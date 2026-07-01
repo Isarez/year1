@@ -44,7 +44,10 @@
   html,body{margin:0;padding:0;}
   body{
     font-family:'Mali','Kanit',sans-serif;
-    background: linear-gradient(180deg, #4FA8F0 0%, #7EC6F5 30%, #BEE6FB 62%, #E8F7FF 100%);
+    background:
+      radial-gradient(700px circle at 88% -8%, rgba(255,247,214,.65), rgba(255,247,214,0) 60%),
+      radial-gradient(500px circle at -5% 15%, rgba(255,255,255,.25), rgba(255,255,255,0) 65%),
+      linear-gradient(180deg, #4092E8 0%, #5FB2EF 26%, #8ED0F5 52%, #C3E9FB 76%, #EAF8FF 100%);
     color:var(--ink);
     min-height:100vh;
     overflow-x:hidden;
@@ -66,7 +69,15 @@
   @keyframes blob3{0%,100%{transform:scale(1);}50%{transform:scale(1.7);}}
 
   .bg-decor{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
-  .bg-cloud{position:absolute; pointer-events:none; user-select:none; line-height:1; filter:saturate(.5) brightness(1.1);}
+
+  .bg-sun{position:fixed; top:64px; right:-50px; width:190px; height:190px; pointer-events:none; z-index:0; animation:sunSpin 90s linear infinite;}
+  .bg-sun .rays{transform-origin:110px 110px; animation:sunPulse 4s ease-in-out infinite;}
+  @keyframes sunSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  @keyframes sunPulse{0%,100%{opacity:.55;}50%{opacity:.85;}}
+
+  .bg-twinkle{position:fixed; pointer-events:none; z-index:0; border-radius:50%; background:#fff; animation:twinkle ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15; transform:scale(.7);}50%{opacity:.9; transform:scale(1.15);}}
+  .bg-cloud{position:absolute; pointer-events:none; user-select:none; filter:blur(1px) drop-shadow(0 10px 16px rgba(80,140,190,.16));}
   @keyframes driftRightward{
     0%  {transform:translateX(0); opacity:0;}
     10% {opacity:.7;}
@@ -81,7 +92,7 @@
   }
   .bg-floater{
     position:absolute; pointer-events:none; user-select:none;
-    opacity:0; filter:saturate(1.3); line-height:1;
+    opacity:0; filter:saturate(1.25) drop-shadow(0 4px 8px rgba(74,63,53,.18)); line-height:1;
     animation:riseUp linear forwards;
   }
   @keyframes riseUp{
@@ -645,6 +656,19 @@
   <div class="shimmer-blob s2"></div>
   <div class="shimmer-blob s3"></div>
 </div>
+<svg class="bg-sun" viewBox="0 0 220 220" aria-hidden="true">
+  <g class="rays" stroke="#FFF3C4" stroke-width="10" stroke-linecap="round" opacity=".7">
+    <line x1="110" y1="10" x2="110" y2="40"/>
+    <line x1="110" y1="180" x2="110" y2="210"/>
+    <line x1="10" y1="110" x2="40" y2="110"/>
+    <line x1="180" y1="110" x2="210" y2="110"/>
+    <line x1="45" y1="45" x2="65" y2="65"/>
+    <line x1="155" y1="155" x2="175" y2="175"/>
+    <line x1="45" y1="175" x2="65" y2="155"/>
+    <line x1="155" y1="65" x2="175" y2="45"/>
+  </g>
+  <circle cx="110" cy="110" r="55" fill="#FFF3C4" opacity=".85"/>
+</svg>
 <div class="bg-decor" id="bg-decor" aria-hidden="true"></div>
 
 <header class="app-header">
@@ -1172,8 +1196,8 @@ function playWin(){ playTone(523.25,.14,'sine',0,.13); playTone(659.25,.14,'sine
 function playClick(){ playTone(420,.05,'square',0,.04); }
 
 /* ============================= BACKGROUND MUSIC ============================= */
-let musicOn = false;
-try{ musicOn = localStorage.getItem('p1quiz_music') === 'on'; }catch(e){}
+let musicOn = true;
+try{ musicOn = localStorage.getItem('p1quiz_music') !== 'off'; }catch(e){}
 let musicGain=null, musicSchedulerId=null, musicNoteIndex=0, musicNextTime=0;
 const BPM = 128;
 const BEAT = 60/BPM;
@@ -1209,21 +1233,32 @@ function ensureMusicGain(){
   ensureAudio();
   if(audioCtx && !musicGain){
     musicGain = audioCtx.createGain();
-    musicGain.gain.value = 0.07;
+    musicGain.gain.value = 0.0001;
     musicGain.connect(audioCtx.destination);
   }
 }
 function scheduleMusicNote(freq, startTime, dur){
   if(freq==null) return;
+  const tail = 0.12;
   const osc = audioCtx.createOscillator();
   const noteGain = audioCtx.createGain();
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(freq, startTime);
-  noteGain.gain.setValueAtTime(0, startTime);
-  noteGain.gain.linearRampToValueAtTime(1, startTime+0.05);
-  noteGain.gain.linearRampToValueAtTime(0, startTime+dur*0.95);
+  noteGain.gain.setValueAtTime(0.0001, startTime);
+  noteGain.gain.exponentialRampToValueAtTime(0.9, startTime+0.035);
+  noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
   osc.connect(noteGain).connect(musicGain);
-  osc.start(startTime); osc.stop(startTime+dur);
+  osc.start(startTime); osc.stop(startTime+dur+tail);
+
+  const subOsc = audioCtx.createOscillator();
+  const subGain = audioCtx.createGain();
+  subOsc.type = 'sine';
+  subOsc.frequency.setValueAtTime(freq/2, startTime);
+  subGain.gain.setValueAtTime(0.0001, startTime);
+  subGain.gain.exponentialRampToValueAtTime(0.35, startTime+0.05);
+  subGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
+  subOsc.connect(subGain).connect(musicGain);
+  subOsc.start(startTime); subOsc.stop(startTime+dur+tail);
 }
 function musicScheduler(){
   if(!musicOn || !audioCtx) return;
@@ -1239,13 +1274,23 @@ function startMusic(){
   ensureMusicGain();
   if(!audioCtx) return;
   if(audioCtx.state==='suspended') audioCtx.resume();
-  musicNextTime = audioCtx.currentTime + 0.1;
+  const now = audioCtx.currentTime;
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+  musicGain.gain.linearRampToValueAtTime(0.025, now+0.4);
+  musicNextTime = now + 0.1;
   musicNoteIndex = 0;
   if(musicSchedulerId) clearInterval(musicSchedulerId);
   musicScheduler();
   musicSchedulerId = setInterval(musicScheduler, 250);
 }
 function stopMusic(){
+  if(musicGain && audioCtx){
+    const now = audioCtx.currentTime;
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+    musicGain.gain.linearRampToValueAtTime(0.0001, now+0.4);
+  }
   if(musicSchedulerId){ clearInterval(musicSchedulerId); musicSchedulerId=null; }
 }
 function refreshMusicBtn(){ musicBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">🎵</span><span class="mute-stripe"></span></span>'; musicBtn.classList.toggle('muted', !musicOn); musicBtn.dataset.tooltip = musicOn ? 'ปิดเพลงพื้นหลัง' : 'เปิดเพลงพื้นหลัง'; }
@@ -1837,7 +1882,13 @@ function spawnFloater(){
   const el = document.createElement('span');
   el.className = 'bg-floater';
   const color = BALLOON_COLORS[Math.floor(Math.random()*BALLOON_COLORS.length)];
-  el.innerHTML = `<svg viewBox="0 0 24 34" width="1em" height="1.4em"><ellipse cx="12" cy="12" rx="10" ry="12" fill="${color}"/><polygon points="9,23 15,23 12,27" fill="${color}"/><line x1="12" y1="27" x2="12" y2="34" stroke="#8A7B6C" stroke-width="1"/></svg>`;
+  el.innerHTML = `<svg viewBox="0 0 24 34" width="1em" height="1.4em">
+    <ellipse cx="12" cy="13" rx="10" ry="12" fill="${color}"/>
+    <ellipse cx="8.3" cy="7.5" rx="3.1" ry="4.2" fill="#fff" opacity=".38"/>
+    <ellipse cx="12" cy="13" rx="10" ry="12" fill="none" stroke="rgba(0,0,0,.08)" stroke-width=".6"/>
+    <polygon points="9.4,24 14.6,24 12,27.8" fill="${color}"/>
+    <path d="M12 27.8 Q10.2 30.8 12 34" stroke="#8A7B6C" stroke-width="1" fill="none" stroke-linecap="round"/>
+  </svg>`;
   const isLarge = Math.random() < 0.25;
   const size = isLarge ? (46 + Math.random()*26)   // 46-72px, ~25% of spawns
                         : (14 + Math.random()*18); // 14-32px, ~75% of spawns
@@ -1856,19 +1907,39 @@ setInterval(spawnFloater, 1100);
 function spawnCloud(){
   const el = document.createElement('span');
   el.className = 'bg-cloud';
-  el.textContent = '☁️';
-  const size = 50 + Math.random()*70;
+  el.innerHTML = `<svg viewBox="0 0 120 70" width="100%" height="100%">
+    <g fill="#fff">
+      <ellipse cx="34" cy="46" rx="30" ry="21"/>
+      <ellipse cx="64" cy="30" rx="34" ry="27"/>
+      <ellipse cx="93" cy="46" rx="25" ry="19"/>
+      <ellipse cx="60" cy="53" rx="50" ry="17"/>
+    </g>
+  </svg>`;
+  const size = 60 + Math.random()*90;
   const dur  = 24 + Math.random()*20;
   const top  = 6 + Math.random()*40;
   const ltr  = Math.random() < 0.5;
   el.style.cssText = ltr
-    ? `font-size:${size}px;top:${top}vh;left:-20vw;animation:driftRightward ${dur}s linear forwards;`
-    : `font-size:${size}px;top:${top}vh;left:110vw;animation:driftLeftward ${dur}s linear forwards;`;
+    ? `width:${size}px;height:${size*0.58}px;top:${top}vh;left:-25vw;animation:driftRightward ${dur}s linear forwards;`
+    : `width:${size}px;height:${size*0.58}px;top:${top}vh;left:115vw;animation:driftLeftward ${dur}s linear forwards;`;
   bgDecorEl.appendChild(el);
   setTimeout(()=>el.remove(), dur*1000+500);
 }
 for(let i=0;i<4;i++) setTimeout(spawnCloud, i*2500);
 setInterval(spawnCloud, 7000);
+
+/* ============================= TWINKLING SPARKLES ============================= */
+for(let i=0;i<22;i++){
+  const el = document.createElement('span');
+  el.className = 'bg-twinkle';
+  const size = 2 + Math.random()*3;
+  const top  = Math.random()*55;
+  const left = Math.random()*100;
+  const dur  = 2.5 + Math.random()*3;
+  const delay = Math.random()*5;
+  el.style.cssText = `width:${size}px;height:${size}px;top:${top}vh;left:${left}vw;animation-duration:${dur}s;animation-delay:-${delay}s;`;
+  bgDecorEl.appendChild(el);
+}
 
 /* ============================= INIT ============================= */
 loadChildren();
