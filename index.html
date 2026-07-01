@@ -333,6 +333,7 @@
   <div class="header-actions">
     <div class="sticker-tally"><span class="dot">🏅</span><span id="tally-text">0/6</span></div>
     <button class="icon-btn" id="sound-toggle" aria-label="เปิด/ปิดเสียง">🔊</button>
+    <button class="icon-btn" id="fullscreen-toggle" aria-label="เต็มหน้าจอ">⛶</button>
   </div>
 </header>
 
@@ -828,6 +829,19 @@ soundBtn.addEventListener('click', ()=>{
   refreshSoundBtn();
   if(soundOn) playClick();
 });
+
+/* ============================= FULLSCREEN TOGGLE ============================= */
+const fsBtn = $('fullscreen-toggle');
+function refreshFsBtn(){ fsBtn.textContent = document.fullscreenElement ? '⤡' : '⛶'; fsBtn.setAttribute('aria-label', document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ'); }
+fsBtn.addEventListener('click', ()=>{
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+  }else{
+    document.exitFullscreen && document.exitFullscreen();
+  }
+});
+document.addEventListener('fullscreenchange', refreshFsBtn);
+refreshFsBtn();
 
 /* ============================= INIT ============================= */
 renderHome();
