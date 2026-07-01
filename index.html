@@ -187,7 +187,7 @@
   .sb-card{
     background:linear-gradient(155deg,#FFF9EC,#FFEFD1 60%,#FFE4BE);
     border-radius:var(--radius-xl); padding:22px 18px 18px;
-    max-width:480px; width:100%;
+    max-width:560px; width:100%;
     box-shadow:0 24px 70px rgba(74,63,53,.32);
     max-height:92vh; overflow-y:auto;
     border:4px solid #FFD98E;
@@ -197,14 +197,14 @@
   .sb-title{font-size:clamp(20px,5.2vw,26px);font-weight:800;color:var(--ink);text-align:center;margin-bottom:2px;}
   .sb-sub{font-size:clamp(14px,3.5vw,16px);color:var(--ink-soft);font-weight:700;text-align:center;margin-bottom:18px;}
   .sb-grid{
-    display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:18px;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px;
   }
   .sb-slot{
     border-radius:var(--radius-lg); display:flex; flex-direction:column;
     align-items:center; justify-content:center; gap:4px;
     border:3px dashed #E8D8C0; background:rgba(255,255,255,.4);
-    padding:14px 8px; position:relative; overflow:hidden;
-    min-height:100px;
+    padding:12px 6px; position:relative; overflow:hidden;
+    min-height:92px;
   }
   .sb-slot.earned{
     border:3px solid transparent;
@@ -219,9 +219,9 @@
     65%{transform:scale(.91) rotate(3deg); filter:blur(0);}
     100%{transform:scale(1) rotate(0); opacity:1;}
   }
-  .sb-slot .slot-emoji{font-size:clamp(34px,8.5vw,46px); line-height:1;}
-  .sb-slot .slot-name{font-size:clamp(11px,2.8vw,13px);font-weight:800;color:var(--ink-soft); text-align:center;}
-  .sb-slot .slot-empty{font-size:28px; opacity:.25;}
+  .sb-slot .slot-emoji{font-size:clamp(28px,7vw,38px); line-height:1;}
+  .sb-slot .slot-name{font-size:clamp(10px,2.6vw,12px);font-weight:800;color:var(--ink-soft); text-align:center;}
+  .sb-slot .slot-empty{font-size:24px; opacity:.25;}
   .sb-slot .slot-shine{
     position:absolute; top:-30%; left:-30%; width:60%; height:160%;
     background:linear-gradient(120deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.65) 50%,rgba(255,255,255,0) 100%);
@@ -682,7 +682,7 @@
 
 </main>
 
-<div class="owl-widget">
+<div class="owl-widget" id="owl-widget">
   <div class="owl-speech" id="owl-speech"></div>
   <button class="mascot" id="mascot" aria-label="นกฮูกสนุกคิด">🦉</button>
   <button class="owl-sticker-btn" id="sticker-tally-btn" aria-label="ดูสมุดสติกเกอร์">
@@ -952,6 +952,7 @@ function addChild(name){
 
 function enterHome(){
   $('child-select-view').hidden = true;
+  $('owl-widget').hidden = false;
   homeView.hidden = false;
   updateHeaderChild();
   renderHome();
@@ -1010,6 +1011,7 @@ function renderChildSelect(){
   initEmojiPicker();
   $('child-select-view').hidden = false;
   homeView.hidden = true;
+  $('owl-widget').hidden = true;
 }
 
 /* child-select submit */
