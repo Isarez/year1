@@ -53,22 +53,32 @@
   html,body{margin:0;padding:0;}
   body{
     font-family:'Mali','Kanit',sans-serif;
-    background:
-      radial-gradient(700px circle at 88% -8%, rgba(255,247,214,.65), rgba(255,247,214,0) 60%),
-      radial-gradient(500px circle at -5% 15%, rgba(255,255,255,.25), rgba(255,255,255,0) 65%),
-      linear-gradient(180deg, #4092E8 0%, #5FB2EF 26%, #8ED0F5 52%, #C3E9FB 76%, #EAF8FF 100%);
+    background:#8ED0F5; /* static fallback; the real sky is painted by .bg-sky-day/.bg-sky-night below (CSS can't tween between two gradients, so we crossfade two layers with opacity instead) */
     color:var(--ink);
     min-height:100vh;
     overflow-x:hidden;
     position:relative;
-    transition:background 1.2s ease;
   }
-  body.night-mode{
+  .bg-sky-day, .bg-sky-night{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    transition:opacity 2s ease;
+  }
+  .bg-sky-day{
+    opacity:1;
+    background:
+      radial-gradient(700px circle at 88% -8%, rgba(255,247,214,.65), rgba(255,247,214,0) 60%),
+      radial-gradient(500px circle at -5% 15%, rgba(255,255,255,.25), rgba(255,255,255,0) 65%),
+      linear-gradient(180deg, #4092E8 0%, #5FB2EF 26%, #8ED0F5 52%, #C3E9FB 76%, #EAF8FF 100%);
+  }
+  .bg-sky-night{
+    opacity:0;
     background:
       radial-gradient(600px circle at 85% 6%, rgba(255,255,255,.10), rgba(255,255,255,0) 60%),
       radial-gradient(500px circle at -5% 15%, rgba(255,255,255,.05), rgba(255,255,255,0) 65%),
       linear-gradient(180deg, #060A1F 0%, #0E1440 22%, #182158 46%, #232F6E 70%, #303F85 100%);
   }
+  body.night-mode .bg-sky-day{opacity:0;}
+  body.night-mode .bg-sky-night{opacity:1;}
   body.night-mode .app-header{
     background:linear-gradient(120deg, rgba(18,22,54,0.55), rgba(18,22,54,0.35));
     border-bottom:1px solid rgba(255,255,255,0.14);
@@ -85,7 +95,7 @@
 
   /* ---------- floating background decor ---------- */
   .bg-shimmer{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
-  .shimmer-blob{position:absolute;border-radius:50%;filter:blur(72px);}
+  .shimmer-blob{position:absolute;border-radius:50%;filter:blur(72px);transition:opacity 2s ease;}
   .shimmer-blob.s1{width:500px;height:500px;top:-150px;left:-150px;background:rgba(255,255,255,.55);animation:blob1 22s ease-in-out infinite;}
   .shimmer-blob.s2{width:420px;height:420px;bottom:-120px;right:-100px;background:rgba(255,255,255,.40);animation:blob2 28s ease-in-out infinite;}
   .shimmer-blob.s3{width:360px;height:360px;top:38%;left:32%;background:rgba(210,240,255,.35);animation:blob3 19s ease-in-out infinite;}
@@ -96,19 +106,32 @@
 
   .bg-decor{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
 
-  .bg-sun{position:fixed; top:64px; right:-50px; width:190px; height:190px; pointer-events:none; z-index:0; animation:sunSpin 90s linear infinite; transition:opacity .8s ease;}
+  /* wrapper handles the rise/set glide (transform) so it doesn't fight the inner svg's own rotate/pulse animation on the same `transform` property */
+  .bg-sun-wrap{
+    position:fixed; top:64px; right:-50px; width:190px; height:190px; pointer-events:none; z-index:0;
+    transform:translateY(0) scale(1);
+    transition:transform 2s cubic-bezier(.5,.05,.35,1);
+  }
+  body.night-mode .bg-sun-wrap{transform:translateY(220px) scale(.75);}
+  .bg-sun{width:100%; height:100%; display:block; animation:sunSpin 90s linear infinite; transition:opacity 2s ease;}
   .bg-sun .rays{transform-origin:110px 110px; animation:sunPulse 4s ease-in-out infinite;}
   @keyframes sunSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   @keyframes sunPulse{0%,100%{opacity:.55;}50%{opacity:.85;}}
   body.night-mode .bg-sun{opacity:0; pointer-events:none;}
 
-  .bg-moon{position:fixed; top:64px; right:-30px; width:170px; height:170px; pointer-events:none; z-index:0; opacity:0; transition:opacity .8s ease;}
+  .bg-moon-wrap{
+    position:fixed; top:64px; right:-30px; width:170px; height:170px; pointer-events:none; z-index:0;
+    transform:translateY(-220px) scale(.75);
+    transition:transform 2s cubic-bezier(.5,.05,.35,1);
+  }
+  body.night-mode .bg-moon-wrap{transform:translateY(0) scale(1);}
+  .bg-moon{width:100%; height:100%; display:block; opacity:0; transition:opacity 2s ease;}
   body.night-mode .bg-moon{opacity:.85; animation:moonGlow 6s ease-in-out infinite;}
   @keyframes moonGlow{0%,100%{opacity:.85;}50%{opacity:1;}}
 
   .bg-twinkle{position:fixed; pointer-events:none; z-index:0; border-radius:50%; background:#fff; animation:twinkle ease-in-out infinite;}
   @keyframes twinkle{0%,100%{opacity:.15; transform:scale(.7);}50%{opacity:.9; transform:scale(1.15);}}
-  .bg-cloud{position:absolute; pointer-events:none; user-select:none; filter:blur(1px) drop-shadow(0 10px 16px rgba(80,140,190,.16)); transition:filter .8s ease;}
+  .bg-cloud{position:absolute; pointer-events:none; user-select:none; filter:blur(1px) drop-shadow(0 10px 16px rgba(80,140,190,.16)); transition:filter 2s ease;}
   body.night-mode .bg-cloud{filter:blur(1px) drop-shadow(0 10px 16px rgba(10,14,40,.45));}
   body.night-mode .bg-floater{filter:saturate(1.1) drop-shadow(0 0 6px rgba(255,241,168,.65));}
   @keyframes driftRightward{
@@ -127,6 +150,7 @@
     position:absolute; pointer-events:none; user-select:none;
     opacity:0; filter:saturate(1.25) drop-shadow(0 4px 8px rgba(74,63,53,.18)); line-height:1;
     animation:riseUp linear forwards;
+    transition:filter 2s ease;
   }
   @keyframes riseUp{
     0%  {transform:translateY(0) rotate(0deg) scale(1);   opacity:0;}
@@ -146,11 +170,12 @@
     -webkit-backdrop-filter:blur(18px) saturate(180%);
     border-bottom:1px solid rgba(255,255,255,0.45);
     box-shadow:0 6px 24px rgba(79,168,240,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+    transition:background 2s ease, border-color 2s ease;
   }
   .brand{display:flex; align-items:center; gap:10px;}
   .brand-emoji{font-size:30px; animation:idleBounce 2.6s ease-in-out infinite;}
-  .brand-text h1{font-size:clamp(22px,5.6vw,28px); font-weight:800; color:var(--ink);}
-  .brand-text p{font-size:clamp(15px,3.8vw,18px); color:var(--ink-soft); font-weight:600;}
+  .brand-text h1{font-size:clamp(22px,5.6vw,28px); font-weight:800; color:var(--ink); transition:color 2s ease, text-shadow 2s ease;}
+  .brand-text p{font-size:clamp(15px,3.8vw,18px); color:var(--ink-soft); font-weight:600; transition:color 2s ease;}
   .header-actions{display:flex; align-items:center; gap:8px;}
   .icon-btn{
     position:relative;
@@ -461,9 +486,16 @@
   /* ---------- home view ---------- */
   .hero{text-align:center; margin:10px 0 24px;}
   .hero-mascot{font-size:64px; display:inline-block; animation:idleBounce 2.4s ease-in-out infinite;}
-  .hero h2{font-size:clamp(28px,7vw,38px); font-weight:800; margin-top:6px;}
-  .hero p{font-size:clamp(17px,4.2vw,21px); color:var(--ink-soft); font-weight:600; margin-top:6px;}
+  .hero h2{font-size:clamp(28px,7vw,38px); font-weight:800; margin-top:6px; transition:color 2s ease, text-shadow 2s ease;}
+  .hero p{font-size:clamp(17px,4.2vw,21px); color:var(--ink-soft); font-weight:600; margin-top:6px; transition:color 2s ease;}
 
+  .cat-section-title{
+    display:flex; align-items:center; gap:8px;
+    font-size:clamp(18px,4.4vw,22px); font-weight:800; color:var(--ink);
+    margin:0 0 14px;
+  }
+  .cat-section-title .cst-emoji{font-size:1.15em;}
+  .cat-section{margin-bottom:30px;}
   .cat-grid{
     display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
     gap:18px;
@@ -507,6 +539,15 @@
     font-size:14.5px; font-weight:700; color:var(--ink);
   }
   .cat-progress-new{color:var(--ink-soft);}
+  .cat-new-badge{
+    position:absolute; top:-8px; left:14px; z-index:1;
+    background:linear-gradient(135deg,#FF6B6B,#FF3B6E); color:#fff;
+    font-size:12px; font-weight:800; letter-spacing:.5px;
+    padding:4px 10px; border-radius:999px; box-shadow:0 3px 8px rgba(255,59,110,.45);
+    animation:newBadgePop .5s cubic-bezier(.34,1.56,.64,1) .3s backwards, newBadgePulse 1.8s ease-in-out 1s infinite;
+  }
+  @keyframes newBadgePop{0%{transform:scale(0) rotate(-15deg); opacity:0;} 100%{transform:scale(1) rotate(-6deg); opacity:1;}}
+  @keyframes newBadgePulse{0%,100%{transform:scale(1) rotate(-6deg);} 50%{transform:scale(1.08) rotate(-6deg);}}
 
   /* ---------- quiz view ---------- */
   .quiz-top{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
@@ -663,7 +704,7 @@
   .btn-retry{background:var(--white); color:var(--ink); border:2px solid #EFE6D6;}
   .btn-home{background:linear-gradient(135deg,#FFC53D,#FF9F3D); color:#5A3A00;}
 
-  footer{text-align:center; padding:20px 0 10px; font-size:12px; color:var(--ink-soft); font-weight:600; position:relative; z-index:1;}
+  footer{text-align:center; padding:20px 0 10px; font-size:12px; color:var(--ink-soft); font-weight:600; position:relative; z-index:1; transition:color 2s ease;}
   footer .footer-privacy{display:block; margin-top:6px; font-size:11px; font-weight:600; opacity:.75;}
   footer .footer-credit{
     display:flex; align-items:center; justify-content:center; gap:6px;
@@ -685,41 +726,139 @@
   }
 
   :focus-visible{outline:3px solid #33B7EE; outline-offset:2px;}
+
+  /* ---------- AR sentence-builder game (fullscreen camera background) ---------- */
+  body.ar-open{overflow:hidden;}
+  #ar-view{position:fixed; inset:0; z-index:70; display:block; isolation:isolate; background:#1a1a2e;}
+
+  .ar-bg-layer{position:fixed; inset:0; z-index:0; background:linear-gradient(160deg,#1a1a2e,#232f6e); overflow:hidden;}
+  #ar-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:.4; z-index:1;}
+  #ar-canvas{position:absolute; inset:0; width:100%; height:100%; z-index:2;}
+  .ar-camera-msg{
+    position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; gap:8px;
+    align-items:center; justify-content:center; text-align:center; padding:20px;
+    color:#fff; font-weight:700; font-size:14.5px; background:rgba(10,14,40,.55);
+  }
+
+  .ar-overlay-ui{
+    position:relative; z-index:6; min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column; padding:14px 14px calc(34px + env(safe-area-inset-bottom));
+    pointer-events:none;
+  }
+  .ar-overlay-ui .quiz-top{pointer-events:auto;}
+  body.ar-open .owl-widget{z-index:72;}
+  .ar-label-chip{
+    background:rgba(255,255,255,.88); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    display:inline-block; padding:4px 12px; border-radius:999px;
+  }
+
+  .ar-cards-layer{position:fixed; inset:0; z-index:7; pointer-events:none;}
+  .ar-card{
+    position:absolute; pointer-events:auto;
+    cursor:grab; background:rgba(255,255,255,.38); border:2px solid rgba(255,255,255,.65); border-radius:20px;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    padding:16px 26px; display:flex; flex-direction:column; align-items:center; gap:6px;
+    min-width:104px;
+    font-weight:800; font-size:27px; color:#fff; text-shadow:0 1px 5px rgba(0,0,0,.4);
+    box-shadow:0 8px 18px rgba(0,0,0,.25);
+    touch-action:none; user-select:none; transition:transform .15s ease, box-shadow .15s ease;
+    animation:cardIn .4s cubic-bezier(.34,1.56,.64,1) backwards;
+  }
+  .ar-card .ar-card-emoji{font-size:46px; line-height:1;}
+  .ar-card .ar-card-num{font-size:40px;}
+  .ar-card.dragging{
+    position:fixed !important; z-index:999; transform:translate(-50%,-50%) scale(1.15);
+    background:rgba(255,255,255,.55);
+    box-shadow:0 10px 24px rgba(0,0,0,.3); cursor:grabbing; pointer-events:none;
+  }
+  .ar-card.placed{
+    position:static !important; cursor:default; box-shadow:0 2px 8px rgba(0,0,0,.12); border-color:transparent;
+    background:rgba(255,255,255,.92); color:var(--ink); text-shadow:none; animation:none;
+  }
+
+  .ar-hint-chip{
+    margin-top:10px; margin-bottom:12px; align-self:center; max-width:92%;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    padding:9px 18px; border-radius:999px; font-size:15px; font-weight:700; color:var(--ink);
+    text-align:center; box-shadow:var(--shadow-btn);
+  }
+  .ar-math-problem{
+    align-self:center; margin-bottom:14px;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    padding:12px 26px; border-radius:20px;
+    font-size:clamp(28px,7.5vw,36px); font-weight:800; color:var(--ink);
+    text-align:center; box-shadow:var(--shadow-btn);
+  }
+  .ar-slot-row{
+    align-self:center; display:flex; flex-wrap:wrap; justify-content:center; gap:14px;
+    padding:16px; margin-bottom:6px; border-radius:var(--radius-xl); min-height:74px;
+    background:rgba(255,255,255,.22); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.45);
+    box-shadow:0 8px 26px rgba(0,0,0,.22);
+  }
+  .ar-slot{
+    position:relative; min-width:104px; min-height:104px; padding:6px;
+    border-radius:18px; border:3px dashed rgba(255,255,255,.7); background:rgba(255,255,255,.14);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .2s ease, background .2s ease, transform .15s ease;
+  }
+  .ar-slot.filled{border-style:solid; border-color:var(--correct); background:rgba(255,255,255,.3); padding:4px;}
+  .ar-slot.wrong-flash{animation:shakeX .4s ease; border-color:var(--wrong); background:rgba(255,97,97,.28);}
+  .ar-slot-ph{font-size:22px; font-weight:800; color:#fff; opacity:.65; text-shadow:0 1px 4px rgba(0,0,0,.35);}
+
+  .ar-cursor{
+    position:fixed; width:30px; height:30px; margin-left:-15px; margin-top:-15px;
+    border-radius:50%; border:4px solid #33B7EE; background:rgba(51,183,238,.18);
+    pointer-events:none; z-index:998; display:none;
+    transition:border-color .1s ease, background .1s ease;
+  }
+  .ar-cursor.active{display:block;}
+  .ar-cursor.hover{border-color:#FFC53D; border-style:dashed; background:rgba(255,197,61,.2);}
+  .ar-cursor.miss{border-color:#FF6161; background:rgba(255,97,97,.25);}
+  .ar-cursor.grabbed{border-color:#33B76C; background:rgba(51,183,108,.25);}
 </style>
 </head>
 <body>
+
+<div class="bg-sky-day" aria-hidden="true"></div>
+<div class="bg-sky-night" aria-hidden="true"></div>
 
 <div class="bg-shimmer" aria-hidden="true">
   <div class="shimmer-blob s1"></div>
   <div class="shimmer-blob s2"></div>
   <div class="shimmer-blob s3"></div>
 </div>
-<svg class="bg-sun" viewBox="0 0 220 220" aria-hidden="true">
-  <g class="rays" stroke="#FFF3C4" stroke-width="10" stroke-linecap="round" opacity=".7">
-    <line x1="110" y1="10" x2="110" y2="40"/>
-    <line x1="110" y1="180" x2="110" y2="210"/>
-    <line x1="10" y1="110" x2="40" y2="110"/>
-    <line x1="180" y1="110" x2="210" y2="110"/>
-    <line x1="45" y1="45" x2="65" y2="65"/>
-    <line x1="155" y1="155" x2="175" y2="175"/>
-    <line x1="45" y1="175" x2="65" y2="155"/>
-    <line x1="155" y1="65" x2="175" y2="45"/>
-  </g>
-  <circle cx="110" cy="110" r="55" fill="#FFF3C4" opacity=".85"/>
-</svg>
-<svg class="bg-moon" viewBox="0 0 220 220" aria-hidden="true">
-  <defs>
-    <radialGradient id="moonGlowGrad" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFF9E6" stop-opacity=".55"/>
-      <stop offset="100%" stop-color="#FFF9E6" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <circle cx="110" cy="110" r="95" fill="url(#moonGlowGrad)"/>
-  <circle cx="110" cy="110" r="52" fill="#F4EFDD"/>
-  <circle cx="92" cy="90" r="9" fill="#DAD3B8" opacity=".55"/>
-  <circle cx="126" cy="118" r="13" fill="#DAD3B8" opacity=".45"/>
-  <circle cx="98" cy="132" r="6" fill="#DAD3B8" opacity=".45"/>
-</svg>
+<div class="bg-sun-wrap">
+  <svg class="bg-sun" viewBox="0 0 220 220" aria-hidden="true">
+    <g class="rays" stroke="#FFF3C4" stroke-width="10" stroke-linecap="round" opacity=".7">
+      <line x1="110" y1="10" x2="110" y2="40"/>
+      <line x1="110" y1="180" x2="110" y2="210"/>
+      <line x1="10" y1="110" x2="40" y2="110"/>
+      <line x1="180" y1="110" x2="210" y2="110"/>
+      <line x1="45" y1="45" x2="65" y2="65"/>
+      <line x1="155" y1="155" x2="175" y2="175"/>
+      <line x1="45" y1="175" x2="65" y2="155"/>
+      <line x1="155" y1="65" x2="175" y2="45"/>
+    </g>
+    <circle cx="110" cy="110" r="55" fill="#FFF3C4" opacity=".85"/>
+  </svg>
+</div>
+<div class="bg-moon-wrap">
+  <svg class="bg-moon" viewBox="0 0 220 220" aria-hidden="true">
+    <defs>
+      <radialGradient id="moonGlowGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFF9E6" stop-opacity=".55"/>
+        <stop offset="100%" stop-color="#FFF9E6" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="110" cy="110" r="95" fill="url(#moonGlowGrad)"/>
+    <circle cx="110" cy="110" r="52" fill="#F4EFDD"/>
+    <circle cx="92" cy="90" r="9" fill="#DAD3B8" opacity=".55"/>
+    <circle cx="126" cy="118" r="13" fill="#DAD3B8" opacity=".45"/>
+    <circle cx="98" cy="132" r="6" fill="#DAD3B8" opacity=".45"/>
+  </svg>
+</div>
 <div class="bg-decor" id="bg-decor" aria-hidden="true"></div>
 
 <header class="app-header">
@@ -766,7 +905,14 @@
       <h2 id="hero-greeting">สวัสดีจ้า นักสู้ตัวน้อย!</h2>
       <p>เลือกหมวดที่อยากลองทำก่อนได้เลย 🎯</p>
     </div>
-    <div class="cat-grid" id="cat-grid"></div>
+    <div class="cat-section">
+      <div class="cat-section-title"><span class="cst-emoji">📝</span> คำถาม-คำตอบ</div>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+    <div class="cat-section">
+      <div class="cat-section-title"><span class="cst-emoji">🖐️</span> การโต้ตอบ</div>
+      <div class="cat-grid" id="cat-grid-interactive"></div>
+    </div>
   </section>
 
   <!-- QUIZ VIEW -->
@@ -823,6 +969,36 @@
   </section>
 
 </main>
+
+<!-- AR SENTENCE-BUILDER VIEW (fullscreen camera background, outside <main> so its high z-index isn't trapped inside main's stacking context) -->
+<section id="ar-view" hidden>
+  <div class="ar-bg-layer" id="ar-bg-layer">
+    <video id="ar-video" autoplay playsinline muted></video>
+    <canvas id="ar-canvas"></canvas>
+    <div class="ar-camera-msg" id="ar-camera-msg" hidden>
+      <span style="font-size:34px;">🖐️🚫</span>
+      <span>ใช้กล้องไม่ได้ ไม่เป็นไรนะ!<br>ใช้นิ้วหรือเมาส์ลากคำได้เลยจ้ะ 👇</span>
+    </div>
+  </div>
+
+  <div class="ar-cards-layer" id="ar-cards-row"></div>
+
+  <div class="ar-overlay-ui">
+    <div class="quiz-top">
+      <button class="back-btn" id="ar-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label ar-label-chip" id="ar-cat-label">ต่อประโยค AR</div>
+        <div class="progress-track"><div class="progress-fill" id="ar-progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="q-counter" id="ar-level-counter">1/10</div>
+    </div>
+
+    <div class="ar-hint-chip" id="ar-hint">✋ ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" หยิบคำมาต่อประโยคให้ถูกลำดับนะ!</div>
+    <div class="ar-math-problem" id="ar-math-problem" hidden></div>
+    <div class="ar-slot-row" id="ar-slot-row"></div>
+  </div>
+</section>
+<div class="ar-cursor" id="ar-cursor"></div>
 
 <div class="owl-widget" id="owl-widget">
   <div class="owl-speech" id="owl-speech"></div>
@@ -1042,8 +1218,76 @@ const CATS = [
         return { q:'', emoji:'', img:'assets/iq2/q'+num+'.png', choices:letters, correct:correct, explain:'คำตอบคือข้อ '+letters[correct]+' ตามภาพโจทย์ด้านบน' };
       });
     })()
+  },
+  {
+    id:'ar-thai', name:'ต่อประโยค (ไทย)', emoji:'🖐️', color:'#F17FA8', light:'#FDE1EC',
+    type:'ar', lang:'th', levels:10, isNew:true
+  },
+  {
+    id:'ar-eng', name:'ต่อประโยค (Eng)', emoji:'🤟', color:'#3EC6C6', light:'#D8F6F6',
+    type:'ar', lang:'en', levels:10, isNew:true
+  },
+  {
+    id:'ar-math', name:'คิดเลข', emoji:'🔢', color:'#FFB020', light:'#FFF1D6',
+    type:'ar', mode:'math', levels:10, isNew:true
   }
 ];
+
+/* ============================= AR SENTENCE DATA ============================= */
+const AR_SENTENCES = {
+  th:{
+    3:[
+      [{w:'แมว',e:'🐱'},{w:'กิน',e:'🍽️'},{w:'ปลา',e:'🐟'}],
+      [{w:'หมา',e:'🐶'},{w:'ดื่ม',e:'🥤'},{w:'น้ำ',e:'💧'}],
+      [{w:'นก',e:'🐦'},{w:'กิน',e:'🍽️'},{w:'หนอน',e:'🐛'}],
+      [{w:'ไก่',e:'🐔'},{w:'กิน',e:'🍽️'},{w:'ข้าว',e:'🍚'}],
+      [{w:'เด็ก',e:'🧒'},{w:'กิน',e:'🍽️'},{w:'ขนม',e:'🍪'}],
+      [{w:'ผึ้ง',e:'🐝'},{w:'บิน',e:'💨'},{w:'สูง',e:'⬆️'}]
+    ],
+    4:[
+      [{w:'แมว',e:'🐱'},{w:'กิน',e:'🍽️'},{w:'ปลา',e:'🐟'},{w:'อร่อย',e:'😋'}],
+      [{w:'น้อง',e:'🧒'},{w:'ดื่ม',e:'🥤'},{w:'นม',e:'🥛'},{w:'อุ่น',e:'♨️'}],
+      [{w:'หมา',e:'🐶'},{w:'วิ่ง',e:'🏃'},{w:'เร็ว',e:'💨'},{w:'มาก',e:'❗'}],
+      [{w:'ผีเสื้อ',e:'🦋'},{w:'บิน',e:'💨'},{w:'ไป',e:'➡️'},{w:'สวน',e:'🌷'}],
+      [{w:'แม่',e:'👩'},{w:'ทำ',e:'👩‍🍳'},{w:'อาหาร',e:'🍲'},{w:'อร่อย',e:'😋'}],
+      [{w:'พ่อ',e:'👨'},{w:'ขับ',e:'🚗'},{w:'รถ',e:'🚙'},{w:'ไป',e:'➡️'}]
+    ],
+    5:[
+      [{w:'น้อง',e:'🧒'},{w:'กิน',e:'🍽️'},{w:'ข้าว',e:'🍚'},{w:'กับ',e:'➕'},{w:'ไข่',e:'🍳'}],
+      [{w:'แมว',e:'🐱'},{w:'นอน',e:'😴'},{w:'บน',e:'⬆️'},{w:'เตียง',e:'🛏️'},{w:'นุ่ม',e:'☁️'}],
+      [{w:'เด็ก',e:'🧒'},{w:'เล่น',e:'🎈'},{w:'บอล',e:'⚽'},{w:'ใน',e:'📍'},{w:'สวน',e:'🌳'}],
+      [{w:'หมา',e:'🐶'},{w:'คาบ',e:'🦴'},{w:'ลูกบอล',e:'🎾'},{w:'มา',e:'➡️'},{w:'ให้',e:'🤲'}],
+      [{w:'ปลา',e:'🐟'},{w:'ว่าย',e:'🏊'},{w:'อยู่',e:'📍'},{w:'ใน',e:'📍'},{w:'บ่อ',e:'💧'}],
+      [{w:'นก',e:'🐦'},{w:'ร้อง',e:'🎵'},{w:'เพลง',e:'🎶'},{w:'บน',e:'⬆️'},{w:'ต้นไม้',e:'🌳'}]
+    ]
+  },
+  en:{
+    3:[
+      [{w:'Cat',e:'🐱'},{w:'eats',e:'🍽️'},{w:'fish',e:'🐟'}],
+      [{w:'Dog',e:'🐶'},{w:'drinks',e:'🥤'},{w:'water',e:'💧'}],
+      [{w:'Bird',e:'🐦'},{w:'eats',e:'🍽️'},{w:'worm',e:'🐛'}],
+      [{w:'I',e:'🧒'},{w:'like',e:'❤️'},{w:'cake',e:'🍰'}],
+      [{w:'Sun',e:'☀️'},{w:'is',e:'➡️'},{w:'hot',e:'🔥'}],
+      [{w:'Fish',e:'🐟'},{w:'can',e:'✅'},{w:'swim',e:'🏊'}]
+    ],
+    4:[
+      [{w:'Cat',e:'🐱'},{w:'eats',e:'🍽️'},{w:'fish',e:'🐟'},{w:'fast',e:'💨'}],
+      [{w:'I',e:'🧒'},{w:'drink',e:'🥤'},{w:'milk',e:'🥛'},{w:'daily',e:'📅'}],
+      [{w:'Dog',e:'🐶'},{w:'runs',e:'🏃'},{w:'very',e:'❗'},{w:'fast',e:'💨'}],
+      [{w:'Bird',e:'🐦'},{w:'flies',e:'💨'},{w:'so',e:'➡️'},{w:'high',e:'⬆️'}],
+      [{w:'Mom',e:'👩'},{w:'cooks',e:'👩‍🍳'},{w:'good',e:'😋'},{w:'food',e:'🍲'}],
+      [{w:'Dad',e:'👨'},{w:'drives',e:'🚗'},{w:'a',e:'➕'},{w:'car',e:'🚙'}]
+    ],
+    5:[
+      [{w:'I',e:'🧒'},{w:'eat',e:'🍽️'},{w:'rice',e:'🍚'},{w:'and',e:'➕'},{w:'egg',e:'🍳'}],
+      [{w:'Cat',e:'🐱'},{w:'sleeps',e:'😴'},{w:'on',e:'⬆️'},{w:'soft',e:'☁️'},{w:'bed',e:'🛏️'}],
+      [{w:'Kids',e:'🧒'},{w:'play',e:'🎈'},{w:'ball',e:'⚽'},{w:'in',e:'📍'},{w:'park',e:'🌳'}],
+      [{w:'Dog',e:'🐶'},{w:'brings',e:'🤲'},{w:'the',e:'➕'},{w:'ball',e:'🎾'},{w:'back',e:'➡️'}],
+      [{w:'Fish',e:'🐟'},{w:'swim',e:'🏊'},{w:'in',e:'📍'},{w:'the',e:'➕'},{w:'pond',e:'💧'}],
+      [{w:'Bird',e:'🐦'},{w:'sings',e:'🎵'},{w:'on',e:'⬆️'},{w:'a',e:'➕'},{w:'tree',e:'🌳'}]
+    ]
+  }
+};
 
 /* ============================= STATE ============================= */
 const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3' };
@@ -1403,8 +1647,9 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view');
 const mascot = $('mascot');
+let lastGameType = 'quiz', lastCatId = null;
 
 function mascotHappy(){ mascot.classList.remove('oops'); mascot.classList.remove('happy'); void mascot.offsetWidth; mascot.classList.add('happy'); }
 function mascotOops(){ mascot.classList.remove('happy'); mascot.classList.remove('oops'); void mascot.offsetWidth; mascot.classList.add('oops'); }
@@ -1431,7 +1676,8 @@ function updateTally(){ $('tally-text').textContent = stickerCount()+'/'+CATS.le
 wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true;
+  stopARGame();
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true;
   renderChildSelect();
 });
 
@@ -1440,7 +1686,9 @@ function renderHome(){
   const name = activeChild ? activeChild.name : 'นักสู้ตัวน้อย';
   $('hero-greeting').textContent = 'สวัสดีจ้า '+name+'! 🎉';
   const grid = $('cat-grid');
+  const gridInteractive = $('cat-grid-interactive');
   grid.innerHTML = '';
+  gridInteractive.innerHTML = '';
   CATS.forEach(cat=>{
     const p = progress[cat.id];
     const unlocked = p && p.unlocked;
@@ -1449,14 +1697,16 @@ function renderHome(){
     const card = document.createElement('button');
     card.className = 'cat-card'+(isLocked?' cat-locked':'');
     card.style.setProperty('--cat-light', isLocked?'#EEEEEE':cat.light);
+    const total = cat.type==='ar' ? cat.levels : cat.questions.length;
     card.innerHTML =
+      (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
       '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?cat.emoji:'🔒')+'</div>'+
       '<div class="cat-emoji">'+(isLocked?'🔒':cat.emoji)+'</div>'+
       '<div class="cat-name">'+cat.name+'</div>'+
-      '<div class="cat-meta">'+cat.questions.length+' ข้อ</div>'+
+      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : total+' ข้อ')+'</div>'+
       (isLocked
         ? '<div class="cat-lock-msg">🔐 ผ่าน '+catById(reqId).name+' ก่อนนะ</div>'
-        : (p ? '<div class="cat-progress">ทำแล้ว '+p.best+'/'+cat.questions.length+' '+'⭐'.repeat(p.stars)+'</div>'
+        : (p ? '<div class="cat-progress">ทำแล้ว '+p.best+'/'+total+' '+'⭐'.repeat(p.stars)+'</div>'
               : '<div class="cat-progress cat-progress-new">ยังไม่เคยทำ ✨</div>'));
     card.addEventListener('click', ()=>{
       if(isLocked){
@@ -1464,9 +1714,10 @@ function renderHome(){
         showOwlMsg('locked');
         return;
       }
-      playClick(); startQuiz(cat.id);
+      playClick();
+      if(cat.type==='ar') startARGame(cat.id); else startQuiz(cat.id);
     });
-    grid.appendChild(card);
+    (cat.type==='ar' ? gridInteractive : grid).appendChild(card);
   });
   updateTally();
 }
@@ -1482,9 +1733,11 @@ function shuffleChoices(q){
 }
 
 function startQuiz(catId){
+  stopARGame();
+  lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   $('quiz-cat-label').textContent = cat.emoji+' '+cat.name;
@@ -1644,11 +1897,12 @@ function finishQuiz(){
 
 $('retry-btn').addEventListener('click', ()=>{
   playClick();
-  startQuiz(state.catId);
+  if(lastGameType==='ar'){ startARGame(lastCatId); } else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
-  resultView.hidden = true; quizView.hidden = true; homeView.hidden = false;
+  stopARGame();
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -1661,6 +1915,480 @@ $('home-btn').addEventListener('click', ()=>{
 $('quiz-back').addEventListener('click', ()=>{
   playClick();
   quizView.hidden = true; resultView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* ============================= AR SENTENCE-BUILDER GAME ============================= */
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [5,9],[9,10],[10,11],[11,12],
+  [9,13],[13,14],[14,15],[15,16],
+  [13,17],[17,18],[18,19],[19,20],
+  [0,17]
+];
+
+let arGame = null;             // {catId, level, mistakes, totalLevels}
+let arActive = false;          // hand-tracking running?
+let arHands = null, arCamera = null, arStream = null, arRafId = null, arResizeHandler = null;
+let arLandmarks = null;        // latest hand landmarks from onResults
+let arWasPinching = false;
+let arDraggingCard = null, arDragSource = null; // 'hand' | 'mouse'
+let _mpLoadPromise = null;
+
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+function shuffleDomChildren(container){
+  const kids = Array.from(container.children);
+  shuffleArray(kids).forEach(k=>container.appendChild(k));
+}
+
+function loadScriptOnce(src){
+  return new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = src; s.crossOrigin = 'anonymous';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('โหลดสคริปต์ไม่สำเร็จ: '+src));
+    document.head.appendChild(s);
+  });
+}
+function loadMediaPipeScripts(){
+  if(window.Hands && window.Camera) return Promise.resolve();
+  if(_mpLoadPromise) return _mpLoadPromise;
+  _mpLoadPromise = loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js')
+    .then(()=>loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'))
+    .then(()=>{ if(!window.Hands || !window.Camera) throw new Error('ไม่พบ MediaPipe Hands/Camera'); });
+  return _mpLoadPromise;
+}
+
+function buildLevel(catId){
+  const cat = catById(catId);
+  if(cat.mode==='math'){ buildMathLevel(cat); return; }
+  $('ar-math-problem').hidden = true;
+  const level = arGame.level;
+  const wordCount = level<=3 ? 3 : (level<=6 ? 4 : 5);
+  const pool = AR_SENTENCES[cat.lang][wordCount];
+  const sentence = pool[Math.floor(Math.random()*pool.length)];
+  renderSlotsAndCards(sentence);
+  showARHint(cat.lang==='th'
+    ? '✋ จีบนิ้วหยิบคำ แล้วลากไปเรียงในช่องให้ถูกลำดับนะ!'
+    : '✋ Pinch a word card and drag it into the right box!');
+}
+
+/* scatter position in a safe zone away from screen edges (hand tracking loses the hand near frame edges), spread across `n` horizontal slices */
+function scatterPosition(pos, n){
+  const safeLeft = 18, safeWidth = 64;   // keep horizontal center within 18%-82%
+  const safeTop = 42, safeHeight = 34;   // keep vertical center within 42%-76%
+  const slotW = safeWidth/n;
+  const left = (safeLeft + slotW*pos + Math.random()*slotW*0.3).toFixed(1)+'%';
+  /* zig-zag rows (alternate near-top/near-bottom of the safe band) so bigger cards don't overlap each other */
+  const rowH = safeHeight/2;
+  const top = (safeTop + (pos%2)*rowH + Math.random()*rowH).toFixed(1)+'%';
+  return { left, top };
+}
+function placeCardAtScatterPos(card, pos, n){
+  const { left, top } = scatterPosition(pos, n);
+  card.dataset.origLeft = left;
+  card.dataset.origTop = top;
+  card.style.left = left;
+  card.style.top = top;
+  card.style.animationDelay = (pos*0.06)+'s';
+}
+
+function renderSlotsAndCards(sentence){
+  const slotRow = $('ar-slot-row');
+  slotRow.innerHTML = '';
+  sentence.forEach((_,i)=>{
+    const s = document.createElement('div');
+    s.className = 'ar-slot';
+    s.dataset.slotIndex = i;
+    s.innerHTML = '<span class="ar-slot-ph">'+(i+1)+'</span>';
+    slotRow.appendChild(s);
+  });
+
+  const cardsRow = $('ar-cards-row');
+  cardsRow.innerHTML = '';
+  const order = shuffleArray(sentence.map((_,i)=>i));
+  const n = order.length;
+  order.forEach((i, pos)=>{
+    const w = sentence[i];
+    const card = document.createElement('div');
+    card.className = 'ar-card';
+    card.dataset.correctIndex = i;
+    card.innerHTML = '<span class="ar-card-emoji">'+w.e+'</span><span class="ar-card-word">'+w.w+'</span>';
+    placeCardAtScatterPos(card, pos, n);
+    wireCardDrag(card);
+    cardsRow.appendChild(card);
+  });
+}
+
+/* ---- AR math mode: random 1-2 digit addition/subtraction, pick the 1 correct answer card out of 3 ---- */
+function buildMathLevel(cat){
+  const level = arGame.level;
+  const twoDigit = level>=6; // levels 1-5: single-digit numbers, levels 6-10: two-digit numbers
+  let a, b;
+  const op = Math.random()<0.5 ? '+' : '-';
+  if(twoDigit){ a = Math.floor(Math.random()*90)+10; b = Math.floor(Math.random()*90)+10; }
+  else { a = Math.floor(Math.random()*9)+1; b = Math.floor(Math.random()*9)+1; }
+  if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
+  const answer = op==='+' ? a+b : a-b;
+  renderMathPuzzle(a, b, op, answer);
+  showARHint('✋ จีบนิ้วหยิบการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!');
+}
+
+function renderMathPuzzle(a, b, op, answer){
+  const problemEl = $('ar-math-problem');
+  problemEl.hidden = false;
+  problemEl.textContent = a+' '+op+' '+b+' = ?';
+
+  const slotRow = $('ar-slot-row');
+  slotRow.innerHTML = '';
+  const s = document.createElement('div');
+  s.className = 'ar-slot';
+  s.dataset.slotIndex = 0;
+  s.innerHTML = '<span class="ar-slot-ph">❓</span>';
+  slotRow.appendChild(s);
+
+  /* build 3 unique non-negative choices: the correct answer + 2 nearby distractors */
+  const choices = new Set([answer]);
+  let guard = 0;
+  while(choices.size<3 && guard<50){
+    guard++;
+    const delta = Math.floor(Math.random()*10)-5;
+    const val = answer + delta;
+    if(delta!==0 && val>=0) choices.add(val);
+  }
+  const order = shuffleArray(Array.from(choices));
+
+  const cardsRow = $('ar-cards-row');
+  cardsRow.innerHTML = '';
+  const n = order.length;
+  order.forEach((val, pos)=>{
+    const card = document.createElement('div');
+    card.className = 'ar-card';
+    card.dataset.correctIndex = (val===answer) ? 0 : -1;
+    card.innerHTML = '<span class="ar-card-word ar-card-num">'+val+'</span>';
+    placeCardAtScatterPos(card, pos, n);
+    wireCardDrag(card);
+    cardsRow.appendChild(card);
+  });
+}
+
+function showARHint(text){ $('ar-hint').textContent = text; }
+
+/* ---- drag & drop (shared by hand-pinch and mouse/touch pointer events) ---- */
+function wireCardDrag(card){
+  card.addEventListener('pointerdown', e=>{
+    if(card.classList.contains('placed') || arDraggingCard) return;
+    e.preventDefault();
+    startDragCard(card, 'mouse');
+  });
+}
+document.addEventListener('pointermove', e=>{
+  if(arDraggingCard && arDragSource==='mouse') moveDraggingCardTo(e.clientX, e.clientY);
+});
+document.addEventListener('pointerup', e=>{
+  if(arDraggingCard && arDragSource==='mouse') attemptDrop(arDraggingCard, e.clientX, e.clientY);
+});
+document.addEventListener('pointercancel', ()=>{
+  if(arDraggingCard && arDragSource==='mouse'){ returnCardToPool(arDraggingCard); arDraggingCard=null; arDragSource=null; }
+});
+
+function startDragCard(card, source){
+  arDraggingCard = card;
+  arDragSource = source;
+  card.classList.add('dragging');
+  playClick();
+}
+function moveDraggingCardTo(x,y){
+  if(!arDraggingCard) return;
+  arDraggingCard.style.left = x+'px';
+  arDraggingCard.style.top = y+'px';
+}
+function attemptDrop(card, x, y){
+  card.classList.remove('dragging');
+  card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
+  const slots = Array.from($('ar-slot-row').children);
+  const pad = 34; // generous drop tolerance so little hands don't need pixel-perfect aim
+  let target = null, bestDist = Infinity;
+  for(const s of slots){
+    if(s.classList.contains('filled')) continue;
+    const r = s.getBoundingClientRect();
+    if(x>=r.left-pad && x<=r.right+pad && y>=r.top-pad && y<=r.bottom+pad){
+      const cx = r.left+r.width/2, cy = r.top+r.height/2;
+      const d = (x-cx)*(x-cx) + (y-cy)*(y-cy);
+      if(d < bestDist){ bestDist = d; target = s; }
+    }
+  }
+  if(target){ placeCardInSlot(card, target); }
+  else { returnCardToPool(card); }
+  arDraggingCard = null; arDragSource = null;
+}
+function placeCardInSlot(card, slot){
+  slot.innerHTML = '';
+  card.classList.add('placed');
+  slot.appendChild(card);
+  slot.classList.add('filled');
+  playClick();
+  checkSlotsComplete();
+}
+function returnCardToPool(card){
+  card.classList.remove('dragging');
+  card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
+}
+
+function checkSlotsComplete(){
+  const slots = Array.from($('ar-slot-row').children);
+  if(slots.some(s=>!s.classList.contains('filled'))) return;
+  const correct = slots.every((s,i)=>{
+    const card = s.querySelector('.ar-card');
+    return card && Number(card.dataset.correctIndex)===i;
+  });
+  if(correct) levelSuccess(); else levelMistake();
+}
+
+function levelMistake(){
+  arGame.mistakes++;
+  playWrong();
+  mascotOops();
+  const slots = Array.from($('ar-slot-row').children);
+  slots.forEach(s=>s.classList.add('wrong-flash'));
+  const cat = catById(arGame.catId);
+  showARHint(cat.mode==='math'
+    ? '🤔 ยังไม่ถูกนะ ลองหยิบการ์ดคำตอบใหม่ดูสิ!'
+    : (cat.lang==='th' ? '🤔 ยังไม่ถูกนะ ลองสลับคำใหม่ดูสิ!' : '🤔 Not quite right — try again!'));
+  setTimeout(()=>{
+    const cardsRow = $('ar-cards-row');
+    slots.forEach((s,i)=>{
+      const card = s.querySelector('.ar-card');
+      if(card){ card.classList.remove('placed'); cardsRow.appendChild(card); }
+      s.classList.remove('wrong-flash','filled');
+      s.innerHTML = '<span class="ar-slot-ph">'+(cat.mode==='math' ? '❓' : (i+1))+'</span>';
+    });
+    shuffleDomChildren(cardsRow);
+  }, 1000);
+}
+
+function levelSuccess(){
+  playCorrect();
+  mascotHappy();
+  burstCenterTop(30);
+  showOwlMsg('correct');
+  const cat = catById(arGame.catId);
+  showARHint(cat.mode==='math'
+    ? '🎉 เก่งมาก! คำนวณถูกต้อง!'
+    : (cat.lang==='th' ? '🎉 เก่งมาก! ต่อประโยคถูกต้อง!' : '🎉 Great job! Sentence is correct!'));
+  $('ar-progress-fill').style.width = (arGame.level/arGame.totalLevels*100)+'%';
+  setTimeout(()=>{
+    if(arGame.level >= arGame.totalLevels){ finishARGame(); }
+    else { arGame.level++; renderARLevel(); }
+  }, 1300);
+}
+
+/* ---- hand tracking (MediaPipe Hands) ---- */
+function drawHandSkeleton(ctx, lm, w, h){
+  const pts = lm.map(p=>({x:(1-p.x)*w, y:p.y*h}));
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(255,255,255,.85)';
+  HAND_CONNECTIONS.forEach(([a,b])=>{
+    ctx.beginPath(); ctx.moveTo(pts[a].x,pts[a].y); ctx.lineTo(pts[b].x,pts[b].y); ctx.stroke();
+  });
+  pts.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.fillStyle = (i===4) ? '#FF6161' : (i===8) ? '#33B7EE' : '#FFC53D';
+    ctx.arc(p.x, p.y, (i===4||i===8) ? 7 : 5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.stroke();
+  });
+}
+
+function updateArCursor(pageX, pageY, pinching){
+  const cursorEl = $('ar-cursor');
+  cursorEl.style.left = pageX+'px';
+  cursorEl.style.top = pageY+'px';
+  cursorEl.classList.add('active');
+
+  const hoveredEl = document.elementFromPoint(pageX, pageY);
+  const hoverCard = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-card:not(.placed)');
+  const hoverSlot = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-slot:not(.filled)');
+
+  cursorEl.classList.remove('hover','miss','grabbed');
+
+  if(pinching){
+    if(!arWasPinching && !arDraggingCard && hoverCard){ startDragCard(hoverCard, 'hand'); }
+    if(arDraggingCard && arDragSource==='hand'){
+      moveDraggingCardTo(pageX, pageY);
+      cursorEl.classList.add('grabbed');
+    } else if(arDraggingCard){
+      cursorEl.classList.add('grabbed');
+    } else {
+      cursorEl.classList.add('miss');
+    }
+  } else {
+    if(arWasPinching && arDraggingCard && arDragSource==='hand'){
+      attemptDrop(arDraggingCard, pageX, pageY);
+    }
+    if(hoverCard || hoverSlot) cursorEl.classList.add('hover');
+  }
+  arWasPinching = pinching;
+}
+
+function arDrawLoop(){
+  if(!arActive) return;
+  const canvas = $('ar-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(arLandmarks){
+    drawHandSkeleton(ctx, arLandmarks, canvas.width, canvas.height);
+    const idx = arLandmarks[8], thumb = arLandmarks[4];
+    const ix = (1-idx.x)*canvas.width,   iy = idx.y*canvas.height;
+    const tx = (1-thumb.x)*canvas.width, ty = thumb.y*canvas.height;
+    const dx = ix-tx, dy = iy-ty;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const pinching = dist < Math.max(28, canvas.width*0.07);
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width/canvas.width, scaleY = rect.height/canvas.height;
+    const pageX = rect.left + ix*scaleX, pageY = rect.top + iy*scaleY;
+    updateArCursor(pageX, pageY, pinching);
+  } else {
+    $('ar-cursor').classList.remove('active');
+    arWasPinching = false;
+  }
+  arRafId = requestAnimationFrame(arDrawLoop);
+}
+
+async function initHandTracking(){
+  const msgEl = $('ar-camera-msg');
+  msgEl.hidden = true;
+  try{
+    await loadMediaPipeScripts();
+    const video = $('ar-video');
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{ width:480, height:360, facingMode:'user' }, audio:false });
+    arStream = stream;
+    video.srcObject = stream;
+    await video.play().catch(()=>{});
+
+    const canvas = $('ar-canvas');
+    arResizeHandler = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    arResizeHandler();
+    window.addEventListener('resize', arResizeHandler);
+
+    arHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    arHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    arHands.onResults(res=>{ arLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
+
+    arCamera = new Camera(video, {
+      onFrame: async ()=>{ if(arHands){ await arHands.send({ image:video }); } },
+      width:480, height:360
+    });
+    await arCamera.start();
+
+    arActive = true;
+    $('ar-cursor').classList.add('active');
+    arRafId = requestAnimationFrame(arDrawLoop);
+  }catch(err){
+    console.warn('AR hand tracking unavailable, using mouse/touch fallback:', err);
+    msgEl.hidden = false;
+    arActive = false;
+  }
+}
+
+function stopARGame(){
+  arActive = false;
+  arLandmarks = null;
+  arWasPinching = false;
+  if(arRafId){ cancelAnimationFrame(arRafId); arRafId = null; }
+  if(arCamera){ try{ arCamera.stop(); }catch(e){} arCamera = null; }
+  if(arStream){ arStream.getTracks().forEach(t=>t.stop()); arStream = null; }
+  if(arResizeHandler){ window.removeEventListener('resize', arResizeHandler); arResizeHandler = null; }
+  arHands = null;
+  if(arDraggingCard){ returnCardToPool(arDraggingCard); arDraggingCard = null; arDragSource = null; }
+  const cursorEl = $('ar-cursor');
+  if(cursorEl) cursorEl.classList.remove('active');
+  document.body.classList.remove('ar-open');
+}
+
+/* ---- game flow ---- */
+function startARGame(catId){
+  stopARGame();
+  lastGameType = 'ar'; lastCatId = catId;
+  arGame = { catId, level:1, mistakes:0, totalLevels: catById(catId).levels };
+  document.body.classList.add('ar-open');
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false;
+  const cat = catById(catId);
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  $('ar-cat-label').textContent = cat.emoji+' '+cat.name;
+  $('ar-cat-label').style.color = cat.color;
+  renderARLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 500);
+  initHandTracking();
+}
+
+function renderARLevel(){
+  $('ar-level-counter').textContent = arGame.level+'/'+arGame.totalLevels;
+  $('ar-progress-fill').style.width = ((arGame.level-1)/arGame.totalLevels*100)+'%';
+  buildLevel(arGame.catId);
+}
+
+function finishARGame(){
+  const cat = catById(arGame.catId);
+  const mistakes = arGame.mistakes;
+  const totalLevels = arGame.totalLevels;
+  stopARGame();
+  arView.hidden = true; resultView.hidden = false;
+
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = {
+    best: prev ? Math.max(prev.best, totalLevels) : totalLevels,
+    stars: prev ? Math.max(prev.stars, stars) : stars,
+    unlocked: wasUnlocked || stars>=2
+  };
+  saveProgress();
+
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row');
+  starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+
+  $('score-line').textContent = 'ต่อประโยคครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false;
+    $('sticker-earned').textContent = cat.emoji;
+    pendingSticker = cat.id;
+    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('ar-back').addEventListener('click', ()=>{
+  playClick();
+  stopARGame();
+  arView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
