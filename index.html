@@ -61,7 +61,21 @@
     min-height:100vh;
     overflow-x:hidden;
     position:relative;
+    transition:background 1.2s ease;
   }
+  body.night-mode{
+    background:
+      radial-gradient(600px circle at 85% 6%, rgba(255,255,255,.10), rgba(255,255,255,0) 60%),
+      radial-gradient(500px circle at -5% 15%, rgba(255,255,255,.05), rgba(255,255,255,0) 65%),
+      linear-gradient(180deg, #060A1F 0%, #0E1440 22%, #182158 46%, #232F6E 70%, #303F85 100%);
+  }
+  body.night-mode .app-header{
+    background:linear-gradient(120deg, rgba(18,22,54,0.55), rgba(18,22,54,0.35));
+    border-bottom:1px solid rgba(255,255,255,0.14);
+  }
+  body.night-mode .app-header .brand-text h1{color:#FFF7E0; text-shadow:0 1px 3px rgba(0,0,0,.35);}
+  body.night-mode .app-header .brand-text p{color:#C9D3F5;}
+  body.night-mode .shimmer-blob{opacity:.4;}
   button{font-family:inherit;}
   h1,h2,h3,p{margin:0;}
   [hidden]{display:none !important;}
@@ -79,14 +93,21 @@
 
   .bg-decor{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
 
-  .bg-sun{position:fixed; top:64px; right:-50px; width:190px; height:190px; pointer-events:none; z-index:0; animation:sunSpin 90s linear infinite;}
+  .bg-sun{position:fixed; top:64px; right:-50px; width:190px; height:190px; pointer-events:none; z-index:0; animation:sunSpin 90s linear infinite; transition:opacity .8s ease;}
   .bg-sun .rays{transform-origin:110px 110px; animation:sunPulse 4s ease-in-out infinite;}
   @keyframes sunSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   @keyframes sunPulse{0%,100%{opacity:.55;}50%{opacity:.85;}}
+  body.night-mode .bg-sun{opacity:0; pointer-events:none;}
+
+  .bg-moon{position:fixed; top:64px; right:-30px; width:170px; height:170px; pointer-events:none; z-index:0; opacity:0; transition:opacity .8s ease;}
+  body.night-mode .bg-moon{opacity:.85; animation:moonGlow 6s ease-in-out infinite;}
+  @keyframes moonGlow{0%,100%{opacity:.85;}50%{opacity:1;}}
 
   .bg-twinkle{position:fixed; pointer-events:none; z-index:0; border-radius:50%; background:#fff; animation:twinkle ease-in-out infinite;}
   @keyframes twinkle{0%,100%{opacity:.15; transform:scale(.7);}50%{opacity:.9; transform:scale(1.15);}}
-  .bg-cloud{position:absolute; pointer-events:none; user-select:none; filter:blur(1px) drop-shadow(0 10px 16px rgba(80,140,190,.16));}
+  .bg-cloud{position:absolute; pointer-events:none; user-select:none; filter:blur(1px) drop-shadow(0 10px 16px rgba(80,140,190,.16)); transition:filter .8s ease;}
+  body.night-mode .bg-cloud{filter:blur(1px) drop-shadow(0 10px 16px rgba(10,14,40,.45));}
+  body.night-mode .bg-floater{filter:saturate(1.1) drop-shadow(0 0 6px rgba(255,241,168,.65));}
   @keyframes driftRightward{
     0%  {transform:translateX(0); opacity:0;}
     10% {opacity:.7;}
@@ -363,14 +384,19 @@
   /* emoji picker */
   .emoji-picker-label{font-size:14px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;text-align:left;}
   .emoji-picker{
-    display:grid; grid-template-columns:repeat(6,1fr); gap:5px;
+    display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px;
     background:var(--cream); border-radius:var(--radius-md);
     padding:10px; border:3px solid var(--cream-2); margin-bottom:14px;
   }
   .emo-btn{
+    min-width:0; width:100%;
     font-size:28px; border:3px solid transparent; border-radius:var(--radius-sm);
     padding:4px 2px; cursor:pointer; background:transparent;
     line-height:1.1; transition:transform .12s,border-color .12s,background .12s;
+  }
+  @media (max-width:380px){
+    .emoji-picker{grid-template-columns:repeat(5,minmax(0,1fr));}
+    .emo-btn{font-size:24px;}
   }
   .emo-btn:active{transform:scale(.82);}
   .emo-btn.selected{
@@ -678,6 +704,19 @@
   </g>
   <circle cx="110" cy="110" r="55" fill="#FFF3C4" opacity=".85"/>
 </svg>
+<svg class="bg-moon" viewBox="0 0 220 220" aria-hidden="true">
+  <defs>
+    <radialGradient id="moonGlowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF9E6" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#FFF9E6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="110" cy="110" r="95" fill="url(#moonGlowGrad)"/>
+  <circle cx="110" cy="110" r="52" fill="#F4EFDD"/>
+  <circle cx="92" cy="90" r="9" fill="#DAD3B8" opacity=".55"/>
+  <circle cx="126" cy="118" r="13" fill="#DAD3B8" opacity=".45"/>
+  <circle cx="98" cy="132" r="6" fill="#DAD3B8" opacity=".45"/>
+</svg>
 <div class="bg-decor" id="bg-decor" aria-hidden="true"></div>
 
 <header class="app-header">
@@ -690,6 +729,7 @@
   </div>
   <div class="header-actions">
     <button class="child-chip" id="switch-child-btn" hidden aria-label="เปลี่ยนเด็ก"><span id="header-child-emoji"></span> <span id="header-child-name"></span></button>
+<button class="icon-btn" id="theme-toggle" aria-label="สลับธีมกลางวัน/กลางคืน" data-tooltip="โหมดกลางคืน">🌙</button>
 <button class="icon-btn" id="music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง" data-tooltip="เปิด/ปิดเพลงพื้นหลัง">🎵</button>
     <button class="icon-btn" id="sound-toggle" aria-label="เปิด/ปิดเสียง" data-tooltip="เปิด/ปิดเสียง">🔊</button>
     <button class="icon-btn" id="clear-btn" aria-label="ล้างข้อมูล" data-tooltip="ล้างข้อมูลทั้งหมด">🗑️</button>
@@ -1884,20 +1924,48 @@ $('bmm-btn').addEventListener('click', ()=>{ playClick(); openOverlay('qr-modal'
 $('qr-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('qr-modal'); });
 $('qr-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('qr-modal'); });
 
-/* ============================= FLOATING BG BALLOONS ============================= */
-const BALLOON_COLORS = ['#FF6B6B','#FF9F43','#FFD93D','#6BCB77','#4D96FF','#9B7DE0','#FF6FB5'];
+/* ============================= DAY / NIGHT THEME ============================= */
 const bgDecorEl = $('bg-decor');
+function isNightMode(){ return document.body.classList.contains('night-mode'); }
+function refreshThemeBtn(){
+  const night = isNightMode();
+  themeBtn.textContent = night ? '☀️' : '🌙';
+  themeBtn.dataset.tooltip = night ? 'โหมดกลางวัน' : 'โหมดกลางคืน';
+  themeBtn.setAttribute('aria-label', night ? 'สลับเป็นโหมดกลางวัน' : 'สลับเป็นโหมดกลางคืน');
+}
+function setTheme(night, persist){
+  document.body.classList.toggle('night-mode', night);
+  if(persist){ try{ localStorage.setItem('p1quiz_theme', night?'night':'day'); }catch(e){} }
+  refreshThemeBtn();
+  bgDecorEl.querySelectorAll('.bg-floater, .bg-cloud').forEach(e=>e.remove());
+}
+const themeBtn = $('theme-toggle');
+let nightMode = false;
+try{ nightMode = localStorage.getItem('p1quiz_theme') === 'night'; }catch(e){}
+setTheme(nightMode, false);
+themeBtn.addEventListener('click', ()=>{ playClick(); setTheme(!isNightMode(), true); });
+
+/* ============================= FLOATING BG BALLOONS / STARS ============================= */
+const BALLOON_COLORS = ['#FF6B6B','#FF9F43','#FFD93D','#6BCB77','#4D96FF','#9B7DE0','#FF6FB5'];
+const STAR_COLORS = ['#FFF7D6','#FFE9A8','#CDE7FF','#FFFFFF','#B9D6FF'];
 function spawnFloater(){
   const el = document.createElement('span');
   el.className = 'bg-floater';
-  const color = BALLOON_COLORS[Math.floor(Math.random()*BALLOON_COLORS.length)];
-  el.innerHTML = `<svg viewBox="0 0 24 34" width="1em" height="1.4em">
-    <ellipse cx="12" cy="13" rx="10" ry="12" fill="${color}"/>
-    <ellipse cx="8.3" cy="7.5" rx="3.1" ry="4.2" fill="#fff" opacity=".38"/>
-    <ellipse cx="12" cy="13" rx="10" ry="12" fill="none" stroke="rgba(0,0,0,.08)" stroke-width=".6"/>
-    <polygon points="9.4,24 14.6,24 12,27.8" fill="${color}"/>
-    <path d="M12 27.8 Q10.2 30.8 12 34" stroke="#8A7B6C" stroke-width="1" fill="none" stroke-linecap="round"/>
-  </svg>`;
+  if(isNightMode()){
+    const color = STAR_COLORS[Math.floor(Math.random()*STAR_COLORS.length)];
+    el.innerHTML = `<svg viewBox="0 0 24 24" width="1em" height="1em">
+      <polygon points="12,1 14.7,8.8 23,9.1 16.4,14.2 18.7,22.3 12,17.6 5.3,22.3 7.6,14.2 1,9.1 9.3,8.8" fill="${color}" stroke="rgba(255,255,255,.5)" stroke-width=".4"/>
+    </svg>`;
+  } else {
+    const color = BALLOON_COLORS[Math.floor(Math.random()*BALLOON_COLORS.length)];
+    el.innerHTML = `<svg viewBox="0 0 24 34" width="1em" height="1.4em">
+      <ellipse cx="12" cy="13" rx="10" ry="12" fill="${color}"/>
+      <ellipse cx="8.3" cy="7.5" rx="3.1" ry="4.2" fill="#fff" opacity=".38"/>
+      <ellipse cx="12" cy="13" rx="10" ry="12" fill="none" stroke="rgba(0,0,0,.08)" stroke-width=".6"/>
+      <polygon points="9.4,24 14.6,24 12,27.8" fill="${color}"/>
+      <path d="M12 27.8 Q10.2 30.8 12 34" stroke="#8A7B6C" stroke-width="1" fill="none" stroke-linecap="round"/>
+    </svg>`;
+  }
   const isLarge = Math.random() < 0.25;
   const size = isLarge ? (46 + Math.random()*26)   // 46-72px, ~25% of spawns
                         : (14 + Math.random()*18); // 14-32px, ~75% of spawns
@@ -1916,8 +1984,9 @@ setInterval(spawnFloater, 1100);
 function spawnCloud(){
   const el = document.createElement('span');
   el.className = 'bg-cloud';
+  const color = isNightMode() ? '#AAB9E8' : '#fff';
   el.innerHTML = `<svg viewBox="0 0 120 70" width="100%" height="100%">
-    <g fill="#fff">
+    <g fill="${color}">
       <ellipse cx="34" cy="46" rx="30" ry="21"/>
       <ellipse cx="64" cy="30" rx="34" ry="27"/>
       <ellipse cx="93" cy="46" rx="25" ry="19"/>
