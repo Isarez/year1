@@ -114,7 +114,8 @@
       <div class="cat-grid" id="cat-grid"></div>
     </div>
     <div class="cat-section">
-      <div class="cat-section-title"><span class="cst-emoji">🖐️</span> การโต้ตอบ</div>
+      <div class="cat-section-title"><span class="cst-emoji">🖐️</span> การโต้ตอบ (AR)</div>
+      <p class="cat-section-note">💡 แนะนำให้เล่นบนแท็บเล็ต โน้ตบุ๊ก หรือคอมพิวเตอร์เพื่อใช้กล้อง AR ได้เต็มรูปแบบ — ถ้าเล่นบนมือถือจะไม่ใช้กล้อง ใช้นิ้วแตะลากแทนนะ</p>
       <div class="cat-grid" id="cat-grid-interactive"></div>
     </div>
   </section>
@@ -180,12 +181,20 @@
     <video id="ar-video" autoplay playsinline muted></video>
     <canvas id="ar-canvas"></canvas>
     <div class="ar-camera-msg" id="ar-camera-msg" hidden>
-      <span style="font-size:34px;">🖐️🚫</span>
-      <span>ใช้กล้องไม่ได้ ไม่เป็นไรนะ!<br>ใช้นิ้วหรือเมาส์ลากคำได้เลยจ้ะ 👇</span>
+      <span id="ar-camera-msg-emoji" style="font-size:34px;">🖐️🚫</span>
+      <span id="ar-camera-msg-text">ใช้กล้องไม่ได้ ไม่เป็นไรนะ!<br>ใช้นิ้วหรือเมาส์ลากคำได้เลยจ้ะ 👇</span>
     </div>
   </div>
 
   <div class="ar-cards-layer" id="ar-cards-row"></div>
+
+  <div class="ar-match-wrap" id="ar-match-wrap" hidden>
+    <svg class="ar-match-svg" id="ar-match-svg"></svg>
+    <div class="ar-match-row">
+      <div class="ar-match-col ar-match-left" id="ar-match-left"></div>
+      <div class="ar-match-col ar-match-right" id="ar-match-right"></div>
+    </div>
+  </div>
 
   <div class="ar-overlay-ui">
     <div class="quiz-top">

@@ -643,6 +643,7 @@ let arHands = null, arCamera = null, arStream = null, arRafId = null, arResizeHa
 let arLandmarks = null;        // latest hand landmarks from onResults
 let arWasPinching = false;
 let arDraggingCard = null, arDragSource = null; // 'hand' | 'mouse'
+let arDragLineFrom = null;     // {side, key, x, y, el} anchor dot for match-mode line drag
 let _mpLoadPromise = null;
 
 function shuffleArray(arr){
@@ -677,16 +678,19 @@ function loadMediaPipeScripts(){
 
 function buildLevel(catId){
   const cat = catById(catId);
-  if(cat.mode==='math'){ buildMathLevel(cat); return; }
   $('ar-math-problem').hidden = true;
+  $('ar-slot-row').hidden = false;
+  $('ar-match-wrap').hidden = true;
+  if(cat.mode==='math'){ buildMathLevel(cat); return; }
+  if(cat.mode==='match'){ buildMatchLevel(cat); return; }
   const level = arGame.level;
   const wordCount = level<=3 ? 3 : (level<=6 ? 4 : 5);
   const pool = AR_SENTENCES[cat.lang][wordCount];
   const sentence = pool[Math.floor(Math.random()*pool.length)];
   renderSlotsAndCards(sentence);
-  showARHint(cat.lang==='th'
-    ? '✋ จีบนิ้วหยิบคำ แล้วลากไปเรียงในช่องให้ถูกลำดับนะ!'
-    : '✋ Pinch a word card and drag it into the right box!');
+  showARHint(isMobileViewport()
+    ? (cat.lang==='th' ? '👆 แตะคำแล้วลากไปเรียงในช่องให้ถูกลำดับนะ!' : '👆 Tap a word card and drag it into the right box!')
+    : (cat.lang==='th' ? '✋ จีบนิ้วหยิบคำ แล้วลากไปเรียงในช่องให้ถูกลำดับนะ!' : '✋ Pinch a word card and drag it into the right box!'));
 }
 
 /* scatter position in a safe zone away from screen edges (hand tracking loses the hand near frame edges), spread across `n` horizontal slices */
@@ -747,7 +751,9 @@ function buildMathLevel(cat){
   if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
   const answer = op==='+' ? a+b : a-b;
   renderMathPuzzle(a, b, op, answer);
-  showARHint('✋ จีบนิ้วหยิบการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!');
+  showARHint(isMobileViewport()
+    ? '👆 แตะการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!'
+    : '✋ จีบนิ้วหยิบการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!');
 }
 
 function renderMathPuzzle(a, b, op, answer){
@@ -788,6 +794,50 @@ function renderMathPuzzle(a, b, op, answer){
   });
 }
 
+/* ---- AR match mode: drag a line from a symbol on the left to its matching word on the right ---- */
+function buildMatchLevel(cat){
+  $('ar-slot-row').hidden = true;
+  $('ar-cards-row').innerHTML = '';
+  $('ar-match-wrap').hidden = false;
+  const level = arGame.level;
+  const n = level<=3 ? 3 : (level<=6 ? 4 : 5);
+  const items = shuffleArray(AR_MATCH_ITEMS.slice()).slice(0, n);
+  renderMatchPairs(items);
+  showARHint(isMobileViewport()
+    ? '👆 แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกันนะ!'
+    : '✋ แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกัน (จีบนิ้วถ้าอยากยกเลิก)');
+}
+
+function renderMatchPairs(items){
+  const svg = $('ar-match-svg');
+  svg.innerHTML = '';
+  const leftCol = $('ar-match-left');
+  const rightCol = $('ar-match-right');
+  leftCol.innerHTML = '';
+  rightCol.innerHTML = '';
+
+  const rightOrder = shuffleArray(items.map((_,i)=>i));
+
+  items.forEach((it, i)=>{
+    const row = document.createElement('div');
+    row.className = 'ar-match-item';
+    row.dataset.key = i;
+    row.innerHTML = '<span class="ar-match-emoji">'+it.e+'</span><span class="ar-dot" data-side="left" data-key="'+i+'"></span>';
+    leftCol.appendChild(row);
+  });
+  rightOrder.forEach(i=>{
+    const it = items[i];
+    const row = document.createElement('div');
+    row.className = 'ar-match-item';
+    row.dataset.key = i;
+    row.innerHTML = '<span class="ar-dot" data-side="right" data-key="'+i+'"></span><span class="ar-match-word">'+it.w+'</span>';
+    rightCol.appendChild(row);
+  });
+
+  leftCol.querySelectorAll('.ar-dot').forEach(wireMatchDot);
+  rightCol.querySelectorAll('.ar-dot').forEach(wireMatchDot);
+}
+
 function showARHint(text){ $('ar-hint').textContent = text; }
 
 /* ---- drag & drop (shared by hand-pinch and mouse/touch pointer events) ---- */
@@ -800,12 +850,15 @@ function wireCardDrag(card){
 }
 document.addEventListener('pointermove', e=>{
   if(arDraggingCard && arDragSource==='mouse') moveDraggingCardTo(e.clientX, e.clientY);
+  if(arDragLineFrom && arDragSource==='mouse') updateTempLine(e.clientX, e.clientY);
 });
 document.addEventListener('pointerup', e=>{
   if(arDraggingCard && arDragSource==='mouse') attemptDrop(arDraggingCard, e.clientX, e.clientY);
+  if(arDragLineFrom && arDragSource==='mouse') attemptLineDrop(e.clientX, e.clientY);
 });
 document.addEventListener('pointercancel', ()=>{
   if(arDraggingCard && arDragSource==='mouse'){ returnCardToPool(arDraggingCard); arDraggingCard=null; arDragSource=null; }
+  if(arDragLineFrom && arDragSource==='mouse'){ cancelDragLine(); }
 });
 
 function startDragCard(card, source){
@@ -851,6 +904,84 @@ function returnCardToPool(card){
   card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
 }
 
+/* ---- match mode: drag a line from a left dot to a right dot (shared by hand-pinch and mouse/touch) ---- */
+function wireMatchDot(dot){
+  dot.addEventListener('pointerdown', e=>{
+    if(dot.classList.contains('matched') || arDraggingCard || arDragLineFrom) return;
+    e.preventDefault();
+    startDragLine(dot, 'mouse');
+  });
+}
+function startDragLine(dot, source){
+  const r = dot.getBoundingClientRect();
+  arDragLineFrom = { side:dot.dataset.side, key:dot.dataset.key, x:r.left+r.width/2, y:r.top+r.height/2, el:dot };
+  arDragSource = source;
+  dot.classList.add('active-drag');
+  playClick();
+}
+function updateTempLine(x, y){
+  if(!arDragLineFrom) return;
+  let line = document.getElementById('ar-match-templine');
+  if(!line){
+    line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.id = 'ar-match-templine';
+    line.setAttribute('class', 'ar-match-line');
+    line.setAttribute('stroke', '#FFC53D');
+    line.setAttribute('stroke-dasharray', '3 9');
+    $('ar-match-svg').appendChild(line);
+  }
+  line.setAttribute('x1', arDragLineFrom.x); line.setAttribute('y1', arDragLineFrom.y);
+  line.setAttribute('x2', x); line.setAttribute('y2', y);
+}
+function clearTempLine(){
+  const line = document.getElementById('ar-match-templine');
+  if(line) line.remove();
+}
+function cancelDragLine(){
+  clearTempLine();
+  if(arDragLineFrom && arDragLineFrom.el) arDragLineFrom.el.classList.remove('active-drag');
+  arDragLineFrom = null; arDragSource = null;
+}
+function attemptLineDrop(x, y){
+  clearTempLine();
+  const fromDot = arDragLineFrom.el;
+  fromDot.classList.remove('active-drag');
+  const targetSide = arDragLineFrom.side==='left' ? 'right' : 'left';
+  const pad = 34; // generous drop tolerance so little hands don't need pixel-perfect aim
+  let target = null, bestDist = Infinity;
+  document.querySelectorAll('.ar-dot[data-side="'+targetSide+'"]:not(.matched)').forEach(d=>{
+    const r = d.getBoundingClientRect();
+    if(x>=r.left-pad && x<=r.right+pad && y>=r.top-pad && y<=r.bottom+pad){
+      const cx = r.left+r.width/2, cy = r.top+r.height/2;
+      const dist = (x-cx)*(x-cx) + (y-cy)*(y-cy);
+      if(dist < bestDist){ bestDist = dist; target = d; }
+    }
+  });
+  arDragLineFrom = null; arDragSource = null;
+  if(!target) return;
+  if(target.dataset.key === fromDot.dataset.key){ connectMatchPair(fromDot, target); }
+  else { matchMistakeFlash(fromDot, target); }
+}
+function connectMatchPair(dotA, dotB){
+  playClick();
+  const ra = dotA.getBoundingClientRect(), rb = dotB.getBoundingClientRect();
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('class', 'ar-match-line');
+  line.setAttribute('x1', ra.left+ra.width/2); line.setAttribute('y1', ra.top+ra.height/2);
+  line.setAttribute('x2', rb.left+rb.width/2); line.setAttribute('y2', rb.top+rb.height/2);
+  $('ar-match-svg').appendChild(line);
+  [dotA, dotB].forEach(d=>{ d.classList.add('matched'); d.closest('.ar-match-item').classList.add('matched'); });
+  const remaining = document.querySelectorAll('#ar-match-left .ar-dot:not(.matched)').length;
+  if(remaining===0) setTimeout(levelSuccess, 350);
+}
+function matchMistakeFlash(dotA, dotB){
+  arGame.mistakes++;
+  playWrong();
+  mascotOops();
+  [dotA, dotB].forEach(d=>{ d.classList.add('wrong-flash'); setTimeout(()=>d.classList.remove('wrong-flash'), 450); });
+  showARHint('🤔 ยังไม่ตรงกันนะ ลองโยงเส้นใหม่ดูสิ!');
+}
+
 function checkSlotsComplete(){
   const slots = Array.from($('ar-slot-row').children);
   if(slots.some(s=>!s.classList.contains('filled'))) return;
@@ -891,7 +1022,9 @@ function levelSuccess(){
   const cat = catById(arGame.catId);
   showARHint(cat.mode==='math'
     ? '🎉 เก่งมาก! คำนวณถูกต้อง!'
-    : (cat.lang==='th' ? '🎉 เก่งมาก! ต่อประโยคถูกต้อง!' : '🎉 Great job! Sentence is correct!'));
+    : cat.mode==='match'
+      ? '🎉 เก่งมาก! โยงเส้นถูกต้องหมดเลย!'
+      : (cat.lang==='th' ? '🎉 เก่งมาก! ต่อประโยคถูกต้อง!' : '🎉 Great job! Sentence is correct!'));
   $('ar-progress-fill').style.width = (arGame.level/arGame.totalLevels*100)+'%';
   setTimeout(()=>{
     if(arGame.level >= arGame.totalLevels){ finishARGame(); }
@@ -923,10 +1056,34 @@ function updateArCursor(pageX, pageY, pinching){
   cursorEl.classList.add('active');
 
   const hoveredEl = document.elementFromPoint(pageX, pageY);
+  cursorEl.classList.remove('hover','miss','grabbed');
+
+  const cat = arGame && catById(arGame.catId);
+  if(cat && cat.mode==='match'){
+    /* touch a dot to start dragging its line right away; pinch fingers together to cancel an active drag */
+    const hoverDot = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-dot:not(.matched)');
+    if(arDragLineFrom && arDragSource==='hand'){
+      if(pinching){
+        cancelDragLine();
+        cursorEl.classList.add('miss');
+      } else {
+        updateTempLine(pageX, pageY);
+        cursorEl.classList.add('grabbed');
+        const targetSide = arDragLineFrom.side==='left' ? 'right' : 'left';
+        if(hoverDot && hoverDot.dataset.side===targetSide){ attemptLineDrop(pageX, pageY); }
+      }
+    } else if(pinching){
+      cursorEl.classList.add('miss');
+    } else if(hoverDot){
+      startDragLine(hoverDot, 'hand');
+      cursorEl.classList.add('hover');
+    }
+    arWasPinching = pinching;
+    return;
+  }
+
   const hoverCard = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-card:not(.placed)');
   const hoverSlot = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-slot:not(.filled)');
-
-  cursorEl.classList.remove('hover','miss','grabbed');
 
   if(pinching){
     if(!arWasPinching && !arDraggingCard && hoverCard){ startDragCard(hoverCard, 'hand'); }
@@ -973,9 +1130,19 @@ function arDrawLoop(){
   arRafId = requestAnimationFrame(arDrawLoop);
 }
 
+function isMobileViewport(){
+  return window.innerWidth < 768;
+}
+
 async function initHandTracking(){
   const msgEl = $('ar-camera-msg');
   msgEl.hidden = true;
+  if(isMobileViewport()){
+    /* mobile phones skip the camera entirely — touch-drag only, no permission prompt. A one-time toast (not a persistent card) avoids overlapping the hint chip. */
+    showToast('👆', 'มือถือไม่ใช้กล้อง ลากด้วยนิ้วได้เลย!');
+    arActive = false;
+    return;
+  }
   try{
     await loadMediaPipeScripts();
     const video = $('ar-video');
@@ -1004,6 +1171,8 @@ async function initHandTracking(){
     arRafId = requestAnimationFrame(arDrawLoop);
   }catch(err){
     console.warn('AR hand tracking unavailable, using mouse/touch fallback:', err);
+    $('ar-camera-msg-emoji').textContent = '🖐️🚫';
+    $('ar-camera-msg-text').innerHTML = 'ใช้กล้องไม่ได้ ไม่เป็นไรนะ!<br>ใช้นิ้วหรือเมาส์ลากคำได้เลยจ้ะ 👇';
     msgEl.hidden = false;
     arActive = false;
   }
@@ -1019,9 +1188,11 @@ function stopARGame(){
   if(arResizeHandler){ window.removeEventListener('resize', arResizeHandler); arResizeHandler = null; }
   arHands = null;
   if(arDraggingCard){ returnCardToPool(arDraggingCard); arDraggingCard = null; arDragSource = null; }
+  if(arDragLineFrom){ cancelDragLine(); }
   const cursorEl = $('ar-cursor');
   if(cursorEl) cursorEl.classList.remove('active');
   document.body.classList.remove('ar-open');
+  document.body.classList.remove('ar-mobile-nocam');
 }
 
 /* ---- game flow ---- */
@@ -1030,6 +1201,7 @@ function startARGame(catId){
   lastGameType = 'ar'; lastCatId = catId;
   arGame = { catId, level:1, mistakes:0, totalLevels: catById(catId).levels };
   document.body.classList.add('ar-open');
+  if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
@@ -1363,17 +1535,33 @@ for(let i=0;i<10;i++) setTimeout(spawnFloater, i*700);
 setInterval(spawnFloater, 1100);
 
 /* ============================= FLOATING CLOUDS (upper half) ============================= */
+const CLOUD_SHAPES = [
+  `<ellipse cx="34" cy="46" rx="30" ry="21"/>
+   <ellipse cx="64" cy="30" rx="34" ry="27"/>
+   <ellipse cx="93" cy="46" rx="25" ry="19"/>
+   <ellipse cx="60" cy="53" rx="50" ry="17"/>`,
+  `<ellipse cx="26" cy="42" rx="22" ry="16"/>
+   <ellipse cx="50" cy="24" rx="26" ry="21"/>
+   <ellipse cx="78" cy="34" rx="22" ry="18"/>
+   <ellipse cx="98" cy="46" rx="18" ry="14"/>
+   <ellipse cx="55" cy="50" rx="48" ry="15"/>`,
+  `<ellipse cx="30" cy="38" rx="20" ry="19"/>
+   <ellipse cx="58" cy="22" rx="24" ry="20"/>
+   <ellipse cx="88" cy="40" rx="21" ry="18"/>
+   <ellipse cx="60" cy="48" rx="45" ry="14"/>`,
+  `<ellipse cx="22" cy="48" rx="18" ry="13"/>
+   <ellipse cx="45" cy="34" rx="22" ry="18"/>
+   <ellipse cx="70" cy="26" rx="26" ry="22"/>
+   <ellipse cx="97" cy="42" rx="20" ry="16"/>
+   <ellipse cx="58" cy="55" rx="52" ry="15"/>`
+];
 function spawnCloud(){
   const el = document.createElement('span');
   el.className = 'bg-cloud';
   const color = isNightMode() ? '#AAB9E8' : '#fff';
+  const shape = CLOUD_SHAPES[Math.floor(Math.random()*CLOUD_SHAPES.length)];
   el.innerHTML = `<svg viewBox="0 0 120 70" width="100%" height="100%">
-    <g fill="${color}">
-      <ellipse cx="34" cy="46" rx="30" ry="21"/>
-      <ellipse cx="64" cy="30" rx="34" ry="27"/>
-      <ellipse cx="93" cy="46" rx="25" ry="19"/>
-      <ellipse cx="60" cy="53" rx="50" ry="17"/>
-    </g>
+    <g fill="${color}">${shape}</g>
   </svg>`;
   const size = 60 + Math.random()*90;
   const dur  = 24 + Math.random()*20;
