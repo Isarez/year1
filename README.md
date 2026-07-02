@@ -29,10 +29,10 @@
 - รองรับโหมดเต็มหน้าจอ และติดตั้งเป็นแอป (Add to Home Screen) ได้บนมือถือ/แท็บเล็ต
 - ข้อมูลความคืบหน้าทั้งหมดเก็บไว้บนเครื่องผู้ใช้เท่านั้น (`localStorage`) ไม่มีการส่งไปยังเซิร์ฟเวอร์ใดๆ
 
-เป็นไฟล์ HTML เดี่ยว (single-page app, ไม่มี build step) เปิดใช้งานได้ทันทีในเบราว์เซอร์
+เป็น static site ล้วนๆ (ไม่มี build step) แยกไฟล์เป็น `index.html`, `css/style.css`, `js/data.js`, `js/owl-messages.js`, `js/app.js` เปิดใช้งานได้ทันทีในเบราว์เซอร์
 
 ## ใช้งาน
 
 เปิดผ่าน GitHub Pages: https://isarez.github.io/year1/
 
-หรือดาวน์โหลด `index.html` (พร้อมโฟลเดอร์ `assets/` และ `manifest.webmanifest`) แล้วเปิดด้วยเบราว์เซอร์ได้เลย
+หรือดาวน์โหลดทั้งโฟลเดอร์ (`index.html`, `css/`, `js/`, `assets/`, `manifest.webmanifest`) แล้วเปิด `index.html` ด้วยเบราว์เซอร์ได้เลย

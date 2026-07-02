@@ -1,24 +1,34 @@
 # นกฮูกสนุกคิด — เตรียมสอบ ป.1
 
-เว็บแอปไฟล์เดียว (`index.html`, ไม่มี build step) สำหรับเตรียมสอบเข้า ป.1 deploy ผ่าน GitHub Pages จาก branch `main` ที่ https://isarez.github.io/year1/
+เว็บแอปสำหรับเตรียมสอบเข้า ป.1 ไม่มี build step (ไฟล์ static ล้วนๆ) deploy ผ่าน GitHub Pages จาก branch `main` ที่ https://isarez.github.io/year1/
+
+## โครงสร้างไฟล์
+
+- `index.html` — markup ล้วนๆ, อ้างอิง CSS/JS ผ่าน `<link>`/`<script src>`
+- `css/style.css` — สไตล์ทั้งหมด
+- `js/data.js` — ชุดข้อมูลคำถาม/ข้อความหลัก: `CATS` (คำถามทุกหมวด), `AR_SENTENCES` (ประโยคเกม AR), `CAT_REQUIRES` (กติกาล็อกหมวด)
+- `js/owl-messages.js` — `OWL_MSGS` ข้อความให้กำลังใจของนกฮูก
+- `js/app.js` — logic ทั้งหมดของแอป (state, render, quiz flow, AR game, ธีม, เสียง ฯลฯ) โหลดหลังสุดเพราะอ้างอิงตัวแปรจาก data.js/owl-messages.js
+- ลำดับการโหลด script สำคัญ: `data.js` → `owl-messages.js` → `app.js` (ห้ามสลับ เพราะ app.js ใช้ตัวแปร global จากสองไฟล์แรก)
+- ไม่มี build step ก็จริง แต่การเปิดไฟล์ตรงๆ ผ่าน `file://` ยังใช้ได้ปกติ (ข้อมูลเป็น `.js` ไม่ใช่ `.json` ที่ต้อง `fetch` ผ่าน server เท่านั้น)
 
 ## กฎการทำงานในโปรเจคนี้
 
 - **ตอบผู้ใช้เป็นภาษาไทยเสมอ** ไม่ว่าจะถามอะไร (โค้ด/ชื่อตัวแปรเป็นภาษาอังกฤษได้ตามปกติ)
 - **ห้าม `git push` เอง** ต้องถามผู้ใช้ก่อนทุกครั้ง แม้จะ commit ไปแล้วก็ตาม
-- **ตรวจสอบก่อนบอกว่าทำเสร็จ**: รัน JS syntax check กับ `index.html` ก่อนส่งมอบงานทุกครั้ง เช่น
+- **ตรวจสอบก่อนบอกว่าทำเสร็จ**: รัน JS syntax check กับไฟล์ JS ทั้ง 3 ไฟล์ (เรียงตามลำดับโหลดจริง) ก่อนส่งมอบงานทุกครั้ง เช่น
   ```bash
   node -e "
   const fs = require('fs');
-  const html = fs.readFileSync('index.html','utf8');
-  const js = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
-  try { new Function(js); console.log('OK JS syntax'); } catch(e){ console.error('ERROR:', e.message); }
+  const files = ['js/data.js','js/owl-messages.js','js/app.js'];
+  const combined = files.map(f=>fs.readFileSync(f,'utf8')).join('\n');
+  try { new Function(combined); console.log('OK JS syntax'); } catch(e){ console.error('ERROR:', e.message); }
   "
   ```
 - **หลัง push/deploy สำเร็จทุกครั้ง**:
   1. สรุปสิ่งที่เปลี่ยนแปลงสั้นๆ ให้ผู้ใช้ทราบ
   2. เขียนสรุปนั้นลงไฟล์นี้ (`CLAUDE.md`) ด้วย โดยเพิ่มเป็นรายการใหม่ในหัวข้อ "ประวัติการเปลี่ยนแปลง (changelog)" ด้านล่าง (รูปแบบ: `- YYYY-MM-DD: สรุปสั้นๆ`) และถ้าเปลี่ยนแปลงพฤติกรรม/สถานะสำคัญของแอป ให้อัปเดตหัวข้อ "สถานะปัจจุบันของแอป" ให้ตรงด้วย
-  3. ก่อน push/deploy ทุกครั้ง ให้ตรวจและอัปเดต `README.md` ให้ตรงกับสถานะล่าสุดของแอปด้วย (เช่น ฟีเจอร์ใหม่, หมวดหมู่ใหม่) แล้ว commit `README.md` ไปพร้อมกับ `CLAUDE.md` และ `index.html` ใน push เดียวกัน
+  3. ก่อน push/deploy ทุกครั้ง ให้ตรวจและอัปเดต `README.md` ให้ตรงกับสถานะล่าสุดของแอปด้วย (เช่น ฟีเจอร์ใหม่, หมวดหมู่ใหม่) แล้ว commit `README.md` ไปพร้อมกับ `CLAUDE.md` และไฟล์โค้ดที่เปลี่ยนใน push เดียวกัน
 
 ## สถานะปัจจุบันของแอป (สำคัญ อย่าย้อนกลับโดยไม่ถาม)
 
@@ -41,3 +51,5 @@
 
 - 2026-07-02: เพิ่มมินิเกม AR 3 หมวด (ต่อประโยคไทย/Eng, คิดเลข) พร้อมแก้บั๊กจับ/วางการ์ด, ปรับ layout ช่องวางขึ้นด้านบน, style glassmorphism, แยกหน้าเลือกหมวดเป็น 2 section, เพิ่ม animation พระอาทิตย์ตก-พระจันทร์ขึ้นและ crossfade สีท้องฟ้าตอนสลับธีม, เพิ่มป้าย NEW บนการ์ดหมวดใหม่
 - 2026-07-02: เพิ่มปุ่ม "วิธีติดตั้งแอปบน iPad/แท็บเล็ต" (ย้ายจาก icon ใน header มาเป็นปุ่ม text ลอยมุมล่างซ้าย) และเพิ่มปุ่มเต็มหน้าจอในโหมด AR (มุมขวาบน)
+- 2026-07-02: แยกไฟล์เดี่ยว `index.html` ออกเป็น `index.html` (markup) + `css/style.css` + `js/data.js` + `js/owl-messages.js` + `js/app.js` เพื่อให้ดูแล/แก้ไขง่ายขึ้น พฤติกรรมแอปเหมือนเดิมทุกอย่าง ไม่มี build step เพิ่ม
+- 2026-07-02: เพิ่มความหลากหลายของประโยคในเกม AR ต่อประโยค — ขยาย `AR_SENTENCES` (ไทย/อังกฤษ × 3/4/5 คำ) จากเดิม 6 ประโยคต่อชุด เป็น 20 ประโยคต่อชุด (รวม 120 ประโยค) เพื่อลดโอกาสเจอประโยคซ้ำเวลาเล่นซ้ำ
