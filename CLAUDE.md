@@ -34,7 +34,10 @@
 - **ข้อมูลผู้ใช้ทั้งหมดเก็บใน `localStorage` เท่านั้น ไม่มี backend** — footer มีข้อความยืนยันเรื่องนี้ ต้องคงความจริงนี้ไว้ถ้าจะเพิ่มฟีเจอร์ sync/backend ในอนาคต
 - **มินิเกม AR (จับคู่นิ้วมือ)**: หมวด `ar-thai`/`ar-eng` (ต่อประโยค ลากคำใส่ช่องตามลำดับ) และ `ar-math` (คิดเลข บวก/ลบ 1-2 หลัก ลากการ์ดคำตอบที่ถูกใส่ช่องเดียว) ทั้ง 3 หมวดมี `isNew:true` ทำให้ขึ้นป้าย "NEW ✨" บนการ์ดหน้าเลือกหมวด (ลบออกเมื่อผู้ใช้เห็นว่าเกมไม่ใหม่แล้วโดยถามก่อน). หน้าเลือกหมวดแบ่งเป็น 2 section: "คำถาม-คำตอบ" (`#cat-grid`) กับ "การโต้ตอบ" (`#cat-grid-interactive`, มีแต่หมวด type `ar`)
 - **Theme transition**: ท้องฟ้ากลางวัน/กลางคืนใช้ 2 เลเยอร์ `.bg-sky-day`/`.bg-sky-night` ซ้อนกันแล้ว crossfade ด้วย `opacity 2s` (ไม่ใช้ `transition:background` บน gradient เพราะเบราว์เซอร์ tween gradient ตรงๆ ไม่ได้) พระอาทิตย์/พระจันทร์ใช้ wrapper div แยกจาก SVG เดิมเพื่อทำ transform translateY แยกจาก animation หมุน/pulse เดิม (element เดียวมี transform 2 ระบบพร้อมกันไม่ได้)
+- **ปุ่มวิธีติดตั้งแอป**: `#install-toggle` เป็นปุ่ม text ("วิธีติดตั้งแอปบน iPad/แท็บเล็ต") ลอยมุมล่างซ้าย (`.install-link-btn`) ไม่ใช่ icon ใน header อีกต่อไป กดแล้วเปิด `#install-modal` (คำแนะนำ iPad/iPhone Safari + Android Chrome) ซ่อนอัตโนมัติตอนอยู่ใน AR view (`body.ar-open .install-link-btn{display:none}`)
+- **ปุ่มเต็มหน้าจอ**: มี 2 ปุ่มที่ผูก logic เดียวกัน — `#fullscreen-toggle` ใน header (หน้าปกติ) และ `#ar-fullscreen-toggle` ใน `.quiz-top` ของ AR view (มุมขวาบน ข้าง `#ar-level-counter`) ทั้งคู่ผูกกับ `fsBtns` array และ `refreshFsBtn()` เดียวกัน ถ้าเพิ่มปุ่มเต็มหน้าจอใหม่ให้เพิ่ม id เข้า array นี้แทนการเขียน handler แยก
 
 ## ประวัติการเปลี่ยนแปลง (changelog)
 
 - 2026-07-02: เพิ่มมินิเกม AR 3 หมวด (ต่อประโยคไทย/Eng, คิดเลข) พร้อมแก้บั๊กจับ/วางการ์ด, ปรับ layout ช่องวางขึ้นด้านบน, style glassmorphism, แยกหน้าเลือกหมวดเป็น 2 section, เพิ่ม animation พระอาทิตย์ตก-พระจันทร์ขึ้นและ crossfade สีท้องฟ้าตอนสลับธีม, เพิ่มป้าย NEW บนการ์ดหมวดใหม่
+- 2026-07-02: เพิ่มปุ่ม "วิธีติดตั้งแอปบน iPad/แท็บเล็ต" (ย้ายจาก icon ใน header มาเป็นปุ่ม text ลอยมุมล่างซ้าย) และเพิ่มปุ่มเต็มหน้าจอในโหมด AR (มุมขวาบน)
