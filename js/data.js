@@ -159,11 +159,11 @@ const CATS = [
     type:'ar', lang:'en', levels:10, isNew:true
   },
   {
-    id:'ar-math', name:'คิดเลข', emoji:'🔢', color:'#FFB020', light:'#FFF1D6',
+    id:'ar-math', name:'คิดเลข', emoji:'🧮', color:'#FFB020', light:'#FFF1D6',
     type:'ar', mode:'math', levels:10, isNew:true
   },
   {
-    id:'ar-match', name:'โยงเส้น (ไทย)', emoji:'🔗', color:'#8E7CC3', light:'#EAE4F7',
+    id:'ar-match', name:'โยงเส้น (ไทย)', emoji:'🪢', color:'#8E7CC3', light:'#EAE4F7',
     type:'ar', mode:'match', lang:'th', levels:10, isNew:true
   },
   {
