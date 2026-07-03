@@ -801,11 +801,12 @@ function buildMatchLevel(cat){
   $('ar-match-wrap').hidden = false;
   const level = arGame.level;
   const n = level<=3 ? 3 : (level<=6 ? 4 : 5);
-  const items = shuffleArray(AR_MATCH_ITEMS.slice()).slice(0, n);
+  const pool = AR_MATCH_ITEMS[cat.lang || 'th'];
+  const items = shuffleArray(pool.slice()).slice(0, n);
   renderMatchPairs(items);
   showARHint(isMobileViewport()
-    ? '👆 แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกันนะ!'
-    : '✋ แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกัน (จีบนิ้วถ้าอยากยกเลิก)');
+    ? (cat.lang==='th' ? '👆 แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกันนะ!' : '👆 Tap a dot and drag a line to its matching answer!')
+    : (cat.lang==='th' ? '✋ แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกัน (จีบนิ้วถ้าอยากยกเลิก)' : '✋ Tap a dot and drag a line to its match (pinch to cancel)'));
 }
 
 function renderMatchPairs(items){
@@ -979,7 +980,8 @@ function matchMistakeFlash(dotA, dotB){
   playWrong();
   mascotOops();
   [dotA, dotB].forEach(d=>{ d.classList.add('wrong-flash'); setTimeout(()=>d.classList.remove('wrong-flash'), 450); });
-  showARHint('🤔 ยังไม่ตรงกันนะ ลองโยงเส้นใหม่ดูสิ!');
+  const cat = catById(arGame.catId);
+  showARHint(cat.lang==='th' ? '🤔 ยังไม่ตรงกันนะ ลองโยงเส้นใหม่ดูสิ!' : '🤔 Not a match — try connecting a different line!');
 }
 
 function checkSlotsComplete(){
@@ -1023,7 +1025,7 @@ function levelSuccess(){
   showARHint(cat.mode==='math'
     ? '🎉 เก่งมาก! คำนวณถูกต้อง!'
     : cat.mode==='match'
-      ? '🎉 เก่งมาก! โยงเส้นถูกต้องหมดเลย!'
+      ? (cat.lang==='th' ? '🎉 เก่งมาก! โยงเส้นถูกต้องหมดเลย!' : '🎉 Great job! All lines matched correctly!')
       : (cat.lang==='th' ? '🎉 เก่งมาก! ต่อประโยคถูกต้อง!' : '🎉 Great job! Sentence is correct!'));
   $('ar-progress-fill').style.width = (arGame.level/arGame.totalLevels*100)+'%';
   setTimeout(()=>{
