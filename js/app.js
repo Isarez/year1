@@ -776,11 +776,10 @@ function matchMistake(){
 
 function finishMemoryGame(){
   const cat = catById(memoryGame.catId);
-  const mistakes = memoryGame.mistakes;
   const totalLevels = memoryGame.totalLevels;
   memoryView.hidden = true; resultView.hidden = false;
 
-  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const stars = 3;
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
   const newlyUnlocked = !wasUnlocked && stars>=2;

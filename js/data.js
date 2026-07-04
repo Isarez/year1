@@ -175,7 +175,7 @@ const CATS = [
     type:'ar', mode:'count', levels:10, isNew:true, desktopOnly:true
   },
   {
-    id:'skill-memory', name:'จับคู่โดมิโน', emoji:'🁣', color:'#E0764C', light:'#FBE3D4',
+    id:'skill-memory', name:'จับคู่โดมิโน', emoji:'🎲', color:'#E0764C', light:'#FBE3D4',
     type:'skill', mode:'memory', levels:3, isNew:true
   }
 ];
