@@ -1825,6 +1825,7 @@ $('install-toggle').addEventListener('click', ()=>{ playClick(); openOverlay('in
 $('install-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('install-modal'); });
 $('install-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('install-modal'); });
 $('bmm-btn').addEventListener('click', ()=>{ playClick(); openOverlay('qr-modal'); });
+fetch('version').then(r=>r.text()).then(t=>{ $('app-version').textContent = t.trim(); }).catch(()=>{});
 $('qr-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('qr-modal'); });
 $('qr-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('qr-modal'); });
 
