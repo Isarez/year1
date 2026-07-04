@@ -798,6 +798,7 @@ function finishMemoryGame(){
   for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
   Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
 
+  const mistakes = memoryGame.mistakes;
   $('score-line').textContent = 'จับคู่ครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
   $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
 
@@ -1006,19 +1007,22 @@ function buildMatchLevel(cat){
   const n = level<=3 ? 3 : (level<=6 ? 4 : 5);
   const pool = AR_MATCH_ITEMS[cat.lang || 'th'];
   const items = shuffleArray(pool.slice()).slice(0, n);
-  renderMatchPairs(items);
+  renderMatchPairs(items, n);
   showARHint(isMobileViewport()
     ? (cat.lang==='th' ? '👆 แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกันนะ!' : '👆 Tap a dot and drag a line to its matching answer!')
     : (cat.lang==='th' ? '✋ แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกัน (จีบนิ้วถ้าอยากยกเลิก)' : '✋ Tap a dot and drag a line to its match (pinch to cancel)'));
 }
 
-function renderMatchPairs(items){
+function renderMatchPairs(items, n){
   const svg = $('ar-match-svg');
   svg.innerHTML = '';
   const leftCol = $('ar-match-left');
   const rightCol = $('ar-match-right');
   leftCol.innerHTML = '';
   rightCol.innerHTML = '';
+  const colGap = n<=3 ? '60px' : n===4 ? '40px' : '26px';
+  leftCol.style.gap = colGap;
+  rightCol.style.gap = colGap;
 
   const rightOrder = shuffleArray(items.map((_,i)=>i));
 
@@ -1934,6 +1938,29 @@ for(let i=0;i<22;i++){
   el.style.cssText = `width:${size}px;height:${size}px;top:${top}vh;left:${left}vw;animation-duration:${dur}s;animation-delay:-${delay}s;`;
   bgDecorEl.appendChild(el);
 }
+
+/* ============================= CLICK STAR SPARK ============================= */
+(function(){
+  const COLORS = ['#FFD700','#FF8C42','#FF6B9D','#A78BFA','#34D399','#60A5FA','#FBBF24'];
+  const RAYS = 8;
+  document.addEventListener('click', e=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'click-spark';
+    wrap.style.left = e.clientX+'px';
+    wrap.style.top  = e.clientY+'px';
+    const color = COLORS[Math.floor(Math.random()*COLORS.length)];
+    for(let i=0;i<RAYS;i++){
+      const ray = document.createElement('div');
+      ray.className = 'click-spark-ray';
+      ray.style.setProperty('--a', (i*360/RAYS)+'deg');
+      ray.style.background = color;
+      ray.style.animationDelay = (i*18)+'ms';
+      wrap.appendChild(ray);
+    }
+    document.body.appendChild(wrap);
+    setTimeout(()=>wrap.remove(), 700);
+  });
+})();
 
 /* ============================= INIT ============================= */
 loadChildren();
