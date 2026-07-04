@@ -1013,6 +1013,18 @@
     .domino-pip{ max-width:13px; max-height:13px; }
   }
 
+  /* จอกลาง (tablet/481px-1024px): บังคับ 4 การ์ดต่อแถว ลดขนาดการ์ดตามความกว้างจอด้วย CSS grid + aspect-ratio */
+  @media (min-width:481px) and (max-width:1024px){
+    .memory-col{
+      display:grid; grid-template-columns:repeat(4,1fr);
+      gap:8px; padding:10px 8px;
+    }
+    .memory-card{ width:100%; height:auto; aspect-ratio:3/4; }
+    .card-face-value{ font-size:clamp(14px,4vw,28px); }
+    .domino-pip{ max-width:clamp(4px,1.8vw,17px); max-height:clamp(4px,1.8vw,17px); }
+    .memory-card-icon-svg{ width:50%; height:50%; }
+  }
+
   /* จอกว้าง (เดสก์ท็อป): ขยายการ์ด/ช่องวางการ์ดขึ้นอีก แต่ยังคงเป็นซ้าย-ขวา (สืบทอด flex-wrap:nowrap จาก .memory-board ฐาน) */
   @media (min-width:1025px){
     .memory-card{ width:128px; height:166px; }
