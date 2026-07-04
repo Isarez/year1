@@ -118,6 +118,10 @@
       <p class="cat-section-note">💡 แนะนำให้เล่นบนแท็บเล็ต โน้ตบุ๊ก หรือคอมพิวเตอร์เพื่อใช้กล้อง AR ได้เต็มรูปแบบ — ถ้าเล่นบนมือถือจะไม่ใช้กล้อง ใช้นิ้วแตะลากแทนนะ</p>
       <div class="cat-grid" id="cat-grid-interactive"></div>
     </div>
+    <div class="cat-section">
+      <div class="cat-section-title"><span class="cst-emoji">🧠</span> เกมฝึกทักษะ</div>
+      <div class="cat-grid" id="cat-grid-skill"></div>
+    </div>
   </section>
 
   <!-- QUIZ VIEW -->
@@ -142,6 +146,23 @@
       <div class="next-btn-wrap">
         <button class="next-btn" id="next-btn">ข้อต่อไป ➜</button>
       </div>
+    </div>
+  </section>
+
+  <!-- MEMORY MATCHING VIEW -->
+  <section id="memory-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="memory-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="memory-cat-label">จับคู่โดมิโน</div>
+        <div class="progress-track"><div class="progress-fill" id="memory-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="memory-hint">🁣 แตะการ์ดตัวเลข 1 ใบ แล้วแตะการ์ดโดมิโน 1 ใบ ให้ค่าตรงกันนะ!</div>
+      </div>
+      <div class="q-counter" id="memory-level-counter">1/3</div>
+    </div>
+    <div class="memory-board">
+      <div class="memory-col memory-col-dots" id="memory-col-dots"></div>
+      <div class="memory-col memory-col-numbers" id="memory-col-numbers"></div>
     </div>
   </section>
 
@@ -209,6 +230,13 @@
 
     <div class="ar-hint-chip" id="ar-hint">✋ ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" หยิบคำมาต่อประโยคให้ถูกลำดับนะ!</div>
     <div class="ar-math-problem" id="ar-math-problem" hidden></div>
+    <div class="ar-count-question" id="ar-count-question" hidden></div>
+    <div class="ar-count-zone" id="ar-count-zone" hidden>
+      <div class="ar-count-zone-label">
+        <span class="ar-count-zone-ph" id="ar-count-zone-ph">วางของตรงนี้</span>
+        <span class="ar-count-tally" id="ar-count-tally">หยิบแล้ว 0 ชิ้น</span>
+      </div>
+    </div>
     <div class="ar-slot-row" id="ar-slot-row"></div>
   </div>
 </section>

@@ -355,9 +355,10 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
+let memoryGame = null;
 
 function mascotHappy(){ mascot.classList.remove('oops'); mascot.classList.remove('happy'); void mascot.offsetWidth; mascot.classList.add('happy'); }
 function mascotOops(){ mascot.classList.remove('happy'); mascot.classList.remove('oops'); void mascot.offsetWidth; mascot.classList.add('oops'); }
@@ -385,7 +386,7 @@ wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true;
   renderChildSelect();
 });
 
@@ -395,37 +396,50 @@ function renderHome(){
   $('hero-greeting').textContent = 'สวัสดีจ้า '+name+'! 🎉';
   const grid = $('cat-grid');
   const gridInteractive = $('cat-grid-interactive');
+  const gridSkill = $('cat-grid-skill');
   grid.innerHTML = '';
   gridInteractive.innerHTML = '';
+  gridSkill.innerHTML = '';
   CATS.forEach(cat=>{
     const p = progress[cat.id];
     const unlocked = p && p.unlocked;
     const reqId = CAT_REQUIRES[cat.id];
     const isLocked = !!reqId && !(progress[reqId] && progress[reqId].unlocked);
+    const isDeviceLocked = !!cat.desktopOnly && isMobileViewport();
+    const locked = isLocked || isDeviceLocked;
     const card = document.createElement('button');
-    card.className = 'cat-card'+(isLocked?' cat-locked':'');
-    card.style.setProperty('--cat-light', isLocked?'#EEEEEE':cat.light);
-    const total = cat.type==='ar' ? cat.levels : cat.questions.length;
+    card.className = 'cat-card'+(locked?' cat-locked':'');
+    card.style.setProperty('--cat-light', locked?'#EEEEEE':cat.light);
+    const total = (cat.type==='ar' || cat.type==='skill') ? cat.levels : cat.questions.length;
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
       '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?cat.emoji:'🔒')+'</div>'+
-      '<div class="cat-emoji">'+(isLocked?'🔒':cat.emoji)+'</div>'+
+      '<div class="cat-emoji">'+(locked?'🔒':cat.emoji)+'</div>'+
       '<div class="cat-name">'+cat.name+'</div>'+
-      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : total+' ข้อ')+'</div>'+
+      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : cat.type==='skill' ? total+' ด่าน 🧠' : total+' ข้อ')+'</div>'+
       (isLocked
         ? '<div class="cat-lock-msg">🔐 ผ่าน '+catById(reqId).name+' ก่อนนะ</div>'
-        : (p ? '<div class="cat-progress">ทำแล้ว '+p.best+'/'+total+' '+'⭐'.repeat(p.stars)+'</div>'
-              : '<div class="cat-progress cat-progress-new">ยังไม่เคยทำ ✨</div>'));
+        : isDeviceLocked
+          ? '<div class="cat-lock-msg">🖥️ เล่นได้บนแท็บเล็ต/คอมพิวเตอร์เท่านั้นนะ</div>'
+          : (p ? '<div class="cat-progress">ทำแล้ว '+p.best+'/'+total+' '+'⭐'.repeat(p.stars)+'</div>'
+                : '<div class="cat-progress cat-progress-new">ยังไม่เคยทำ ✨</div>'));
     card.addEventListener('click', ()=>{
       if(isLocked){
         showToast('🔐','ต้องผ่าน '+catById(reqId).name+' ก่อนนะ!');
         showOwlMsg('locked');
         return;
       }
+      if(isDeviceLocked){
+        showToast('🖥️','เกมนี้เล่นได้บนแท็บเล็ตหรือคอมพิวเตอร์เท่านั้นนะ ลองเปิดจากอุปกรณ์จอใหญ่ขึ้นดูนะ!');
+        showOwlMsg('locked');
+        return;
+      }
       playClick();
-      if(cat.type==='ar') startARGame(cat.id); else startQuiz(cat.id);
+      if(cat.type==='ar') startARGame(cat.id);
+      else if(cat.type==='skill') startMemoryGame(cat.id);
+      else startQuiz(cat.id);
     });
-    (cat.type==='ar' ? gridInteractive : grid).appendChild(card);
+    (cat.type==='skill' ? gridSkill : (cat.type==='ar' ? gridInteractive : grid)).appendChild(card);
   });
   updateTally();
 }
@@ -445,7 +459,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   $('quiz-cat-label').textContent = cat.emoji+' '+cat.name;
@@ -605,12 +619,14 @@ function finishQuiz(){
 
 $('retry-btn').addEventListener('click', ()=>{
   playClick();
-  if(lastGameType==='ar'){ startARGame(lastCatId); } else { startQuiz(state.catId); }
+  if(lastGameType==='ar'){ startARGame(lastCatId); }
+  else if(lastGameType==='memory'){ startMemoryGame(lastCatId); }
+  else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -623,6 +639,188 @@ $('home-btn').addEventListener('click', ()=>{
 $('quiz-back').addEventListener('click', ()=>{
   playClick();
   quizView.hidden = true; resultView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* ============================= MEMORY MATCHING GAME (จับคู่โดมิโน) ============================= */
+function startMemoryGame(catId){
+  stopARGame();
+  lastGameType = 'memory'; lastCatId = catId;
+  const cat = catById(catId);
+  memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  $('memory-cat-label').textContent = cat.emoji+' '+cat.name;
+  $('memory-cat-label').style.color = cat.color;
+  renderMemoryLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+
+/* รูปแบบจุดโดมิโน (0-6 จุดต่อครึ่งการ์ด) วางตำแหน่งแบบเดียวกับลูกเต๋า/โดมิโนจริง */
+const DOMINO_PIPS = {
+  0:[], 1:['c'], 2:['tl','br'], 3:['tl','c','br'],
+  4:['tl','tr','bl','br'], 5:['tl','tr','c','bl','br'], 6:['tl','ml','bl','tr','mr','br']
+};
+function dominoHalfHtml(n){
+  return '<div class="domino-half">'+DOMINO_PIPS[n].map(p=>'<span class="domino-pip pip-'+p+'"></span>').join('')+'</div>';
+}
+function dominoCardHtml(value){
+  const top = Math.ceil(value/2);
+  const bottom = value - top;
+  return '<div class="domino-card">'+dominoHalfHtml(top)+'<div class="domino-divider"></div>'+dominoHalfHtml(bottom)+'</div>';
+}
+
+function renderMemoryLevel(){
+  const pairCount = MEMORY_LEVEL_PAIRS[memoryGame.level-1];
+  memoryGame.totalPairs = pairCount;
+  memoryGame.matchedCount = 0;
+  memoryGame.openNumber = null;
+  memoryGame.openDot = null;
+  memoryGame.locked = false;
+
+  const pool = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const values = shuffleArray(pool.slice()).slice(0, pairCount);
+  const numberOrder = shuffleArray(values.slice());
+  const dotOrder = shuffleArray(values.slice());
+
+  const numCol = $('memory-col-numbers');
+  const dotCol = $('memory-col-dots');
+  numCol.innerHTML = '';
+  dotCol.innerHTML = '';
+
+  /* ไอคอนหลังการ์ดเป็น SVG เดียวกันทั้งการ์ดตัวเลขและการ์ดจุด (ต่างกันแค่สีพื้นหลังผ่าน CSS) */
+  const cardBackIcon = '<svg class="memory-card-icon-svg" viewBox="0 0 24 24"><path d="M12 2 L14.9 8.6 L22 9.3 L16.8 14.1 L18.2 21 L12 17.5 L5.8 21 L7.2 14.1 L2 9.3 L9.1 8.6 Z"/></svg>';
+
+  numberOrder.forEach(value=>{
+    const card = document.createElement('button');
+    card.className = 'memory-card memory-card-number';
+    card.dataset.value = value;
+    card.innerHTML =
+      '<div class="memory-card-inner">'+
+        '<div class="memory-card-face card-face-hidden"><span class="memory-card-icon">'+cardBackIcon+'</span></div>'+
+        '<div class="memory-card-face card-face-value">'+value+'</div>'+
+      '</div>';
+    card.addEventListener('click', ()=>flipCard(card, 'number', value));
+    numCol.appendChild(card);
+  });
+
+  dotOrder.forEach(value=>{
+    const card = document.createElement('button');
+    card.className = 'memory-card memory-card-dot';
+    card.dataset.value = value;
+    card.innerHTML =
+      '<div class="memory-card-inner">'+
+        '<div class="memory-card-face card-face-hidden"><span class="memory-card-icon">'+cardBackIcon+'</span></div>'+
+        '<div class="memory-card-face card-face-value">'+dominoCardHtml(value)+'</div>'+
+      '</div>';
+    card.addEventListener('click', ()=>flipCard(card, 'dot', value));
+    dotCol.appendChild(card);
+  });
+
+  $('memory-level-counter').textContent = memoryGame.level+'/'+memoryGame.totalLevels;
+  $('memory-progress-fill').style.width = '0%';
+}
+
+function flipCard(cardEl, side, value){
+  if(cardEl.classList.contains('matched')) return;
+  /* ถ้ามีคู่ที่ตอบผิดค้างเปิดอยู่ ให้คว่ำคู่เก่าทันทีตอนคลิกการ์ดใบใหม่ แทนการรอ delay */
+  if(memoryGame.locked) resetMismatch();
+  if(cardEl.classList.contains('flipped')) return;
+  if(side==='number' && memoryGame.openNumber) return;
+  if(side==='dot' && memoryGame.openDot) return;
+
+  cardEl.classList.add('flipped');
+  playClick();
+  if(side==='number') memoryGame.openNumber = { el:cardEl, value };
+  else memoryGame.openDot = { el:cardEl, value };
+
+  if(memoryGame.openNumber && memoryGame.openDot){
+    if(memoryGame.openNumber.value === memoryGame.openDot.value){ matchSuccess(); }
+    else { matchMistake(); }
+  }
+}
+
+function resetMismatch(){
+  if(memoryGame.openNumber) memoryGame.openNumber.el.classList.remove('flipped','mismatch');
+  if(memoryGame.openDot) memoryGame.openDot.el.classList.remove('flipped','mismatch');
+  memoryGame.openNumber = null;
+  memoryGame.openDot = null;
+  memoryGame.locked = false;
+}
+
+function matchSuccess(){
+  memoryGame.openNumber.el.classList.add('matched');
+  memoryGame.openDot.el.classList.add('matched');
+  memoryGame.matchedCount++;
+  $('memory-progress-fill').style.width = (memoryGame.matchedCount/memoryGame.totalPairs*100)+'%';
+  memoryGame.openNumber = null;
+  memoryGame.openDot = null;
+  memoryGame.locked = false;
+  if(memoryGame.matchedCount === memoryGame.totalPairs){
+    if(memoryGame.level >= memoryGame.totalLevels){ setTimeout(finishMemoryGame, 500); }
+    else { memoryGame.level++; setTimeout(renderMemoryLevel, 500); }
+  }
+}
+
+function matchMistake(){
+  memoryGame.mistakes++;
+  playWrong();
+  mascotOops();
+  memoryGame.openNumber.el.classList.add('mismatch');
+  memoryGame.openDot.el.classList.add('mismatch');
+  memoryGame.locked = true; // ค้างคู่ที่ผิดไว้บนจอ ให้เด็กมีเวลาดูนานเท่าที่ต้องการ จนกว่าจะคลิกการ์ดใบใหม่ (ดู flipCard/resetMismatch)
+}
+
+function finishMemoryGame(){
+  const cat = catById(memoryGame.catId);
+  const mistakes = memoryGame.mistakes;
+  const totalLevels = memoryGame.totalLevels;
+  memoryView.hidden = true; resultView.hidden = false;
+
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = {
+    best: prev ? Math.max(prev.best, totalLevels) : totalLevels,
+    stars: prev ? Math.max(prev.stars, stars) : stars,
+    unlocked: wasUnlocked || stars>=2
+  };
+  saveProgress();
+
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row');
+  starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+
+  $('score-line').textContent = 'จับคู่ครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false;
+    $('sticker-earned').textContent = cat.emoji;
+    pendingSticker = cat.id;
+    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('memory-back').addEventListener('click', ()=>{
+  playClick();
+  memoryView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -681,8 +879,11 @@ function buildLevel(catId){
   $('ar-math-problem').hidden = true;
   $('ar-slot-row').hidden = false;
   $('ar-match-wrap').hidden = true;
+  $('ar-count-question').hidden = true;
+  $('ar-count-zone').hidden = true;
   if(cat.mode==='math'){ buildMathLevel(cat); return; }
   if(cat.mode==='match'){ buildMatchLevel(cat); return; }
+  if(cat.mode==='count'){ buildCountLevel(cat); return; }
   const level = arGame.level;
   const wordCount = level<=3 ? 3 : (level<=6 ? 4 : 5);
   const pool = AR_SENTENCES[cat.lang][wordCount];
@@ -694,9 +895,12 @@ function buildLevel(catId){
 }
 
 /* scatter position in a safe zone away from screen edges (hand tracking loses the hand near frame edges), spread across `n` horizontal slices */
-function scatterPosition(pos, n){
+/* minTop: optional override to push the top of the safe band lower (e.g. below a tall answer zone) so scattered items don't spawn on top of it */
+function scatterPosition(pos, n, minTop){
   const safeLeft = 18, safeWidth = 64;   // keep horizontal center within 18%-82%
-  const safeTop = 42, safeHeight = 34;   // keep vertical center within 42%-76%
+  const maxSafeBottom = 76;              // bottom of the safe band never moves, only the top does
+  const safeTop = Math.min(Math.max(42, minTop||0), maxSafeBottom-10); // always leave at least a 10%-tall band
+  const safeHeight = maxSafeBottom - safeTop;
   const slotW = safeWidth/n;
   const left = (safeLeft + slotW*pos + Math.random()*slotW*0.3).toFixed(1)+'%';
   /* zig-zag rows (alternate near-top/near-bottom of the safe band) so bigger cards don't overlap each other */
@@ -704,8 +908,8 @@ function scatterPosition(pos, n){
   const top = (safeTop + (pos%2)*rowH + Math.random()*rowH).toFixed(1)+'%';
   return { left, top };
 }
-function placeCardAtScatterPos(card, pos, n){
-  const { left, top } = scatterPosition(pos, n);
+function placeCardAtScatterPos(card, pos, n, minTop){
+  const { left, top } = scatterPosition(pos, n, minTop);
   card.dataset.origLeft = left;
   card.dataset.origTop = top;
   card.style.left = left;
@@ -839,6 +1043,92 @@ function renderMatchPairs(items){
   rightCol.querySelectorAll('.ar-dot').forEach(wireMatchDot);
 }
 
+/* ---- AR count mode: read the question, pinch-grab matching symbols into the answer basket (tablet/desktop only) ---- */
+function buildCountLevel(cat){
+  $('ar-slot-row').hidden = true;
+  $('ar-count-question').hidden = false;
+  $('ar-count-zone').hidden = false;
+  const level = arGame.level;
+  const tier = level<=3 ? 'easy' : (level<=6 ? 'medium' : 'hard');
+  const pool = AR_COUNT_QUESTIONS[tier];
+  let idx = Math.floor(Math.random()*pool.length);
+  if(pool.length>1 && arGame.lastCountIndex===idx){ idx = (idx+1)%pool.length; }
+  arGame.lastCountIndex = idx;
+  const q = pool[idx];
+  arGame.countQuestion = q;
+  arGame.zoneCount = 0;
+  arGame.zoneLocked = false;
+  $('ar-count-question').textContent = q.q;
+  scatterCountItems(q); // resets the zone's contents (including the tally line) fresh
+  showARHint('✋ จีบนิ้วหยิบของแล้วลากไปใส่ตะกร้าให้ครบตามโจทย์นะ!');
+}
+
+/* count mode often has more items on screen than the other AR games (up to ~10), so instead of the
+   generic sequential-band scatter (shared with sentence/math/match), lay them out on a grid: each item
+   gets its own cell (no two items can ever share space) and only jitters a bit within that cell — this
+   also lets it use more of the screen, closer to the left/right/bottom edges, without crowding or overlap */
+function scatterCountItems(q){
+  const zone = $('ar-count-zone');
+  zone.innerHTML = '<div class="ar-count-zone-label">'+
+    '<span class="ar-count-zone-ph" id="ar-count-zone-ph">วางของตรงนี้</span>'+
+    '<span class="ar-count-tally" id="ar-count-tally">หยิบแล้ว 0 ชิ้น</span>'+
+    '</div>';
+  const cardsRow = $('ar-cards-row');
+  cardsRow.innerHTML = '';
+  /* keep scattered items below the answer zone so they never spawn on top of it */
+  const zoneRect = zone.getBoundingClientRect();
+  const minTopPct = (zoneRect.bottom / window.innerHeight * 100) + 4;
+  const flat = [];
+  q.items.forEach(item=>{
+    for(let i=0;i<item.count;i++) flat.push(item);
+  });
+  const order = shuffleArray(flat);
+  const n = order.length;
+
+  const safeLeft = 8, safeRight = 88;   // keep item centers within 8%-88% horizontally
+  const maxSafeBottom = 88;             // bottom of the grid never moves lower than this
+  const safeTop = Math.min(Math.max(42, minTopPct), maxSafeBottom-14); // always leave at least a 14%-tall grid
+  /* a plain emoji card is ~72px on tablet, ~84px on desktop (see .ar-card-plain / its @media(min-width:1025px)
+     override in css/style.css) — pad generously so cells stay comfortably bigger than a card even after jitter */
+  const cardPx = window.innerWidth>=1025 ? 84 : 72;
+  const minCellW = cardPx + 80, minCellH = cardPx + 70;
+  const availPxW = window.innerWidth * (safeRight-safeLeft)/100;
+  const availPxH = window.innerHeight * (maxSafeBottom-safeTop)/100;
+  const maxColsByWidth = Math.max(1, Math.floor(availPxW/minCellW));
+  const maxRowsByHeight = Math.max(1, Math.floor(availPxH/minCellH));
+  let cols = Math.max(1, Math.min(Math.ceil(Math.sqrt(n*1.6)), maxColsByWidth));
+  if(Math.ceil(n/cols) > maxRowsByHeight){
+    /* not enough vertical room for that many rows — trade for more columns instead, up to the width cap */
+    cols = Math.min(maxColsByWidth, Math.ceil(n/maxRowsByHeight));
+  }
+  const rows = Math.ceil(n/cols); // always recomputed from the final `cols` so every item is guaranteed a cell
+  const colW = (safeRight-safeLeft)/cols;
+  const rowH = (maxSafeBottom-safeTop)/rows;
+  /* jitter amplitude is capped by how much room is actually left in the cell beyond the card itself, not a flat
+     fraction of the cell — otherwise a jitter that's "20% of a barely-big-enough cell" can still cause overlap */
+  const colWpx = colW/100*window.innerWidth, rowHpx = rowH/100*window.innerHeight;
+  const jitterXpx = Math.max(0, (colWpx-cardPx)/2*0.5);
+  const jitterYpx = Math.max(0, (rowHpx-cardPx)/2*0.5);
+  const jitterXpct = jitterXpx/window.innerWidth*100, jitterYpct = jitterYpx/window.innerHeight*100;
+
+  order.forEach((item, pos)=>{
+    const card = document.createElement('div');
+    card.className = 'ar-card ar-card-plain';
+    card.dataset.itemKey = item.key;
+    card.innerHTML = '<span class="ar-card-emoji">'+item.emoji+'</span>';
+    const col = pos % cols, row = Math.floor(pos/cols);
+    const left = (safeLeft + colW*(col+0.5) + (Math.random()-0.5)*2*jitterXpct).toFixed(1)+'%';
+    const top = (safeTop + rowH*(row+0.5) + (Math.random()-0.5)*2*jitterYpct).toFixed(1)+'%';
+    card.dataset.origLeft = left;
+    card.dataset.origTop = top;
+    card.style.left = left;
+    card.style.top = top;
+    card.style.animationDelay = (pos*0.06)+'s';
+    wireCardDrag(card);
+    cardsRow.appendChild(card);
+  });
+}
+
 function showARHint(text){ $('ar-hint').textContent = text; }
 
 /* ---- drag & drop (shared by hand-pinch and mouse/touch pointer events) ---- */
@@ -874,6 +1164,8 @@ function moveDraggingCardTo(x,y){
   arDraggingCard.style.top = y+'px';
 }
 function attemptDrop(card, x, y){
+  const cat = catById(arGame.catId);
+  if(cat.mode==='count'){ attemptCountDrop(card, x, y); return; }
   card.classList.remove('dragging');
   card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
   const slots = Array.from($('ar-slot-row').children);
@@ -899,6 +1191,40 @@ function placeCardInSlot(card, slot){
   slot.classList.add('filled');
   playClick();
   checkSlotsComplete();
+}
+
+/* ---- count mode: drop into the single answer basket (not a fixed per-position slot) ---- */
+function attemptCountDrop(card, x, y){
+  card.classList.remove('dragging');
+  card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
+  const zone = $('ar-count-zone');
+  const pad = 34;
+  const r = zone.getBoundingClientRect();
+  const inside = x>=r.left-pad && x<=r.right+pad && y>=r.top-pad && y<=r.bottom+pad;
+  if(inside && !arGame.zoneLocked){ placeItemInZone(card); }
+  else { returnCardToPool(card); }
+  arDraggingCard = null; arDragSource = null;
+}
+function placeItemInZone(card){
+  const ph = document.getElementById('ar-count-zone-ph');
+  if(ph) ph.hidden = true;
+  card.classList.add('placed');
+  $('ar-count-zone').appendChild(card);
+  playClick();
+  arGame.zoneCount++;
+  updateCountTally();
+  checkCountComplete();
+}
+function updateCountTally(){
+  $('ar-count-tally').textContent = 'หยิบแล้ว '+arGame.zoneCount+' ชิ้น';
+}
+function checkCountComplete(){
+  const target = arGame.countQuestion.targetCount;
+  if(arGame.zoneCount < target) return;
+  arGame.zoneLocked = true;
+  const cards = Array.from($('ar-count-zone').querySelectorAll('.ar-card'));
+  const correct = cards.every(c=>c.dataset.itemKey===arGame.countQuestion.targetKey);
+  if(correct) levelSuccess(); else levelMistake();
 }
 function returnCardToPool(card){
   card.classList.remove('dragging');
@@ -998,9 +1324,10 @@ function levelMistake(){
   arGame.mistakes++;
   playWrong();
   mascotOops();
+  const cat = catById(arGame.catId);
+  if(cat.mode==='count'){ countLevelMistake(cat); return; }
   const slots = Array.from($('ar-slot-row').children);
   slots.forEach(s=>s.classList.add('wrong-flash'));
-  const cat = catById(arGame.catId);
   showARHint(cat.mode==='math'
     ? '🤔 ยังไม่ถูกนะ ลองหยิบการ์ดคำตอบใหม่ดูสิ!'
     : (cat.lang==='th' ? '🤔 ยังไม่ถูกนะ ลองสลับคำใหม่ดูสิ!' : '🤔 Not quite right — try again!'));
@@ -1016,6 +1343,17 @@ function levelMistake(){
   }, 1000);
 }
 
+function countLevelMistake(cat){
+  $('ar-count-zone').classList.add('wrong-flash');
+  showARHint('🤔 ยังไม่ถูกนะ ลองหยิบใหม่ดูสิ!');
+  setTimeout(()=>{
+    $('ar-count-zone').classList.remove('wrong-flash');
+    arGame.zoneCount = 0;
+    arGame.zoneLocked = false;
+    scatterCountItems(arGame.countQuestion); // resets the zone's contents (including the tally line) fresh
+  }, 1000);
+}
+
 function levelSuccess(){
   playCorrect();
   mascotHappy();
@@ -1026,7 +1364,9 @@ function levelSuccess(){
     ? '🎉 เก่งมาก! คำนวณถูกต้อง!'
     : cat.mode==='match'
       ? (cat.lang==='th' ? '🎉 เก่งมาก! โยงเส้นถูกต้องหมดเลย!' : '🎉 Great job! All lines matched correctly!')
-      : (cat.lang==='th' ? '🎉 เก่งมาก! ต่อประโยคถูกต้อง!' : '🎉 Great job! Sentence is correct!'));
+      : cat.mode==='count'
+        ? '🎉 เก่งมาก! หยิบของถูกต้องครบเลย!'
+        : (cat.lang==='th' ? '🎉 เก่งมาก! ต่อประโยคถูกต้อง!' : '🎉 Great job! Sentence is correct!'));
   $('ar-progress-fill').style.width = (arGame.level/arGame.totalLevels*100)+'%';
   setTimeout(()=>{
     if(arGame.level >= arGame.totalLevels){ finishARGame(); }
@@ -1085,7 +1425,7 @@ function updateArCursor(pageX, pageY, pinching){
   }
 
   const hoverCard = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-card:not(.placed)');
-  const hoverSlot = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-slot:not(.filled)');
+  const hoverSlot = hoveredEl && hoveredEl.closest && (hoveredEl.closest('.ar-slot:not(.filled)') || hoveredEl.closest('.ar-count-zone'));
 
   if(pinching){
     if(!arWasPinching && !arDraggingCard && hoverCard){ startDragCard(hoverCard, 'hand'); }
@@ -1199,12 +1539,17 @@ function stopARGame(){
 
 /* ---- game flow ---- */
 function startARGame(catId){
+  const startCat = catById(catId);
+  if(startCat.desktopOnly && isMobileViewport()){
+    showToast('🖥️','เกมนี้เล่นได้บนแท็บเล็ตหรือคอมพิวเตอร์เท่านั้นนะ!');
+    return;
+  }
   stopARGame();
   lastGameType = 'ar'; lastCatId = catId;
   arGame = { catId, level:1, mistakes:0, totalLevels: catById(catId).levels };
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
