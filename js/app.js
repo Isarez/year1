@@ -1455,21 +1455,68 @@ function levelSuccess(){
   }, 1300);
 }
 
-/* ---- hand tracking (MediaPipe Hands) ---- */
-function drawHandSkeleton(ctx, lm, w, h){
-  const pts = lm.map(p=>({x:(1-p.x)*w, y:p.y*h}));
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = 'rgba(255,255,255,.85)';
-  HAND_CONNECTIONS.forEach(([a,b])=>{
-    ctx.beginPath(); ctx.moveTo(pts[a].x,pts[a].y); ctx.lineTo(pts[b].x,pts[b].y); ctx.stroke();
-  });
-  pts.forEach((p,i)=>{
+/* ---- hand tracking (MediaPipe Hands) — flat cartoon hand, drawn on canvas ----
+   สไตล์อ้างอิงจาก assets/example/hand_1.png (สีพื้นเรียบ ไม่มีเส้นขอบ, นิ้วมนอวบ)
+   แต่วาดสดจาก landmark จริงทุกเฟรม (ไม่ใช่รูปนิ่ง) เพื่อให้นิ้วขยับ/งอตามมือจริง ไม่แข็งค้าง */
+function drawCartoonHand(ctx, lm, W, H){
+  const pts = lm.map(p=>({x:(1-p.x)*W, y:p.y*H}));
+  const blen = (a,b)=> Math.hypot(b.x-a.x, b.y-a.y);
+
+  const SKIN   = '#FFDDCE';
+  const SHADOW = '#FFCBBE';
+
+  /* วาดเส้นโค้งนุ่มๆ ผ่านจุดข้อนิ้วทุกจุด (แทนเส้นตรงต่อกันเป็นท่อนๆ ที่ดูแข็ง)
+     ใช้ quadraticCurveTo โดยจุดควบคุมคือ joint จริง ปลายทางคือจุดกึ่งกลางระหว่าง joint ถัดไป (Catmull-like smoothing) */
+  function smoothFinger(jts, width){
+    const n = jts.length;
     ctx.beginPath();
-    ctx.fillStyle = (i===4) ? '#FF6161' : (i===8) ? '#33B7EE' : '#FFC53D';
-    ctx.arc(p.x, p.y, (i===4||i===8) ? 7 : 5, 0, Math.PI*2);
-    ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.stroke();
+    ctx.moveTo(jts[0].x, jts[0].y);
+    for(let i=1;i<n-1;i++){
+      const mx=(jts[i].x+jts[i+1].x)/2, my=(jts[i].y+jts[i+1].y)/2;
+      ctx.quadraticCurveTo(jts[i].x, jts[i].y, mx, my);
+    }
+    ctx.lineTo(jts[n-1].x, jts[n-1].y);
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.lineWidth=width; ctx.strokeStyle=SKIN; ctx.stroke();
+  }
+
+  /* ฝ่ามือ — rounded polygon เติมสีพื้น ให้ฐานนิ้วเชื่อมเป็นเนื้อเดียว */
+  const wLen = blen(pts[5], pts[17]) * 0.4;
+  const dx = pts[0].x-pts[9].x, dy = pts[0].y-pts[9].y, r = Math.hypot(dx,dy)||1;
+  const wl = {x:pts[0].x-dy/r*wLen, y:pts[0].y+dx/r*wLen};
+  const wr = {x:pts[0].x+dy/r*wLen, y:pts[0].y-dx/r*wLen};
+  ctx.beginPath();
+  ctx.moveTo(wl.x, wl.y);
+  [5,9,13,17].forEach(i=> ctx.lineTo(pts[i].x, pts[i].y));
+  ctx.lineTo(wr.x, wr.y);
+  ctx.closePath();
+  ctx.fillStyle=SKIN; ctx.fill();
+
+  /* เงาอ่อนๆ ตรงโคนนิ้ว ให้มีมิติแบบภาพต้นแบบ (ไม่ใช่เส้นขอบ แค่ accent สีเข้มขึ้นนิดหน่อย) */
+  [5,9,13,17].forEach(i=>{
+    ctx.beginPath();
+    ctx.ellipse(pts[i].x, pts[i].y, blen(pts[0],pts[i])*0.09, blen(pts[0],pts[i])*0.09, 0,0,Math.PI*2);
+    ctx.fillStyle=SHADOW; ctx.fill();
   });
+
+  /* 5 นิ้ว — ความหนาคำนวณจาก bone length จริง (chubby, มนกลม, สเกลอัตโนมัติทุกขนาดจอ) */
+  smoothFinger([pts[1],pts[2],pts[3],pts[4]],     blen(pts[1],pts[2])*1.05); // โป้ง
+  smoothFinger([pts[5],pts[6],pts[7],pts[8]],     blen(pts[5],pts[6])*0.85); // ชี้
+  smoothFinger([pts[9],pts[10],pts[11],pts[12]],  blen(pts[9],pts[10])*0.85); // กลาง
+  smoothFinger([pts[13],pts[14],pts[15],pts[16]], blen(pts[13],pts[14])*0.85); // นาง
+  smoothFinger([pts[17],pts[18],pts[19],pts[20]], blen(pts[17],pts[18])*0.85); // ก้อย
+
+  /* indicator นิ้วโป้ง (pinch) */
+  const pr = blen(pts[3],pts[4])*0.45;
+  ctx.beginPath(); ctx.arc(pts[4].x,pts[4].y, pr,0,Math.PI*2);
+  ctx.fillStyle='#FF6161'; ctx.fill();
+  ctx.lineWidth=2.5; ctx.strokeStyle='#fff'; ctx.stroke();
+
+  /* indicator นิ้วชี้ (cursor) */
+  const ir = blen(pts[7],pts[8])*0.45;
+  ctx.beginPath(); ctx.arc(pts[8].x,pts[8].y, ir,0,Math.PI*2);
+  ctx.fillStyle='#33B7EE'; ctx.fill();
+  ctx.lineWidth=2.5; ctx.strokeStyle='#fff'; ctx.stroke();
 }
 
 function updateArCursor(pageX, pageY, pinching){
@@ -1534,7 +1581,7 @@ function arDrawLoop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(arLandmarks){
-    drawHandSkeleton(ctx, arLandmarks, canvas.width, canvas.height);
+    drawCartoonHand(ctx, arLandmarks, canvas.width, canvas.height);
     const idx = arLandmarks[8], thumb = arLandmarks[4];
     const ix = (1-idx.x)*canvas.width,   iy = idx.y*canvas.height;
     const tx = (1-thumb.x)*canvas.width, ty = thumb.y*canvas.height;
