@@ -10,7 +10,11 @@ const CHILD_AVATARS = [
   '🐶','🐱','🐰','🐻','🐼','🦊',
   '🐸','🐧','🦄','🦋','🦕','🐙',
   '🦁','🐯','🐨','🐹','🦔','🦦',
-  '🌟','🌈','🚀','🎈','🍦','🎀'
+  '🌟','🌈','🚀','🎈','🍦','🎀',
+  '🐷','🐮','🐵','🐔','🦉','🦖',
+  '🐬','🐳','🦈','🐞','🐝','🦜',
+  '🐺','🦝','🦥','🐿️','🦩','🐢',
+  '🍭','🍩','🍪','🧁','⚽','🎨'
 ];
 let selectedEmoji = CHILD_AVATARS[0];
 
@@ -67,14 +71,14 @@ function enterHome(){
 }
 
 function updateHeaderChild(){
-  const switchBtn = $('switch-child-btn');
+  const chipGroup = $('child-chip-group');
   if(activeChild){
     $('header-child-emoji').textContent = activeChild.emoji || '👤';
     $('header-child-name').textContent = activeChild.name;
-    switchBtn.hidden = false;
+    chipGroup.hidden = false;
     $('brand-sub').textContent = 'สวัสดี '+activeChild.name+' 👋';
   } else {
-    switchBtn.hidden = true;
+    chipGroup.hidden = true;
     $('brand-sub').textContent = 'เก็บสติกเกอร์ให้ครบทุกหมวด!';
   }
 }
@@ -97,6 +101,8 @@ function renderChildSelect(){
     csSub.textContent = 'เลือกชื่อได้เลย 😊';
     children.forEach(child=>{
       const stars = totalStarsForChild(child.id);
+      const row = document.createElement('div');
+      row.className = 'child-row';
       const card = document.createElement('button');
       card.className = 'child-card';
       const avSpan = document.createElement('span');
@@ -119,7 +125,15 @@ function renderChildSelect(){
       card.appendChild(cinfo);
       card.appendChild(arrow);
       card.addEventListener('click', ()=>{ playClick(); selectChild(child.id); });
-      listEl.appendChild(card);
+      const editBtn = document.createElement('button');
+      editBtn.className = 'child-edit-btn';
+      editBtn.type = 'button';
+      editBtn.setAttribute('aria-label','แก้ไข Emoji');
+      editBtn.textContent = '✏️';
+      editBtn.addEventListener('click', ()=>{ playClick(); openEditEmojiModal(child.id); });
+      row.appendChild(card);
+      row.appendChild(editBtn);
+      listEl.appendChild(row);
     });
     addForm.hidden = true;
     addNewBtn.hidden = false;
@@ -411,6 +425,16 @@ function renderHome(){
     card.className = 'cat-card'+(locked?' cat-locked':'');
     card.style.setProperty('--cat-light', locked?'#EEEEEE':cat.light);
     card.style.setProperty('--cat-color', locked?'#AAAAAA':cat.color);
+    /* ตัวเข้าฉาก (cardIn) ใช้ fill-mode:forwards ค้าง transform:scale(1) ไว้ตลอดไปด้วย
+       "animation priority" ซึ่งชนะ transition ของ :hover เสมอ (แม้ animation จะจบไปนานแล้ว)
+       ทำให้ hover scale ไม่ขยับเลย — พอ animation จบ เปลี่ยนมาใช้ class ".settled" (ปกติ ไม่ใช่ animation)
+       แทนเพื่อคง transform:scale(1) ไว้ ให้ :hover (ซึ่ง specificity สูงกว่า) แข่งขันชนะได้ตามปกติ
+       (ห้ามลบ animation ตรงๆ เฉยๆ เพราะจะ fallback กลับไป base style transform:scale(.85) ทันทีเหมือนย่อกลับ) */
+    card.addEventListener('animationend', function onCardInEnd(){
+      card.classList.add('settled');
+      card.style.animation = 'none';
+      card.removeEventListener('animationend', onCardInEnd);
+    }, {once:true});
     const total = (cat.type==='ar' || cat.type==='skill') ? cat.levels : cat.questions.length;
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
@@ -930,6 +954,16 @@ function loadMediaPipeScripts(){
   return _mpLoadPromise;
 }
 
+/* สุ่ม index ที่ยังไม่เคยใช้ใน usedSet ของรอบนี้ (กันด่านซ้ำ) ถ้าใช้ครบทุกตัวในพูลแล้วค่อยเคลียร์เริ่มใหม่ */
+function pickNoRepeatIdx(usedSet, poolLength){
+  if(poolLength<=0) return 0;
+  if(usedSet.size >= poolLength) usedSet.clear();
+  let idx;
+  do{ idx = Math.floor(Math.random()*poolLength); } while(usedSet.has(idx));
+  usedSet.add(idx);
+  return idx;
+}
+
 function buildLevel(catId){
   const cat = catById(catId);
   $('ar-math-problem').hidden = true;
@@ -943,7 +977,8 @@ function buildLevel(catId){
   const level = arGame.level;
   const wordCount = level<=3 ? 3 : (level<=6 ? 4 : 5);
   const pool = AR_SENTENCES[cat.lang][wordCount];
-  const sentence = pool[Math.floor(Math.random()*pool.length)];
+  if(!arGame.usedSentenceIdx[wordCount]) arGame.usedSentenceIdx[wordCount] = new Set();
+  const sentence = pool[pickNoRepeatIdx(arGame.usedSentenceIdx[wordCount], pool.length)];
   renderSlotsAndCards(sentence);
   showARHint(isMobileViewport()
     ? (cat.lang==='th' ? '👆 แตะคำแล้วลากไปเรียงในช่องให้ถูกลำดับนะ!' : '👆 Tap a word card and drag it into the right box!')
@@ -1062,7 +1097,12 @@ function buildMatchLevel(cat){
   const level = arGame.level;
   const n = level<=3 ? 3 : (level<=6 ? 4 : 5);
   const pool = AR_MATCH_ITEMS[cat.lang || 'th'];
-  const items = shuffleArray(pool.slice()).slice(0, n);
+  /* เลือกคู่ที่ยังไม่เคยออกในรอบนี้ก่อน กันด่านซ้ำ ถ้าเหลือไม่พอสำหรับด่านนี้ค่อยเคลียร์แล้วเริ่มใหม่ */
+  let availableIdx = pool.map((_,i)=>i).filter(i=>!arGame.usedMatchKeys.has(i));
+  if(availableIdx.length < n){ arGame.usedMatchKeys.clear(); availableIdx = pool.map((_,i)=>i); }
+  const chosenIdx = shuffleArray(availableIdx).slice(0, n);
+  chosenIdx.forEach(i=>arGame.usedMatchKeys.add(i));
+  const items = chosenIdx.map(i=>pool[i]);
   renderMatchPairs(items, n);
   showARHint(isMobileViewport()
     ? (cat.lang==='th' ? '👆 แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกันนะ!' : '👆 Tap a dot and drag a line to its matching answer!')
@@ -1110,9 +1150,8 @@ function buildCountLevel(cat){
   const level = arGame.level;
   const tier = level<=3 ? 'easy' : (level<=6 ? 'medium' : 'hard');
   const pool = AR_COUNT_QUESTIONS[tier];
-  let idx = Math.floor(Math.random()*pool.length);
-  if(pool.length>1 && arGame.lastCountIndex===idx){ idx = (idx+1)%pool.length; }
-  arGame.lastCountIndex = idx;
+  if(!arGame.usedCountIdx[tier]) arGame.usedCountIdx[tier] = new Set();
+  const idx = pickNoRepeatIdx(arGame.usedCountIdx[tier], pool.length);
   const q = pool[idx];
   arGame.countQuestion = q;
   arGame.zoneCount = 0;
@@ -1462,49 +1501,105 @@ function drawCartoonHand(ctx, lm, W, H){
   const pts = lm.map(p=>({x:(1-p.x)*W, y:p.y*H}));
   const blen = (a,b)=> Math.hypot(b.x-a.x, b.y-a.y);
 
-  const SKIN   = '#FFDDCE';
-  const SHADOW = '#FFCBBE';
+  const SKIN    = '#FFDDCE';
+  const OUTLINE = '#E8A67F';
+  const outlineW = Math.max(1.5, blen(pts[0],pts[9])*0.03);
 
-  /* วาดเส้นโค้งนุ่มๆ ผ่านจุดข้อนิ้วทุกจุด (แทนเส้นตรงต่อกันเป็นท่อนๆ ที่ดูแข็ง)
-     ใช้ quadraticCurveTo โดยจุดควบคุมคือ joint จริง ปลายทางคือจุดกึ่งกลางระหว่าง joint ถัดไป (Catmull-like smoothing) */
-  function smoothFinger(jts, width){
-    const n = jts.length;
-    ctx.beginPath();
-    ctx.moveTo(jts[0].x, jts[0].y);
-    for(let i=1;i<n-1;i++){
-      const mx=(jts[i].x+jts[i+1].x)/2, my=(jts[i].y+jts[i+1].y)/2;
-      ctx.quadraticCurveTo(jts[i].x, jts[i].y, mx, my);
+  /* นิ้ว (ทุกนิ้ว) — ทรงสามเหลี่ยมขอบมน ไล่ความอวบจากโคน (กว้าง) ไปปลาย (แคบ) แบบต่อเนื่อง
+     คำนวณ half-width ที่แต่ละข้อนิ้วแบบ interpolate เชิงเส้นจาก baseHalf→tipHalf แล้ว fill เป็น polygon เดียว
+     ปลายมนด้วย quadratic curve ผ่านจุดปลายนิ้วจริง, โคนกว้างกว่าเดิมเล็กน้อยให้จมเข้าไปในฝ่ามือ เชื่อมต่อกันเนียน ไม่มีรอยต่อ */
+  function drawFinger(jts, baseHalf, tipHalf, extend){
+    /* extend: ยืดปลายนิ้ว (jts สุดท้าย) ออกไปอีกเล็กน้อยตามทิศทางท่อนสุดท้าย ให้นิ้วดูยาวสมส่วนขึ้น (เกินตำแหน่ง landmark จริงนิดหน่อย) */
+    if(extend){
+      const n0 = jts.length;
+      const bx=jts[n0-1].x-jts[n0-2].x, by=jts[n0-1].y-jts[n0-2].y, bl=Math.hypot(bx,by)||1;
+      jts = [...jts.slice(0,n0-1), {x:jts[n0-1].x+bx/bl*extend, y:jts[n0-1].y+by/bl*extend}];
     }
-    ctx.lineTo(jts[n-1].x, jts[n-1].y);
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.lineWidth=width; ctx.strokeStyle=SKIN; ctx.stroke();
+    const n = jts.length;
+    const L=[], R=[];
+    for(let i=0;i<n;i++){
+      const seg = i<n-1 ? [jts[i],jts[i+1]] : [jts[i-1],jts[i]];
+      const t  = i/(n-1);
+      const hw = baseHalf + (tipHalf-baseHalf)*t;
+      const ddx=seg[1].x-seg[0].x, ddy=seg[1].y-seg[0].y, rr=Math.hypot(ddx,ddy)||1;
+      L.push({x:jts[i].x-ddy/rr*hw, y:jts[i].y+ddx/rr*hw});
+      R.push({x:jts[i].x+ddy/rr*hw, y:jts[i].y-ddx/rr*hw});
+    }
+    /* เส้นข้างทั้งสองฝั่งใช้ quadraticCurveTo ผ่านจุดกึ่งกลางข้อต่อ (แทน lineTo ตรงๆ) ให้ไม่เห็นเหลี่ยมตรงข้อนิ้วเลย */
+    ctx.beginPath();
+    ctx.moveTo(L[0].x, L[0].y);
+    for(let i=1;i<n-1;i++){
+      const mx=(L[i].x+L[i+1].x)/2, my=(L[i].y+L[i+1].y)/2;
+      ctx.quadraticCurveTo(L[i].x, L[i].y, mx, my);
+    }
+    ctx.quadraticCurveTo(L[n-1].x, L[n-1].y, jts[n-1].x, jts[n-1].y);
+    ctx.quadraticCurveTo(R[n-1].x, R[n-1].y, R[n-2].x, R[n-2].y);
+    for(let i=n-2;i>=1;i--){
+      const mx=(R[i].x+R[i-1].x)/2, my=(R[i].y+R[i-1].y)/2;
+      ctx.quadraticCurveTo(R[i].x, R[i].y, mx, my);
+    }
+    ctx.lineTo(R[0].x, R[0].y);
+    /* ไม่ closePath ก่อน stroke: fill() ยังปิดรูปให้อัตโนมัติเหมือนเดิม แต่ stroke() จะไม่ลากเส้นปิดที่โคนนิ้ว
+       (กันไม่ให้เห็นเส้นตัดขวางโคนนิ้วทับบนฝ่ามือ) */
+    ctx.fillStyle=SKIN; ctx.fill();
+    ctx.lineWidth=outlineW; ctx.strokeStyle=OUTLINE; ctx.stroke();
   }
 
-  /* ฝ่ามือ — rounded polygon เติมสีพื้น ให้ฐานนิ้วเชื่อมเป็นเนื้อเดียว */
-  const wLen = blen(pts[5], pts[17]) * 0.4;
-  const dx = pts[0].x-pts[9].x, dy = pts[0].y-pts[9].y, r = Math.hypot(dx,dy)||1;
-  const wl = {x:pts[0].x-dy/r*wLen, y:pts[0].y+dx/r*wLen};
-  const wr = {x:pts[0].x+dy/r*wLen, y:pts[0].y-dx/r*wLen};
-  ctx.beginPath();
-  ctx.moveTo(wl.x, wl.y);
-  [5,9,13,17].forEach(i=> ctx.lineTo(pts[i].x, pts[i].y));
-  ctx.lineTo(wr.x, wr.y);
-  ctx.closePath();
-  ctx.fillStyle=SKIN; ctx.fill();
-
-  /* เงาอ่อนๆ ตรงโคนนิ้ว ให้มีมิติแบบภาพต้นแบบ (ไม่ใช่เส้นขอบ แค่ accent สีเข้มขึ้นนิดหน่อย) */
-  [5,9,13,17].forEach(i=>{
-    ctx.beginPath();
-    ctx.ellipse(pts[i].x, pts[i].y, blen(pts[0],pts[i])*0.09, blen(pts[0],pts[i])*0.09, 0,0,Math.PI*2);
-    ctx.fillStyle=SHADOW; ctx.fill();
+  /* ฝ่ามือ — โค้งมนรอบด้าน ไม่มีเหลี่ยม และขยายใหญ่ขึ้นให้สมส่วนกับนิ้ว
+     วิธี: ขยายจุดขอบทุกจุดออกจากจุดศูนย์กลางฝ่ามือ แล้วลากเส้นโค้งผ่านจุดกึ่งกลางระหว่างแต่ละคู่ (rounded-corner polygon) */
+  const palmCenter = {
+    x:(pts[0].x+pts[5].x+pts[9].x+pts[13].x+pts[17].x)/5,
+    y:(pts[0].y+pts[5].y+pts[9].y+pts[13].y+pts[17].y)/5,
+  };
+  const bulge = (p, factor)=>({
+    x: palmCenter.x + (p.x-palmCenter.x)*factor,
+    y: palmCenter.y + (p.y-palmCenter.y)*factor,
   });
 
-  /* 5 นิ้ว — ความหนาคำนวณจาก bone length จริง (chubby, มนกลม, สเกลอัตโนมัติทุกขนาดจอ) */
-  smoothFinger([pts[1],pts[2],pts[3],pts[4]],     blen(pts[1],pts[2])*1.05); // โป้ง
-  smoothFinger([pts[5],pts[6],pts[7],pts[8]],     blen(pts[5],pts[6])*0.85); // ชี้
-  smoothFinger([pts[9],pts[10],pts[11],pts[12]],  blen(pts[9],pts[10])*0.85); // กลาง
-  smoothFinger([pts[13],pts[14],pts[15],pts[16]], blen(pts[13],pts[14])*0.85); // นาง
-  smoothFinger([pts[17],pts[18],pts[19],pts[20]], blen(pts[17],pts[18])*0.85); // ก้อย
+  const wLen = blen(pts[5], pts[17]) * 0.72;
+  const dx = pts[0].x-pts[9].x, dy = pts[0].y-pts[9].y, r = Math.hypot(dx,dy)||1;
+  const wristBase = bulge(pts[0], 1.35);
+  const wA = {x:wristBase.x-dy/r*wLen, y:wristBase.y+dx/r*wLen};
+  const wB = {x:wristBase.x+dy/r*wLen, y:wristBase.y-dx/r*wLen};
+  /* ฝั่งไหนใกล้โคนนิ้วโป้ง (pts[1]) มากกว่า ให้เป็นขอบข้อมือด้านนิ้วโป้ง จะได้แทรกจุดฐานนิ้วโป้งต่อให้เนียน ไม่มีช่องว่าง */
+  const wristThumbSide = blen(wA,pts[1]) < blen(wB,pts[1]) ? wA : wB;
+  const wristPinkySide = wristThumbSide===wA ? wB : wA;
+  const thumbBase = bulge(pts[1], 1.22);
+
+  const palmPts = [wristThumbSide, thumbBase, bulge(pts[5],1.32), bulge(pts[9],1.28), bulge(pts[13],1.32), bulge(pts[17],1.36), wristPinkySide];
+  const n = palmPts.length;
+  const mid = (a,b)=>({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+  ctx.beginPath();
+  const startMid = mid(palmPts[n-1], palmPts[0]);
+  ctx.moveTo(startMid.x, startMid.y);
+  for(let i=0;i<n;i++){
+    const cur = palmPts[i], nxt = palmPts[(i+1)%n];
+    const m = mid(cur, nxt);
+    ctx.quadraticCurveTo(cur.x, cur.y, m.x, m.y);
+  }
+  ctx.closePath();
+  ctx.fillStyle=SKIN; ctx.fill();
+  ctx.lineWidth=outlineW; ctx.strokeStyle=OUTLINE; ctx.stroke();
+
+  /* ความหนาโคนนิ้วแต่ละนิ้ว (ใช้ทั้งวาดปลอกคอเชื่อมฝ่ามือ และวาดตัวนิ้วเอง ให้ตรงกันเป๊ะ) */
+  const thumbHalf=blen(pts[1],pts[2])*0.48;
+  const idxBase=blen(pts[5],pts[6])*0.44, midBase=blen(pts[9],pts[10])*0.46,
+        ringBase=blen(pts[13],pts[14])*0.44, pinkyBase=blen(pts[17],pts[18])*0.36;
+
+  /* ปลอกคอ (collar) วงกลมสีเนื้อทับรอยต่อโคนนิ้วกับฝ่ามือ (รวมนิ้วโป้งด้วย) ปิดรอยหยักเว้าของเส้นขอบฝ่ามือให้เนียนสนิท ไม่เห็นรอยต่อ/เหลี่ยม */
+  [[1,thumbHalf],[5,idxBase],[9,midBase],[13,ringBase],[17,pinkyBase]].forEach(([i,half])=>{
+    ctx.beginPath();
+    ctx.arc(pts[i].x, pts[i].y, half*1.08, 0, Math.PI*2);
+    ctx.fillStyle=SKIN; ctx.fill();
+  });
+
+  /* 5 นิ้ว — นิ้วชี้/กลาง/นาง/ก้อย ยืดปลายออกอีกนิด (extend) ให้ดูยาวสมส่วนขึ้นกว่าความยาว landmark ตรงๆ
+     ความหนาไล่ต่อเนื่องจากโคนไปปลายแบบสามเหลี่ยมขอบมน (ทรง/ความหนาต่างกันตามสัดส่วนนิ้วจริง) */
+  drawFinger([pts[1],pts[2],pts[3],pts[4]],       thumbHalf, blen(pts[1],pts[2])*0.24); // โป้ง: สั้น ป้อม (เชื่อมผ่านปลอกคอ+thumbBase ในฝ่ามือแล้ว)
+  drawFinger([pts[5],pts[6],pts[7],pts[8]],       idxBase,   blen(pts[5],pts[6])*0.22,   blen(pts[7],pts[8])*0.48); // ชี้
+  drawFinger([pts[9],pts[10],pts[11],pts[12]],    midBase,   blen(pts[9],pts[10])*0.23,  blen(pts[11],pts[12])*0.48); // กลาง: นิ้วยาวสุด หนาสุด
+  drawFinger([pts[13],pts[14],pts[15],pts[16]],   ringBase,  blen(pts[13],pts[14])*0.22, blen(pts[15],pts[16])*0.48); // นาง
+  drawFinger([pts[17],pts[18],pts[19],pts[20]],   pinkyBase, blen(pts[17],pts[18])*0.19, blen(pts[19],pts[20])*0.30); // ก้อย: เรียวสุด
 
   /* indicator นิ้วโป้ง (pinch) */
   const pr = blen(pts[3],pts[4])*0.45;
@@ -1646,6 +1741,42 @@ async function initHandTracking(){
     msgEl.hidden = false;
     arActive = false;
   }
+  updateCameraToggleBtn();
+}
+
+/* หยุดเฉพาะกล้อง/hand-tracking โดยไม่ออกจากเกม (ต่างจาก stopARGame ที่ออกจากเกมทั้งหมด)
+   ใช้กับปุ่มเปิด-ปิดกล้อง ให้เด็กสลับไปลากด้วยนิ้ว/เมาส์ต่อได้เลยโดยไม่ต้องออกจากด่าน */
+function stopCameraOnly(){
+  arActive = false;
+  arLandmarks = null;
+  arWasPinching = false;
+  if(arRafId){ cancelAnimationFrame(arRafId); arRafId = null; }
+  if(arCamera){ try{ arCamera.stop(); }catch(e){} arCamera = null; }
+  if(arStream){ arStream.getTracks().forEach(t=>t.stop()); arStream = null; }
+  if(arResizeHandler){ window.removeEventListener('resize', arResizeHandler); arResizeHandler = null; }
+  arHands = null;
+  const cursorEl = $('ar-cursor');
+  if(cursorEl) cursorEl.classList.remove('active');
+}
+
+function updateCameraToggleBtn(){
+  const btn = $('ar-camera-toggle');
+  if(!btn) return;
+  const label = arActive ? 'ปิดกล้อง' : 'เปิดกล้อง';
+  btn.classList.toggle('muted', !arActive);
+  btn.setAttribute('aria-label', label);
+  btn.dataset.tooltip = label;
+}
+
+function toggleARCamera(){
+  if(isMobileViewport()) return; // ปุ่มนี้ไม่แสดงบนมือถืออยู่แล้ว กันไว้อีกชั้น
+  if(arActive){
+    stopCameraOnly();
+    updateCameraToggleBtn();
+    showToast('📷','ปิดกล้องแล้ว ใช้นิ้ว/เมาส์ลากคำได้เลย!');
+  } else {
+    initHandTracking().then(updateCameraToggleBtn);
+  }
 }
 
 function stopARGame(){
@@ -1674,9 +1805,11 @@ function startARGame(catId){
   }
   stopARGame();
   lastGameType = 'ar'; lastCatId = catId;
-  arGame = { catId, level:1, mistakes:0, totalLevels: catById(catId).levels };
+  arGame = { catId, level:1, mistakes:0, totalLevels: catById(catId).levels,
+    usedSentenceIdx:{}, usedMatchKeys:new Set(), usedCountIdx:{} }; // กันด่านซ้ำภายในรอบเดียวกัน (สุ่มแบบไม่ซ้ำ)
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
+  $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
@@ -1746,6 +1879,11 @@ $('ar-back').addEventListener('click', ()=>{
   arView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
+});
+
+$('ar-camera-toggle').addEventListener('click', ()=>{
+  playClick();
+  toggleARCamera();
 });
 
 /* ============================= SOUND TOGGLE ============================= */
@@ -1944,6 +2082,56 @@ $('delete-child-btn').addEventListener('click', ()=>{
 });
 
 $('clear-btn').addEventListener('click', ()=>{ playClick(); showClearModal(); });
+
+/* ============================= EDIT EMOJI (สำหรับเด็กที่มีชื่อแล้ว อยากเปลี่ยน avatar)
+   เปิดได้ 2 ทาง: ปุ่ม ✏️ คู่กับชื่อเด็กใน header (แก้ activeChild) และปุ่ม ✏️ คู่กับการ์ดเด็กแต่ละคน
+   ในหน้าเลือกโปรไฟล์ (แก้เด็กคนไหนก็ได้ ไม่ต้อง select เข้าไปก่อน) — ใช้ editingChildId เก็บว่ากำลังแก้ใคร ============================= */
+let editEmojiSelected = null;
+let editingChildId = null;
+function initEditEmojiPicker(currentEmoji){
+  editEmojiSelected = currentEmoji;
+  const picker = $('edit-emoji-picker');
+  picker.innerHTML = '';
+  CHILD_AVATARS.forEach(em=>{
+    const btn = document.createElement('button');
+    btn.className = 'emo-btn'+(em===editEmojiSelected?' selected':'');
+    btn.textContent = em;
+    btn.type = 'button';
+    btn.addEventListener('click', ()=>{
+      editEmojiSelected = em;
+      picker.querySelectorAll('.emo-btn').forEach(b=>b.classList.toggle('selected', b.textContent===em));
+      playClick();
+    });
+    picker.appendChild(btn);
+  });
+}
+function openEditEmojiModal(childId){
+  const child = children.find(c=>c.id===childId);
+  if(!child) return;
+  editingChildId = childId;
+  initEditEmojiPicker(child.emoji);
+  openOverlay('edit-emoji-modal');
+}
+$('header-edit-emoji-btn').addEventListener('click', ()=>{
+  playClick();
+  if(activeChild) openEditEmojiModal(activeChild.id);
+});
+$('edit-emoji-cancel-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('edit-emoji-modal'); });
+$('edit-emoji-modal-backdrop').addEventListener('click', ()=> closeOverlay('edit-emoji-modal'));
+$('edit-emoji-save-btn').addEventListener('click', ()=>{
+  playClick();
+  const rec = children.find(c=>c.id===editingChildId);
+  if(rec && editEmojiSelected){
+    rec.emoji = editEmojiSelected;
+    if(activeChild && activeChild.id===editingChildId) activeChild.emoji = editEmojiSelected;
+    saveChildren();
+    updateHeaderChild();
+    renderHome();
+    if(!$('child-select-view').hidden) renderChildSelect();
+    showToast('✅','เปลี่ยน avatar แล้วจ้า!');
+  }
+  closeOverlay('edit-emoji-modal');
+});
 
 /* ============================= BUY ME A MILK ============================= */
 $('install-toggle').addEventListener('click', ()=>{ playClick(); openOverlay('install-modal'); });

@@ -167,19 +167,21 @@
     transition:transform .15s ease, background .15s ease;
   }
   .icon-btn:active{transform:translateY(3px); box-shadow:none;}
-  .icon-btn .icon-inner{
+  .icon-btn .icon-inner, .back-btn .icon-inner{
     position:relative; width:100%; height:100%; border-radius:50%;
     overflow:hidden; display:flex; align-items:center; justify-content:center;
   }
-  .icon-btn .icon-glyph{display:inline-block;}
-  .icon-btn.muted .icon-glyph{opacity:.4; filter:grayscale(1);}
-  .icon-btn .mute-stripe{
+  .icon-btn .icon-glyph, .back-btn .icon-glyph{display:inline-block;}
+  .icon-glyph.lens-icon{display:flex; align-items:center; justify-content:center;}
+  .icon-glyph.lens-icon svg{display:block;}
+  .icon-btn.muted .icon-glyph, .back-btn.muted .icon-glyph{opacity:.4; filter:grayscale(1);}
+  .icon-btn .mute-stripe, .back-btn .mute-stripe{
     display:none; position:absolute; top:50%; left:-15%; width:130%; height:3px;
     background:#FF6161; border-radius:3px;
     box-shadow:0 0 0 1.5px rgba(255,255,255,.85);
     transform:translateY(-50%) rotate(-40deg);
   }
-  .icon-btn.muted .mute-stripe{display:block;}
+  .icon-btn.muted .mute-stripe, .back-btn.muted .mute-stripe{display:block;}
   .icon-btn[data-tooltip]::after{
     content:attr(data-tooltip);
     position:absolute; top:calc(100% + 10px); left:50%;
@@ -366,6 +368,19 @@
   .cs-inner h2{font-size:clamp(21px,5vw,26px); font-weight:800; color:var(--ink); margin-bottom:4px;}
   .cs-inner .cs-sub{font-size:clamp(15px,3.8vw,17px); color:var(--ink-soft); font-weight:600; margin-bottom:20px;}
   .child-list{display:flex; flex-direction:column; gap:10px; margin-bottom:4px;}
+  /* button group: การ์ดเลือกเด็ก (ซ้าย, ไซส์เท่าเดิม) + ปุ่มแก้ไข emoji (ขวา) เชื่อมเป็นก้อนเดียวกัน
+     มีเส้นแบ่งตรงกลาง เหมือน chip กลุ่มเดียวกันใน header (คงสี/ขอบ/เงาของ template เดิม แค่รวมทรง) */
+  .child-row{
+    display:flex; align-items:stretch; background:var(--cream);
+    border-radius:var(--radius-md); border:3px solid var(--cream-2);
+    box-shadow:var(--shadow-btn); overflow:hidden;
+  }
+  .child-row .child-card{border:none; box-shadow:none; border-radius:0; background:transparent;}
+  .child-row .child-edit-btn{
+    width:48px; height:auto; border-radius:0; font-size:18px;
+    box-shadow:none; border-left:3px solid var(--cream-2); background:transparent;
+  }
+  .child-row .child-edit-btn:active{transform:none; background:rgba(74,63,53,.06);}
   .child-card{
     width:100%; padding:13px 18px; border-radius:var(--radius-md);
     border:3px solid var(--cream-2); background:var(--cream);
@@ -407,7 +422,12 @@
     display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px;
     background:var(--cream); border-radius:var(--radius-md);
     padding:10px; border:3px solid var(--cream-2); margin-bottom:14px;
+    max-height:260px; overflow-y:auto; /* emoji เยอะขึ้น 2 เท่า ใส่ scrollbar กันกล่องยืดเกินจอ */
+    scrollbar-width:thin; scrollbar-color:var(--cat-color,#FFB020) var(--cream-2);
   }
+  .emoji-picker::-webkit-scrollbar{width:8px;}
+  .emoji-picker::-webkit-scrollbar-track{background:var(--cream-2); border-radius:8px;}
+  .emoji-picker::-webkit-scrollbar-thumb{background:var(--cat-color,#FFB020); border-radius:8px;}
   .emo-btn{
     min-width:0; width:100%;
     font-size:28px; border:3px solid transparent; border-radius:var(--radius-sm);
@@ -424,7 +444,7 @@
     transform:scale(1.18);
   }
   /* confirm modal */
-  #confirm-modal,#clear-modal,#qr-modal,#install-modal{
+  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal{
     position:fixed; inset:0; z-index:200;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
@@ -474,6 +494,27 @@
   }
   .child-chip:active{transform:translateY(2px); box-shadow:none;}
   #header-child-name{overflow:hidden; text-overflow:ellipsis; max-width:90px; display:inline-block;}
+  /* button group: ชื่อเด็ก (ซ้าย, ไซส์เท่าเดิม) + ปุ่มแก้ไข emoji (ขวา) เชื่อมเป็นปุ่มเดียวกัน มีเส้นแบ่งตรงกลาง
+     (คงสี/เงา/ฟอนต์ตาม template เดิม แค่เปลี่ยนทรงจาก 2 ปุ่มแยกเป็นกลุ่มเชื่อมต่อ) */
+  .child-chip-group{
+    display:flex; align-items:stretch;
+    background:var(--white); border-radius:999px; box-shadow:var(--shadow-btn); overflow:hidden;
+  }
+  .child-chip-group .child-chip{
+    background:transparent; box-shadow:none; border-radius:0;
+  }
+  .child-chip-group .child-edit-btn{
+    background:transparent; box-shadow:none; border-radius:0; width:auto;
+    padding:6px 12px; border-left:2px solid var(--cream-2);
+  }
+  .child-edit-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:32px; height:32px; flex-shrink:0;
+    background:var(--white); border:none; border-radius:50%;
+    box-shadow:var(--shadow-btn); font-size:14px; cursor:pointer; transition:transform .15s;
+  }
+  .child-edit-btn:active{transform:translateY(2px); box-shadow:none;}
+  .child-chip-group .child-edit-btn:active{transform:none; background:rgba(74,63,53,.06);}
 
   /* ---------- home view ---------- */
   .hero{text-align:center; margin:10px 0 24px;}
@@ -504,8 +545,12 @@
     box-shadow:var(--shadow-card);
     opacity:0; transform:scale(.85);
     animation:cardIn .55s cubic-bezier(.34,1.56,.64,1) forwards;
-    transition:transform .22s cubic-bezier(.34,1.3,.64,1), box-shadow .22s ease;
+    transition:transform .32s cubic-bezier(.34,1.3,.64,1), box-shadow .32s ease, z-index 0s;
+    will-change:transform;
   }
+  /* หลัง cardIn animation จบ (ดู animationend listener ใน renderHome()) จะติด class นี้แทนการค้าง animation ไว้
+     เพื่อคง transform:scale(1) แบบ normal-priority ให้ :hover (specificity สูงกว่า) override ได้จริง */
+  .cat-card.settled{ opacity:1; transform:scale(1); }
   /* shimmer ใช้ background-position animate (ไม่ขยับ element จึงไม่ต้อง overflow:hidden
      และ badge ที่โผล่เกินการ์ด top:-8px จะไม่ถูกตัด) */
   .cat-card:not(.cat-locked)::before{
@@ -515,8 +560,9 @@
     transition:none;
   }
   .cat-card:not(.cat-locked):hover{
-    transform:translateY(-8px) scale(1.04);
-    box-shadow:0 20px 40px rgba(74,63,53,.22), 0 6px 14px rgba(74,63,53,.12), 0 0 0 3px rgba(255,255,255,.95), 0 0 0 5px var(--cat-color);
+    transform:translateY(-14px) scale(1.13);
+    box-shadow:0 28px 54px rgba(74,63,53,.26), 0 10px 20px rgba(74,63,53,.14), 0 0 0 3px rgba(255,255,255,.95), 0 0 0 5px var(--cat-color);
+    z-index:4;
   }
   .cat-card:not(.cat-locked):hover::before{
     background-position:0% 0; transition:background-position .55s ease .05s;
@@ -747,6 +793,11 @@
     display:flex; align-items:center; justify-content:center; gap:6px;
     margin-top:16px; line-height:1;
   }
+  .visitor-badge{
+    height:16px; border-radius:4px; vertical-align:middle;
+    opacity:.85; filter:saturate(.85); transition:opacity .15s;
+  }
+  .visitor-badge:hover{opacity:1;}
   .bmm-btn{
     display:inline-flex; align-items:center; gap:4px; line-height:1;
     padding:4px 12px; border-radius:999px; border:none;
