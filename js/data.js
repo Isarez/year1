@@ -177,7 +177,20 @@ const CATS = [
   {
     id:'skill-memory', name:'จับคู่โดมิโน', emoji:'🎲', color:'#E0764C', light:'#FBE3D4',
     type:'skill', mode:'memory', levels:3, isNew:true
+  },
+  {
+    id:'skill-animals', name:'จับคู่สัตว์', emoji:'🦜', color:'#3A9A6E', light:'#D8F3DC',
+    type:'skill', mode:'animals', levels:3, isNew:true
   }
+];
+
+/* ============================= ANIMAL MATCH PAIRS (emoji <-> English word) ============================= */
+/* ใช้กับเกม skill-animals: ซ้าย=รูปสัตว์ emoji, ขวา=คำศัพท์ภาษาอังกฤษ — มี 16 คู่เพื่อ shuffle หยิบ 4/8/12 ต่อด่าน */
+const ANIMAL_MATCH_PAIRS = [
+  {e:'🐱', w:'CAT'},     {e:'🐶', w:'DOG'},      {e:'🐰', w:'RABBIT'},  {e:'🐻', w:'BEAR'},
+  {e:'🦁', w:'LION'},    {e:'🐯', w:'TIGER'},     {e:'🐸', w:'FROG'},    {e:'🐮', w:'COW'},
+  {e:'🐷', w:'PIG'},     {e:'🐔', w:'CHICKEN'},   {e:'🐟', w:'FISH'},    {e:'🐦', w:'BIRD'},
+  {e:'🐘', w:'ELEPHANT'},{e:'🐧', w:'PENGUIN'},   {e:'🦊', w:'FOX'},     {e:'🐨', w:'KOALA'},
 ];
 
 /* ============================= AR MATCH DATA (symbol <-> word pairs) ============================= */

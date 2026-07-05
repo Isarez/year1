@@ -410,6 +410,7 @@ function renderHome(){
     const card = document.createElement('button');
     card.className = 'cat-card'+(locked?' cat-locked':'');
     card.style.setProperty('--cat-light', locked?'#EEEEEE':cat.light);
+    card.style.setProperty('--cat-color', locked?'#AAAAAA':cat.color);
     const total = (cat.type==='ar' || cat.type==='skill') ? cat.levels : cat.questions.length;
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
@@ -654,6 +655,9 @@ function startMemoryGame(catId){
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   $('memory-cat-label').textContent = cat.emoji+' '+cat.name;
   $('memory-cat-label').style.color = cat.color;
+  $('memory-hint').textContent = cat.mode==='animals'
+    ? '🐾 แตะการ์ดรูปสัตว์ 1 ใบ แล้วแตะการ์ดคำ 1 ใบ ให้ตรงกันนะ!'
+    : '🎲 แตะการ์ดตัวเลข 1 ใบ แล้วแตะการ์ดโดมิโน 1 ใบ ให้ค่าตรงกันนะ!';
   renderMemoryLevel();
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
@@ -673,13 +677,65 @@ function dominoCardHtml(value){
   return '<div class="domino-card">'+dominoHalfHtml(top)+'<div class="domino-divider"></div>'+dominoHalfHtml(bottom)+'</div>';
 }
 
+function renderAnimalCards(pairCount){
+  const pairs = shuffleArray(ANIMAL_MATCH_PAIRS.slice()).slice(0, pairCount);
+  const animalOrder = shuffleArray(pairs.map((_,i)=>i));
+  const wordOrder   = shuffleArray(pairs.map((_,i)=>i));
+  const animalCol = $('memory-col-dots');
+  const wordCol   = $('memory-col-numbers');
+  animalCol.innerHTML = '';
+  wordCol.innerHTML   = '';
+
+  const pawIcon = '<svg class="memory-card-icon-svg" viewBox="0 0 32 32">'+
+    '<ellipse cx="16" cy="22" rx="6.5" ry="4.5"/>'+
+    '<ellipse cx="6.5" cy="15" rx="2.8" ry="3.5" transform="rotate(-15 6.5 15)"/>'+
+    '<ellipse cx="11" cy="10" rx="2.8" ry="3.5"/>'+
+    '<ellipse cx="21" cy="10" rx="2.8" ry="3.5"/>'+
+    '<ellipse cx="25.5" cy="15" rx="2.8" ry="3.5" transform="rotate(15 25.5 15)"/>'+
+  '</svg>';
+
+  animalOrder.forEach(idx=>{
+    const card = document.createElement('button');
+    card.className = 'memory-card memory-card-dot card-animals-emoji';
+    card.dataset.value = idx;
+    card.innerHTML =
+      '<div class="memory-card-inner">'+
+        '<div class="memory-card-face card-face-hidden"><span class="memory-card-icon">'+pawIcon+'</span></div>'+
+        '<div class="memory-card-face card-face-value">'+pairs[idx].e+'</div>'+
+      '</div>';
+    card.addEventListener('click', ()=>flipCard(card, 'dot', idx));
+    animalCol.appendChild(card);
+  });
+
+  wordOrder.forEach(idx=>{
+    const card = document.createElement('button');
+    card.className = 'memory-card memory-card-number card-animals-word';
+    card.dataset.value = idx;
+    card.innerHTML =
+      '<div class="memory-card-inner">'+
+        '<div class="memory-card-face card-face-hidden"><span class="memory-card-icon">'+pawIcon+'</span></div>'+
+        '<div class="memory-card-face card-face-value card-face-word">'+pairs[idx].w+'</div>'+
+      '</div>';
+    card.addEventListener('click', ()=>flipCard(card, 'number', idx));
+    wordCol.appendChild(card);
+  });
+}
+
 function renderMemoryLevel(){
+  const cat = catById(memoryGame.catId);
   const pairCount = MEMORY_LEVEL_PAIRS[memoryGame.level-1];
   memoryGame.totalPairs = pairCount;
   memoryGame.matchedCount = 0;
   memoryGame.openNumber = null;
   memoryGame.openDot = null;
   memoryGame.locked = false;
+
+  if(cat.mode === 'animals'){
+    renderAnimalCards(pairCount);
+    $('memory-level-counter').textContent = memoryGame.level+'/'+memoryGame.totalLevels;
+    $('memory-progress-fill').style.width = '0%';
+    return;
+  }
 
   const pool = [1,2,3,4,5,6,7,8,9,10,11,12];
   const values = shuffleArray(pool.slice()).slice(0, pairCount);
@@ -1137,7 +1193,7 @@ function showARHint(text){ $('ar-hint').textContent = text; }
 /* ---- drag & drop (shared by hand-pinch and mouse/touch pointer events) ---- */
 function wireCardDrag(card){
   card.addEventListener('pointerdown', e=>{
-    if(card.classList.contains('placed') || arDraggingCard) return;
+    if(arDraggingCard) return;
     e.preventDefault();
     startDragCard(card, 'mouse');
   });
@@ -1155,7 +1211,22 @@ document.addEventListener('pointercancel', ()=>{
   if(arDragLineFrom && arDragSource==='mouse'){ cancelDragLine(); }
 });
 
+function liftCardFromSlot(card){
+  const slot = card.closest && card.closest('.ar-slot');
+  if(!slot) return;
+  card.classList.remove('placed');
+  slot.classList.remove('filled');
+  const cat = arGame && catById(arGame.catId);
+  const slotIdx = Array.from(slot.parentElement.children).indexOf(slot);
+  slot.innerHTML = '<span class="ar-slot-ph">'+(cat && cat.mode==='math' ? '❓' : (slotIdx+1))+'</span>';
+  const r = slot.getBoundingClientRect();
+  const layer = $('ar-cards-row');
+  layer.appendChild(card);
+  card.style.left = (r.left + r.width/2) + 'px';
+  card.style.top  = (r.top  + r.height/2) + 'px';
+}
 function startDragCard(card, source){
+  if(card.classList.contains('placed')) liftCardFromSlot(card);
   arDraggingCard = card;
   arDragSource = source;
   card.classList.add('dragging');
@@ -1184,8 +1255,15 @@ function attemptDrop(card, x, y){
     }
   }
   if(target){ placeCardInSlot(card, target); }
-  else { returnCardToPool(card); }
+  else { leaveCardAtPos(card, x, y); }
   arDraggingCard = null; arDragSource = null;
+}
+function leaveCardAtPos(card, x, y){
+  card.classList.remove('dragging');
+  const layer = $('ar-cards-row');
+  if(card.parentElement !== layer) layer.appendChild(card);
+  card.style.left = x + 'px';
+  card.style.top  = y + 'px';
 }
 function placeCardInSlot(card, slot){
   slot.innerHTML = '';
@@ -1205,7 +1283,7 @@ function attemptCountDrop(card, x, y){
   const r = zone.getBoundingClientRect();
   const inside = x>=r.left-pad && x<=r.right+pad && y>=r.top-pad && y<=r.bottom+pad;
   if(inside && !arGame.zoneLocked){ placeItemInZone(card); }
-  else { returnCardToPool(card); }
+  else { leaveCardAtPos(card, x, y); }
   arDraggingCard = null; arDragSource = null;
 }
 function placeItemInZone(card){
@@ -1427,7 +1505,7 @@ function updateArCursor(pageX, pageY, pinching){
     return;
   }
 
-  const hoverCard = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-card:not(.placed)');
+  const hoverCard = hoveredEl && hoveredEl.closest && hoveredEl.closest('.ar-card');
   const hoverSlot = hoveredEl && hoveredEl.closest && (hoveredEl.closest('.ar-slot:not(.filled)') || hoveredEl.closest('.ar-count-zone'));
 
   if(pinching){

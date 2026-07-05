@@ -504,9 +504,36 @@
     box-shadow:var(--shadow-card);
     opacity:0; transform:scale(.85);
     animation:cardIn .55s cubic-bezier(.34,1.56,.64,1) forwards;
-    transition:transform .18s ease, box-shadow .18s ease;
+    transition:transform .22s cubic-bezier(.34,1.3,.64,1), box-shadow .22s ease;
   }
-  .cat-card:active{transform:translateY(5px) scale(.98); box-shadow:0 4px 0 rgba(74,63,53,0.10);}
+  /* shimmer ใช้ background-position animate (ไม่ขยับ element จึงไม่ต้อง overflow:hidden
+     และ badge ที่โผล่เกินการ์ด top:-8px จะไม่ถูกตัด) */
+  .cat-card:not(.cat-locked)::before{
+    content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:0;
+    background:linear-gradient(105deg, transparent 44%, rgba(255,255,255,.65) 50%, transparent 56%);
+    background-size:300% 100%; background-position:100% 0;
+    transition:none;
+  }
+  .cat-card:not(.cat-locked):hover{
+    transform:translateY(-8px) scale(1.04);
+    box-shadow:0 20px 40px rgba(74,63,53,.22), 0 6px 14px rgba(74,63,53,.12), 0 0 0 3px rgba(255,255,255,.95), 0 0 0 5px var(--cat-color);
+  }
+  .cat-card:not(.cat-locked):hover::before{
+    background-position:0% 0; transition:background-position .55s ease .05s;
+  }
+  /* emoji wiggle: plays once per hover ด้วย animation ที่รีเซ็ตทันทีตอน unhover */
+  .cat-card:not(.cat-locked):hover .cat-emoji{
+    animation:emojiWiggle .5s cubic-bezier(.36,.07,.19,.97);
+  }
+  @keyframes emojiWiggle{
+    0%{ transform:scale(1) rotate(0); }
+    20%{ transform:scale(1.3) rotate(-12deg); }
+    45%{ transform:scale(1.22) rotate(9deg); }
+    65%{ transform:scale(1.16) rotate(-5deg); }
+    82%{ transform:scale(1.08) rotate(3deg); }
+    100%{ transform:scale(1) rotate(0); }
+  }
+  .cat-card:active{transform:translateY(4px) scale(.97) !important; box-shadow:0 4px 0 rgba(74,63,53,0.10) !important;}
   .cat-card:nth-child(1){animation-delay:.03s;}
   .cat-card:nth-child(2){animation-delay:.10s;}
   .cat-card:nth-child(3){animation-delay:.17s;}
@@ -518,7 +545,7 @@
   .cat-sticker{
     position:absolute; top:14px; right:14px; width:40px; height:40px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; font-size:19px;
-    background:#EDE6DA; filter:grayscale(1) opacity(.55);
+    background:#EDE6DA; filter:grayscale(1) opacity(.55); z-index:1;
   }
   .cat-sticker.unlocked{
     background:radial-gradient(circle at 35% 30%, #FFF3B0, #FFC93C 70%);
@@ -1042,6 +1069,26 @@
   .memory-card.matched .card-face-value{ background:var(--correct-l); box-shadow:0 0 0 3px var(--correct) inset; }
   .memory-card.mismatch .card-face-value{ background:var(--wrong-l); box-shadow:0 0 0 3px var(--wrong) inset; }
 
+  /* ---------- เกมจับคู่สัตว์: ลายหลังการ์ดเขียว (สัตว์) / ม่วง (คำศัพท์) แตกต่างจากโดมิโน ---------- */
+  .card-animals-emoji .card-face-hidden{
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,.22) 0 8px, transparent 8px 18px),
+      linear-gradient(145deg, #2E8B57, #6ECBA0);
+    border:3px solid rgba(255,255,255,.55);
+  }
+  .card-animals-word .card-face-hidden{
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,.22) 0 8px, transparent 8px 18px),
+      linear-gradient(145deg, #7040B8, #B27AE0);
+    border:3px solid rgba(255,255,255,.55);
+  }
+  /* หน้าการ์ดคำศัพท์ภาษาอังกฤษ */
+  .card-face-word{
+    font-size:17px; font-weight:900; letter-spacing:1.5px;
+    color:#4A2C7A; font-family:'Courier New',Courier,monospace;
+    word-break:break-all; padding:4px; line-height:1.2;
+  }
+
   /* จอแคบ (มือถือ): จอเล็กเกินกว่าจะให้ 2 คอลัมน์อยู่ซ้าย-ขวาแล้วยังเห็นการ์ดชัดเจน — สลับเป็นวางคอลัมน์บน-ล่างแทน
      ได้พื้นที่กว้างเต็มจอต่อคอลัมน์ จึงขยายขนาดการ์ดกลับขึ้นมาได้ (ไม่ต้องบีบเล็กเท่าตอนบังคับซ้าย-ขวา) */
   @media (max-width:480px){
@@ -1051,6 +1098,7 @@
     .card-face-value{ font-size:30px; }
     .memory-card-icon{ width:44px; height:44px; }
     .domino-pip{ max-width:13px; max-height:13px; }
+    .card-face-word{ font-size:12px; letter-spacing:.5px; }
   }
 
   /* จอกลาง (tablet/481px-1024px): บังคับ 4 การ์ดต่อแถว ลดขนาดการ์ดตามความกว้างจอด้วย CSS grid + aspect-ratio */
@@ -1063,6 +1111,7 @@
     .card-face-value{ font-size:clamp(14px,4vw,28px); }
     .domino-pip{ max-width:clamp(4px,1.8vw,17px); max-height:clamp(4px,1.8vw,17px); }
     .memory-card-icon-svg{ width:50%; height:50%; }
+    .card-face-word{ font-size:clamp(11px,2.8vw,17px); }
   }
 
   /* จอกว้าง (เดสก์ท็อป): ขยายการ์ด/ช่องวางการ์ดขึ้นอีก แต่ยังคงเป็นซ้าย-ขวา (สืบทอด flex-wrap:nowrap จาก .memory-board ฐาน) */
@@ -1072,6 +1121,7 @@
     .card-face-value{ font-size:48px; }
     .memory-card-icon{ width:62px; height:62px; }
     .domino-pip{ max-width:21px; max-height:21px; }
+    .card-face-word{ font-size:19px; }
   }
 
   /* ===== CUSTOM OWL CURSOR (pointer) — ต้องอยู่ท้ายสุดเพื่อ override cursor:pointer ทั้งหมด ===== */
