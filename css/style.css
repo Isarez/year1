@@ -362,7 +362,6 @@
     background:var(--white); border-radius:var(--radius-xl);
     padding:32px 24px 28px; max-width:400px; width:100%;
     box-shadow:var(--shadow-card); text-align:center;
-    max-height:90vh; overflow-y:auto;
   }
   .cs-mascot{font-size:60px; display:inline-block; animation:idleBounce 1.2s ease-in-out infinite alternate; margin-bottom:8px;}
   .cs-inner h2{font-size:clamp(21px,5vw,26px); font-weight:800; color:var(--ink); margin-bottom:4px;}
@@ -423,10 +422,10 @@
     background:var(--cream); border-radius:var(--radius-md);
     padding:10px; border:3px solid var(--cream-2); margin-bottom:14px;
     max-height:260px; overflow-y:auto; /* emoji เยอะขึ้น 2 เท่า ใส่ scrollbar กันกล่องยืดเกินจอ */
-    scrollbar-width:thin; scrollbar-color:var(--cat-color,#FFB020) var(--cream-2);
+    scrollbar-width:thin; scrollbar-color:var(--cat-color,#FFB020) transparent;
   }
   .emoji-picker::-webkit-scrollbar{width:8px;}
-  .emoji-picker::-webkit-scrollbar-track{background:var(--cream-2); border-radius:8px;}
+  .emoji-picker::-webkit-scrollbar-track{background:transparent;}
   .emoji-picker::-webkit-scrollbar-thumb{background:var(--cat-color,#FFB020); border-radius:8px;}
   .emo-btn{
     min-width:0; width:100%;
@@ -537,7 +536,9 @@
     display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
     gap:18px;
   }
-  #cat-grid-skill{ grid-template-columns:repeat(auto-fill, minmax(210px,240px)); }
+  /* auto-fit+1fr ของ .cat-grid ฐานจะยืดการ์ดให้กว้างเกินไปเมื่อ section มีการ์ดน้อย (เทียบกับ section อื่นที่มีการ์ดเยอะกว่า)
+     ต้อง cap ความกว้างสูงสุดไว้ (auto-fill + max คงที่ แทน 1fr) ให้การ์ดทุก section ขนาดเท่ากันเป๊ะเสมอ ไม่ว่าจะมีกี่ใบ */
+  #cat-grid-skill, #cat-grid-listen{ grid-template-columns:repeat(auto-fill, minmax(210px,240px)); }
   .cat-card{
     position:relative; text-align:left; cursor:pointer; border:none;
     border-radius:var(--radius-xl); padding:20px 18px 18px;
@@ -1173,6 +1174,49 @@
     .memory-card-icon{ width:62px; height:62px; }
     .domino-pip{ max-width:21px; max-height:21px; }
     .card-face-word{ font-size:19px; }
+  }
+
+  /* ---------- Listen word-spelling game (เกมฟังคำศัพท์ 1/2) ---------- */
+  .listen-board{display:flex; flex-direction:column; align-items:center; gap:28px; padding:12px 6px 40px;}
+  .listen-speak-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:14px 28px; border-radius:999px; border:none; cursor:pointer;
+    background:linear-gradient(135deg, var(--cat-color, #6C5CE7), #8E7CC3); color:#fff;
+    font-family:inherit; font-weight:800; font-size:19px;
+    box-shadow:0 6px 0 rgba(0,0,0,.15); transition:transform .15s, box-shadow .15s;
+  }
+  .listen-speak-btn:active{transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,.15);}
+  .listen-slots{display:flex; gap:14px; justify-content:center;}
+  .listen-slot{
+    width:64px; height:64px; border-radius:var(--radius-md);
+    display:flex; align-items:center; justify-content:center;
+    font-size:32px; font-weight:800; text-transform:uppercase; color:var(--ink);
+    background:var(--cream); border:3px dashed var(--cream-2);
+    transition:transform .15s, background .15s, border-color .15s;
+  }
+  .listen-slot.hint{background:var(--cat-color, #6C5CE7); color:#fff; border-style:solid; border-color:transparent;}
+  .listen-slot.filled{background:var(--white); border-style:solid; border-color:var(--cat-color,#6C5CE7); cursor:pointer;}
+  .listen-slot.filled:active{transform:translateY(3px);}
+  .listen-slot.wrong{background:#FFD9D9; border-color:#FF6161; animation:listenShake .4s;}
+  @keyframes listenShake{
+    0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);}
+  }
+  .listen-cards{
+    display:flex; flex-wrap:wrap; gap:18px; justify-content:center;
+    max-width:640px; margin-top:32px; /* เว้นระยะห่างจากโจทย์ (ปุ่มฟังคำศัพท์+ช่องคำตอบ) ลงมาให้ชัดเจนขึ้น */
+  }
+  .listen-card{
+    width:104px; height:104px; border-radius:var(--radius-md);
+    background:var(--cream); border:3px solid var(--cream-2);
+    font-family:inherit; font-size:46px; font-weight:800; text-transform:uppercase; color:var(--ink);
+    cursor:pointer; box-shadow:var(--shadow-btn); transition:transform .15s;
+  }
+  .listen-card:active{transform:translateY(3px); box-shadow:none;}
+  .listen-card.used{visibility:hidden; pointer-events:none;}
+  @media (max-width:480px){
+    .listen-slot{width:52px; height:52px; font-size:26px;}
+    .listen-card{width:80px; height:80px; font-size:34px;}
+    .listen-speak-btn{padding:12px 22px; font-size:17px;}
   }
 
   /* ===== CUSTOM OWL CURSOR (pointer) — ต้องอยู่ท้ายสุดเพื่อ override cursor:pointer ทั้งหมด ===== */

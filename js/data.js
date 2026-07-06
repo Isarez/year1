@@ -172,16 +172,35 @@ const CATS = [
   },
   {
     id:'ar-count', name:'หยิบให้ครบ', emoji:'🧺', color:'#1FAF9E', light:'#D3F3EF',
-    type:'ar', mode:'count', levels:10, isNew:true, desktopOnly:true
+    type:'ar', mode:'count', levels:10, desktopOnly:true
   },
   {
     id:'skill-memory', name:'จับคู่โดมิโน', emoji:'🎲', color:'#E0764C', light:'#FBE3D4',
-    type:'skill', mode:'memory', levels:3, isNew:true
+    type:'skill', mode:'memory', levels:3
   },
   {
     id:'skill-animals', name:'จับคู่สัตว์', emoji:'🦜', color:'#3A9A6E', light:'#D8F3DC',
     type:'skill', mode:'animals', levels:3, isNew:true
+  },
+  {
+    id:'listen1', name:'ฟังคำศัพท์ 1', emoji:'🎧', color:'#6C5CE7', light:'#E6E1FB',
+    type:'listen', mode:'hint', levels:10, isNew:true
+  },
+  {
+    id:'listen2', name:'ฟังคำศัพท์ 2', emoji:'👂', color:'#5B6EE8', light:'#E1E6FD',
+    type:'listen', mode:'nohint', levels:10, isNew:true
   }
+];
+
+/* ============================= LISTEN WORDS (เกมฟังคำศัพท์ 1/2) ============================= */
+/* คำศัพท์ภาษาอังกฤษ 3 ตัวอักษร ทุกคำมีตัวอักษรไม่ซ้ำกันเอง (ง่ายต่อการสุ่มการ์ดตัวหลอกไม่ให้ปนกับตัวอักษรของคำตอบ) */
+const LISTEN_WORDS = [
+  'cat','dog','sun','pen','cup','hat','bag','box','bed','bus',
+  'car','fan','jar','key','log','map','net','owl','pig','top',
+  'van','web','ant','arm','bat','cow','fox','gum','hen','kit',
+  'lip','red','wet','zip','mud','nut','oil','pot','rat','sit',
+  'ten','wig','yes','leg','ear','ice','sky','sea','toe','cap',
+  'jet','bun','mop','saw','tub'
 ];
 
 /* ============================= ANIMAL MATCH PAIRS (emoji <-> English word) ============================= */
@@ -444,7 +463,7 @@ const AR_COUNT_QUESTIONS = {
   ]
 };
 
-const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3' };
+const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'listen1' };
 
 /* จำนวนคู่ (pairs) ต่อด่านของเกม skill-memory (จับคู่ตัวเลขกับจุด), index 0 = ด่าน 1 */
 const MEMORY_LEVEL_PAIRS = [4, 8, 12];

@@ -47,9 +47,16 @@ function selectChild(id){
   }
 }
 
+/* ห้ามใช้ชื่อซ้ำกับเด็กที่มีอยู่แล้วใน localStorage (ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ถ้าซ้ำ แจ้งเตือนให้เปลี่ยนชื่อใหม่ และไม่บันทึกลง storage เลย */
 function addChild(name){
   name = name.trim();
   if(!name) return;
+  if(children.some(c=>c.name.toLowerCase()===name.toLowerCase())){
+    showToast('⚠️','ชื่อ "'+name+'" มีอยู่แล้วนะ ลองเปลี่ยนชื่อใหม่ดูสิ');
+    const input = document.getElementById('child-name-input');
+    if(input){ input.focus(); input.select(); }
+    return;
+  }
   const id = 'child_'+Date.now();
   const emoji = selectedEmoji;
   children.push({id, name, emoji});
@@ -115,7 +122,7 @@ function renderChildSelect(){
       cname.textContent = child.name;
       const cstars = document.createElement('div');
       cstars.className = 'cstars';
-      cstars.textContent = stars ? '⭐'.repeat(Math.min(stars,15)) : 'ยังไม่เคยทำ ✨';
+      cstars.textContent = stars ? '⭐'.repeat(Math.min(stars,12)) : 'ยังไม่เคยทำ ✨';
       cinfo.appendChild(cname);
       cinfo.appendChild(cstars);
       const arrow = document.createElement('span');
@@ -369,7 +376,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -400,7 +407,7 @@ wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true;
   renderChildSelect();
 });
 
@@ -411,9 +418,11 @@ function renderHome(){
   const grid = $('cat-grid');
   const gridInteractive = $('cat-grid-interactive');
   const gridSkill = $('cat-grid-skill');
+  const gridListen = $('cat-grid-listen');
   grid.innerHTML = '';
   gridInteractive.innerHTML = '';
   gridSkill.innerHTML = '';
+  gridListen.innerHTML = '';
   CATS.forEach(cat=>{
     const p = progress[cat.id];
     const unlocked = p && p.unlocked;
@@ -435,13 +444,13 @@ function renderHome(){
       card.style.animation = 'none';
       card.removeEventListener('animationend', onCardInEnd);
     }, {once:true});
-    const total = (cat.type==='ar' || cat.type==='skill') ? cat.levels : cat.questions.length;
+    const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen') ? cat.levels : cat.questions.length;
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
       '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?cat.emoji:'🔒')+'</div>'+
       '<div class="cat-emoji">'+(locked?'🔒':cat.emoji)+'</div>'+
       '<div class="cat-name">'+cat.name+'</div>'+
-      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : cat.type==='skill' ? total+' ด่าน 🧠' : total+' ข้อ')+'</div>'+
+      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : cat.type==='skill' ? total+' ด่าน 🧠' : cat.type==='listen' ? total+' ด่าน 🎧' : total+' ข้อ')+'</div>'+
       (isLocked
         ? '<div class="cat-lock-msg">🔐 ผ่าน '+catById(reqId).name+' ก่อนนะ</div>'
         : isDeviceLocked
@@ -462,9 +471,10 @@ function renderHome(){
       playClick();
       if(cat.type==='ar') startARGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
+      else if(cat.type==='listen') startListenGame(cat.id);
       else startQuiz(cat.id);
     });
-    (cat.type==='skill' ? gridSkill : (cat.type==='ar' ? gridInteractive : grid)).appendChild(card);
+    (cat.type==='skill' ? gridSkill : (cat.type==='ar' ? gridInteractive : (cat.type==='listen' ? gridListen : grid))).appendChild(card);
   });
   updateTally();
 }
@@ -484,7 +494,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   $('quiz-cat-label').textContent = cat.emoji+' '+cat.name;
@@ -646,12 +656,13 @@ $('retry-btn').addEventListener('click', ()=>{
   playClick();
   if(lastGameType==='ar'){ startARGame(lastCatId); }
   else if(lastGameType==='memory'){ startMemoryGame(lastCatId); }
+  else if(lastGameType==='listen'){ startListenGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -674,7 +685,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   $('memory-cat-label').textContent = cat.emoji+' '+cat.name;
@@ -901,6 +912,225 @@ function finishMemoryGame(){
 $('memory-back').addEventListener('click', ()=>{
   playClick();
   memoryView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */
+/* mode:'hint' (ฟังคำศัพท์ 1) เฉลยบางตัวอักษรให้ในช่องคำตอบ (ด่าน 1-5 เฉลย 2 ตัว, ด่าน 6-10 เฉลย 1 ตัว)
+   mode:'nohint' (ฟังคำศัพท์ 2) ไม่เฉลยเลย เด็กหาและเรียงตัวอักษรเองทั้งหมดทุกด่าน */
+let listenGame = null; // {catId, level, mistakes, totalLevels, word, letters, hintPositions, filled, cardEls, usedWordIdx}
+
+function startListenGame(catId){
+  stopARGame();
+  lastGameType = 'listen'; lastCatId = catId;
+  const cat = catById(catId);
+  listenGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, usedWordIdx:new Set() };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  $('listen-cat-label').textContent = cat.emoji+' '+cat.name;
+  $('listen-cat-label').style.color = cat.color;
+  renderListenLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+
+function speakListenWord(word){
+  if(!window.speechSynthesis){ showToast('🔇','เบราว์เซอร์นี้ไม่รองรับการอ่านออกเสียง'); return; }
+  speechSynthesis.cancel(); // ตัดเสียงเดิมที่ค้างอยู่ก่อนพูดคำใหม่ กันเสียงซ้อนกันตอนกดรัวๆ
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+function renderListenLevel(){
+  const cat = catById(listenGame.catId);
+  const level = listenGame.level;
+  const idx = pickNoRepeatIdx(listenGame.usedWordIdx, LISTEN_WORDS.length);
+  const word = LISTEN_WORDS[idx];
+  const letters = word.split('');
+
+  /* เฉลยตัวอักษร: เฉพาะ mode 'hint' (ฟังคำศัพท์ 1) เท่านั้น — เลือกตำแหน่งเฉลยแบบสุ่ม ไม่ตายตัวว่าต้องเป็นตัวแรก/ท้าย */
+  let hintCount = 0;
+  if(cat.mode==='hint') hintCount = level<=5 ? 2 : 1;
+  const positions = shuffleArray([0,1,2]);
+  const hintPositions = positions.slice(0, hintCount);
+  const findPositions = positions.slice(hintCount);
+
+  /* จำนวนตัวอักษรหลอกเพิ่มตามความยากของด่าน — เกมฟังคำศัพท์ 2 (mode 'nohint') จำกัดการ์ดรวมไว้ไม่เกิน 5 ใบเสมอ
+     (ไม่เฉลยเลย ต้องหาครบ 3 ตัวอยู่แล้ว ถ้าการ์ดเยอะเกินไปจะยากเกินไปสำหรับเด็ก 5 ขวบ) */
+  const neededLetters = findPositions.map(p=>letters[p]);
+  let decoyCount = level<=3 ? 2 : (level<=6 ? 3 : 4);
+  if(cat.mode==='nohint') decoyCount = Math.min(decoyCount, 5-neededLetters.length);
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c=>!letters.includes(c));
+  shuffleArray(alphabet);
+  const decoys = alphabet.slice(0, decoyCount);
+  const cardLetters = shuffleArray([...neededLetters, ...decoys]);
+
+  listenGame.word = word;
+  listenGame.letters = letters;
+  listenGame.hintPositions = hintPositions;
+  listenGame.filled = {};   // ตำแหน่ง -> ตัวอักษรที่เด็กเลือกเอง (ไม่รวมตำแหน่งเฉลย)
+  listenGame.cardEls = {};  // ตัวอักษร -> การ์ด element (ตัวอักษรในด่านเดียวกันไม่ซ้ำกันเอง จึงใช้เป็น key ได้)
+
+  const slotsEl = $('listen-slots');
+  slotsEl.innerHTML = '';
+  letters.forEach((letter, pos)=>{
+    const slot = document.createElement('div');
+    const isHint = hintPositions.includes(pos);
+    slot.className = 'listen-slot'+(isHint ? ' hint' : ' empty');
+    slot.dataset.pos = pos;
+    if(isHint){ slot.textContent = letter; }
+    else { slot.addEventListener('click', ()=> undoListenSlot(pos)); }
+    slotsEl.appendChild(slot);
+  });
+
+  const cardsEl = $('listen-cards');
+  cardsEl.innerHTML = '';
+  cardLetters.forEach(letter=>{
+    const card = document.createElement('button');
+    card.className = 'listen-card';
+    card.type = 'button';
+    card.textContent = letter;
+    card.addEventListener('click', ()=> placeListenLetter(letter, card));
+    cardsEl.appendChild(card);
+    listenGame.cardEls[letter] = card;
+  });
+
+  $('listen-level-counter').textContent = level+'/'+listenGame.totalLevels;
+  $('listen-progress-fill').style.width = ((level-1)/listenGame.totalLevels*100)+'%';
+  $('listen-hint').textContent = '🎧 กดปุ่มฟังคำศัพท์ แล้วเลือกตัวอักษรมาต่อคำให้ถูกนะ!';
+}
+
+function placeListenLetter(letter, cardEl){
+  if(cardEl.classList.contains('used')) return;
+  const slotsEl = $('listen-slots');
+  const emptySlot = Array.from(slotsEl.children).find(s=>s.classList.contains('empty') && !s.classList.contains('filled'));
+  if(!emptySlot) return;
+  const pos = Number(emptySlot.dataset.pos);
+  listenGame.filled[pos] = letter;
+  emptySlot.textContent = letter;
+  emptySlot.classList.add('filled');
+  cardEl.classList.add('used');
+  playClick();
+
+  const totalFilled = Object.keys(listenGame.filled).length + listenGame.hintPositions.length;
+  if(totalFilled === 3) checkListenAnswer();
+}
+
+/* คลิกช่องคำตอบที่เด็กใส่เอง (ไม่ใช่ช่องเฉลย) เพื่อยกเลิก คืนตัวอักษรกลับไปในการ์ด ให้แก้ไขก่อนครบ 3 ช่อง */
+function undoListenSlot(pos){
+  if(listenGame.hintPositions.includes(pos)) return;
+  const letter = listenGame.filled[pos];
+  if(letter === undefined) return;
+  delete listenGame.filled[pos];
+  const slotsEl = $('listen-slots');
+  const slot = Array.from(slotsEl.children).find(s=>Number(s.dataset.pos)===pos);
+  slot.textContent = '';
+  slot.classList.remove('filled');
+  const cardEl = listenGame.cardEls[letter];
+  if(cardEl) cardEl.classList.remove('used');
+  playClick();
+}
+
+function checkListenAnswer(){
+  const attempt = listenGame.letters.map((_, pos)=>
+    listenGame.hintPositions.includes(pos) ? listenGame.letters[pos] : listenGame.filled[pos]
+  );
+  if(attempt.join('') === listenGame.word) listenLevelSuccess();
+  else listenLevelMistake();
+}
+
+function listenLevelMistake(){
+  listenGame.mistakes++;
+  playWrong();
+  mascotOops();
+  const slotsEl = $('listen-slots');
+  Array.from(slotsEl.children).forEach(s=>s.classList.add('wrong'));
+  $('listen-hint').textContent = '🤔 ยังไม่ถูกนะ ลองเลือกตัวอักษรใหม่ดูสิ!';
+  setTimeout(()=>{
+    Array.from(slotsEl.children).forEach(s=>{
+      s.classList.remove('wrong');
+      const pos = Number(s.dataset.pos);
+      if(listenGame.hintPositions.includes(pos)) return;
+      s.textContent = '';
+      s.classList.remove('filled');
+    });
+    Object.values(listenGame.filled).forEach(letter=>{
+      const cardEl = listenGame.cardEls[letter];
+      if(cardEl) cardEl.classList.remove('used');
+    });
+    listenGame.filled = {};
+  }, 1000);
+}
+
+function listenLevelSuccess(){
+  playCorrect();
+  mascotHappy();
+  burstCenterTop(30);
+  showOwlMsg('correct');
+  $('listen-hint').textContent = '🎉 เก่งมาก! สะกดถูกต้อง!';
+  $('listen-progress-fill').style.width = (listenGame.level/listenGame.totalLevels*100)+'%';
+  setTimeout(()=>{
+    if(listenGame.level >= listenGame.totalLevels){ finishListenGame(); }
+    else { listenGame.level++; renderListenLevel(); }
+  }, 1300);
+}
+
+function finishListenGame(){
+  const cat = catById(listenGame.catId);
+  const mistakes = listenGame.mistakes;
+  const totalLevels = listenGame.totalLevels;
+  listenView.hidden = true; resultView.hidden = false;
+
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = {
+    best: prev ? Math.max(prev.best, totalLevels) : totalLevels,
+    stars: prev ? Math.max(prev.stars, stars) : stars,
+    unlocked: wasUnlocked || stars>=2
+  };
+  saveProgress();
+
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row');
+  starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+
+  $('score-line').textContent = 'ฟังคำศัพท์ครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false;
+    $('sticker-earned').textContent = cat.emoji;
+    pendingSticker = cat.id;
+    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('listen-speak-btn').addEventListener('click', ()=>{
+  playClick();
+  if(listenGame && listenGame.word) speakListenWord(listenGame.word);
+});
+$('listen-back').addEventListener('click', ()=>{
+  playClick();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  listenView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1271,10 +1501,23 @@ function startDragCard(card, source){
   card.classList.add('dragging');
   playClick();
 }
+/* กันการ์ดหลุดออกนอกจอ — จำกัดจุดศูนย์กลางการ์ด (จุดอ้างอิงตอน dragging คือ left/top จริงเพราะใช้ translate(-50%,-50%))
+   ไม่ให้เกินขอบจอ โดยเผื่อระยะครึ่งความกว้าง/สูงของการ์ดเองไว้เสมอ */
+function clampToViewport(x, y, card){
+  const r = card.getBoundingClientRect();
+  const halfW = r.width/2, halfH = r.height/2, margin = 6;
+  const minX = halfW+margin, maxX = window.innerWidth-halfW-margin;
+  const minY = halfH+margin, maxY = window.innerHeight-halfH-margin;
+  return {
+    x: Math.min(Math.max(x, minX), Math.max(minX,maxX)),
+    y: Math.min(Math.max(y, minY), Math.max(minY,maxY)),
+  };
+}
 function moveDraggingCardTo(x,y){
   if(!arDraggingCard) return;
-  arDraggingCard.style.left = x+'px';
-  arDraggingCard.style.top = y+'px';
+  const p = clampToViewport(x, y, arDraggingCard);
+  arDraggingCard.style.left = p.x+'px';
+  arDraggingCard.style.top = p.y+'px';
 }
 function attemptDrop(card, x, y){
   const cat = catById(arGame.catId);
@@ -1301,8 +1544,14 @@ function leaveCardAtPos(card, x, y){
   card.classList.remove('dragging');
   const layer = $('ar-cards-row');
   if(card.parentElement !== layer) layer.appendChild(card);
-  card.style.left = x + 'px';
-  card.style.top  = y + 'px';
+  /* หลังเอา class dragging ออก การ์ดกลับไปใช้ left/top แบบมุมบนซ้าย (ไม่ใช่จุดกึ่งกลางแบบตอนลาก)
+     ต้องกันไม่ให้มุมบนซ้าย/ขวาล่างเกินขอบจอ การ์ดถึงจะไม่โผล่ครึ่งตัวหรือหลุดออกนอกจอ */
+  const w = card.offsetWidth, h = card.offsetHeight, margin = 6;
+  const maxX = window.innerWidth - w - margin, maxY = window.innerHeight - h - margin;
+  const clampedX = Math.min(Math.max(x, margin), Math.max(margin, maxX));
+  const clampedY = Math.min(Math.max(y, margin), Math.max(margin, maxY));
+  card.style.left = clampedX + 'px';
+  card.style.top  = clampedY + 'px';
 }
 function placeCardInSlot(card, slot){
   slot.innerHTML = '';
@@ -1810,7 +2059,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));

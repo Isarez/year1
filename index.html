@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.3.11">
+<link rel="stylesheet" href="css/style.css?v=1.3.24">
 </head>
 <body>
 
@@ -125,6 +125,10 @@
       <div class="cat-section-title"><span class="cst-emoji">🧠</span> เกมฝึกทักษะ</div>
       <div class="cat-grid" id="cat-grid-skill"></div>
     </div>
+    <div class="cat-section">
+      <div class="cat-section-title"><span class="cst-emoji">🎧</span> เกมฟังคำศัพท์</div>
+      <div class="cat-grid" id="cat-grid-listen"></div>
+    </div>
   </section>
 
   <!-- QUIZ VIEW -->
@@ -166,6 +170,24 @@
     <div class="memory-board">
       <div class="memory-col memory-col-dots" id="memory-col-dots"></div>
       <div class="memory-col memory-col-numbers" id="memory-col-numbers"></div>
+    </div>
+  </section>
+
+  <!-- LISTEN WORD-SPELLING VIEW (เกมฟังคำศัพท์ 1/2) -->
+  <section id="listen-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="listen-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="listen-cat-label">ฟังคำศัพท์ 1</div>
+        <div class="progress-track"><div class="progress-fill" id="listen-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="listen-hint">🎧 กดปุ่มฟังคำศัพท์ แล้วเลือกตัวอักษรมาต่อคำให้ถูกนะ!</div>
+      </div>
+      <div class="q-counter" id="listen-level-counter">1/10</div>
+    </div>
+    <div class="listen-board">
+      <button class="listen-speak-btn" id="listen-speak-btn">🔊 ฟังคำศัพท์</button>
+      <div class="listen-slots" id="listen-slots"></div>
+      <div class="listen-cards" id="listen-cards"></div>
     </div>
   </section>
 
@@ -313,7 +335,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>
@@ -348,8 +370,8 @@
   </div>
 </div>
 
-<script src="js/data.js?v=1.3.11"></script>
-<script src="js/owl-messages.js?v=1.3.11"></script>
-<script src="js/app.js?v=1.3.11"></script>
+<script src="js/data.js?v=1.3.24"></script>
+<script src="js/owl-messages.js?v=1.3.24"></script>
+<script src="js/app.js?v=1.3.24"></script>
 </body>
 </html>
