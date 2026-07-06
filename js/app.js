@@ -5,6 +5,14 @@ try{ soundOn = localStorage.getItem('p1quiz_sound') !== 'off'; }catch(e){}
 let state = { catId:null, qIndex:0, score:0, wrong:[], answered:false };
 let pendingSticker = null;
 
+/* ============================= HEADER SVG ICONS ============================= */
+const SVG_MOON     = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7BA7E0" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8DEFF"/></svg>';
+const SVG_SUN      = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#E8A020" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#FFD040"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+const SVG_MUSIC    = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+const SVG_SPEAKER  = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+const SVG_EXPAND   = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+const SVG_COMPRESS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
+
 /* ============================= CHILDREN ============================= */
 const CHILD_AVATARS = [
   '🐶','🐱','🐰','🐻','🐼','🦊',
@@ -70,6 +78,7 @@ function addChild(name){
 function enterHome(){
   $('child-select-view').hidden = true;
   $('owl-widget').hidden = false;
+  $('clear-btn').hidden = false;
   homeView.hidden = false;
   updateHeaderChild();
   renderHome();
@@ -149,6 +158,7 @@ function renderChildSelect(){
   selectedEmoji = CHILD_AVATARS[0];
   initEmojiPicker();
   $('child-select-view').hidden = false;
+  $('clear-btn').hidden = true;
   homeView.hidden = true;
   $('owl-widget').hidden = true;
 }
@@ -190,6 +200,15 @@ function wireChildSelectEvents(){
     document.getElementById('child-add-form').hidden = false;
     initEmojiPicker();
     document.getElementById('child-name-input').focus();
+  });
+  document.getElementById('child-import-btn').addEventListener('click', ()=>{
+    playClick();
+    document.getElementById('child-import-input').value = '';
+    document.getElementById('child-import-input').click();
+  });
+  document.getElementById('child-import-input').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(file) importChildData(file);
   });
 }
 
@@ -318,7 +337,7 @@ function stopMusic(){
   }
   if(musicSchedulerId){ clearInterval(musicSchedulerId); musicSchedulerId=null; }
 }
-function refreshMusicBtn(){ musicBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">🎵</span><span class="mute-stripe"></span></span>'; musicBtn.classList.toggle('muted', !musicOn); musicBtn.dataset.tooltip = musicOn ? 'ปิดเพลงพื้นหลัง' : 'เปิดเพลงพื้นหลัง'; }
+function refreshMusicBtn(){ musicBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_MUSIC+'</span><span class="mute-stripe"></span></span>'; musicBtn.classList.toggle('muted', !musicOn); musicBtn.dataset.tooltip = musicOn ? 'ปิดเพลงพื้นหลัง' : 'เปิดเพลงพื้นหลัง'; }
 
 /* ============================= CONFETTI ============================= */
 const canvas = document.getElementById('confetti-canvas');
@@ -2137,7 +2156,7 @@ $('ar-camera-toggle').addEventListener('click', ()=>{
 
 /* ============================= SOUND TOGGLE ============================= */
 const soundBtn = $('sound-toggle');
-function refreshSoundBtn(){ soundBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">🔊</span><span class="mute-stripe"></span></span>'; soundBtn.classList.toggle('muted', !soundOn); soundBtn.dataset.tooltip = soundOn ? 'ปิดเสียง' : 'เปิดเสียง'; }
+function refreshSoundBtn(){ soundBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_SPEAKER+'</span><span class="mute-stripe"></span></span>'; soundBtn.classList.toggle('muted', !soundOn); soundBtn.dataset.tooltip = soundOn ? 'ปิดเสียง' : 'เปิดเสียง'; }
 refreshSoundBtn();
 soundBtn.addEventListener('click', ()=>{
   soundOn = !soundOn;
@@ -2165,7 +2184,7 @@ const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle')];
 function refreshFsBtn(){
   const label = document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ';
   fsBtns.forEach(btn=>{
-    btn.textContent = document.fullscreenElement ? '⤡' : '⛶';
+    btn.innerHTML = document.fullscreenElement ? SVG_COMPRESS : SVG_EXPAND;
     btn.setAttribute('aria-label', label);
     btn.dataset.tooltip = label;
   });
@@ -2276,6 +2295,84 @@ $('modal-confirm-btn').addEventListener('click', ()=>{
   if(cb) cb();
 });
 
+/* ============================= DATA TRANSFER (export / import) ============================= */
+
+function owkHash(str){
+  let h = 5381;
+  for(let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  return 'OWK1_' + (h >>> 0).toString(16).padStart(8, '0');
+}
+
+function exportChildData(){
+  if(!activeChild){ showToast('⚠️','เลือกเด็กก่อนนะ'); return; }
+  const prog = JSON.parse(localStorage.getItem('p1quiz_progress_'+activeChild.id) || '{}');
+  const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒'}, progress:prog};
+  const body = JSON.stringify(payload);
+  const sig = owkHash(body);
+  const full = JSON.stringify({v:payload.v, child:payload.child, progress:payload.progress, sig});
+  const bytes = new TextEncoder().encode(full);
+  const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
+  const b64 = btoa(binary);
+  const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2)+Date.now().toString(36);
+  const blob = new Blob([b64], {type:'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'owlkids_data_'+uuid;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  hideClearModal();
+  showToast('📤','ดาวน์โหลดข้อมูลของ '+activeChild.name+' แล้ว!');
+}
+
+let pendingImport = null;
+
+function showImportConflictModal(importedChild, progress, conflictChild){
+  pendingImport = {child: importedChild, progress, conflictChildId: conflictChild.id};
+  $('import-conflict-title').textContent = 'มีเด็กชื่อ "'+conflictChild.name+'" อยู่แล้ว';
+  $('import-rename-form').hidden = true;
+  $('import-rename-input').value = importedChild.name;
+  $('import-replace-btn').hidden = false;
+  $('import-rename-btn').hidden = false;
+  $('import-rename-confirm-btn').hidden = true;
+  openOverlay('import-conflict-modal');
+}
+function hideImportConflictModal(){ closeOverlay('import-conflict-modal'); pendingImport = null; }
+
+function importChildData(file){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const binary = atob(e.target.result.trim());
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      const jsonStr = new TextDecoder().decode(bytes);
+      const obj = JSON.parse(jsonStr);
+      const {v, child, progress, sig} = obj;
+      if(!sig || !child || !child.id || !child.name){
+        showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
+      }
+      const body = JSON.stringify({v, child:{id:child.id, name:child.name, emoji:child.emoji||'🧒'}, progress:progress||{}});
+      if(owkHash(body) !== sig){
+        showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
+      }
+      const conflictChild = children.find(c => c.id === child.id || c.name.toLowerCase() === child.name.toLowerCase());
+      if(conflictChild){
+        showImportConflictModal(child, progress||{}, conflictChild);
+        return;
+      }
+      children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒'});
+      saveChildren();
+      if(progress) try{ localStorage.setItem('p1quiz_progress_'+child.id, JSON.stringify(progress)); }catch(er){}
+      renderChildSelect();
+      showToast('📥','นำเข้าข้อมูลของ '+child.name+' เรียบร้อย! 🎉');
+    }catch(err){
+      showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้');
+    }
+  };
+  reader.readAsText(file);
+}
+
 /* ============================= CLEAR DATA ============================= */
 function showClearModal(){
   const name = activeChild ? (activeChild.emoji+' '+activeChild.name) : null;
@@ -2288,6 +2385,52 @@ function hideClearModal(){ closeOverlay('clear-modal'); }
 
 $('clear-modal-backdrop').addEventListener('click', hideClearModal);
 $('clear-cancel-btn').addEventListener('click', ()=>{ playClick(); hideClearModal(); });
+$('export-child-btn').addEventListener('click', ()=>{ playClick(); exportChildData(); });
+
+$('import-conflict-backdrop').addEventListener('click', hideImportConflictModal);
+$('import-conflict-cancel-btn').addEventListener('click', ()=>{ playClick(); hideImportConflictModal(); });
+
+$('import-replace-btn').addEventListener('click', ()=>{
+  if(!pendingImport) return;
+  playClick();
+  const {child, progress, conflictChildId} = pendingImport;
+  const existing = children.find(c => c.id === conflictChildId);
+  if(existing){ existing.emoji = child.emoji || existing.emoji; saveChildren(); }
+  try{ localStorage.setItem('p1quiz_progress_'+conflictChildId, JSON.stringify(progress||{})); }catch(e){}
+  hideImportConflictModal();
+  renderChildSelect();
+  showToast('✅','อัปเดตข้อมูลของ '+(existing ? existing.name : child.name)+' แล้ว!');
+});
+
+$('import-rename-btn').addEventListener('click', ()=>{
+  playClick();
+  $('import-replace-btn').hidden = true;
+  $('import-rename-btn').hidden = true;
+  $('import-rename-form').hidden = false;
+  $('import-rename-confirm-btn').hidden = false;
+  $('import-rename-input').focus();
+  $('import-rename-input').select();
+});
+
+$('import-rename-confirm-btn').addEventListener('click', ()=>{
+  if(!pendingImport) return;
+  const newName = $('import-rename-input').value.trim();
+  if(!newName){ showToast('⚠️','ใส่ชื่อก่อนนะ'); return; }
+  if(children.some(c => c.name.toLowerCase() === newName.toLowerCase())){
+    showToast('⚠️','ชื่อ "'+newName+'" มีอยู่แล้ว ลองเปลี่ยนชื่อใหม่ดูสิ'); return;
+  }
+  playClick();
+  const {child, progress} = pendingImport;
+  const newId = 'child_'+Date.now();
+  children.push({id:newId, name:newName, emoji:child.emoji||'🧒'});
+  saveChildren();
+  if(progress) try{ localStorage.setItem('p1quiz_progress_'+newId, JSON.stringify(progress)); }catch(e){}
+  hideImportConflictModal();
+  renderChildSelect();
+  showToast('📥','นำเข้าข้อมูลเป็น "'+newName+'" เรียบร้อย! 🎉');
+});
+
+$('import-rename-input').addEventListener('keydown', e=>{ if(e.key==='Enter') $('import-rename-confirm-btn').click(); });
 
 $('reset-progress-btn').addEventListener('click', ()=>{
   hideClearModal(); playClick();
@@ -2396,7 +2539,7 @@ const bgDecorEl = $('bg-decor');
 function isNightMode(){ return document.body.classList.contains('night-mode'); }
 function refreshThemeBtn(){
   const night = isNightMode();
-  themeBtn.textContent = night ? '☀️' : '🌙';
+  themeBtn.innerHTML = night ? SVG_SUN : SVG_MOON;
   themeBtn.dataset.tooltip = night ? 'โหมดกลางวัน' : 'โหมดกลางคืน';
   themeBtn.setAttribute('aria-label', night ? 'สลับเป็นโหมดกลางวัน' : 'สลับเป็นโหมดกลางคืน');
 }

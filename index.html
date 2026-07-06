@@ -81,7 +81,7 @@
 <button class="icon-btn" id="theme-toggle" aria-label="สลับธีมกลางวัน/กลางคืน" data-tooltip="โหมดกลางคืน">🌙</button>
 <button class="icon-btn" id="music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง" data-tooltip="เปิด/ปิดเพลงพื้นหลัง">🎵</button>
     <button class="icon-btn" id="sound-toggle" aria-label="เปิด/ปิดเสียง" data-tooltip="เปิด/ปิดเสียง">🔊</button>
-    <button class="icon-btn" id="clear-btn" aria-label="ล้างข้อมูล" data-tooltip="ล้างข้อมูลทั้งหมด">🗑️</button>
+    <button class="icon-btn" id="clear-btn" aria-label="จัดการข้อมูล" data-tooltip="จัดการข้อมูล" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="rgba(74,63,53,.12)"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/></svg></button>
     <button class="icon-btn" id="fullscreen-toggle" aria-label="เต็มหน้าจอ" data-tooltip="เต็มหน้าจอ">⛶</button>
   </div>
 </header>
@@ -102,6 +102,8 @@
         <button class="child-submit-btn" id="child-submit-btn">เริ่มเรียนเลย! 🚀</button>
       </div>
       <button class="child-add-new-btn" id="child-add-new-btn" hidden>+ เพิ่มเด็กคนใหม่</button>
+      <button class="child-import-btn" id="child-import-btn">📥 นำเข้าข้อมูลเด็กจากอุปกรณ์อื่น</button>
+      <input type="file" id="child-import-input" style="display:none">
     </div>
   </section>
 
@@ -310,10 +312,11 @@
 <div id="clear-modal" hidden>
   <div class="modal-backdrop" id="clear-modal-backdrop"></div>
   <div class="modal-card">
-    <div class="modal-icon">⚙️</div>
+    <div class="modal-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="rgba(74,63,53,.1)"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/></svg></div>
     <h3 class="modal-title">จัดการข้อมูล</h3>
     <p class="modal-body" id="clear-child-info">เลือกว่าต้องการทำอะไร</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <button id="export-child-btn" class="modal-confirm-btn" style="background:#4FA8F0;box-shadow:0 5px 0 #1E7DC4;">📤 ย้ายข้อมูลเด็กไปอุปกรณ์อื่น</button>
       <button id="reset-progress-btn" class="modal-confirm-btn" style="background:#FF9F3D;box-shadow:0 5px 0 #B87000;">🔄 รีเซ็ตคะแนน / ดาว</button>
       <button id="delete-child-btn" class="modal-confirm-btn">🗑️ ลบข้อมูลเด็กออก</button>
     </div>
@@ -335,7 +338,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>
@@ -356,6 +359,25 @@
       3. ยืนยันการติดตั้ง เป็นอันเสร็จ 🎉
     </p>
     <button class="modal-cancel-btn" id="install-close-btn" style="width:100%;margin-top:20px;">ปิด ✕</button>
+  </div>
+</div>
+
+<!-- IMPORT CONFLICT MODAL -->
+<div id="import-conflict-modal" hidden>
+  <div class="modal-backdrop" id="import-conflict-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-icon">⚠️</div>
+    <h3 class="modal-title" id="import-conflict-title">มีเด็กชื่อ "xxx" อยู่แล้ว</h3>
+    <p class="modal-body">จะทำอะไรกับข้อมูลที่นำเข้า?</p>
+    <div id="import-rename-form" hidden style="margin-bottom:12px;">
+      <input class="child-name-input" id="import-rename-input" type="text" placeholder="ใส่ชื่อใหม่" maxlength="20" autocomplete="off">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <button id="import-replace-btn" class="modal-confirm-btn" style="background:#FF9F3D;box-shadow:0 5px 0 #B87000;">🔄 แทนที่ข้อมูลเด็กชื่อเดิม</button>
+      <button id="import-rename-btn" class="modal-confirm-btn" style="background:#4FA8F0;box-shadow:0 5px 0 #1E7DC4;">✏️ เปลี่ยนชื่อก่อนนำเข้า</button>
+      <button id="import-rename-confirm-btn" class="modal-confirm-btn" hidden>✅ ยืนยันนำเข้าด้วยชื่อใหม่</button>
+    </div>
+    <button class="modal-cancel-btn" id="import-conflict-cancel-btn">ยกเลิก ✕</button>
   </div>
 </div>
 

@@ -171,7 +171,8 @@
     position:relative; width:100%; height:100%; border-radius:50%;
     overflow:hidden; display:flex; align-items:center; justify-content:center;
   }
-  .icon-btn .icon-glyph, .back-btn .icon-glyph{display:inline-block;}
+  .icon-btn .icon-glyph, .back-btn .icon-glyph{display:flex; align-items:center; justify-content:center;}
+  .icon-btn svg, .back-btn svg{display:block; flex-shrink:0;}
   .icon-glyph.lens-icon{display:flex; align-items:center; justify-content:center;}
   .icon-glyph.lens-icon svg{display:block;}
   .icon-btn.muted .icon-glyph, .back-btn.muted .icon-glyph{opacity:.4; filter:grayscale(1);}
@@ -182,7 +183,7 @@
     transform:translateY(-50%) rotate(-40deg);
   }
   .icon-btn.muted .mute-stripe, .back-btn.muted .mute-stripe{display:block;}
-  .icon-btn[data-tooltip]::after{
+.icon-btn[data-tooltip]::after{
     content:attr(data-tooltip);
     position:absolute; top:calc(100% + 10px); left:50%;
     transform:translateX(-50%) translateY(-4px);
@@ -415,6 +416,13 @@
     cursor:pointer; transition:border-color .15s,color .15s;
   }
   .child-add-new-btn:hover,.child-add-new-btn:active{border-color:#FFB020; color:var(--ink);}
+  .child-import-btn{
+    margin-top:6px; width:100%; padding:7px; border-radius:var(--radius-md);
+    border:none; background:transparent;
+    font-family:inherit; font-size:clamp(13px,3.2vw,14px); font-weight:600; color:var(--ink-soft);
+    cursor:pointer; transition:color .15s; text-decoration:underline; text-underline-offset:3px;
+  }
+  .child-import-btn:hover,.child-import-btn:active{color:var(--ink);}
   /* emoji picker */
   .emoji-picker-label{font-size:14px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;text-align:left;}
   .emoji-picker{
@@ -443,7 +451,7 @@
     transform:scale(1.18);
   }
   /* confirm modal */
-  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal{
+  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal{
     position:fixed; inset:0; z-index:200;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
