@@ -1,7 +1,7 @@
 /* ============================= DATA ============================= */
 const CATS = [
   {
-    id:'math', name:'คณิตศาสตร์', emoji:'🔢', color:'#FF8A5B', light:'#FFE7DA',
+    id:'math', name:'คณิตศาสตร์', emoji:'🔢', icon:'assets/icons/math.svg', color:'#FF8A5B', light:'#FFE7DA',
     questions:[
       {q:'★★★★★★★ มีดาวกี่ดวง?', emoji:'', choices:['5','6','7','8'], correct:2, explain:'นับดาวได้ทั้งหมด 7 ดวงจ้ะ'},
       {q:'จำนวน "สิบสอง" เขียนเป็นตัวเลขได้อย่างไร?', emoji:'🔢', choices:['21','12','20','22'], correct:1, explain:'สิบสอง เขียนเป็นตัวเลขคือ 12'},
@@ -16,7 +16,7 @@ const CATS = [
     ]
   },
   {
-    id:'thai', name:'ภาษาไทย 1', emoji:'📖', color:'#33B7EE', light:'#DBF3FE',
+    id:'thai', name:'ภาษาไทย 1', emoji:'📖', icon:'assets/icons/thai-1.svg', color:'#33B7EE', light:'#DBF3FE',
     questions:[
       {q:'ข้อใดมีพยัญชนะต้นเหมือนกับคำว่า "ปลา"?', emoji:'🐟', choices:['มะม่วง','ปูนา','กล้วย','ฝักบัว'], correct:1, explain:'"ปูนา" มีพยัญชนะต้น ป เหมือน "ปลา"'},
       {q:'ข้อใดมีพยัญชนะต้นแตกต่างจากข้ออื่น?', emoji:'🔤', choices:['กา','กบ','กวาง','ขาว'], correct:3, explain:'"ขาว" ขึ้นต้นด้วย ข ต่างจากตัวอื่นที่ขึ้นต้นด้วย ก'},
@@ -31,7 +31,7 @@ const CATS = [
     ]
   },
   {
-    id:'thai2', name:'ภาษาไทย 2', emoji:'📝', color:'#2FBF9B', light:'#D6F5EC',
+    id:'thai2', name:'ภาษาไทย 2', emoji:'📝', icon:'assets/icons/thai-2.svg', color:'#2FBF9B', light:'#D6F5EC',
     questions:[
       {q:'เลือกคำที่เหมาะสมเติมในช่องว่าง: "น้องนุ่น _____ อาหารเช้า"', emoji:'🍚', choices:['กิน','ว่าย','ขับ','นอน'], correct:0, explain:'น้องนุ่น "กิน" อาหารเช้า'},
       {q:'เลือกคำที่เหมาะสมเติมในช่องว่าง: "แม่ _____ ดอกไม้ในสวน"', emoji:'🌷', choices:['กิน','รดน้ำ','ขับ','ว่าย'], correct:1, explain:'แม่ "รดน้ำ" ดอกไม้ในสวน'},
@@ -46,7 +46,7 @@ const CATS = [
     ]
   },
   {
-    id:'english', name:'English', emoji:'🔤', color:'#4CBE84', light:'#DEF5E7',
+    id:'english', name:'English', emoji:'🔤', icon:'assets/icons/english.svg', color:'#4CBE84', light:'#DEF5E7',
     questions:[
       {q:'Which picture matches the word "APPLE"?', emoji:'', choices:['🍊','🍎','🍌','🍇'], correct:1, explain:'APPLE means แอปเปิ้ล 🍎'},
       {q:'Which picture matches the word "DOG"?', emoji:'', choices:['🐱','🐟','🐶','🐰'], correct:2, explain:'DOG means สุนัข 🐶'},
@@ -61,7 +61,7 @@ const CATS = [
     ]
   },
   {
-    id:'behavior', name:'พฤติกรรมดี-ไม่ดี', emoji:'🌟', color:'#FFC53D', light:'#FFF2CE',
+    id:'behavior', name:'พฤติกรรมดี-ไม่ดี', emoji:'🌟', icon:'assets/icons/behavior.svg', color:'#FFC53D', light:'#FFF2CE',
     questions:[
       {q:'ข้อใดแสดงพฤติกรรมที่ดี?', emoji:'🙏', choices:['ทิ้งขยะลงพื้น','ไหว้ทักทายผู้ใหญ่','ทะเลาะกับเพื่อน','เล่นมือถือขณะกินข้าว'], correct:1, explain:'การไหว้ทักทายผู้ใหญ่เป็นมารยาทที่ดีและสุภาพ'},
       {q:'ข้อใดแสดงพฤติกรรมที่ไม่ดี?', emoji:'😠', choices:['อ่านหนังสือ','ช่วยเหลือเพื่อน','แกล้งเพื่อน','รดน้ำต้นไม้'], correct:2, explain:'การแกล้งเพื่อนเป็นพฤติกรรมที่ไม่ดี ไม่ควรทำ'},
@@ -74,7 +74,7 @@ const CATS = [
     ]
   },
   {
-    id:'animals', name:'สัตว์และที่อยู่', emoji:'🐾', color:'#F17FA8', light:'#FDE1EC',
+    id:'animals', name:'สัตว์และที่อยู่', emoji:'🐾', icon:'assets/icons/animals.svg', color:'#F17FA8', light:'#FDE1EC',
     questions:[
       {q:'ข้อใดเป็นสัตว์ที่อยู่ในน้ำ ทั้งหมด?', emoji:'🌊', choices:['สิงโต หมี กวาง','ปลา กุ้ง ปลาหมึก','กบ เสือ ลิง','นก ผีเสื้อ ค้างคาว'], correct:1, explain:'ปลา กุ้ง ปลาหมึก ล้วนอาศัยอยู่ในน้ำ'},
       {q:'ข้อใดเป็นสัตว์ครึ่งบกครึ่งน้ำ?', emoji:'🐸', choices:['สิงโต','กบ','โลมา','นก'], correct:1, explain:'กบสามารถอยู่ได้ทั้งในน้ำและบนบก'},
@@ -91,7 +91,7 @@ const CATS = [
     ]
   },
   {
-    id:'days', name:'วันในสัปดาห์', emoji:'📅', color:'#9B7DE0', light:'#EAE1FC',
+    id:'days', name:'วันในสัปดาห์', emoji:'📅', icon:'assets/icons/weekday.svg', color:'#9B7DE0', light:'#EAE1FC',
     questions:[
       {q:'วันจันทร์ ภาษาอังกฤษคือข้อใด?', emoji:'🌙', choices:['Tuesday','Sunday','Monday','Friday'], correct:2, explain:'วันจันทร์ คือ Monday'},
       {q:'วันอังคาร ภาษาอังกฤษคือข้อใด?', emoji:'🔥', choices:['Wednesday','Monday','Sunday','Tuesday'], correct:3, explain:'วันอังคาร คือ Tuesday'},
@@ -103,7 +103,7 @@ const CATS = [
     ]
   },
   {
-    id:'iq1', name:'เชาวน์ปัญญา 1', emoji:'🧩', color:'#7C6EF2', light:'#E6E2FD',
+    id:'iq1', name:'เชาวน์ปัญญา 1', emoji:'🧩', icon:'assets/icons/iq-1.svg', color:'#7C6EF2', light:'#E6E2FD',
     questions:(function(){
       /* Q1-Q15: answers from PDF answer key (0=ก,1=ข,2=ค) */
       const answers = [1,1,0,2,2,1,2,1,2,2, 2,2,1,0,1];
@@ -115,7 +115,7 @@ const CATS = [
     })()
   },
   {
-    id:'iq2', name:'เชาวน์ปัญญา 2', emoji:'🔍', color:'#3498DB', light:'#D6EEF8',
+    id:'iq2', name:'เชาวน์ปัญญา 2', emoji:'🔍', icon:'assets/icons/iq-2.svg', color:'#3498DB', light:'#D6EEF8',
     questions:(function(){
       /* Q16-Q30: answers from PDF answer key (0=ก,1=ข,2=ค) */
       const answers = [1,0,2,0,2, 1,0,2,2,1, 1,2,1,1,1];
@@ -127,7 +127,7 @@ const CATS = [
     })()
   },
   {
-    id:'iq3', name:'เชาวน์ปัญญา 3', emoji:'💡', color:'#E67E22', light:'#FDEBD0',
+    id:'iq3', name:'เชาวน์ปัญญา 3', emoji:'💡', icon:'assets/icons/iq-3.svg', color:'#E67E22', light:'#FDEBD0',
     questions:(function(){
       /* Q31-Q45: answers from PDF answer key (0=ก,1=ข,2=ค); Q38 corrected to ข */
       const answers = [0,0,1,2,1,2,0,1,2,2, 1,0,2,2,0];
@@ -139,7 +139,7 @@ const CATS = [
     })()
   },
   {
-    id:'iq4', name:'เชาวน์ปัญญา 4', emoji:'🎯', color:'#27AE60', light:'#D5F5E3',
+    id:'iq4', name:'เชาวน์ปัญญา 4', emoji:'🎯', icon:'assets/icons/iq-4.svg', color:'#27AE60', light:'#D5F5E3',
     questions:(function(){
       /* Q46-Q60: answers from PDF answer key (0=ก,1=ข,2=ค); Q52 corrected to ข, Q53 corrected to ค */
       const answers = [1,0,2,2,0, 0,1,2,0,0, 2,0,0,2,1];
@@ -151,43 +151,43 @@ const CATS = [
     })()
   },
   {
-    id:'ar-thai', name:'ต่อประโยค (ไทย)', emoji:'🖐️', color:'#F17FA8', light:'#FDE1EC',
+    id:'ar-thai', name:'ต่อประโยค (ไทย)', emoji:'🖐️', icon:'assets/icons/sentence-th.svg', color:'#F17FA8', light:'#FDE1EC',
     type:'ar', lang:'th', levels:10
   },
   {
-    id:'ar-eng', name:'ต่อประโยค (Eng)', emoji:'🤟', color:'#3EC6C6', light:'#D8F6F6',
+    id:'ar-eng', name:'ต่อประโยค (Eng)', emoji:'🤟', icon:'assets/icons/sentence-en.svg', color:'#3EC6C6', light:'#D8F6F6',
     type:'ar', lang:'en', levels:10
   },
   {
-    id:'ar-math', name:'คิดเลข', emoji:'🧮', color:'#FFB020', light:'#FFF1D6',
+    id:'ar-math', name:'คิดเลข', emoji:'🧮', icon:'assets/icons/count.svg', color:'#FFB020', light:'#FFF1D6',
     type:'ar', mode:'math', levels:10
   },
   {
-    id:'ar-match', name:'โยงเส้น (ไทย)', emoji:'🪢', color:'#8E7CC3', light:'#EAE4F7',
+    id:'ar-match', name:'โยงเส้น (ไทย)', emoji:'🪢', icon:'assets/icons/connect-th.svg', color:'#8E7CC3', light:'#EAE4F7',
     type:'ar', mode:'match', lang:'th', levels:10
   },
   {
-    id:'ar-match-en', name:'โยงเส้น (Eng)', emoji:'🔗', color:'#4FA9E8', light:'#DCF0FB',
+    id:'ar-match-en', name:'โยงเส้น (Eng)', emoji:'🔗', icon:'assets/icons/connect-en.svg', color:'#4FA9E8', light:'#DCF0FB',
     type:'ar', mode:'match', lang:'en', levels:10
   },
   {
-    id:'ar-count', name:'หยิบให้ครบ', emoji:'🧺', color:'#1FAF9E', light:'#D3F3EF',
+    id:'ar-count', name:'หยิบให้ครบ', emoji:'🧺', icon:'assets/icons/collect.svg', color:'#1FAF9E', light:'#D3F3EF',
     type:'ar', mode:'count', levels:10, desktopOnly:true
   },
   {
-    id:'skill-memory', name:'จับคู่โดมิโน', emoji:'🎲', color:'#E0764C', light:'#FBE3D4',
+    id:'skill-memory', name:'จับคู่โดมิโน', emoji:'🎲', icon:'assets/icons/domino.svg', color:'#E0764C', light:'#FBE3D4',
     type:'skill', mode:'memory', levels:3
   },
   {
-    id:'skill-animals', name:'จับคู่สัตว์', emoji:'🦜', color:'#3A9A6E', light:'#D8F3DC',
+    id:'skill-animals', name:'จับคู่สัตว์', emoji:'🦜', icon:'assets/icons/match-animal.svg', color:'#3A9A6E', light:'#D8F3DC',
     type:'skill', mode:'animals', levels:3, isNew:true
   },
   {
-    id:'listen1', name:'ฟังคำศัพท์ 1', emoji:'🎧', color:'#6C5CE7', light:'#E6E1FB',
+    id:'listen1', name:'ฟังคำศัพท์ 1', emoji:'🎧', icon:'assets/icons/listen-1.svg', color:'#6C5CE7', light:'#E6E1FB',
     type:'listen', mode:'hint', levels:10, isNew:true
   },
   {
-    id:'listen2', name:'ฟังคำศัพท์ 2', emoji:'👂', color:'#5B6EE8', light:'#E1E6FD',
+    id:'listen2', name:'ฟังคำศัพท์ 2', emoji:'👂', icon:'assets/icons/listen-2.svg', color:'#5B6EE8', light:'#E1E6FD',
     type:'listen', mode:'nohint', levels:10, isNew:true
   }
 ];

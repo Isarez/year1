@@ -1,0 +1,38 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สัตว์และที่อยู่">
+  <defs>
+    <linearGradient id="pawG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb3d1"/>
+      <stop offset="1" stop-color="#f56aa0"/>
+    </linearGradient>
+    <linearGradient id="pawToe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9ec4"/>
+      <stop offset="1" stop-color="#ef5591"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="18" ry="3.2" fill="#000" opacity="0.10"/>
+
+  <!-- main pad -->
+  <path d="M32 33c8.5 0 15 6.5 15 13.5 0 5.6-6.7 6.5-15 6.5s-15-.9-15-6.5C17 39.5 23.5 33 32 33z"
+        fill="url(#pawG)" stroke="#d34a80" stroke-width="3" stroke-linejoin="round"/>
+  <!-- pad highlight -->
+  <ellipse cx="26" cy="42" rx="4.5" ry="3.2" fill="#fff" opacity="0.35"/>
+
+  <!-- toes -->
+  <g stroke="#d34a80" stroke-width="3">
+    <ellipse cx="15" cy="31" rx="5.5" ry="7" fill="url(#pawToe)"/>
+    <ellipse cx="25.5" cy="21" rx="5.8" ry="7.4" fill="url(#pawToe)"/>
+    <ellipse cx="38.5" cy="21" rx="5.8" ry="7.4" fill="url(#pawToe)"/>
+    <ellipse cx="49" cy="31" rx="5.5" ry="7" fill="url(#pawToe)"/>
+  </g>
+  <!-- toe highlights -->
+  <g fill="#fff" opacity="0.35">
+    <ellipse cx="13.5" cy="29" rx="1.8" ry="2.4"/>
+    <ellipse cx="24" cy="18.5" rx="1.9" ry="2.6"/>
+    <ellipse cx="37" cy="18.5" rx="1.9" ry="2.6"/>
+    <ellipse cx="47.5" cy="29" rx="1.8" ry="2.4"/>
+  </g>
+
+  <!-- little heart accent on pad -->
+  <path d="M32 45c-1.4-2.2-4.4-1.2-4.4 1 0 2 2.6 3.4 4.4 4.8 1.8-1.4 4.4-2.8 4.4-4.8 0-2.2-3-3.2-4.4-1z"
+        fill="#fff" opacity="0.55"/>
+</svg>

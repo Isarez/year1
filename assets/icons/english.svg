@@ -1,0 +1,29 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English">
+  <defs>
+    <linearGradient id="engA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9be9b7"/>
+      <stop offset="1" stop-color="#3fc072"/>
+    </linearGradient>
+    <linearGradient id="engB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7ee0a2"/>
+      <stop offset="1" stop-color="#33ad63"/>
+    </linearGradient>
+    <linearGradient id="engC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe27a"/>
+      <stop offset="1" stop-color="#ffc531"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="21" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- block A (bottom left) -->
+  <rect x="7" y="30" width="24" height="22" rx="6" fill="url(#engA)" stroke="#2c9457" stroke-width="3"/>
+  <rect x="10" y="33" width="5" height="16" rx="2.5" fill="#fff" opacity="0.24"/>
+  <text x="19" y="47" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#fff" text-anchor="middle">A</text>
+  <!-- block B (bottom right) -->
+  <rect x="33" y="30" width="24" height="22" rx="6" fill="url(#engB)" stroke="#2c9457" stroke-width="3"/>
+  <rect x="36" y="33" width="5" height="16" rx="2.5" fill="#fff" opacity="0.24"/>
+  <text x="45" y="47" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#fff" text-anchor="middle">B</text>
+  <!-- block C (top, stacked) -->
+  <rect x="20" y="9" width="24" height="22" rx="6" fill="url(#engC)" stroke="#2c9457" stroke-width="3"/>
+  <rect x="23" y="12" width="5" height="16" rx="2.5" fill="#fff" opacity="0.28"/>
+  <text x="32" y="26" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#2c9457" text-anchor="middle">C</text>
+</svg>

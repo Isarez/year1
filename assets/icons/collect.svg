@@ -1,0 +1,25 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="หยิบให้ครบ">
+  <defs>
+    <linearGradient id="colG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9be9b7"/>
+      <stop offset="1" stop-color="#3fc072"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- fruits inside -->
+  <circle cx="26" cy="28" r="7" fill="#ff8a5c" stroke="#d9542f" stroke-width="2.4"/>
+  <path d="M26 21v-3" stroke="#2c9457" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="39" cy="30" r="6" fill="#ffd54f" stroke="#e0a516" stroke-width="2.4"/>
+  <path d="M39 24v-2" stroke="#2c9457" stroke-width="2" stroke-linecap="round"/>
+  <!-- handle -->
+  <path d="M20 30a12 12 0 0 1 24 0" fill="none" stroke="#2c9457" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- basket -->
+  <path d="M12 30h40l-4 20a6 6 0 0 1-6 5H22a6 6 0 0 1-6-5z"
+        fill="url(#colG)" stroke="#2c9457" stroke-width="3" stroke-linejoin="round"/>
+  <g stroke="#eafff2" stroke-width="2.4" stroke-linecap="round">
+    <path d="M24 36l-1 16M32 36v16M40 36l1 16M15 38h34M17 46h30"/>
+  </g>
+  <!-- check badge -->
+  <circle cx="47" cy="15" r="7" fill="#ffd54f" stroke="#2c9457" stroke-width="2.4"/>
+  <path d="M44 15l2.2 2.4 3.6-4.4" fill="none" stroke="#2c9457" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

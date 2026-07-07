@@ -1,0 +1,22 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ฟังคำศัพท์ 1">
+  <defs>
+    <linearGradient id="ls1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c7b3ff"/>
+      <stop offset="1" stop-color="#8a6bf0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- headband -->
+  <path d="M13 36v-6a19 19 0 0 1 38 0v6" fill="none" stroke="#6a4bd0" stroke-width="3.6" stroke-linecap="round"/>
+  <!-- left cup -->
+  <rect x="9" y="32" width="13" height="21" rx="6.5" fill="url(#ls1G)" stroke="#6a4bd0" stroke-width="3"/>
+  <rect x="12" y="35" width="4" height="15" rx="2" fill="#fff" opacity="0.3"/>
+  <!-- right cup -->
+  <rect x="42" y="32" width="13" height="21" rx="6.5" fill="url(#ls1G)" stroke="#6a4bd0" stroke-width="3"/>
+  <rect x="45" y="35" width="4" height="15" rx="2" fill="#fff" opacity="0.3"/>
+  <!-- music notes -->
+  <g fill="#ffd54f" stroke="#6a4bd0" stroke-width="1.8">
+    <circle cx="30" cy="26" r="3"/>
+    <path d="M33 26v-8l4 2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

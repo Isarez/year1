@@ -1,0 +1,27 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ปัญญา 3">
+  <defs>
+    <linearGradient id="iq3G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff0a8"/>
+      <stop offset="1" stop-color="#ffc531"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="14" ry="3.2" fill="#000" opacity="0.10"/>
+  <!-- sparkles / rays -->
+  <g stroke="#ffb300" stroke-width="2.6" stroke-linecap="round">
+    <path d="M32 3v5M14 12l3 3M50 12l-3 3M9 30h5M50 30h5"/>
+  </g>
+  <!-- bulb glass -->
+  <path d="M32 9c9 0 15 7 15 15 0 5-2 8-5 11-1.5 1.4-2 3-2 5H24c0-2-.5-3.6-2-5-3-3-5-6-5-11 0-8 6-15 15-15z"
+        fill="url(#iq3G)" stroke="#e0a516" stroke-width="3" stroke-linejoin="round"/>
+  <!-- filament (smiley) -->
+  <g fill="none" stroke="#e0a516" stroke-width="2.6" stroke-linecap="round">
+    <path d="M27 24v-2M37 24v-2"/>
+    <path d="M27 29c2 2.5 8 2.5 10 0"/>
+  </g>
+  <!-- base -->
+  <g stroke="#c98f10" stroke-width="3" stroke-linecap="round">
+    <path d="M25 46h14M27 51h10M30 55h4"/>
+  </g>
+  <!-- highlight -->
+  <path d="M23 15a12 12 0 0 1 7-3.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+</svg>

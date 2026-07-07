@@ -1,0 +1,20 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ปัญญา 4">
+  <defs>
+    <linearGradient id="iq4G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9be9b7"/>
+      <stop offset="1" stop-color="#3fc072"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- maze board -->
+  <rect x="10" y="10" width="44" height="44" rx="10" fill="url(#iq4G)" stroke="#2c9457" stroke-width="3"/>
+  <rect x="14" y="14" width="9" height="36" rx="5" fill="#fff" opacity="0.14"/>
+  <!-- maze path -->
+  <path d="M18 46v-8h10v-8H18v-8h20v24h8V18H30"
+        fill="none" stroke="#eafff2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- start dot -->
+  <circle cx="18" cy="46" r="3.4" fill="#ffd54f" stroke="#2c9457" stroke-width="2"/>
+  <!-- goal star -->
+  <path d="M46 15l1.6 3.2 3.4.5-2.5 2.4.6 3.5-3.1-1.7-3.1 1.7.6-3.5-2.5-2.4 3.4-.5z"
+        fill="#ffd54f" stroke="#2c9457" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>

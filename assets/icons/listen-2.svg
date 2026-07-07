@@ -1,0 +1,34 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ฟังคำศัพท์ 2">
+  <defs>
+    <linearGradient id="ls2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a7d4ff"/>
+      <stop offset="1" stop-color="#4f97f5"/>
+    </linearGradient>
+    <linearGradient id="ls2H" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe27a"/>
+      <stop offset="1" stop-color="#ffc531"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- megaphone body -->
+  <path d="M14 26l24-9a3 3 0 0 1 4 2.8v24.4a3 3 0 0 1-4 2.8l-24-9z"
+        fill="url(#ls2G)" stroke="#2f6bc4" stroke-width="3" stroke-linejoin="round"/>
+  <!-- mouth ring -->
+  <path d="M42 21c3 1 5 5 5 11s-2 10-5 11z" fill="#eaf4ff" stroke="#2f6bc4" stroke-width="2.6" stroke-linejoin="round"/>
+  <!-- back rim -->
+  <rect x="10" y="26" width="6" height="12" rx="3" fill="url(#ls2G)" stroke="#2f6bc4" stroke-width="3"/>
+  <!-- highlight -->
+  <path d="M18 27l18-6.6v3.4L18 30z" fill="#fff" opacity="0.28"/>
+  <!-- handle -->
+  <path d="M24 44v6a4 4 0 0 0 8 0v-3" fill="none" stroke="#2f6bc4" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- sound waves -->
+  <g fill="none" stroke="#4f97f5" stroke-width="3" stroke-linecap="round">
+    <path d="M52 22a16 16 0 0 1 0 20"/>
+    <path d="M57 17a25 25 0 0 1 0 30"/>
+  </g>
+  <!-- sound star/note accent -->
+  <path d="M48 12l1.4 2.9 3.2.5-2.3 2.2.5 3.2-2.8-1.5-2.8 1.5.5-3.2-2.3-2.2 3.2-.5z"
+        fill="url(#ls2H)" stroke="#e0a516" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>

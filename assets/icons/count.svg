@@ -1,0 +1,35 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="คิดเลข">
+  <defs>
+    <linearGradient id="cntA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc79a"/>
+      <stop offset="1" stop-color="#ff8a5c"/>
+    </linearGradient>
+    <linearGradient id="cntB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd54f"/>
+      <stop offset="1" stop-color="#ffb300"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="20" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- block "1" -->
+  <rect x="7" y="14" width="20" height="20" rx="6" fill="url(#cntA)" stroke="#d9542f" stroke-width="3"/>
+  <rect x="10" y="17" width="5" height="14" rx="2.5" fill="#fff" opacity="0.24"/>
+  <text x="17" y="29" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">1</text>
+
+  <!-- block "2" -->
+  <rect x="37" y="14" width="20" height="20" rx="6" fill="url(#cntA)" stroke="#d9542f" stroke-width="3"/>
+  <rect x="40" y="17" width="5" height="14" rx="2.5" fill="#fff" opacity="0.24"/>
+  <text x="47" y="29" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">2</text>
+
+  <!-- plus between blocks -->
+  <path d="M32 20v8M28 24h8" stroke="#d9542f" stroke-width="3.2" stroke-linecap="round"/>
+
+  <!-- result block "3" with counting dots -->
+  <rect x="18" y="38" width="28" height="18" rx="6" fill="url(#cntB)" stroke="#d9542f" stroke-width="3"/>
+  <text x="27" y="51" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#d9542f" text-anchor="middle">3</text>
+  <g fill="#fff" stroke="#d9542f" stroke-width="1.6">
+    <circle cx="36" cy="44" r="2.3"/>
+    <circle cx="41.5" cy="44" r="2.3"/>
+    <circle cx="38.7" cy="50" r="2.3"/>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ปัญญา 1">
+  <defs>
+    <linearGradient id="iq1A" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c7b3ff"/>
+      <stop offset="1" stop-color="#8a6bf0"/>
+    </linearGradient>
+    <linearGradient id="iq1B" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe27a"/>
+      <stop offset="1" stop-color="#ffc531"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- purple puzzle piece -->
+  <path d="M10 12h13a4 4 0 1 1 8 0h1v13a4 4 0 1 1 0 8v1H19a4 4 0 1 0-8 0h-1V33a4 4 0 1 0 0-8z"
+        fill="url(#iq1A)" stroke="#6a4bd0" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M13 15h6v3a4 4 0 0 0-6 3z" fill="#fff" opacity="0.28"/>
+  <!-- yellow interlocking piece (bottom-right) -->
+  <path d="M33 33h6a4 4 0 1 1 8 0h6v13a4 4 0 1 1 0 8v-1H41a4 4 0 1 0-8 0z"
+        fill="url(#iq1B)" stroke="#e0a516" stroke-width="3" stroke-linejoin="round"/>
+</svg>

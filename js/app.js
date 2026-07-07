@@ -8,10 +8,11 @@ let pendingSticker = null;
 /* ============================= HEADER SVG ICONS ============================= */
 const SVG_MOON     = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7BA7E0" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8DEFF"/></svg>';
 const SVG_SUN      = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#E8A020" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#FFD040"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-const SVG_MUSIC    = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
-const SVG_SPEAKER  = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-const SVG_EXPAND   = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
-const SVG_COMPRESS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
+const SVG_MUSIC    = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6C5CE7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13" fill="#DCD2FB"/><circle cx="6" cy="18" r="3" fill="#C7B3FF"/><circle cx="18" cy="16" r="3" fill="#C7B3FF"/></svg>';
+const SVG_SPEAKER  = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#D4881C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#FFDF8E"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M18.7 5.3a9.5 9.5 0 0 1 0 13.4" opacity=".55"/></svg>';
+const SVG_EXPAND   = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+const SVG_COMPRESS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
+const SVG_PENCIL   = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg>';
 
 /* ============================= CHILDREN ============================= */
 const CHILD_AVATARS = [
@@ -145,7 +146,7 @@ function renderChildSelect(){
       editBtn.className = 'child-edit-btn';
       editBtn.type = 'button';
       editBtn.setAttribute('aria-label','แก้ไข Emoji');
-      editBtn.textContent = '✏️';
+      editBtn.innerHTML = SVG_PENCIL;
       editBtn.addEventListener('click', ()=>{ playClick(); openEditEmojiModal(child.id); });
       row.appendChild(card);
       row.appendChild(editBtn);
@@ -419,6 +420,16 @@ function saveProgress(){
 }
 function catById(id){ return CATS.find(c=>c.id===id); }
 function stickerCount(){ return Object.values(progress).filter(p=>p && p.unlocked).length; }
+function setStickerEarned(cat){
+  const el = $('sticker-earned');
+  if(cat.icon){ el.innerHTML = '<img src="'+cat.icon+'" class="sticker-earned-img" alt="'+cat.name+'">'; }
+  else { el.textContent = cat.emoji; }
+}
+function setCatLabel(id, cat){
+  const el = $(id);
+  el.innerHTML = (cat.icon ? '<img src="'+cat.icon+'" class="cat-label-icon" alt=""> ' : cat.emoji+' ')+cat.name;
+  el.style.color = cat.color;
+}
 function updateTally(){ $('tally-text').textContent = stickerCount()+'/'+CATS.length; }
 
 /* wire child-select events now that $ is available */
@@ -466,8 +477,8 @@ function renderHome(){
     const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen') ? cat.levels : cat.questions.length;
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
-      '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?cat.emoji:'🔒')+'</div>'+
-      '<div class="cat-emoji">'+(locked?'🔒':cat.emoji)+'</div>'+
+      '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?(cat.icon?'<img src="'+cat.icon+'" class="cat-sticker-icon" alt="">':cat.emoji):'🔒')+'</div>'+
+      '<div class="cat-emoji">'+(locked?'🔒':(cat.icon?'<img src="'+cat.icon+'" class="cat-icon-img" alt="'+cat.name+'">':cat.emoji))+'</div>'+
       '<div class="cat-name">'+cat.name+'</div>'+
       '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : cat.type==='skill' ? total+' ด่าน 🧠' : cat.type==='listen' ? total+' ด่าน 🎧' : total+' ข้อ')+'</div>'+
       (isLocked
@@ -516,8 +527,7 @@ function startQuiz(catId){
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
-  $('quiz-cat-label').textContent = cat.emoji+' '+cat.name;
-  $('quiz-cat-label').style.color = cat.color;
+  setCatLabel('quiz-cat-label', cat);
   renderQuestion();
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
@@ -643,7 +653,7 @@ function finishQuiz(){
   const stickerBlock = $('sticker-block');
   if(newlyUnlocked){
     stickerBlock.hidden = false;
-    $('sticker-earned').textContent = cat.emoji;
+    setStickerEarned(cat);
     pendingSticker = cat.id;
     setTimeout(()=>burstCenterTop(40), 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
@@ -707,8 +717,7 @@ function startMemoryGame(catId){
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  $('memory-cat-label').textContent = cat.emoji+' '+cat.name;
-  $('memory-cat-label').style.color = cat.color;
+  setCatLabel('memory-cat-label', cat);
   $('memory-hint').textContent = cat.mode==='animals'
     ? '🐾 แตะการ์ดรูปสัตว์ 1 ใบ แล้วแตะการ์ดคำ 1 ใบ ให้ตรงกันนะ!'
     : '🎲 แตะการ์ดตัวเลข 1 ใบ แล้วแตะการ์ดโดมิโน 1 ใบ ให้ค่าตรงกันนะ!';
@@ -915,7 +924,7 @@ function finishMemoryGame(){
   const stickerBlock = $('sticker-block');
   if(newlyUnlocked){
     stickerBlock.hidden = false;
-    $('sticker-earned').textContent = cat.emoji;
+    setStickerEarned(cat);
     pendingSticker = cat.id;
     setTimeout(()=>burstCenterTop(40), 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
@@ -948,8 +957,7 @@ function startListenGame(catId){
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  $('listen-cat-label').textContent = cat.emoji+' '+cat.name;
-  $('listen-cat-label').style.color = cat.color;
+  setCatLabel('listen-cat-label', cat);
   renderListenLevel();
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
@@ -1129,7 +1137,7 @@ function finishListenGame(){
   const stickerBlock = $('sticker-block');
   if(newlyUnlocked){
     stickerBlock.hidden = false;
-    $('sticker-earned').textContent = cat.emoji;
+    setStickerEarned(cat);
     pendingSticker = cat.id;
     setTimeout(()=>burstCenterTop(40), 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
@@ -2082,8 +2090,7 @@ function startARGame(catId){
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  $('ar-cat-label').textContent = cat.emoji+' '+cat.name;
-  $('ar-cat-label').style.color = cat.color;
+  setCatLabel('ar-cat-label', cat);
   renderARLevel();
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 500);
@@ -2128,7 +2135,7 @@ function finishARGame(){
   const stickerBlock = $('sticker-block');
   if(newlyUnlocked){
     stickerBlock.hidden = false;
-    $('sticker-earned').textContent = cat.emoji;
+    setStickerEarned(cat);
     pendingSticker = cat.id;
     setTimeout(()=>burstCenterTop(40), 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
@@ -2226,8 +2233,11 @@ function renderStickerBook(stampCatId){
     slot.style.setProperty('--shine-delay', (i*0.4)+'s');
     if(isEarned){
       slot.innerHTML =
-        '<div class="slot-shine"></div>'+
-        '<span class="slot-emoji">'+cat.emoji+'</span>'+
+        '<div class="slot-sticker"><div class="slot-shine"></div>'+
+        (cat.icon
+          ? '<img src="'+cat.icon+'" class="slot-icon-img" alt="'+cat.name+'">'
+          : '<span class="slot-emoji">'+cat.emoji+'</span>')+
+        '</div>'+
         '<span class="slot-name">'+cat.name+'</span>';
     } else {
       slot.innerHTML =
@@ -2256,6 +2266,7 @@ function closeStickerBook(){
 }
 
 $('sb-close-btn').addEventListener('click', ()=>{ playClick(); closeStickerBook(); });
+$('sb-x-btn').addEventListener('click', ()=>{ playClick(); closeStickerBook(); });
 $('sticker-book').addEventListener('click', e=>{ if(e.target===$('sticker-book')) closeStickerBook(); });
 $('sticker-tally-btn').addEventListener('click', ()=>{ playClick(); openStickerBook(null); });
 

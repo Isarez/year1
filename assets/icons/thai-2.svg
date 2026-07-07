@@ -1,0 +1,22 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย 2">
+  <defs>
+    <linearGradient id="thai2A" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a7d4ff"/>
+      <stop offset="1" stop-color="#6aa8f5"/>
+    </linearGradient>
+    <linearGradient id="thai2B" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7cc0ff"/>
+      <stop offset="1" stop-color="#4f97f5"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="20" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- back card (ข) tilted left -->
+  <g transform="rotate(-10 22 32)">
+    <rect x="9" y="16" width="26" height="32" rx="7" fill="url(#thai2A)" stroke="#2f6bc4" stroke-width="3"/>
+    <text x="22" y="38" font-family="'Sarabun','Noto Sans Thai',sans-serif" font-size="20" font-weight="bold" fill="#fff" text-anchor="middle">ข</text>
+  </g>
+  <!-- front card (ก) -->
+  <rect x="30" y="18" width="26" height="32" rx="7" fill="url(#thai2B)" stroke="#2f6bc4" stroke-width="3"/>
+  <rect x="33" y="21" width="6" height="26" rx="3" fill="#fff" opacity="0.22"/>
+  <text x="43" y="41" font-family="'Sarabun','Noto Sans Thai',sans-serif" font-size="22" font-weight="bold" fill="#fff" text-anchor="middle">ก</text>
+</svg>

@@ -1,0 +1,30 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วันในสัปดาห์">
+  <defs>
+    <linearGradient id="calBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a7d4ff"/>
+      <stop offset="1" stop-color="#4f97f5"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- calendar body -->
+  <rect x="10" y="14" width="44" height="40" rx="8" fill="#eef5ff" stroke="#2f6bc4" stroke-width="3"/>
+  <!-- header band -->
+  <path d="M10 22a8 8 0 0 1 8-8h28a8 8 0 0 1 8 8v4H10z" fill="url(#calBody)" stroke="#2f6bc4" stroke-width="3" stroke-linejoin="round"/>
+  <!-- rings -->
+  <g stroke="#2f6bc4" stroke-width="3" stroke-linecap="round">
+    <path d="M22 9v8M42 9v8"/>
+  </g>
+  <!-- week day cells (7) -->
+  <g fill="#cfe3ff" stroke="#2f6bc4" stroke-width="1.6">
+    <rect x="14" y="31" width="6" height="6" rx="2"/>
+    <rect x="22" y="31" width="6" height="6" rx="2"/>
+    <rect x="30" y="31" width="6" height="6" rx="2"/>
+    <rect x="38" y="31" width="6" height="6" rx="2"/>
+    <rect x="46" y="31" width="4" height="6" rx="2"/>
+    <rect x="14" y="41" width="6" height="6" rx="2"/>
+    <rect x="22" y="41" width="6" height="6" rx="2"/>
+  </g>
+  <!-- highlighted day -->
+  <rect x="29" y="40" width="9" height="9" rx="2.5" fill="#ffd54f" stroke="#2f6bc4" stroke-width="2"/>
+  <path d="M31.5 44.5l1.6 1.6 2.6-3" fill="none" stroke="#2f6bc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

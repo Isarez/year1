@@ -1,0 +1,23 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ปัญญา 2">
+  <defs>
+    <linearGradient id="iq2G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a7d4ff"/>
+      <stop offset="1" stop-color="#4f97f5"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="55" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- brain outline -->
+  <path d="M32 12c-8 0-12 4-12 6-6 0-8 6-5 10-4 3-3 10 2 12 1 5 8 7 15 5 7 2 14 0 15-5 5-2 6-9 2-12 3-4 1-10-5-10 0-2-4-6-12-6z"
+        fill="url(#iq2G)" stroke="#2f6bc4" stroke-width="3" stroke-linejoin="round"/>
+  <!-- center division -->
+  <path d="M32 14v34" stroke="#2f6bc4" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- gyri curls -->
+  <g fill="none" stroke="#eaf4ff" stroke-width="2.4" stroke-linecap="round">
+    <path d="M26 22c-4 1-4 5-1 6"/>
+    <path d="M25 32c-4 0-4 5 0 6"/>
+    <path d="M38 22c4 1 4 5 1 6"/>
+    <path d="M39 32c4 0 4 5 0 6"/>
+  </g>
+  <!-- highlight -->
+  <path d="M23 17c3-2 6-2 8-1" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
+</svg>

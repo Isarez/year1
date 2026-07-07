@@ -308,22 +308,42 @@
     transition:opacity .32s cubic-bezier(.34,1.56,.64,1), transform .32s cubic-bezier(.34,1.56,.64,1);
   }
   #sticker-book.show .sb-card{ opacity:1; transform:scale(1) translateY(0); }
+  /* ปุ่มปิด ✕ มุมบนขวา: sticky ให้ลอยติดขอบบนตอน scroll สมุด */
+  .sb-x-btn{
+    position:sticky; top:0; z-index:5;
+    display:block; margin-left:auto; margin-bottom:-36px;
+    width:36px; height:36px; border-radius:50%; border:none; cursor:pointer;
+    background:#FFB020; color:#5A3A00; font-size:17px; font-weight:800; font-family:inherit;
+    box-shadow:0 3px 0 #C47E00; transition:transform .15s, box-shadow .15s;
+  }
+  .sb-x-btn:active{transform:translateY(2px); box-shadow:0 1px 0 #C47E00;}
+  /* scrollbar สมุดสติกเกอร์: พื้นหลังใส thumb สีทองเข้าธีม (pattern เดียวกับ .emoji-picker) */
+  .sb-card{scrollbar-width:thin; scrollbar-color:#FFB020 transparent;}
+  .sb-card::-webkit-scrollbar{width:8px;}
+  .sb-card::-webkit-scrollbar-track{background:transparent;}
+  .sb-card::-webkit-scrollbar-thumb{background:#FFB020; border-radius:8px;}
   .sb-title{font-size:clamp(20px,5.2vw,26px);font-weight:800;color:var(--ink);text-align:center;margin-bottom:2px;}
   .sb-sub{font-size:clamp(14px,3.5vw,16px);color:var(--ink-soft);font-weight:700;text-align:center;margin-bottom:18px;}
   .sb-grid{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px;
+    display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:18px;
   }
   .sb-slot{
     border-radius:var(--radius-lg); display:flex; flex-direction:column;
     align-items:center; justify-content:center; gap:4px;
     border:3px dashed #E8D8C0; background:rgba(255,255,255,.4);
-    padding:12px 6px; position:relative; overflow:hidden;
+    padding:10px 4px; position:relative; overflow:hidden;
     min-height:92px;
   }
   .sb-slot.earned{
-    border:3px solid transparent;
-    background:linear-gradient(145deg,#FFF7DD,#FFEAB0);
-    box-shadow:0 4px 18px rgba(255,176,32,.28);
+    border:3px solid transparent; background:transparent; box-shadow:none; overflow:visible;
+  }
+  /* สติกเกอร์ในสมุด: วงกลมทอง + มุมพับ แบบเดียวกับ .cat-sticker.unlocked บนการ์ดหมวด */
+  .slot-sticker{
+    width:clamp(60px,15vw,80px); height:clamp(60px,15vw,80px); flex-shrink:0;
+    border-radius:50%; overflow:hidden; position:relative;
+    display:flex; align-items:center; justify-content:center;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M94.8 53.9 A45 45 0 1 0 53.9 94.8 Z' fill='%23FFD75E' stroke='%23E9AE45' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M94.8 53.9 A45 45 0 0 0 53.9 94.8 Z' fill='%23E8A63C' stroke='%23E9AE45' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.28));
   }
   .sb-slot.stamping{
     animation:stampIn .6s cubic-bezier(.34,1.56,.64,1) .45s both;
@@ -334,6 +354,9 @@
     100%{transform:scale(1) rotate(0); opacity:1;}
   }
   .sb-slot .slot-emoji{font-size:clamp(28px,7vw,38px); line-height:1;}
+  .sb-slot .slot-icon-img{width:clamp(28px,7vw,38px); height:clamp(28px,7vw,38px); object-fit:contain; display:block;}
+  .slot-sticker .slot-icon-img{width:55%; height:55%; transform:rotate(30deg);}
+  .slot-sticker .slot-emoji{font-size:clamp(22px,5.5vw,30px); transform:rotate(30deg);}
   .sb-slot .slot-name{font-size:clamp(10px,2.6vw,12px);font-weight:800;color:var(--ink-soft); text-align:center;}
   .sb-slot .slot-empty{font-size:24px; opacity:.25;}
   .sb-slot .slot-shine{
@@ -530,11 +553,11 @@
   .hero p{font-size:clamp(17px,4.2vw,21px); color:var(--ink-soft); font-weight:600; margin-top:6px; transition:color 2s ease;}
 
   .cat-section-title{
-    display:flex; align-items:center; gap:8px;
+    display:flex; align-items:center; gap:10px;
     font-size:clamp(18px,4.4vw,22px); font-weight:800; color:var(--ink);
     margin:0 0 14px;
   }
-  .cat-section-title .cst-emoji{font-size:1.15em;}
+  .cst-icon{width:36px; height:36px; object-fit:contain; display:block; flex-shrink:0;}
   .cat-section-note{
     font-size:clamp(13px,3.2vw,14.5px); font-weight:600; color:var(--ink-soft);
     margin:-8px 0 16px; line-height:1.5;
@@ -602,14 +625,26 @@
     display:flex; align-items:center; justify-content:center; font-size:19px;
     background:#EDE6DA; filter:grayscale(1) opacity(.55); z-index:1;
   }
+  .cat-sticker-icon{width:22px; height:22px; object-fit:contain; display:block;}
+  /* สติกเกอร์ปลดล็อก: วงกลมทองชั้นเดียว + มุมพับครึ่งวงกลมล่างขวา (SVG frame ฝังใน background) icon เอียง 30° + shine กวาดแบบสมุดสติกเกอร์ */
   .cat-sticker.unlocked{
-    background:radial-gradient(circle at 35% 30%, #FFF3B0, #FFC93C 70%);
-    filter:none; box-shadow:0 0 0 3px #FFF7DA, 0 4px 10px rgba(255,180,20,.5);
+    width:44px; height:44px;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M94.8 53.9 A45 45 0 1 0 53.9 94.8 Z' fill='%23FFD75E' stroke='%23E9AE45' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M94.8 53.9 A45 45 0 0 0 53.9 94.8 Z' fill='%23E8A63C' stroke='%23E9AE45' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% 100% no-repeat;
+    border-radius:50%; overflow:hidden; box-shadow:none;
+    filter:drop-shadow(0 3px 5px rgba(0,0,0,.28));
     animation:starPop .5s cubic-bezier(.34,1.56,.64,1);
   }
+  .cat-sticker.unlocked::after{
+    content:''; position:absolute; top:-30%; left:-30%; width:60%; height:160%;
+    background:linear-gradient(120deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.65) 50%,rgba(255,255,255,0) 100%);
+    transform:skewX(-20deg); pointer-events:none;
+    animation:shine 3.5s ease-in-out infinite;
+  }
+  .cat-sticker.unlocked .cat-sticker-icon{width:24px; height:24px; transform:rotate(30deg);}
   @keyframes starPop{0%{transform:scale(0) rotate(-25deg);} 65%{transform:scale(1.25) rotate(8deg);} 100%{transform:scale(1) rotate(0);}}
 
   .cat-emoji{font-size:54px; line-height:1;}
+  .cat-icon-img{width:54px; height:54px; object-fit:contain; display:block;}
   .cat-name{font-size:clamp(22px,5.6vw,27px); font-weight:800; margin-top:10px; color:var(--ink);}
   .cat-meta{font-size:17px; color:var(--ink-soft); font-weight:700; margin-top:2px;}
   .cat-progress{
@@ -637,7 +672,8 @@
   }
   .back-btn:active{transform:translateY(3px); box-shadow:none;}
   .quiz-top-info{flex:1;}
-  .quiz-top-info .cat-label{font-size:16px; font-weight:800; color:var(--cat-color,var(--math));}
+  .quiz-top-info .cat-label{font-size:16px; font-weight:800; color:var(--cat-color,var(--math)); display:flex; align-items:center; gap:6px;}
+  .cat-label-icon{width:20px; height:20px; object-fit:contain; display:block; flex-shrink:0;}
   .progress-track{
     margin-top:5px; height:14px; border-radius:999px; background:#EFE6D6; overflow:hidden;
     box-shadow:inset 0 2px 4px rgba(0,0,0,.08);
@@ -774,6 +810,7 @@
     box-shadow:0 0 0 5px #FFF3D2, 0 8px 16px rgba(255,180,20,.45);
     animation:starPop .6s cubic-bezier(.34,1.56,.64,1);
   }
+  .sticker-earned-img{width:56px; height:56px; object-fit:contain; display:block;}
   .sticker-caption{font-size:14.5px; font-weight:700; color:var(--ink-soft); margin-top:8px;}
 
   .review-wrap{margin-top:22px; text-align:left;}

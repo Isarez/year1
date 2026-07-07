@@ -1,0 +1,30 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ต่อประโยค (ไทย)">
+  <defs>
+    <linearGradient id="stThA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb3d1"/>
+      <stop offset="1" stop-color="#f56aa0"/>
+    </linearGradient>
+    <linearGradient id="stThB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9ec4"/>
+      <stop offset="1" stop-color="#ef5591"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="55" rx="20" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- word tile 1 (left) with puzzle knob on right -->
+  <path d="M10 20h16v6a3.5 3.5 0 0 0 0 7v6H10a3 3 0 0 1-3-3v-6a3.5 3.5 0 0 0 0-7v-6a3 3 0 0 1 3-3z"
+        fill="url(#stThA)" stroke="#d34a80" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M13 25h9M13 30h7" stroke="#fff4f8" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- word tile 2 (right) with puzzle socket on left -->
+  <path d="M54 20H38v6a3.5 3.5 0 0 1 0 7v6h16a3 3 0 0 0 3-3v-6a3.5 3.5 0 0 1 0-7v-6a3 3 0 0 0-3-3z"
+        fill="url(#stThB)" stroke="#d34a80" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M42 25h9M42 30h7" stroke="#fff4f8" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- highlight -->
+  <path d="M11 23h6v3h-6z" fill="#fff" opacity="0.28"/>
+
+  <!-- plus badge showing "join" -->
+  <circle cx="32" cy="46" r="7" fill="#ffd54f" stroke="#d34a80" stroke-width="2.6"/>
+  <path d="M32 43v6M29 46h6" stroke="#d34a80" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

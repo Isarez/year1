@@ -76,12 +76,12 @@
   <div class="header-actions">
     <div class="child-chip-group" id="child-chip-group" hidden>
       <button class="child-chip" id="switch-child-btn" aria-label="เปลี่ยนเด็ก"><span id="header-child-emoji"></span> <span id="header-child-name"></span></button>
-      <button class="child-edit-btn" id="header-edit-emoji-btn" aria-label="แก้ไข Emoji" data-tooltip="แก้ไข Emoji">✏️</button>
+      <button class="child-edit-btn" id="header-edit-emoji-btn" aria-label="แก้ไข Emoji" data-tooltip="แก้ไข Emoji"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg></button>
     </div>
 <button class="icon-btn" id="theme-toggle" aria-label="สลับธีมกลางวัน/กลางคืน" data-tooltip="โหมดกลางคืน">🌙</button>
 <button class="icon-btn" id="music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง" data-tooltip="เปิด/ปิดเพลงพื้นหลัง">🎵</button>
     <button class="icon-btn" id="sound-toggle" aria-label="เปิด/ปิดเสียง" data-tooltip="เปิด/ปิดเสียง">🔊</button>
-    <button class="icon-btn" id="clear-btn" aria-label="จัดการข้อมูล" data-tooltip="จัดการข้อมูล" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="rgba(74,63,53,.12)"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/></svg></button>
+    <button class="icon-btn" id="clear-btn" aria-label="จัดการข้อมูล" data-tooltip="จัดการข้อมูล" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3D7FBF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#DCF0FB"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/></svg></button>
     <button class="icon-btn" id="fullscreen-toggle" aria-label="เต็มหน้าจอ" data-tooltip="เต็มหน้าจอ">⛶</button>
   </div>
 </header>
@@ -115,20 +115,20 @@
       <p>เลือกหมวดที่อยากลองทำก่อนได้เลย 🎯</p>
     </div>
     <div class="cat-section">
-      <div class="cat-section-title"><span class="cst-emoji">📝</span> คำถาม-คำตอบ</div>
+      <div class="cat-section-title"><img src="assets/icons/section-quiz.svg" class="cst-icon" alt=""> คำถาม-คำตอบ</div>
       <div class="cat-grid" id="cat-grid"></div>
     </div>
     <div class="cat-section">
-      <div class="cat-section-title"><span class="cst-emoji">🖐️</span> การโต้ตอบ (AR)</div>
+      <div class="cat-section-title"><img src="assets/icons/section-ar.svg" class="cst-icon" alt=""> การโต้ตอบ (AR)</div>
       <p class="cat-section-note">💡 แนะนำให้เล่นบนแท็บเล็ต โน้ตบุ๊ก หรือคอมพิวเตอร์เพื่อใช้กล้อง AR ได้เต็มรูปแบบ — ถ้าเล่นบนมือถือจะไม่ใช้กล้อง ใช้นิ้วแตะลากแทนนะ</p>
       <div class="cat-grid" id="cat-grid-interactive"></div>
     </div>
     <div class="cat-section">
-      <div class="cat-section-title"><span class="cst-emoji">🧠</span> เกมฝึกทักษะ</div>
+      <div class="cat-section-title"><img src="assets/icons/section-skill.svg" class="cst-icon" alt=""> เกมฝึกทักษะ</div>
       <div class="cat-grid" id="cat-grid-skill"></div>
     </div>
     <div class="cat-section">
-      <div class="cat-section-title"><span class="cst-emoji">🎧</span> เกมฟังคำศัพท์</div>
+      <div class="cat-section-title"><img src="assets/icons/section-listen.svg" class="cst-icon" alt=""> เกมฟังคำศัพท์</div>
       <div class="cat-grid" id="cat-grid-listen"></div>
     </div>
   </section>
@@ -287,6 +287,7 @@
 <!-- STICKER BOOK -->
 <div id="sticker-book" hidden>
   <div class="sb-card">
+    <button class="sb-x-btn" id="sb-x-btn" aria-label="ปิดสมุด">✕</button>
     <div class="sb-title">📒 สมุดสติกเกอร์</div>
     <div class="sb-sub" id="sb-sub">ของน้องหนู</div>
     <div class="sb-grid" id="sb-grid"></div>
