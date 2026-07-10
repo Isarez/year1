@@ -1468,6 +1468,7 @@ let arGame = null;             // {catId, level, mistakes, totalLevels}
 let arActive = false;          // hand-tracking running?
 let arHands = null, arCamera = null, arStream = null, arRafId = null, arResizeHandler = null;
 let arLandmarks = null;        // latest hand landmarks from onResults
+let arHandSmooth = null;       // landmark (พิกัด pixel) ผ่าน temporal smoothing แล้ว — ลด jitter ให้มือ/cursor ขยับนุ่มขึ้น
 let arWasPinching = false;
 let arDraggingCard = null, arDragSource = null; // 'hand' | 'mouse'
 let arDragLineFrom = null;     // {side, key, x, y, el} anchor dot for match-mode line drag
@@ -2063,58 +2064,23 @@ function levelSuccess(){
 }
 
 /* ---- hand tracking (MediaPipe Hands) — flat cartoon hand, drawn on canvas ----
-   สไตล์อ้างอิงจาก assets/example/hand_1.png (สีพื้นเรียบ ไม่มีเส้นขอบ, นิ้วมนอวบ)
-   แต่วาดสดจาก landmark จริงทุกเฟรม (ไม่ใช่รูปนิ่ง) เพื่อให้นิ้วขยับ/งอตามมือจริง ไม่แข็งค้าง */
-function drawCartoonHand(ctx, lm, W, H){
-  const pts = lm.map(p=>({x:(1-p.x)*W, y:p.y*H}));
+   มือการ์ตูนแบนสำหรับเด็ก วาดสดจาก landmark จริงทุกเฟรม (ไม่ใช่รูปนิ่ง) นิ้วขยับ/งอตามมือจริง
+   รับ pts เป็นพิกัด pixel ที่ผ่าน temporal smoothing มาแล้วจาก arDrawLoop (ลด jitter จาก MediaPipe)
+   องค์ประกอบความสวย: เงาสติกเกอร์ใต้มือ (silhouette วาดลง canvas สำรองแล้ว drawImage ด้วย alpha เดียว
+   กันเงาซ้อนเข้มเป็นหย่อมตรงรอยต่อรูปทรง), ผิวไล่เฉด radial gradient, ปลอกแขนเสื้อพาสเทลที่ข้อมือ,
+   เล็บนิ้วกลาง/นาง/ก้อย (เว้นโป้ง/ชี้ที่มีจุด indicator อยู่), จุด indicator แบบลูกแก้ว + halo เต้นตามเวลา */
+let _handShadowCv = null;
+function drawCartoonHand(ctx, pts){
   const blen = (a,b)=> Math.hypot(b.x-a.x, b.y-a.y);
 
-  const SKIN    = '#FFDDCE';
-  const OUTLINE = '#E8A67F';
-  const outlineW = Math.max(1.5, blen(pts[0],pts[9])*0.03);
+  const OUTLINE  = '#E8A67F';
+  const NAIL     = '#FFF4EC';
+  const CUFF     = '#A5DCF5';
+  const CUFF_DK  = '#5FAFD4';
+  const handScale = blen(pts[0], pts[9]) || 1;
+  const outlineW  = Math.max(1.5, handScale*0.03);
 
-  /* นิ้ว (ทุกนิ้ว) — ทรงสามเหลี่ยมขอบมน ไล่ความอวบจากโคน (กว้าง) ไปปลาย (แคบ) แบบต่อเนื่อง
-     คำนวณ half-width ที่แต่ละข้อนิ้วแบบ interpolate เชิงเส้นจาก baseHalf→tipHalf แล้ว fill เป็น polygon เดียว
-     ปลายมนด้วย quadratic curve ผ่านจุดปลายนิ้วจริง, โคนกว้างกว่าเดิมเล็กน้อยให้จมเข้าไปในฝ่ามือ เชื่อมต่อกันเนียน ไม่มีรอยต่อ */
-  function drawFinger(jts, baseHalf, tipHalf, extend){
-    /* extend: ยืดปลายนิ้ว (jts สุดท้าย) ออกไปอีกเล็กน้อยตามทิศทางท่อนสุดท้าย ให้นิ้วดูยาวสมส่วนขึ้น (เกินตำแหน่ง landmark จริงนิดหน่อย) */
-    if(extend){
-      const n0 = jts.length;
-      const bx=jts[n0-1].x-jts[n0-2].x, by=jts[n0-1].y-jts[n0-2].y, bl=Math.hypot(bx,by)||1;
-      jts = [...jts.slice(0,n0-1), {x:jts[n0-1].x+bx/bl*extend, y:jts[n0-1].y+by/bl*extend}];
-    }
-    const n = jts.length;
-    const L=[], R=[];
-    for(let i=0;i<n;i++){
-      const seg = i<n-1 ? [jts[i],jts[i+1]] : [jts[i-1],jts[i]];
-      const t  = i/(n-1);
-      const hw = baseHalf + (tipHalf-baseHalf)*t;
-      const ddx=seg[1].x-seg[0].x, ddy=seg[1].y-seg[0].y, rr=Math.hypot(ddx,ddy)||1;
-      L.push({x:jts[i].x-ddy/rr*hw, y:jts[i].y+ddx/rr*hw});
-      R.push({x:jts[i].x+ddy/rr*hw, y:jts[i].y-ddx/rr*hw});
-    }
-    /* เส้นข้างทั้งสองฝั่งใช้ quadraticCurveTo ผ่านจุดกึ่งกลางข้อต่อ (แทน lineTo ตรงๆ) ให้ไม่เห็นเหลี่ยมตรงข้อนิ้วเลย */
-    ctx.beginPath();
-    ctx.moveTo(L[0].x, L[0].y);
-    for(let i=1;i<n-1;i++){
-      const mx=(L[i].x+L[i+1].x)/2, my=(L[i].y+L[i+1].y)/2;
-      ctx.quadraticCurveTo(L[i].x, L[i].y, mx, my);
-    }
-    ctx.quadraticCurveTo(L[n-1].x, L[n-1].y, jts[n-1].x, jts[n-1].y);
-    ctx.quadraticCurveTo(R[n-1].x, R[n-1].y, R[n-2].x, R[n-2].y);
-    for(let i=n-2;i>=1;i--){
-      const mx=(R[i].x+R[i-1].x)/2, my=(R[i].y+R[i-1].y)/2;
-      ctx.quadraticCurveTo(R[i].x, R[i].y, mx, my);
-    }
-    ctx.lineTo(R[0].x, R[0].y);
-    /* ไม่ closePath ก่อน stroke: fill() ยังปิดรูปให้อัตโนมัติเหมือนเดิม แต่ stroke() จะไม่ลากเส้นปิดที่โคนนิ้ว
-       (กันไม่ให้เห็นเส้นตัดขวางโคนนิ้วทับบนฝ่ามือ) */
-    ctx.fillStyle=SKIN; ctx.fill();
-    ctx.lineWidth=outlineW; ctx.strokeStyle=OUTLINE; ctx.stroke();
-  }
-
-  /* ฝ่ามือ — โค้งมนรอบด้าน ไม่มีเหลี่ยม และขยายใหญ่ขึ้นให้สมส่วนกับนิ้ว
-     วิธี: ขยายจุดขอบทุกจุดออกจากจุดศูนย์กลางฝ่ามือ แล้วลากเส้นโค้งผ่านจุดกึ่งกลางระหว่างแต่ละคู่ (rounded-corner polygon) */
+  /* ---- geometry (คำนวณครั้งเดียว ใช้ทั้ง pass เงาและ pass จริง) ---- */
   const palmCenter = {
     x:(pts[0].x+pts[5].x+pts[9].x+pts[13].x+pts[17].x)/5,
     y:(pts[0].y+pts[5].y+pts[9].y+pts[13].y+pts[17].y)/5,
@@ -2133,53 +2099,161 @@ function drawCartoonHand(ctx, lm, W, H){
   const wristThumbSide = blen(wA,pts[1]) < blen(wB,pts[1]) ? wA : wB;
   const wristPinkySide = wristThumbSide===wA ? wB : wA;
   const thumbBase = bulge(pts[1], 1.22);
-
   const palmPts = [wristThumbSide, thumbBase, bulge(pts[5],1.32), bulge(pts[9],1.28), bulge(pts[13],1.32), bulge(pts[17],1.36), wristPinkySide];
-  const n = palmPts.length;
-  const mid = (a,b)=>({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
-  ctx.beginPath();
-  const startMid = mid(palmPts[n-1], palmPts[0]);
-  ctx.moveTo(startMid.x, startMid.y);
-  for(let i=0;i<n;i++){
-    const cur = palmPts[i], nxt = palmPts[(i+1)%n];
-    const m = mid(cur, nxt);
-    ctx.quadraticCurveTo(cur.x, cur.y, m.x, m.y);
-  }
-  ctx.closePath();
-  ctx.fillStyle=SKIN; ctx.fill();
-  ctx.lineWidth=outlineW; ctx.strokeStyle=OUTLINE; ctx.stroke();
+
+  /* ปลอกแขนเสื้อ (cuff) capsule ที่ข้อมือ ถัดจากโคนมือออกไปทางแขน วาดก่อนฝ่ามือให้โผล่ใต้มือเหมือนแขนเสื้อเด็ก */
+  const cuffC = {x:wristBase.x + dx/r*handScale*0.14, y:wristBase.y + dy/r*handScale*0.14};
+  const cuffHalf = wLen*0.82;
+  const cuffA = {x:cuffC.x-dy/r*cuffHalf, y:cuffC.y+dx/r*cuffHalf};
+  const cuffB = {x:cuffC.x+dy/r*cuffHalf, y:cuffC.y-dx/r*cuffHalf};
+  const cuffW = handScale*0.30;
 
   /* ความหนาโคนนิ้วแต่ละนิ้ว (ใช้ทั้งวาดปลอกคอเชื่อมฝ่ามือ และวาดตัวนิ้วเอง ให้ตรงกันเป๊ะ) */
   const thumbHalf=blen(pts[1],pts[2])*0.48;
   const idxBase=blen(pts[5],pts[6])*0.44, midBase=blen(pts[9],pts[10])*0.46,
         ringBase=blen(pts[13],pts[14])*0.44, pinkyBase=blen(pts[17],pts[18])*0.36;
+  const collars = [[1,thumbHalf],[5,idxBase],[9,midBase],[13,ringBase],[17,pinkyBase]];
 
-  /* ปลอกคอ (collar) วงกลมสีเนื้อทับรอยต่อโคนนิ้วกับฝ่ามือ (รวมนิ้วโป้งด้วย) ปิดรอยหยักเว้าของเส้นขอบฝ่ามือให้เนียนสนิท ไม่เห็นรอยต่อ/เหลี่ยม */
-  [[1,thumbHalf],[5,idxBase],[9,midBase],[13,ringBase],[17,pinkyBase]].forEach(([i,half])=>{
+  /* extend: ยืดปลายนิ้ว (jts สุดท้าย) ออกไปอีกเล็กน้อยตามทิศทางท่อนสุดท้าย ให้นิ้วดูยาวสมส่วนขึ้น (เกินตำแหน่ง landmark จริงนิดหน่อย) */
+  const extendTip = (jts, extend)=>{
+    if(!extend) return jts;
+    const n0 = jts.length;
+    const bx=jts[n0-1].x-jts[n0-2].x, by=jts[n0-1].y-jts[n0-2].y, bl=Math.hypot(bx,by)||1;
+    return [...jts.slice(0,n0-1), {x:jts[n0-1].x+bx/bl*extend, y:jts[n0-1].y+by/bl*extend}];
+  };
+  /* 5 นิ้ว — ทรง/ความหนาต่างกันตามสัดส่วนนิ้วจริง, nail = นิ้วที่มีเล็บ (กลาง/นาง/ก้อย) */
+  const fingers = [
+    {jts:[pts[1],pts[2],pts[3],pts[4]],                                                    base:thumbHalf, tip:blen(pts[1],pts[2])*0.24},              // โป้ง: สั้น ป้อม
+    {jts:extendTip([pts[5],pts[6],pts[7],pts[8]],     blen(pts[7],pts[8])*0.48),           base:idxBase,   tip:blen(pts[5],pts[6])*0.22},              // ชี้
+    {jts:extendTip([pts[9],pts[10],pts[11],pts[12]],  blen(pts[11],pts[12])*0.48),         base:midBase,   tip:blen(pts[9],pts[10])*0.23,  nail:true}, // กลาง: ยาวสุด หนาสุด
+    {jts:extendTip([pts[13],pts[14],pts[15],pts[16]], blen(pts[15],pts[16])*0.48),         base:ringBase,  tip:blen(pts[13],pts[14])*0.22, nail:true}, // นาง
+    {jts:extendTip([pts[17],pts[18],pts[19],pts[20]], blen(pts[19],pts[20])*0.30),         base:pinkyBase, tip:blen(pts[17],pts[18])*0.19, nail:true}  // ก้อย: เรียวสุด
+  ];
+
+  /* ผิวไล่เฉด: อ่อนสว่างกลางฝ่ามือ → อมส้มขึ้นเล็กน้อยที่ขอบ/ปลายนิ้ว ให้มีมิตินุ่มๆ แบบการ์ตูน */
+  const skinGrad = ctx.createRadialGradient(palmCenter.x, palmCenter.y, handScale*0.2, palmCenter.x, palmCenter.y, handScale*1.7);
+  skinGrad.addColorStop(0, '#FFE8DB');
+  skinGrad.addColorStop(.55, '#FFDDCE');
+  skinGrad.addColorStop(1, '#FFCFB8');
+
+  /* ---- path builders (ใช้ร่วมกันทั้ง 2 pass) ---- */
+  /* นิ้ว — ทรงสามเหลี่ยมขอบมน ไล่ความอวบจากโคน (กว้าง) ไปปลาย (แคบ) ต่อเนื่อง
+     เส้นข้างสองฝั่งใช้ quadraticCurveTo ผ่านจุดกึ่งกลางข้อต่อ ให้ไม่เห็นเหลี่ยมตรงข้อนิ้ว
+     ไม่ closePath: fill() ปิดรูปให้เอง แต่ stroke() จะไม่ลากเส้นตัดขวางโคนนิ้วทับบนฝ่ามือ */
+  function buildFingerPath(tctx, jts, baseHalf, tipHalf){
+    const n = jts.length;
+    const L=[], R=[];
+    for(let i=0;i<n;i++){
+      const seg = i<n-1 ? [jts[i],jts[i+1]] : [jts[i-1],jts[i]];
+      const t  = i/(n-1);
+      const hw = baseHalf + (tipHalf-baseHalf)*t;
+      const ddx=seg[1].x-seg[0].x, ddy=seg[1].y-seg[0].y, rr=Math.hypot(ddx,ddy)||1;
+      L.push({x:jts[i].x-ddy/rr*hw, y:jts[i].y+ddx/rr*hw});
+      R.push({x:jts[i].x+ddy/rr*hw, y:jts[i].y-ddx/rr*hw});
+    }
+    tctx.beginPath();
+    tctx.moveTo(L[0].x, L[0].y);
+    for(let i=1;i<n-1;i++){
+      const mx=(L[i].x+L[i+1].x)/2, my=(L[i].y+L[i+1].y)/2;
+      tctx.quadraticCurveTo(L[i].x, L[i].y, mx, my);
+    }
+    tctx.quadraticCurveTo(L[n-1].x, L[n-1].y, jts[n-1].x, jts[n-1].y);
+    tctx.quadraticCurveTo(R[n-1].x, R[n-1].y, R[n-2].x, R[n-2].y);
+    for(let i=n-2;i>=1;i--){
+      const mx=(R[i].x+R[i-1].x)/2, my=(R[i].y+R[i-1].y)/2;
+      tctx.quadraticCurveTo(R[i].x, R[i].y, mx, my);
+    }
+    tctx.lineTo(R[0].x, R[0].y);
+  }
+  /* ฝ่ามือ — rounded-corner polygon โค้งมนรอบด้าน (ลากโค้งผ่านจุดกึ่งกลางระหว่างแต่ละคู่จุดขอบ) */
+  function buildPalmPath(tctx){
+    const n = palmPts.length;
+    const mid = (a,b)=>({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+    tctx.beginPath();
+    const startMid = mid(palmPts[n-1], palmPts[0]);
+    tctx.moveTo(startMid.x, startMid.y);
+    for(let i=0;i<n;i++){
+      const cur = palmPts[i], nxt = palmPts[(i+1)%n];
+      const m = mid(cur, nxt);
+      tctx.quadraticCurveTo(cur.x, cur.y, m.x, m.y);
+    }
+    tctx.closePath();
+  }
+
+  /* ---- วาดมือทั้งมือ: flat=true วาด silhouette สีเดียว (สำหรับเงา), flat=false วาดจริง (gradient+ขอบ) ---- */
+  function paintHand(tctx, flat){
+    const skin = flat ? '#7A4828' : skinGrad;
+    /* cuff (หลังสุด อยู่ใต้ฝ่ามือ) */
+    tctx.beginPath();
+    tctx.moveTo(cuffA.x, cuffA.y); tctx.lineTo(cuffB.x, cuffB.y);
+    tctx.lineCap = 'round';
+    if(flat){
+      tctx.lineWidth = cuffW+outlineW*2; tctx.strokeStyle = skin; tctx.stroke();
+    } else {
+      tctx.lineWidth = cuffW+outlineW*2; tctx.strokeStyle = CUFF_DK; tctx.stroke();
+      tctx.lineWidth = cuffW; tctx.strokeStyle = CUFF; tctx.stroke();
+    }
+    /* ฝ่ามือ */
+    buildPalmPath(tctx);
+    tctx.fillStyle = skin; tctx.fill();
+    if(!flat){ tctx.lineWidth = outlineW; tctx.strokeStyle = OUTLINE; tctx.stroke(); }
+    /* ปลอกคอ (collar) วงกลมสีเนื้อทับรอยต่อโคนนิ้วกับฝ่ามือ ปิดรอยหยักเว้าของเส้นขอบฝ่ามือให้เนียนสนิท */
+    collars.forEach(([i,half])=>{
+      tctx.beginPath();
+      tctx.arc(pts[i].x, pts[i].y, half*1.08, 0, Math.PI*2);
+      tctx.fillStyle = skin; tctx.fill();
+    });
+    /* 5 นิ้ว */
+    fingers.forEach(f=>{
+      buildFingerPath(tctx, f.jts, f.base, f.tip);
+      tctx.fillStyle = skin; tctx.fill();
+      if(!flat){ tctx.lineWidth = outlineW; tctx.strokeStyle = OUTLINE; tctx.stroke(); }
+    });
+  }
+
+  /* pass 1: เงาสติกเกอร์ — silhouette ทึบบน canvas สำรอง แล้ววางเยื้องลงขวาด้วย alpha เดียวทั้งก้อน */
+  const mainCv = ctx.canvas;
+  if(!_handShadowCv) _handShadowCv = document.createElement('canvas');
+  if(_handShadowCv.width !== mainCv.width || _handShadowCv.height !== mainCv.height){
+    _handShadowCv.width = mainCv.width; _handShadowCv.height = mainCv.height;
+  }
+  const sctx = _handShadowCv.getContext('2d');
+  sctx.clearRect(0, 0, _handShadowCv.width, _handShadowCv.height);
+  paintHand(sctx, true);
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.drawImage(_handShadowCv, handScale*0.05, handScale*0.09);
+  ctx.restore();
+
+  /* pass 2: มือจริง */
+  paintHand(ctx, false);
+
+  /* เล็บ — วงรีสีอ่อนที่ปลายนิ้วกลาง/นาง/ก้อย วางตามทิศปลายนิ้ว เพิ่มความน่ารักแบบการ์ตูน */
+  fingers.forEach(f=>{
+    if(!f.nail) return;
+    const jn = f.jts.length, tipPt = f.jts[jn-1], prev = f.jts[jn-2];
+    const ddx = tipPt.x-prev.x, ddy = tipPt.y-prev.y, rr = Math.hypot(ddx,ddy)||1;
+    const nx = tipPt.x-ddx/rr*f.tip*1.1, ny = tipPt.y-ddy/rr*f.tip*1.1;
     ctx.beginPath();
-    ctx.arc(pts[i].x, pts[i].y, half*1.08, 0, Math.PI*2);
-    ctx.fillStyle=SKIN; ctx.fill();
+    ctx.ellipse(nx, ny, f.tip*0.95, f.tip*0.68, Math.atan2(ddy,ddx), 0, Math.PI*2);
+    ctx.fillStyle = NAIL; ctx.fill();
+    ctx.lineWidth = Math.max(1, outlineW*0.66); ctx.strokeStyle = 'rgba(232,166,127,.6)'; ctx.stroke();
   });
 
-  /* 5 นิ้ว — นิ้วชี้/กลาง/นาง/ก้อย ยืดปลายออกอีกนิด (extend) ให้ดูยาวสมส่วนขึ้นกว่าความยาว landmark ตรงๆ
-     ความหนาไล่ต่อเนื่องจากโคนไปปลายแบบสามเหลี่ยมขอบมน (ทรง/ความหนาต่างกันตามสัดส่วนนิ้วจริง) */
-  drawFinger([pts[1],pts[2],pts[3],pts[4]],       thumbHalf, blen(pts[1],pts[2])*0.24); // โป้ง: สั้น ป้อม (เชื่อมผ่านปลอกคอ+thumbBase ในฝ่ามือแล้ว)
-  drawFinger([pts[5],pts[6],pts[7],pts[8]],       idxBase,   blen(pts[5],pts[6])*0.22,   blen(pts[7],pts[8])*0.48); // ชี้
-  drawFinger([pts[9],pts[10],pts[11],pts[12]],    midBase,   blen(pts[9],pts[10])*0.23,  blen(pts[11],pts[12])*0.48); // กลาง: นิ้วยาวสุด หนาสุด
-  drawFinger([pts[13],pts[14],pts[15],pts[16]],   ringBase,  blen(pts[13],pts[14])*0.22, blen(pts[15],pts[16])*0.48); // นาง
-  drawFinger([pts[17],pts[18],pts[19],pts[20]],   pinkyBase, blen(pts[17],pts[18])*0.19, blen(pts[19],pts[20])*0.30); // ก้อย: เรียวสุด
-
-  /* indicator นิ้วโป้ง (pinch) */
-  const pr = blen(pts[3],pts[4])*0.45;
-  ctx.beginPath(); ctx.arc(pts[4].x,pts[4].y, pr,0,Math.PI*2);
-  ctx.fillStyle='#FF6161'; ctx.fill();
-  ctx.lineWidth=2.5; ctx.strokeStyle='#fff'; ctx.stroke();
-
-  /* indicator นิ้วชี้ (cursor) */
-  const ir = blen(pts[7],pts[8])*0.45;
-  ctx.beginPath(); ctx.arc(pts[8].x,pts[8].y, ir,0,Math.PI*2);
-  ctx.fillStyle='#33B7EE'; ctx.fill();
-  ctx.lineWidth=2.5; ctx.strokeStyle='#fff'; ctx.stroke();
+  /* indicator โป้ง (pinch, แดง) / ชี้ (cursor, ฟ้า) — ลูกแก้วมี highlight + halo โปร่งเต้นตามเวลา */
+  const tNow = performance.now()/1000;
+  function indicator(p, baseR, color, halo){
+    const pulse = 1 + 0.12*Math.sin(tNow*5);
+    ctx.beginPath(); ctx.arc(p.x, p.y, baseR*1.7*pulse, 0, Math.PI*2);
+    ctx.fillStyle = halo; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, baseR, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x-baseR*0.32, p.y-baseR*0.32, baseR*0.28, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+  }
+  indicator(pts[4], blen(pts[3],pts[4])*0.45, '#FF6161', 'rgba(255,97,97,.18)');
+  indicator(pts[8], blen(pts[7],pts[8])*0.45, '#33B7EE', 'rgba(51,183,238,.18)');
 }
 
 function updateArCursor(pageX, pageY, pinching){
@@ -2244,10 +2318,15 @@ function arDrawLoop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(arLandmarks){
-    drawCartoonHand(ctx, arLandmarks, canvas.width, canvas.height);
-    const idx = arLandmarks[8], thumb = arLandmarks[4];
-    const ix = (1-idx.x)*canvas.width,   iy = idx.y*canvas.height;
-    const tx = (1-thumb.x)*canvas.width, ty = thumb.y*canvas.height;
+    /* temporal smoothing: ขยับจุดเดิมเข้าหาตำแหน่งใหม่ 50% ต่อเฟรม — ทั้งมือที่วาดและ cursor นุ่มขึ้น
+       ไม่สั่นตาม jitter ของ MediaPipe (smooth ที่จุดเดียว มือกับ cursor เลยตรงกันเสมอ) */
+    const raw = arLandmarks.map(p=>({x:(1-p.x)*canvas.width, y:p.y*canvas.height}));
+    if(!arHandSmooth || arHandSmooth.length !== raw.length) arHandSmooth = raw;
+    else arHandSmooth = arHandSmooth.map((p,i)=>({x:p.x+(raw[i].x-p.x)*0.5, y:p.y+(raw[i].y-p.y)*0.5}));
+    const hpts = arHandSmooth;
+    drawCartoonHand(ctx, hpts);
+    const ix = hpts[8].x, iy = hpts[8].y;
+    const tx = hpts[4].x, ty = hpts[4].y;
     const dx = ix-tx, dy = iy-ty;
     const dist = Math.sqrt(dx*dx + dy*dy);
     const pinching = dist < Math.max(28, canvas.width*0.07);
@@ -2257,6 +2336,7 @@ function arDrawLoop(){
     const pageX = rect.left + ix*scaleX, pageY = rect.top + iy*scaleY;
     updateArCursor(pageX, pageY, pinching);
   } else {
+    arHandSmooth = null;
     $('ar-cursor').classList.remove('active');
     arWasPinching = false;
   }
