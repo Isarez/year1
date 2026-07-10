@@ -1,5 +1,11 @@
 /* ============ โหมดคุณครู — สไตล์เฉพาะหน้า teacher (ต่อยอดจาก ../css/style.css) ============ */
 
+/* จัดการ์ด setup ให้อยู่กลางจอ — หน้าหลักทำผ่าน id #child-select-view ซึ่งไม่ครอบหน้านี้ */
+#teacher-setup-view{
+  display:flex; align-items:center; justify-content:center;
+  padding:24px 20px; min-height:82vh;
+}
+
 /* modal ยืนยันลบ — pattern position:fixed + centering เดียวกับ modal หน้าหลัก */
 #confirm-del-modal{
   position:fixed; inset:0; z-index:300;

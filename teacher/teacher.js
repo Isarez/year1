@@ -611,6 +611,21 @@ function finishTeacherQuiz(){
 $('retry-btn').addEventListener('click', ()=>{ playClick(); startTeacherQuiz(quiz.gameId); });
 $('home-btn').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
 
+/* ---------- Buy me a Milk (QR modal — id `qr-modal` เดียวกับหน้าหลัก ได้ CSS centering จาก style.css) ---------- */
+function openOverlay(id){
+  const el = $(id);
+  el.hidden = false;
+  requestAnimationFrame(()=> requestAnimationFrame(()=> el.classList.add('show')));
+}
+function closeOverlay(id){
+  const el = $(id);
+  el.classList.remove('show');
+  setTimeout(()=>{ el.hidden = true; }, 300);
+}
+$('bmm-btn').addEventListener('click', ()=>{ playClick(); openOverlay('qr-modal'); });
+$('qr-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('qr-modal'); });
+$('qr-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('qr-modal'); });
+
 /* ---------- init ---------- */
 loadData();
 renderAvatarPicker();
