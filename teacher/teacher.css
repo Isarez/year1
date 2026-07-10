@@ -6,12 +6,15 @@
   padding:24px 20px; min-height:82vh;
 }
 
-/* modal ยืนยันลบ — pattern position:fixed + centering เดียวกับ modal หน้าหลัก */
-#confirm-del-modal{
+/* modal ยืนยันลบ + จัดการข้อมูล — pattern position:fixed + centering เดียวกับ modal หน้าหลัก */
+#confirm-del-modal, #data-modal{
   position:fixed; inset:0; z-index:300;
   display:flex; align-items:center; justify-content:center;
 }
-#confirm-del-modal[hidden]{display:none;}
+#confirm-del-modal[hidden], #data-modal[hidden]{display:none;}
+.data-modal-actions{display:flex; flex-direction:column; gap:12px; margin-bottom:14px;}
+.data-export-btn{width:100%;}
+.data-delete-btn{width:100%; background:linear-gradient(135deg,#FF8F8F,#E2574B);}
 
 /* หน้า home ครู */
 .teacher-empty{

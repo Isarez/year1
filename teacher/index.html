@@ -70,6 +70,10 @@
       <button class="child-chip" id="teacher-chip"><span id="header-teacher-emoji"></span> <span id="header-teacher-name"></span></button>
     </div>
     <button class="icon-btn" id="theme-toggle" aria-label="สลับโหมดกลางวัน/กลางคืน"></button>
+    <button class="icon-btn" id="music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง"></button>
+    <button class="icon-btn" id="sound-toggle" aria-label="เปิด/ปิดเสียง"></button>
+    <button class="icon-btn" id="clear-btn" aria-label="จัดการข้อมูล" data-tooltip="จัดการข้อมูล" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3D7FBF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#DCF0FB"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/></svg></button>
+    <button class="icon-btn" id="fullscreen-toggle" aria-label="เต็มหน้าจอ"></button>
   </div>
 </header>
 
@@ -86,6 +90,8 @@
       <input class="child-name-input" id="teacher-name-input" type="text" placeholder="ชื่อคุณครู" maxlength="30" autocomplete="off">
       <input class="child-name-input" id="school-name-input" type="text" placeholder="ชื่อโรงเรียน" maxlength="40" autocomplete="off">
       <button class="child-submit-btn" id="teacher-submit-btn">เริ่มใช้งานเลย! 🚀</button>
+      <button class="child-import-btn" id="teacher-import-btn">📥 นำเข้าข้อมูลคุณครูจากอุปกรณ์อื่น</button>
+      <input type="file" id="teacher-import-input" style="display:none">
     </div>
   </section>
 
@@ -262,6 +268,21 @@
 </div>
 
 <footer>โหมดคุณครู — สร้างโจทย์เองให้เด็กๆ ฝึกทำ 💛<span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.teacher.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+
+<!-- DATA MANAGE MODAL (จัดการข้อมูล: ย้ายข้อมูล / ลบคุณครู) -->
+<div id="data-modal" hidden>
+  <div class="modal-backdrop" id="data-modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-icon">🗂️</div>
+    <h3 class="modal-title">จัดการข้อมูล</h3>
+    <p class="modal-body">ข้อมูลที่ย้ายมีเฉพาะโปรไฟล์คุณครูและโจทย์ทั้งหมด (ไม่รวมข้อมูลเด็กของหน้าหลัก)</p>
+    <div class="data-modal-actions">
+      <button class="child-submit-btn data-export-btn" id="data-export-btn">📤 ย้ายข้อมูล (ดาวน์โหลดไฟล์)</button>
+      <button class="child-submit-btn data-delete-btn" id="data-delete-btn">🗑️ ลบคุณครู</button>
+    </div>
+    <button class="modal-cancel-btn" id="data-close-btn" style="width:100%;">ปิด ✕</button>
+  </div>
+</div>
 
 <div id="toast" class="toast"><span id="toast-emoji"></span><span id="toast-msg"></span></div>
 

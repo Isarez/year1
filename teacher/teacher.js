@@ -30,13 +30,15 @@ const GRADES = [
 ];
 function gradeName(id){ const g = GRADES.find(x=>x.id===id); return g ? g.name : id; }
 
-/* ---------- mechanics (เฟส 1: เปิดเฉพาะ quiz — ตัวอื่นโชว์ "เร็วๆ นี้" อ้างอิงเกมจากหน้าหลัก) ---------- */
+/* ---------- mechanics (เฟส 1: เปิดเฉพาะ quiz — AR แยก 4 รูปแบบตามเกมหน้าหลัก ทั้งหมด disabled "เร็วๆ นี้") ---------- */
 const MECHANICS = [
-  {id:'quiz',   name:'ถาม-ตอบปรนัย', emoji:'📝', enabled:true},
-  {id:'ar',     name:'AR ลากคำตอบ (กล้อง)', emoji:'🖐️', enabled:false},
-  {id:'match',  name:'จับคู่ความจำ', emoji:'🎴', enabled:false},
-  {id:'shadow', name:'ทายเงา', emoji:'🔦', enabled:false},
-  {id:'listen', name:'ฟังคำศัพท์', emoji:'🎧', enabled:false}
+  {id:'quiz',        name:'ถาม-ตอบปรนัย', emoji:'📝', enabled:true},
+  {id:'ar-pick',     name:'AR หยิบการ์ดคำตอบที่ถูกต้อง', emoji:'🖐️', enabled:false},
+  {id:'ar-order',    name:'AR หยิบการ์ดเรียงคำ', emoji:'🔤', enabled:false},
+  {id:'ar-connect',  name:'AR โยงเส้น', emoji:'🪢', enabled:false},
+  {id:'ar-sentence', name:'AR หยิบการ์ดต่อประโยค', emoji:'📖', enabled:false},
+  {id:'match',       name:'จับคู่ความจำ', emoji:'🎴', enabled:false},
+  {id:'listen',      name:'ฟังคำศัพท์', emoji:'🎧', enabled:false}
 ];
 
 /* ---------- logos (SVG เตรียมไว้ ธีมเดียวกับ icon เกมหน้าหลัก) ---------- */
@@ -60,7 +62,9 @@ const AVATARS = [
   '🍭','🍩','🍪','🧁','⚽','🎨'
 ];
 
-/* ---------- เสียง (procedural Web Audio ชุดเดียวกับหน้าหลัก) ---------- */
+/* ---------- เสียง (procedural Web Audio ชุดเดียวกับหน้าหลัก — key เปิด/ปิดใช้ร่วมกัน) ---------- */
+let soundOn = true;
+try{ soundOn = localStorage.getItem('p1quiz_sound') !== 'off'; }catch(e){}
 let audioCtx = null;
 function ensureAudio(){
   if(!audioCtx){
@@ -69,6 +73,7 @@ function ensureAudio(){
   if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
 }
 function playTone(freq, dur, type, delay, vol){
+  if(!soundOn) return;
   ensureAudio(); if(!audioCtx) return;
   const t = audioCtx.currentTime + (delay||0);
   const osc = audioCtx.createOscillator();
@@ -87,6 +92,143 @@ function playCongrats(){
   playTone(523.25,.16,'sine',0,.13); playTone(659.25,.16,'sine',.14,.13);
   playTone(783.99,.16,'sine',.28,.13); playTone(1046.5,.22,'sine',.42,.15);
   playTone(1318.5,.55,'sine',.64,.11); playTone(1046.5,.55,'sine',.64,.10); playTone(783.99,.55,'sine',.64,.08);
+}
+
+/* ---------- เพลงพื้นหลัง (procedural playlist 5 เพลง — engine เดียวกับหน้าหลัก, key p1quiz_music ร่วมกัน) ---------- */
+let musicOn = true;
+try{ musicOn = localStorage.getItem('p1quiz_music') !== 'off'; }catch(e){}
+let musicGain=null, musicSchedulerId=null, musicNoteIndex=0, musicNextTime=0, musicTrackIdx=0;
+const MUSIC_TRACKS = [
+{ bpm:128, notes:[
+  [523.25,.5],[659.25,.5],[783.99,.5],[659.25,.5],
+  [880.00,.5],[783.99,.25],[659.25,.25],[523.25,1],
+  [587.33,.25],[659.25,.25],[587.33,.25],[523.25,.25],
+  [659.25,.5],[783.99,.5],[659.25,.75],[null,.25],
+  [523.25,.25],[523.25,.25],[659.25,.25],[783.99,.25],
+  [880.00,.5],[783.99,.25],[659.25,.25],
+  [783.99,.5],[659.25,.25],[523.25,.25],[587.33,.5],[null,.5],
+  [880.00,.5],[783.99,.5],[659.25,.5],[587.33,.5],
+  [523.25,.5],[659.25,.25],[523.25,.25],[392.00,.5],[null,.5],
+  [523.25,.25],[659.25,.25],[523.25,.25],[783.99,.25],
+  [659.25,.5],[523.25,.25],[659.25,.25],[880.00,.75],[null,.25],
+  [1046.5,.25],[880.00,.25],[783.99,.25],[659.25,.25],
+  [523.25,.5],[659.25,.5],[783.99,.5],[659.25,.5],
+  [523.25,.25],[659.25,.25],[783.99,.25],[880.00,.25],
+  [783.99,.5],[659.25,.25],[523.25,.25],[587.33,.5],[659.25,.5],
+  [523.25,.5],[659.25,.5],[783.99,.5],[523.25,.5],
+  [523.25,1.5],[null,.5]
+]},
+{ bpm:112, notes:[
+  [659.25,.5],[783.99,.5],[880.00,.5],[783.99,.5],
+  [659.25,.5],[587.33,.5],[523.25,1],
+  [587.33,.5],[659.25,.5],[698.46,.5],[659.25,.5],
+  [587.33,.5],[523.25,.5],[587.33,1],
+  [659.25,.5],[783.99,.5],[880.00,.5],[1046.5,.5],
+  [987.77,.5],[880.00,.5],[783.99,1],
+  [880.00,.5],[783.99,.5],[659.25,.5],[587.33,.5],
+  [523.25,1.5],[null,.5]
+]},
+{ bpm:132, notes:[
+  [523.25,.75],[659.25,.25],[783.99,.75],[880.00,.25],
+  [1046.5,.5],[880.00,.5],[783.99,1],
+  [587.33,.75],[698.46,.25],[880.00,.75],[698.46,.25],
+  [659.25,.5],[587.33,.5],[523.25,1],
+  [783.99,.75],[880.00,.25],[1046.5,.75],[880.00,.25],
+  [783.99,.5],[659.25,.5],[587.33,1],
+  [523.25,.25],[587.33,.25],[659.25,.25],[698.46,.25],
+  [783.99,.5],[880.00,.5],[1046.5,1],[null,1]
+]},
+{ bpm:104, notes:[
+  [783.99,1],[659.25,1],
+  [698.46,.5],[659.25,.5],[587.33,1],
+  [523.25,.5],[587.33,.5],[659.25,1],
+  [587.33,1],[null,.5],[392.00,.5],
+  [440.00,.5],[493.88,.5],[523.25,1],
+  [659.25,.5],[587.33,.5],[523.25,1],
+  [493.88,.5],[440.00,.5],[392.00,1.5],[null,.5],
+  [523.25,1],[659.25,1],[783.99,2],[null,1]
+]},
+{ bpm:120, notes:[
+  [392.00,.5],[523.25,.5],[659.25,.5],[523.25,.5],
+  [392.00,.5],[523.25,.5],[659.25,1],
+  [440.00,.5],[587.33,.5],[698.46,.5],[587.33,.5],
+  [440.00,.5],[587.33,.5],[698.46,1],
+  [783.99,.5],[698.46,.5],[659.25,.5],[587.33,.5],
+  [659.25,.25],[698.46,.25],[783.99,.5],[880.00,1],
+  [783.99,.5],[659.25,.5],[587.33,.5],[523.25,.5],
+  [587.33,.5],[493.88,.5],[523.25,1.5],[null,.5]
+]}
+];
+function ensureMusicGain(){
+  ensureAudio();
+  if(audioCtx && !musicGain){
+    musicGain = audioCtx.createGain();
+    musicGain.gain.value = 0.0001;
+    musicGain.connect(audioCtx.destination);
+  }
+}
+function scheduleMusicNote(freq, startTime, dur){
+  if(freq==null) return;
+  const tail = 0.12;
+  const osc = audioCtx.createOscillator();
+  const noteGain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, startTime);
+  noteGain.gain.setValueAtTime(0.0001, startTime);
+  noteGain.gain.exponentialRampToValueAtTime(0.9, startTime+0.06);
+  noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
+  osc.connect(noteGain).connect(musicGain);
+  osc.start(startTime); osc.stop(startTime+dur+tail);
+
+  const subOsc = audioCtx.createOscillator();
+  const subGain = audioCtx.createGain();
+  subOsc.type = 'sine';
+  subOsc.frequency.setValueAtTime(freq/2, startTime);
+  subGain.gain.setValueAtTime(0.0001, startTime);
+  subGain.gain.exponentialRampToValueAtTime(0.35, startTime+0.05);
+  subGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
+  subOsc.connect(subGain).connect(musicGain);
+  subOsc.start(startTime); subOsc.stop(startTime+dur+tail);
+}
+function musicScheduler(){
+  if(!musicOn || !audioCtx) return;
+  while(musicNextTime < audioCtx.currentTime + 1.0){
+    const track = MUSIC_TRACKS[musicTrackIdx];
+    const beat = 60/track.bpm;
+    const [freq, beats] = track.notes[musicNoteIndex];
+    const dur = beats*beat;
+    scheduleMusicNote(freq, musicNextTime, dur);
+    musicNextTime += dur;
+    musicNoteIndex++;
+    if(musicNoteIndex >= track.notes.length){
+      musicNoteIndex = 0;
+      musicTrackIdx = (musicTrackIdx+1) % MUSIC_TRACKS.length;
+      musicNextTime += beat*2;
+    }
+  }
+}
+function startMusic(){
+  ensureMusicGain();
+  if(!audioCtx) return;
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+  musicGain.gain.linearRampToValueAtTime(0.025, now+0.4);
+  musicNextTime = now + 0.1;
+  musicNoteIndex = 0;
+  if(musicSchedulerId) clearInterval(musicSchedulerId);
+  musicScheduler();
+  musicSchedulerId = setInterval(musicScheduler, 250);
+}
+function stopMusic(){
+  if(musicGain && audioCtx){
+    const now = audioCtx.currentTime;
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+    musicGain.gain.linearRampToValueAtTime(0.0001, now+0.4);
+  }
+  if(musicSchedulerId){ clearInterval(musicSchedulerId); musicSchedulerId=null; }
 }
 
 /* ---------- toast แจ้งเตือน (pattern เดียวกับหน้าหลัก — CSS .toast อยู่ใน style.css แล้ว) ---------- */
@@ -133,6 +275,49 @@ let nightMode = false;
 try{ nightMode = localStorage.getItem('p1quiz_theme') === 'night'; }catch(e){}
 setTheme(nightMode, false);
 themeBtn.addEventListener('click', ()=>{ playClick(); setTheme(!isNightMode(), true); });
+
+/* ---------- ปุ่ม menu bar ที่เหลือ (ฟังก์ชันเดียวกับหน้าหลัก) ---------- */
+const SVG_MUSIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6C5CE7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13" fill="#DCD2FB"/><circle cx="6" cy="18" r="3" fill="#C7B3FF"/><circle cx="18" cy="16" r="3" fill="#C7B3FF"/></svg>';
+const SVG_SPEAKER = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#D4881C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#FFDF8E"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M18.7 5.3a9.5 9.5 0 0 1 0 13.4" opacity=".55"/></svg>';
+const SVG_EXPAND = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+const SVG_COMPRESS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
+
+const musicBtn = $('music-toggle');
+function refreshMusicBtn(){ musicBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_MUSIC+'</span><span class="mute-stripe"></span></span>'; musicBtn.classList.toggle('muted', !musicOn); musicBtn.dataset.tooltip = musicOn ? 'ปิดเพลงพื้นหลัง' : 'เปิดเพลงพื้นหลัง'; }
+refreshMusicBtn();
+musicBtn.addEventListener('click', ()=>{
+  musicOn = !musicOn;
+  try{ localStorage.setItem('p1quiz_music', musicOn?'on':'off'); }catch(e){}
+  refreshMusicBtn();
+  if(musicOn){ startMusic(); } else { stopMusic(); }
+});
+if(musicOn){
+  const resumeMusicOnce = ()=>{ startMusic(); document.removeEventListener('click', resumeMusicOnce); };
+  document.addEventListener('click', resumeMusicOnce, {once:true});
+}
+
+const soundBtn = $('sound-toggle');
+function refreshSoundBtn(){ soundBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_SPEAKER+'</span><span class="mute-stripe"></span></span>'; soundBtn.classList.toggle('muted', !soundOn); soundBtn.dataset.tooltip = soundOn ? 'ปิดเสียง' : 'เปิดเสียง'; }
+refreshSoundBtn();
+soundBtn.addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  try{ localStorage.setItem('p1quiz_sound', soundOn?'on':'off'); }catch(e){}
+  refreshSoundBtn();
+  if(soundOn) playClick();
+});
+
+const fsBtn = $('fullscreen-toggle');
+function refreshFsBtn(){
+  fsBtn.innerHTML = document.fullscreenElement ? SVG_COMPRESS : SVG_EXPAND;
+  fsBtn.dataset.tooltip = document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ';
+}
+fsBtn.addEventListener('click', ()=>{
+  playClick();
+  if(document.fullscreenElement){ document.exitFullscreen(); }
+  else if(document.documentElement.requestFullscreen){ document.documentElement.requestFullscreen(); }
+});
+document.addEventListener('fullscreenchange', refreshFsBtn);
+refreshFsBtn();
 
 /* ---------- background decor (ลูกโป่ง/ดาว + เมฆ — ชุดเดียวกับหน้าหลัก) ---------- */
 const BALLOON_COLORS = ['#FF6B6B','#FF9F43','#FFD93D','#6BCB77','#4D96FF','#9B7DE0','#FF6FB5'];
@@ -223,6 +408,8 @@ function refreshHeaderChip(){
   } else {
     $('teacher-chip-group').hidden = true;
   }
+  /* ปุ่มจัดการข้อมูลโชว์เฉพาะเมื่อ setup แล้ว (pattern เดียวกับหน้าหลักที่ซ่อนตอน child-select) */
+  $('clear-btn').hidden = !profile;
 }
 let selectedGrade = null;   // ระดับชั้นที่เลือกดูบนหน้า home (เฉพาะชั้นที่มีเกม publish)
 
@@ -409,6 +596,15 @@ $('confirm-del-ok').addEventListener('click', ()=>{
     pendingDelete.block.remove();
     renumberQuestions();
     closeDelModal();
+  } else if(pendingDelete && pendingDelete.type==='teacher'){
+    /* ลบคุณครู: ล้างเฉพาะข้อมูลโหมดคุณครู (ไม่แตะข้อมูลเด็ก/ธีมของหน้าหลัก) แล้วกลับหน้า setup */
+    try{ localStorage.removeItem(LS_PROFILE); localStorage.removeItem(LS_GAMES); }catch(e){}
+    profile = null; games = []; selectedGrade = null; manageFilter = 'all';
+    closeDelModal();
+    refreshHeaderChip();
+    $('teacher-name-input').value = ''; $('school-name-input').value = '';
+    showView(setupView);
+    showToast('🗑️','ลบข้อมูลคุณครูเรียบร้อยแล้วค่ะ');
   } else {
     closeDelModal();
   }
@@ -742,6 +938,75 @@ function finishTeacherQuiz(){
 }
 $('retry-btn').addEventListener('click', ()=>{ playClick(); startTeacherQuiz(quiz.gameId); });
 $('home-btn').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
+
+/* ---------- จัดการข้อมูล: ย้ายข้อมูล (export/import) + ลบคุณครู ----------
+   ย้ายเฉพาะโปรไฟล์คุณครู + โจทย์ทั้งหมด (ไม่แตะข้อมูลเด็กของหน้าหลัก)
+   รูปแบบไฟล์: JSON → checksum djb2 prefix OWKT1_ → UTF-8 → Base64 (แนวเดียวกับ export เด็กหน้าหลักที่ใช้ OWK1_) */
+function owktHash(str){
+  let h = 5381;
+  for(let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  return 'OWKT1_' + (h >>> 0).toString(16).padStart(8, '0');
+}
+function exportTeacherData(){
+  if(!profile){ showToast('⚠️','ยังไม่มีข้อมูลคุณครูให้ย้ายนะคะ'); return; }
+  const payload = {v:1, teacher:profile, games};
+  const body = JSON.stringify({v:payload.v, teacher:payload.teacher, games:payload.games});
+  const sig = owktHash(body);
+  const full = JSON.stringify({v:payload.v, teacher:payload.teacher, games:payload.games, sig});
+  const bytes = new TextEncoder().encode(full);
+  const binary = Array.from(bytes, b=>String.fromCharCode(b)).join('');
+  const b64 = btoa(binary);
+  const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2)+Date.now().toString(36);
+  const blob = new Blob([b64], {type:'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'owlkids_teacher_'+uuid;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  showToast('📤','ดาวน์โหลดไฟล์ข้อมูลคุณครูแล้ว เก็บไว้นำเข้าที่อุปกรณ์ใหม่ได้เลยค่ะ');
+}
+function importTeacherFile(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const binary = atob(String(e.target.result).trim());
+      const bytes = Uint8Array.from(binary, c=>c.charCodeAt(0));
+      const jsonStr = new TextDecoder().decode(bytes);
+      const data = JSON.parse(jsonStr);
+      if(!data || !data.teacher || !data.teacher.name || !Array.isArray(data.games)) throw new Error('bad');
+      const body = JSON.stringify({v:data.v, teacher:data.teacher, games:data.games});
+      if(owktHash(body) !== data.sig) throw new Error('sig');
+      profile = data.teacher;
+      games = data.games;
+      saveProfile(); saveGames();
+      showToast('✅','นำเข้าข้อมูลคุณครูสำเร็จแล้วค่ะ');
+      renderTeacherHome();
+    }catch(err){
+      showToast('🚫','ไฟล์ไม่ถูกต้องหรือเสียหาย นำเข้าไม่ได้นะคะ');
+    }
+  };
+  reader.readAsText(file);
+}
+$('teacher-import-btn').addEventListener('click', ()=>{ playClick(); $('teacher-import-input').click(); });
+$('teacher-import-input').addEventListener('change', (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(f) importTeacherFile(f);
+  e.target.value = '';
+});
+
+/* data modal (ปุ่มจัดการข้อมูลใน header — โชว์หลัง setup แล้วเท่านั้น) */
+$('clear-btn').addEventListener('click', ()=>{ playClick(); openOverlay('data-modal'); });
+$('data-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('data-modal'); });
+$('data-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('data-modal'); });
+$('data-export-btn').addEventListener('click', ()=>{ playClick(); exportTeacherData(); });
+$('data-delete-btn').addEventListener('click', ()=>{
+  playClick();
+  closeOverlay('data-modal');
+  pendingDelete = {type:'teacher'};
+  $('confirm-del-title').textContent = 'ลบคุณครู?';
+  $('confirm-del-body').textContent = 'โปรไฟล์คุณครูและโจทย์ทั้งหมด '+games.length+' ชุดจะถูกลบถาวร กู้คืนไม่ได้นะคะ (ไม่กระทบข้อมูลเด็กของหน้าหลัก)';
+  setTimeout(()=>openOverlay('confirm-del-modal'), 320);
+});
 
 /* ---------- Buy me a Milk (QR modal — id `qr-modal` เดียวกับหน้าหลัก ได้ CSS centering จาก style.css) ---------- */
 function openOverlay(id){
