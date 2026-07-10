@@ -238,41 +238,83 @@ function playTone(freq,dur,type,delay,vol){
 function playCorrect(){ playTone(523.25,.15,'sine',0,.14); playTone(659.25,.18,'sine',.12,.14); playTone(783.99,.24,'sine',.24,.14); }
 function playWrong(){ playTone(190,.28,'sawtooth',0,.07); }
 function playWin(){ playTone(523.25,.14,'sine',0,.13); playTone(659.25,.14,'sine',.13,.13); playTone(783.99,.14,'sine',.26,.13); playTone(1046.5,.3,'sine',.39,.15); }
-function playClick(){ playTone(420,.05,'square',0,.04); }
+function playClick(){ playTone(659.25,.07,'sine',0,.05); }
+/* แฟนแฟร์แสดงความยินดีตอนจบเกม (จังหวะเดียวกับพลุ) — โทน C major เดียวกับ playCorrect */
+function playCongrats(){
+  playTone(523.25,.16,'sine',0,.13);
+  playTone(659.25,.16,'sine',.14,.13);
+  playTone(783.99,.16,'sine',.28,.13);
+  playTone(1046.5,.22,'sine',.42,.15);
+  playTone(1318.5,.55,'sine',.64,.11);
+  playTone(1046.5,.55,'sine',.64,.10);
+  playTone(783.99,.55,'sine',.64,.08);
+}
 
 /* ============================= BACKGROUND MUSIC ============================= */
 let musicOn = true;
 try{ musicOn = localStorage.getItem('p1quiz_music') !== 'off'; }catch(e){}
-let musicGain=null, musicSchedulerId=null, musicNoteIndex=0, musicNextTime=0;
-const BPM = 128;
-const BEAT = 60/BPM;
-/* bouncy C-major melody — upbeat school-song feel */
-const MUSIC_MELODY = [
-  /* phrase 1 — happy climb */
+let musicGain=null, musicSchedulerId=null, musicNoteIndex=0, musicNextTime=0, musicTrackIdx=0;
+/* เพลงพื้นหลัง 5 เพลง (C major ทั้งหมด — โทนเดียวกับ playCorrect) เล่นวนต่อกันเป็น playlist */
+const MUSIC_TRACKS = [
+{ bpm:128, notes:[ /* เพลง 1 — เพลงโรงเรียนสนุกๆ (เพลงเดิม) */
   [523.25,.5],[659.25,.5],[783.99,.5],[659.25,.5],
   [880.00,.5],[783.99,.25],[659.25,.25],[523.25,1],
-  /* phrase 2 — call-response */
   [587.33,.25],[659.25,.25],[587.33,.25],[523.25,.25],
   [659.25,.5],[783.99,.5],[659.25,.75],[null,.25],
-  /* phrase 3 — bounce pattern */
   [523.25,.25],[523.25,.25],[659.25,.25],[783.99,.25],
   [880.00,.5],[783.99,.25],[659.25,.25],
   [783.99,.5],[659.25,.25],[523.25,.25],[587.33,.5],[null,.5],
-  /* phrase 4 — skip down */
   [880.00,.5],[783.99,.5],[659.25,.5],[587.33,.5],
   [523.25,.5],[659.25,.25],[523.25,.25],[392.00,.5],[null,.5],
-  /* phrase 5 — energetic jumps */
   [523.25,.25],[659.25,.25],[523.25,.25],[783.99,.25],
   [659.25,.5],[523.25,.25],[659.25,.25],[880.00,.75],[null,.25],
-  /* phrase 6 — cascade down */
   [1046.5,.25],[880.00,.25],[783.99,.25],[659.25,.25],
   [523.25,.5],[659.25,.5],[783.99,.5],[659.25,.5],
-  /* phrase 7 — playful staccato */
   [523.25,.25],[659.25,.25],[783.99,.25],[880.00,.25],
   [783.99,.5],[659.25,.25],[523.25,.25],[587.33,.5],[659.25,.5],
-  /* phrase 8 — round off */
   [523.25,.5],[659.25,.5],[783.99,.5],[523.25,.5],
   [523.25,1.5],[null,.5]
+]},
+{ bpm:112, notes:[ /* เพลง 2 — แมวเหมียวเดินเล่น (นุ่มๆ ก้าวช้าๆ) */
+  [659.25,.5],[783.99,.5],[880.00,.5],[783.99,.5],
+  [659.25,.5],[587.33,.5],[523.25,1],
+  [587.33,.5],[659.25,.5],[698.46,.5],[659.25,.5],
+  [587.33,.5],[523.25,.5],[587.33,1],
+  [659.25,.5],[783.99,.5],[880.00,.5],[1046.5,.5],
+  [987.77,.5],[880.00,.5],[783.99,1],
+  [880.00,.5],[783.99,.5],[659.25,.5],[587.33,.5],
+  [523.25,1.5],[null,.5]
+]},
+{ bpm:132, notes:[ /* เพลง 3 — กระโดดโลดเต้น (จังหวะสนุก dotted) */
+  [523.25,.75],[659.25,.25],[783.99,.75],[880.00,.25],
+  [1046.5,.5],[880.00,.5],[783.99,1],
+  [587.33,.75],[698.46,.25],[880.00,.75],[698.46,.25],
+  [659.25,.5],[587.33,.5],[523.25,1],
+  [783.99,.75],[880.00,.25],[1046.5,.75],[880.00,.25],
+  [783.99,.5],[659.25,.5],[587.33,1],
+  [523.25,.25],[587.33,.25],[659.25,.25],[698.46,.25],
+  [783.99,.5],[880.00,.5],[1046.5,1],[null,1]
+]},
+{ bpm:104, notes:[ /* เพลง 4 — ลมเย็นยามเย็น (สงบ ผ่อนคลาย) */
+  [783.99,1],[659.25,1],
+  [698.46,.5],[659.25,.5],[587.33,1],
+  [523.25,.5],[587.33,.5],[659.25,1],
+  [587.33,1],[null,.5],[392.00,.5],
+  [440.00,.5],[493.88,.5],[523.25,1],
+  [659.25,.5],[587.33,.5],[523.25,1],
+  [493.88,.5],[440.00,.5],[392.00,1.5],[null,.5],
+  [523.25,1],[659.25,1],[783.99,2],[null,1]
+]},
+{ bpm:120, notes:[ /* เพลง 5 — เดินทางผจญภัย (มาร์ชสดใส) */
+  [392.00,.5],[523.25,.5],[659.25,.5],[523.25,.5],
+  [392.00,.5],[523.25,.5],[659.25,1],
+  [440.00,.5],[587.33,.5],[698.46,.5],[587.33,.5],
+  [440.00,.5],[587.33,.5],[698.46,1],
+  [783.99,.5],[698.46,.5],[659.25,.5],[587.33,.5],
+  [659.25,.25],[698.46,.25],[783.99,.5],[880.00,1],
+  [783.99,.5],[659.25,.5],[587.33,.5],[523.25,.5],
+  [587.33,.5],[493.88,.5],[523.25,1.5],[null,.5]
+]}
 ];
 function ensureMusicGain(){
   ensureAudio();
@@ -287,10 +329,10 @@ function scheduleMusicNote(freq, startTime, dur){
   const tail = 0.12;
   const osc = audioCtx.createOscillator();
   const noteGain = audioCtx.createGain();
-  osc.type = 'triangle';
+  osc.type = 'sine';
   osc.frequency.setValueAtTime(freq, startTime);
   noteGain.gain.setValueAtTime(0.0001, startTime);
-  noteGain.gain.exponentialRampToValueAtTime(0.9, startTime+0.035);
+  noteGain.gain.exponentialRampToValueAtTime(0.9, startTime+0.06);
   noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
   osc.connect(noteGain).connect(musicGain);
   osc.start(startTime); osc.stop(startTime+dur+tail);
@@ -308,11 +350,19 @@ function scheduleMusicNote(freq, startTime, dur){
 function musicScheduler(){
   if(!musicOn || !audioCtx) return;
   while(musicNextTime < audioCtx.currentTime + 1.0){
-    const [freq, beats] = MUSIC_MELODY[musicNoteIndex];
-    const dur = beats*BEAT;
+    const track = MUSIC_TRACKS[musicTrackIdx];
+    const beat = 60/track.bpm;
+    const [freq, beats] = track.notes[musicNoteIndex];
+    const dur = beats*beat;
     scheduleMusicNote(freq, musicNextTime, dur);
     musicNextTime += dur;
-    musicNoteIndex = (musicNoteIndex+1) % MUSIC_MELODY.length;
+    musicNoteIndex++;
+    if(musicNoteIndex >= track.notes.length){
+      /* จบเพลง — พัก 2 จังหวะแล้วต่อเพลงถัดไปวนเป็น playlist */
+      musicNoteIndex = 0;
+      musicTrackIdx = (musicTrackIdx+1) % MUSIC_TRACKS.length;
+      musicNextTime += beat*2;
+    }
   }
 }
 function startMusic(){
@@ -655,12 +705,12 @@ function finishQuiz(){
     stickerBlock.hidden = false;
     setStickerEarned(cat);
     pendingSticker = cat.id;
-    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
   } else {
     stickerBlock.hidden = true;
     if(state.score === total){ setTimeout(()=>showOwlMsg('perfect'), 400); }
-    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
   }
 
   const reviewWrap = $('review-wrap');
@@ -926,12 +976,12 @@ function finishMemoryGame(){
     stickerBlock.hidden = false;
     setStickerEarned(cat);
     pendingSticker = cat.id;
-    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
   } else {
     stickerBlock.hidden = true;
     if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
-    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
   }
   $('review-wrap').hidden = true;
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1240,12 +1290,12 @@ function finishListenGame(){
     stickerBlock.hidden = false;
     setStickerEarned(cat);
     pendingSticker = cat.id;
-    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
   } else {
     stickerBlock.hidden = true;
     if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
-    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
   }
   $('review-wrap').hidden = true;
   window.scrollTo({top:0, behavior:'smooth'});
@@ -2238,12 +2288,12 @@ function finishARGame(){
     stickerBlock.hidden = false;
     setStickerEarned(cat);
     pendingSticker = cat.id;
-    setTimeout(()=>burstCenterTop(40), 250);
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
     setTimeout(()=>showOwlMsg('sticker'), 400);
   } else {
     stickerBlock.hidden = true;
     if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
-    if(stars>=2) setTimeout(()=>burstCenterTop(50), 250);
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
   }
   $('review-wrap').hidden = true;
   window.scrollTo({top:0, behavior:'smooth'});
