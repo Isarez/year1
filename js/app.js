@@ -1029,12 +1029,17 @@ function renderShadowLevel(){
   const pool = SHADOW_ITEMS[group];
   const ansIdx = pickNoRepeatIdx(g.usedIdx[group], pool.length);
   const answer = pool[ansIdx];
-  const pickedIdx = new Set([ansIdx]);
+  /* ตัวหลอก: เลือกตัวที่ shape tag (s) เดียวกับคำตอบก่อนให้เงาใกล้เคียงกัน ถ้าไม่พอค่อยเติมสุ่มจากกลุ่มเดียวกัน */
+  const shapeIdx = [], otherIdx = [];
+  pool.forEach((it, i)=>{
+    if(i===ansIdx) return;
+    (it.s && it.s===answer.s ? shapeIdx : otherIdx).push(i);
+  });
+  shuffleArray(shapeIdx); shuffleArray(otherIdx);
+  const decoyOrder = shapeIdx.concat(otherIdx);
   const choices = [answer];
-  while(choices.length < Math.min(choiceCount, pool.length)){
-    const i = Math.floor(Math.random()*pool.length);
-    if(pickedIdx.has(i)) continue;
-    pickedIdx.add(i);
+  for(const i of decoyOrder){
+    if(choices.length >= Math.min(choiceCount, pool.length)) break;
     choices.push(pool[i]);
   }
   shuffleArray(choices);
@@ -1047,11 +1052,13 @@ function renderShadowLevel(){
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');
   wrap.innerHTML = '';
+  g.answerBtn = null;
   choices.forEach(item=>{
     const btn = document.createElement('button');
     btn.className = 'shadow-choice';
     btn.innerHTML = '<span class="shadow-choice-emoji">'+item.e+'</span><span class="shadow-choice-name">'+item.n+'</span>';
     btn.addEventListener('click', ()=>pickShadowChoice(btn, item));
+    if(item.e === answer.e) g.answerBtn = btn;
     wrap.appendChild(btn);
   });
 }
@@ -1059,22 +1066,24 @@ function renderShadowLevel(){
 function pickShadowChoice(btn, item){
   const g = shadowGame;
   if(!g || g.locked) return;
-  if(item.e === g.answer.e){
-    g.locked = true;
+  g.locked = true;
+  const correct = item.e === g.answer.e;
+  if(correct){
     playCorrect(); mascotHappy(); showOwlMsg('correct');
     btn.classList.add('correct');
-    $('shadow-prompt').classList.add('revealed'); /* เฉลยสีจริงของเงาให้เด็กเห็นว่าทายถูก */
-    $('shadow-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
-    setTimeout(()=>{
-      if(g.level >= g.totalLevels){ finishShadowGame(); }
-      else { g.level++; renderShadowLevel(); }
-    }, 1200);
   } else {
+    /* ตอบผิด: เฉลยข้อถูกให้ดูแล้วไปด่านต่อไปเลย ไม่ให้เลือกซ้ำ */
     g.mistakes++;
     playWrong(); showOwlMsg('wrong');
     btn.classList.add('wrong');
-    btn.disabled = true;
+    if(g.answerBtn) g.answerBtn.classList.add('correct');
   }
+  $('shadow-prompt').classList.add('revealed'); /* เฉลยสีจริงของเงาให้เด็กเห็นทุกครั้ง */
+  $('shadow-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+  setTimeout(()=>{
+    if(g.level >= g.totalLevels){ finishShadowGame(); }
+    else { g.level++; renderShadowLevel(); }
+  }, correct ? 1200 : 1600);
 }
 
 function finishShadowGame(){

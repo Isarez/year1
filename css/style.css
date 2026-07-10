@@ -1253,9 +1253,10 @@
   }
   .shadow-prompt{
     font-size:clamp(84px, 18vw, 128px); line-height:1.15;
-    filter:brightness(0); transition:filter .5s ease; user-select:none;
+    filter:brightness(0); user-select:none;
   }
-  .shadow-prompt.revealed{filter:none;}
+  /* transition อยู่บน .revealed เท่านั้น: เฉลยสี = ค่อยๆ จาง, ขึ้นข้อใหม่ = ดำทันที (ไม่แว้บสีจริงให้เห็นก่อน) */
+  .shadow-prompt.revealed{filter:none; transition:filter .5s ease;}
   .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; gap:16px; width:100%;}
   .shadow-choice{
     display:flex; flex-direction:column; align-items:center; gap:4px;
