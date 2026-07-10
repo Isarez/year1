@@ -172,10 +172,13 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
   display:flex; flex-direction:column; gap:14px;
 }
 .manage-empty{text-align:center; font-size:17px; font-weight:700; color:var(--ink-soft); padding:14px 0;}
+/* เว้นจังหวะรายการ: แถวโจทย์ห่างกัน 14px และหัวข้อระดับชั้นมีที่หายใจทั้งบน-ล่าง */
+#manage-list{display:flex; flex-direction:column; gap:14px;}
 .mg-grade-title{
   font-size:18px; font-weight:800; color:var(--ink);
-  margin:10px 2px 0; padding-bottom:4px; border-bottom:2px dashed #F3E2C0;
+  margin:16px 2px 2px; padding-bottom:6px; border-bottom:2px dashed #F3E2C0;
 }
+#manage-list .mg-grade-title:first-child{margin-top:2px;}
 .mg-item{
   display:flex; align-items:center; gap:14px;
   border:3px solid #F3E2C0; border-radius:18px; padding:12px 14px; background:#FFFDF6;
