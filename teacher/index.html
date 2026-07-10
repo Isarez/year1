@@ -108,7 +108,8 @@
     <!-- มีเกม publish แล้ว: ปุ่มจัดการโจทย์ + ตัวเลือกระดับชั้น + เกมจัดกลุ่มตามรูปแบบเกม -->
     <div id="teacher-game-sections" hidden>
       <div class="teacher-toolbar">
-        <button class="child-submit-btn teacher-add-btn" id="teacher-manage-btn">🗂️ จัดการโจทย์</button>
+        <button class="child-submit-btn teacher-add-btn" id="teacher-add-btn">＋ เพิ่มโจทย์</button>
+        <button class="child-submit-btn teacher-add-btn teacher-manage-btn" id="teacher-manage-btn">🗂️ จัดการโจทย์</button>
       </div>
       <div class="grade-filter" id="grade-filter"></div>
       <div id="teacher-mech-groups"></div>
@@ -260,6 +261,8 @@
 </div>
 
 <footer>โหมดคุณครู — สร้างโจทย์เองให้เด็กๆ ฝึกทำ 💛<span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.teacher.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+
+<div id="toast" class="toast"><span id="toast-emoji"></span><span id="toast-msg"></span></div>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="qr-modal" hidden>

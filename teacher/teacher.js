@@ -89,6 +89,19 @@ function playCongrats(){
   playTone(1318.5,.55,'sine',.64,.11); playTone(1046.5,.55,'sine',.64,.10); playTone(783.99,.55,'sine',.64,.08);
 }
 
+/* ---------- toast แจ้งเตือน (pattern เดียวกับหน้าหลัก — CSS .toast อยู่ใน style.css แล้ว) ---------- */
+let _toastTimer = null;
+function showToast(emoji, msg){
+  $('toast-emoji').textContent = emoji;
+  $('toast-msg').textContent = msg;
+  const t = $('toast');
+  t.classList.remove('visible');
+  void t.offsetWidth;
+  t.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>t.classList.remove('visible'), 2600);
+}
+
 /* ---------- views ---------- */
 const setupView   = $('teacher-setup-view');
 const homeView    = $('teacher-home-view');
@@ -193,8 +206,8 @@ function renderAvatarPicker(){
 $('teacher-submit-btn').addEventListener('click', ()=>{
   const name = $('teacher-name-input').value.trim();
   const school = $('school-name-input').value.trim();
-  if(!name){ alert('ใส่ชื่อคุณครูก่อนนะคะ'); $('teacher-name-input').focus(); return; }
-  if(!school){ alert('ใส่ชื่อโรงเรียนก่อนนะคะ'); $('school-name-input').focus(); return; }
+  if(!name){ showToast('✏️','ใส่ชื่อคุณครูก่อนนะคะ'); $('teacher-name-input').focus(); return; }
+  if(!school){ showToast('🏫','ใส่ชื่อโรงเรียนก่อนนะคะ'); $('school-name-input').focus(); return; }
   playClick();
   profile = { name, school, avatar:selectedAvatar };
   saveProfile();
@@ -288,6 +301,7 @@ function buildGameCard(game){
 }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 $('teacher-add-big-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null, 'home'); });
+$('teacher-add-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null, 'home'); });
 $('teacher-manage-btn').addEventListener('click', ()=>{ playClick(); renderManage(); });
 $('teacher-empty-manage-btn').addEventListener('click', ()=>{ playClick(); renderManage(); });
 
@@ -298,7 +312,19 @@ function renderManage(){
   if(!games.length){
     wrap.innerHTML = '<p class="manage-empty">ยังไม่มีชุดโจทย์เลย กดปุ่มด้านบนเพื่อสร้างชุดแรกได้เลยค่ะ</p>';
   }
-  games.forEach(game=>{
+  /* แยกหัวข้อตามระดับชั้น */
+  GRADES.forEach(gr=>{
+    const list = games.filter(g=>g.grade===gr.id);
+    if(!list.length) return;
+    const head = document.createElement('div');
+    head.className = 'mg-grade-title';
+    head.textContent = '🎓 '+gr.name;
+    wrap.appendChild(head);
+    list.forEach(game=> wrap.appendChild(buildManageRow(game)));
+  });
+  showView(manageView);
+}
+function buildManageRow(game){
     const mech = MECHANICS.find(m=>m.id===game.mechanic) || MECHANICS[0];
     const row = document.createElement('div');
     row.className = 'mg-item';
@@ -306,7 +332,7 @@ function renderManage(){
       '<img class="mg-logo" src="'+game.logo+'" alt="">'+
       '<div class="mg-info">'+
         '<div class="mg-title">'+escapeHtml(game.title)+' '+(game.published?'<span class="mg-status mg-pub">เผยแพร่แล้ว</span>':'<span class="mg-status mg-draft">แบบร่าง</span>')+'</div>'+
-        '<div class="mg-meta">🎓 '+gradeName(game.grade)+' · '+mech.emoji+' '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
+        '<div class="mg-meta">'+mech.emoji+' '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
       '</div>'+
       '<div class="mg-actions">'+
         (game.published?'':'<button class="tg-action-btn tg-pub">🚀 เผยแพร่</button>')+
@@ -316,14 +342,16 @@ function renderManage(){
     const pubBtn = row.querySelector('.tg-pub');
     if(pubBtn) pubBtn.addEventListener('click', ()=>{
       playClick();
+      if(game.questions.length < game.questionCount){
+        showToast('🚫','เผยแพร่ไม่ได้: มีโจทย์ '+game.questions.length+' ข้อ แต่ตั้งไว้ '+game.questionCount+' ข้อ/รอบ — แก้ไขชุดนี้ก่อนนะคะ');
+        return;
+      }
       game.published = true; game.updatedAt = Date.now();
       saveGames(); renderManage();
     });
     row.querySelector('.tg-edit').addEventListener('click', ()=>{ playClick(); openBuilder(game.id, 'manage'); });
     row.querySelector('.tg-del').addEventListener('click', ()=>{ playClick(); askDeleteGame(game.id); });
-    wrap.appendChild(row);
-  });
-  showView(manageView);
+    return row;
 }
 $('manage-back').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
 $('manage-add-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null, 'manage'); });
@@ -415,7 +443,7 @@ function buildQuestionBlock(qData){
     row.querySelector('input[type=radio]').checked = !!isCorrect;
     row.querySelector('.bq-ans-del').addEventListener('click', ()=>{
       playClick();
-      if(ansWrap.children.length <= 2){ alert('ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return; }
+      if(ansWrap.children.length <= 2){ showToast('⚠️','ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return; }
       row.remove();
     });
     ansWrap.appendChild(row);
@@ -423,7 +451,7 @@ function buildQuestionBlock(qData){
   block.querySelector('.bq-add-ans-btn').addEventListener('click', ()=>{ playClick(); addAnswerRow('', false); });
   block.querySelector('.bq-del-btn').addEventListener('click', ()=>{
     playClick();
-    if($('b-questions').children.length <= 1){ alert('ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }
+    if($('b-questions').children.length <= 1){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }
     block.remove();
     renumberQuestions();
   });
@@ -481,9 +509,9 @@ $('builder-back').addEventListener('click', ()=>{ playClick(); leaveBuilder(); }
 /* อ่าน+ตรวจข้อมูลจากฟอร์ม — คืน object หรือ null (พร้อม alert บอกจุดผิด) */
 function collectBuilderData(){
   const title = $('b-title').value.trim();
-  if(!title){ alert('ใส่ชื่อหัวข้อเกมก่อนนะคะ'); $('b-title').focus(); return null; }
+  if(!title){ showToast('✏️','ใส่ชื่อหัวข้อเกมก่อนนะคะ'); $('b-title').focus(); return null; }
   const count = parseInt($('b-count').value, 10);
-  if(!count || count < 1){ alert('จำนวนโจทย์ต่อรอบต้องอย่างน้อย 1 ข้อนะคะ'); $('b-count').focus(); return null; }
+  if(!count || count < 1){ showToast('⚠️','จำนวนโจทย์ต่อรอบต้องอย่างน้อย 1 ข้อนะคะ'); $('b-count').focus(); return null; }
   const questions = [];
   const blocks = Array.from($('b-questions').children);
   for(let i=0;i<blocks.length;i++){
@@ -492,13 +520,13 @@ function collectBuilderData(){
     const rows = Array.from(b.querySelectorAll('.bq-ans-row'));
     const answers = rows.map(r=>r.querySelector('.bq-ans-input').value.trim());
     const correct = rows.findIndex(r=>r.querySelector('input[type=radio]').checked);
-    if(!qText){ alert('ข้อที่ '+(i+1)+' ยังไม่ได้ใส่โจทย์นะคะ'); return null; }
-    if(answers.some(a=>!a)){ alert('ข้อที่ '+(i+1)+' มีช่องคำตอบว่างอยู่นะคะ (ลบช่องที่ไม่ใช้ออกได้)'); return null; }
-    if(answers.length < 2){ alert('ข้อที่ '+(i+1)+' ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return null; }
-    if(correct < 0){ alert('ข้อที่ '+(i+1)+' ยังไม่ได้ติ๊กคำตอบที่ถูกนะคะ'); return null; }
+    if(!qText){ showToast('✏️','ข้อที่ '+(i+1)+' ยังไม่ได้ใส่โจทย์นะคะ'); return null; }
+    if(answers.some(a=>!a)){ showToast('✏️','ข้อที่ '+(i+1)+' มีช่องคำตอบว่างอยู่นะคะ (ลบช่องที่ไม่ใช้ออกได้)'); return null; }
+    if(answers.length < 2){ showToast('⚠️','ข้อที่ '+(i+1)+' ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return null; }
+    if(correct < 0){ showToast('☑️','ข้อที่ '+(i+1)+' ยังไม่ได้ติ๊กคำตอบที่ถูกนะคะ'); return null; }
     questions.push({ q:qText, answers, correct });
   }
-  if(!questions.length){ alert('ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return null; }
+  if(!questions.length){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return null; }
   return {
     grade: $('b-grade').value,
     mechanic: selectedMechanic,
@@ -512,6 +540,11 @@ function collectBuilderData(){
 function saveBuilder(publish){
   const data = collectBuilderData();
   if(!data) return;
+  /* กติกา publish: ต้องมีโจทย์ในคลังอย่างน้อยเท่าจำนวนโจทย์ต่อรอบ (save draft ได้ตามปกติ) */
+  if(publish && data.questions.length < data.questionCount){
+    showToast('🚫','เผยแพร่ไม่ได้: มีโจทย์ '+data.questions.length+' ข้อ แต่ตั้งไว้ '+data.questionCount+' ข้อ/รอบ — เพิ่มโจทย์หรือลดจำนวนต่อรอบก่อนนะคะ');
+    return;
+  }
   if(editingGameId){
     const game = games.find(g=>g.id===editingGameId);
     Object.assign(game, data);
