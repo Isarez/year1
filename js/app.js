@@ -446,7 +446,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -487,7 +487,7 @@ wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true;
   renderChildSelect();
 });
 
@@ -550,6 +550,7 @@ function renderHome(){
       }
       playClick();
       if(cat.type==='ar') startARGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='shadow') startShadowGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else startQuiz(cat.id);
@@ -574,7 +575,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -736,12 +737,13 @@ $('retry-btn').addEventListener('click', ()=>{
   if(lastGameType==='ar'){ startARGame(lastCatId); }
   else if(lastGameType==='memory'){ startMemoryGame(lastCatId); }
   else if(lastGameType==='listen'){ startListenGame(lastCatId); }
+  else if(lastGameType==='shadow'){ startShadowGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -764,7 +766,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -994,6 +996,136 @@ $('memory-back').addEventListener('click', ()=>{
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
+/* =============================
+   SHADOW GUESSING GAME (เกมทายเงา)
+   โจทย์เป็นเงาสีดำ (emoji + filter:brightness(0)) ให้เลือกภาพสีปกติที่ตรงกับเงา
+   ด่าน 1-5 = 3 ตัวเลือก, 6-10 = 4 ตัวเลือก, 11-15 = 5 ตัวเลือก
+   ตัวหลอกสุ่มจากกลุ่มเดียวกับคำตอบ (SHADOW_ITEMS ใน data.js) คำตอบไม่ซ้ำภายใน 1 รอบเล่น
+   ============================= */
+let shadowGame = null; // {catId, level, mistakes, totalLevels, usedIdx:{group:Set}, answer, locked}
+
+function startShadowGame(catId){
+  stopARGame();
+  lastGameType = 'shadow'; lastCatId = catId;
+  const cat = catById(catId);
+  shadowGame = {
+    catId, level:1, mistakes:0, totalLevels:cat.levels,
+    usedIdx:{ animals:new Set(), fruits:new Set(), objects:new Set() },
+    answer:null, locked:false
+  };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('shadow-cat-label', cat);
+  renderShadowLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderShadowLevel(){
+  const g = shadowGame;
+  const choiceCount = g.level<=5 ? 3 : (g.level<=10 ? 4 : 5);
+  const groups = Object.keys(SHADOW_ITEMS);
+  const group = groups[Math.floor(Math.random()*groups.length)];
+  const pool = SHADOW_ITEMS[group];
+  const ansIdx = pickNoRepeatIdx(g.usedIdx[group], pool.length);
+  const answer = pool[ansIdx];
+  const pickedIdx = new Set([ansIdx]);
+  const choices = [answer];
+  while(choices.length < Math.min(choiceCount, pool.length)){
+    const i = Math.floor(Math.random()*pool.length);
+    if(pickedIdx.has(i)) continue;
+    pickedIdx.add(i);
+    choices.push(pool[i]);
+  }
+  shuffleArray(choices);
+  g.answer = answer; g.locked = false;
+
+  const prompt = $('shadow-prompt');
+  prompt.classList.remove('revealed');
+  prompt.textContent = answer.e;
+  $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  const wrap = $('shadow-choices');
+  wrap.innerHTML = '';
+  choices.forEach(item=>{
+    const btn = document.createElement('button');
+    btn.className = 'shadow-choice';
+    btn.innerHTML = '<span class="shadow-choice-emoji">'+item.e+'</span><span class="shadow-choice-name">'+item.n+'</span>';
+    btn.addEventListener('click', ()=>pickShadowChoice(btn, item));
+    wrap.appendChild(btn);
+  });
+}
+
+function pickShadowChoice(btn, item){
+  const g = shadowGame;
+  if(!g || g.locked) return;
+  if(item.e === g.answer.e){
+    g.locked = true;
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    btn.classList.add('correct');
+    $('shadow-prompt').classList.add('revealed'); /* เฉลยสีจริงของเงาให้เด็กเห็นว่าทายถูก */
+    $('shadow-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{
+      if(g.level >= g.totalLevels){ finishShadowGame(); }
+      else { g.level++; renderShadowLevel(); }
+    }, 1200);
+  } else {
+    g.mistakes++;
+    playWrong(); showOwlMsg('wrong');
+    btn.classList.add('wrong');
+    btn.disabled = true;
+  }
+}
+
+function finishShadowGame(){
+  const cat = catById(shadowGame.catId);
+  const mistakes = shadowGame.mistakes;
+  const totalLevels = shadowGame.totalLevels;
+  shadowView.hidden = true; resultView.hidden = false;
+
+  /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row');
+  starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{
+    setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220);
+  });
+  $('score-line').textContent = 'ทายเงาครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false;
+    setStickerEarned(cat);
+    pendingSticker = cat.id;
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('shadow-back').addEventListener('click', ()=>{
+  playClick();
+  shadowView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
 /* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */
 /* mode:'hint' (ฟังคำศัพท์ 1) เฉลยบางตัวอักษรให้ในช่องคำตอบ (ด่าน 1-5 เฉลย 2 ตัว, ด่าน 6-10 เฉลย 1 ตัว)
    mode:'nohint' (ฟังคำศัพท์ 2) ไม่เฉลยเลย เด็กหาและเรียงตัวอักษรเองทั้งหมดทุกด่าน */
@@ -1045,7 +1177,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -2237,7 +2369,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));

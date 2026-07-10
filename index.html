@@ -176,6 +176,25 @@
     </div>
   </section>
 
+  <!-- SHADOW GUESSING VIEW (เกมทายเงา) -->
+  <section id="shadow-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="shadow-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="shadow-cat-label">ทายเงา</div>
+        <div class="progress-track"><div class="progress-fill" id="shadow-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="shadow-hint">🔦 เงาสีดำนี้คืออะไรเอ่ย? แตะภาพที่ตรงกับเงานะ!</div>
+      </div>
+      <div class="q-counter" id="shadow-level-counter">1/15</div>
+    </div>
+    <div class="shadow-board">
+      <div class="shadow-prompt-card">
+        <div class="shadow-prompt" id="shadow-prompt">🐘</div>
+      </div>
+      <div class="shadow-choices" id="shadow-choices"></div>
+    </div>
+  </section>
+
   <!-- LISTEN WORD-SPELLING VIEW (เกมฟังคำศัพท์ 1/2) -->
   <section id="listen-view" hidden>
     <div class="quiz-top">
@@ -341,7 +360,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>
