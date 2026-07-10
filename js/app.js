@@ -238,7 +238,7 @@ function playTone(freq,dur,type,delay,vol){
 function playCorrect(){ playTone(523.25,.15,'sine',0,.14); playTone(659.25,.18,'sine',.12,.14); playTone(783.99,.24,'sine',.24,.14); }
 function playWrong(){ playTone(190,.28,'sawtooth',0,.07); }
 function playWin(){ playTone(523.25,.14,'sine',0,.13); playTone(659.25,.14,'sine',.13,.13); playTone(783.99,.14,'sine',.26,.13); playTone(1046.5,.3,'sine',.39,.15); }
-function playClick(){ playTone(659.25,.07,'sine',0,.05); }
+function playClick(){ playTone(659.25,.08,'sine',0,.12); playTone(1318.5,.05,'sine',0,.04); }
 /* แฟนแฟร์แสดงความยินดีตอนจบเกม (จังหวะเดียวกับพลุ) — โทน C major เดียวกับ playCorrect */
 function playCongrats(){
   playTone(523.25,.16,'sine',0,.13);
