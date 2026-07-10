@@ -148,8 +148,11 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
 /* ปุ่มเลือกระดับชั้นบนหน้า home (โชว์เฉพาะชั้นที่มีเกม publish) */
 .grade-filter{
   display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
-  max-width:820px; margin:6px auto 4px; padding:0 10px;
+  max-width:820px; margin:26px auto 8px; padding:0 10px;
 }
+/* filter ในการ์ดจัดการโจทย์: ชิดซ้าย ระยะแคบกว่า ไม่ต้องเผื่อ margin ใหญ่แบบหน้า home */
+.manage-filter{margin:2px 0 4px; padding:0; justify-content:flex-start;}
+.manage-filter .grade-chip{font-size:14px; padding:7px 16px;}
 .grade-chip{
   border:3px solid #F3E2C0; background:rgba(255,255,255,.92); border-radius:999px;
   padding:9px 20px; font-family:inherit; font-size:16px; font-weight:800;

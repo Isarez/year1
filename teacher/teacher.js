@@ -306,14 +306,35 @@ $('teacher-manage-btn').addEventListener('click', ()=>{ playClick(); renderManag
 $('teacher-empty-manage-btn').addEventListener('click', ()=>{ playClick(); renderManage(); });
 
 /* ---------- manage view (จัดการโจทย์: ทุกชุดทั้ง draft/published) ---------- */
+let manageFilter = 'all';   // 'all' | grade id — filter รายการในหน้าจัดการโจทย์
+
 function renderManage(){
+  /* แถว filter: ทั้งหมด + เฉพาะระดับชั้นที่มีโจทย์ */
+  const grades = GRADES.filter(gr=>games.some(g=>g.grade===gr.id));
+  if(manageFilter!=='all' && !grades.some(gr=>gr.id===manageFilter)) manageFilter = 'all';
+  const fWrap = $('manage-filter');
+  fWrap.innerHTML = '';
+  fWrap.hidden = !games.length;
+  if(games.length){
+    const mkChip = (id, label)=>{
+      const b = document.createElement('button');
+      b.className = 'grade-chip'+(manageFilter===id?' selected':'');
+      b.textContent = label;
+      b.addEventListener('click', ()=>{ playClick(); manageFilter = id; renderManage(); });
+      fWrap.appendChild(b);
+    };
+    mkChip('all', '📚 ทั้งหมด');
+    grades.forEach(gr=> mkChip(gr.id, '🎓 '+gr.name));
+  }
+
   const wrap = $('manage-list');
   wrap.innerHTML = '';
   if(!games.length){
     wrap.innerHTML = '<p class="manage-empty">ยังไม่มีชุดโจทย์เลย กดปุ่มด้านบนเพื่อสร้างชุดแรกได้เลยค่ะ</p>';
   }
-  /* แยกหัวข้อตามระดับชั้น */
+  /* แยกหัวข้อตามระดับชั้น (ตาม filter ที่เลือก) */
   GRADES.forEach(gr=>{
+    if(manageFilter!=='all' && gr.id!==manageFilter) return;
     const list = games.filter(g=>g.grade===gr.id);
     if(!list.length) return;
     const head = document.createElement('div');
@@ -356,26 +377,41 @@ function buildManageRow(game){
 $('manage-back').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
 $('manage-add-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null, 'manage'); });
 
-/* ---------- delete confirm modal ---------- */
-let pendingDeleteId = null;
+/* ---------- delete confirm modal (ใช้ร่วม: ลบชุดโจทย์จากหน้าจัดการ / ลบข้อโจทย์ในฟอร์ม)
+   ต้องเปิด-ปิดผ่าน openOverlay/closeOverlay เสมอ — CSS modal หลักซ่อนด้วย opacity:0
+   จนกว่าจะติดคลาส .show การเซ็ต hidden=false เฉยๆ จะได้ modal ล่องหนบังจอ (เคยเป็นบั๊กมาแล้ว) ---------- */
+let pendingDelete = null;   // {type:'game', id} | {type:'question', block}
 function askDeleteGame(id){
   const game = games.find(g=>g.id===id);
   if(!game) return;
-  pendingDeleteId = id;
+  pendingDelete = {type:'game', id};
+  $('confirm-del-title').textContent = 'ลบชุดโจทย์นี้?';
   $('confirm-del-body').textContent = '"'+game.title+'" จะถูกลบถาวร (โจทย์ทั้งหมด '+game.questions.length+' ข้อ) กู้คืนไม่ได้นะคะ';
-  $('confirm-del-modal').hidden = false;
+  openOverlay('confirm-del-modal');
 }
-$('confirm-del-cancel').addEventListener('click', ()=>{ playClick(); $('confirm-del-modal').hidden = true; pendingDeleteId = null; });
-$('confirm-del-backdrop').addEventListener('click', ()=>{ $('confirm-del-modal').hidden = true; pendingDeleteId = null; });
+function askDeleteQuestion(block, num){
+  pendingDelete = {type:'question', block};
+  $('confirm-del-title').textContent = 'ลบข้อที่ '+num+'?';
+  $('confirm-del-body').textContent = 'โจทย์ข้อนี้จะถูกลบออกจากฟอร์ม กู้คืนไม่ได้นะคะ';
+  openOverlay('confirm-del-modal');
+}
+function closeDelModal(){ closeOverlay('confirm-del-modal'); pendingDelete = null; }
+$('confirm-del-cancel').addEventListener('click', ()=>{ playClick(); closeDelModal(); });
+$('confirm-del-backdrop').addEventListener('click', ()=>{ closeDelModal(); });
 $('confirm-del-ok').addEventListener('click', ()=>{
   playClick();
-  if(pendingDeleteId){
-    games = games.filter(g=>g.id!==pendingDeleteId);
+  if(pendingDelete && pendingDelete.type==='game'){
+    games = games.filter(g=>g.id!==pendingDelete.id);
     saveGames();
+    closeDelModal();
+    renderManage(); /* ลบชุดได้จากหน้าจัดการโจทย์เท่านั้น — กลับไปหน้าเดิม */
+  } else if(pendingDelete && pendingDelete.type==='question'){
+    pendingDelete.block.remove();
+    renumberQuestions();
+    closeDelModal();
+  } else {
+    closeDelModal();
   }
-  $('confirm-del-modal').hidden = true;
-  pendingDeleteId = null;
-  renderManage(); /* ลบได้จากหน้าจัดการโจทย์เท่านั้น — กลับไปหน้าเดิม */
 });
 
 /* ---------- builder ---------- */
@@ -452,8 +488,8 @@ function buildQuestionBlock(qData){
   block.querySelector('.bq-del-btn').addEventListener('click', ()=>{
     playClick();
     if($('b-questions').children.length <= 1){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }
-    block.remove();
-    renumberQuestions();
+    const num = Array.from($('b-questions').children).indexOf(block)+1;
+    askDeleteQuestion(block, num);
   });
 
   if(qData){
