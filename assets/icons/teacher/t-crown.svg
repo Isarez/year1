@@ -1,0 +1,9 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="มงกุฎ">
+  <defs><linearGradient id="tcA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#ffc531"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M10 22 L20 32 L32 14 L44 32 L54 22 L50 48 L14 48 Z" fill="url(#tcA)" stroke="#e0a516" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="10" cy="20" r="4" fill="#ff8fbe" stroke="#c0527a" stroke-width="2.4"/>
+  <circle cx="32" cy="12" r="4" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="2.4"/>
+  <circle cx="54" cy="20" r="4" fill="#8fdcb4" stroke="#2c9457" stroke-width="2.4"/>
+  <circle cx="24" cy="41" r="3" fill="#fff" opacity=".55"/><circle cx="40" cy="41" r="3" fill="#fff" opacity=".55"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ดอกไม้">
+  <ellipse cx="32" cy="58" rx="15" ry="3" fill="#000" opacity="0.10"/>
+  <path d="M32 34 L32 55" stroke="#3a9a6e" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M32 44 C27 42 23 42 20 45 C24 48 29 48 32 46 M32 48 C36 45 41 45 44 48 C40 52 35 51 32 50" fill="#8fdcb4" stroke="#3a9a6e" stroke-width="2.4" stroke-linejoin="round"/>
+  <g fill="#ffb9d5" stroke="#c0527a" stroke-width="2.6">
+    <ellipse cx="32" cy="12" rx="7" ry="9"/><ellipse cx="45" cy="21" rx="7" ry="9" transform="rotate(72 45 21)"/>
+    <ellipse cx="40" cy="36" rx="7" ry="9" transform="rotate(144 40 36)"/><ellipse cx="24" cy="36" rx="7" ry="9" transform="rotate(-144 24 36)"/>
+    <ellipse cx="19" cy="21" rx="7" ry="9" transform="rotate(-72 19 21)"/>
+  </g>
+  <circle cx="32" cy="24" r="7.5" fill="#ffe27a" stroke="#e0a516" stroke-width="2.8"/>
+</svg>

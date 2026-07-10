@@ -1,0 +1,8 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="แอปเปิ้ล">
+  <defs><linearGradient id="taA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9c9c"/><stop offset="1" stop-color="#f2765e"/></linearGradient></defs>
+  <ellipse cx="32" cy="58" rx="17" ry="3.4" fill="#000" opacity="0.10"/>
+  <path d="M32 18 C24 10 10 14 10 30 C10 44 20 55 27 55 C29.5 55 30.5 54 32 54 C33.5 54 34.5 55 37 55 C44 55 54 44 54 30 C54 14 40 10 32 18 Z" fill="url(#taA)" stroke="#b5473a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 18 C32 12 34 8 38 6" fill="none" stroke="#7a5c50" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M38 12 C42 8 47 8 50 10 C48 15 43 17 38 15 Z" fill="#8fdcb4" stroke="#3a9a6e" stroke-width="2.6" stroke-linejoin="round"/>
+  <ellipse cx="22" cy="28" rx="4.5" ry="6.5" fill="#fff" opacity=".38" transform="rotate(-15 22 28)"/>
+</svg>

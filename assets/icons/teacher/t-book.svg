@@ -1,0 +1,8 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="หนังสือ">
+  <defs><linearGradient id="tbA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#4fa9e8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 14 C25 9 15 9 9 12 L9 48 C15 45 25 45 32 50 C39 45 49 45 55 48 L55 12 C49 9 39 9 32 14 Z" fill="url(#tbA)" stroke="#2f7fb5" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 14 L32 50" stroke="#2f7fb5" stroke-width="3"/>
+  <path d="M15 20 C20 18.5 25 19 28 21 M15 28 C20 26.5 25 27 28 29 M15 36 C20 34.5 25 35 28 37" stroke="#e8f6ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M36 21 C39 19 44 18.5 49 20 M36 29 C39 27 44 26.5 49 28 M36 37 C39 35 44 34.5 49 36" stroke="#e8f6ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+</svg>

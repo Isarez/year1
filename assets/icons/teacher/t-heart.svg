@@ -1,0 +1,8 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="หัวใจ">
+  <defs><linearGradient id="thA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb9d5"/><stop offset="1" stop-color="#ff6fb5"/></linearGradient></defs>
+  <ellipse cx="32" cy="58" rx="17" ry="3.4" fill="#000" opacity="0.10"/>
+  <path d="M32 52 C18 42 8 33 8 22 C8 14 14 9 21 9 C26 9 30 12 32 16 C34 12 38 9 43 9 C50 9 56 14 56 22 C56 33 46 42 32 52 Z" fill="url(#thA)" stroke="#c0527a" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="20" cy="20" rx="5" ry="7" fill="#fff" opacity=".42" transform="rotate(-25 20 20)"/>
+  <circle cx="26" cy="26" r="2.2" fill="#8a2f52"/><circle cx="38" cy="26" r="2.2" fill="#8a2f52"/>
+  <path d="M27 32c2.6 2.4 7.4 2.4 10 0" fill="none" stroke="#8a2f52" stroke-width="2.3" stroke-linecap="round"/>
+</svg>

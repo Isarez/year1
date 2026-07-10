@@ -1,0 +1,142 @@
+/* ============ โหมดคุณครู — สไตล์เฉพาะหน้า teacher (ต่อยอดจาก ../css/style.css) ============ */
+
+/* modal ยืนยันลบ — pattern position:fixed + centering เดียวกับ modal หน้าหลัก */
+#confirm-del-modal{
+  position:fixed; inset:0; z-index:300;
+  display:flex; align-items:center; justify-content:center;
+}
+#confirm-del-modal[hidden]{display:none;}
+
+/* หน้า home ครู */
+.teacher-empty{
+  max-width:420px; margin:40px auto; text-align:center;
+  background:rgba(255,255,255,.9); border-radius:26px; padding:36px 28px;
+  box-shadow:0 8px 0 rgba(0,0,0,.07);
+}
+.teacher-empty-emoji{font-size:64px; line-height:1.2; margin-bottom:8px;}
+.teacher-empty p{font-size:19px; font-weight:700; color:var(--ink); margin-bottom:20px;}
+.teacher-add-big-btn{width:100%; font-size:22px;}
+.teacher-toolbar{display:flex; justify-content:flex-end; max-width:820px; margin:0 auto 6px; padding:0 10px;}
+.teacher-add-btn{width:auto; padding:10px 26px; font-size:17px;}
+
+/* การ์ดชุดโจทย์ — ใช้ .cat-card เดิม + ส่วนเสริม */
+/* grid การ์ดชุดโจทย์: cap ความกว้างการ์ดเหมือน #cat-grid-skill หน้าหลัก (auto-fit+1fr ฐานจะยืดการ์ดเมื่อมีใบเดียว) */
+#teacher-grade-groups .cat-grid{
+  grid-template-columns:repeat(auto-fill, minmax(210px,240px));
+  max-width:820px; margin:0 auto; padding:0 10px;
+}
+.tg-badge-draft{
+  position:absolute; top:12px; right:12px; z-index:2;
+  background:#B9C4D8; color:#fff; font-size:12px; font-weight:800;
+  padding:3px 10px; border-radius:999px;
+}
+.tg-actions{
+  display:flex; gap:8px; justify-content:center; margin-top:10px;
+}
+.tg-action-btn{
+  border:none; cursor:pointer; font-family:inherit; font-weight:700; font-size:13px;
+  padding:6px 14px; border-radius:999px; background:#FFF3DC; color:#8a6d3b;
+  box-shadow:0 3px 0 rgba(0,0,0,.08); transition:transform .12s;
+}
+.tg-action-btn:hover{transform:translateY(-2px);}
+.tg-action-btn.tg-del{background:#FFE3E3; color:#B23636;}
+.tg-action-btn.tg-pub{background:#DDF6E7; color:#1d6b3e;}
+.teacher-grade-title{
+  max-width:820px; margin:26px auto 12px; padding:0 10px;
+  font-size:21px; font-weight:800; color:var(--ink);
+  display:flex; align-items:center; gap:8px;
+}
+body.night-mode .teacher-grade-title{color:#F2E8FF;}
+
+/* ============ Builder form ============ */
+.builder-card{
+  max-width:720px; margin:14px auto 50px;
+  background:rgba(255,255,255,.94); border-radius:26px;
+  padding:26px 24px 30px; box-shadow:0 8px 0 rgba(0,0,0,.07);
+  display:flex; flex-direction:column; gap:22px;
+}
+.builder-field{display:flex; flex-direction:column; gap:8px;}
+.builder-label{font-size:18px; font-weight:800; color:var(--ink);}
+.builder-label-sub{font-size:14px; font-weight:600; color:var(--ink-soft);}
+.builder-note{font-size:14px; font-weight:600; color:var(--ink-soft); margin-top:2px;}
+.builder-input{margin:0; width:100%;}
+.builder-count{max-width:140px;}
+.builder-select{
+  font-family:inherit; font-size:18px; font-weight:700; color:var(--ink);
+  padding:12px 16px; border-radius:16px; border:3px solid #F3E2C0;
+  background:#fff; max-width:240px; cursor:pointer;
+}
+
+/* mechanic picker */
+.mechanic-picker{display:flex; flex-wrap:wrap; gap:10px;}
+.mechanic-chip{
+  border:3px solid #F3E2C0; background:#fff; border-radius:16px;
+  padding:10px 16px; font-family:inherit; font-size:16px; font-weight:700;
+  color:var(--ink); cursor:pointer; transition:transform .12s, border-color .12s;
+  display:flex; align-items:center; gap:7px;
+}
+.mechanic-chip:hover:not(:disabled){transform:translateY(-2px);}
+.mechanic-chip.selected{border-color:var(--thai); background:#EAF5FE;}
+.mechanic-chip:disabled{opacity:.45; cursor:not-allowed;}
+.mechanic-soon{font-size:11px; font-weight:800; background:#B9C4D8; color:#fff; padding:2px 8px; border-radius:999px;}
+
+/* logo picker */
+.logo-picker{
+  display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; max-width:460px;
+}
+.logo-choice{
+  border:3px solid #F3E2C0; background:#fff; border-radius:16px; padding:8px;
+  cursor:pointer; transition:transform .12s, border-color .12s;
+  display:flex; align-items:center; justify-content:center;
+}
+.logo-choice img{width:100%; max-width:52px; display:block;}
+.logo-choice:hover{transform:translateY(-2px) scale(1.05);}
+.logo-choice.selected{border-color:var(--thai); background:#EAF5FE;}
+@media (max-width:480px){ .logo-picker{grid-template-columns:repeat(4,minmax(0,1fr));} }
+
+/* question blocks */
+.bq-block{
+  border:3px dashed #F3E2C0; border-radius:18px; padding:16px 14px 14px;
+  margin-bottom:14px; position:relative; background:#FFFDF6;
+}
+.bq-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+.bq-num{font-size:16px; font-weight:800; color:var(--ink-soft);}
+.bq-del-btn{
+  border:none; background:#FFE3E3; color:#B23636; font-family:inherit; font-weight:700;
+  font-size:13px; padding:5px 12px; border-radius:999px; cursor:pointer;
+}
+.bq-q-input{width:100%; margin:0 0 10px;}
+.bq-answers{display:flex; flex-direction:column; gap:8px;}
+.bq-ans-row{display:flex; align-items:center; gap:10px;}
+.bq-ans-row input[type="radio"]{width:22px; height:22px; accent-color:#33B76C; cursor:pointer; flex-shrink:0;}
+.bq-ans-input{flex:1; margin:0; padding:10px 14px; font-size:16px;}
+.bq-ans-del{
+  border:none; background:transparent; color:#B23636; font-size:18px; cursor:pointer;
+  font-family:inherit; padding:4px 6px; flex-shrink:0;
+}
+.bq-add-ans-btn{
+  border:none; background:#EAF5FE; color:#2f7fb5; font-family:inherit; font-weight:700;
+  font-size:14px; padding:7px 16px; border-radius:999px; cursor:pointer; margin-top:8px;
+  align-self:flex-start;
+}
+.builder-add-q-btn{
+  width:100%; border:3px dashed #B9D6FF; background:#F2F8FF; color:#2f7fb5;
+  font-family:inherit; font-weight:800; font-size:17px; padding:13px; border-radius:18px;
+  cursor:pointer; transition:transform .12s;
+}
+.builder-add-q-btn:hover{transform:translateY(-2px);}
+
+/* checkbox row */
+.builder-check-row{
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  font-size:17px; font-weight:700; color:var(--ink);
+}
+.builder-check-row input{width:24px; height:24px; accent-color:#33B76C; cursor:pointer;}
+
+/* action buttons */
+.builder-actions{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+.builder-draft-btn{background:#FFF3DC; color:#8a6d3b;}
+.builder-publish-btn{background:linear-gradient(135deg,#FFC531,#FF9F43); color:#fff;}
+
+/* กลางคืน: การ์ดฟอร์ม/empty state ยังพื้นขาวครีม อ่านได้ปกติ — เสริมเฉพาะ select บนพื้นมืด */
+body.night-mode .builder-select{background:#fff;}

@@ -1,0 +1,622 @@
+/* ============================================================
+   โหมดคุณครู (Teacher Mode) — เฟส 1
+   หน้าแยกจากแอปหลัก (owlkids.net/teacher) ใช้ธีม/CSS ร่วมกับหน้าหลัก
+   แต่ JS แยกของตัวเองทั้งหมด (js/app.js ผูกกับ DOM ของ index.html แน่นเกินกว่าจะ reuse)
+   ข้อมูลทั้งหมดเก็บ localStorage: owlkids_teacher_profile / owlkids_teacher_games
+   ============================================================ */
+
+function $(id){ return document.getElementById(id); }
+
+/* ---------- storage ---------- */
+const LS_PROFILE = 'owlkids_teacher_profile';
+const LS_GAMES   = 'owlkids_teacher_games';
+
+let profile = null;   // {name, school, avatar}
+let games   = [];     // [{id,title,grade,mechanic,logo,questionCount,shuffle,published,questions:[{q,answers:[..],correct}],createdAt,updatedAt}]
+
+function loadData(){
+  try{ profile = JSON.parse(localStorage.getItem(LS_PROFILE)) || null; }catch(e){ profile = null; }
+  try{ games = JSON.parse(localStorage.getItem(LS_GAMES)) || []; }catch(e){ games = []; }
+  if(!Array.isArray(games)) games = [];
+}
+function saveProfile(){ try{ localStorage.setItem(LS_PROFILE, JSON.stringify(profile)); }catch(e){} }
+function saveGames(){ try{ localStorage.setItem(LS_GAMES, JSON.stringify(games)); }catch(e){} }
+
+/* ---------- grades ---------- */
+const GRADES = [
+  {id:'k1', name:'อนุบาล 1'}, {id:'k2', name:'อนุบาล 2'}, {id:'k3', name:'อนุบาล 3'},
+  {id:'p1', name:'ประถม 1'}, {id:'p2', name:'ประถม 2'}, {id:'p3', name:'ประถม 3'},
+  {id:'p4', name:'ประถม 4'}, {id:'p5', name:'ประถม 5'}, {id:'p6', name:'ประถม 6'}
+];
+function gradeName(id){ const g = GRADES.find(x=>x.id===id); return g ? g.name : id; }
+
+/* ---------- mechanics (เฟส 1: เปิดเฉพาะ quiz — ตัวอื่นโชว์ "เร็วๆ นี้" อ้างอิงเกมจากหน้าหลัก) ---------- */
+const MECHANICS = [
+  {id:'quiz',   name:'ถาม-ตอบปรนัย', emoji:'📝', enabled:true},
+  {id:'ar',     name:'AR ลากคำตอบ (กล้อง)', emoji:'🖐️', enabled:false},
+  {id:'match',  name:'จับคู่ความจำ', emoji:'🎴', enabled:false},
+  {id:'shadow', name:'ทายเงา', emoji:'🔦', enabled:false},
+  {id:'listen', name:'ฟังคำศัพท์', emoji:'🎧', enabled:false}
+];
+
+/* ---------- logos (SVG เตรียมไว้ ธีมเดียวกับ icon เกมหน้าหลัก) ---------- */
+const LOGOS = ['t-star','t-book','t-pencil','t-rocket','t-flower','t-ball','t-apple','t-music','t-puzzle','t-crown','t-rainbow','t-heart']
+  .map(n=>'../assets/icons/teacher/'+n+'.svg');
+/* สีการ์ดหมุนเวียนตามลำดับเกม (โทนเดียวกับหมวดหน้าหลัก) */
+const CARD_COLORS = [
+  ['#4FA9E8','#DCF0FB'], ['#F2765E','#FDE1DA'], ['#3A9A6E','#D8F3DC'], ['#9B7DE0','#EAE4F7'],
+  ['#FFB020','#FFF1D6'], ['#E0764C','#FBE3D4'], ['#2FAE86','#D8F3EA'], ['#FF6FB5','#FFE3F0']
+];
+
+/* ---------- avatars (ชุดเดียวกับหน้าหลัก) ---------- */
+const AVATARS = [
+  '🐶','🐱','🐰','🐻','🐼','🦊',
+  '🐸','🐧','🦄','🦋','🦕','🐙',
+  '🦁','🐯','🐨','🐹','🦔','🦦',
+  '🌟','🌈','🚀','🎈','🍦','🎀',
+  '🐷','🐮','🐵','🐔','🦉','🦖',
+  '🐬','🐳','🦈','🐞','🐝','🦜',
+  '🐺','🦝','🦥','🐿️','🦩','🐢',
+  '🍭','🍩','🍪','🧁','⚽','🎨'
+];
+
+/* ---------- เสียง (procedural Web Audio ชุดเดียวกับหน้าหลัก) ---------- */
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  }
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+}
+function playTone(freq, dur, type, delay, vol){
+  ensureAudio(); if(!audioCtx) return;
+  const t = audioCtx.currentTime + (delay||0);
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(t); osc.stop(t+dur+0.05);
+}
+function playCorrect(){ playTone(523.25,.15,'sine',0,.14); playTone(659.25,.18,'sine',.12,.14); playTone(783.99,.24,'sine',.24,.14); }
+function playWrong(){ playTone(190,.28,'sawtooth',0,.07); }
+function playClick(){ playTone(659.25,.08,'sine',0,.12); playTone(1318.5,.05,'sine',0,.04); }
+function playCongrats(){
+  playTone(523.25,.16,'sine',0,.13); playTone(659.25,.16,'sine',.14,.13);
+  playTone(783.99,.16,'sine',.28,.13); playTone(1046.5,.22,'sine',.42,.15);
+  playTone(1318.5,.55,'sine',.64,.11); playTone(1046.5,.55,'sine',.64,.10); playTone(783.99,.55,'sine',.64,.08);
+}
+
+/* ---------- views ---------- */
+const setupView   = $('teacher-setup-view');
+const homeView    = $('teacher-home-view');
+const builderView = $('builder-view');
+const quizView    = $('quiz-view');
+const resultView  = $('result-view');
+function showView(v){
+  [setupView, homeView, builderView, quizView, resultView].forEach(x=>{ x.hidden = (x!==v); });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- theme (key เดียวกับหน้าหลัก ธีมจะตรงกันทั้งสองหน้า) ---------- */
+const SVG_MOON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7BA7E0" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8DEFF"/></svg>';
+const SVG_SUN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#E8A020" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#FFD040"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+const themeBtn = $('theme-toggle');
+const bgDecorEl = $('bg-decor');
+function isNightMode(){ return document.body.classList.contains('night-mode'); }
+function refreshThemeBtn(){
+  themeBtn.innerHTML = isNightMode() ? SVG_SUN : SVG_MOON;
+}
+function setTheme(night, persist){
+  document.body.classList.toggle('night-mode', night);
+  if(persist){ try{ localStorage.setItem('p1quiz_theme', night?'night':'day'); }catch(e){} }
+  refreshThemeBtn();
+  bgDecorEl.querySelectorAll('.bg-floater, .bg-cloud').forEach(e=>e.remove());
+}
+let nightMode = false;
+try{ nightMode = localStorage.getItem('p1quiz_theme') === 'night'; }catch(e){}
+setTheme(nightMode, false);
+themeBtn.addEventListener('click', ()=>{ playClick(); setTheme(!isNightMode(), true); });
+
+/* ---------- background decor (ลูกโป่ง/ดาว + เมฆ — ชุดเดียวกับหน้าหลัก) ---------- */
+const BALLOON_COLORS = ['#FF6B6B','#FF9F43','#FFD93D','#6BCB77','#4D96FF','#9B7DE0','#FF6FB5'];
+const STAR_COLORS = ['#FFF7D6','#FFE9A8','#CDE7FF','#FFFFFF','#B9D6FF'];
+function spawnFloater(){
+  const el = document.createElement('span');
+  el.className = 'bg-floater';
+  if(isNightMode()){
+    const color = STAR_COLORS[Math.floor(Math.random()*STAR_COLORS.length)];
+    el.innerHTML = `<svg viewBox="0 0 24 24" width="1em" height="1em"><polygon points="12,1 14.7,8.8 23,9.1 16.4,14.2 18.7,22.3 12,17.6 5.3,22.3 7.6,14.2 1,9.1 9.3,8.8" fill="${color}" stroke="rgba(255,255,255,.5)" stroke-width=".4"/></svg>`;
+  } else {
+    const color = BALLOON_COLORS[Math.floor(Math.random()*BALLOON_COLORS.length)];
+    el.innerHTML = `<svg viewBox="0 0 24 34" width="1em" height="1.4em"><ellipse cx="12" cy="13" rx="10" ry="12" fill="${color}"/><ellipse cx="8.3" cy="7.5" rx="3.1" ry="4.2" fill="#fff" opacity=".38"/><ellipse cx="12" cy="13" rx="10" ry="12" fill="none" stroke="rgba(0,0,0,.08)" stroke-width=".6"/><polygon points="9.4,24 14.6,24 12,27.8" fill="${color}"/><path d="M12 27.8 Q10.2 30.8 12 34" stroke="#8A7B6C" stroke-width="1" fill="none" stroke-linecap="round"/></svg>`;
+  }
+  const isLarge = Math.random() < 0.25;
+  const size = isLarge ? (46 + Math.random()*26) : (14 + Math.random()*18);
+  const dur  = 9  + Math.random()*8;
+  const left = 2  + Math.random()*92;
+  const rot  = (Math.random()-0.5)*50;
+  const sc   = 0.85 + Math.random()*0.3;
+  el.style.cssText = `font-size:${size}px;left:${left}vw;bottom:-60px;animation-duration:${dur}s;--rot:${rot}deg;--sc:${sc};`;
+  bgDecorEl.appendChild(el);
+  setTimeout(()=>el.remove(), dur*1000+500);
+}
+for(let i=0;i<10;i++) setTimeout(spawnFloater, i*700);
+setInterval(spawnFloater, 1100);
+
+const CLOUD_SHAPES = [
+  `<ellipse cx="34" cy="46" rx="30" ry="21"/><ellipse cx="64" cy="30" rx="34" ry="27"/><ellipse cx="93" cy="46" rx="25" ry="19"/><ellipse cx="60" cy="53" rx="50" ry="17"/>`,
+  `<ellipse cx="26" cy="42" rx="22" ry="16"/><ellipse cx="50" cy="24" rx="26" ry="21"/><ellipse cx="78" cy="34" rx="22" ry="18"/><ellipse cx="98" cy="46" rx="18" ry="14"/><ellipse cx="55" cy="50" rx="48" ry="15"/>`,
+  `<ellipse cx="30" cy="38" rx="20" ry="19"/><ellipse cx="58" cy="22" rx="24" ry="20"/><ellipse cx="88" cy="40" rx="21" ry="18"/><ellipse cx="60" cy="48" rx="45" ry="14"/>`,
+  `<ellipse cx="22" cy="48" rx="18" ry="13"/><ellipse cx="45" cy="34" rx="22" ry="18"/><ellipse cx="70" cy="26" rx="26" ry="22"/><ellipse cx="97" cy="42" rx="20" ry="16"/><ellipse cx="58" cy="55" rx="52" ry="15"/>`
+];
+function spawnCloud(){
+  const el = document.createElement('span');
+  el.className = 'bg-cloud';
+  const color = isNightMode() ? '#AAB9E8' : '#fff';
+  const shape = CLOUD_SHAPES[Math.floor(Math.random()*CLOUD_SHAPES.length)];
+  el.innerHTML = `<svg viewBox="0 0 120 70" width="100%" height="100%"><g fill="${color}">${shape}</g></svg>`;
+  const size = 60 + Math.random()*90;
+  const dur  = 24 + Math.random()*20;
+  const top  = 6 + Math.random()*40;
+  const ltr  = Math.random() < 0.5;
+  el.style.cssText = ltr
+    ? `width:${size}px;height:${size*0.58}px;top:${top}vh;left:-25vw;animation:driftRightward ${dur}s linear forwards;`
+    : `width:${size}px;height:${size*0.58}px;top:${top}vh;left:115vw;animation:driftLeftward ${dur}s linear forwards;`;
+  bgDecorEl.appendChild(el);
+  setTimeout(()=>el.remove(), dur*1000+500);
+}
+for(let i=0;i<4;i++) setTimeout(spawnCloud, i*2500);
+setInterval(spawnCloud, 7000);
+
+/* ---------- setup flow ---------- */
+let selectedAvatar = AVATARS[0];
+function renderAvatarPicker(){
+  const picker = $('emoji-picker');
+  picker.innerHTML = '';
+  AVATARS.forEach(em=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emo-btn'+(em===selectedAvatar?' selected':'');
+    b.textContent = em;
+    b.addEventListener('click', ()=>{
+      playClick();
+      selectedAvatar = em;
+      picker.querySelectorAll('.emo-btn').forEach(x=>x.classList.toggle('selected', x===b));
+    });
+    picker.appendChild(b);
+  });
+}
+$('teacher-submit-btn').addEventListener('click', ()=>{
+  const name = $('teacher-name-input').value.trim();
+  const school = $('school-name-input').value.trim();
+  if(!name){ alert('ใส่ชื่อคุณครูก่อนนะคะ'); $('teacher-name-input').focus(); return; }
+  if(!school){ alert('ใส่ชื่อโรงเรียนก่อนนะคะ'); $('school-name-input').focus(); return; }
+  playClick();
+  profile = { name, school, avatar:selectedAvatar };
+  saveProfile();
+  renderTeacherHome();
+});
+
+/* ---------- teacher home ---------- */
+function refreshHeaderChip(){
+  if(profile){
+    $('teacher-chip-group').hidden = false;
+    $('header-teacher-emoji').textContent = profile.avatar;
+    $('header-teacher-name').textContent = profile.name;
+  } else {
+    $('teacher-chip-group').hidden = true;
+  }
+}
+function renderTeacherHome(){
+  refreshHeaderChip();
+  $('teacher-greeting').textContent = profile.avatar+' สวัสดี ครู'+profile.name+'!';
+  $('teacher-school-line').textContent = '🏫 '+profile.school+' — จัดการชุดโจทย์ของคุณครูได้ที่นี่เลย';
+  const hasGames = games.length > 0;
+  $('teacher-empty').hidden = hasGames;
+  $('teacher-game-sections').hidden = !hasGames;
+  if(hasGames) renderGradeGroups();
+  showView(homeView);
+}
+function renderGradeGroups(){
+  const wrap = $('teacher-grade-groups');
+  wrap.innerHTML = '';
+  GRADES.forEach(gr=>{
+    const list = games.filter(g=>g.grade===gr.id);
+    if(!list.length) return;
+    const title = document.createElement('div');
+    title.className = 'teacher-grade-title';
+    title.textContent = '🎓 '+gr.name;
+    wrap.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'cat-grid';
+    list.forEach((game, i)=>{
+      grid.appendChild(buildGameCard(game, i));
+    });
+    wrap.appendChild(grid);
+  });
+}
+function buildGameCard(game, i){
+  const idx = games.indexOf(game);
+  const [color, light] = CARD_COLORS[idx % CARD_COLORS.length];
+  const card = document.createElement('div');
+  card.className = 'cat-card settled';
+  card.style.setProperty('--cat-light', light);
+  card.style.setProperty('--cat-color', color);
+  card.style.animation = 'none';
+  const mech = MECHANICS.find(m=>m.id===game.mechanic) || MECHANICS[0];
+  card.innerHTML =
+    (game.published ? '' : '<div class="tg-badge-draft">แบบร่าง</div>')+
+    '<div class="cat-emoji"><img src="'+game.logo+'" class="cat-icon-img" alt=""></div>'+
+    '<div class="cat-name">'+escapeHtml(game.title)+'</div>'+
+    '<div class="cat-meta">'+mech.emoji+' '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
+    '<div class="tg-actions">'+
+      (game.published ? '<button class="tg-action-btn tg-play">▶ เล่น</button>' : '<button class="tg-action-btn tg-pub">🚀 เผยแพร่</button>')+
+      '<button class="tg-action-btn tg-edit">✏️ แก้ไข</button>'+
+      '<button class="tg-action-btn tg-del">🗑️ ลบ</button>'+
+    '</div>';
+  const playBtn = card.querySelector('.tg-play');
+  if(playBtn) playBtn.addEventListener('click', ()=>{ playClick(); startTeacherQuiz(game.id); });
+  const pubBtn = card.querySelector('.tg-pub');
+  if(pubBtn) pubBtn.addEventListener('click', ()=>{
+    playClick();
+    game.published = true; game.updatedAt = Date.now();
+    saveGames(); renderTeacherHome();
+  });
+  card.querySelector('.tg-edit').addEventListener('click', ()=>{ playClick(); openBuilder(game.id); });
+  card.querySelector('.tg-del').addEventListener('click', ()=>{ playClick(); askDeleteGame(game.id); });
+  return card;
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+$('teacher-add-big-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null); });
+$('teacher-add-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null); });
+
+/* ---------- delete confirm modal ---------- */
+let pendingDeleteId = null;
+function askDeleteGame(id){
+  const game = games.find(g=>g.id===id);
+  if(!game) return;
+  pendingDeleteId = id;
+  $('confirm-del-body').textContent = '"'+game.title+'" จะถูกลบถาวร (โจทย์ทั้งหมด '+game.questions.length+' ข้อ) กู้คืนไม่ได้นะคะ';
+  $('confirm-del-modal').hidden = false;
+}
+$('confirm-del-cancel').addEventListener('click', ()=>{ playClick(); $('confirm-del-modal').hidden = true; pendingDeleteId = null; });
+$('confirm-del-backdrop').addEventListener('click', ()=>{ $('confirm-del-modal').hidden = true; pendingDeleteId = null; });
+$('confirm-del-ok').addEventListener('click', ()=>{
+  playClick();
+  if(pendingDeleteId){
+    games = games.filter(g=>g.id!==pendingDeleteId);
+    saveGames();
+  }
+  $('confirm-del-modal').hidden = true;
+  pendingDeleteId = null;
+  renderTeacherHome();
+});
+
+/* ---------- builder ---------- */
+let editingGameId = null;   // null = สร้างใหม่
+let selectedLogo = LOGOS[0];
+let selectedMechanic = 'quiz';
+
+function renderMechanicPicker(){
+  const wrap = $('mechanic-picker');
+  wrap.innerHTML = '';
+  MECHANICS.forEach(m=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mechanic-chip'+(m.id===selectedMechanic?' selected':'');
+    b.disabled = !m.enabled;
+    b.innerHTML = m.emoji+' '+m.name+(m.enabled?'':' <span class="mechanic-soon">เร็วๆ นี้</span>');
+    if(m.enabled){
+      b.addEventListener('click', ()=>{
+        playClick();
+        selectedMechanic = m.id;
+        wrap.querySelectorAll('.mechanic-chip').forEach(x=>x.classList.toggle('selected', x===b));
+      });
+    }
+    wrap.appendChild(b);
+  });
+}
+function renderLogoPicker(){
+  const wrap = $('logo-picker');
+  wrap.innerHTML = '';
+  LOGOS.forEach(src=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'logo-choice'+(src===selectedLogo?' selected':'');
+    b.innerHTML = '<img src="'+src+'" alt="">';
+    b.addEventListener('click', ()=>{
+      playClick();
+      selectedLogo = src;
+      wrap.querySelectorAll('.logo-choice').forEach(x=>x.classList.toggle('selected', x===b));
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/* บล็อกโจทย์ 1 ข้อในฟอร์ม — คืน element (เก็บข้อมูลผ่าน DOM ตอน save) */
+function buildQuestionBlock(qData){
+  const block = document.createElement('div');
+  block.className = 'bq-block';
+  block.innerHTML =
+    '<div class="bq-head"><span class="bq-num"></span><button type="button" class="bq-del-btn">🗑️ ลบข้อนี้</button></div>'+
+    '<input class="child-name-input bq-q-input" type="text" placeholder="พิมพ์โจทย์ เช่น 2 + 3 = ?" maxlength="200">'+
+    '<div class="bq-answers"></div>'+
+    '<button type="button" class="bq-add-ans-btn">＋ เพิ่มคำตอบ</button>';
+  const ansWrap = block.querySelector('.bq-answers');
+  const radioName = 'bq-correct-'+Math.random().toString(36).slice(2,8);
+
+  function addAnswerRow(text, isCorrect){
+    const row = document.createElement('div');
+    row.className = 'bq-ans-row';
+    row.innerHTML =
+      '<input type="radio" name="'+radioName+'" title="คำตอบที่ถูก">'+
+      '<input class="child-name-input bq-ans-input" type="text" placeholder="คำตอบ" maxlength="100">'+
+      '<button type="button" class="bq-ans-del" title="ลบคำตอบนี้">✕</button>';
+    row.querySelector('.bq-ans-input').value = text || '';
+    row.querySelector('input[type=radio]').checked = !!isCorrect;
+    row.querySelector('.bq-ans-del').addEventListener('click', ()=>{
+      playClick();
+      if(ansWrap.children.length <= 2){ alert('ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return; }
+      row.remove();
+    });
+    ansWrap.appendChild(row);
+  }
+  block.querySelector('.bq-add-ans-btn').addEventListener('click', ()=>{ playClick(); addAnswerRow('', false); });
+  block.querySelector('.bq-del-btn').addEventListener('click', ()=>{
+    playClick();
+    if($('b-questions').children.length <= 1){ alert('ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }
+    block.remove();
+    renumberQuestions();
+  });
+
+  if(qData){
+    block.querySelector('.bq-q-input').value = qData.q;
+    qData.answers.forEach((a,i)=> addAnswerRow(a, i===qData.correct));
+  } else {
+    addAnswerRow('', true);
+    addAnswerRow('', false);
+    addAnswerRow('', false);
+  }
+  return block;
+}
+function renumberQuestions(){
+  Array.from($('b-questions').children).forEach((b,i)=>{
+    b.querySelector('.bq-num').textContent = 'ข้อที่ '+(i+1);
+  });
+}
+$('b-add-question').addEventListener('click', ()=>{
+  playClick();
+  $('b-questions').appendChild(buildQuestionBlock(null));
+  renumberQuestions();
+});
+
+function openBuilder(gameId){
+  editingGameId = gameId;
+  const game = gameId ? games.find(g=>g.id===gameId) : null;
+  $('builder-title-label').textContent = game ? 'แก้ไข: '+game.title : 'สร้างชุดโจทย์ใหม่';
+  $('b-grade').value = game ? game.grade : 'p1';
+  selectedMechanic = game ? game.mechanic : 'quiz';
+  $('b-title').value = game ? game.title : '';
+  selectedLogo = game ? game.logo : LOGOS[Math.floor(Math.random()*LOGOS.length)];
+  $('b-count').value = game ? game.questionCount : 10;
+  $('b-shuffle').checked = game ? !!game.shuffle : true;
+  renderMechanicPicker();
+  renderLogoPicker();
+  const qWrap = $('b-questions');
+  qWrap.innerHTML = '';
+  if(game && game.questions.length){
+    game.questions.forEach(q=> qWrap.appendChild(buildQuestionBlock(q)));
+  } else {
+    qWrap.appendChild(buildQuestionBlock(null));
+  }
+  renumberQuestions();
+  showView(builderView);
+}
+$('builder-back').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
+
+/* อ่าน+ตรวจข้อมูลจากฟอร์ม — คืน object หรือ null (พร้อม alert บอกจุดผิด) */
+function collectBuilderData(){
+  const title = $('b-title').value.trim();
+  if(!title){ alert('ใส่ชื่อหัวข้อเกมก่อนนะคะ'); $('b-title').focus(); return null; }
+  const count = parseInt($('b-count').value, 10);
+  if(!count || count < 1){ alert('จำนวนโจทย์ต่อรอบต้องอย่างน้อย 1 ข้อนะคะ'); $('b-count').focus(); return null; }
+  const questions = [];
+  const blocks = Array.from($('b-questions').children);
+  for(let i=0;i<blocks.length;i++){
+    const b = blocks[i];
+    const qText = b.querySelector('.bq-q-input').value.trim();
+    const rows = Array.from(b.querySelectorAll('.bq-ans-row'));
+    const answers = rows.map(r=>r.querySelector('.bq-ans-input').value.trim());
+    const correct = rows.findIndex(r=>r.querySelector('input[type=radio]').checked);
+    if(!qText){ alert('ข้อที่ '+(i+1)+' ยังไม่ได้ใส่โจทย์นะคะ'); return null; }
+    if(answers.some(a=>!a)){ alert('ข้อที่ '+(i+1)+' มีช่องคำตอบว่างอยู่นะคะ (ลบช่องที่ไม่ใช้ออกได้)'); return null; }
+    if(answers.length < 2){ alert('ข้อที่ '+(i+1)+' ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return null; }
+    if(correct < 0){ alert('ข้อที่ '+(i+1)+' ยังไม่ได้ติ๊กคำตอบที่ถูกนะคะ'); return null; }
+    questions.push({ q:qText, answers, correct });
+  }
+  if(!questions.length){ alert('ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return null; }
+  return {
+    grade: $('b-grade').value,
+    mechanic: selectedMechanic,
+    title,
+    logo: selectedLogo,
+    questionCount: Math.min(count, 50),
+    shuffle: $('b-shuffle').checked,
+    questions
+  };
+}
+function saveBuilder(publish){
+  const data = collectBuilderData();
+  if(!data) return;
+  if(editingGameId){
+    const game = games.find(g=>g.id===editingGameId);
+    Object.assign(game, data);
+    if(publish) game.published = true;
+    game.updatedAt = Date.now();
+  } else {
+    games.push(Object.assign({
+      id: 'tg-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      published: !!publish,
+      createdAt: Date.now(), updatedAt: Date.now()
+    }, data));
+  }
+  saveGames();
+  playCorrect();
+  renderTeacherHome();
+}
+$('b-save-draft').addEventListener('click', ()=>{ playClick(); saveBuilder(false); });
+$('b-publish').addEventListener('click', ()=>{ playClick(); saveBuilder(true); });
+
+/* ---------- quiz play (adapt จาก engine หน้าหลัก — ไม่มีสติกเกอร์) ---------- */
+let quiz = null;   // {gameId, qIndex, score, wrong:[], answered, questions:[{q,choices,correct}]}
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+/* แปลงโจทย์ {q,answers,correct} → {q,choices,correct} พร้อมสลับตัวเลือกถ้าเปิด shuffle */
+function prepareQuestion(qd, shuffleChoices){
+  const idxs = qd.answers.map((_,i)=>i);
+  if(shuffleChoices) shuffleArray(idxs);
+  return {
+    q: qd.q,
+    choices: idxs.map(i=>qd.answers[i]),
+    correct: idxs.indexOf(qd.correct)
+  };
+}
+function startTeacherQuiz(gameId){
+  const game = games.find(g=>g.id===gameId);
+  if(!game) return;
+  let pool = game.questions.slice();
+  if(game.shuffle) shuffleArray(pool);
+  pool = pool.slice(0, Math.min(game.questionCount, pool.length));
+  quiz = {
+    gameId,
+    qIndex: 0, score: 0, wrong: [], answered: false,
+    questions: pool.map(qd=>prepareQuestion(qd, game.shuffle))
+  };
+  const idx = games.indexOf(game);
+  const [color, light] = CARD_COLORS[idx % CARD_COLORS.length];
+  quiz.color = color; quiz.light = light;
+  document.documentElement.style.setProperty('--cat-color', color);
+  quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>el.style.setProperty('--cat-color', color));
+  $('quiz-cat-label').innerHTML = '<img src="'+game.logo+'" class="cat-label-icon" alt="" style="width:26px;height:26px;vertical-align:-6px;margin-right:6px;">'+escapeHtml(game.title);
+  showView(quizView);
+  renderQuestion();
+}
+function renderQuestion(){
+  const total = quiz.questions.length;
+  const q = quiz.questions[quiz.qIndex];
+  quiz.answered = false;
+  $('q-counter').textContent = (quiz.qIndex+1)+'/'+total;
+  $('progress-fill').style.width = ((quiz.qIndex)/total*100)+'%';
+  $('progress-fill').style.background = quiz.color;
+  $('q-emoji').textContent = '';
+  $('q-text').textContent = q.q;
+  const grid = $('choice-grid');
+  grid.innerHTML = '';
+  q.choices.forEach((choiceText, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.style.setProperty('--cat-light', quiz.light);
+    btn.textContent = choiceText;
+    btn.addEventListener('click', ()=> selectAnswer(idx, q));
+    grid.appendChild(btn);
+  });
+  const fb = $('feedback');
+  fb.className = 'feedback';
+  $('fb-text').textContent = '';
+  $('fb-face').textContent = '';
+  const nb = $('next-btn');
+  nb.className = 'next-btn';
+  nb.style.setProperty('--cat-color', quiz.color);
+  nb.textContent = (quiz.qIndex === total-1) ? 'ดูคะแนนเลย! 🏁' : 'ข้อต่อไป ➜';
+}
+function selectAnswer(idx, q){
+  if(quiz.answered) return;
+  quiz.answered = true;
+  const ok = idx === q.correct;
+  const buttons = Array.from($('choice-grid').children);
+  buttons.forEach((b,i)=>{
+    b.disabled = true;
+    if(i === q.correct) b.classList.add('correct');
+    else if(i === idx) b.classList.add('wrong');
+    if(i !== q.correct && i !== idx) b.classList.add('dim');
+  });
+  const fb = $('feedback');
+  if(ok){
+    quiz.score++;
+    playCorrect();
+    fb.classList.add('ok');
+    $('fb-face').textContent = '🎉';
+    $('fb-text').textContent = 'เก่งมาก! ตอบถูกแล้ว';
+  } else {
+    quiz.wrong.push({ q:q.q, correctText:q.choices[q.correct] });
+    playWrong();
+    fb.classList.add('ng');
+    $('fb-face').textContent = '💪';
+    $('fb-text').textContent = 'ยังไม่ถูกนะ คำตอบคือ "'+q.choices[q.correct]+'"';
+  }
+  requestAnimationFrame(()=>fb.classList.add('show'));
+  requestAnimationFrame(()=>$('next-btn').classList.add('show'));
+}
+$('next-btn').addEventListener('click', ()=>{
+  playClick();
+  if(!quiz.answered) return;
+  if(quiz.qIndex < quiz.questions.length-1){
+    quiz.qIndex++;
+    renderQuestion();
+  } else {
+    finishTeacherQuiz();
+  }
+});
+$('quiz-back').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
+
+function finishTeacherQuiz(){
+  const total = quiz.questions.length;
+  const pct = quiz.score/total;
+  const stars = pct>=0.9 ? 3 : (pct>=0.6 ? 2 : 1);
+  showView(resultView);
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? 'สุดยอดไปเลย!' : stars===2 ? 'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ!';
+  const starsRow = $('stars-row');
+  starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent='⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{
+    setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220);
+  });
+  $('score-line').textContent = 'ทำถูก '+quiz.score+'/'+total+' ข้อ';
+  $('score-sub').textContent = stars===3 ? 'เก่งสุด ๆ ไปเลย ทำได้เกือบครบทุกข้อ!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งได้เสมอ!';
+  const wrap = $('review-wrap');
+  const list = $('review-list');
+  if(quiz.wrong.length){
+    wrap.hidden = false;
+    list.innerHTML = '';
+    quiz.wrong.forEach(w=>{
+      const item = document.createElement('div');
+      item.className = 'review-item';
+      item.innerHTML = '<div class="rq">'+escapeHtml(w.q)+'</div><div class="ra">✅ '+escapeHtml(w.correctText)+'</div>';
+      list.appendChild(item);
+    });
+  } else {
+    wrap.hidden = true;
+  }
+  if(stars>=2) setTimeout(()=>playCongrats(), 250);
+}
+$('retry-btn').addEventListener('click', ()=>{ playClick(); startTeacherQuiz(quiz.gameId); });
+$('home-btn').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
+
+/* ---------- init ---------- */
+loadData();
+renderAvatarPicker();
+fetch('../version').then(r=>r.text()).then(v=>{ $('app-version').textContent = v.trim()+' (teacher)'; }).catch(()=>{});
+if(profile){
+  renderTeacherHome();
+} else {
+  showView(setupView);
+}

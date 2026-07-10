@@ -1,0 +1,8 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ลูกบอล">
+  <ellipse cx="32" cy="58" rx="17" ry="3.4" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="31" r="24" fill="#fff" stroke="#4a4a5a" stroke-width="3"/>
+  <path d="M32 19 L42 26 L38 38 L26 38 L22 26 Z" fill="#4a4a5a"/>
+  <path d="M32 7 L32 19 M42 26 L53 22 M38 38 L45 48 M26 38 L19 48 M22 26 L11 22" stroke="#4a4a5a" stroke-width="2.6"/>
+  <path d="M18 15 C22 11 27 9 32 9" stroke="#fff" stroke-width="0" fill="none"/>
+  <ellipse cx="22" cy="17" rx="6" ry="4" fill="#fff" opacity=".5" transform="rotate(-30 22 17)"/>
+</svg>
