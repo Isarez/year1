@@ -1,0 +1,20 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ฟังคำศัพท์ไทย 1">
+  <defs>
+    <linearGradient id="lt1G" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb3a7"/>
+      <stop offset="1" stop-color="#f2765e"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- speech bubble -->
+  <path d="M12 16h40a5 5 0 0 1 5 5v18a5 5 0 0 1-5 5H30l-9 8v-8h-9a5 5 0 0 1-5-5V21a5 5 0 0 1 5-5z"
+        fill="url(#lt1G)" stroke="#c14a34" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M17 21h30a2 2 0 0 1 2 2v2H15v-2a2 2 0 0 1 2-2z" fill="#fff" opacity="0.25"/>
+  <!-- thai letter ก -->
+  <text x="32" y="35" text-anchor="middle" font-family="'Chonburi','TH Sarabun New',sans-serif" font-size="24" font-weight="700" fill="#fff">ก</text>
+  <!-- sound note accent -->
+  <g fill="#ffd54f" stroke="#c14a34" stroke-width="1.8">
+    <circle cx="50" cy="12" r="3"/>
+    <path d="M53 12V4l4 2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

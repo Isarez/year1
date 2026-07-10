@@ -947,17 +947,62 @@ $('memory-back').addEventListener('click', ()=>{
 /* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */
 /* mode:'hint' (ฟังคำศัพท์ 1) เฉลยบางตัวอักษรให้ในช่องคำตอบ (ด่าน 1-5 เฉลย 2 ตัว, ด่าน 6-10 เฉลย 1 ตัว)
    mode:'nohint' (ฟังคำศัพท์ 2) ไม่เฉลยเลย เด็กหาและเรียงตัวอักษรเองทั้งหมดทุกด่าน */
-let listenGame = null; // {catId, level, mistakes, totalLevels, word, letters, hintPositions, filled, cardEls, usedWordIdx}
+let listenGame = null; // {catId, level, mistakes, totalLevels, word, letters, hintPositions, filled, cardEls, usedWordIdx, noThaiVoice, symbol}
 
-function startListenGame(catId){
+/* หา voice ภาษาไทยที่ติดตั้งไว้ในเบราว์เซอร์ (ถ้ามี) เพื่อ set ให้ utterance ใช้ตรงๆ แทนการพึ่ง lang อย่างเดียว
+   (บาง browser เลือก voice ผิดถ้าไม่ได้ set .voice ให้ชัดเจน) */
+function pickThaiVoice(){
+  if(!window.speechSynthesis) return null;
+  return speechSynthesis.getVoices().find(v=>v.lang && v.lang.toLowerCase().startsWith('th')) || null;
+}
+
+/* เช็คว่าเบราว์เซอร์นี้มีเสียงพูดภาษาไทยติดตั้งไว้ไหม (บาง browser โหลด voice list แบบ async ผ่าน event 'voiceschanged')
+   ใช้แค่ตัดสินใจว่าจะโชว์รูปคำใบ้เสริมไหม ไม่ได้ใช้ปิดกั้นการพยายามพูดจริง (กันกรณี detect พลาดแล้วเสียงไม่ออกทั้งที่มี voice) */
+function hasThaiVoiceSupport(){
+  return new Promise(resolve=>{
+    if(!window.speechSynthesis){ resolve(false); return; }
+    const check = ()=> speechSynthesis.getVoices().some(v=>v.lang && v.lang.toLowerCase().startsWith('th'));
+    if(speechSynthesis.getVoices().length){ resolve(check()); return; }
+    let done = false;
+    const finish = ()=>{ if(done) return; done = true; resolve(check()); };
+    speechSynthesis.addEventListener('voiceschanged', finish, {once:true});
+    setTimeout(finish, 1000);
+  });
+}
+
+/* ไล่ความยากคำไทยตามด่าน: ด่าน 1-4 คำ 3 ตัวอักษร, 5-8 คำ 4 ตัวอักษร, 9-10 คำ 5 ตัวอักษร */
+function listenThaiWordLen(level){
+  if(level<=4) return 3;
+  if(level<=8) return 4;
+  return 5;
+}
+
+/* จำนวนตัวอักษรที่เฉลยให้ (เฉพาะ mode 'hint' คือ ฟังคำไทย 1) ลดลงทุกครึ่งของแต่ละช่วงความยาวคำ */
+function listenThaiHintCount(cat, level){
+  if(cat.mode!=='hint') return 0;
+  if(level<=2) return 2;
+  if(level<=4) return 1;
+  if(level<=6) return 2;
+  if(level<=8) return 1;
+  return level<=9 ? 2 : 1;
+}
+
+async function startListenGame(catId){
   stopARGame();
   lastGameType = 'listen'; lastCatId = catId;
   const cat = catById(catId);
-  listenGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, usedWordIdx:new Set() };
+  listenGame = {
+    catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
+    usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
+  };
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
+  if(cat.lang==='th'){
+    listenGame.noThaiVoice = !(await hasThaiVoiceSupport());
+    if(listenGame.noThaiVoice) showToast('🔇','เบราว์เซอร์นี้ไม่รองรับเสียงพูดภาษาไทย ระบบจะโชว์รูปคำใบ้แทนนะ');
+  }
   renderListenLevel();
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
@@ -966,14 +1011,27 @@ function startListenGame(catId){
 function speakListenWord(word){
   if(!window.speechSynthesis){ showToast('🔇','เบราว์เซอร์นี้ไม่รองรับการอ่านออกเสียง'); return; }
   speechSynthesis.cancel(); // ตัดเสียงเดิมที่ค้างอยู่ก่อนพูดคำใหม่ กันเสียงซ้อนกันตอนกดรัวๆ
+  const cat = listenGame ? catById(listenGame.catId) : null;
   const u = new SpeechSynthesisUtterance(word);
-  u.lang = 'en-US';
+  if(cat && cat.lang==='th'){
+    const voice = pickThaiVoice();
+    if(voice) u.voice = voice; // set voice ตรงๆ แทนพึ่ง lang อย่างเดียว บาง browser เลือก voice ผิด/ไม่พูดถ้าไม่ set
+    u.lang = 'th-TH';
+  } else {
+    u.lang = 'en-US';
+  }
   u.rate = 0.85;
-  speechSynthesis.speak(u);
+  // Chrome มีบั๊กที่ speak() ทันทีหลัง cancel() บางทีเงียบเฉยๆ ต้องรอ event loop รอบถัดไปก่อนค่อยพูด
+  setTimeout(()=> speechSynthesis.speak(u), 30);
 }
 
 function renderListenLevel(){
   const cat = catById(listenGame.catId);
+  if(cat.lang==='th') prepareListenLevelTh(cat);
+  else prepareListenLevelEn(cat);
+}
+
+function prepareListenLevelEn(cat){
   const level = listenGame.level;
   const idx = pickNoRepeatIdx(listenGame.usedWordIdx, LISTEN_WORDS.length);
   const word = LISTEN_WORDS[idx];
@@ -982,7 +1040,7 @@ function renderListenLevel(){
   /* เฉลยตัวอักษร: เฉพาะ mode 'hint' (ฟังคำศัพท์ 1) เท่านั้น — เลือกตำแหน่งเฉลยแบบสุ่ม ไม่ตายตัวว่าต้องเป็นตัวแรก/ท้าย */
   let hintCount = 0;
   if(cat.mode==='hint') hintCount = level<=5 ? 2 : 1;
-  const positions = shuffleArray([0,1,2]);
+  const positions = shuffleArray(letters.map((_,i)=>i));
   const hintPositions = positions.slice(0, hintCount);
   const findPositions = positions.slice(hintCount);
 
@@ -994,6 +1052,41 @@ function renderListenLevel(){
   const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c=>!letters.includes(c));
   shuffleArray(alphabet);
   const decoys = alphabet.slice(0, decoyCount);
+
+  listenGame.symbol = null;
+  finalizeListenLevel(cat, word, letters, hintPositions, neededLetters, decoys);
+}
+
+function prepareListenLevelTh(cat){
+  const level = listenGame.level;
+  const wordLen = listenThaiWordLen(level);
+  const pool = LISTEN_WORDS_TH[wordLen];
+  const idx = pickNoRepeatIdx(listenGame.usedWordIdx[wordLen], pool.length);
+  const entry = pool[idx];
+  const word = entry.w;
+  const letters = word.split('');
+
+  const hintCount = listenThaiHintCount(cat, level);
+  const positions = shuffleArray(letters.map((_,i)=>i));
+  const hintPositions = positions.slice(0, hintCount);
+  const findPositions = positions.slice(hintCount);
+  const neededLetters = findPositions.map(p=>letters[p]);
+
+  let decoyCount = wordLen<=3 ? 2 : (wordLen<=4 ? 3 : 4);
+  if(cat.mode==='nohint'){
+    const cap = wordLen<=3 ? 5 : (wordLen<=4 ? 6 : 7);
+    decoyCount = Math.max(0, Math.min(decoyCount, cap-letters.length));
+  }
+  const decoyPool = THAI_DECOY_CHARS.filter(c=>!letters.includes(c));
+  shuffleArray(decoyPool);
+  const decoys = decoyPool.slice(0, decoyCount);
+
+  listenGame.symbol = entry.e;
+  finalizeListenLevel(cat, word, letters, hintPositions, neededLetters, decoys);
+}
+
+function finalizeListenLevel(cat, word, letters, hintPositions, neededLetters, decoys){
+  const level = listenGame.level;
   const cardLetters = shuffleArray([...neededLetters, ...decoys]);
 
   listenGame.word = word;
@@ -1029,6 +1122,14 @@ function renderListenLevel(){
   $('listen-level-counter').textContent = level+'/'+listenGame.totalLevels;
   $('listen-progress-fill').style.width = ((level-1)/listenGame.totalLevels*100)+'%';
   $('listen-hint').textContent = '🎧 กดปุ่มฟังคำศัพท์ แล้วเลือกตัวอักษรมาต่อคำให้ถูกนะ!';
+
+  const symbolEl = $('listen-symbol');
+  if(cat.lang==='th' && listenGame.noThaiVoice && listenGame.symbol){
+    symbolEl.textContent = listenGame.symbol;
+    symbolEl.hidden = false;
+  } else {
+    symbolEl.hidden = true;
+  }
 }
 
 function placeListenLetter(letter, cardEl){
@@ -1044,10 +1145,10 @@ function placeListenLetter(letter, cardEl){
   playClick();
 
   const totalFilled = Object.keys(listenGame.filled).length + listenGame.hintPositions.length;
-  if(totalFilled === 3) checkListenAnswer();
+  if(totalFilled === listenGame.letters.length) checkListenAnswer();
 }
 
-/* คลิกช่องคำตอบที่เด็กใส่เอง (ไม่ใช่ช่องเฉลย) เพื่อยกเลิก คืนตัวอักษรกลับไปในการ์ด ให้แก้ไขก่อนครบ 3 ช่อง */
+/* คลิกช่องคำตอบที่เด็กใส่เอง (ไม่ใช่ช่องเฉลย) เพื่อยกเลิก คืนตัวอักษรกลับไปในการ์ด ให้แก้ไขก่อนครบทุกช่อง */
 function undoListenSlot(pos){
   if(listenGame.hintPositions.includes(pos)) return;
   const letter = listenGame.filled[pos];
