@@ -2646,6 +2646,47 @@ fetch('version').then(r=>r.text()).then(t=>{ $('app-version').textContent = t.tr
 $('qr-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('qr-modal'); });
 $('qr-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('qr-modal'); });
 
+/* ============================= CHANGELOG MODAL ============================= */
+/* parse ไฟล์ changelog (เก็บแค่ version ล่าสุด version เดียว เขียนทับทุก release):
+   บรรทัดแรก = เลข version, บรรทัดขึ้นต้น "## " = หัวข้อหมวด, บรรทัดขึ้นต้น "- " = รายการย่อยในหมวดล่าสุด */
+function parseChangelog(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(l=>l.length);
+  if(!lines.length) return null;
+  const version = lines[0];
+  const categories = [];
+  let current = null;
+  for(let i=1;i<lines.length;i++){
+    const line = lines[i];
+    if(line.startsWith('## ')){
+      current = {title:line.slice(3), items:[]};
+      categories.push(current);
+    } else if(line.startsWith('- ') && current){
+      current.items.push(line.slice(2));
+    }
+  }
+  return {version, categories};
+}
+function renderChangelogBody(data){
+  const body = $('changelog-body');
+  if(!data || !data.categories.length){
+    body.innerHTML = '<p>ยังไม่มีข้อมูลอัปเดตนะ</p>';
+    return;
+  }
+  body.innerHTML = `<div class="changelog-version">${data.version}</div>` +
+    data.categories.map(cat=>
+      `<div class="changelog-cat">${cat.title}</div><ul class="changelog-list">${cat.items.map(it=>`<li>${it}</li>`).join('')}</ul>`
+    ).join('');
+}
+$('changelog-open-btn').addEventListener('click', ()=>{
+  playClick();
+  fetch('changelog').then(r=>r.text()).then(text=> renderChangelogBody(parseChangelog(text)))
+    .catch(()=>{ $('changelog-body').innerHTML = '<p>โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้งนะ</p>'; });
+  openOverlay('changelog-modal');
+});
+$('changelog-x-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('changelog-modal'); });
+$('changelog-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('changelog-modal'); });
+$('changelog-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('changelog-modal'); });
+
 /* ============================= DAY / NIGHT THEME ============================= */
 const bgDecorEl = $('bg-decor');
 function isNightMode(){ return document.body.classList.contains('night-mode'); }

@@ -104,6 +104,7 @@
       <button class="child-add-new-btn" id="child-add-new-btn" hidden>+ เพิ่มเด็กคนใหม่</button>
       <button class="child-import-btn" id="child-import-btn">📥 นำเข้าข้อมูลเด็กจากอุปกรณ์อื่น</button>
       <input type="file" id="child-import-input" style="display:none">
+      <button class="child-import-btn changelog-open-btn" id="changelog-open-btn">📋 รายละเอียดการอัพเดท</button>
     </div>
   </section>
 
@@ -340,7 +341,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.year1.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>
@@ -361,6 +362,18 @@
       3. ยืนยันการติดตั้ง เป็นอันเสร็จ 🎉
     </p>
     <button class="modal-cancel-btn" id="install-close-btn" style="width:100%;margin-top:20px;">ปิด ✕</button>
+  </div>
+</div>
+
+<!-- CHANGELOG MODAL -->
+<div id="changelog-modal" hidden>
+  <div class="modal-backdrop" id="changelog-modal-backdrop"></div>
+  <div class="modal-card changelog-card">
+    <button class="modal-x-btn" id="changelog-x-btn" aria-label="ปิด">✕</button>
+    <div class="modal-icon">📋</div>
+    <h3 class="modal-title">รายละเอียดการอัพเดท</h3>
+    <div class="modal-body changelog-body" id="changelog-body"></div>
+    <button class="modal-cancel-btn" id="changelog-close-btn" style="width:100%;">ปิด ✕</button>
   </div>
 </div>
 

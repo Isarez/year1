@@ -448,6 +448,8 @@
     cursor:pointer; transition:color .15s; text-decoration:underline; text-underline-offset:3px;
   }
   .child-import-btn:hover,.child-import-btn:active{color:var(--ink);}
+  /* ปุ่ม "รายละเอียดการอัพเดท" เป็นคนละหัวข้อ/คนละกลุ่มฟังก์ชันกับปุ่มนำเข้าข้อมูล เว้นระยะเพิ่มให้แยกกันชัดเจน */
+  .changelog-open-btn{margin-top:22px;}
   /* emoji picker */
   .emoji-picker-label{font-size:14px;font-weight:700;color:var(--ink-soft);margin-bottom:8px;text-align:left;}
   .emoji-picker{
@@ -476,7 +478,7 @@
     transform:scale(1.18);
   }
   /* confirm modal */
-  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal{
+  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal{
     position:fixed; inset:0; z-index:200;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
@@ -516,6 +518,22 @@
     box-shadow:0 5px 0 #C43535; transition:transform .15s,box-shadow .15s;
   }
   .modal-confirm-btn:active{transform:translateY(4px); box-shadow:0 1px 0 #C43535;}
+  /* ปุ่มปิด ✕ มุมบนขวาของ modal (pattern เดียวกับ .sb-x-btn ในสมุดสติกเกอร์ แต่ absolute แทน sticky เพราะ .modal-card ไม่ scroll ตัวเอง) */
+  .modal-x-btn{
+    position:absolute; top:14px; right:14px; z-index:5;
+    width:32px; height:32px; border-radius:50%; border:none; cursor:pointer;
+    background:var(--cream-2); color:var(--ink-soft); font-size:15px; font-weight:800; font-family:inherit;
+    transition:transform .15s, background .15s;
+  }
+  .modal-x-btn:active{transform:translateY(2px);}
+  /* modal รายละเอียดการอัพเดท */
+  .changelog-card{max-width:420px; max-height:82vh; overflow-y:auto;}
+  .changelog-body{text-align:left;}
+  .changelog-version{font-size:15px; font-weight:800; color:var(--ink); margin-bottom:10px; text-align:center;}
+  .changelog-cat{font-size:16px; font-weight:800; color:var(--ink); margin:14px 0 6px;}
+  .changelog-cat:first-child{margin-top:0;}
+  .changelog-list{margin:0 0 4px; padding-left:20px; color:var(--ink-soft); font-size:15px; font-weight:600; line-height:1.6;}
+  .changelog-list li{margin-bottom:4px;}
   /* child chip in header */
   .child-chip{
     display:flex; align-items:center; gap:5px;
