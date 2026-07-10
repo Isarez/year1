@@ -2090,9 +2090,10 @@ function drawCartoonHand(ctx, pts){
     y: palmCenter.y + (p.y-palmCenter.y)*factor,
   });
 
-  const wLen = blen(pts[5], pts[17]) * 0.72;
+  /* โครงฝ่ามือ: ข้อมือแคบกว่าช่วงโคนนิ้ว (สอบลงเล็กน้อย) และไม่ยืดยาวลงล่างเกินไป ให้ได้สัดส่วนมือเด็กป้อมๆ */
+  const wLen = blen(pts[5], pts[17]) * 0.62;
   const dx = pts[0].x-pts[9].x, dy = pts[0].y-pts[9].y, r = Math.hypot(dx,dy)||1;
-  const wristBase = bulge(pts[0], 1.35);
+  const wristBase = bulge(pts[0], 1.26);
   const wA = {x:wristBase.x-dy/r*wLen, y:wristBase.y+dx/r*wLen};
   const wB = {x:wristBase.x+dy/r*wLen, y:wristBase.y-dx/r*wLen};
   /* ฝั่งไหนใกล้โคนนิ้วโป้ง (pts[1]) มากกว่า ให้เป็นขอบข้อมือด้านนิ้วโป้ง จะได้แทรกจุดฐานนิ้วโป้งต่อให้เนียน ไม่มีช่องว่าง */
@@ -2101,12 +2102,19 @@ function drawCartoonHand(ctx, pts){
   const thumbBase = bulge(pts[1], 1.22);
   const palmPts = [wristThumbSide, thumbBase, bulge(pts[5],1.32), bulge(pts[9],1.28), bulge(pts[13],1.32), bulge(pts[17],1.36), wristPinkySide];
 
-  /* ปลอกแขนเสื้อ (cuff) capsule ที่ข้อมือ ถัดจากโคนมือออกไปทางแขน วาดก่อนฝ่ามือให้โผล่ใต้มือเหมือนแขนเสื้อเด็ก */
-  const cuffC = {x:wristBase.x + dx/r*handScale*0.14, y:wristBase.y + dy/r*handScale*0.14};
-  const cuffHalf = wLen*0.82;
+  /* ปลอกแขนเสื้อ (cuff) capsule ที่ข้อมือ — จัดให้ tuck ใต้ขอบล่างฝ่ามือพอดี (ขอบบน cuff ซุกใต้ฝ่ามือ
+     และความกว้างแคบกว่าฐานฝ่ามือเล็กน้อย) ให้ดูเป็นแขนเสื้อที่มือโผล่ออกมา ไม่ใช่แผ่นลอยแยกชิ้น */
+  /* จุดกลาง cuff เลื่อนเข้าหาฝั่งก้อยเล็กน้อย — silhouette ฝ่ามือฝั่งก้อยกว้างกว่าฝั่งโป้ง (bulge 1.36 vs thumbBase 1.22)
+     ถ้า center ตรงแกนข้อมือเป๊ะ cuff จะดูเยื้องออกฝั่งโป้งเวลามือเอียง */
+  const pinkyDir = {x:(wristPinkySide.x-wristBase.x)/wLen, y:(wristPinkySide.y-wristBase.y)/wLen};
+  const cuffC = {
+    x:wristBase.x + dx/r*handScale*0.12 + pinkyDir.x*wLen*0.18,
+    y:wristBase.y + dy/r*handScale*0.12 + pinkyDir.y*wLen*0.18
+  };
+  const cuffHalf = wLen*0.52;
   const cuffA = {x:cuffC.x-dy/r*cuffHalf, y:cuffC.y+dx/r*cuffHalf};
   const cuffB = {x:cuffC.x+dy/r*cuffHalf, y:cuffC.y-dx/r*cuffHalf};
-  const cuffW = handScale*0.30;
+  const cuffW = handScale*0.42;
 
   /* ความหนาโคนนิ้วแต่ละนิ้ว (ใช้ทั้งวาดปลอกคอเชื่อมฝ่ามือ และวาดตัวนิ้วเอง ให้ตรงกันเป๊ะ) */
   const thumbHalf=blen(pts[1],pts[2])*0.48;
