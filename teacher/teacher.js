@@ -92,11 +92,12 @@ function playCongrats(){
 /* ---------- views ---------- */
 const setupView   = $('teacher-setup-view');
 const homeView    = $('teacher-home-view');
+const manageView  = $('manage-view');
 const builderView = $('builder-view');
 const quizView    = $('quiz-view');
 const resultView  = $('result-view');
 function showView(v){
-  [setupView, homeView, builderView, quizView, resultView].forEach(x=>{ x.hidden = (x!==v); });
+  [setupView, homeView, manageView, builderView, quizView, resultView].forEach(x=>{ x.hidden = (x!==v); });
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -210,68 +211,122 @@ function refreshHeaderChip(){
     $('teacher-chip-group').hidden = true;
   }
 }
+let selectedGrade = null;   // ระดับชั้นที่เลือกดูบนหน้า home (เฉพาะชั้นที่มีเกม publish)
+
 function renderTeacherHome(){
   refreshHeaderChip();
   $('teacher-greeting').textContent = profile.avatar+' สวัสดี ครู'+profile.name+'!';
-  $('teacher-school-line').textContent = '🏫 '+profile.school+' — จัดการชุดโจทย์ของคุณครูได้ที่นี่เลย';
-  const hasGames = games.length > 0;
-  $('teacher-empty').hidden = hasGames;
-  $('teacher-game-sections').hidden = !hasGames;
-  if(hasGames) renderGradeGroups();
+  $('teacher-school-line').textContent = '🏫 '+profile.school+' — เลือกเกมให้เด็กๆ เล่นได้เลย';
+  const published = games.filter(g=>g.published);
+  if(!published.length){
+    /* ยังไม่มีเกม publish: โชว์ empty state (ถ้ามี draft ค้าง โชว์ปุ่มจัดการโจทย์ให้ไปเผยแพร่ได้) */
+    $('teacher-empty').hidden = false;
+    $('teacher-game-sections').hidden = true;
+    $('teacher-empty-msg').textContent = games.length
+      ? 'มีแบบร่างอยู่ '+games.length+' ชุด แต่ยังไม่ได้เผยแพร่ — กด "จัดการโจทย์" เพื่อเผยแพร่ให้เด็กเล่นนะคะ'
+      : 'ยังไม่มีโจทย์เลย มาสร้างชุดแรกกันเถอะ!';
+    $('teacher-empty-manage-btn').hidden = !games.length;
+  } else {
+    $('teacher-empty').hidden = true;
+    $('teacher-game-sections').hidden = false;
+    renderGradeFilter(published);
+    renderMechGroups(published);
+  }
   showView(homeView);
 }
-function renderGradeGroups(){
-  const wrap = $('teacher-grade-groups');
+/* ปุ่มเลือกระดับชั้น — โชว์เฉพาะชั้นที่มีเกม publish แล้ว */
+function renderGradeFilter(published){
+  const grades = GRADES.filter(gr=>published.some(g=>g.grade===gr.id));
+  if(!grades.some(gr=>gr.id===selectedGrade)) selectedGrade = grades[0].id;
+  const wrap = $('grade-filter');
   wrap.innerHTML = '';
-  GRADES.forEach(gr=>{
-    const list = games.filter(g=>g.grade===gr.id);
-    if(!list.length) return;
+  grades.forEach(gr=>{
+    const b = document.createElement('button');
+    b.className = 'grade-chip'+(gr.id===selectedGrade?' selected':'');
+    b.textContent = '🎓 '+gr.name;
+    b.addEventListener('click', ()=>{
+      playClick();
+      selectedGrade = gr.id;
+      renderTeacherHome();
+    });
+    wrap.appendChild(b);
+  });
+}
+/* column เกมของชั้นที่เลือก จัดกลุ่มเป็น section ตามรูปแบบเกม (mechanic) แบบหน้าหลัก */
+function renderMechGroups(published){
+  const wrap = $('teacher-mech-groups');
+  wrap.innerHTML = '';
+  const list = published.filter(g=>g.grade===selectedGrade);
+  MECHANICS.forEach(mech=>{
+    const games2 = list.filter(g=>g.mechanic===mech.id);
+    if(!games2.length) return;
     const title = document.createElement('div');
     title.className = 'teacher-grade-title';
-    title.textContent = '🎓 '+gr.name;
+    title.textContent = mech.emoji+' '+mech.name;
     wrap.appendChild(title);
     const grid = document.createElement('div');
     grid.className = 'cat-grid';
-    list.forEach((game, i)=>{
-      grid.appendChild(buildGameCard(game, i));
-    });
+    games2.forEach(game=> grid.appendChild(buildGameCard(game)));
     wrap.appendChild(grid);
   });
 }
-function buildGameCard(game, i){
+/* การ์ดเกมบนหน้า home: ไม่มีปุ่มย่อย คลิกทั้งใบ = เข้าเล่นเลย */
+function buildGameCard(game){
   const idx = games.indexOf(game);
   const [color, light] = CARD_COLORS[idx % CARD_COLORS.length];
-  const card = document.createElement('div');
+  const card = document.createElement('button');
   card.className = 'cat-card settled';
   card.style.setProperty('--cat-light', light);
   card.style.setProperty('--cat-color', color);
   card.style.animation = 'none';
-  const mech = MECHANICS.find(m=>m.id===game.mechanic) || MECHANICS[0];
   card.innerHTML =
-    (game.published ? '' : '<div class="tg-badge-draft">แบบร่าง</div>')+
     '<div class="cat-emoji"><img src="'+game.logo+'" class="cat-icon-img" alt=""></div>'+
     '<div class="cat-name">'+escapeHtml(game.title)+'</div>'+
-    '<div class="cat-meta">'+mech.emoji+' '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
-    '<div class="tg-actions">'+
-      (game.published ? '<button class="tg-action-btn tg-play">▶ เล่น</button>' : '<button class="tg-action-btn tg-pub">🚀 เผยแพร่</button>')+
-      '<button class="tg-action-btn tg-edit">✏️ แก้ไข</button>'+
-      '<button class="tg-action-btn tg-del">🗑️ ลบ</button>'+
-    '</div>';
-  const playBtn = card.querySelector('.tg-play');
-  if(playBtn) playBtn.addEventListener('click', ()=>{ playClick(); startTeacherQuiz(game.id); });
-  const pubBtn = card.querySelector('.tg-pub');
-  if(pubBtn) pubBtn.addEventListener('click', ()=>{
-    playClick();
-    game.published = true; game.updatedAt = Date.now();
-    saveGames(); renderTeacherHome();
-  });
-  card.querySelector('.tg-edit').addEventListener('click', ()=>{ playClick(); openBuilder(game.id); });
-  card.querySelector('.tg-del').addEventListener('click', ()=>{ playClick(); askDeleteGame(game.id); });
+    '<div class="cat-meta">'+game.questionCount+' ข้อ/รอบ</div>';
+  card.addEventListener('click', ()=>{ playClick(); startTeacherQuiz(game.id); });
   return card;
 }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-$('teacher-add-big-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null); });
-$('teacher-add-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null); });
+$('teacher-add-big-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null, 'home'); });
+$('teacher-manage-btn').addEventListener('click', ()=>{ playClick(); renderManage(); });
+$('teacher-empty-manage-btn').addEventListener('click', ()=>{ playClick(); renderManage(); });
+
+/* ---------- manage view (จัดการโจทย์: ทุกชุดทั้ง draft/published) ---------- */
+function renderManage(){
+  const wrap = $('manage-list');
+  wrap.innerHTML = '';
+  if(!games.length){
+    wrap.innerHTML = '<p class="manage-empty">ยังไม่มีชุดโจทย์เลย กดปุ่มด้านบนเพื่อสร้างชุดแรกได้เลยค่ะ</p>';
+  }
+  games.forEach(game=>{
+    const mech = MECHANICS.find(m=>m.id===game.mechanic) || MECHANICS[0];
+    const row = document.createElement('div');
+    row.className = 'mg-item';
+    row.innerHTML =
+      '<img class="mg-logo" src="'+game.logo+'" alt="">'+
+      '<div class="mg-info">'+
+        '<div class="mg-title">'+escapeHtml(game.title)+' '+(game.published?'<span class="mg-status mg-pub">เผยแพร่แล้ว</span>':'<span class="mg-status mg-draft">แบบร่าง</span>')+'</div>'+
+        '<div class="mg-meta">🎓 '+gradeName(game.grade)+' · '+mech.emoji+' '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
+      '</div>'+
+      '<div class="mg-actions">'+
+        (game.published?'':'<button class="tg-action-btn tg-pub">🚀 เผยแพร่</button>')+
+        '<button class="tg-action-btn tg-edit">✏️ แก้ไข</button>'+
+        '<button class="tg-action-btn tg-del">🗑️ ลบ</button>'+
+      '</div>';
+    const pubBtn = row.querySelector('.tg-pub');
+    if(pubBtn) pubBtn.addEventListener('click', ()=>{
+      playClick();
+      game.published = true; game.updatedAt = Date.now();
+      saveGames(); renderManage();
+    });
+    row.querySelector('.tg-edit').addEventListener('click', ()=>{ playClick(); openBuilder(game.id, 'manage'); });
+    row.querySelector('.tg-del').addEventListener('click', ()=>{ playClick(); askDeleteGame(game.id); });
+    wrap.appendChild(row);
+  });
+  showView(manageView);
+}
+$('manage-back').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
+$('manage-add-btn').addEventListener('click', ()=>{ playClick(); openBuilder(null, 'manage'); });
 
 /* ---------- delete confirm modal ---------- */
 let pendingDeleteId = null;
@@ -292,11 +347,12 @@ $('confirm-del-ok').addEventListener('click', ()=>{
   }
   $('confirm-del-modal').hidden = true;
   pendingDeleteId = null;
-  renderTeacherHome();
+  renderManage(); /* ลบได้จากหน้าจัดการโจทย์เท่านั้น — กลับไปหน้าเดิม */
 });
 
 /* ---------- builder ---------- */
 let editingGameId = null;   // null = สร้างใหม่
+let builderFrom = 'manage'; // เข้าฟอร์มมาจากหน้าไหน ('home' | 'manage') — save/back แล้วกลับหน้านั้น
 let selectedLogo = LOGOS[0];
 let selectedMechanic = 'quiz';
 
@@ -393,8 +449,9 @@ $('b-add-question').addEventListener('click', ()=>{
   renumberQuestions();
 });
 
-function openBuilder(gameId){
+function openBuilder(gameId, from){
   editingGameId = gameId;
+  builderFrom = from || 'manage';
   const game = gameId ? games.find(g=>g.id===gameId) : null;
   $('builder-title-label').textContent = game ? 'แก้ไข: '+game.title : 'สร้างชุดโจทย์ใหม่';
   $('b-grade').value = game ? game.grade : 'p1';
@@ -415,7 +472,11 @@ function openBuilder(gameId){
   renumberQuestions();
   showView(builderView);
 }
-$('builder-back').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
+function leaveBuilder(){
+  if(builderFrom === 'home') renderTeacherHome();
+  else renderManage();
+}
+$('builder-back').addEventListener('click', ()=>{ playClick(); leaveBuilder(); });
 
 /* อ่าน+ตรวจข้อมูลจากฟอร์ม — คืน object หรือ null (พร้อม alert บอกจุดผิด) */
 function collectBuilderData(){
@@ -465,7 +526,9 @@ function saveBuilder(publish){
   }
   saveGames();
   playCorrect();
-  renderTeacherHome();
+  /* publish แล้วพากลับหน้า home ให้เห็นเกมโชว์เลย / save draft กลับหน้าที่มา */
+  if(publish) renderTeacherHome();
+  else leaveBuilder();
 }
 $('b-save-draft').addEventListener('click', ()=>{ playClick(); saveBuilder(false); });
 $('b-publish').addEventListener('click', ()=>{ playClick(); saveBuilder(true); });

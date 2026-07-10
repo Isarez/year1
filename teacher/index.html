@@ -97,19 +97,35 @@
       <p id="teacher-school-line"></p>
     </div>
 
-    <!-- ยังไม่มีเกม: ปุ่มใหญ่กลางจอ -->
+    <!-- ยังไม่มีเกมเลย: ปุ่มใหญ่กลางจอ -->
     <div class="teacher-empty" id="teacher-empty" hidden>
       <div class="teacher-empty-emoji">📝</div>
-      <p>ยังไม่มีโจทย์เลย มาสร้างชุดแรกกันเถอะ!</p>
+      <p id="teacher-empty-msg">ยังไม่มีโจทย์เลย มาสร้างชุดแรกกันเถอะ!</p>
       <button class="child-submit-btn teacher-add-big-btn" id="teacher-add-big-btn">＋ เพิ่มโจทย์</button>
+      <button class="child-import-btn" id="teacher-empty-manage-btn" hidden>🗂️ จัดการโจทย์</button>
     </div>
 
-    <!-- มีเกมแล้ว: ปุ่มเพิ่มมุมบน + รายการเกมแยกตามระดับชั้น -->
+    <!-- มีเกม publish แล้ว: ปุ่มจัดการโจทย์ + ตัวเลือกระดับชั้น + เกมจัดกลุ่มตามรูปแบบเกม -->
     <div id="teacher-game-sections" hidden>
       <div class="teacher-toolbar">
-        <button class="child-submit-btn teacher-add-btn" id="teacher-add-btn">＋ เพิ่มโจทย์</button>
+        <button class="child-submit-btn teacher-add-btn" id="teacher-manage-btn">🗂️ จัดการโจทย์</button>
       </div>
-      <div id="teacher-grade-groups"></div>
+      <div class="grade-filter" id="grade-filter"></div>
+      <div id="teacher-mech-groups"></div>
+    </div>
+  </section>
+
+  <!-- MANAGE VIEW (จัดการโจทย์: list ทุกชุด publish/edit/delete) -->
+  <section id="manage-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="manage-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label">🗂️ จัดการโจทย์</div>
+      </div>
+    </div>
+    <div class="manage-card">
+      <button class="builder-add-q-btn" id="manage-add-btn">＋ เพิ่มโจทย์ใหม่</button>
+      <div id="manage-list"></div>
     </div>
   </section>
 
@@ -243,7 +259,7 @@
   </div>
 </div>
 
-<footer>โหมดคุณครู — สร้างโจทย์เองให้เด็กๆ ฝึกทำ 💛<span class="footer-privacy">🔒 ข้อมูลชุดโจทย์ทั้งหมดถูกจัดเก็บบนเครื่องนี้เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.teacher.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>โหมดคุณครู — สร้างโจทย์เองให้เด็กๆ ฝึกทำ 💛<span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.teacher.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="qr-modal" hidden>
