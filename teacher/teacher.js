@@ -739,7 +739,17 @@ function bqShell(innerHtml){
   const block = document.createElement('div');
   block.className = 'bq-block';
   block.innerHTML =
-    '<div class="bq-head"><span class="bq-num"></span><button type="button" class="bq-del-btn">'+SVG_TRASH+' ลบข้อนี้</button></div>'+innerHtml;
+    '<div class="bq-head"><span class="bq-num"></span><span class="bq-head-btns">'+
+      '<button type="button" class="bq-emoji-mini" title="แทรก emoji ในข้อนี้">😀</button>'+
+      '<button type="button" class="bq-del-btn">'+SVG_TRASH+' ลบข้อนี้</button>'+
+    '</span></div>'+innerHtml;
+  /* ปุ่ม emoji ประจำข้อ: เปิดแผงลอย + โฟกัสช่องแรกของข้อนี้ (แก้ปัญหาโจทย์เยอะแล้วปุ่มบนสุดอยู่ไกล) */
+  block.querySelector('.bq-emoji-mini').addEventListener('click', ()=>{
+    playClick();
+    openEmojiPop();
+    const inp = block.querySelector('input[type="text"]');
+    if(inp){ lastEmojiTarget = inp; inp.focus(); }
+  });
   block.querySelector('.bq-del-btn').addEventListener('click', ()=>{
     playClick();
     if($('b-questions').children.length <= 1){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }
@@ -878,6 +888,7 @@ function openBuilder(gameId, from){
   showView(builderView);
 }
 function leaveBuilder(){
+  closeEmojiPop();
   if(builderFrom === 'home') renderTeacherHome();
   else renderManage();
 }
@@ -972,6 +983,7 @@ function saveBuilder(publish){
   }
   saveGames();
   playCorrect();
+  closeEmojiPop();
   /* publish แล้วพากลับหน้า home ให้เห็นเกมโชว์เลย / save draft กลับหน้าที่มา */
   if(publish) renderTeacherHome();
   else leaveBuilder();
@@ -1017,12 +1029,21 @@ function renderEmojiPop(){
     grid.appendChild(b);
   });
 }
+function openEmojiPop(){
+  const pop = $('emoji-insert-pop');
+  if(!$('emoji-pop-grid').children.length) renderEmojiPop();
+  pop.hidden = false;
+  document.body.classList.add('emoji-pop-open');
+}
+function closeEmojiPop(){
+  $('emoji-insert-pop').hidden = true;
+  document.body.classList.remove('emoji-pop-open');
+}
 $('b-emoji-btn').addEventListener('click', ()=>{
   playClick();
-  const pop = $('emoji-insert-pop');
-  pop.hidden = !pop.hidden;
-  if(!pop.hidden && !$('emoji-pop-grid').children.length) renderEmojiPop();
+  if($('emoji-insert-pop').hidden) openEmojiPop(); else closeEmojiPop();
 });
+$('emoji-pop-close').addEventListener('click', ()=>{ playClick(); closeEmojiPop(); });
 $('b-publish').addEventListener('click', ()=>{ playClick(); saveBuilder(true); });
 
 /* ---------- quiz play (adapt จาก engine หน้าหลัก — ไม่มีสติกเกอร์) ---------- */

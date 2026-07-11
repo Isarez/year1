@@ -162,11 +162,28 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
   padding:6px 14px; cursor:pointer; transition:transform .12s;
 }
 .bq-emoji-btn:hover{transform:translateY(-2px);}
+/* แผง emoji เป็นแบบลอย dock มุมขวาล่างจอ — เลื่อนดูโจทย์ข้อไหนอยู่ก็กดแทรกได้ ไม่ต้องเลื่อนกลับขึ้นบน
+   (dock ขวาเพื่อไม่บังปุ่มบันทึก/เผยแพร่ที่อยู่กลางจอ + เผื่อ margin ล่างของฟอร์มไว้ scroll หลบได้เสมอ) */
 .emoji-insert-pop{
-  border:3px dashed #B9D6FF; border-radius:18px; background:#F7FBFF;
-  padding:12px 14px; margin-bottom:4px;
+  position:fixed; bottom:16px; right:16px; left:auto;
+  width:min(380px, calc(100vw - 28px)); z-index:250;
+  border:3px solid #B9D6FF; border-radius:18px; background:#F7FBFF;
+  padding:10px 14px 12px; box-shadow:0 10px 28px rgba(30,60,110,.25);
 }
-.emoji-pop-hint{font-size:13.5px; font-weight:600; color:var(--ink-soft); margin-bottom:8px;}
+body.emoji-pop-open .builder-card{margin-bottom:320px;}
+.emoji-pop-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:6px;}
+.emoji-pop-hint{font-size:13.5px; font-weight:600; color:var(--ink-soft);}
+.emoji-pop-close{
+  border:none; background:#EAF5FE; color:#2f7fb5; font-size:14px; font-weight:800;
+  width:28px; height:28px; border-radius:50%; cursor:pointer; flex-shrink:0;
+}
+/* ปุ่ม emoji ประจำข้อ (ใน header ของ block) */
+.bq-head-btns{display:flex; gap:8px; align-items:center;}
+.bq-emoji-mini{
+  border:2px solid #F3E2C0; background:#fff; border-radius:999px;
+  font-size:15px; line-height:1; padding:4px 10px; cursor:pointer; transition:transform .12s;
+}
+.bq-emoji-mini:hover{transform:scale(1.12);}
 .emoji-pop-grid{
   display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr)); gap:4px;
   max-height:180px; overflow-y:auto;
