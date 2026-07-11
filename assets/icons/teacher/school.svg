@@ -1,0 +1,12 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="โรงเรียน">
+  <ellipse cx="32" cy="58" rx="22" ry="3.4" fill="#000" opacity="0.10"/>
+  <rect x="6" y="32" width="16" height="22" rx="3" fill="#ffe9c9" stroke="#d49a4a" stroke-width="3"/>
+  <rect x="42" y="32" width="16" height="22" rx="3" fill="#ffe9c9" stroke="#d49a4a" stroke-width="3"/>
+  <rect x="18" y="24" width="28" height="30" rx="3" fill="#ff9c9c" stroke="#b5473a" stroke-width="3"/>
+  <path d="M16 24 L32 10 L48 24 Z" fill="#f2765e" stroke="#b5473a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 4 L32 10 M32 4 L40 6 L32 9 Z" stroke="#2f7fb5" stroke-width="2.4" fill="#8fd3ff" stroke-linejoin="round"/>
+  <circle cx="32" cy="22" r="4" fill="#fff8ec" stroke="#b5473a" stroke-width="2.4"/>
+  <rect x="27" y="40" width="10" height="14" rx="2" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="2.6"/>
+  <rect x="10" y="37" width="8" height="7" rx="2" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="2.2"/>
+  <rect x="46" y="37" width="8" height="7" rx="2" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="2.2"/>
+</svg>

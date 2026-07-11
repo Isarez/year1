@@ -1,0 +1,10 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ผีเสื้อ">
+  <ellipse cx="32" cy="58" rx="16" ry="3.2" fill="#000" opacity="0.10"/>
+  <path d="M30 30 C20 14 6 16 8 28 C9 36 20 38 29 35 Z" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M34 30 C44 14 58 16 56 28 C55 36 44 38 35 35 Z" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M29 37 C22 46 26 54 31 51 L32 48 Z" fill="#ffb9d5" stroke="#c0527a" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M35 37 C42 46 38 54 33 51 L32 48 Z" fill="#ffb9d5" stroke="#c0527a" stroke-width="2.8" stroke-linejoin="round"/>
+  <ellipse cx="32" cy="36" rx="4" ry="12" fill="#7a5c50" stroke="#59423a" stroke-width="2.4"/>
+  <path d="M29 25 C27 21 24 19 22 19 M35 25 C37 21 40 19 42 19" fill="none" stroke="#59423a" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="18" cy="25" r="2.6" fill="#fff" opacity=".7"/><circle cx="46" cy="25" r="2.6" fill="#fff" opacity=".7"/>
+</svg>

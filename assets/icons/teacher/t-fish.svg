@@ -1,0 +1,9 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ปลา">
+  <ellipse cx="30" cy="56" rx="18" ry="3.2" fill="#000" opacity="0.10"/>
+  <path d="M48 32 L60 20 C61 30 61 36 60 44 Z" fill="#ffb9d5" stroke="#c0527a" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="28" cy="32" rx="22" ry="16" fill="#8fd3ff" stroke="#2f7fb5" stroke-width="3"/>
+  <path d="M22 20 C28 24 28 40 22 44" fill="none" stroke="#2f7fb5" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="14" cy="29" r="2.6" fill="#1d4f75"/>
+  <path d="M9 36 c2 1.6 5 1.6 7 0" fill="none" stroke="#1d4f75" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="52" cy="14" r="2.5" fill="#bfe6ff"/><circle cx="57" cy="9" r="1.8" fill="#bfe6ff"/>
+</svg>

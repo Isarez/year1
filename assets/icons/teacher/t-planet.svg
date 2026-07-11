@@ -1,0 +1,8 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ดาวเคราะห์">
+  <ellipse cx="32" cy="58" rx="17" ry="3.2" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="30" r="16" fill="#c9b8f2" stroke="#5e4d99" stroke-width="3"/>
+  <circle cx="26" cy="24" r="4" fill="#a08ae0" opacity=".7"/><circle cx="38" cy="34" r="3" fill="#a08ae0" opacity=".7"/><circle cx="30" cy="37" r="2" fill="#a08ae0" opacity=".7"/>
+  <ellipse cx="32" cy="32" rx="26" ry="7" fill="none" stroke="#ffc531" stroke-width="3.4" transform="rotate(-14 32 32)"/>
+  <circle cx="27" cy="27" r="2.2" fill="#3d2f73"/><circle cx="37" cy="27" r="2.2" fill="#3d2f73"/>
+  <path d="M28 33c2.4 2 5.6 2 8 0" fill="none" stroke="#3d2f73" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เรือ">
+  <path d="M4 52 Q10 48 16 52 T28 52 T40 52 T52 52 T64 52 L64 60 L0 60 L0 52 Q2 51 4 52" fill="#8fd3ff" opacity=".7"/>
+  <path d="M10 46 L54 46 L47 55 L17 55 Z" fill="#e0764c" stroke="#a54a2a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 10 L32 44" stroke="#7a5c50" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M35 12 C44 16 46 26 45 40 L35 40 Z" fill="#ffe27a" stroke="#e0a516" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M29 16 C22 20 20 30 21 40 L29 40 Z" fill="#fff" stroke="#b9c4d8" stroke-width="3" stroke-linejoin="round"/>
+</svg>

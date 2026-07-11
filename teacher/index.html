@@ -180,11 +180,11 @@
       <div class="builder-field">
         <label class="builder-label" for="b-count">จำนวนโจทย์ต่อรอบเล่น</label>
         <input class="child-name-input builder-input builder-count" id="b-count" type="number" min="1" max="50" value="10">
-        <p class="builder-note">💡 ใส่โจทย์มากกว่าจำนวนนี้ได้ ระบบจะสุ่มโจทย์มาให้ตามจำนวนที่เลือกทุกรอบเล่น</p>
+        <p class="builder-note" id="b-count-note">💡 ใส่โจทย์มากกว่าจำนวนนี้ได้ ระบบจะสุ่มโจทย์มาให้ตามจำนวนที่เลือกทุกรอบเล่น</p>
       </div>
 
       <div class="builder-field">
-        <div class="builder-label">โจทย์และคำตอบ <span class="builder-label-sub">(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)</span></div>
+        <div class="builder-label">โจทย์และคำตอบ <span class="builder-label-sub" id="bq-label-sub">(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)</span></div>
         <div id="b-questions"></div>
         <button class="builder-add-q-btn" id="b-add-question">＋ เพิ่มโจทย์อีกข้อ</button>
       </div>
@@ -253,6 +253,46 @@
 
 </main>
 
+<!-- AR VIEW (fullscreen camera — อยู่นอก <main> เหมือนหน้าหลัก ไม่ให้ z-index โดนขังใน stacking context ของ main) -->
+<section id="ar-view" hidden>
+  <div class="ar-bg-layer" id="ar-bg-layer">
+    <video id="ar-video" autoplay playsinline muted></video>
+    <canvas id="ar-canvas"></canvas>
+    <div class="ar-camera-msg" id="ar-camera-msg" hidden>
+      <span id="ar-camera-msg-emoji" style="font-size:34px;">🖐️🚫</span>
+      <span id="ar-camera-msg-text">ใช้กล้องไม่ได้ ไม่เป็นไรนะ!<br>ใช้นิ้วหรือเมาส์ลากคำได้เลยจ้ะ 👇</span>
+    </div>
+  </div>
+
+  <div class="ar-cards-layer" id="ar-cards-row"></div>
+
+  <div class="ar-match-wrap" id="ar-match-wrap" hidden>
+    <svg class="ar-match-svg" id="ar-match-svg"></svg>
+    <div class="ar-match-row">
+      <div class="ar-match-col ar-match-left" id="ar-match-left"></div>
+      <div class="ar-match-col ar-match-right" id="ar-match-right"></div>
+    </div>
+  </div>
+
+  <div class="ar-overlay-ui">
+    <div class="quiz-top">
+      <button class="back-btn" id="ar-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label ar-label-chip" id="ar-cat-label">เกม AR</div>
+        <div class="progress-track"><div class="progress-fill" id="ar-progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="q-counter" id="ar-level-counter">1/10</div>
+      <button class="back-btn" id="ar-camera-toggle" aria-label="ปิดกล้อง" data-tooltip="ปิดกล้อง"><span class="icon-inner"><span class="icon-glyph lens-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="14" fill="#3A4A5C"/><circle cx="16" cy="16" r="11" fill="#6FA8DC"/><circle cx="16" cy="16" r="7.5" fill="#2B4F73"/><circle cx="16" cy="16" r="3.6" fill="#16232F"/><path d="M16 5 L19 9 L13 9 Z" fill="#8FC1EA" opacity=".8"/><circle cx="12" cy="12" r="1.8" fill="#DDEFFF" opacity=".85"/></svg></span><span class="mute-stripe"></span></span></button>
+      <button class="back-btn" id="ar-fullscreen-toggle" aria-label="เต็มหน้าจอ" data-tooltip="เต็มหน้าจอ">⛶</button>
+    </div>
+
+    <div class="ar-hint-chip" id="ar-hint">✋ ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" หยิบการ์ดมาวางให้ถูกนะ!</div>
+    <div class="ar-math-problem" id="ar-math-problem" hidden></div>
+    <div class="ar-slot-row" id="ar-slot-row"></div>
+  </div>
+</section>
+<div class="ar-cursor" id="ar-cursor"></div>
+
 <!-- CONFIRM DELETE MODAL -->
 <div id="confirm-del-modal" hidden>
   <div class="modal-backdrop" id="confirm-del-backdrop"></div>
@@ -299,5 +339,6 @@
 </div>
 
 <script src="teacher.js?v=1.13.0"></script>
+<script src="teacher-ar.js?v=1.13.0"></script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ของขวัญ">
+  <ellipse cx="32" cy="58" rx="18" ry="3.4" fill="#000" opacity="0.10"/>
+  <rect x="12" y="26" width="40" height="28" rx="5" fill="#8fdcb4" stroke="#2c9457" stroke-width="3"/>
+  <rect x="9" y="18" width="46" height="11" rx="4" fill="#aee6c8" stroke="#2c9457" stroke-width="3"/>
+  <rect x="28" y="18" width="8" height="36" fill="#ff8fbe" stroke="#c0527a" stroke-width="2.6"/>
+  <path d="M32 17 C26 8 14 10 18 16 C21 20 28 18 32 17 Z M32 17 C38 8 50 10 46 16 C43 20 36 18 32 17 Z" fill="#ffb9d5" stroke="#c0527a" stroke-width="2.6" stroke-linejoin="round"/>
+</svg>

@@ -196,5 +196,21 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
   .mg-actions{width:100%; justify-content:flex-end;}
 }
 
+/* fade-in ไล่จังหวะตอนสลับ filter / render รายการใหม่ (แทน cardIn ของหน้าหลักซึ่งช้ากว่า)
+   ประกาศทีหลัง style.css จึงชนะ animation ของ .cat-card ฐาน — delay ใส่ผ่าน inline style ต่อใบ */
+@keyframes tgFadeUp{
+  from{opacity:0; transform:translateY(12px) scale(.97);}
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+.tg-fade{animation:tgFadeUp .35s ease backwards;}
+.teacher-grade-title .cst-icon{width:30px; height:30px; display:inline-block; vertical-align:-8px;}
+#teacher-school-line .cst-icon{width:26px; height:26px; display:inline-block; vertical-align:-7px;}
+
+/* ฟอร์มจับคู่ (ar-connect): ซ้าย ↔ ขวา แถวเดียว */
+.bq-pair-row{display:flex; align-items:center; gap:10px;}
+.bq-pair-arrow{font-size:20px; font-weight:800; color:var(--ink-soft); flex-shrink:0;}
+/* ฟอร์มเรียงการ์ด (ar-order): เลขลำดับหน้าแถว */
+.bq-order-num{font-size:16px; font-weight:800; color:var(--ink-soft); min-width:22px; text-align:right; flex-shrink:0;}
+
 /* กลางคืน: การ์ดฟอร์ม/empty state ยังพื้นขาวครีม อ่านได้ปกติ — เสริมเฉพาะ select บนพื้นมืด */
 body.night-mode .builder-select{background:#fff;}

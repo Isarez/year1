@@ -1,0 +1,9 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="กลอง">
+  <ellipse cx="32" cy="58" rx="20" ry="3.4" fill="#000" opacity="0.10"/>
+  <path d="M8 10 L28 26 M56 10 L36 26" stroke="#a9765c" stroke-width="3.6" stroke-linecap="round"/>
+  <circle cx="8" cy="10" r="4" fill="#ff8f8f" stroke="#b5473a" stroke-width="2.4"/>
+  <circle cx="56" cy="10" r="4" fill="#ff8f8f" stroke="#b5473a" stroke-width="2.4"/>
+  <path d="M12 32 L12 48 C12 52 21 55 32 55 C43 55 52 52 52 48 L52 32 Z" fill="#ffb9d5" stroke="#c0527a" stroke-width="3"/>
+  <path d="M12 40 L22 46 L32 40 L42 46 L52 40" fill="none" stroke="#c0527a" stroke-width="2.6" stroke-linejoin="round"/>
+  <ellipse cx="32" cy="32" rx="20" ry="7" fill="#fff8ec" stroke="#c0527a" stroke-width="3"/>
+</svg>

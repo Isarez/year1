@@ -1,0 +1,12 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="พระอาทิตย์">
+  <ellipse cx="32" cy="58" rx="16" ry="3.2" fill="#000" opacity="0.10"/>
+  <g stroke="#e0a516" stroke-width="4" stroke-linecap="round">
+    <line x1="32" y1="4" x2="32" y2="12"/><line x1="32" y1="52" x2="32" y2="58"/>
+    <line x1="6" y1="31" x2="14" y2="31"/><line x1="50" y1="31" x2="58" y2="31"/>
+    <line x1="13" y1="12" x2="19" y2="18"/><line x1="45" y1="44" x2="51" y2="50"/>
+    <line x1="13" y1="50" x2="19" y2="44"/><line x1="45" y1="18" x2="51" y2="12"/>
+  </g>
+  <circle cx="32" cy="31" r="15" fill="#ffe27a" stroke="#e0a516" stroke-width="3"/>
+  <circle cx="27" cy="29" r="2" fill="#a8790f"/><circle cx="37" cy="29" r="2" fill="#a8790f"/>
+  <path d="M27 35c2.8 2.4 7.2 2.4 10 0" fill="none" stroke="#a8790f" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
