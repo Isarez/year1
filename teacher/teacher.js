@@ -290,6 +290,18 @@ try{ nightMode = localStorage.getItem('p1quiz_theme') === 'night'; }catch(e){}
 setTheme(nightMode, false);
 themeBtn.addEventListener('click', ()=>{ playClick(); setTheme(!isNightMode(), true); });
 
+/* ---------- ชุด icon SVG โทนเดียวกับหน้าหลัก (พาสเทล + เส้นขอบเข้ม) ใช้แทน emoji ตามปุ่ม/หัวข้อ ---------- */
+const SVG_CAP      = '<svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#5b6bc0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 9 L12 4 L2 9 L12 14 Z" fill="#C8D4F4"/><path d="M6 11.5 V16 C6 17.6 8.7 19 12 19 C15.3 19 18 17.6 18 16 V11.5" fill="#DDE6FA"/><path d="M22 9 V14"/></svg>';
+const SVG_PLUS     = '<svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#D8F3DC"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
+const SVG_FOLDER   = '<svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#D4881C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7 C3 5.9 3.9 5 5 5 H9 L11 7.5 H19 C20.1 7.5 21 8.4 21 9.5 V17 C21 18.1 20.1 19 19 19 H5 C3.9 19 3 18.1 3 17 Z" fill="#FFDF8E"/></svg>';
+const SVG_ROCKET_S = '<svg class="btn-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5e4d99" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 C15 5 16 9 15.4 13 L8.6 13 C8 9 9 5 12 3 Z" fill="#C9B8F2"/><circle cx="12" cy="8.5" r="1.8" fill="#fff"/><path d="M8.6 11.5 L5.6 15.5 L8.8 14.8 Z M15.4 11.5 L18.4 15.5 L15.2 14.8 Z" fill="#FFB9D5" stroke="#c0527a"/><path d="M10.6 16 C11 18 11.3 19 12 20.6 C12.7 19 13 18 13.4 16" fill="#FFC531" stroke="#e0a516"/></svg>';
+const SVG_PENCIL_S = '<svg class="btn-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg>';
+const SVG_TRASH    = '<svg class="btn-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#B23636" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7 H20 M9 7 V5 C9 4.4 9.4 4 10 4 H14 C14.6 4 15 4.4 15 5 V7" fill="none"/><path d="M6 7 L7 20 C7 20.6 7.5 21 8 21 H16 C16.5 21 17 20.6 17 20 L18 7" fill="#FFE3E3"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+const SVG_SAVE     = '<svg class="btn-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8a6d3b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3 H17 L21 7 V19 C21 20.1 20.1 21 19 21 H5 C3.9 21 3 20.1 3 19 V5 C3 3.9 3.9 3 5 3 Z" fill="#FFEFC9"/><rect x="8" y="3" width="8" height="5" rx="1" fill="#fff"/><rect x="7" y="12" width="10" height="9" rx="1" fill="#fff"/></svg>';
+const SVG_EXPORT   = '<svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f7fb5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#DCF0FB"/><polyline points="14 3 14 8 19 8"/><path d="M12 17 V11 M9.5 13.5 L12 11 L14.5 13.5"/></svg>';
+const SVG_IMPORT   = '<svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E8F63" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#D8F3DC"/><polyline points="14 3 14 8 19 8"/><path d="M12 11 V17 M9.5 14.5 L12 17 L14.5 14.5"/></svg>';
+const SVG_BOOKS    = '<svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f7fb5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6 C9.5 4.2 5.5 4.2 3 5.2 V18.4 C5.5 17.4 9.5 17.4 12 19.2 C14.5 17.4 18.5 17.4 21 18.4 V5.2 C18.5 4.2 14.5 4.2 12 6 Z" fill="#DCF0FB"/><path d="M12 6 V19.2"/></svg>';
+
 /* ---------- ปุ่ม menu bar ที่เหลือ (ฟังก์ชันเดียวกับหน้าหลัก) ---------- */
 const SVG_MUSIC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6C5CE7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13" fill="#DCD2FB"/><circle cx="6" cy="18" r="3" fill="#C7B3FF"/><circle cx="18" cy="16" r="3" fill="#C7B3FF"/></svg>';
 const SVG_SPEAKER = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#D4881C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#FFDF8E"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M18.7 5.3a9.5 9.5 0 0 1 0 13.4" opacity=".55"/></svg>';
@@ -459,7 +471,7 @@ function renderGradeFilter(published){
   grades.forEach(gr=>{
     const b = document.createElement('button');
     b.className = 'grade-chip'+(gr.id===selectedGrade?' selected':'');
-    b.textContent = '🎓 '+gr.name;
+    b.innerHTML = SVG_CAP+' '+gr.name;
     b.addEventListener('click', ()=>{
       playClick();
       selectedGrade = gr.id;
@@ -535,12 +547,12 @@ function renderManage(){
     const mkChip = (id, label)=>{
       const b = document.createElement('button');
       b.className = 'grade-chip'+(manageFilter===id?' selected':'');
-      b.textContent = label;
+      b.innerHTML = label;
       b.addEventListener('click', ()=>{ playClick(); manageFilter = id; renderManage(); });
       fWrap.appendChild(b);
     };
-    mkChip('all', '📚 ทั้งหมด');
-    grades.forEach(gr=> mkChip(gr.id, '🎓 '+gr.name));
+    mkChip('all', SVG_BOOKS+' ทั้งหมด');
+    grades.forEach(gr=> mkChip(gr.id, SVG_CAP+' '+gr.name));
   }
 
   const wrap = $('manage-list');
@@ -555,7 +567,7 @@ function renderManage(){
     if(!list.length) return;
     const head = document.createElement('div');
     head.className = 'mg-grade-title';
-    head.textContent = '🎓 '+gr.name+' ('+list.length+' ชุด)';
+    head.innerHTML = SVG_CAP+' '+gr.name+' ('+list.length+' ชุด)';
     wrap.appendChild(head);
     list.forEach(game=> wrap.appendChild(buildManageRow(game)));
   });
@@ -569,12 +581,12 @@ function buildManageRow(game){
       '<img class="mg-logo" src="'+game.logo+'" alt="">'+
       '<div class="mg-info">'+
         '<div class="mg-title">'+escapeHtml(game.title)+' '+(game.published?'<span class="mg-status mg-pub">เผยแพร่แล้ว</span>':'<span class="mg-status mg-draft">แบบร่าง</span>')+'</div>'+
-        '<div class="mg-meta">'+mech.emoji+' '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
+        '<div class="mg-meta"><img src="'+mech.icon+'" class="mg-mech-icon" alt=""> '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
       '</div>'+
       '<div class="mg-actions">'+
-        (game.published?'':'<button class="tg-action-btn tg-pub">🚀 เผยแพร่</button>')+
-        '<button class="tg-action-btn tg-edit">✏️ แก้ไข</button>'+
-        '<button class="tg-action-btn tg-del">🗑️ ลบ</button>'+
+        (game.published?'':'<button class="tg-action-btn tg-pub">'+SVG_ROCKET_S+' เผยแพร่</button>')+
+        '<button class="tg-action-btn tg-edit">'+SVG_PENCIL_S+' แก้ไข</button>'+
+        '<button class="tg-action-btn tg-del">'+SVG_TRASH+' ลบ</button>'+
       '</div>';
     const pubBtn = row.querySelector('.tg-pub');
     if(pubBtn) pubBtn.addEventListener('click', ()=>{
@@ -653,7 +665,7 @@ function renderMechanicPicker(){
     b.type = 'button';
     b.className = 'mechanic-chip'+(m.id===selectedMechanic?' selected':'');
     b.disabled = !m.enabled;
-    b.innerHTML = m.emoji+' '+m.name+(m.enabled?'':' <span class="mechanic-soon">เร็วๆ นี้</span>');
+    b.innerHTML = '<img src="'+m.icon+'" class="mech-chip-icon" alt="">'+m.name+(m.enabled?'':' <span class="mechanic-soon">เร็วๆ นี้</span>');
     if(m.enabled){
       b.addEventListener('click', ()=>{
         playClick();
@@ -719,7 +731,7 @@ function bqShell(innerHtml){
   const block = document.createElement('div');
   block.className = 'bq-block';
   block.innerHTML =
-    '<div class="bq-head"><span class="bq-num"></span><button type="button" class="bq-del-btn">🗑️ ลบข้อนี้</button></div>'+innerHtml;
+    '<div class="bq-head"><span class="bq-num"></span><button type="button" class="bq-del-btn">'+SVG_TRASH+' ลบข้อนี้</button></div>'+innerHtml;
   block.querySelector('.bq-del-btn').addEventListener('click', ()=>{
     playClick();
     if($('b-questions').children.length <= 1){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }
@@ -1171,6 +1183,24 @@ function closeOverlay(id){
 $('bmm-btn').addEventListener('click', ()=>{ playClick(); openOverlay('qr-modal'); });
 $('qr-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('qr-modal'); });
 $('qr-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('qr-modal'); });
+
+/* ---------- แทนที่ icon emoji บนปุ่ม static ด้วย SVG โทนเดียวกัน ---------- */
+function bigSvg(svg, px){ return svg.replace(/width="\d+" height="\d+"/, 'width="'+px+'" height="'+px+'"').replace('class="btn-svg" ',''); }
+(function initThemedIcons(){
+  $('teacher-add-btn').innerHTML = SVG_PLUS+' เพิ่มโจทย์';
+  $('teacher-add-big-btn').innerHTML = SVG_PLUS+' เพิ่มโจทย์';
+  $('teacher-manage-btn').innerHTML = SVG_FOLDER+' จัดการโจทย์';
+  $('teacher-empty-manage-btn').innerHTML = SVG_FOLDER+' จัดการโจทย์';
+  $('manage-add-btn').innerHTML = SVG_PLUS+' เพิ่มโจทย์ใหม่';
+  $('manage-title-label').innerHTML = SVG_FOLDER+' จัดการโจทย์';
+  $('b-save-draft').innerHTML = SVG_SAVE+' บันทึกแบบร่าง';
+  $('b-publish').innerHTML = SVG_ROCKET_S+' เผยแพร่';
+  $('data-export-btn').innerHTML = SVG_EXPORT+' ย้ายข้อมูลคุณครูไปอุปกรณ์อื่น';
+  $('data-delete-btn').innerHTML = SVG_TRASH+' ลบคุณครู';
+  $('teacher-import-btn').innerHTML = SVG_IMPORT+' นำเข้าข้อมูลคุณครูจากอุปกรณ์อื่น';
+  document.querySelector('#data-modal .modal-icon').innerHTML = bigSvg(SVG_FOLDER, 44);
+  document.querySelector('#confirm-del-modal .modal-icon').innerHTML = bigSvg(SVG_TRASH, 44);
+})();
 
 /* ---------- init ---------- */
 loadData();

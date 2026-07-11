@@ -149,6 +149,11 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
 .builder-draft-btn{background:#FFF3DC; color:#8a6d3b;}
 .builder-publish-btn{background:linear-gradient(135deg,#FFC531,#FF9F43); color:#fff;}
 
+/* icon SVG แทน emoji บนปุ่ม/หัวข้อ — จัดแนวกับตัวหนังสือ */
+.btn-svg{vertical-align:-4px; display:inline-block;}
+.mech-chip-icon{width:22px; height:22px; vertical-align:-6px; margin-right:4px;}
+.mg-mech-icon{width:17px; height:17px; vertical-align:-3.5px;}
+
 /* ปุ่ม+popover แทรก emoji ลงช่องโจทย์/คำตอบ */
 .bq-label-row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
 .bq-emoji-btn{
