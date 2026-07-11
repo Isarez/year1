@@ -184,7 +184,14 @@
       </div>
 
       <div class="builder-field">
-        <div class="builder-label">โจทย์และคำตอบ <span class="builder-label-sub" id="bq-label-sub">(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)</span></div>
+        <div class="builder-label bq-label-row">
+          <span>โจทย์และคำตอบ <span class="builder-label-sub" id="bq-label-sub">(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)</span></span>
+          <button type="button" class="bq-emoji-btn" id="b-emoji-btn">😀 แทรก emoji</button>
+        </div>
+        <div class="emoji-insert-pop" id="emoji-insert-pop" hidden>
+          <p class="emoji-pop-hint">แตะช่องโจทย์/คำตอบที่ต้องการก่อน แล้วเลือก emoji ที่จะแทรกได้เลย</p>
+          <div class="emoji-pop-grid" id="emoji-pop-grid"></div>
+        </div>
         <div id="b-questions"></div>
         <button class="builder-add-q-btn" id="b-add-question">＋ เพิ่มโจทย์อีกข้อ</button>
       </div>
@@ -197,6 +204,7 @@
       </div>
 
       <div class="builder-actions">
+        <button class="btn-pill builder-cancel-btn" id="b-cancel">✕ ยกเลิก</button>
         <button class="btn-pill builder-draft-btn" id="b-save-draft">💾 บันทึกแบบร่าง</button>
         <button class="btn-pill builder-publish-btn" id="b-publish">🚀 เผยแพร่</button>
       </div>

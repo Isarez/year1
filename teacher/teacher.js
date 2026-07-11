@@ -18,6 +18,14 @@ function loadData(){
   try{ profile = JSON.parse(localStorage.getItem(LS_PROFILE)) || null; }catch(e){ profile = null; }
   try{ games = JSON.parse(localStorage.getItem(LS_GAMES)) || []; }catch(e){ games = []; }
   if(!Array.isArray(games)) games = [];
+  /* migration: mechanic 'ar-order' (หยิบการ์ดเรียงคำ) ถูกยุบรวมกับ 'ar-sentence' แล้ว (mechanic เดียวกัน)
+     แปลงข้อมูลเก่า {cards:[...]} → {sentence:'...'} */
+  games.forEach(g=>{
+    if(g.mechanic === 'ar-order'){
+      g.mechanic = 'ar-sentence';
+      g.questions = g.questions.map(q=> q.cards ? {sentence:q.cards.join(' ')} : q);
+    }
+  });
 }
 function saveProfile(){ try{ localStorage.setItem(LS_PROFILE, JSON.stringify(profile)); }catch(e){} }
 function saveGames(){ try{ localStorage.setItem(LS_GAMES, JSON.stringify(games)); }catch(e){} }
@@ -35,9 +43,8 @@ function gradeName(id){ const g = GRADES.find(x=>x.id===id); return g ? g.name :
 const MECHANICS = [
   {id:'quiz',        name:'ถาม-ตอบปรนัย', emoji:'📝', enabled:true,  form:'choices',  icon:'../assets/icons/section-quiz.svg'},
   {id:'ar-pick',     name:'AR หยิบการ์ดคำตอบที่ถูกต้อง', emoji:'🖐️', enabled:true,  form:'choices',  icon:'../assets/icons/section-ar.svg'},
-  {id:'ar-order',    name:'AR หยิบการ์ดเรียงคำ', emoji:'🔤', enabled:true,  form:'order',    icon:'../assets/icons/section-ar.svg'},
+  {id:'ar-sentence', name:'AR หยิบการ์ดเรียงลำดับ', emoji:'🔤', enabled:true,  form:'sentence', icon:'../assets/icons/section-ar.svg'},
   {id:'ar-connect',  name:'AR โยงเส้น', emoji:'🪢', enabled:true,  form:'pairs',    icon:'../assets/icons/section-ar.svg'},
-  {id:'ar-sentence', name:'AR หยิบการ์ดต่อประโยค', emoji:'📖', enabled:true,  form:'sentence', icon:'../assets/icons/section-ar.svg'},
   {id:'match',       name:'จับคู่ความจำ', emoji:'🎴', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'},
   {id:'listen',      name:'ฟังคำศัพท์', emoji:'🎧', enabled:false, form:'choices',  icon:'../assets/icons/section-listen.svg'}
 ];
@@ -548,7 +555,7 @@ function renderManage(){
     if(!list.length) return;
     const head = document.createElement('div');
     head.className = 'mg-grade-title';
-    head.textContent = '🎓 '+gr.name;
+    head.textContent = '🎓 '+gr.name+' ('+list.length+' ชุด)';
     wrap.appendChild(head);
     list.forEach(game=> wrap.appendChild(buildManageRow(game)));
   });
@@ -676,8 +683,7 @@ function renderQuestionArea(){
   /* ป้ายกำกับ/หมายเหตุปรับตามรูปแบบเกม */
   $('bq-label-sub').textContent =
     form==='choices'  ? '(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)' :
-    form==='sentence' ? '(พิมพ์ประโยค เว้นวรรคระหว่างคำ ระบบจะตัดเป็นการ์ดคำให้เด็กเรียง)' :
-    form==='order'    ? '(ใส่การ์ดเรียงตามลำดับที่ถูกต้อง ตอนเล่นระบบจะสลับให้เด็กเรียงเอง)' :
+    form==='sentence' ? '(พิมพ์คำหรือประโยค เว้นวรรคระหว่างการ์ดแต่ละใบ ระบบจะตัดเป็นการ์ดให้เด็กเรียงตามลำดับ)' :
                         '(ใส่คู่ที่ตรงกัน ซ้าย ↔ ขวา ตอนเล่นจะสุ่มมาโยงครั้งละไม่เกิน 4 คู่)';
   $('b-count-note').textContent =
     form==='pairs'
@@ -705,7 +711,6 @@ function renderLogoPicker(){
 function buildQuestionBlock(qData){
   const form = mechById(selectedMechanic).form;
   if(form==='sentence') return buildSentenceBlock(qData);
-  if(form==='order')    return buildOrderBlock(qData);
   if(form==='pairs')    return buildPairBlock(qData);
   return buildChoicesBlock(qData);
 }
@@ -723,43 +728,11 @@ function bqShell(innerHtml){
   });
   return block;
 }
-/* ฟอร์มแบบประโยค (ar-sentence): 1 ข้อ = 1 ประโยค */
+/* ฟอร์มแบบเรียงลำดับ (ar-sentence): 1 ข้อ = 1 ข้อความ เว้นวรรคเป็นการ์ดแต่ละใบ (ใช้ได้ทั้งเรียงคำ/ต่อประโยค) */
 function buildSentenceBlock(qData){
-  const block = bqShell('<input class="child-name-input bq-q-input bq-sentence-input" type="text" placeholder="พิมพ์ประโยค เช่น แมว กิน ปลา" maxlength="200">');
+  const block = bqShell('<input class="child-name-input bq-q-input bq-sentence-input" type="text" placeholder="เช่น แมว กิน ปลา หรือ 1 2 3 4" maxlength="200">');
   if(qData) block.querySelector('.bq-sentence-input').value = qData.sentence;
   return block;
-}
-/* ฟอร์มแบบเรียงการ์ด (ar-order): ช่องเรียงตามลำดับที่ถูกต้อง เพิ่ม/ลบได้ */
-function buildOrderBlock(qData){
-  const block = bqShell('<div class="bq-answers bq-order-rows"></div><button type="button" class="bq-add-ans-btn">＋ เพิ่มการ์ด</button>');
-  const wrap = block.querySelector('.bq-order-rows');
-  function addCardRow(text){
-    const row = document.createElement('div');
-    row.className = 'bq-ans-row';
-    row.innerHTML =
-      '<span class="bq-order-num"></span>'+
-      '<input class="child-name-input bq-ans-input" type="text" placeholder="ข้อความบนการ์ด" maxlength="60">'+
-      '<button type="button" class="bq-ans-del" title="ลบการ์ดนี้">✕</button>';
-    row.querySelector('.bq-ans-input').value = text || '';
-    row.querySelector('.bq-ans-del').addEventListener('click', ()=>{
-      playClick();
-      if(wrap.children.length <= 2){ showToast('⚠️','ต้องมีการ์ดอย่างน้อย 2 ใบนะคะ'); return; }
-      row.remove(); renumberOrderRows(wrap);
-    });
-    wrap.appendChild(row);
-    renumberOrderRows(wrap);
-  }
-  block.querySelector('.bq-add-ans-btn').addEventListener('click', ()=>{
-    playClick();
-    if(wrap.children.length >= 6){ showToast('⚠️','การ์ดได้สูงสุด 6 ใบต่อข้อนะคะ (จอเด็กวางไม่พอ)'); return; }
-    addCardRow('');
-  });
-  if(qData){ qData.cards.forEach(c=>addCardRow(c)); }
-  else { addCardRow(''); addCardRow(''); addCardRow(''); }
-  return block;
-}
-function renumberOrderRows(wrap){
-  Array.from(wrap.children).forEach((r,i)=>{ r.querySelector('.bq-order-num').textContent = (i+1)+'.'; });
 }
 /* ฟอร์มแบบจับคู่ (ar-connect): 1 ข้อ = 1 คู่ ซ้าย↔ขวา */
 function buildPairBlock(qData){
@@ -863,11 +836,6 @@ function collectBuilderData(){
       if(words.length < 2){ showToast('⚠️','ข้อที่ '+(i+1)+' ประโยคต้องมีอย่างน้อย 2 คำ (เว้นวรรคระหว่างคำ) นะคะ'); return null; }
       if(words.length > 6){ showToast('⚠️','ข้อที่ '+(i+1)+' ประโยคยาวเกิน 6 คำ จอเด็กวางการ์ดไม่พอนะคะ'); return null; }
       questions.push({ sentence });
-    } else if(form==='order'){
-      const cards = Array.from(b.querySelectorAll('.bq-ans-input')).map(x=>x.value.trim());
-      if(cards.some(c=>!c)){ showToast('✏️','ข้อที่ '+(i+1)+' มีช่องการ์ดว่างอยู่นะคะ'); return null; }
-      if(cards.length < 2){ showToast('⚠️','ข้อที่ '+(i+1)+' ต้องมีการ์ดอย่างน้อย 2 ใบนะคะ'); return null; }
-      questions.push({ cards });
     } else if(form==='pairs'){
       const left = b.querySelector('.bq-pair-left').value.trim();
       const right = b.querySelector('.bq-pair-right').value.trim();
@@ -924,7 +892,53 @@ function saveBuilder(publish){
   if(publish) renderTeacherHome();
   else leaveBuilder();
 }
+$('b-cancel').addEventListener('click', ()=>{ playClick(); leaveBuilder(); });
 $('b-save-draft').addEventListener('click', ()=>{ playClick(); saveBuilder(false); });
+
+/* ---------- แทรก emoji ลงช่องโจทย์/คำตอบ ----------
+   จำช่อง input ตัวหนังสือที่ focus ล่าสุดในฟอร์มโจทย์ แล้วแทรก emoji ที่ตำแหน่ง cursor */
+const EMOJI_INSERT_SET = [
+  '🐶','🐱','🐰','🐻','🐼','🦊','🐸','🐷','🐮','🐵','🐔','🦉','🦁','🐯','🐘','🦒','🦆','🐟','🦈','🐙','🦀','🐢','🦋','🐝',
+  '🍎','🍌','🍇','🍉','🍓','🍍','🍒','🥕','🌽','🍄','🍦','🍰','🧁','🍭',
+  '⚽','🏀','🚗','🚲','✈️','🚀','⛵','🎈','🎁','🧸','⭐','🌈','☀️','🌙','☁️','⛄','🌸','🌳','💛','✏️','📚','🎨','🥁','🎵'
+];
+let lastEmojiTarget = null;
+$('b-questions').addEventListener('focusin', (e)=>{
+  if(e.target && e.target.matches('input[type="text"]')) lastEmojiTarget = e.target;
+});
+function renderEmojiPop(){
+  const grid = $('emoji-pop-grid');
+  grid.innerHTML = '';
+  EMOJI_INSERT_SET.forEach(em=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emoji-pop-btn';
+    b.textContent = em;
+    b.addEventListener('click', ()=>{
+      playClick();
+      /* default: ช่องแรกของฟอร์ม ถ้ายังไม่เคย focus ช่องไหน */
+      if(!lastEmojiTarget || !document.body.contains(lastEmojiTarget)){
+        lastEmojiTarget = $('b-questions').querySelector('input[type="text"]');
+      }
+      if(!lastEmojiTarget) return;
+      const inp = lastEmojiTarget;
+      const start = inp.selectionStart ?? inp.value.length;
+      const end = inp.selectionEnd ?? inp.value.length;
+      inp.value = inp.value.slice(0, start) + em + inp.value.slice(end);
+      const pos = start + em.length;
+      inp.focus();
+      try{ inp.setSelectionRange(pos, pos); }catch(e){}
+      lastEmojiTarget = inp;
+    });
+    grid.appendChild(b);
+  });
+}
+$('b-emoji-btn').addEventListener('click', ()=>{
+  playClick();
+  const pop = $('emoji-insert-pop');
+  pop.hidden = !pop.hidden;
+  if(!pop.hidden && !$('emoji-pop-grid').children.length) renderEmojiPop();
+});
 $('b-publish').addEventListener('click', ()=>{ playClick(); saveBuilder(true); });
 
 /* ---------- quiz play (adapt จาก engine หน้าหลัก — ไม่มีสติกเกอร์) ---------- */

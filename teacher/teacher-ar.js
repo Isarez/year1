@@ -3,7 +3,7 @@
    port จาก js/app.js (เกม AR หน้าหลัก) โดยคง id/class/CSS เดิมทั้งหมด
    โหลดหลัง teacher.js (ใช้ playClick/playCorrect/playWrong/showToast/showView ฯลฯ ร่วมกัน)
    mechanic → mode: ar-pick→math (หยิบการ์ดคำตอบใส่ช่องเดียว),
-   ar-order/ar-sentence→sentence (เรียงการ์ดใส่ช่องตามลำดับ), ar-connect→match (โยงเส้น)
+   ar-sentence→sentence (เรียงการ์ดใส่ช่องตามลำดับ — ครอบทั้งเรียงคำ/ต่อประโยค), ar-connect→match (โยงเส้น)
    ============================================================ */
 let arGame = null;             // {gameId, mech, level, mistakes, totalLevels, usedQIdx:Set, usedMatchKeys:Set, currentQ}
 let arActive = false;          // hand-tracking running?
@@ -777,14 +777,14 @@ function buildLevel(){
   $('ar-match-wrap').hidden = true;
   if(cat.mode==='math'){ buildPickLevel(); return; }
   if(cat.mode==='match'){ buildConnectLevel(); return; }
-  /* sentence/order: เรียงการ์ดใส่ช่องตามลำดับ */
+  /* sentence: เรียงการ์ดใส่ช่องตามลำดับ (ครอบทั้งเรียงคำและต่อประโยค — mechanic เดียวกัน) */
   const qd = nextArQuestion();
-  const words = arGame.mech==='ar-sentence' ? qd.sentence.trim().split(/\s+/) : qd.cards;
+  const words = qd.sentence.trim().split(/\s+/);
   const sentence = words.map(w=>({w, e:''}));
   renderSlotsAndCards(sentence);
   showARHint(isMobileViewport()
-    ? (arGame.mech==='ar-sentence' ? '👆 แตะคำแล้วลากไปเรียงในช่องให้ถูกลำดับนะ!' : '👆 แตะการ์ดแล้วลากไปเรียงในช่องให้ถูกลำดับนะ!')
-    : (arGame.mech==='ar-sentence' ? '✋ จีบนิ้วหยิบคำ แล้วลากไปเรียงในช่องให้ถูกลำดับนะ!' : '✋ จีบนิ้วหยิบการ์ด แล้วลากไปเรียงในช่องให้ถูกลำดับนะ!'));
+    ? '👆 แตะการ์ดแล้วลากไปเรียงในช่องให้ถูกลำดับนะ!'
+    : '✋ จีบนิ้วหยิบการ์ด แล้วลากไปเรียงในช่องให้ถูกลำดับนะ!');
 }
 
 /* ar-pick: โชว์โจทย์ด้านบน กระจายการ์ดคำตอบ (ถูก 1 + ตัวลวงจากฟอร์ม) ให้หยิบใส่ช่องเดียว */
