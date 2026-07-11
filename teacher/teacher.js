@@ -45,6 +45,7 @@ const MECHANICS = [
   {id:'ar-pick',     name:'AR หยิบการ์ดคำตอบที่ถูกต้อง', emoji:'🖐️', enabled:true,  form:'choices',  icon:'../assets/icons/section-ar.svg'},
   {id:'ar-sentence', name:'AR หยิบการ์ดเรียงลำดับ', emoji:'🔤', enabled:true,  form:'sentence', icon:'../assets/icons/section-ar.svg'},
   {id:'ar-connect',  name:'AR โยงเส้น', emoji:'🪢', enabled:true,  form:'pairs',    icon:'../assets/icons/section-ar.svg'},
+  {id:'ar-count',    name:'AR หยิบให้ครบ', emoji:'🧺', enabled:true,  form:'count',    icon:'../assets/icons/section-ar.svg', desktopOnly:true},
   {id:'match',       name:'จับคู่ความจำ', emoji:'🎴', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'},
   {id:'listen',      name:'ฟังคำศัพท์', emoji:'🎧', enabled:false, form:'choices',  icon:'../assets/icons/section-listen.svg'}
 ];
@@ -524,6 +525,11 @@ function buildGameCard(game){
 function playTeacherGame(gameId){
   const game = games.find(g=>g.id===gameId);
   if(!game) return;
+  /* หยิบให้ครบต้องการจอกว้าง — ล็อกบนมือถือเหมือน ar-count ของหน้าหลัก */
+  if(mechById(game.mechanic).desktopOnly && window.innerWidth < 768){
+    showToast('🖥️','เกมหยิบให้ครบเล่นได้บนแท็บเล็ต/คอมพิวเตอร์เท่านั้นนะ');
+    return;
+  }
   if(game.mechanic==='quiz') startTeacherQuiz(gameId);
   else startTeacherAR(gameId);
 }
@@ -696,6 +702,7 @@ function renderQuestionArea(){
   $('bq-label-sub').textContent =
     form==='choices'  ? '(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)' :
     form==='sentence' ? '(พิมพ์คำหรือประโยค เว้นวรรคระหว่างการ์ดแต่ละใบ ระบบจะตัดเป็นการ์ดให้เด็กเรียงตามลำดับ)' :
+    form==='count'    ? '(ใส่โจทย์ + ของที่ต้องหยิบพร้อมจำนวน + ของหลอก 1-3 ชนิด — แนะนำใช้ emoji เป็นของ)' :
                         '(ใส่คู่ที่ตรงกัน ซ้าย ↔ ขวา ตอนเล่นจะสุ่มมาโยงครั้งละไม่เกิน 4 คู่)';
   $('b-count-note').textContent =
     form==='pairs'
@@ -724,6 +731,7 @@ function buildQuestionBlock(qData){
   const form = mechById(selectedMechanic).form;
   if(form==='sentence') return buildSentenceBlock(qData);
   if(form==='pairs')    return buildPairBlock(qData);
+  if(form==='count')    return buildCountBlock(qData);
   return buildChoicesBlock(qData);
 }
 /* โครง block ร่วม: หัวเลขข้อ + ปุ่มลบข้อ */
@@ -757,6 +765,51 @@ function buildPairBlock(qData){
   if(qData){
     block.querySelector('.bq-pair-left').value = qData.left;
     block.querySelector('.bq-pair-right').value = qData.right;
+  }
+  return block;
+}
+/* ฟอร์มแบบหยิบให้ครบ (ar-count): โจทย์ + ของที่ต้องหยิบ (emoji/คำ + จำนวน) + ตัวหลอกหลายชนิด */
+function buildCountBlock(qData){
+  const block = bqShell(
+    '<input class="child-name-input bq-q-input" type="text" placeholder="โจทย์ เช่น ช่วยหยิบแอปเปิ้ลให้ครบ 5 ลูก" maxlength="200">'+
+    '<div class="bq-count-target bq-ans-row">'+
+      '<span class="bq-count-label">🎯 ของที่ต้องหยิบ</span>'+
+      '<input class="child-name-input bq-ans-input bq-target-item" type="text" placeholder="เช่น 🍎" maxlength="30">'+
+      '<input class="child-name-input bq-ans-input bq-count-num bq-target-count" type="number" min="1" max="8" value="5" title="จำนวนที่ต้องหยิบ">'+
+    '</div>'+
+    '<div class="bq-answers bq-decoy-rows"></div>'+
+    '<button type="button" class="bq-add-ans-btn">＋ เพิ่มของหลอก</button>');
+  const wrap = block.querySelector('.bq-decoy-rows');
+  function addDecoyRow(item, count){
+    const row = document.createElement('div');
+    row.className = 'bq-ans-row';
+    row.innerHTML =
+      '<span class="bq-count-label">🃏 ของหลอก</span>'+
+      '<input class="child-name-input bq-ans-input bq-decoy-item" type="text" placeholder="เช่น 🍌" maxlength="30">'+
+      '<input class="child-name-input bq-ans-input bq-count-num bq-decoy-count" type="number" min="1" max="8" value="3" title="จำนวนของหลอก">'+
+      '<button type="button" class="bq-ans-del" title="ลบของหลอกนี้">✕</button>';
+    row.querySelector('.bq-decoy-item').value = item || '';
+    if(count) row.querySelector('.bq-decoy-count').value = count;
+    row.querySelector('.bq-ans-del').addEventListener('click', ()=>{
+      playClick();
+      if(wrap.children.length <= 1){ showToast('⚠️','ต้องมีของหลอกอย่างน้อย 1 ชนิดนะคะ (ไม่งั้นหยิบอะไรก็ถูกหมด)'); return; }
+      row.remove();
+    });
+    wrap.appendChild(row);
+  }
+  block.querySelector('.bq-add-ans-btn').addEventListener('click', ()=>{
+    playClick();
+    if(wrap.children.length >= 3){ showToast('⚠️','ของหลอกได้สูงสุด 3 ชนิดต่อข้อนะคะ (ของบนจอจะแน่นเกินไป)'); return; }
+    addDecoyRow('', 3);
+  });
+  if(qData){
+    block.querySelector('.bq-q-input').value = qData.q;
+    block.querySelector('.bq-target-item').value = qData.target.item;
+    block.querySelector('.bq-target-count').value = qData.target.count;
+    (qData.decoys||[]).forEach(d=>addDecoyRow(d.item, d.count));
+    if(!(qData.decoys||[]).length) addDecoyRow('', 3);
+  } else {
+    addDecoyRow('', 3);
   }
   return block;
 }
@@ -848,6 +901,25 @@ function collectBuilderData(){
       if(words.length < 2){ showToast('⚠️','ข้อที่ '+(i+1)+' ประโยคต้องมีอย่างน้อย 2 คำ (เว้นวรรคระหว่างคำ) นะคะ'); return null; }
       if(words.length > 6){ showToast('⚠️','ข้อที่ '+(i+1)+' ประโยคยาวเกิน 6 คำ จอเด็กวางการ์ดไม่พอนะคะ'); return null; }
       questions.push({ sentence });
+    } else if(form==='count'){
+      const qText = b.querySelector('.bq-q-input').value.trim();
+      const tItem = b.querySelector('.bq-target-item').value.trim();
+      const tCount = parseInt(b.querySelector('.bq-target-count').value, 10);
+      if(!qText){ showToast('✏️','ข้อที่ '+(i+1)+' ยังไม่ได้ใส่โจทย์นะคะ'); return null; }
+      if(!tItem){ showToast('🎯','ข้อที่ '+(i+1)+' ยังไม่ได้ใส่ของที่ต้องหยิบนะคะ'); return null; }
+      if(!tCount || tCount<1 || tCount>8){ showToast('⚠️','ข้อที่ '+(i+1)+' จำนวนที่ต้องหยิบต้องอยู่ระหว่าง 1-8 นะคะ'); return null; }
+      const decoys = [];
+      const dRows = Array.from(b.querySelectorAll('.bq-decoy-rows .bq-ans-row'));
+      for(const r of dRows){
+        const dItem = r.querySelector('.bq-decoy-item').value.trim();
+        const dCount = parseInt(r.querySelector('.bq-decoy-count').value, 10);
+        if(!dItem){ showToast('🃏','ข้อที่ '+(i+1)+' มีช่องของหลอกว่างอยู่นะคะ'); return null; }
+        if(!dCount || dCount<1 || dCount>8){ showToast('⚠️','ข้อที่ '+(i+1)+' จำนวนของหลอกต้องอยู่ระหว่าง 1-8 นะคะ'); return null; }
+        if(dItem===tItem){ showToast('⚠️','ข้อที่ '+(i+1)+' ของหลอกต้องไม่ซ้ำกับของที่ต้องหยิบนะคะ'); return null; }
+        decoys.push({item:dItem, count:dCount});
+      }
+      if(!decoys.length){ showToast('🃏','ข้อที่ '+(i+1)+' ต้องมีของหลอกอย่างน้อย 1 ชนิดนะคะ'); return null; }
+      questions.push({ q:qText, target:{item:tItem, count:tCount}, decoys });
     } else if(form==='pairs'){
       const left = b.querySelector('.bq-pair-left').value.trim();
       const right = b.querySelector('.bq-pair-right').value.trim();

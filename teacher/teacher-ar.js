@@ -192,6 +192,7 @@ function moveDraggingCardTo(x,y){
 }
 function attemptDrop(card, x, y){
   const cat = arCat();
+  if(cat.mode==='count'){ attemptCountDrop(card, x, y); return; }
   card.classList.remove('dragging');
   card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
   const slots = Array.from($('ar-slot-row').children);
@@ -329,6 +330,7 @@ function levelMistake(){
   arGame.mistakes++;
   playWrong();
   const cat = arCat();
+  if(cat.mode==='count'){ countLevelMistake(cat); return; }
   const slots = Array.from($('ar-slot-row').children);
   slots.forEach(s=>s.classList.add('wrong-flash'));
   showARHint(cat.mode==='math'
@@ -753,12 +755,123 @@ function stopARGame(){
 }
 
 
+/* count mode often has more items on screen than the other AR games (up to ~10), so instead of the
+   generic sequential-band scatter (shared with sentence/math/match), lay them out on a grid: each item
+   gets its own cell (no two items can ever share space) and only jitters a bit within that cell — this
+   also lets it use more of the screen, closer to the left/right/bottom edges, without crowding or overlap */
+function scatterCountItems(q){
+  const zone = $('ar-count-zone');
+  zone.innerHTML = '<div class="ar-count-zone-label">'+
+    '<span class="ar-count-zone-ph" id="ar-count-zone-ph">วางของตรงนี้</span>'+
+    '<span class="ar-count-tally" id="ar-count-tally">หยิบแล้ว 0 ชิ้น</span>'+
+    '</div>';
+  const cardsRow = $('ar-cards-row');
+  cardsRow.innerHTML = '';
+  /* keep scattered items below the answer zone so they never spawn on top of it */
+  const zoneRect = zone.getBoundingClientRect();
+  const minTopPct = (zoneRect.bottom / window.innerHeight * 100) + 4;
+  const flat = [];
+  q.items.forEach(item=>{
+    for(let i=0;i<item.count;i++) flat.push(item);
+  });
+  const order = shuffleArray(flat);
+  const n = order.length;
+
+  const safeLeft = 8, safeRight = 88;   // keep item centers within 8%-88% horizontally
+  const maxSafeBottom = 88;             // bottom of the grid never moves lower than this
+  const safeTop = Math.min(Math.max(42, minTopPct), maxSafeBottom-14); // always leave at least a 14%-tall grid
+  /* a plain emoji card is ~72px on tablet, ~84px on desktop (see .ar-card-plain / its @media(min-width:1025px)
+     override in css/style.css) — pad generously so cells stay comfortably bigger than a card even after jitter */
+  const cardPx = window.innerWidth>=1025 ? 84 : 72;
+  const minCellW = cardPx + 80, minCellH = cardPx + 70;
+  const availPxW = window.innerWidth * (safeRight-safeLeft)/100;
+  const availPxH = window.innerHeight * (maxSafeBottom-safeTop)/100;
+  const maxColsByWidth = Math.max(1, Math.floor(availPxW/minCellW));
+  const maxRowsByHeight = Math.max(1, Math.floor(availPxH/minCellH));
+  let cols = Math.max(1, Math.min(Math.ceil(Math.sqrt(n*1.6)), maxColsByWidth));
+  if(Math.ceil(n/cols) > maxRowsByHeight){
+    /* not enough vertical room for that many rows — trade for more columns instead, up to the width cap */
+    cols = Math.min(maxColsByWidth, Math.ceil(n/maxRowsByHeight));
+  }
+  const rows = Math.ceil(n/cols); // always recomputed from the final `cols` so every item is guaranteed a cell
+  const colW = (safeRight-safeLeft)/cols;
+  const rowH = (maxSafeBottom-safeTop)/rows;
+  /* jitter amplitude is capped by how much room is actually left in the cell beyond the card itself, not a flat
+     fraction of the cell — otherwise a jitter that's "20% of a barely-big-enough cell" can still cause overlap */
+  const colWpx = colW/100*window.innerWidth, rowHpx = rowH/100*window.innerHeight;
+  const jitterXpx = Math.max(0, (colWpx-cardPx)/2*0.5);
+  const jitterYpx = Math.max(0, (rowHpx-cardPx)/2*0.5);
+  const jitterXpct = jitterXpx/window.innerWidth*100, jitterYpct = jitterYpx/window.innerHeight*100;
+
+  order.forEach((item, pos)=>{
+    const card = document.createElement('div');
+    card.className = 'ar-card ar-card-plain';
+    card.dataset.itemKey = item.key;
+    card.innerHTML = '<span class="ar-card-emoji">'+item.emoji+'</span>';
+    const col = pos % cols, row = Math.floor(pos/cols);
+    const left = (safeLeft + colW*(col+0.5) + (Math.random()-0.5)*2*jitterXpct).toFixed(1)+'%';
+    const top = (safeTop + rowH*(row+0.5) + (Math.random()-0.5)*2*jitterYpct).toFixed(1)+'%';
+    card.dataset.origLeft = left;
+    card.dataset.origTop = top;
+    card.style.left = left;
+    card.style.top = top;
+    card.style.animationDelay = (pos*0.06)+'s';
+    wireCardDrag(card);
+    cardsRow.appendChild(card);
+  });
+}
+
+/* ---- count mode: drop into the single answer basket (not a fixed per-position slot) ---- */
+function attemptCountDrop(card, x, y){
+  card.classList.remove('dragging');
+  card.style.left = card.dataset.origLeft; card.style.top = card.dataset.origTop;
+  const zone = $('ar-count-zone');
+  const pad = 34;
+  const r = zone.getBoundingClientRect();
+  const inside = x>=r.left-pad && x<=r.right+pad && y>=r.top-pad && y<=r.bottom+pad;
+  if(inside && !arGame.zoneLocked){ placeItemInZone(card); }
+  else { leaveCardAtPos(card, x, y); }
+  arDraggingCard = null; arDragSource = null;
+}
+function placeItemInZone(card){
+  const ph = document.getElementById('ar-count-zone-ph');
+  if(ph) ph.hidden = true;
+  card.classList.add('placed');
+  $('ar-count-zone').appendChild(card);
+  playClick();
+  arGame.zoneCount++;
+  updateCountTally();
+  checkCountComplete();
+}
+function updateCountTally(){
+  $('ar-count-tally').textContent = 'หยิบแล้ว '+arGame.zoneCount+' ชิ้น';
+}
+function checkCountComplete(){
+  const target = arGame.countQuestion.targetCount;
+  if(arGame.zoneCount < target) return;
+  arGame.zoneLocked = true;
+  const cards = Array.from($('ar-count-zone').querySelectorAll('.ar-card'));
+  const correct = cards.every(c=>c.dataset.itemKey===arGame.countQuestion.targetKey);
+  if(correct) levelSuccess(); else levelMistake();
+}
+function countLevelMistake(cat){
+  $('ar-count-zone').classList.add('wrong-flash');
+  showARHint('🤔 ยังไม่ถูกนะ ลองหยิบใหม่ดูสิ!');
+  setTimeout(()=>{
+    $('ar-count-zone').classList.remove('wrong-flash');
+    arGame.zoneCount = 0;
+    arGame.zoneLocked = false;
+    scatterCountItems(arGame.countQuestion); // resets the zone's contents (including the tally line) fresh
+  }, 1000);
+}
+
+
 /* ============ glue: ผูก engine เข้ากับข้อมูลชุดโจทย์ของคุณครู ============ */
 
 /* pseudo-cat แทน catById ของหน้าหลัก — mode/lang ที่ engine เดิมใช้ตัดสินพฤติกรรม */
 function arCat(){
   const mech = arGame ? arGame.mech : 'ar-pick';
-  const mode = mech==='ar-pick' ? 'math' : mech==='ar-connect' ? 'match' : 'sentence';
+  const mode = mech==='ar-pick' ? 'math' : mech==='ar-connect' ? 'match' : mech==='ar-count' ? 'count' : 'sentence';
   return { mode, lang:'th' };
 }
 function arGameData(){ return games.find(g=>g.id===arGame.gameId); }
@@ -775,8 +888,11 @@ function buildLevel(){
   $('ar-math-problem').hidden = true;
   $('ar-slot-row').hidden = false;
   $('ar-match-wrap').hidden = true;
+  $('ar-count-question').hidden = true;
+  $('ar-count-zone').hidden = true;
   if(cat.mode==='math'){ buildPickLevel(); return; }
   if(cat.mode==='match'){ buildConnectLevel(); return; }
+  if(cat.mode==='count'){ buildTeacherCountLevel(); return; }
   /* sentence: เรียงการ์ดใส่ช่องตามลำดับ (ครอบทั้งเรียงคำและต่อประโยค — mechanic เดียวกัน) */
   const qd = nextArQuestion();
   const words = qd.sentence.trim().split(/\s+/);
@@ -836,6 +952,24 @@ function buildConnectLevel(){
   showARHint(isMobileViewport()
     ? '👆 แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกันนะ!'
     : '✋ แตะจุดวงกลมแล้วลากเส้นไปยังคำตอบที่ตรงกัน (จีบนิ้วถ้าอยากยกเลิก)');
+}
+
+/* ar-count: โจทย์จากฟอร์ม (ของที่ต้องหยิบ+จำนวน / ตัวหลอกหลายชนิด) แปลงเป็นรูปแบบ engine เดิม */
+function buildTeacherCountLevel(){
+  $('ar-slot-row').hidden = true;
+  $('ar-count-question').hidden = false;
+  $('ar-count-zone').hidden = false;
+  const qd = nextArQuestion();
+  const items = [{key:'target', emoji:qd.target.item, count:qd.target.count}]
+    .concat((qd.decoys||[]).map((d,i)=>({key:'d'+i, emoji:d.item, count:d.count})));
+  arGame.countQuestion = { q:qd.q, targetKey:'target', targetCount:qd.target.count, items };
+  arGame.zoneCount = 0;
+  arGame.zoneLocked = false;
+  $('ar-count-question').textContent = qd.q;
+  scatterCountItems(arGame.countQuestion); // resets โซนตะกร้า (รวม tally) ใหม่ทุกครั้ง
+  showARHint(isMobileViewport()
+    ? '👆 แตะของแล้วลากไปใส่ตะกร้าให้ครบตามโจทย์นะ!'
+    : '✋ จีบนิ้วหยิบของแล้วลากไปใส่ตะกร้าให้ครบตามโจทย์นะ!');
 }
 
 /* ---- game flow ---- */

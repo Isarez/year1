@@ -240,6 +240,10 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
 .bq-pair-arrow{font-size:20px; font-weight:800; color:var(--ink-soft); flex-shrink:0;}
 /* ฟอร์มเรียงการ์ด (ar-order): เลขลำดับหน้าแถว */
 .bq-order-num{font-size:16px; font-weight:800; color:var(--ink-soft); min-width:22px; text-align:right; flex-shrink:0;}
+/* ฟอร์มหยิบให้ครบ (ar-count): แถวของที่ต้องหยิบ/ของหลอก + ช่องจำนวน */
+.bq-count-label{font-size:14px; font-weight:800; color:var(--ink-soft); min-width:104px; flex-shrink:0;}
+.bq-count-num{max-width:76px; flex:none; text-align:center;}
+.bq-count-target{margin-bottom:8px;}
 
 /* กลางคืน: การ์ดฟอร์ม/empty state ยังพื้นขาวครีม อ่านได้ปกติ — เสริมเฉพาะ select บนพื้นมืด */
 body.night-mode .builder-select{background:#fff;}
