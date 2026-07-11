@@ -53,8 +53,12 @@ function mechById(id){ return MECHANICS.find(m=>m.id===id) || MECHANICS[0]; }
 
 /* ---------- logos (SVG เตรียมไว้ ธีมเดียวกับ icon เกมหน้าหลัก) ---------- */
 const LOGOS = [
-  't-star','t-book','t-pencil','t-rocket','t-flower','t-ball','t-apple','t-music','t-puzzle','t-crown','t-rainbow','t-heart',
-  't-sun','t-car','t-boat','t-tree','t-fish','t-cake','t-gift','t-planet','t-drum','t-butterfly','t-icecream','t-robot'
+  't-star','t-book','t-pencil','t-rocket','t-flower','t-ball','t-apple','t-music',
+  't-puzzle','t-crown','t-rainbow','t-heart','t-sun','t-car','t-boat','t-tree',
+  't-fish','t-cake','t-gift','t-planet','t-drum','t-butterfly','t-icecream','t-robot',
+  't-moon','t-cloud','t-umbrella','t-kite','t-balloon','t-duck','t-cat','t-dog',
+  't-bear','t-owl','t-elephant','t-frog','t-strawberry','t-banana','t-watermelon','t-carrot',
+  't-train','t-plane','t-bike','t-house','t-bell','t-medal','t-palette','t-clock'
 ].map(n=>'../assets/icons/teacher/'+n+'.svg');
 /* สีการ์ดหมุนเวียนตามลำดับเกม (โทนเดียวกับหมวดหน้าหลัก) */
 const CARD_COLORS = [
@@ -739,17 +743,7 @@ function bqShell(innerHtml){
   const block = document.createElement('div');
   block.className = 'bq-block';
   block.innerHTML =
-    '<div class="bq-head"><span class="bq-num"></span><span class="bq-head-btns">'+
-      '<button type="button" class="bq-emoji-mini" title="แทรก emoji ในข้อนี้">😀</button>'+
-      '<button type="button" class="bq-del-btn">'+SVG_TRASH+' ลบข้อนี้</button>'+
-    '</span></div>'+innerHtml;
-  /* ปุ่ม emoji ประจำข้อ: เปิดแผงลอย + โฟกัสช่องแรกของข้อนี้ (แก้ปัญหาโจทย์เยอะแล้วปุ่มบนสุดอยู่ไกล) */
-  block.querySelector('.bq-emoji-mini').addEventListener('click', ()=>{
-    playClick();
-    openEmojiPop();
-    const inp = block.querySelector('input[type="text"]');
-    if(inp){ lastEmojiTarget = inp; inp.focus(); }
-  });
+    '<div class="bq-head"><span class="bq-num"></span><button type="button" class="bq-del-btn">'+SVG_TRASH+' ลบข้อนี้</button></div>'+innerHtml;
   block.querySelector('.bq-del-btn').addEventListener('click', ()=>{
     playClick();
     if($('b-questions').children.length <= 1){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return; }

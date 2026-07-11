@@ -90,19 +90,19 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
 .mechanic-chip:disabled{opacity:.45; cursor:not-allowed;}
 .mechanic-soon{font-size:11px; font-weight:800; background:#B9C4D8; color:#fff; padding:2px 8px; border-radius:999px;}
 
-/* logo picker */
+/* logo picker — เต็มความกว้างฟอร์ม 8 ตัวต่อแถวเสมอ */
 .logo-picker{
-  display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; max-width:460px;
+  display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; width:100%;
 }
 .logo-choice{
   border:3px solid #F3E2C0; background:#fff; border-radius:16px; padding:8px;
   cursor:pointer; transition:transform .12s, border-color .12s;
   display:flex; align-items:center; justify-content:center;
 }
-.logo-choice img{width:100%; max-width:52px; display:block;}
+.logo-choice img{width:100%; max-width:56px; display:block;}
 .logo-choice:hover{transform:translateY(-2px) scale(1.05);}
 .logo-choice.selected{border-color:var(--thai); background:#EAF5FE;}
-@media (max-width:480px){ .logo-picker{grid-template-columns:repeat(4,minmax(0,1fr));} }
+@media (max-width:480px){ .logo-picker{gap:6px;} .logo-choice{padding:5px; border-radius:12px;} }
 
 /* question blocks */
 .bq-block{
@@ -154,14 +154,7 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
 .mech-chip-icon{width:22px; height:22px; vertical-align:-6px; margin-right:4px;}
 .mg-mech-icon{width:17px; height:17px; vertical-align:-3.5px;}
 
-/* ปุ่ม+popover แทรก emoji ลงช่องโจทย์/คำตอบ */
-.bq-label-row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-.bq-emoji-btn{
-  border:2px solid #F3E2C0; background:#FFFDF6; border-radius:999px;
-  font-family:inherit; font-size:14px; font-weight:700; color:var(--ink-soft);
-  padding:6px 14px; cursor:pointer; transition:transform .12s;
-}
-.bq-emoji-btn:hover{transform:translateY(-2px);}
+/* popover แทรก emoji ลงช่องโจทย์/คำตอบ */
 /* แผง emoji เป็นแบบลอย dock มุมขวาล่างจอ — เลื่อนดูโจทย์ข้อไหนอยู่ก็กดแทรกได้ ไม่ต้องเลื่อนกลับขึ้นบน
    (dock ขวาเพื่อไม่บังปุ่มบันทึก/เผยแพร่ที่อยู่กลางจอ + เผื่อ margin ล่างของฟอร์มไว้ scroll หลบได้เสมอ) */
 .emoji-insert-pop{
@@ -177,13 +170,16 @@ body.emoji-pop-open .builder-card{margin-bottom:320px;}
   border:none; background:#EAF5FE; color:#2f7fb5; font-size:14px; font-weight:800;
   width:28px; height:28px; border-radius:50%; cursor:pointer; flex-shrink:0;
 }
-/* ปุ่ม emoji ประจำข้อ (ใน header ของ block) */
-.bq-head-btns{display:flex; gap:8px; align-items:center;}
-.bq-emoji-mini{
-  border:2px solid #F3E2C0; background:#fff; border-radius:999px;
-  font-size:15px; line-height:1; padding:4px 10px; cursor:pointer; transition:transform .12s;
+/* ปุ่ม "แทรก emoji" ลอยมุมขวาล่างจอ (ตำแหน่งเดียวกับแผง — เปิดแผงแล้วปุ่มซ่อน แผงมาแทนที่) */
+.emoji-fab{
+  position:fixed; bottom:16px; right:16px; z-index:249;
+  border:3px solid #B9D6FF; background:#F7FBFF; border-radius:999px;
+  font-family:inherit; font-size:15px; font-weight:800; color:#2f7fb5;
+  padding:11px 20px; cursor:pointer; box-shadow:0 6px 18px rgba(30,60,110,.22);
+  transition:transform .12s;
 }
-.bq-emoji-mini:hover{transform:scale(1.12);}
+.emoji-fab:hover{transform:translateY(-2px) scale(1.04);}
+body.emoji-pop-open .emoji-fab{display:none;}
 .emoji-pop-grid{
   display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr)); gap:4px;
   max-height:180px; overflow-y:auto;
