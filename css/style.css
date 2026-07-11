@@ -272,6 +272,9 @@
     font-size:13px; font-weight:700; color:var(--ink-soft);
   }
 
+  /* icon SVG แทน emoji บนปุ่มข้อความ (ใช้ทั้งหน้าหลักและหน้า teacher) — จัดแนวกับตัวหนังสือ */
+  .btn-svg{vertical-align:-4px; display:inline-block;}
+
   /* ---------- toast notification ---------- */
   .toast{
     position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(16px);
