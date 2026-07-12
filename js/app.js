@@ -1156,7 +1156,7 @@ function renderShadowOverlapLevel(){
   g.answerBtn = null;
   choices.forEach(item=>{
     const btn = document.createElement('button');
-    btn.className = 'shadow-choice';
+    btn.className = 'shadow-choice ov'+k;
     btn.innerHTML = '<span class="shadow-choice-emoji multi">'+item.e+'</span><span class="shadow-choice-name">'+item.n+'</span>';
     btn.addEventListener('click', ()=>pickShadowChoice(btn, item));
     if(item.e === answer.e) g.answerBtn = btn;
@@ -1689,20 +1689,23 @@ function renderSlotsAndCards(sentence){
 /* ---- AR math mode: random 1-2 digit addition/subtraction, pick the 1 correct answer card out of 3 ---- */
 function buildMathLevel(cat){
   const level = arGame.level;
-  const twoDigit = level>=6; // levels 1-5: single-digit numbers, levels 6-10: two-digit numbers
+  /* mathTiers: [[min,max] ด่าน 1-3, [min,max] ด่าน 4-7, [min,max] ด่าน 8-10] ไล่ตามความยากของแต่ละหมวด */
+  const tier = level<=3 ? cat.mathTiers[0] : (level<=7 ? cat.mathTiers[1] : cat.mathTiers[2]);
+  const [lo, hi] = tier;
   let a, b;
   const op = Math.random()<0.5 ? '+' : '-';
-  if(twoDigit){ a = Math.floor(Math.random()*90)+10; b = Math.floor(Math.random()*90)+10; }
-  else { a = Math.floor(Math.random()*9)+1; b = Math.floor(Math.random()*9)+1; }
+  a = Math.floor(Math.random()*(hi-lo+1))+lo;
+  b = Math.floor(Math.random()*(hi-lo+1))+lo;
   if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
   const answer = op==='+' ? a+b : a-b;
-  renderMathPuzzle(a, b, op, answer);
+  renderMathPuzzle(a, b, op, answer, cat.mathChoices || 3);
   showARHint(isMobileViewport()
     ? '👆 แตะการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!'
     : '✋ จีบนิ้วหยิบการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!');
 }
 
-function renderMathPuzzle(a, b, op, answer){
+function renderMathPuzzle(a, b, op, answer, numChoices){
+  numChoices = numChoices || 3;
   const problemEl = $('ar-math-problem');
   problemEl.hidden = false;
   problemEl.textContent = a+' '+op+' '+b+' = ?';
@@ -1715,10 +1718,10 @@ function renderMathPuzzle(a, b, op, answer){
   s.innerHTML = '<span class="ar-slot-ph">❓</span>';
   slotRow.appendChild(s);
 
-  /* build 3 unique non-negative choices: the correct answer + 2 nearby distractors */
+  /* build N unique non-negative choices: the correct answer + nearby distractors */
   const choices = new Set([answer]);
   let guard = 0;
-  while(choices.size<3 && guard<50){
+  while(choices.size<numChoices && guard<50){
     guard++;
     const delta = Math.floor(Math.random()*10)-5;
     const val = answer + delta;
