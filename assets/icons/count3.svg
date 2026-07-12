@@ -1,0 +1,30 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="หยิบตัวเลข 3">
+  <defs>
+    <linearGradient id="cnt3A" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F5A0BE"/>
+      <stop offset="1" stop-color="#E8598C"/>
+    </linearGradient>
+    <linearGradient id="cnt3B" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FAC3D6"/>
+      <stop offset="1" stop-color="#EF7CA3"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="20" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- block "45" -->
+  <rect x="5" y="14" width="22" height="20" rx="6" fill="url(#cnt3A)" stroke="#B23764" stroke-width="3"/>
+  <rect x="8" y="17" width="5" height="14" rx="2.5" fill="#fff" opacity="0.24"/>
+  <text x="16" y="29" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">45</text>
+
+  <!-- block "32" -->
+  <rect x="37" y="14" width="22" height="20" rx="6" fill="url(#cnt3A)" stroke="#B23764" stroke-width="3"/>
+  <rect x="40" y="17" width="5" height="14" rx="2.5" fill="#fff" opacity="0.24"/>
+  <text x="48" y="29" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">32</text>
+
+  <!-- minus between blocks -->
+  <path d="M28 24h8" stroke="#B23764" stroke-width="3.2" stroke-linecap="round"/>
+
+  <!-- result block "13" -->
+  <rect x="16" y="38" width="32" height="18" rx="6" fill="url(#cnt3B)" stroke="#B23764" stroke-width="3"/>
+  <text x="32" y="51" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#B23764" text-anchor="middle">13</text>
+</svg>

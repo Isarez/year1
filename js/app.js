@@ -1689,11 +1689,13 @@ function renderSlotsAndCards(sentence){
 /* ---- AR math mode: random 1-2 digit addition/subtraction, pick the 1 correct answer card out of 3 ---- */
 function buildMathLevel(cat){
   const level = arGame.level;
-  const twoDigit = level>=6; // levels 1-5: single-digit numbers, levels 6-10: two-digit numbers
+  /* mathTiers: [[min,max] ด่าน 1-3, [min,max] ด่าน 4-7, [min,max] ด่าน 8-10] ไล่ตามความยากของแต่ละหมวด */
+  const tier = level<=3 ? cat.mathTiers[0] : (level<=7 ? cat.mathTiers[1] : cat.mathTiers[2]);
+  const [lo, hi] = tier;
   let a, b;
   const op = Math.random()<0.5 ? '+' : '-';
-  if(twoDigit){ a = Math.floor(Math.random()*90)+10; b = Math.floor(Math.random()*90)+10; }
-  else { a = Math.floor(Math.random()*9)+1; b = Math.floor(Math.random()*9)+1; }
+  a = Math.floor(Math.random()*(hi-lo+1))+lo;
+  b = Math.floor(Math.random()*(hi-lo+1))+lo;
   if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
   const answer = op==='+' ? a+b : a-b;
   renderMathPuzzle(a, b, op, answer);
