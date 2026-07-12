@@ -1260,6 +1260,14 @@
   }
   /* transition อยู่บน .revealed เท่านั้น: เฉลยสี = ค่อยๆ จาง, ขึ้นข้อใหม่ = ดำทันที (ไม่แว้บสีจริงให้เห็นก่อน) */
   .shadow-prompt.revealed{filter:none; transition:filter .5s ease;}
+  /* ทายเงา 2/3: emoji หลายตัวซ้อนเหลื่อมกันเป็นเงาก้อนเดียว (filter brightness(0) อยู่ที่ parent จึงดำทั้งก้อน)
+     margin ติดลบหน่วย em = ระยะซ้อน ~40% ยังพอเห็นรูปทรงแต่ละชิ้น — ตัวที่ซ้อนขยับขึ้น/ลงเล็กน้อยให้ดูเป็นธรรมชาติ */
+  .shadow-prompt .sp-i{display:inline-block; line-height:1.15;}
+  .shadow-prompt.ov2{font-size:clamp(72px, 15vw, 108px);}
+  .shadow-prompt.ov2 .sp-i:nth-child(2){margin-left:-.52em; transform:translateY(.1em);}
+  .shadow-prompt.ov3{font-size:clamp(60px, 12.5vw, 90px);}
+  .shadow-prompt.ov3 .sp-i:nth-child(2){margin-left:-.5em; transform:translateY(.12em);}
+  .shadow-prompt.ov3 .sp-i:nth-child(3){margin-left:-.5em; transform:translateY(-.08em);}
   .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; gap:16px; width:100%;}
   .shadow-choice{
     display:flex; flex-direction:column; align-items:center; gap:4px;
@@ -1271,14 +1279,19 @@
   .shadow-choice:hover{transform:translateY(-4px) scale(1.06); border-color:var(--cat-color, #5D6D9E);}
   .shadow-choice:active{transform:scale(.95);}
   .shadow-choice-emoji{font-size:clamp(44px, 9vw, 60px); line-height:1.15;}
-  .shadow-choice-name{font-size:16px; font-weight:700; color:var(--ink-soft);}
+  /* ตัวเลือกแบบชุด 2-3 ชิ้น (ทายเงา 2/3): emoji เล็กลงให้การ์ดไม่บาน, ชื่อยาว ("ก + ข") ตัดขึ้นบรรทัดได้ */
+  .shadow-choice-emoji.multi{font-size:clamp(32px, 6.5vw, 44px); letter-spacing:3px;}
+  .shadow-choice-name{font-size:16px; font-weight:700; color:var(--ink-soft); max-width:180px;}
   .shadow-choice.correct{border-color:var(--correct); background:var(--correct-l); animation:popCorrect .38s ease;}
   .shadow-choice.wrong{border-color:var(--wrong); background:var(--wrong-l); opacity:.55; cursor:default; animation:shakeX .45s ease;}
   @media (max-width:480px){
     .shadow-prompt-card{padding:12px 30px;}
     .shadow-prompt{font-size:clamp(64px, 24vw, 96px);}
+    .shadow-prompt.ov2{font-size:clamp(52px, 19vw, 76px);}
+    .shadow-prompt.ov3{font-size:clamp(42px, 15vw, 62px);}
     .shadow-choice{min-width:88px; padding:10px 12px 8px;}
     .shadow-choices{gap:11px;}
+    .shadow-choice-emoji.multi{font-size:clamp(26px, 8vw, 36px); letter-spacing:2px;}
   }
 
   /* ---------- Listen word-spelling game (เกมฟังคำศัพท์ 1/2) ---------- */

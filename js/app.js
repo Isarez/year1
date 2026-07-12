@@ -1002,7 +1002,7 @@ $('memory-back').addEventListener('click', ()=>{
    ด่าน 1-5 = 3 ตัวเลือก, 6-10 = 4 ตัวเลือก, 11-15 = 5 ตัวเลือก
    ตัวหลอกสุ่มจากกลุ่มเดียวกับคำตอบ (SHADOW_ITEMS ใน data.js) คำตอบไม่ซ้ำภายใน 1 รอบเล่น
    ============================= */
-let shadowGame = null; // {catId, level, mistakes, totalLevels, usedIdx:{group:Set}, answer, locked}
+let shadowGame = null; // {catId, level, mistakes, totalLevels, overlap, usedIdx:{group:Set}, usedCombos:Set, answer, locked}
 
 function startShadowGame(catId){
   stopARGame();
@@ -1010,19 +1010,31 @@ function startShadowGame(catId){
   const cat = catById(catId);
   shadowGame = {
     catId, level:1, mistakes:0, totalLevels:cat.levels,
+    overlap: cat.overlap || 1,
     usedIdx:{ animals:new Set(), fruits:new Set(), objects:new Set() },
+    usedCombos:new Set(),
     answer:null, locked:false
   };
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
+  /* ทายเงา 2/3: เงาซ้อนกันหลายชั้น — ตั้ง class ขนาด prompt + ข้อความ hint ตามจำนวนเงาของหมวดนี้ */
+  const prompt = $('shadow-prompt');
+  prompt.classList.remove('ov2','ov3');
+  if(shadowGame.overlap===2) prompt.classList.add('ov2');
+  else if(shadowGame.overlap===3) prompt.classList.add('ov3');
+  $('shadow-hint').textContent =
+    shadowGame.overlap===2 ? '👥 มีเงา 2 อย่างซ้อนกันอยู่! แตะคู่ที่ตรงกับเงาทั้งสองนะ' :
+    shadowGame.overlap===3 ? '🎭 มีเงา 3 อย่างซ้อนกันอยู่! แตะชุดที่ตรงกับเงาทั้งสามนะ' :
+    '🔦 เงาสีดำนี้คืออะไรเอ่ย? แตะภาพที่ตรงกับเงานะ!';
   renderShadowLevel();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function renderShadowLevel(){
   const g = shadowGame;
+  if(g.overlap > 1){ renderShadowOverlapLevel(); return; }
   const choiceCount = g.level<=5 ? 3 : (g.level<=10 ? 4 : 5);
   const groups = Object.keys(SHADOW_ITEMS);
   const group = groups[Math.floor(Math.random()*groups.length)];
@@ -1057,6 +1069,95 @@ function renderShadowLevel(){
     const btn = document.createElement('button');
     btn.className = 'shadow-choice';
     btn.innerHTML = '<span class="shadow-choice-emoji">'+item.e+'</span><span class="shadow-choice-name">'+item.n+'</span>';
+    btn.addEventListener('click', ()=>pickShadowChoice(btn, item));
+    if(item.e === answer.e) g.answerBtn = btn;
+    wrap.appendChild(btn);
+  });
+}
+
+/* ---- ทายเงา 2/3: โจทย์เป็นเงา 2-3 ชิ้นซ้อนกัน ตัวเลือกเป็นชุด object (คู่/สามชิ้น) ----
+   ชุดคำตอบสุ่มผสมจากคลัง SHADOW_ITEMS ทุกกลุ่มรวมกัน (45 ชิ้น = คู่/ชุดผสมได้หลายร้อยแบบ เล่นซ้ำไม่ซ้ำเดิม)
+   โดยบังคับ shape tag (s) ในชุดเดียวกันไม่ซ้ำกัน ให้เงาที่ซ้อนยังพอแยกรูปทรงออก
+   ตัวหลอก: แทนที่ของจริงทีละ 1/2/3 ชิ้น (คงตำแหน่งเดิม เช่น ชิ้นแรกจริงชิ้นหลังหลอก) โดยตัวแทนเลือก
+   shape เดียวกับชิ้นที่ถูกแทนก่อนให้เงาคล้ายของจริง — คีย์ชุด (comboKey) กันโจทย์ซ้ำภายในรอบเล่นเดียวกัน */
+function shadowFlatPool(){
+  return SHADOW_ITEMS.animals.concat(SHADOW_ITEMS.fruits, SHADOW_ITEMS.objects);
+}
+function shadowComboKey(items){ return items.map(x=>x.e).sort().join('|'); }
+function pickShadowCombo(pool, k, usedCombos){
+  /* สุ่มชุด k ชิ้น: e ไม่ซ้ำ + s ไม่ซ้ำกันในชุด, ลองจนกว่าจะได้คีย์ที่ยังไม่เคยใช้ (ลองพอสมควรแล้วค่อยเคลียร์) */
+  for(let attempt=0; attempt<60; attempt++){
+    const picked = [];
+    const usedE = new Set(), usedS = new Set();
+    let guard = 0;
+    while(picked.length < k && guard++ < 200){
+      const it = pool[Math.floor(Math.random()*pool.length)];
+      if(usedE.has(it.e) || (it.s && usedS.has(it.s))) continue;
+      picked.push(it); usedE.add(it.e); if(it.s) usedS.add(it.s);
+    }
+    if(picked.length < k) continue;
+    const key = shadowComboKey(picked);
+    if(!usedCombos.has(key)){ usedCombos.add(key); return picked; }
+    if(attempt===40) usedCombos.clear(); /* พูลคีย์ใกล้หมด (เล่นซ้ำนานมาก) เริ่มนับใหม่ */
+  }
+  return null;
+}
+function shadowReplaceItem(pool, original, excludeEs){
+  /* หาตัวหลอกมาแทน 1 ชิ้น: เงาคล้ายของจริง (s เดียวกัน) ก่อน ถ้าไม่มีค่อยสุ่มตัวอื่น */
+  const same = pool.filter(it=>!excludeEs.has(it.e) && it.s && it.s===original.s);
+  const rest = pool.filter(it=>!excludeEs.has(it.e) && (!it.s || it.s!==original.s));
+  const src = same.length ? same : rest;
+  if(!src.length) return null;
+  return src[Math.floor(Math.random()*src.length)];
+}
+function renderShadowOverlapLevel(){
+  const g = shadowGame;
+  const k = g.overlap;
+  const choiceCount = k===2 ? (g.level<=5 ? 3 : (g.level<=10 ? 4 : 5))
+                            : (g.level<=7 ? 3 : 4); /* ชุดละ 3 ชิ้นการ์ดกว้าง เกิน 4 ตัวเลือกจะล้นจอ */
+  const pool = shadowFlatPool();
+  const ansItems = pickShadowCombo(pool, k, g.usedCombos) || pool.slice(0, k);
+  const makeChoice = items => ({ e: items.map(x=>x.e).join(''), n: items.map(x=>x.n).join(' + '), items });
+  const answer = makeChoice(ansItems);
+
+  /* ตัวหลอกชุดที่ i: แทนของจริง (i%k)+1 ชิ้นแบบวนตำแหน่ง — ชุดแรกได้แบบ "ชิ้นแรกจริง ชิ้นหลังหลอก" เสมอ */
+  const seenKeys = new Set([shadowComboKey(ansItems)]);
+  const choices = [answer];
+  let di = 0, guard = 0;
+  while(choices.length < choiceCount && guard++ < 40){
+    const replaceCount = (di % k) + 1;
+    const items = ansItems.slice();
+    const excludeEs = new Set(items.map(x=>x.e));
+    /* แทนจากท้ายชุดก่อน (คงชิ้นแรกไว้เป็นของจริงในตัวหลอกชุดแรกๆ) */
+    let ok = true;
+    for(let r=0; r<replaceCount; r++){
+      const pos = k-1-r;
+      const rep = shadowReplaceItem(pool, ansItems[pos], excludeEs);
+      if(!rep){ ok = false; break; }
+      items[pos] = rep; excludeEs.add(rep.e);
+    }
+    di++;
+    if(!ok) continue;
+    const key = shadowComboKey(items);
+    if(seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    choices.push(makeChoice(items));
+  }
+  shuffleArray(choices);
+  g.answer = answer; g.locked = false;
+
+  const prompt = $('shadow-prompt');
+  prompt.classList.remove('revealed');
+  prompt.innerHTML = ansItems.map(x=>'<span class="sp-i">'+x.e+'</span>').join('');
+  $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  const wrap = $('shadow-choices');
+  wrap.innerHTML = '';
+  g.answerBtn = null;
+  choices.forEach(item=>{
+    const btn = document.createElement('button');
+    btn.className = 'shadow-choice';
+    btn.innerHTML = '<span class="shadow-choice-emoji multi">'+item.e+'</span><span class="shadow-choice-name">'+item.n+'</span>';
     btn.addEventListener('click', ()=>pickShadowChoice(btn, item));
     if(item.e === answer.e) g.answerBtn = btn;
     wrap.appendChild(btn);

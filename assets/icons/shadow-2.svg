@@ -1,0 +1,33 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ทายเงา 2">
+  <defs>
+    <linearGradient id="sh2A" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe27a"/>
+      <stop offset="1" stop-color="#ffc531"/>
+    </linearGradient>
+    <linearGradient id="sh2Beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff3b8" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#fff3b8" stop-opacity=".15"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="20" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- ลำแสงไฟฉาย -->
+  <path d="M21 29 L54 15 L54 50 Z" fill="url(#sh2Beam)"/>
+
+  <!-- ไฟฉาย -->
+  <g transform="rotate(14 13 33)">
+    <rect x="2" y="28" width="13" height="11" rx="3.5" fill="#9db1e8" stroke="#5b6bc0" stroke-width="3"/>
+    <rect x="14" y="25" width="8" height="17" rx="3" fill="url(#sh2A)" stroke="#e0a516" stroke-width="3"/>
+  </g>
+
+  <!-- เงา 2 ชิ้นซ้อนกัน: ลูกบอลกลม (หลัง สีอ่อนกว่า) + กระต่าย (หน้า) -->
+  <g fill="#6b7396">
+    <circle cx="52" cy="38" r="8.5"/>
+  </g>
+  <g fill="#3d4666">
+    <ellipse cx="43" cy="41.5" rx="8.5" ry="7.5"/>
+    <ellipse cx="39.5" cy="28.5" rx="2.6" ry="7" transform="rotate(-9 39.5 28.5)"/>
+    <ellipse cx="46.5" cy="28.5" rx="2.6" ry="7" transform="rotate(9 46.5 28.5)"/>
+    <circle cx="51.5" cy="45" r="3"/>
+  </g>
+</svg>
