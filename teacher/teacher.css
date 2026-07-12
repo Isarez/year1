@@ -29,12 +29,8 @@
 .teacher-add-btn{width:auto; padding:10px 26px; font-size:17px;}
 .teacher-manage-btn{background:linear-gradient(135deg,#8FD3FF,#4FA9E8);}
 
-/* การ์ดชุดโจทย์ — ใช้ .cat-card เดิม + ส่วนเสริม */
-/* grid การ์ดชุดโจทย์: cap ความกว้างการ์ดเหมือน #cat-grid-skill หน้าหลัก (auto-fit+1fr ฐานจะยืดการ์ดเมื่อมีใบเดียว) */
-#teacher-mech-groups .cat-grid{
-  grid-template-columns:repeat(auto-fill, minmax(210px,240px));
-  max-width:820px; margin:0 auto; padding:0 10px;
-}
+/* การ์ดชุดโจทย์ — ใช้ .cat-card เดิม + ส่วนเสริม, ความกว้าง/จำนวนคอลัมน์สืบทอดจาก .cat-grid ฐานใน css/style.css โดยตรง
+   (ฐานใช้ auto-fill+max คงที่อยู่แล้ว ขยายคอลัมน์เองอัตโนมัติตาม main ที่กว้างขึ้นบนจอใหญ่ ไม่ต้อง override ที่นี่) */
 .tg-badge-draft{
   position:absolute; top:12px; right:12px; z-index:2;
   background:#B9C4D8; color:#fff; font-size:12px; font-weight:800;
@@ -52,7 +48,7 @@
 .tg-action-btn.tg-del{background:#FFE3E3; color:#B23636;}
 .tg-action-btn.tg-pub{background:#DDF6E7; color:#1d6b3e;}
 .teacher-grade-title{
-  max-width:820px; margin:26px auto 12px; padding:0 10px;
+  max-width:820px; margin:26px 0px 12px; padding:0 10px;
   font-size:21px; font-weight:800; color:var(--ink);
   display:flex; align-items:center; gap:8px;
 }
@@ -195,6 +191,10 @@ body.emoji-pop-open .emoji-fab{display:none;}
   display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
   max-width:820px; margin:26px auto 8px; padding:0 10px;
 }
+/* จอกว้างขยาย toolbar/filter/grid ให้กว้างขึ้นเป็นขั้นบันไดตรงกับ main ของ css/style.css (เดิมคงที่ 820px ทุกจอ)
+   ต้องอยู่หลัง .teacher-toolbar/.teacher-grade-title/.grade-filter เสมอ ไม่งั้น cascade source-order จะโดน base rule ทับ (specificity เท่ากัน) */
+@media (min-width:900px){ .teacher-toolbar, .grade-filter, .teacher-grade-title{ max-width:1080px; } }
+@media (min-width:1300px){ .teacher-toolbar, .grade-filter, .teacher-grade-title{ max-width:1280px; } }
 /* filter ในการ์ดจัดการโจทย์: ชิดซ้าย ระยะแคบกว่า ไม่ต้องเผื่อ margin ใหญ่แบบหน้า home */
 .manage-filter{margin:2px 0 4px; padding:0; justify-content:flex-start;}
 .manage-filter .grade-chip{font-size:14px; padding:7px 16px;}
