@@ -1255,7 +1255,7 @@
     padding:16px 46px; box-shadow:0 8px 0 rgba(0,0,0,.08);
   }
   .shadow-prompt{
-    font-size:clamp(84px, 18vw, 128px); line-height:1.15;
+    font-size:clamp(100px, 21vw, 152px); line-height:1.15;
     filter:brightness(0); user-select:none;
   }
   /* transition อยู่บน .revealed เท่านั้น: เฉลยสี = ค่อยๆ จาง, ขึ้นข้อใหม่ = ดำทันที (ไม่แว้บสีจริงให้เห็นก่อน) */
@@ -1263,9 +1263,9 @@
   /* ทายเงา 2/3: emoji หลายตัวซ้อนเหลื่อมกันเป็นเงาก้อนเดียว (filter brightness(0) อยู่ที่ parent จึงดำทั้งก้อน)
      margin ติดลบหน่วย em = ระยะซ้อน ~40% ยังพอเห็นรูปทรงแต่ละชิ้น — ตัวที่ซ้อนขยับขึ้น/ลงเล็กน้อยให้ดูเป็นธรรมชาติ */
   .shadow-prompt .sp-i{display:inline-block; line-height:1.15;}
-  .shadow-prompt.ov2{font-size:clamp(72px, 15vw, 108px);}
+  .shadow-prompt.ov2{font-size:clamp(86px, 18vw, 130px);}
   .shadow-prompt.ov2 .sp-i:nth-child(2){margin-left:-.52em; transform:translateY(.1em);}
-  .shadow-prompt.ov3{font-size:clamp(60px, 12.5vw, 90px);}
+  .shadow-prompt.ov3{font-size:clamp(72px, 15vw, 108px);}
   .shadow-prompt.ov3 .sp-i:nth-child(2){margin-left:-.5em; transform:translateY(.12em);}
   .shadow-prompt.ov3 .sp-i:nth-child(3){margin-left:-.5em; transform:translateY(-.08em);}
   .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; gap:16px; width:100%;}
@@ -1286,9 +1286,9 @@
   .shadow-choice.wrong{border-color:var(--wrong); background:var(--wrong-l); opacity:.55; cursor:default; animation:shakeX .45s ease;}
   @media (max-width:480px){
     .shadow-prompt-card{padding:12px 30px;}
-    .shadow-prompt{font-size:clamp(64px, 24vw, 96px);}
-    .shadow-prompt.ov2{font-size:clamp(52px, 19vw, 76px);}
-    .shadow-prompt.ov3{font-size:clamp(42px, 15vw, 62px);}
+    .shadow-prompt{font-size:clamp(76px, 28vw, 114px);}
+    .shadow-prompt.ov2{font-size:clamp(62px, 22vw, 90px);}
+    .shadow-prompt.ov3{font-size:clamp(50px, 18vw, 74px);}
     .shadow-choice{min-width:88px; padding:10px 12px 8px;}
     .shadow-choices{gap:11px;}
     .shadow-choice-emoji.multi{font-size:clamp(26px, 8vw, 36px); letter-spacing:2px;}
