@@ -1250,7 +1250,7 @@
   /* ---------- Shadow guessing game (เกมทายเงา) ---------- */
   .shadow-board{
     display:flex; flex-direction:column; align-items:center; gap:24px;
-    padding:14px 6px 40px; max-width:760px; margin:0 auto;
+    padding:14px 6px 40px; width:100%; max-width:100%; margin:0 auto;
   }
   .shadow-prompt-card{
     background:linear-gradient(180deg, #FFFDF5, #FFF3DC);
@@ -1273,7 +1273,7 @@
   .shadow-prompt.ov3 .sp-i:nth-child(3){margin-left:-.5em; transform:translateY(-.08em);}
   /* การ์ดตัวเลือกความกว้างคงที่ (width ไม่ใช่ min-width) ให้ flex-wrap ขึ้นบรรทัดใหม่เป็นแถวสมมาตรเสมอ
      (ของเดิมใช้ min-width ทำให้การ์ดกว้างไม่เท่ากันตามความยาวชื่อ ขึ้นบรรทัดสะเปะสะปะ) */
-  .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:18px; width:100%; max-width:620px; margin:0 auto;}
+  .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:18px; width:100%; max-width:100%; margin:0 auto;}
   .shadow-choice{
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
     background:#fff; border:3px solid #F3E2C0; border-radius:20px;
