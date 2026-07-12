@@ -381,6 +381,10 @@
   .sb-close-btn:active{transform:translateY(4px); box-shadow:0 1px 0 #C47E00;}
 
   main{position:relative; z-index:1; max-width:820px; margin:0 auto; padding:20px 16px 60px;}
+  /* จอกว้างมีที่ว่างด้านข้างเยอะ (main เดิมคงที่ 820px) ขยาย section ต่างๆ ให้ใช้พื้นที่มากขึ้นเป็นขั้นบันได
+     grid การ์ดหมวด (.cat-grid ฯลฯ) ใช้ auto-fit/auto-fill อยู่แล้วจึงไล่เรียงคอลัมน์เพิ่มเองอัตโนมัติเมื่อ main กว้างขึ้น */
+  @media (min-width:900px){ main{max-width:1080px;} }
+  @media (min-width:1300px){ main{max-width:1280px;} }
 
   /* ---------- child select view ---------- */
   #child-select-view{
@@ -586,13 +590,12 @@
     margin:-8px 0 16px; line-height:1.5;
   }
   .cat-section{margin-bottom:30px;}
+  /* auto-fill + max คงที่ (ไม่ใช่ 1fr) ให้การ์ดทุก section ขนาดเท่ากันเป๊ะเสมอไม่ว่าจะมีกี่ใบ หรือ main กว้างแค่ไหน
+     — จอกว้างขึ้นแค่ไล่คอลัมน์เพิ่ม ไม่ยืดการ์ดให้ใหญ่เกิน (เดิม .cat-grid ฐานใช้ 1fr ยืดการ์ด แก้ให้ตรงกับทุก section) */
   .cat-grid{
-    display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
-    gap:18px;
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,240px));
+    justify-content:center; gap:18px;
   }
-  /* auto-fit+1fr ของ .cat-grid ฐานจะยืดการ์ดให้กว้างเกินไปเมื่อ section มีการ์ดน้อย (เทียบกับ section อื่นที่มีการ์ดเยอะกว่า)
-     ต้อง cap ความกว้างสูงสุดไว้ (auto-fill + max คงที่ แทน 1fr) ให้การ์ดทุก section ขนาดเท่ากันเป๊ะเสมอ ไม่ว่าจะมีกี่ใบ */
-  #cat-grid-skill, #cat-grid-listen{ grid-template-columns:repeat(auto-fill, minmax(210px,240px)); }
   .cat-card{
     position:relative; text-align:left; cursor:pointer; border:none;
     border-radius:var(--radius-xl); padding:20px 18px 18px;
