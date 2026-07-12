@@ -164,11 +164,11 @@ const CATS = [
   },
   {
     id:'ar-math2', name:'หยิบตัวเลข 2', emoji:'🔟', icon:'assets/icons/count2.svg', color:'#4CAF50', light:'#DFF3E0',
-    type:'ar', mode:'math', levels:10, mathTiers:[[0,15],[0,28],[0,40]], isNew:true
+    type:'ar', mode:'math', levels:10, mathTiers:[[10,17],[10,23],[10,30]], mathChoices:4, isNew:true
   },
   {
     id:'ar-math3', name:'หยิบตัวเลข 3', emoji:'💯', icon:'assets/icons/count3.svg', color:'#E8598C', light:'#FDE1EA',
-    type:'ar', mode:'math', levels:10, mathTiers:[[20,50],[30,75],[50,100]], isNew:true
+    type:'ar', mode:'math', levels:10, mathTiers:[[20,50],[30,75],[50,100]], mathChoices:4, isNew:true
   },
   {
     id:'ar-match', name:'โยงเส้น (ไทย)', emoji:'🪢', icon:'assets/icons/connect-th.svg', color:'#8E7CC3', light:'#EAE4F7',

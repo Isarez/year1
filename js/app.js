@@ -1698,13 +1698,14 @@ function buildMathLevel(cat){
   b = Math.floor(Math.random()*(hi-lo+1))+lo;
   if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
   const answer = op==='+' ? a+b : a-b;
-  renderMathPuzzle(a, b, op, answer);
+  renderMathPuzzle(a, b, op, answer, cat.mathChoices || 3);
   showARHint(isMobileViewport()
     ? '👆 แตะการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!'
     : '✋ จีบนิ้วหยิบการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!');
 }
 
-function renderMathPuzzle(a, b, op, answer){
+function renderMathPuzzle(a, b, op, answer, numChoices){
+  numChoices = numChoices || 3;
   const problemEl = $('ar-math-problem');
   problemEl.hidden = false;
   problemEl.textContent = a+' '+op+' '+b+' = ?';
@@ -1717,10 +1718,10 @@ function renderMathPuzzle(a, b, op, answer){
   s.innerHTML = '<span class="ar-slot-ph">❓</span>';
   slotRow.appendChild(s);
 
-  /* build 3 unique non-negative choices: the correct answer + 2 nearby distractors */
+  /* build N unique non-negative choices: the correct answer + nearby distractors */
   const choices = new Set([answer]);
   let guard = 0;
-  while(choices.size<3 && guard<50){
+  while(choices.size<numChoices && guard<50){
     guard++;
     const delta = Math.floor(Math.random()*10)-5;
     const val = answer + delta;
