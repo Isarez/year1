@@ -1252,7 +1252,7 @@
   .shadow-prompt-card{
     background:linear-gradient(180deg, #FFFDF5, #FFF3DC);
     border:4px solid var(--cat-color, #5D6D9E); border-radius:26px;
-    padding:16px 46px; box-shadow:0 8px 0 rgba(0,0,0,.08);
+    padding:30px 50px; box-shadow:0 8px 0 rgba(0,0,0,.08);
   }
   .shadow-prompt{
     font-size:clamp(100px, 21vw, 152px); line-height:1.15;
@@ -1268,11 +1268,13 @@
   .shadow-prompt.ov3{font-size:clamp(72px, 15vw, 108px);}
   .shadow-prompt.ov3 .sp-i:nth-child(2){margin-left:-.5em; transform:translateY(.12em);}
   .shadow-prompt.ov3 .sp-i:nth-child(3){margin-left:-.5em; transform:translateY(-.08em);}
-  .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; gap:16px; width:100%;}
+  /* การ์ดตัวเลือกความกว้างคงที่ (width ไม่ใช่ min-width) ให้ flex-wrap ขึ้นบรรทัดใหม่เป็นแถวสมมาตรเสมอ
+     (ของเดิมใช้ min-width ทำให้การ์ดกว้างไม่เท่ากันตามความยาวชื่อ ขึ้นบรรทัดสะเปะสะปะ) */
+  .shadow-choices{display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:18px; width:100%; max-width:620px; margin:0 auto;}
   .shadow-choice{
-    display:flex; flex-direction:column; align-items:center; gap:4px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
     background:#fff; border:3px solid #F3E2C0; border-radius:20px;
-    padding:14px 18px 10px; min-width:108px; cursor:pointer; font-family:inherit;
+    padding:14px 10px 10px; width:150px; cursor:pointer; font-family:inherit;
     box-shadow:0 5px 0 rgba(0,0,0,.07);
     transition:transform .15s ease, border-color .15s ease;
   }
@@ -1281,16 +1283,18 @@
   .shadow-choice-emoji{font-size:clamp(44px, 9vw, 60px); line-height:1.15;}
   /* ตัวเลือกแบบชุด 2-3 ชิ้น (ทายเงา 2/3): emoji เล็กลงให้การ์ดไม่บาน, ชื่อยาว ("ก + ข") ตัดขึ้นบรรทัดได้ */
   .shadow-choice-emoji.multi{font-size:clamp(32px, 6.5vw, 44px); letter-spacing:3px;}
-  .shadow-choice-name{font-size:16px; font-weight:700; color:var(--ink-soft); max-width:180px;}
+  .shadow-choice-name{font-size:16px; font-weight:700; color:var(--ink-soft); max-width:126px; text-align:center; word-break:break-word;}
   .shadow-choice.correct{border-color:var(--correct); background:var(--correct-l); animation:popCorrect .38s ease;}
   .shadow-choice.wrong{border-color:var(--wrong); background:var(--wrong-l); opacity:.55; cursor:default; animation:shakeX .45s ease;}
   @media (max-width:480px){
-    .shadow-prompt-card{padding:12px 30px;}
+    .shadow-prompt-card{padding:20px 30px;}
     .shadow-prompt{font-size:clamp(76px, 28vw, 114px);}
     .shadow-prompt.ov2{font-size:clamp(62px, 22vw, 90px);}
     .shadow-prompt.ov3{font-size:clamp(50px, 18vw, 74px);}
-    .shadow-choice{min-width:88px; padding:10px 12px 8px;}
-    .shadow-choices{gap:11px;}
+    /* กว้างคงที่ 130px บังคับให้เหลือแค่ 2 การ์ดต่อแถว บนจอแคบ กันแถวสุดท้ายเหลือใบเดียวโดดๆ ไม่สวย */
+    .shadow-choice{width:130px; padding:10px 8px 8px;}
+    .shadow-choices{gap:12px; max-width:100%;}
+    .shadow-choice-name{max-width:108px; font-size:15px;}
     .shadow-choice-emoji.multi{font-size:clamp(26px, 8vw, 36px); letter-spacing:2px;}
   }
 
