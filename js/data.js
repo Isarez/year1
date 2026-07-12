@@ -183,8 +183,8 @@ const CATS = [
     type:'skill', mode:'animals', levels:3
   },
   {
-    id:'skill-shadow', name:'ทายเงา', emoji:'🔦', icon:'assets/icons/shadow.svg', color:'#5D6D9E', light:'#E4E8F6',
-    type:'skill', mode:'shadow', levels:15, isNew:true
+    id:'skill-shadow', name:'ทายเงา 1', emoji:'🔦', icon:'assets/icons/shadow.svg', color:'#5D6D9E', light:'#E4E8F6',
+    type:'skill', mode:'shadow', levels:15
   },
   {
     id:'skill-shadow2', name:'ทายเงา 2', emoji:'👥', icon:'assets/icons/shadow-2.svg', color:'#7C5CA8', light:'#EDE3F8',
@@ -204,11 +204,11 @@ const CATS = [
   },
   {
     id:'listen-th1', name:'ฟังคำไทย 1', emoji:'🗣️', icon:'assets/icons/listen-th1.svg', color:'#F2765E', light:'#FDE1DA',
-    type:'listen', mode:'hint', lang:'th', levels:10, isNew:true
+    type:'listen', mode:'hint', lang:'th', levels:10
   },
   {
     id:'listen-th2', name:'ฟังคำไทย 2', emoji:'🔊', icon:'assets/icons/listen-th2.svg', color:'#2FAE86', light:'#D8F3EA',
-    type:'listen', mode:'nohint', lang:'th', levels:10, isNew:true
+    type:'listen', mode:'nohint', lang:'th', levels:10
   }
 ];
 
