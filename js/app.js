@@ -1120,7 +1120,8 @@ function renderShadowOverlapLevel(){
   const makeChoice = items => ({ e: items.map(x=>x.e).join(''), n: items.map(x=>x.n).join(' + '), items });
   const answer = makeChoice(ansItems);
 
-  /* ตัวหลอกชุดที่ i: แทนของจริง (i%k)+1 ชิ้นแบบวนตำแหน่ง — ชุดแรกได้แบบ "ชิ้นแรกจริง ชิ้นหลังหลอก" เสมอ */
+  /* ตัวหลอกชุดที่ i: แทนของจริง (i%k)+1 ชิ้น โดย "สุ่มตำแหน่ง" ที่ถูกแทนทุกครั้ง
+     → ได้คละกันทั้ง ชิ้นแรกจริงชิ้นหลังหลอก / ชิ้นหลังจริงชิ้นแรกหลอก / หลอกทั้งชุด */
   const seenKeys = new Set([shadowComboKey(ansItems)]);
   const choices = [answer];
   let di = 0, guard = 0;
@@ -1128,10 +1129,9 @@ function renderShadowOverlapLevel(){
     const replaceCount = (di % k) + 1;
     const items = ansItems.slice();
     const excludeEs = new Set(items.map(x=>x.e));
-    /* แทนจากท้ายชุดก่อน (คงชิ้นแรกไว้เป็นของจริงในตัวหลอกชุดแรกๆ) */
+    const positions = shuffleArray(items.map((_,i)=>i)).slice(0, replaceCount);
     let ok = true;
-    for(let r=0; r<replaceCount; r++){
-      const pos = k-1-r;
+    for(const pos of positions){
       const rep = shadowReplaceItem(pool, ansItems[pos], excludeEs);
       if(!rep){ ok = false; break; }
       items[pos] = rep; excludeEs.add(rep.e);
