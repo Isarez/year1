@@ -1187,6 +1187,50 @@ $('retry-btn').addEventListener('click', ()=>{
 });
 $('home-btn').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
 
+/* ---------- แก้ไขโปรไฟล์คุณครู (ชื่อ/โรงเรียน/avatar) — เปิดจากปุ่มดินสอคู่กับ chip ชื่อครูบน menu bar ---------- */
+let editTeacherAvatar = null;
+function openTeacherEdit(){
+  if(!profile) return;
+  editTeacherAvatar = profile.avatar;
+  const picker = $('edit-teacher-picker');
+  picker.innerHTML = '';
+  AVATARS.forEach(em=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emo-btn'+(em===editTeacherAvatar?' selected':'');
+    b.textContent = em;
+    b.addEventListener('click', ()=>{
+      playClick();
+      editTeacherAvatar = em;
+      picker.querySelectorAll('.emo-btn').forEach(x=>x.classList.toggle('selected', x===b));
+    });
+    picker.appendChild(b);
+  });
+  $('edit-teacher-name').value = profile.name;
+  $('edit-teacher-school').value = profile.school;
+  openOverlay('teacher-edit-modal');
+}
+$('teacher-chip').addEventListener('click', ()=>{ playClick(); openTeacherEdit(); });
+$('teacher-edit-btn').addEventListener('click', ()=>{ playClick(); openTeacherEdit(); });
+$('teacher-edit-cancel').addEventListener('click', ()=>{ playClick(); closeOverlay('teacher-edit-modal'); });
+$('teacher-edit-backdrop').addEventListener('click', ()=>{ closeOverlay('teacher-edit-modal'); });
+$('teacher-edit-save').addEventListener('click', ()=>{
+  playClick();
+  const name = $('edit-teacher-name').value.trim();
+  const school = $('edit-teacher-school').value.trim();
+  if(!name){ showToast('✏️','ใส่ชื่อคุณครูก่อนนะคะ'); $('edit-teacher-name').focus(); return; }
+  if(!school){ showToast('🏫','ใส่ชื่อโรงเรียนก่อนนะคะ'); $('edit-teacher-school').focus(); return; }
+  profile.name = name;
+  profile.school = school;
+  profile.avatar = editTeacherAvatar || profile.avatar;
+  saveProfile();
+  closeOverlay('teacher-edit-modal');
+  showToast('✅','บันทึกโปรไฟล์คุณครูแล้วค่ะ');
+  /* refresh ทุกจุดที่โชว์ข้อมูลครู — ถ้าอยู่หน้า home ให้ re-render greeting ด้วย */
+  refreshHeaderChip();
+  if(!homeView.hidden) renderTeacherHome();
+});
+
 /* ---------- จัดการข้อมูล: ย้ายข้อมูล (export/import) + ลบคุณครู ----------
    ย้ายเฉพาะโปรไฟล์คุณครู + โจทย์ทั้งหมด (ไม่แตะข้อมูลเด็กของหน้าหลัก)
    รูปแบบไฟล์: JSON → checksum djb2 prefix OWKT1_ → UTF-8 → Base64 (แนวเดียวกับ export เด็กหน้าหลักที่ใช้ OWK1_) */

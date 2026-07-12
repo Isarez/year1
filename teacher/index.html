@@ -68,6 +68,7 @@
   <div class="header-actions">
     <div class="child-chip-group" id="teacher-chip-group" hidden>
       <button class="child-chip" id="teacher-chip"><span id="header-teacher-emoji"></span> <span id="header-teacher-name"></span></button>
+      <button class="child-edit-btn" id="teacher-edit-btn" aria-label="แก้ไขโปรไฟล์คุณครู" data-tooltip="แก้ไขโปรไฟล์คุณครู"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg></button>
     </div>
     <button class="icon-btn" id="theme-toggle" aria-label="สลับโหมดกลางวัน/กลางคืน"></button>
     <button class="icon-btn" id="music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง"></button>
@@ -185,7 +186,7 @@
 
       <div class="builder-field">
         <div class="builder-label">โจทย์และคำตอบ <span class="builder-label-sub" id="bq-label-sub">(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)</span></div>
-        <button type="button" class="emoji-fab" id="b-emoji-btn">😀 แทรก emoji</button>
+        <button type="button" class="emoji-fab" id="b-emoji-btn">😀 แทรก emoji ในโจทย์หรือคำตอบ</button>
         <div class="emoji-insert-pop" id="emoji-insert-pop" hidden>
           <div class="emoji-pop-head">
             <p class="emoji-pop-hint">แตะช่องโจทย์/คำตอบที่ต้องการก่อน แล้วเลือก emoji ที่จะแทรกได้เลย</p>
@@ -323,7 +324,23 @@
   </div>
 </div>
 
-<footer>โหมดคุณครู — สร้างโจทย์เองเพื่อเป็นสื่อการสอน 💛<span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.teacher.test" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>โหมดคุณครู — สร้างโจทย์เองเพื่อเป็นสื่อการสอน 💛<span class="footer-credit"><img class="visitor-badge" src="https://visitor-badge.laobi.icu/badge?page_id=isarez.teacher" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+
+<!-- TEACHER PROFILE EDIT MODAL (แก้ชื่อครู/โรงเรียน/avatar) -->
+<div id="teacher-edit-modal" hidden>
+  <div class="modal-backdrop" id="teacher-edit-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-icon" id="teacher-edit-icon">✏️</div>
+    <h3 class="modal-title">แก้ไขโปรไฟล์คุณครู</h3>
+    <div class="emoji-picker" id="edit-teacher-picker"></div>
+    <input class="child-name-input" id="edit-teacher-name" type="text" placeholder="ชื่อคุณครู" maxlength="30" autocomplete="off" style="margin-top:14px;">
+    <input class="child-name-input" id="edit-teacher-school" type="text" placeholder="ชื่อโรงเรียน" maxlength="40" autocomplete="off">
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" id="teacher-edit-cancel">ยกเลิก</button>
+      <button class="modal-confirm-btn" id="teacher-edit-save">บันทึก ✅</button>
+    </div>
+  </div>
+</div>
 
 <!-- DATA MANAGE MODAL (จัดการข้อมูล: ย้ายข้อมูล / ลบคุณครู) -->
 <div id="data-modal" hidden>

@@ -2893,6 +2893,7 @@ function openEditEmojiModal(childId){
   if(!child) return;
   editingChildId = childId;
   initEditEmojiPicker(child.emoji);
+  $('edit-name-input').value = child.name;
   openOverlay('edit-emoji-modal');
 }
 $('header-edit-emoji-btn').addEventListener('click', ()=>{
@@ -2905,13 +2906,22 @@ $('edit-emoji-save-btn').addEventListener('click', ()=>{
   playClick();
   const rec = children.find(c=>c.id===editingChildId);
   if(rec && editEmojiSelected){
+    /* แก้ชื่อได้ด้วย — กติกาเดียวกับตอนสร้าง: ห้ามว่าง ห้ามซ้ำกับเด็กคนอื่น (ไม่สนตัวพิมพ์เล็ก/ใหญ่) */
+    const newName = $('edit-name-input').value.trim();
+    if(!newName){ showToast('✏️','ใส่ชื่อก่อนนะ'); $('edit-name-input').focus(); return; }
+    if(children.some(c=>c.id!==editingChildId && c.name.toLowerCase()===newName.toLowerCase())){
+      showToast('🚫','ชื่อนี้มีอยู่แล้ว ใช้ชื่ออื่นนะ');
+      $('edit-name-input').focus();
+      return;
+    }
     rec.emoji = editEmojiSelected;
-    if(activeChild && activeChild.id===editingChildId) activeChild.emoji = editEmojiSelected;
+    rec.name = newName;
+    if(activeChild && activeChild.id===editingChildId){ activeChild.emoji = editEmojiSelected; activeChild.name = newName; }
     saveChildren();
     updateHeaderChild();
     renderHome();
     if(!$('child-select-view').hidden) renderChildSelect();
-    showToast('✅','เปลี่ยน avatar แล้วจ้า!');
+    showToast('✅','บันทึกโปรไฟล์แล้วจ้า!');
   }
   closeOverlay('edit-emoji-modal');
 });

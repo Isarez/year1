@@ -283,7 +283,7 @@
     font-size:clamp(15px,4vw,17px); font-weight:700;
     display:flex; align-items:center; gap:8px;
     opacity:0; transition:opacity .22s,transform .22s;
-    pointer-events:none; z-index:160; white-space:nowrap;
+    pointer-events:none; z-index:320; white-space:nowrap;
     box-shadow:0 8px 24px rgba(0,0,0,.22);
   }
   .toast.visible{opacity:1; transform:translateX(-50%) translateY(0);}
