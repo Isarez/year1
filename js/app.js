@@ -1156,7 +1156,7 @@ function renderShadowOverlapLevel(){
   g.answerBtn = null;
   choices.forEach(item=>{
     const btn = document.createElement('button');
-    btn.className = 'shadow-choice';
+    btn.className = 'shadow-choice ov'+k;
     btn.innerHTML = '<span class="shadow-choice-emoji multi">'+item.e+'</span><span class="shadow-choice-name">'+item.n+'</span>';
     btn.addEventListener('click', ()=>pickShadowChoice(btn, item));
     if(item.e === answer.e) g.answerBtn = btn;
