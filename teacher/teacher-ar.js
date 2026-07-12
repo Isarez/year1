@@ -95,6 +95,11 @@ function renderSlotsAndCards(sentence){
   });
 }
 
+/* ต่างจากโหมดเด็ก (ซ้าย=emoji เสมอ): คู่ของครูเป็นข้อความอิสระทั้งสองฝั่ง — เลือกสไตล์ตามเนื้อหาจริง
+   emoji ล้วน → .ar-match-emoji (ตัวใหญ่), มีตัวอักษร/ตัวเลข → .ar-match-word (สไตล์ข้อความเดียวกับฝั่งขวา) */
+function matchLabelClass(text){
+  return /[\p{L}\p{N}]/u.test(text) ? 'ar-match-word' : 'ar-match-emoji';
+}
 function renderMatchPairs(items, n){
   const svg = $('ar-match-svg');
   svg.innerHTML = '';
@@ -112,7 +117,7 @@ function renderMatchPairs(items, n){
     const row = document.createElement('div');
     row.className = 'ar-match-item';
     row.dataset.key = i;
-    row.innerHTML = '<span class="ar-match-emoji">'+it.e+'</span><span class="ar-dot" data-side="left" data-key="'+i+'"></span>';
+    row.innerHTML = '<span class="'+matchLabelClass(it.e)+'">'+it.e+'</span><span class="ar-dot" data-side="left" data-key="'+i+'"></span>';
     leftCol.appendChild(row);
   });
   rightOrder.forEach(i=>{
@@ -120,7 +125,7 @@ function renderMatchPairs(items, n){
     const row = document.createElement('div');
     row.className = 'ar-match-item';
     row.dataset.key = i;
-    row.innerHTML = '<span class="ar-dot" data-side="right" data-key="'+i+'"></span><span class="ar-match-word">'+it.w+'</span>';
+    row.innerHTML = '<span class="ar-dot" data-side="right" data-key="'+i+'"></span><span class="'+matchLabelClass(it.w)+'">'+it.w+'</span>';
     rightCol.appendChild(row);
   });
 
