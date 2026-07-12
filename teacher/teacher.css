@@ -56,7 +56,7 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
 
 /* ============ Builder form ============ */
 .builder-card{
-  max-width:720px; margin:14px auto 50px;
+  width:100%; max-width:100%; margin:14px auto 50px;
   background:rgba(255,255,255,.94); border-radius:26px;
   padding:26px 24px 30px; box-shadow:0 8px 0 rgba(0,0,0,.07);
   display:flex; flex-direction:column; gap:22px;
@@ -208,7 +208,7 @@ body.emoji-pop-open .emoji-fab{display:none;}
 
 /* หน้าจัดการโจทย์ */
 .manage-card{
-  max-width:720px; margin:14px auto 50px;
+  width:100%; max-width:100%; margin:14px auto 50px;
   background:rgba(255,255,255,.94); border-radius:26px;
   padding:22px 20px 26px; box-shadow:0 8px 0 rgba(0,0,0,.07);
   display:flex; flex-direction:column; gap:14px;
