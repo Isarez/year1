@@ -446,7 +446,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -487,7 +487,7 @@ wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
   renderChildSelect();
 });
 
@@ -551,6 +551,7 @@ function renderHome(){
       playClick();
       if(cat.type==='ar') startARGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='shadow') startShadowGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='mix') startMixGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else startQuiz(cat.id);
@@ -575,7 +576,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -738,12 +739,13 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='memory'){ startMemoryGame(lastCatId); }
   else if(lastGameType==='listen'){ startListenGame(lastCatId); }
   else if(lastGameType==='shadow'){ startShadowGame(lastCatId); }
+  else if(lastGameType==='mix'){ startMixGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -766,7 +768,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1015,7 +1017,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1236,6 +1238,323 @@ $('shadow-back').addEventListener('click', ()=>{
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
+/* ============================= COLOR MIXING GAME (เกมผสมสี 1/2 — หม้อผสมสีวิเศษ) ============================= */
+/* mechanic: แตะกระปุกสีหยอดลงหม้อ พอครบจำนวนที่ต้องหยอด หม้อคนอัตโนมัติแล้วโชว์ "สีผลลัพธ์จริง" ของคู่ที่เลือก
+   (ตอบผิดเด็กได้เห็นว่าคู่นั้นผสมแล้วได้สีอะไรจริงๆ ไม่ใช่แค่บอกว่าผิด) — ผสมสี 1: เลือก 2 สีเองทั้งคู่,
+   ผสมสี 2 (mixAdvanced) ด่าน 1-5: หม้อมีสีตั้งต้นให้แล้ว หาสีที่หายไป, ด่าน 6-10: ผสม 3 สี 2 จังหวะ (หม้อโชว์สีกลางทาง) */
+let mixGame = null; // {catId, level, mistakes, totalLevels, advanced, queue, entry, jars, pours, prefill, needed, mixedCount, locked}
+
+/* คิวโจทย์ทั้งรอบ: สุ่มลำดับสูตร ถ้าต้องการมากกว่าจำนวนสูตรในกลุ่ม เติมแบบสุ่มโดยไม่ให้ซ้ำติดกัน */
+function buildMixQueue(recipes, count){
+  const arr = shuffleArray(recipes.slice());
+  let guard = 0;
+  while(arr.length < count && guard++ < 50){
+    const r = recipes[Math.floor(Math.random()*recipes.length)];
+    if(r !== arr[arr.length-1]) arr.push(r);
+  }
+  return arr.slice(0, count);
+}
+
+/* ผสมค่าสีแบบเฉลี่ย RGB — ใช้โชว์สีในหม้อของคู่ที่ "ไม่มีในตารางสูตร" (ตอบผิด) ให้เด็กเห็นผลจริงเสมอ */
+function mixHexAvg(ids){
+  let r = 0, g = 0, b = 0;
+  ids.forEach(id=>{
+    const hex = MIX_COLORS[id].c;
+    r += parseInt(hex.slice(1,3),16); g += parseInt(hex.slice(3,5),16); b += parseInt(hex.slice(5,7),16);
+  });
+  const n = ids.length;
+  const to2 = v => Math.round(v/n).toString(16).padStart(2,'0');
+  return '#'+to2(r)+to2(g)+to2(b);
+}
+function mixKey(ids){ return ids.slice().sort().join('+'); }
+function mixLookup(ids){
+  if(ids.length !== 2) return null;
+  const key = mixKey(ids);
+  const rec = MIX_RECIPES.find(r=>mixKey(r.mix)===key);
+  return rec ? rec.out : null;
+}
+
+function startMixGame(catId){
+  stopARGame();
+  lastGameType = 'mix'; lastCatId = catId;
+  const cat = catById(catId);
+  const advanced = !!cat.mixAdvanced;
+  let queue;
+  if(advanced){
+    /* ผสมสี 2: ด่าน 1-5 หาเองทั้ง 2 สี (สูตรยากขึ้น tier 2-3 หลากหลาย), ด่าน 6-10 ผสม 3 สี 2 จังหวะ */
+    const hardPool = MIX_RECIPES.filter(r=>r.tier>=2);
+    queue = shuffleArray(hardPool.slice()).slice(0,5).map(r=>({kind:'both', recipe:r}))
+      .concat(shuffleArray(MIX_TWOSTEP.slice()).map(r=>({kind:'twostep', recipe:r})));
+  } else {
+    /* ผสมสี 1: หม้อเฉลยสีตั้งต้นให้ 1 สี ให้หา "คู่สี" มาเติม — ไล่ความยากตาม tier, สุ่มสูตร+สุ่มฝั่งที่เฉลยทุกรอบ */
+    const tier = t => MIX_RECIPES.filter(r=>r.tier===t);
+    queue = buildMixQueue(tier(1),4).concat(buildMixQueue(tier(2),3), buildMixQueue(tier(3),3))
+      .map(r=>({kind:'missing', recipe:r}));
+  }
+  mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
+              entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('mix-cat-label', cat);
+  renderMixLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderMixLevel(){
+  const g = mixGame;
+  const entry = g.queue[g.level-1];
+  g.entry = entry; g.pours = []; g.mixedCount = 0; g.locked = false;
+  const rec = entry.recipe;
+  const allIds = Object.keys(MIX_COLORS);
+
+  if(entry.kind==='twostep'){
+    g.prefill = null;
+    g.needed = rec.steps.slice();
+    const jarCount = g.level<=7 ? 4 : 5;
+    g.jars = rec.steps.slice();
+    const extras = shuffleArray(allIds.filter(id=>!rec.steps.includes(id)));
+    while(g.jars.length < jarCount && extras.length) g.jars.push(extras.pop());
+    $('mix-hint').textContent = '🌀 สีนี้ต้องผสมถึง 3 สี! ค่อยๆ หยอดทีละสี ดูสีในหม้อเปลี่ยนไปเรื่อยๆ นะ';
+  } else if(entry.kind==='missing'){
+    /* ผสมสี 1: เฉลยสีตั้งต้นในหม้อ 1 สี (สุ่มฝั่ง) ให้หาคู่สีที่เหลือมาเติม */
+    g.prefill = rec.mix[Math.floor(Math.random()*2)];
+    g.needed = rec.mix.slice();
+    const missing = rec.mix.find(id=>id!==g.prefill);
+    const jarCount = g.level<=4 ? 3 : (g.level<=7 ? 4 : 5);
+    g.jars = [missing];
+    const extras = shuffleArray(allIds.filter(id=>id!==missing && id!==g.prefill));
+    while(g.jars.length < jarCount && extras.length) g.jars.push(extras.pop());
+    $('mix-hint').textContent = '🔍 ในหม้อมี'+MIX_COLORS[g.prefill].n+'อยู่แล้ว เติมอีกสีเดียวให้กลายเป็น'+rec.out.n+'นะ!';
+  } else {
+    /* ผสมสี 2 ด่าน 1-5: ไม่เฉลยเลย หาเองทั้ง 2 สี */
+    g.prefill = null;
+    g.needed = rec.mix.slice();
+    const jarCount = g.level<=2 ? 4 : 5;
+    g.jars = rec.mix.slice();
+    const extras = shuffleArray(allIds.filter(id=>!rec.mix.includes(id)));
+    while(g.jars.length < jarCount && extras.length) g.jars.push(extras.pop());
+    $('mix-hint').textContent = '🎨 ด่านนี้ต้องหาเองทั้ง 2 สี! เลือกหยอดลงหม้อให้กลายเป็น'+rec.out.n+'นะ';
+  }
+  shuffleArray(g.jars);
+
+  $('mix-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('mix-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('mix-target-text').innerHTML = 'ช่วยทำ<b>'+rec.out.n+'</b>ให้หน่อยนะ!';
+  $('mix-target-swatch').style.background = rec.out.c;
+  $('mix-msg').hidden = true;
+
+  const pot = $('mix-pot');
+  pot.classList.remove('stirring','happy','sad');
+  const liquid = $('mix-pot-liquid');
+  liquid.classList.remove('draining');
+  if(g.prefill){ liquid.style.background = MIX_COLORS[g.prefill].c; liquid.classList.add('filled'); }
+  else { liquid.classList.remove('filled'); }
+  renderMixChips();
+
+  const jarsWrap = $('mix-jars');
+  jarsWrap.innerHTML = '';
+  g.jars.forEach(id=>{
+    const col = MIX_COLORS[id];
+    const btn = document.createElement('button');
+    btn.className = 'mix-jar';
+    btn.dataset.color = id;
+    btn.innerHTML = '<span class="mix-jar-pot" style="--jc:'+col.c+'"><span class="mix-jar-lid"></span><span class="mix-jar-drip"></span></span><span class="mix-jar-name">'+col.n+'</span>';
+    btn.addEventListener('click', ()=>mixPour(id, btn));
+    jarsWrap.appendChild(btn);
+  });
+}
+
+/* แถวจุดสีใต้หม้อ: โชว์สีที่หยอดไปแล้ว (สีตั้งต้นของโหมดหาสีที่หายไปมีแม่กุญแจ ตักออกไม่ได้)
+   จุดสีที่เพิ่งหยอดและยังไม่ถูกคนผสม แตะซ้ำเพื่อตักออกได้ */
+function renderMixChips(){
+  const g = mixGame;
+  const wrap = $('mix-pot-chips');
+  wrap.innerHTML = '';
+  const addChip = (id, removable)=>{
+    const chip = document.createElement('button');
+    chip.className = 'mix-chip'+(removable ? ' removable' : '');
+    chip.style.background = MIX_COLORS[id].c;
+    chip.title = MIX_COLORS[id].n;
+    if(removable){
+      chip.addEventListener('click', ()=>{
+        if(g.locked || g.pours.length!==1 || g.mixedCount>0) return;
+        playClick();
+        g.pours = [];
+        $('mix-pot-liquid').classList.remove('filled');
+        const jarBtn = $('mix-jars').querySelector('.mix-jar[data-color="'+id+'"]');
+        if(jarBtn) jarBtn.classList.remove('used');
+        renderMixChips();
+      });
+    }
+    wrap.appendChild(chip);
+  };
+  if(g.prefill) addChip(g.prefill, false);
+  g.pours.forEach(id=>{
+    addChip(id, g.pours.length===1 && g.mixedCount===0 && !g.locked);
+  });
+}
+
+/* effect กระปุกสีลอยไปเทที่ปากหม้อ: clone กระปุกเป็น ghost ตำแหน่ง fixed แล้ว transition ไปเหนือหม้อพร้อมเอียงเท */
+function mixPourEffect(colorId, jarBtn, done){
+  const potRim = document.querySelector('#mix-pot .mix-pot-rim');
+  const src = jarBtn.querySelector('.mix-jar-pot');
+  if(!potRim || !src){ done(); return; }
+  const from = src.getBoundingClientRect();
+  const to = potRim.getBoundingClientRect();
+  const ghost = document.createElement('span');
+  ghost.className = 'mix-pour-ghost';
+  ghost.style.setProperty('--jc', MIX_COLORS[colorId].c);
+  ghost.style.left = from.left+'px';
+  ghost.style.top = from.top+'px';
+  ghost.style.width = from.width+'px';
+  ghost.style.height = from.height+'px';
+  document.body.appendChild(ghost);
+  const dx = (to.left + to.width/2) - (from.left + from.width/2) + from.width*0.7;
+  const dy = (to.top - from.height*1.15) - from.top;
+  requestAnimationFrame(()=>{ ghost.style.transform = 'translate('+dx+'px,'+dy+'px) rotate(-115deg)'; });
+  setTimeout(()=>{ ghost.classList.add('poured'); }, 500);
+  setTimeout(()=>{ ghost.remove(); done(); }, 760);
+}
+
+function mixPour(colorId, jarBtn){
+  const g = mixGame;
+  if(!g || g.locked) return;
+  if(jarBtn.classList.contains('used')) return;
+  playClick();
+  jarBtn.classList.add('used');
+  g.locked = true; /* ล็อกระหว่าง effect เท กันกดรัว — ปลดเมื่อจบจังหวะที่ไม่ใช่การตัดสินผล */
+  g.pours.push(colorId);
+  const liquid = $('mix-pot-liquid');
+  const potHadContent = !!g.prefill || g.pours.length > 1;
+  const totalNeeded = g.needed.length - (g.prefill ? 1 : 0);
+
+  mixPourEffect(colorId, jarBtn, ()=>{
+    if(!potHadContent){
+      /* สีแรกของหม้อเปล่า: เทลงไปเฉยๆ ยังไม่ต้องคน */
+      liquid.style.background = MIX_COLORS[colorId].c;
+      liquid.classList.add('filled');
+      g.locked = false;
+      renderMixChips();
+      return;
+    }
+
+    /* มีสีในหม้ออยู่แล้ว → คนผสมอัตโนมัติ */
+    const isFinal = g.pours.length >= totalNeeded;
+    const effective = (g.prefill ? [g.prefill] : []).concat(g.pours);
+    const pot = $('mix-pot');
+    renderMixChips();
+    pot.classList.add('stirring');
+    setTimeout(()=>{
+      pot.classList.remove('stirring');
+      g.mixedCount = g.pours.length;
+      if(!isFinal){
+        /* จังหวะกลางทางของโหมดผสม 2 ขั้น: โชว์สีกลางทาง (จากตารางสูตรถ้ามี ไม่มีก็เฉลี่ยสี) */
+        const mid = mixLookup(effective);
+        liquid.style.background = mid ? mid.c : mixHexAvg(effective);
+        g.locked = false;
+        renderMixChips();
+        return;
+      }
+      finishMixPour(effective);
+    }, 950);
+  });
+}
+
+function finishMixPour(effective){
+  const g = mixGame;
+  const rec = g.entry.recipe;
+  const correct = mixKey(effective) === mixKey(g.needed);
+  const liquid = $('mix-pot-liquid');
+  const pot = $('mix-pot');
+  const resultOut = correct ? rec.out : (mixLookup(effective) || {n:null, c:mixHexAvg(effective)});
+  liquid.style.background = resultOut.c;
+  const msg = $('mix-msg');
+
+  if(correct){
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    pot.classList.add('happy');
+    msg.textContent = '🎉 ได้'+rec.out.n+'แล้ว เก่งมาก!';
+    msg.hidden = false;
+    $('mix-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{
+      if(g.level >= g.totalLevels){ finishMixGame(); }
+      else { g.level++; renderMixLevel(); }
+    }, 1500);
+  } else {
+    g.mistakes++;
+    playWrong(); showOwlMsg('wrong');
+    pot.classList.add('sad');
+    msg.textContent = resultOut.n
+      ? '💧 ได้'+resultOut.n+'แทนแฮะ ยังไม่ใช่'+rec.out.n+' เทออกแล้วลองใหม่นะ!'
+      : '💧 ได้สีแปลกๆ แฮะ ยังไม่ใช่'+rec.out.n+' เทออกแล้วลองใหม่นะ!';
+    msg.hidden = false;
+    setTimeout(()=>{
+      liquid.classList.add('draining');
+      setTimeout(()=>{
+        /* รีเซ็ตหม้อ โจทย์เดิม ให้ลองใหม่ (คงสีตั้งต้นไว้ถ้าเป็นโหมดหาสีที่หายไป) */
+        g.pours = []; g.mixedCount = 0; g.locked = false;
+        liquid.classList.remove('draining');
+        pot.classList.remove('sad');
+        if(g.prefill){ liquid.style.background = MIX_COLORS[g.prefill].c; }
+        else { liquid.classList.remove('filled'); }
+        msg.hidden = true;
+        renderMixChips();
+        $('mix-jars').querySelectorAll('.mix-jar').forEach(b=>b.classList.remove('used'));
+      }, 550);
+    }, 1700);
+  }
+}
+
+function finishMixGame(){
+  const cat = catById(mixGame.catId);
+  const mistakes = mixGame.mistakes;
+  const totalLevels = mixGame.totalLevels;
+  mixView.hidden = true; resultView.hidden = false;
+
+  /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row');
+  starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{
+    setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220);
+  });
+  $('score-line').textContent = 'ผสมสีครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false;
+    setStickerEarned(cat);
+    pendingSticker = cat.id;
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('mix-back').addEventListener('click', ()=>{
+  playClick();
+  mixView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
 /* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */
 /* mode:'hint' (ฟังคำศัพท์ 1) เฉลยบางตัวอักษรให้ในช่องคำตอบ (ด่าน 1-5 เฉลย 2 ตัว, ด่าน 6-10 เฉลย 1 ตัว)
    mode:'nohint' (ฟังคำศัพท์ 2) ไม่เฉลยเลย เด็กหาและเรียงตัวอักษรเองทั้งหมดทุกด่าน */
@@ -1287,7 +1606,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -2570,7 +2889,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));

@@ -197,6 +197,43 @@
     </div>
   </section>
 
+  <!-- COLOR MIXING VIEW (เกมผสมสี 1/2 — หม้อผสมสีวิเศษ) -->
+  <section id="mix-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="mix-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="mix-cat-label">ผสมสี</div>
+        <div class="progress-track"><div class="progress-fill" id="mix-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="mix-hint">🎨 แตะกระปุกสีเพื่อหยอดสีลงหม้อนะ!</div>
+      </div>
+      <div class="q-counter" id="mix-level-counter">1/10</div>
+    </div>
+    <div class="mix-board">
+      <div class="mix-target-card">
+        <div class="mix-target-text" id="mix-target-text">ช่วยทำ<b>สีส้ม</b>ให้หน่อยนะ!</div>
+        <div class="mix-target-swatch" id="mix-target-swatch"></div>
+      </div>
+      <div class="mix-pot-wrap">
+        <div class="mix-msg" id="mix-msg" hidden></div>
+        <div class="mix-pot" id="mix-pot">
+          <div class="mix-ladle"><span class="mix-ladle-bowl"></span></div>
+          <div class="mix-pot-rim"></div>
+          <div class="mix-pot-body">
+            <div class="mix-pot-liquid" id="mix-pot-liquid"></div>
+            <div class="mix-pot-face">
+              <span class="mpf-eye l"></span><span class="mpf-eye r"></span>
+              <span class="mpf-cheek l"></span><span class="mpf-cheek r"></span>
+              <span class="mpf-mouth"></span>
+              <span class="mpf-tear"></span>
+            </div>
+          </div>
+        </div>
+        <div class="mix-pot-chips" id="mix-pot-chips"></div>
+      </div>
+      <div class="mix-jars" id="mix-jars"></div>
+    </div>
+  </section>
+
   <!-- LISTEN WORD-SPELLING VIEW (เกมฟังคำศัพท์ 1/2) -->
   <section id="listen-view" hidden>
     <div class="quiz-top">

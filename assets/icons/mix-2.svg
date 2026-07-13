@@ -1,0 +1,30 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ผสมสี 2">
+  <defs>
+    <linearGradient id="mix2Pot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8394C7"/>
+      <stop offset="1" stop-color="#6C7DB0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="21" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- หยดสี 3 สี (แดง เหลือง ขาว) — โจทย์ผสมหลายขั้น -->
+  <path d="M12 5c2.6 3.5 4 5.4 4 7.4a4 4 0 1 1-8 0c0-2 1.4-3.9 4-7.4z" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
+  <path d="M32 3c2.6 3.5 4 5.4 4 7.4a4 4 0 1 1-8 0c0-2 1.4-3.9 4-7.4z" fill="#FDD835" stroke="#C7A500" stroke-width="2"/>
+  <path d="M52 5c2.6 3.5 4 5.4 4 7.4a4 4 0 1 1-8 0c0-2 1.4-3.9 4-7.4z" fill="#FDFDFD" stroke="#9E9E9E" stroke-width="2"/>
+
+  <!-- เครื่องหมายคำถามเล็กๆ: ต้องคิดย้อนว่าใช้สีอะไร -->
+  <text x="32" y="22" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#5D6D9E" text-anchor="middle">?</text>
+
+  <!-- หม้อ -->
+  <circle cx="9" cy="36" r="4.5" fill="#5D6D9E"/>
+  <circle cx="55" cy="36" r="4.5" fill="#5D6D9E"/>
+  <rect x="10" y="26" width="44" height="7" rx="3.5" fill="#5D6D9E"/>
+  <path d="M12 33h40v8c0 9.5-8 16-20 16S12 50.5 12 41v-8z" fill="url(#mix2Pot)" stroke="#4A5885" stroke-width="2.5"/>
+  <!-- สีส้มอ่อนในหม้อ (ผสม 2 ขั้น: แดง+เหลือง แล้วเติมขาว) -->
+  <path d="M15 36h34v5c0 7.4-6.8 13-17 13s-17-5.6-17-13v-5z" fill="#FFCC80"/>
+  <ellipse cx="32" cy="37.5" rx="15" ry="2.6" fill="#FFE0B2"/>
+  <!-- ตายิ้มบนหม้อ -->
+  <circle cx="26" cy="46" r="1.8" fill="#3B3B3B"/>
+  <circle cx="38" cy="46" r="1.8" fill="#3B3B3B"/>
+  <path d="M28 50.5c1.4 1.6 6.6 1.6 8 0" stroke="#3B3B3B" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>
