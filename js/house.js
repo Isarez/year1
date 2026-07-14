@@ -70,7 +70,7 @@ const hChar = {                       /* สถานะตัวละครใ
   path: [], seg: 0, segT: 0, segFrom: null, walking: false,
   targetRotY: Math.PI, pendingEnter: false, pendingExit: false,
 };
-const creatorState = {dragging:false, lastX:0, autoRot:true, rotY:0, fromWorld:false};
+const creatorState = {dragging:false, lastX:0, rotY:0, rotTarget:0, fromWorld:false};
 
 /* ---------- data ---------- */
 function loadHouseData(){
@@ -394,10 +394,10 @@ function applyCamera(){
       camera.left = -vc*W; camera.right = (1-vc)*W;
       camera.top = 2.2; camera.bottom = camera.top - H;
     }else{
-      /* มือถือ: แผงเป็น bottom sheet — เลื่อนเฟรมให้ตัวละคร "เต็มตัวรวมรองเท้า"
-         อยู่ในพื้นที่ว่างเหนือแผง (แผงสูง ~56-60vh — เผื่อเฟรมถึง y -0.35 ที่ ~42% บนจอ) */
-      const H = 5.0;
-      camera.top = 1.0; camera.bottom = camera.top - H;
+      /* มือถือ: แผงเป็น bottom sheet — พื้นที่ว่างจริงคือระหว่างแถบบน (~70px)
+         กับขอบแผง (~60vh) จัดเฟรมให้หัวจรดรองเท้าอยู่ในช่องนั้นพอดี ไม่โดนตัด/บัง */
+      const H = 6.4;
+      camera.top = 1.58; camera.bottom = camera.top - H;
       camera.left = -H*aspect/2; camera.right = H*aspect/2;
     }
     camera.position.set(0, 2.1, 6.2); camera.lookAt(0, .75, 0);
@@ -481,7 +481,7 @@ function bindCanvasInput(canvas){
       pinchDist = Math.hypot(a.x-b.x, a.y-b.y);
     }
     downX = e.clientX; downY = e.clientY; downT = performance.now(); moved = false;
-    if(hMode==='creator'){ creatorState.dragging = true; creatorState.lastX = e.clientX; creatorState.autoRot = false; }
+    if(hMode==='creator'){ creatorState.dragging = true; creatorState.lastX = e.clientX; }
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', e=>{
@@ -490,6 +490,7 @@ function bindCanvasInput(canvas){
     if(Math.hypot(e.clientX-downX, e.clientY-downY) > 10) moved = true;
     if(hMode==='creator' && creatorState.dragging && pointers.size===1){
       creatorState.rotY += (e.clientX - creatorState.lastX) * .012;
+      creatorState.rotTarget = creatorState.rotY;
       creatorState.lastX = e.clientX;
     }
     if(pointers.size===2 && hMode==='world'){
@@ -643,10 +644,11 @@ let creatorCfg = null;
 function openCreator(fromWorld){
   hMode = 'creator';
   creatorState.fromWorld = fromWorld;
-  creatorState.autoRot = true; creatorState.rotY = 0;
+  creatorState.rotY = 0; creatorState.rotTarget = 0;
   const saved = loadHouseData();
   creatorCfg = Object.assign({}, H_DEFAULT_CHAR, (saved && saved.char) || {});
   $('house-creator').hidden = false;
+  $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
   $('house-hint').hidden = true;
   $('house-creator-title').textContent = fromWorld ? '✏️ แก้ไขตัวละครของหนู' : '🧒 สร้างตัวละครของหนู';
@@ -663,6 +665,7 @@ function closeCreator(){
   if(typeof showToast==='function') showToast('🎉', 'เก่งมาก! ตัวละครของหนูพร้อมแล้ว');
   hMode = 'world';
   $('house-creator').hidden = true;
+  $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
   creatorGroup.visible = false;
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
@@ -692,7 +695,10 @@ function frame(t){
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator'){
-    if(creatorState.autoRot) creatorState.rotY += dt*.7;
+    /* ไม่มี auto-rotate (ผู้ใช้ขอเอาออก) — หมุนนุ่มๆ เข้าหามุมจากปุ่ม ↺/↻ หรือหมุนตามนิ้วลากตรงๆ */
+    if(!creatorState.dragging){
+      creatorState.rotY += (creatorState.rotTarget - creatorState.rotY) * Math.min(1, dt*9);
+    }
     if(charGroup){
       charGroup.rotation.y = creatorState.rotY;
       /* ท่ายืนหายใจเบาๆ ให้ดูมีชีวิต */
@@ -773,6 +779,7 @@ function startHouseGame(){
   }else{
     hMode = 'world';
     $('house-creator').hidden = true;
+    $('house-rotate-wrap').hidden = true;
     $('house-edit-btn').hidden = false;
     creatorGroup.visible = false;
     if(childChanged || !charGroup) rebuildChar(data.char);
@@ -805,5 +812,13 @@ $('house-edit-btn').addEventListener('click', ()=>{
 $('house-done-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   closeCreator();
+});
+$('house-rot-left').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  creatorState.rotTarget += Math.PI/4;
+});
+$('house-rot-right').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  creatorState.rotTarget -= Math.PI/4;
 });
 })();
