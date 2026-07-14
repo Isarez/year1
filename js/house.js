@@ -439,15 +439,39 @@ function applyCamera(){
   }
   camera.updateProjectionMatrix();
 }
-function updateLights(){
-  const night = (typeof isNightMode==='function') && isNightMode();
-  if(night){
-    hemiLight.color.set(0x8fa3d9); hemiLight.groundColor.set(0x39406b); hemiLight.intensity = .55;
-    dirLight.color.set(0xbcd0ff); dirLight.intensity = .5;
-  }else{
-    hemiLight.color.set(0xfff6e0); hemiLight.groundColor.set(0xcde8b0); hemiLight.intensity = .62;
-    dirLight.color.set(0xffffff); dirLight.intensity = .68;
+/* แสงเช้า↔กลางคืน: ตอนสลับธีมค่อยๆ เกลี่ยสี/ความสว่าง ~2s (เท่าจังหวะ crossfade
+   ท้องฟ้า CSS ของแอปหลัก) — instant ใช้ตอนเพิ่งเข้า view ให้ตรงธีมทันที */
+let lightLerp = null;
+function lightTargets(night){
+  return night
+    ? {hi:.55, di:.5,  hc:new THREE.Color(0x8fa3d9), hg:new THREE.Color(0x39406b), dc:new THREE.Color(0xbcd0ff)}
+    : {hi:.62, di:.68, hc:new THREE.Color(0xfff6e0), hg:new THREE.Color(0xcde8b0), dc:new THREE.Color(0xffffff)};
+}
+function updateLights(instant){
+  const to = lightTargets((typeof isNightMode==='function') && isNightMode());
+  if(instant){
+    hemiLight.intensity = to.hi; dirLight.intensity = to.di;
+    hemiLight.color.copy(to.hc); hemiLight.groundColor.copy(to.hg); dirLight.color.copy(to.dc);
+    lightLerp = null;
+    return;
   }
+  lightLerp = {k:0, dur:2,
+    from:{hi:hemiLight.intensity, di:dirLight.intensity,
+          hc:hemiLight.color.clone(), hg:hemiLight.groundColor.clone(), dc:dirLight.color.clone()},
+    to};
+}
+function updateLightLerp(dt){
+  if(!lightLerp) return;
+  lightLerp.k += dt/lightLerp.dur;
+  const k = Math.min(1, lightLerp.k);
+  const e = k*k*(3-2*k); /* smoothstep */
+  const {from, to} = lightLerp;
+  hemiLight.intensity = from.hi + (to.hi-from.hi)*e;
+  dirLight.intensity = from.di + (to.di-from.di)*e;
+  hemiLight.color.lerpColors(from.hc, to.hc, e);
+  hemiLight.groundColor.lerpColors(from.hg, to.hg, e);
+  dirLight.color.lerpColors(from.dc, to.dc, e);
+  if(k>=1) lightLerp = null;
 }
 function initThree(){
   if(hInit) return true;
@@ -807,7 +831,7 @@ function updateFx(now, dt){
 }
 
 /* ---------- สัตว์ตัวเล็กเดินเข้า-ออกฉาก (นก/กระต่าย/กระรอก) ให้โลกมีชีวิต ---------- */
-const CRITTER_MAX = 3;
+const CRITTER_MAX = 4;
 const critters = [];
 let critterSpawnT = 3;
 let outEdgeTiles = null;
@@ -860,7 +884,7 @@ function buildCritter(type){
     });
     const tail = box(.06,.025,.15,c); tail.position.set(0,.16,-.18); g.add(tail);
     [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.3,.17); g.add(eye); });
-  }else{ /* squirrel */
+  }else if(type==='squirrel'){
     const c = 0xa1887f;
     const body = box(.2,.18,.26,c); body.position.y = .14; g.add(body);
     const head = box(.16,.14,.14,c); head.position.set(0,.27,.14); g.add(head);
@@ -868,15 +892,50 @@ function buildCritter(type){
     const tail = box(.08,.32,.08,0x8d6e63); tail.rotation.x = -.55; tail.position.set(0,.28,-.24); g.add(tail); u.tail = tail;
     const nose = sphere(.02,0x5d4037,6); nose.position.set(0,.27,.22); g.add(nose);
     [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.3,.2); g.add(eye); });
+  }else if(type==='chicken'){
+    const c = 0xfdf6ec;
+    const body = box(.24,.2,.28,c); body.position.y = .17; g.add(body);
+    const head = box(.15,.16,.14,c); head.position.set(0,.36,.12); g.add(head); u.head = head;
+    const comb = box(.04,.08,.1,0xe53935); comb.position.set(0,.47,.1); g.add(comb);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(.03,.08,6), toonMat(0xf5a623));
+    beak.castShadow = hShadows; beak.rotation.x = Math.PI/2; beak.position.set(0,.35,.22); g.add(beak);
+    const wattle = sphere(.025,0xe53935,6); wattle.position.set(0,.29,.19); g.add(wattle);
+    const tail = box(.06,.14,.1,0xe8ddc8); tail.rotation.x = .5; tail.position.set(0,.26,-.16); g.add(tail);
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.38,.18); g.add(eye); });
+  }else if(type==='cat'){
+    const c = Math.random()<.5 ? 0xffb74d : 0x90a4ae;
+    const body = box(.22,.18,.36,c); body.position.y = .15; g.add(body);
+    const head = box(.2,.17,.16,c); head.position.set(0,.32,.2); g.add(head);
+    [-1,1].forEach(s=>{ const ear = new THREE.Mesh(new THREE.ConeGeometry(.045,.09,4), toonMat(c));
+      ear.castShadow = hShadows; ear.position.set(.07*s,.44,.18); g.add(ear); });
+    const tail = box(.05,.3,.05,c); tail.rotation.x = -.6; tail.position.set(0,.26,-.3); g.add(tail); u.tail = tail;
+    const muzzle = box(.08,.05,.03,0xfff3e0); muzzle.position.set(0,.28,.285); g.add(muzzle);
+    const nose = sphere(.016,0xe57373,6); nose.position.set(0,.31,.29); g.add(nose);
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x2e7d32,6); eye.position.set(.06*s,.34,.285); g.add(eye); });
+  }else if(type==='duck'){
+    const body = sphere(.16,0xfff8e7,10); body.scale.set(1,.75,1.3); body.position.y = .1; g.add(body);
+    const head = sphere(.1,0xfff8e7,10); head.position.set(0,.3,.14); g.add(head); u.head = head;
+    const beak = box(.09,.03,.1,0xf5a623); beak.position.set(0,.28,.26); g.add(beak);
+    const wing = box(.05,.08,.18,0xf3e5c3); wing.position.set(.13,.12,-.02); g.add(wing);
+    const wing2 = box(.05,.08,.18,0xf3e5c3); wing2.position.set(-.13,.12,-.02); g.add(wing2);
+    const tail = box(.07,.05,.08,0xf3e5c3); tail.rotation.x = .5; tail.position.set(0,.14,-.2); g.add(tail);
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.33,.21); g.add(eye); });
+  }else{ /* fish */
+    const c = [0xff8a65,0x4fc3f7,0xffd54f][(Math.random()*3)|0];
+    const body = sphere(.11,c,10); body.scale.set(.8,.9,1.6); body.position.y = .05; g.add(body);
+    const tailf = new THREE.Mesh(new THREE.ConeGeometry(.07,.14,6), toonMat(c));
+    tailf.castShadow = hShadows; tailf.rotation.x = -Math.PI/2; tailf.position.set(0,.05,-.22); g.add(tailf); u.tail = tailf;
+    const fin = box(.02,.08,.09,c); fin.position.set(0,.15,0); g.add(fin);
+    [-1,1].forEach(s=>{ const eye = sphere(.015,0x33261d,6); eye.position.set(.06*s,.08,.13); g.add(eye); });
   }
   g.userData.hCritter = g;             /* tag ไว้ที่ group — ancestor walk ตอน raycast เจอแน่ */
   g.userData.anim = u;
   return g;
 }
 
-function critterLine(c, from, to, speed){
+function critterLine(c, from, to, speed, arc){
   c.mode = 'line';
-  c.line = {a: from.clone(), b: to.clone(), k: 0, dur: Math.max(.25, from.distanceTo(to)/speed)};
+  c.line = {a: from.clone(), b: to.clone(), k: 0, dur: Math.max(.25, from.distanceTo(to)/speed), arc: arc||0};
   c.group.rotation.y = Math.atan2(to.x-from.x, to.z-from.z);
 }
 function critterPathTo(c, toTile){
@@ -888,23 +947,41 @@ function critterPathTo(c, toTile){
 }
 function critterTileV(t){ return new THREE.Vector3(outWX(t.x), 0, outWZ(t.z)); }
 
+/* น้ำในคลอง: world x ∈ [2.0,4.0] (gx 11-12), แบ่งเหนือ/ใต้สะพาน (สัตว์น้ำไม่ลอดใต้สะพาน) */
+const WATER_Y = -.13;
+function randWaterPoint(region){
+  return new THREE.Vector3(region.xmin + Math.random()*(region.xmax-region.xmin), WATER_Y,
+                           region.zmin + Math.random()*(region.zmax-region.zmin));
+}
+const CRITTER_DOMAIN = {rabbit:'land', squirrel:'land', chicken:'land', cat:'land', bird:'air', duck:'water', fish:'water'};
+
 function spawnCritter(){
   if(!outEdgeTiles || !outEdgeTiles.length) return;
-  const type = ['rabbit','bird','squirrel'][(Math.random()*3)|0];
+  const types = ['rabbit','bird','squirrel','chicken','cat','duck','fish'];
+  const type = types[(Math.random()*types.length)|0];
+  const domain = CRITTER_DOMAIN[type];
   const g = buildCritter(type);
-  const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
-  const dir = edgeOutwardDir(edge);
-  const edgeV = critterTileV(edge);
-  const c = {type, group:g, tile:{...edge}, path:[], seg:0, segT:0, segFrom:null,
+  const c = {type, domain, group:g, tile:null, path:[], seg:0, segT:0, segFrom:null,
              state:'enter', mode:'line', pauseT:0, legs: 2+((Math.random()*3)|0),
-             speed: type==='squirrel' ? 3.2 : (type==='rabbit' ? 2.3 : 2.6), t: Math.random()*10};
-  if(type==='bird'){
+             speed: {squirrel:3.2, rabbit:2.3, bird:2.6, chicken:2, cat:2.4, duck:1.4, fish:2.2}[type],
+             t: Math.random()*10};
+  if(domain==='air'){
     const land = randomGrassTile();
+    const dir = {x: Math.random()<.5 ? -1 : 1, z: Math.random()<.5 ? -1 : 1};
     c.tile = land;
-    g.position.set(critterTileV(land).x + dir.x*5, 2.4, critterTileV(land).z + dir.z*5);
-    critterLine(c, g.position.clone(), critterTileV(land), 3.2);
-    c.state = 'enter';
+    g.position.set(critterTileV(land).x + dir.x*6, 2.4, critterTileV(land).z + dir.z*4);
+    critterLine(c, g.position.clone(), critterTileV(land), 3.2, .3);
+  }else if(domain==='water'){
+    const north = Math.random() < .5;
+    c.water = {xmin:2.15, xmax:3.85, zmin: north ? -6.3 : 1.7, zmax: north ? -1.7 : 6.3, exitZ: north ? -9 : 9};
+    const start = new THREE.Vector3(2.15 + Math.random()*1.7, WATER_Y, c.water.exitZ);
+    g.position.copy(start);
+    critterLine(c, start, randWaterPoint(c.water), c.speed);
   }else{
+    const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
+    const dir = edgeOutwardDir(edge);
+    const edgeV = critterTileV(edge);
+    c.tile = {...edge};
     g.position.set(edgeV.x + dir.x*1.8, 0, edgeV.z + dir.z*1.8);
     critterLine(c, g.position.clone(), edgeV, c.speed);
   }
@@ -919,22 +996,31 @@ function removeCritter(c){
   if(i>=0) critters.splice(i,1);
 }
 
+function critterExitMove(c, fast){
+  const sp = c.speed * (fast ? 1.7 : 1);
+  if(c.domain==='air'){
+    const dir = {x: Math.random()<.5 ? -1 : 1, z: Math.random()<.5 ? -1 : 1};
+    critterLine(c, c.group.position.clone(),
+      new THREE.Vector3(c.group.position.x + dir.x*14, 3, c.group.position.z + dir.z*10), fast ? 4.5 : 3.4, .2);
+  }else if(c.domain==='water'){
+    critterLine(c, c.group.position.clone(),
+      new THREE.Vector3(c.group.position.x, WATER_Y, c.water.exitZ), sp);
+  }else{
+    const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
+    c.speed = sp;
+    critterPathTo(c, edge);
+  }
+}
+
 function startleCritter(c0){
   /* c0 คือ group — หา object critter จริง */
   const c = critters.find(k=>k.group===c0);
   if(!c || c.state==='exit') return;
   if(typeof playClick==='function') playClick();
-  c.startle = .5;                       /* กระโดดตกใจสั้นๆ ก่อนวิ่งหนี */
+  c.startle = .5;                       /* กระโดดตกใจสั้นๆ ก่อนวิ่ง/บิน/ว่ายหนี */
+  if(c.type==='fish') c.jump = {k:0};   /* ปลาตกใจ = กระโดดพ้นน้ำ */
   c.state = 'exit';
-  c.speed *= 1.7;
-  if(c.type==='bird'){
-    const dir = {x: Math.random()<.5 ? -1 : 1, z: Math.random()<.5 ? -1 : 1};
-    critterLine(c, c.group.position.clone(),
-      new THREE.Vector3(c.group.position.x + dir.x*14, 3, c.group.position.z + dir.z*10), 4.5);
-  }else{
-    const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
-    critterPathTo(c, edge);
-  }
+  critterExitMove(c, true);
 }
 
 function updateCritters(dt, t){
@@ -953,13 +1039,13 @@ function updateCritters(dt, t){
       c.line.k += dt / c.line.dur;
       const k = Math.min(1, c.line.k);
       c.group.position.lerpVectors(c.line.a, c.line.b, k);
-      if(c.type==='bird'){ /* บินโค้งนุ่มๆ */
-        c.group.position.y = c.line.a.y + (c.line.b.y - c.line.a.y)*k + Math.sin(k*Math.PI)*.35;
+      if(c.line.arc){ /* โค้งกลางอากาศ (นกบิน) */
+        c.group.position.y = c.line.a.y + (c.line.b.y - c.line.a.y)*k + Math.sin(k*Math.PI)*c.line.arc;
       }
       moving = true;
       if(k>=1){
         if(c.state==='exit'){ removeCritter(c); continue; }
-        if(c.state==='enter'){ c.state = 'wander'; c.mode = 'idle'; c.pauseT = 1 + Math.random()*1.6; }
+        c.state = 'wander'; c.mode = 'idle'; c.pauseT = 1 + Math.random()*1.6;
       }
     }else if(c.mode==='path'){
       const from = c.segFrom, to = c.path[c.seg];
@@ -987,14 +1073,14 @@ function updateCritters(dt, t){
         c.legs--;
         if(c.legs <= 0){
           c.state = 'exit';
-          if(c.type==='bird'){
-            const dir = {x: Math.random()<.5 ? -1 : 1, z: Math.random()<.5 ? -1 : 1};
-            critterLine(c, c.group.position.clone(),
-              new THREE.Vector3(c.group.position.x + dir.x*14, 3, c.group.position.z + dir.z*10), 3.4);
-          }else{
-            const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
-            critterPathTo(c, edge);
-          }
+          critterExitMove(c, false);
+        }else if(c.domain==='air'){
+          /* นกขยับที่ด้วยการ "บินข้าม" เสมอ ไม่เดินไถลพื้น (บั๊กเดิม: ใช้ path เดินแบบสัตว์บก) */
+          const land = randomGrassTile();
+          c.tile = land;
+          critterLine(c, c.group.position.clone(), critterTileV(land), 3, .9);
+        }else if(c.domain==='water'){
+          critterLine(c, c.group.position.clone(), randWaterPoint(c.water), c.speed);
         }else{
           critterPathTo(c, randomGrassTile());
         }
@@ -1005,12 +1091,35 @@ function updateCritters(dt, t){
     if(c.type==='rabbit'){
       c.group.position.y = moving ? Math.abs(Math.sin(c.t*9))*.16 : 0;
     }else if(c.type==='squirrel'){
-      if(moving) c.group.position.y = Math.abs(Math.sin(c.t*13))*.07;
+      c.group.position.y = moving ? Math.abs(Math.sin(c.t*13))*.07 : 0;
       if(u.tail) u.tail.rotation.x = -.55 + Math.sin(c.t*7)*.15;
+    }else if(c.type==='chicken'){
+      c.group.position.y = moving ? Math.abs(Math.sin(c.t*11))*.08 : 0;
+      if(u.head) u.head.rotation.x = moving ? 0 : Math.max(0, Math.sin(c.t*5))*.5; /* จิกพื้นตอนหยุด */
+    }else if(c.type==='cat'){
+      c.group.position.y = 0;
+      c.group.rotation.z = moving ? Math.sin(c.t*8)*.04 : 0;
+      if(u.tail) u.tail.rotation.z = Math.sin(c.t*3)*.25; /* แกว่งหางช้าๆ ตลอด */
     }else if(c.type==='bird'){
       const flying = c.mode==='line';
+      if(!flying) c.group.position.y = 0;
       if(u.wings) u.wings.forEach(w=>{ w.rotation.z = flying ? Math.sin(c.t*22)*.7*w.userData.side : 0; });
       if(u.head && !flying) u.head.rotation.x = Math.max(0, Math.sin(c.t*5))*.55; /* จิกพื้น */
+    }else if(c.type==='duck'){
+      if(c.mode!=='line') c.group.position.y = WATER_Y + Math.sin(c.t*2.6)*.02; /* ลอยตุ๊บป่อง */
+      else c.group.position.y += Math.sin(c.t*2.6)*.02;
+      if(u.head) u.head.rotation.x = (c.mode==='idle' && Math.sin(c.t*.9)>.55) ? .9 : 0; /* มุดหาปลาเป็นพักๆ */
+    }else if(c.type==='fish'){
+      if(c.mode!=='line') c.group.position.y = WATER_Y;
+      if(u.tail) u.tail.rotation.z = Math.sin(c.t*10)*.4; /* โบกหาง */
+      if(!c.jump && c.mode==='line' && Math.random() < dt*.22) c.jump = {k:0}; /* กระโดดพ้นน้ำเป็นครั้งคราว */
+      if(c.jump){
+        c.jump.k += dt/.9;
+        const jk = Math.min(1, c.jump.k);
+        c.group.position.y += Math.sin(jk*Math.PI)*.55;
+        c.group.rotation.x = -Math.sin(jk*Math.PI)*.8;
+        if(jk>=1){ c.jump = null; c.group.rotation.x = 0; }
+      }
     }
     if(c.startle){
       c.startle -= dt;
@@ -1038,6 +1147,7 @@ function frame(t){
   rafId = requestAnimationFrame(frame);
   const dt = Math.min(.05, (t - lastT)/1000 || 0);
   lastT = t;
+  updateLightLerp(dt);
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator'){
@@ -1123,7 +1233,7 @@ function startHouseGame(){
     hChar.path = []; hChar.walking = false; hChar.pendingEnter = false; hChar.pendingExit = false;
     hChar.targetRotY = Math.PI/4;
   }
-  updateLights();
+  updateLights(true);
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   const data = loadHouseData();
