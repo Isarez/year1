@@ -531,6 +531,7 @@ function renderHome(){
     const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen') ? cat.levels : cat.questions.length;
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
+      (cat.cardTag ? '<div class="cat-card-tag">'+cat.cardTag+'</div>' : '')+
       '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?(cat.icon?'<img src="'+cat.icon+'" class="cat-sticker-icon" alt="">':cat.emoji):'🔒')+'</div>'+
       '<div class="cat-emoji">'+(locked?'🔒':(cat.icon?'<img src="'+cat.icon+'" class="cat-icon-img" alt="'+cat.name+'">':cat.emoji))+'</div>'+
       '<div class="cat-name">'+cat.name+'</div>'+
@@ -1810,10 +1811,12 @@ let freePiano = { song:null, pos:0 };
 
 function renderFreePianoSongs(){
   const wrap = $('fp-songs');
-  let html = '<button class="fp-song-chip'+(freePiano.song?'':' active')+'" data-song="-1">🎹 เล่นอิสระ</button>';
+  let html = '<select class="fp-song-select" id="fp-song-select" aria-label="เลือกเพลง">';
+  html += '<option value="-1"'+(freePiano.song?'':' selected')+'>🎹 เล่นอิสระ</option>';
   MUSIC_LEVEL2_SONGS.forEach((s,i)=>{
-    html += '<button class="fp-song-chip'+(freePiano.song===s?' active':'')+'" data-song="'+i+'">'+s.name+'</button>';
+    html += '<option value="'+i+'"'+(freePiano.song===s?' selected':'')+'>'+s.name+'</option>';
   });
+  html += '</select>';
   wrap.innerHTML = html;
 }
 function renderFreePianoNotes(){
@@ -1852,9 +1855,9 @@ function closeFreePiano(){ resumeBgMusicAfterMusicGame(); closeOverlay('free-pia
 $('free-piano-btn').addEventListener('click', openFreePiano);
 $('free-piano-x').addEventListener('click', ()=>{ playClick(); closeFreePiano(); });
 $('free-piano-backdrop').addEventListener('click', closeFreePiano);
-$('fp-songs').addEventListener('click', e=>{
-  const chip = e.target.closest('.fp-song-chip'); if(!chip) return;
-  playClick(); selectFreeSong(+chip.dataset.song);
+$('fp-songs').addEventListener('change', e=>{
+  const sel = e.target.closest('.fp-song-select'); if(!sel) return;
+  playClick(); selectFreeSong(+sel.value);
 });
 $('fp-listen').addEventListener('click', ()=>{ if(freePiano.song) playMusicSequence(freePiano.song.notes); });
 $('fp-notation').addEventListener('click', function(){
