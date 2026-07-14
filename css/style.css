@@ -1545,7 +1545,7 @@
   }
   .house-entry-btn:hover{transform:translateY(-2px) scale(1.03);}
   .house-entry-btn:active{transform:scale(.97);}
-  .house-entry-emoji{font-size:1.25em; line-height:1;}
+  .house-entry-icon{width:1.6em; height:1.6em; display:block;}
   .house-entry-new{
     font-size:.62em; font-weight:800; background:#fff; color:#FF7043;
     border-radius:999px; padding:2px 9px;
@@ -1573,8 +1573,9 @@
   .house-overlay-ui .quiz-top{pointer-events:auto;}
   .house-label-chip{
     background:rgba(255,255,255,.88); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    display:inline-block; padding:4px 14px; border-radius:999px;
+    display:inline-flex; align-items:center; gap:7px; padding:4px 14px; border-radius:999px;
   }
+  .house-label-icon{width:21px; height:21px;}
   .house-hint{
     position:fixed; bottom:calc(18px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
     margin:0; z-index:8; pointer-events:none; transition:opacity .6s ease;
