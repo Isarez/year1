@@ -231,27 +231,29 @@ function buildWorld(){
      หน้าหญ้าเป็นแผ่นบางด้านบน 2 เฉดสลับ checker + ฐานดินน้ำตาลหนาทั้งผืนให้เห็นขอบข้างเป็นชั้นดิน
      น้ำเป็นแอ่งต่ำกว่าระดับหญ้า โปร่งแสงเล็กน้อย เห็นชั้นดินเป็นตลิ่งริมคลอง */
   const topGeo = new THREE.BoxGeometry(1,.24,1);
-  const counts = {g1:0,g2:0,w:0};
+  const counts = {g1:0,g2:0};
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
-    const t = outGrid[z][x];
-    if(t===1) counts.w++; else ((x+z)%2 ? counts.g2++ : counts.g1++);
+    if(outGrid[z][x]!==1) ((x+z)%2 ? counts.g2++ : counts.g1++);
   }
   const grassMat1 = toonMat(0x8fd06c); /* เรียกก่อนเพื่อให้ gradientMap ถูกสร้างก่อนใช้กับ waterMat */
-  const waterMat = new THREE.MeshToonMaterial({color:0x6cc6e8, gradientMap, transparent:true, opacity:.92});
   const inst = {
     g1: new THREE.InstancedMesh(topGeo, grassMat1, counts.g1),
     g2: new THREE.InstancedMesh(topGeo, toonMat(0x7cc25a), counts.g2),
-    w:  new THREE.InstancedMesh(new THREE.BoxGeometry(1,.14,1), waterMat, counts.w),
   };
-  const idx = {g1:0,g2:0,w:0};
+  const idx = {g1:0,g2:0};
   const m4 = new THREE.Matrix4();
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
-    const t = outGrid[z][x];
-    const key = (t===1) ? 'w' : ((x+z)%2 ? 'g2' : 'g1');
-    m4.makeTranslation(outWX(x), t===1 ? -.25 : -.12, outWZ(z));
+    if(outGrid[z][x]===1) continue;
+    const key = (x+z)%2 ? 'g2' : 'g1';
+    m4.makeTranslation(outWX(x), -.12, outWZ(z));
     inst[key].setMatrixAt(idx[key]++, m4);
   }
   Object.values(inst).forEach(im=>{ im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; worldGroup.add(im); });
+  /* น้ำเป็นผืนเดียวยาวตลอดคลอง (เดิมเป็นบล็อกต่อช่อง เห็นรอยต่อเป็นตารางไม่เหมือนน้ำ) */
+  const waterMat = new THREE.MeshToonMaterial({color:0x6cc6e8, gradientMap, transparent:true, opacity:.9});
+  const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(RIVER_X.length, .14, OUT_D), waterMat);
+  waterMesh.position.set(outWX(11.5), -.25, 0);
+  worldGroup.add(waterMesh);
   const dirtBase = new THREE.Mesh(new THREE.BoxGeometry(OUT_W,.6,OUT_D), toonMat(0x9c6b45));
   dirtBase.position.y = -.54; worldGroup.add(dirtBase);
 
@@ -285,6 +287,7 @@ function buildWorld(){
   const winf = box(.74,.74,.06,0xffffff); winf.position.set(-.8,.95,1.3); house.add(winf);
   const win2 = box(.1,.62,.62,0xaadcf5); win2.position.set(1.72,.95,0); house.add(win2);
   house.position.set(outWX(3.5), 0, outWZ(3));
+  house.userData.hHouse = true;
   worldGroup.add(house);
   houseClickables = [];
   house.traverse(o=>{ if(o.isMesh) houseClickables.push(o); });
@@ -304,6 +307,7 @@ function buildWorld(){
     }
     tr.position.set(outWX(x), 0, outWZ(z));
     tr.rotation.y = (x*7+z*13)%6;
+    tr.userData.hTree = {tile:{x,z}};
     worldGroup.add(tr);
   });
 
@@ -314,9 +318,11 @@ function buildWorld(){
     stem.position.y = .09; fl.add(stem);
     const bl = sphere(.07,[0xff8fb3,0xffd54f,0xb388ff,0xff8a65][i%4],8); bl.position.y = .2; fl.add(bl);
     fl.position.set(outWX(x)+.22, 0, outWZ(z)-.18);
+    fl.userData.hFlower = {tile:{x,z}};
     worldGroup.add(fl);
   });
 
+  collectEdgeTiles();
   scene.add(worldGroup);
 }
 
@@ -548,8 +554,29 @@ function ndcFromClient(cx, cy){
 function handleTap(cx, cy){
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
   if(hScene==='out'){
-    const hitHouse = raycaster.intersectObjects(houseClickables, false);
-    if(hitHouse.length){ walkTo(DOOR_TILE.x, DOOR_TILE.z, {enter:true}); return; }
+    /* ยิง ray ใส่ของทั้งฉากแล้วไล่หา tag ที่ ancestor: สัตว์ > บ้าน > ต้นไม้ > ดอกไม้
+       (ชนพื้น/ฐานดินจะไม่เจอ tag แล้วตกไปคำนวณช่องเดินจากระนาบพื้นด้านล่างแทน) */
+    const hits = raycaster.intersectObjects(worldGroup.children, true);
+    if(hits.length){
+      let o = hits[0].object;
+      while(o && o !== worldGroup){
+        if(o.userData.hCritter){ startleCritter(o.userData.hCritter); return; }
+        if(o.userData.hHouse){ walkTo(DOOR_TILE.x, DOOR_TILE.z, {enter:true}); return; }
+        if(o.userData.hTree){
+          const t = o.userData.hTree.tile, g = o;
+          const adj = nearestWalkable(outGrid, OUT_W, OUT_D, t.x, t.z);
+          if(adj) walkTo(adj.x, adj.z, {action:{type:'tree', group:g}});
+          return;
+        }
+        if(o.userData.hFlower){
+          const t = o.userData.hFlower.tile, g = o;
+          const adj = nearestWalkable(outGrid, OUT_W, OUT_D, t.x, t.z);
+          if(adj) walkTo(adj.x, adj.z, {action:{type:'flower', group:g}});
+          return;
+        }
+        o = o.parent;
+      }
+    }
   }else{
     if(interiorDoorMesh && raycaster.intersectObject(interiorDoorMesh, false).length){
       walkTo(IN_DOOR_TILE.x, IN_DOOR_TILE.z, {exit:true}); return;
@@ -585,12 +612,22 @@ function walkTo(gx, gz, opts){
   hChar.walking = hChar.path.length > 0;
   hChar.pendingEnter = !!opts.enter;
   hChar.pendingExit = !!opts.exit;
+  hChar.action = opts.action || null;
   if(!hChar.walking){ finishArrive(); }
 }
 
 function finishArrive(){
   if(hChar.pendingEnter){ hChar.pendingEnter = false; switchScene('in'); }
   else if(hChar.pendingExit){ hChar.pendingExit = false; switchScene('out'); }
+  else if(hChar.action){
+    const a = hChar.action; hChar.action = null;
+    /* หันหน้าเข้าหาเป้าก่อนเล่นเอฟเฟกต์ */
+    if(charGroup){
+      hChar.targetRotY = Math.atan2(a.group.position.x - charGroup.position.x, a.group.position.z - charGroup.position.z);
+    }
+    if(a.type==='tree') shakeTree(a.group);
+    else if(a.type==='flower') bounceFlower(a.group);
+  }
 }
 
 function tileWorld(t){
@@ -599,10 +636,24 @@ function tileWorld(t){
     : new THREE.Vector3(inWX(t.x), 0, inWZ(t.z));
 }
 
-function switchScene(to){
+/* fade ขาวคั่นกลางแล้วค่อยสลับ — ใช้กับทุกการสลับฉาก/โหมดให้ transition นุ่มสม่ำเสมอ */
+function fadeSwap(apply){
   const fade = $('house-fade');
   fade.classList.add('on');
-  setTimeout(()=>{
+  setTimeout(()=>{ apply(); setTimeout(()=>fade.classList.remove('on'), 120); }, 520);
+}
+/* จอขาวทันทีแล้วค่อยๆ เปิด (ใช้ตอนเพิ่งเข้า view) */
+function fadeIn(){
+  const fade = $('house-fade');
+  fade.style.transition = 'none';
+  fade.classList.add('on');
+  void fade.offsetWidth;             /* force reflow ให้ opacity 1 ติดก่อนคืน transition */
+  fade.style.transition = '';
+  setTimeout(()=>fade.classList.remove('on'), 220);
+}
+
+function switchScene(to){
+  fadeSwap(()=>{
     hScene = to;
     worldGroup.visible = (to==='out');
     interiorGroup.visible = (to==='in');
@@ -613,8 +664,7 @@ function switchScene(to){
     charGroup.position.copy(p);
     camTarget.copy(p);
     applyCamera();
-    setTimeout(()=>fade.classList.remove('on'), 60);
-  }, 300);
+  });
 }
 
 /* ---------- โหมดสร้างตัวละคร ---------- */
@@ -708,6 +758,268 @@ function showHint(){
   hintTimer = setTimeout(()=>hint.classList.add('fade-out'), 6000);
 }
 
+/* ---------- เอฟเฟกต์ interaction (เขย่าต้นไม้/ดอกไม้เด้ง + อนุภาคใบไม้ร่วง) ---------- */
+const fxList = [], particles = [];
+let particleGeo = null;
+function spawnParticle(x, y, z, color){
+  if(!particleGeo) particleGeo = new THREE.SphereGeometry(.055, 6, 5);
+  const m = new THREE.Mesh(particleGeo, toonMat(color));  /* material แชร์จาก cache — animate ที่ scale ไม่แตะ opacity */
+  m.position.set(x, y, z);
+  worldGroup.add(m);
+  particles.push({m, vx:(Math.random()-.5)*1.1, vy:.6+Math.random()*.7, vz:(Math.random()-.5)*1.1, life:1.1, max:1.1});
+}
+function shakeTree(g){
+  fxList.push({g, t0:performance.now(), dur:900, kind:'shake'});
+  for(let i=0; i<5; i++){
+    spawnParticle(g.position.x+(Math.random()-.5)*.9, 1.05+Math.random()*.45, g.position.z+(Math.random()-.5)*.9,
+                  i%2 ? 0x66c878 : 0xffffff);
+  }
+  if(typeof playClick==='function') playClick();
+}
+function bounceFlower(g){
+  fxList.push({g, t0:performance.now(), dur:700, kind:'bounce'});
+  spawnParticle(g.position.x, .45, g.position.z, 0xffd54f);
+  spawnParticle(g.position.x, .5, g.position.z, 0xfff4c2);
+  if(typeof playClick==='function') playClick();
+}
+function updateFx(now, dt){
+  for(let i=fxList.length-1; i>=0; i--){
+    const f = fxList[i];
+    const k = (now - f.t0) / f.dur;
+    if(k >= 1){
+      if(f.kind==='shake') f.g.rotation.z = 0;
+      else f.g.scale.set(1,1,1);
+      fxList.splice(i,1); continue;
+    }
+    if(f.kind==='shake') f.g.rotation.z = Math.sin(k*Math.PI*5)*(1-k)*.14;
+    else { const s = 1 + Math.sin(k*Math.PI)*.4; f.g.scale.set(s,s,s); }
+  }
+  for(let i=particles.length-1; i>=0; i--){
+    const p = particles[i];
+    p.life -= dt;
+    if(p.life <= 0){ worldGroup.remove(p.m); particles.splice(i,1); continue; }
+    p.vy -= 3*dt;
+    p.m.position.x += p.vx*dt; p.m.position.y += p.vy*dt; p.m.position.z += p.vz*dt;
+    if(p.m.position.y < .05) p.m.position.y = .05;
+    const s = Math.max(.01, p.life/p.max);
+    p.m.scale.set(s,s,s);
+  }
+}
+
+/* ---------- สัตว์ตัวเล็กเดินเข้า-ออกฉาก (นก/กระต่าย/กระรอก) ให้โลกมีชีวิต ---------- */
+const CRITTER_MAX = 3;
+const critters = [];
+let critterSpawnT = 3;
+let outEdgeTiles = null;
+
+function collectEdgeTiles(){
+  outEdgeTiles = [];
+  for(let x=0; x<OUT_W; x++){
+    if(isWalk(outGrid,OUT_W,OUT_D,x,0)) outEdgeTiles.push({x, z:0});
+    if(isWalk(outGrid,OUT_W,OUT_D,x,OUT_D-1)) outEdgeTiles.push({x, z:OUT_D-1});
+  }
+  for(let z=0; z<OUT_D; z++){
+    if(isWalk(outGrid,OUT_W,OUT_D,0,z)) outEdgeTiles.push({x:0, z});
+    if(isWalk(outGrid,OUT_W,OUT_D,OUT_W-1,z)) outEdgeTiles.push({x:OUT_W-1, z});
+  }
+}
+function edgeOutwardDir(t){
+  return {x: t.x===0 ? -1 : (t.x===OUT_W-1 ? 1 : 0), z: t.z===0 ? -1 : (t.z===OUT_D-1 ? 1 : 0)};
+}
+function randomGrassTile(){
+  for(let i=0; i<40; i++){
+    const x = (Math.random()*OUT_W)|0, z = (Math.random()*OUT_D)|0;
+    if(outGrid[z][x]===0) return {x, z};
+  }
+  return {x:SPAWN_TILE.x, z:SPAWN_TILE.z};
+}
+
+function buildCritter(type){
+  const g = new THREE.Group(); const u = {};
+  if(type==='rabbit'){
+    const c = 0xf7f3ee;
+    const body = box(.26,.2,.32,c); body.position.y = .16; g.add(body);
+    const head = box(.2,.18,.18,c); head.position.set(0,.32,.16); g.add(head);
+    [-1,1].forEach(s=>{
+      const ear = box(.055,.2,.05,c); ear.position.set(.055*s,.5,.13); g.add(ear);
+      const inner = box(.025,.12,.02,0xf4b8c8); inner.position.set(.055*s,.49,.156); g.add(inner);
+    });
+    const tail = sphere(.07,0xffffff,8); tail.position.set(0,.18,-.18); g.add(tail);
+    const nose = sphere(.025,0xf48fb1,6); nose.position.set(0,.31,.26); g.add(nose);
+    [-1,1].forEach(s=>{ const eye = sphere(.02,0x33261d,6); eye.position.set(.06*s,.35,.245); g.add(eye); });
+  }else if(type==='bird'){
+    const c = [0xe57373,0x64b5f6,0xffd54f][(Math.random()*3)|0];
+    const body = sphere(.12,c,10); body.scale.set(1,.95,1.25); body.position.y = .15; g.add(body);
+    const head = sphere(.09,c,10); head.position.set(0,.28,.1); g.add(head); u.head = head;
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(.03,.09,6), toonMat(0xf5a623));
+    beak.castShadow = hShadows; beak.rotation.x = Math.PI/2; beak.position.set(0,.27,.21); g.add(beak);
+    u.wings = [-1,1].map(s=>{
+      const piv = new THREE.Group(); piv.position.set(.1*s,.18,.02); piv.userData.side = s;
+      const w = box(.2,.03,.13,c); w.position.x = .11*s; piv.add(w);
+      g.add(piv); return piv;
+    });
+    const tail = box(.06,.025,.15,c); tail.position.set(0,.16,-.18); g.add(tail);
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.3,.17); g.add(eye); });
+  }else{ /* squirrel */
+    const c = 0xa1887f;
+    const body = box(.2,.18,.26,c); body.position.y = .14; g.add(body);
+    const head = box(.16,.14,.14,c); head.position.set(0,.27,.14); g.add(head);
+    [-1,1].forEach(s=>{ const ear = box(.04,.07,.03,c); ear.position.set(.05*s,.37,.12); g.add(ear); });
+    const tail = box(.08,.32,.08,0x8d6e63); tail.rotation.x = -.55; tail.position.set(0,.28,-.24); g.add(tail); u.tail = tail;
+    const nose = sphere(.02,0x5d4037,6); nose.position.set(0,.27,.22); g.add(nose);
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.3,.2); g.add(eye); });
+  }
+  g.userData.hCritter = g;             /* tag ไว้ที่ group — ancestor walk ตอน raycast เจอแน่ */
+  g.userData.anim = u;
+  return g;
+}
+
+function critterLine(c, from, to, speed){
+  c.mode = 'line';
+  c.line = {a: from.clone(), b: to.clone(), k: 0, dur: Math.max(.25, from.distanceTo(to)/speed)};
+  c.group.rotation.y = Math.atan2(to.x-from.x, to.z-from.z);
+}
+function critterPathTo(c, toTile){
+  const target = nearestWalkable(outGrid, OUT_W, OUT_D, toTile.x, toTile.z);
+  const path = target && findPath(outGrid, OUT_W, OUT_D, c.tile, target);
+  if(!path || !path.length){ c.mode = 'idle'; c.pauseT = .8; return false; }
+  c.mode = 'path'; c.path = path; c.seg = 0; c.segT = 0; c.segFrom = {...c.tile};
+  return true;
+}
+function critterTileV(t){ return new THREE.Vector3(outWX(t.x), 0, outWZ(t.z)); }
+
+function spawnCritter(){
+  if(!outEdgeTiles || !outEdgeTiles.length) return;
+  const type = ['rabbit','bird','squirrel'][(Math.random()*3)|0];
+  const g = buildCritter(type);
+  const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
+  const dir = edgeOutwardDir(edge);
+  const edgeV = critterTileV(edge);
+  const c = {type, group:g, tile:{...edge}, path:[], seg:0, segT:0, segFrom:null,
+             state:'enter', mode:'line', pauseT:0, legs: 2+((Math.random()*3)|0),
+             speed: type==='squirrel' ? 3.2 : (type==='rabbit' ? 2.3 : 2.6), t: Math.random()*10};
+  if(type==='bird'){
+    const land = randomGrassTile();
+    c.tile = land;
+    g.position.set(critterTileV(land).x + dir.x*5, 2.4, critterTileV(land).z + dir.z*5);
+    critterLine(c, g.position.clone(), critterTileV(land), 3.2);
+    c.state = 'enter';
+  }else{
+    g.position.set(edgeV.x + dir.x*1.8, 0, edgeV.z + dir.z*1.8);
+    critterLine(c, g.position.clone(), edgeV, c.speed);
+  }
+  worldGroup.add(g);
+  critters.push(c);
+}
+
+function removeCritter(c){
+  worldGroup.remove(c.group);
+  disposeGroup(c.group);
+  const i = critters.indexOf(c);
+  if(i>=0) critters.splice(i,1);
+}
+
+function startleCritter(c0){
+  /* c0 คือ group — หา object critter จริง */
+  const c = critters.find(k=>k.group===c0);
+  if(!c || c.state==='exit') return;
+  if(typeof playClick==='function') playClick();
+  c.startle = .5;                       /* กระโดดตกใจสั้นๆ ก่อนวิ่งหนี */
+  c.state = 'exit';
+  c.speed *= 1.7;
+  if(c.type==='bird'){
+    const dir = {x: Math.random()<.5 ? -1 : 1, z: Math.random()<.5 ? -1 : 1};
+    critterLine(c, c.group.position.clone(),
+      new THREE.Vector3(c.group.position.x + dir.x*14, 3, c.group.position.z + dir.z*10), 4.5);
+  }else{
+    const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
+    critterPathTo(c, edge);
+  }
+}
+
+function updateCritters(dt, t){
+  critterSpawnT -= dt;
+  if(critters.length < CRITTER_MAX && critterSpawnT <= 0){
+    spawnCritter();
+    critterSpawnT = 6 + Math.random()*8;
+  }
+  for(let i=critters.length-1; i>=0; i--){
+    const c = critters[i];
+    c.t += dt;
+    const u = c.group.userData.anim;
+    let moving = false;
+
+    if(c.mode==='line'){
+      c.line.k += dt / c.line.dur;
+      const k = Math.min(1, c.line.k);
+      c.group.position.lerpVectors(c.line.a, c.line.b, k);
+      if(c.type==='bird'){ /* บินโค้งนุ่มๆ */
+        c.group.position.y = c.line.a.y + (c.line.b.y - c.line.a.y)*k + Math.sin(k*Math.PI)*.35;
+      }
+      moving = true;
+      if(k>=1){
+        if(c.state==='exit'){ removeCritter(c); continue; }
+        if(c.state==='enter'){ c.state = 'wander'; c.mode = 'idle'; c.pauseT = 1 + Math.random()*1.6; }
+      }
+    }else if(c.mode==='path'){
+      const from = c.segFrom, to = c.path[c.seg];
+      c.segT += dt * c.speed;
+      const k = Math.min(1, c.segT);
+      c.group.position.lerpVectors(critterTileV(from), critterTileV(to), k);
+      if(from.x!==to.x || from.z!==to.z) c.group.rotation.y = Math.atan2(to.x-from.x, to.z-from.z);
+      moving = true;
+      if(k>=1){
+        c.segT = 0; c.tile = to; c.segFrom = to; c.seg++;
+        if(c.seg >= c.path.length){
+          if(c.state==='exit'){
+            /* ถึงขอบแล้ว เดินเส้นตรงออกนอกแผนที่ */
+            const dir = edgeOutwardDir(c.tile);
+            critterLine(c, c.group.position.clone(),
+              new THREE.Vector3(c.group.position.x + dir.x*2, 0, c.group.position.z + dir.z*2), c.speed);
+          }else{
+            c.mode = 'idle'; c.pauseT = 1 + Math.random()*2;
+          }
+        }
+      }
+    }else{ /* idle */
+      c.pauseT -= dt;
+      if(c.pauseT <= 0){
+        c.legs--;
+        if(c.legs <= 0){
+          c.state = 'exit';
+          if(c.type==='bird'){
+            const dir = {x: Math.random()<.5 ? -1 : 1, z: Math.random()<.5 ? -1 : 1};
+            critterLine(c, c.group.position.clone(),
+              new THREE.Vector3(c.group.position.x + dir.x*14, 3, c.group.position.z + dir.z*10), 3.4);
+          }else{
+            const edge = outEdgeTiles[(Math.random()*outEdgeTiles.length)|0];
+            critterPathTo(c, edge);
+          }
+        }else{
+          critterPathTo(c, randomGrassTile());
+        }
+      }
+    }
+
+    /* ท่าทางตามชนิด */
+    if(c.type==='rabbit'){
+      c.group.position.y = moving ? Math.abs(Math.sin(c.t*9))*.16 : 0;
+    }else if(c.type==='squirrel'){
+      if(moving) c.group.position.y = Math.abs(Math.sin(c.t*13))*.07;
+      if(u.tail) u.tail.rotation.x = -.55 + Math.sin(c.t*7)*.15;
+    }else if(c.type==='bird'){
+      const flying = c.mode==='line';
+      if(u.wings) u.wings.forEach(w=>{ w.rotation.z = flying ? Math.sin(c.t*22)*.7*w.userData.side : 0; });
+      if(u.head && !flying) u.head.rotation.x = Math.max(0, Math.sin(c.t*5))*.55; /* จิกพื้น */
+    }
+    if(c.startle){
+      c.startle -= dt;
+      c.group.position.y += Math.max(0, Math.sin((0.5-c.startle)/0.5*Math.PI))*.3;
+      if(c.startle<=0) c.startle = 0;
+    }
+  }
+}
+
 /* ---------- ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว ---------- */
 const _nameV = new THREE.Vector3();
 function updateNameLabel(){
@@ -775,6 +1087,8 @@ function frame(t){
     /* กล้องตามตัวละคร */
     camTarget.lerp(charGroup.position, Math.min(1, dt*4));
     applyCamera();
+    updateCritters(dt, t);
+    updateFx(t, dt);
   }
   updateNameLabel();
   renderer.render(scene, camera);
@@ -796,6 +1110,8 @@ function startHouseGame(){
   houseOpen = true;
   $('house-char-name').textContent = activeChild.name;
   syncHouseCtrls();
+  fadeIn();
+  if(!critters.length) critterSpawnT = Math.min(critterSpawnT, 2.5);
 
   /* บ้านผูกกับเด็กที่เลือกเสมอ — สลับเด็กแล้วต้องโหลดตัวละคร/ตำแหน่งของคนใหม่ */
   const childChanged = loadedChildId !== activeChild.id;
@@ -861,11 +1177,11 @@ $('house-entry-btn').addEventListener('click', startHouseGame);
 $('house-back').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); stopHouseGame(); });
 $('house-edit-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
-  if(hMode!=='creator') openCreator(true);
+  if(hMode!=='creator') fadeSwap(()=>openCreator(true));
 });
 $('house-done-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
-  closeCreator();
+  fadeSwap(()=>closeCreator());
 });
 HOUSE_CTRL_PROXY.forEach(([hid,sid])=>{
   $(hid).addEventListener('click', ()=>{

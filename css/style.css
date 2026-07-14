@@ -1630,10 +1630,10 @@
   }
   .house-done-btn:active{transform:scale(.96);}
 
-  /* ม่าน fade ขาวตอนเปลี่ยนฉากเข้า/ออกบ้าน */
+  /* ม่าน fade ขาวตอนเปลี่ยนฉาก/สลับโหมด — .5s ให้รู้สึกนุ่ม ไม่กระตุก */
   .house-fade{
     position:absolute; inset:0; z-index:9; background:#FFF7E8; opacity:0;
-    pointer-events:none; transition:opacity .28s ease;
+    pointer-events:none; transition:opacity .5s ease;
   }
   .house-fade.on{opacity:1;}
 
