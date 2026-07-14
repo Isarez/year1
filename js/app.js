@@ -446,7 +446,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -487,7 +487,7 @@ wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
   renderChildSelect();
 });
 
@@ -552,6 +552,7 @@ function renderHome(){
       if(cat.type==='ar') startARGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='shadow') startShadowGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='mix') startMixGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='music') startMusicGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else startQuiz(cat.id);
@@ -576,7 +577,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -740,12 +741,13 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='listen'){ startListenGame(lastCatId); }
   else if(lastGameType==='shadow'){ startShadowGame(lastCatId); }
   else if(lastGameType==='mix'){ startMixGame(lastCatId); }
+  else if(lastGameType==='music'){ startMusicGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -768,7 +770,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1017,7 +1019,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1293,7 +1295,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -1555,6 +1557,217 @@ $('mix-back').addEventListener('click', ()=>{
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
+/* ============================= เกมดนตรี (เปียโน) — skill-music 1/2/3 ============================= */
+/* musicMode 1: คีย์มีตัวโน้ตกำกับ กดตามโจทย์ 1-3 ตัวเรียงลำดับ (MUSIC_LEVEL1)
+   musicMode 2: เกมความจำสะสม เพลง "ดาวน้อย" ด่าน n กดโน้ตตัวที่ 1..n เปิดเผยเฉพาะตัวใหม่ ต้องจำตัวเก่าเอง (MUSIC_LEVEL2_SONG)
+   musicMode 3: เอาตัวโน้ตกำกับที่คีย์ออก โจทย์บอกโน้ต เด็กหาคีย์เอง 1-3 ตัว (MUSIC_LEVEL3)
+   คีย์ดำกดได้มีเสียงจริง แต่ไม่เกี่ยวกับโจทย์ (ไม่นับผิด) */
+let musicGame = null; // {catId, mode, level, totalLevels, mistakes, target:[whiteIdx], pos, locked}
+let musicNotation = (localStorage.getItem('p1quiz_music_notation')==='en') ? 'en' : 'th';
+
+function musicKeyLabel(k){ return musicNotation==='en' ? k.en : k.th; }
+function pianoWhiteEl(i){ return $('music-piano').querySelector('.music-white[data-white="'+i+'"]'); }
+function flashKey(key){ if(!key) return; key.classList.add('pressed'); setTimeout(()=>key.classList.remove('pressed'), 200); }
+
+/* เสียงโน้ตเปียโนแบบนุ่มใส (Web Audio: sine หลัก + โอเวอร์โทนเบา, envelope นุ่ม) */
+function playPianoNote(freq, dur){
+  ensureAudio();
+  if(!audioCtx) return;
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  const t0 = audioCtx.currentTime; dur = dur || 0.9;
+  const master = audioCtx.createGain();
+  master.gain.setValueAtTime(0.0001, t0);
+  master.gain.exponentialRampToValueAtTime(0.2, t0+0.012);
+  master.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  master.connect(audioCtx.destination);
+  [[1,1],[2,0.16]].forEach(([mult,g])=>{
+    const osc = audioCtx.createOscillator(), og = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = freq*mult; og.gain.value = g;
+    osc.connect(og).connect(master);
+    osc.start(t0); osc.stop(t0+dur);
+  });
+}
+
+function playMusicSequence(seq){
+  if(!seq || !seq.length) return;
+  seq.forEach((wi,i)=>{
+    setTimeout(()=>{
+      playPianoNote(MUSIC_WHITE_KEYS[wi].freq, 0.5);
+      flashKey(pianoWhiteEl(wi));
+    }, i*520);
+  });
+}
+
+function buildPiano(){
+  const piano = $('music-piano'), g = musicGame;
+  piano.classList.toggle('no-key-labels', g.mode===3);
+  const n = MUSIC_WHITE_KEYS.length;
+  let html = '';
+  MUSIC_WHITE_KEYS.forEach((k,i)=>{
+    html += '<button class="music-key music-white" data-white="'+i+'" style="--key-color:'+k.color+'" aria-label="'+k.th+'">'
+         +  '<span class="mk-label">'+musicKeyLabel(k)+'</span></button>';
+  });
+  MUSIC_BLACK_KEYS.forEach((b,i)=>{
+    html += '<button class="music-key music-black" data-black="'+i+'" style="left:'+((b.after+1)*(100/n))+'%" aria-label="คีย์ดำ"></button>';
+  });
+  piano.innerHTML = html;
+}
+
+function renderMusicNotes(allDone){
+  const g = musicGame, wrap = $('music-notes');
+  wrap.innerHTML = '';
+  g.target.forEach((wi,i)=>{
+    const k = MUSIC_WHITE_KEYS[wi];
+    const b = document.createElement('div');
+    b.className = 'music-note-bubble';
+    const done = allDone || i < g.pos;
+    const isNewMemory = g.mode===2 && i === g.target.length-1;
+    const hiddenMem = g.mode===2 && !done && !isNewMemory;
+    if(done){
+      b.classList.add('done'); b.style.setProperty('--key-color', k.color);
+      b.innerHTML = '<span class="mnb-note">'+musicKeyLabel(k)+'</span><span class="mnb-check">✓</span>';
+    } else if(hiddenMem){
+      b.classList.add('mystery'); b.textContent = '?';
+    } else {
+      b.style.setProperty('--key-color', k.color);
+      b.innerHTML = '<span class="mnb-note">'+musicKeyLabel(k)+'</span>';
+    }
+    if(!done && i===g.pos) b.classList.add('current');
+    wrap.appendChild(b);
+  });
+}
+
+function renderMusicLevel(){
+  const g = musicGame;
+  g.pos = 0; g.locked = false;
+  $('music-msg').hidden = true;
+  if(g.mode===2)      g.target = MUSIC_LEVEL2_SONG.notes.slice(0, g.level);
+  else if(g.mode===1) g.target = MUSIC_LEVEL1[g.level-1].slice();
+  else                g.target = MUSIC_LEVEL3[g.level-1].slice();
+  $('music-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('music-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  const hint = $('music-hint'), plabel = $('music-prompt-label');
+  if(g.mode===1){ hint.textContent = '🎹 กดคีย์ตามโน้ตในโจทย์ให้ครบตามลำดับนะ'; plabel.textContent = 'กดคีย์ตามนี้เลย 👇'; }
+  else if(g.mode===2){ hint.textContent = '🧠 จำโน้ตให้ได้! กดตั้งแต่ตัวแรกจนถึงตัวใหม่ล่าสุด'; plabel.textContent = 'เพลง '+MUSIC_LEVEL2_SONG.name+' — เล่นต่อ เพิ่มโน้ตใหม่!'; }
+  else { hint.textContent = '🔍 คีย์ไม่มีตัวโน้ตแล้ว หาคีย์ให้ถูกตามโจทย์นะ'; plabel.textContent = 'หาคีย์ให้ถูก 🔍'; }
+  renderMusicNotes();
+  if(g.mode===2){
+    /* เปิดเผย + เล่นเสียงเฉพาะโน้ตตัวใหม่ล่าสุด (ตัวเก่าต้องจำเอง) */
+    setTimeout(()=>{ const ni = g.target[g.target.length-1]; playPianoNote(MUSIC_WHITE_KEYS[ni].freq, 0.8); flashKey(pianoWhiteEl(ni)); }, 450);
+  } else {
+    setTimeout(()=>playMusicSequence(g.target), 400);
+  }
+}
+
+function musicPressWhite(wi){
+  const g = musicGame;
+  if(!g || g.locked) return;
+  if(wi === g.target[g.pos]){
+    g.pos++;
+    renderMusicNotes();
+    if(g.pos >= g.target.length) musicLevelComplete();
+  } else {
+    g.mistakes++;
+    playWrong(); showOwlMsg('wrong');
+    const key = pianoWhiteEl(wi);
+    if(key){ key.classList.add('key-wrong'); setTimeout(()=>key.classList.remove('key-wrong'), 420); }
+    const cur = $('music-notes').children[g.pos];
+    if(cur){ cur.classList.add('shake'); setTimeout(()=>cur.classList.remove('shake'), 420); }
+  }
+}
+
+function musicLevelComplete(){
+  const g = musicGame;
+  g.locked = true;
+  playCorrect(); mascotHappy(); showOwlMsg('correct');
+  renderMusicNotes(true);
+  const msg = $('music-msg');
+  msg.textContent = '🎉 เยี่ยมมาก!'; msg.hidden = false;
+  $('music-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+  setTimeout(()=>{
+    msg.hidden = true;
+    if(g.level >= g.totalLevels) finishMusicGame();
+    else { g.level++; renderMusicLevel(); }
+  }, 1200);
+}
+
+function startMusicGame(catId){
+  lastGameType = 'music'; lastCatId = catId;
+  const cat = catById(catId);
+  musicGame = { catId, mode:cat.musicMode, level:1, totalLevels:cat.levels, mistakes:0, target:[], pos:0, locked:false };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('music-cat-label', cat);
+  const nt = $('music-notation-toggle');
+  nt.textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
+  nt.setAttribute('aria-pressed', musicNotation==='en');
+  buildPiano();
+  renderMusicLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function finishMusicGame(){
+  const cat = catById(musicGame.catId);
+  const mistakes = musicGame.mistakes, totalLevels = musicGame.totalLevels;
+  musicView.hidden = true; resultView.hidden = false;
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row'); starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+  $('score-line').textContent = 'เล่นดนตรีครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false; setStickerEarned(cat); pendingSticker = cat.id;
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('music-piano').addEventListener('pointerdown', e=>{
+  const key = e.target.closest('.music-key');
+  if(!key) return;
+  e.preventDefault();
+  if(key.classList.contains('music-black')){
+    playPianoNote(MUSIC_BLACK_KEYS[+key.dataset.black].freq, 0.7);
+    flashKey(key);
+    return;
+  }
+  const wi = +key.dataset.white;
+  playPianoNote(MUSIC_WHITE_KEYS[wi].freq, 0.9);
+  flashKey(key);
+  musicPressWhite(wi);
+});
+$('music-listen-btn').addEventListener('click', ()=>{ if(musicGame) playMusicSequence(musicGame.target); });
+$('music-notation-toggle').addEventListener('click', function(){
+  musicNotation = musicNotation==='en' ? 'th' : 'en';
+  localStorage.setItem('p1quiz_music_notation', musicNotation);
+  this.textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
+  this.setAttribute('aria-pressed', musicNotation==='en');
+  if(musicGame){ buildPiano(); renderMusicNotes(); }
+});
+$('music-back').addEventListener('click', ()=>{
+  playClick();
+  musicView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
 /* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */
 /* mode:'hint' (ฟังคำศัพท์ 1) เฉลยบางตัวอักษรให้ในช่องคำตอบ (ด่าน 1-5 เฉลย 2 ตัว, ด่าน 6-10 เฉลย 1 ตัว)
    mode:'nohint' (ฟังคำศัพท์ 2) ไม่เฉลยเลย เด็กหาและเรียงตัวอักษรเองทั้งหมดทุกด่าน */
@@ -1606,7 +1819,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -2889,7 +3102,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
