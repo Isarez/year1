@@ -384,11 +384,22 @@ const CAM_DIR = new THREE.Vector3(1,1.15,1).normalize();
 function applyCamera(){
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   if(hMode==='creator'){
-    /* ห้องลองชุด: กล้องต่ำลงเกือบตรงหน้า เลื่อนเฟรมให้ตัวละคร "เต็มตัวรวมรองเท้า"
-       อยู่ในพื้นที่ว่างเหนือแผงตัวเลือก (แผงสูง ~56-60vh — เผื่อเฟรมถึง y -0.35 ที่ ~42% บนจอ) */
-    const H = 5.0;
-    camera.top = 1.0; camera.bottom = camera.top - H;
-    camera.left = -H*aspect/2; camera.right = H*aspect/2;
+    if(!isMobileViewport()){
+      /* จอใหญ่: แผงตัวเลือกเป็นการ์ดชิดขวา (ดู .house-creator ใน media query ≥768px)
+         → จัดตัวละครเต็มตัวกลางพื้นที่ว่างฝั่งซ้าย ด้วย frustum ซ้าย/ขวาไม่สมมาตร */
+      const H = 4.2, W = H*aspect;
+      const vw = window.innerWidth;
+      const panelW = Math.min(400, vw*.44) + 36;      /* กว้างแผง + ระยะขอบขวา/ช่องไฟ */
+      const vc = ((vw - panelW)/2) / vw;              /* สัดส่วนแนวนอนที่อยากให้ตัวละครอยู่ */
+      camera.left = -vc*W; camera.right = (1-vc)*W;
+      camera.top = 2.2; camera.bottom = camera.top - H;
+    }else{
+      /* มือถือ: แผงเป็น bottom sheet — เลื่อนเฟรมให้ตัวละคร "เต็มตัวรวมรองเท้า"
+         อยู่ในพื้นที่ว่างเหนือแผง (แผงสูง ~56-60vh — เผื่อเฟรมถึง y -0.35 ที่ ~42% บนจอ) */
+      const H = 5.0;
+      camera.top = 1.0; camera.bottom = camera.top - H;
+      camera.left = -H*aspect/2; camera.right = H*aspect/2;
+    }
     camera.position.set(0, 2.1, 6.2); camera.lookAt(0, .75, 0);
   }else{
     const halfH = 5.2 / hZoom;

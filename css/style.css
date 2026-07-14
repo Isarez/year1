@@ -1623,3 +1623,13 @@
     .house-chip{min-width:38px; height:38px; border-radius:12px;}
     .house-chip-color{width:38px;}
   }
+  /* จอใหญ่ (แท็บเล็ต/เดสก์ท็อป): แผงตัวเลือกย้ายไปชิดขวาเป็นการ์ดแนวตั้ง
+     ตัวละครพรีวิวอยู่พื้นที่ว่างฝั่งซ้าย (กล้องเลื่อนให้ใน js/house.js) ไม่โดนแผง/แถบบนทับ */
+  @media (min-width:768px){
+    .house-creator{
+      left:auto; right:18px; transform:none;
+      top:80px; bottom:18px; width:min(400px,44vw);
+      max-height:none;
+    }
+    .house-creator-panel{border-radius:26px; height:100%;}
+  }
