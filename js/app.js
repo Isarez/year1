@@ -446,7 +446,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), houseView = $('house-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -487,7 +487,7 @@ wireChildSelectEvents();
 $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; houseView.hidden = true;
   renderChildSelect();
 });
 
@@ -576,7 +576,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; houseView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -745,7 +745,7 @@ $('retry-btn').addEventListener('click', ()=>{
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; homeView.hidden = false; houseView.hidden = true;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -768,7 +768,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; houseView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1017,7 +1017,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; houseView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1293,7 +1293,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; houseView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -1550,7 +1550,7 @@ function finishMixGame(){
 
 $('mix-back').addEventListener('click', ()=>{
   playClick();
-  mixView.hidden = true; homeView.hidden = false;
+  mixView.hidden = true; homeView.hidden = false; houseView.hidden = true;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1606,7 +1606,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; houseView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -2889,7 +2889,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; houseView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -3123,7 +3123,11 @@ function exportChildData(){
   const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒'}, progress:prog};
   const body = JSON.stringify(payload);
   const sig = owkHash(body);
-  const full = JSON.stringify({v:payload.v, child:payload.child, progress:payload.progress, sig});
+  /* house = ข้อมูล "บ้านของหนู" (ตัวละคร/ของแต่งบ้าน) แนบไปนอก sig เดิม เพื่อให้ไฟล์ export ใหม่
+     ยังนำเข้าในแอปเวอร์ชันเก่าได้ (เวอร์ชันเก่า verify sig จาก {v,child,progress} แล้วมองข้าม field เกิน) */
+  let house = null;
+  try{ house = JSON.parse(localStorage.getItem('p1quiz_house_'+activeChild.id) || 'null'); }catch(e){}
+  const full = JSON.stringify(house ? {v:payload.v, child:payload.child, progress:payload.progress, house, sig} : {v:payload.v, child:payload.child, progress:payload.progress, sig});
   const bytes = new TextEncoder().encode(full);
   const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
   const b64 = btoa(binary);
@@ -3142,8 +3146,8 @@ function exportChildData(){
 
 let pendingImport = null;
 
-function showImportConflictModal(importedChild, progress, conflictChild){
-  pendingImport = {child: importedChild, progress, conflictChildId: conflictChild.id};
+function showImportConflictModal(importedChild, progress, conflictChild, house){
+  pendingImport = {child: importedChild, progress, house: house||null, conflictChildId: conflictChild.id};
   $('import-conflict-title').textContent = 'มีเด็กชื่อ "'+conflictChild.name+'" อยู่แล้ว';
   $('import-rename-form').hidden = true;
   $('import-rename-input').value = importedChild.name;
@@ -3162,7 +3166,7 @@ function importChildData(file){
       const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
       const jsonStr = new TextDecoder().decode(bytes);
       const obj = JSON.parse(jsonStr);
-      const {v, child, progress, sig} = obj;
+      const {v, child, progress, house, sig} = obj;
       if(!sig || !child || !child.id || !child.name){
         showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
       }
@@ -3172,12 +3176,13 @@ function importChildData(file){
       }
       const conflictChild = children.find(c => c.id === child.id || c.name.toLowerCase() === child.name.toLowerCase());
       if(conflictChild){
-        showImportConflictModal(child, progress||{}, conflictChild);
+        showImportConflictModal(child, progress||{}, conflictChild, house);
         return;
       }
       children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒'});
       saveChildren();
       if(progress) try{ localStorage.setItem('p1quiz_progress_'+child.id, JSON.stringify(progress)); }catch(er){}
+      if(house) try{ localStorage.setItem('p1quiz_house_'+child.id, JSON.stringify(house)); }catch(er){}
       renderChildSelect();
       showToast('📥','นำเข้าข้อมูลของ '+child.name+' เรียบร้อย! 🎉');
     }catch(err){
@@ -3207,10 +3212,11 @@ $('import-conflict-cancel-btn').addEventListener('click', ()=>{ playClick(); hid
 $('import-replace-btn').addEventListener('click', ()=>{
   if(!pendingImport) return;
   playClick();
-  const {child, progress, conflictChildId} = pendingImport;
+  const {child, progress, house, conflictChildId} = pendingImport;
   const existing = children.find(c => c.id === conflictChildId);
   if(existing){ existing.emoji = child.emoji || existing.emoji; saveChildren(); }
   try{ localStorage.setItem('p1quiz_progress_'+conflictChildId, JSON.stringify(progress||{})); }catch(e){}
+  if(house) try{ localStorage.setItem('p1quiz_house_'+conflictChildId, JSON.stringify(house)); }catch(e){}
   hideImportConflictModal();
   renderChildSelect();
   showToast('✅','อัปเดตข้อมูลของ '+(existing ? existing.name : child.name)+' แล้ว!');
@@ -3234,11 +3240,12 @@ $('import-rename-confirm-btn').addEventListener('click', ()=>{
     showToast('⚠️','ชื่อ "'+newName+'" มีอยู่แล้ว ลองเปลี่ยนชื่อใหม่ดูสิ'); return;
   }
   playClick();
-  const {child, progress} = pendingImport;
+  const {child, progress, house} = pendingImport;
   const newId = 'child_'+Date.now();
   children.push({id:newId, name:newName, emoji:child.emoji||'🧒'});
   saveChildren();
   if(progress) try{ localStorage.setItem('p1quiz_progress_'+newId, JSON.stringify(progress)); }catch(e){}
+  if(house) try{ localStorage.setItem('p1quiz_house_'+newId, JSON.stringify(house)); }catch(e){}
   hideImportConflictModal();
   renderChildSelect();
   showToast('📥','นำเข้าข้อมูลเป็น "'+newName+'" เรียบร้อย! 🎉');
@@ -3279,6 +3286,7 @@ $('delete-child-btn').addEventListener('click', ()=>{
     'ลบเด็กออก 🗑️',
     ()=>{
       localStorage.removeItem(progressKey());
+      try{ localStorage.removeItem('p1quiz_house_'+activeChild.id); }catch(e){}
       children = children.filter(c=>c.id!==activeChild.id);
       saveChildren();
       try{ localStorage.removeItem('p1quiz_active_child'); }catch(e){}
