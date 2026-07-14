@@ -1588,12 +1588,13 @@ function playPianoNote(freq, dur){
   });
 }
 
-function playMusicSequence(seq){
+/* noFlash=true: เล่นแต่เสียง ไม่ไฮไลต์คีย์ (ใช้กับ mode 3 ที่ต้องให้เด็กหาคีย์เอง ไม่เฉลยตำแหน่ง) */
+function playMusicSequence(seq, noFlash){
   if(!seq || !seq.length) return;
   seq.forEach((wi,i)=>{
     setTimeout(()=>{
       playPianoNote(MUSIC_WHITE_KEYS[wi].freq, 0.5);
-      flashKey(pianoWhiteEl(wi));
+      if(!noFlash) flashKey(pianoWhiteEl(wi));
     }, i*520);
   });
 }
@@ -1655,7 +1656,8 @@ function renderMusicLevel(){
     /* เปิดเผย + เล่นเสียงเฉพาะโน้ตตัวใหม่ล่าสุด (ตัวเก่าต้องจำเอง) */
     setTimeout(()=>{ const ni = g.target[g.target.length-1]; playPianoNote(MUSIC_WHITE_KEYS[ni].freq, 0.8); flashKey(pianoWhiteEl(ni)); }, 450);
   } else {
-    setTimeout(()=>playMusicSequence(g.target), 400);
+    /* mode 3: เล่นทำนองแต่ไม่ไฮไลต์คีย์ (ให้เด็กหาคีย์เอง) — mode 1 ไฮไลต์ปกติ */
+    setTimeout(()=>playMusicSequence(g.target, g.mode===3), 400);
   }
 }
 
@@ -1753,7 +1755,7 @@ $('music-piano').addEventListener('pointerdown', e=>{
   flashKey(key);
   musicPressWhite(wi);
 });
-$('music-listen-btn').addEventListener('click', ()=>{ if(musicGame) playMusicSequence(musicGame.target); });
+$('music-listen-btn').addEventListener('click', ()=>{ if(musicGame) playMusicSequence(musicGame.target, musicGame.mode===3); });
 $('music-notation-toggle').addEventListener('click', function(){
   musicNotation = musicNotation==='en' ? 'th' : 'en';
   localStorage.setItem('p1quiz_music_notation', musicNotation);
