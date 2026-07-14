@@ -2990,7 +2990,7 @@ if(musicOn){
 }
 
 /* ============================= FULLSCREEN TOGGLE ============================= */
-const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle')];
+const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle'), $('house-fullscreen-toggle')];
 function refreshFsBtn(){
   const label = document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ';
   fsBtns.forEach(btn=>{

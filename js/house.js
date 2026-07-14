@@ -227,27 +227,42 @@ function buildWorld(){
   worldGroup = new THREE.Group();
   outGrid = buildOutGrid();
 
-  /* พื้น: บล็อกหญ้า 2 เฉดสลับ checker + น้ำ (InstancedMesh ลด draw call) */
-  const tileGeo = new THREE.BoxGeometry(1,.3,1);
+  /* พื้นสไตล์ isometric บล็อกหนา (อ้างอิง house_example/isomatic2d_style_1.png):
+     หน้าหญ้าเป็นแผ่นบางด้านบน 2 เฉดสลับ checker + ฐานดินน้ำตาลหนาทั้งผืนให้เห็นขอบข้างเป็นชั้นดิน
+     น้ำเป็นแอ่งต่ำกว่าระดับหญ้า โปร่งแสงเล็กน้อย เห็นชั้นดินเป็นตลิ่งริมคลอง */
+  const topGeo = new THREE.BoxGeometry(1,.24,1);
   const counts = {g1:0,g2:0,w:0};
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
     const t = outGrid[z][x];
     if(t===1) counts.w++; else ((x+z)%2 ? counts.g2++ : counts.g1++);
   }
+  const grassMat1 = toonMat(0x8fd06c); /* เรียกก่อนเพื่อให้ gradientMap ถูกสร้างก่อนใช้กับ waterMat */
+  const waterMat = new THREE.MeshToonMaterial({color:0x6cc6e8, gradientMap, transparent:true, opacity:.92});
   const inst = {
-    g1: new THREE.InstancedMesh(tileGeo, toonMat(0x8fd06c), counts.g1),
-    g2: new THREE.InstancedMesh(tileGeo, toonMat(0x7cc25a), counts.g2),
-    w:  new THREE.InstancedMesh(tileGeo, toonMat(0x6cc6e8), counts.w),
+    g1: new THREE.InstancedMesh(topGeo, grassMat1, counts.g1),
+    g2: new THREE.InstancedMesh(topGeo, toonMat(0x7cc25a), counts.g2),
+    w:  new THREE.InstancedMesh(new THREE.BoxGeometry(1,.14,1), waterMat, counts.w),
   };
   const idx = {g1:0,g2:0,w:0};
   const m4 = new THREE.Matrix4();
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
     const t = outGrid[z][x];
     const key = (t===1) ? 'w' : ((x+z)%2 ? 'g2' : 'g1');
-    m4.makeTranslation(outWX(x), t===1 ? -.23 : -.15, outWZ(z));
+    m4.makeTranslation(outWX(x), t===1 ? -.25 : -.12, outWZ(z));
     inst[key].setMatrixAt(idx[key]++, m4);
   }
   Object.values(inst).forEach(im=>{ im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; worldGroup.add(im); });
+  const dirtBase = new THREE.Mesh(new THREE.BoxGeometry(OUT_W,.6,OUT_D), toonMat(0x9c6b45));
+  dirtBase.position.y = -.54; worldGroup.add(dirtBase);
+
+  /* ทางเดินหินหน้าประตูบ้าน */
+  [[4,5],[4,6],[4,7]].forEach(([x,z],i)=>{
+    const s = new THREE.Mesh(new THREE.BoxGeometry(.6,.07,.6), toonMat(0xe3ddd0));
+    s.rotation.y = .35*(i%2 ? 1 : -1);
+    s.position.set(outWX(x), .04, outWZ(z));
+    s.receiveShadow = hShadows;
+    worldGroup.add(s);
+  });
 
   /* สะพานไม้ข้ามคลอง */
   const bridge = new THREE.Group();
@@ -282,6 +297,11 @@ function buildWorld(){
     const f1 = sphere(.5,(i%3===1)?0x5cbf6e:0x4caf50); f1.position.y = .9; tr.add(f1);
     const f2 = sphere(.36,0x66c878); f2.position.set(.3,.68,.18); tr.add(f2);
     const f3 = sphere(.3,0x58b862); f3.position.set(-.28,.72,-.14); tr.add(f3);
+    /* ดอกไม้ขาวแต้มบนพุ่ม (แบบต้นไม้ในภาพอ้างอิง) */
+    if(i%2===0){
+      const b1 = sphere(.07,0xffffff,6); b1.position.set(.2,1.28,.28); tr.add(b1);
+      const b2 = sphere(.055,0xffffff,6); b2.position.set(-.3,1.05,.3); tr.add(b2);
+    }
     tr.position.set(outWX(x), 0, outWZ(z));
     tr.rotation.y = (x*7+z*13)%6;
     worldGroup.add(tr);
@@ -309,15 +329,18 @@ function buildInterior(){
   inGrid = [];
   for(let z=0; z<IN_D; z++){ inGrid.push(new Array(IN_W).fill(0)); }
 
-  const tileGeo = new THREE.BoxGeometry(1,.3,1);
+  const tileGeo = new THREE.BoxGeometry(1,.24,1);
   const im1 = new THREE.InstancedMesh(tileGeo, toonMat(0xe6bc7f), Math.ceil(IN_W*IN_D/2));
   const im2 = new THREE.InstancedMesh(tileGeo, toonMat(0xd9a967), Math.floor(IN_W*IN_D/2));
   const idx = [0,0]; const m4 = new THREE.Matrix4();
   for(let z=0; z<IN_D; z++) for(let x=0; x<IN_W; x++){
-    m4.makeTranslation(inWX(x), -.15, inWZ(z));
+    m4.makeTranslation(inWX(x), -.12, inWZ(z));
     if((x+z)%2){ im2.setMatrixAt(idx[1]++, m4); } else { im1.setMatrixAt(idx[0]++, m4); }
   }
   [im1,im2].forEach(im=>{ im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; interiorGroup.add(im); });
+  /* ฐานใต้พื้นห้อง ให้เป็นบล็อกหนาแบบเดียวกับข้างนอก */
+  const floorBase = new THREE.Mesh(new THREE.BoxGeometry(IN_W,.5,IN_D), toonMat(0x9c6b45));
+  floorBase.position.y = -.49; interiorGroup.add(floorBase);
 
   /* ผนัง 2 ด้านไกลกล้อง (กล้องมองจาก +x,+z) คือด้าน x ต่ำ และ z ต่ำ */
   const wallC = 0xfbe3c0;
@@ -685,6 +708,17 @@ function showHint(){
   hintTimer = setTimeout(()=>hint.classList.add('fade-out'), 6000);
 }
 
+/* ---------- ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว ---------- */
+const _nameV = new THREE.Vector3();
+function updateNameLabel(){
+  const el = $('house-char-name');
+  if(!charGroup || !houseOpen){ el.hidden = true; return; }
+  _nameV.set(charGroup.position.x, charGroup.position.y + 2.05, charGroup.position.z).project(camera);
+  el.style.left = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
+  el.style.top = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
+  el.hidden = false;
+}
+
 /* ---------- loop ---------- */
 const WALK_SPEED = 3;      /* ช่อง/วินาที */
 function frame(t){
@@ -742,6 +776,7 @@ function frame(t){
     camTarget.lerp(charGroup.position, Math.min(1, dt*4));
     applyCamera();
   }
+  updateNameLabel();
   renderer.render(scene, camera);
 }
 
@@ -759,6 +794,8 @@ function startHouseGame(){
   houseView.hidden = false;
   document.body.classList.add('house-open');
   houseOpen = true;
+  $('house-char-name').textContent = activeChild.name;
+  syncHouseCtrls();
 
   /* บ้านผูกกับเด็กที่เลือกเสมอ — สลับเด็กแล้วต้องโหลดตัวละคร/ตำแหน่งของคนใหม่ */
   const childChanged = loadedChildId !== activeChild.id;
@@ -799,7 +836,24 @@ function stopHouseGame(){
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.remove('house-open');
   houseView.hidden = true;
+  $('house-char-name').hidden = true;
   homeView.hidden = false;
+}
+
+/* ---------- ปุ่มควบคุมธีม/เพลง/เสียงในโหมดบ้าน ----------
+   เป็น proxy คลิกปุ่มจริงใน header (ถูกซ่อนด้วย body.house-open) แล้ว mirror icon/class
+   กลับมา ให้สถานะตรงกันเสมอโดยไม่ต้อง copy logic — ปุ่มเต็มจอไม่อยู่ในนี้เพราะผูกกับ
+   fsBtns array ใน js/app.js ตรงๆ ตามกติกา CLAUDE.md */
+const HOUSE_CTRL_PROXY = [
+  ['house-theme-toggle','theme-toggle'],
+  ['house-music-toggle','music-toggle'],
+  ['house-sound-toggle','sound-toggle'],
+];
+function syncHouseCtrls(){
+  HOUSE_CTRL_PROXY.forEach(([hid,sid])=>{
+    const h = $(hid), s = $(sid);
+    if(h && s){ h.innerHTML = s.innerHTML; h.className = s.className; }
+  });
 }
 
 /* ---------- bind ปุ่ม ---------- */
@@ -812,6 +866,12 @@ $('house-edit-btn').addEventListener('click', ()=>{
 $('house-done-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   closeCreator();
+});
+HOUSE_CTRL_PROXY.forEach(([hid,sid])=>{
+  $(hid).addEventListener('click', ()=>{
+    $(sid).click();
+    setTimeout(syncHouseCtrls, 0);
+  });
 });
 $('house-rot-left').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();

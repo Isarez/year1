@@ -115,6 +115,7 @@
       <h2 id="hero-greeting">สวัสดีจ้า นักสู้ตัวน้อย!</h2>
       <p>เลือกหมวดที่อยากลองทำก่อนได้เลย 🎯</p>
       <button class="house-entry-btn" id="house-entry-btn"><span class="house-entry-emoji">🏡</span> บ้านของหนู <span class="house-entry-new">NEW ✨</span></button>
+      <p class="house-entry-desc">โลก 3D ส่วนตัวของหนูเอง — สร้างตัวละคร เดินเล่นรอบบ้าน เข้าไปสำรวจในบ้านได้<br>เล่นเกมให้จบแล้วจะได้ของตกแต่งบ้านมาสะสมเรื่อยๆ (เร็วๆ นี้) 🪑✨</p>
     </div>
     <div class="cat-section">
       <div class="cat-section-title"><img src="assets/icons/section-quiz.svg" class="cst-icon" alt=""> คำถาม-คำตอบ</div>
@@ -343,8 +344,16 @@
       </div>
       <button class="back-btn" id="house-edit-btn" aria-label="แก้ไขตัวละคร" data-tooltip="แก้ไขตัวละคร">✏️</button>
     </div>
+    <!-- ปุ่มควบคุมชุดเดียวกับ header หลัก (header ถูกซ่อนในโหมดบ้าน) — เป็น proxy คลิกแทนปุ่มจริง icon mirror อัตโนมัติใน js/house.js ยกเว้น fullscreen ที่ผูกกับ fsBtns ใน js/app.js ตรงๆ -->
+    <div class="house-ctrl-wrap">
+      <button class="icon-btn" id="house-theme-toggle" aria-label="สลับธีมกลางวัน/กลางคืน">🌙</button>
+      <button class="icon-btn" id="house-music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง">🎵</button>
+      <button class="icon-btn" id="house-sound-toggle" aria-label="เปิด/ปิดเสียง">🔊</button>
+      <button class="icon-btn" id="house-fullscreen-toggle" aria-label="เต็มหน้าจอ">⛶</button>
+    </div>
     <div class="ar-hint-chip house-hint" id="house-hint" hidden>👆 แตะพื้นเพื่อเดินไปเลย! แตะบ้านเพื่อเข้าบ้านนะ</div>
   </div>
+  <div class="house-char-name" id="house-char-name" hidden></div>
   <div class="house-creator" id="house-creator" hidden>
     <div class="house-creator-panel">
       <div class="house-creator-title" id="house-creator-title">🧒 สร้างตัวละครของหนู</div>

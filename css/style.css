@@ -1550,6 +1550,11 @@
     font-size:.62em; font-weight:800; background:#fff; color:#FF7043;
     border-radius:999px; padding:2px 9px;
   }
+  .house-entry-desc{
+    margin-top:10px; font-size:clamp(13.5px,3.4vw,15.5px); font-weight:600;
+    color:var(--ink-soft); line-height:1.55; transition:color 2s ease;
+  }
+  body.night-mode .house-entry-desc{color:#C9D3F5;}
 
   /* view เต็มจอแบบเดียวกับ #ar-view — พื้นหลังโปร่งใสให้เห็นท้องฟ้ากลางวัน/กลางคืนของธีมจริง
      (แบบ ar-mobile-nocam) จึงต้องซ่อน header/footer chrome ที่จะทะลุเข้ามา */
@@ -1575,6 +1580,20 @@
     margin:0; z-index:8; pointer-events:none; transition:opacity .6s ease;
   }
   .house-hint.fade-out{opacity:0;}
+  /* แถบปุ่มควบคุม (ธีม/เพลง/เสียง/เต็มจอ) — คอลัมน์ลอยขวาใต้แถบบน ใช้ .icon-btn ชุดเดียวกับ header */
+  .house-ctrl-wrap{
+    position:fixed; right:14px; top:78px; z-index:8;
+    display:flex; flex-direction:column; gap:10px; pointer-events:auto;
+  }
+  /* ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว — ตำแหน่ง JS อัปเดตทุกเฟรมจาก projection 3D */
+  .house-char-name{
+    position:fixed; z-index:5; transform:translate(-50%,-100%);
+    background:rgba(255,255,255,.88); color:var(--ink);
+    font-size:14.5px; font-weight:800; line-height:1;
+    padding:6px 13px; border-radius:999px; box-shadow:0 2px 8px rgba(70,40,10,.15);
+    pointer-events:none; white-space:nowrap;
+  }
+  .house-char-name[hidden]{display:none;}
 
   /* แผงสร้างตัวละคร — bottom sheet โปร่งๆ ตัวละคร 3D โชว์บนพื้นที่ว่างด้านบน */
   .house-creator{
