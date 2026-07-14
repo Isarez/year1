@@ -211,6 +211,18 @@ const CATS = [
     type:'skill', mode:'mix', mixAdvanced:true, levels:10, isNew:true
   },
   {
+    id:'skill-music', name:'เกมดนตรี 1', emoji:'🎹', icon:'assets/icons/music-1.svg', color:'#C86FB0', light:'#F8E3F1',
+    type:'skill', mode:'music', musicMode:1, levels:10, isNew:true
+  },
+  {
+    id:'skill-music2', name:'เกมดนตรี 2', emoji:'🎼', icon:'assets/icons/music-2.svg', color:'#7B6FD0', light:'#E7E3F8',
+    type:'skill', mode:'music', musicMode:2, levels:10, isNew:true
+  },
+  {
+    id:'skill-music3', name:'เกมดนตรี 3', emoji:'🎤', icon:'assets/icons/music-3.svg', color:'#D08A5E', light:'#FBEBDD',
+    type:'skill', mode:'music', musicMode:3, levels:10, isNew:true, cardTag:'🎹 เล่นผ่านปลดล็อกเปียโน'
+  },
+  {
     id:'listen1', name:'ฟังคำศัพท์ 1', emoji:'🎧', icon:'assets/icons/listen-1.svg', color:'#6C5CE7', light:'#E6E1FB',
     type:'listen', mode:'hint', levels:10
   },
@@ -528,7 +540,7 @@ const AR_COUNT_QUESTIONS = {
   ]
 };
 
-const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'listen1', 'listen-th2':'listen-th1', 'skill-shadow2':'skill-shadow', 'skill-shadow3':'skill-shadow2', 'ar-math2':'ar-math', 'ar-math3':'ar-math2', 'skill-mix2':'skill-mix' };
+const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'listen1', 'listen-th2':'listen-th1', 'skill-shadow2':'skill-shadow', 'skill-shadow3':'skill-shadow2', 'ar-math2':'ar-math', 'ar-math3':'ar-math2', 'skill-mix2':'skill-mix', 'skill-music2':'skill-music', 'skill-music3':'skill-music2' };
 
 /* จำนวนคู่ (pairs) ต่อด่านของเกม skill-memory (จับคู่ตัวเลขกับจุด), index 0 = ด่าน 1 */
 const MEMORY_LEVEL_PAIRS = [4, 8, 12];
@@ -597,3 +609,53 @@ const SHADOW_ITEMS = {
     {e:'👟', n:'รองเท้า', s:'wear'}, {e:'🧸', n:'ตุ๊กตาหมี', s:'toy'}, {e:'🎸', n:'กีตาร์', s:'stick'}
   ]
 };
+
+/* ============================= เกมดนตรี (skill-music) — เปียโน ============================= */
+/* คีย์ขาว 15 คีย์ = 2 ช่วงเสียง (โด-โด) โน้ตไทย ด ร ม ฟ ซ ล ท + โน้ตอังกฤษ C D E F G A B
+   แต่ละโน้ตมีสีประจำ (ไล่สายรุ้ง โน้ตชื่อเดียวกันสีเดียวกันทุกช่วงเสียง) freq = ความถี่จริง (equal temperament)
+   โจทย์ทุก level อ้างอิงคีย์ด้วย index ในอาเรย์นี้ (0-14) — โจทย์ใช้เฉพาะคีย์ขาว */
+const MUSIC_WHITE_KEYS = [
+  {th:'ด', en:'C', freq:261.63, color:'#F94144'},
+  {th:'ร', en:'D', freq:293.66, color:'#F8961E'},
+  {th:'ม', en:'E', freq:329.63, color:'#F9C74F'},
+  {th:'ฟ', en:'F', freq:349.23, color:'#90BE6D'},
+  {th:'ซ', en:'G', freq:392.00, color:'#43AA8B'},
+  {th:'ล', en:'A', freq:440.00, color:'#4D96FF'},
+  {th:'ท', en:'B', freq:493.88, color:'#9D4EDD'},
+  {th:'ด', en:'C', freq:523.25, color:'#F94144'},
+  {th:'ร', en:'D', freq:587.33, color:'#F8961E'},
+  {th:'ม', en:'E', freq:659.25, color:'#F9C74F'},
+  {th:'ฟ', en:'F', freq:698.46, color:'#90BE6D'},
+  {th:'ซ', en:'G', freq:783.99, color:'#43AA8B'},
+  {th:'ล', en:'A', freq:880.00, color:'#4D96FF'},
+  {th:'ท', en:'B', freq:987.77, color:'#9D4EDD'},
+  {th:'ด', en:'C', freq:1046.50, color:'#F94144'}
+];
+/* คีย์ดำ 10 คีย์ (เสียงครึ่งเสียง/ชาร์ป) กดได้มีเสียงจริง แต่โจทย์ไม่เคยใช้
+   after = index คีย์ขาวที่คีย์ดำนี้แทรกอยู่ทางขวา (ไม่มีคีย์ดำหลัง ม/ท คือ index 2,6,9,13,14) */
+const MUSIC_BLACK_KEYS = [
+  {after:0, freq:277.18}, {after:1, freq:311.13},
+  {after:3, freq:369.99}, {after:4, freq:415.30}, {after:5, freq:466.16},
+  {after:7, freq:554.37}, {after:8, freq:622.25},
+  {after:10, freq:739.99}, {after:11, freq:830.61}, {after:12, freq:932.33}
+];
+/* Level 1 (คีย์มีตัวโน้ตกำกับ) และ Level 3 (คีย์ไม่มีตัวโน้ต หาคีย์เอง) สุ่มโจทย์สดทุกครั้ง
+   ไล่ความยากตามด่าน: ด่าน 1-3 = 1 โน้ต, 4-7 = 2 โน้ต, 8-10 = 3 โน้ต (ดู randMusicTarget ใน app.js)
+   การเช็คคำตอบเทียบด้วย "ชื่อโน้ต" (ด/ร/ม...) ไม่ผูก octave กดคีย์ชื่อเดียวกัน octave ไหนก็ถือว่าถูก */
+/* Level 2: เกมความจำสะสม (Simon) คีย์ยังมีตัวโน้ตกำกับ ด่าน n ให้กดโน้ตตัวที่ 1..n เรียงตามลำดับ
+   เปิดเผยเฉพาะโน้ตตัวใหม่ของด่านนั้น ตัวก่อนหน้าต้องจำเอง — สุ่ม 1 เพลงจาก 10 เพลงจริงต่อการเล่น (เล่นซ้ำได้เพลงใหม่)
+   notes เก็บทำนอง "เต็มเพลง" (ใช้ในเปียโนของหนู modal เลือกเพลงเล่นจนจบ)
+   *** Level 2 ใช้แค่ 10 โน้ตแรกเท่านั้น *** (renderMusicLevel slice(0, level) ด่านสูงสุด 10)
+   ดังนั้น 10 โน้ตแรกของทุกเพลงต้องคงไว้เหมือนเดิม (index คีย์ขาว 0-14 = ด ร ม ฟ ซ ล ท ด ร ม ฟ ซ ล ท ด) */
+const MUSIC_LEVEL2_SONGS = [
+  { name:'ดาวน้อย 🌟',          notes:[0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1, 0,0,4,4,5,5,4, 3,3,2,2,1,1,0] }, /* Twinkle Twinkle */
+  { name:'แกะน้อยของแมรี่ 🐑',   notes:[2,1,0,1,2,2,2, 1,1,1, 2,4,4, 2,1,0,1,2,2,2,2, 1,1,2,1,0] }, /* Mary Had a Little Lamb */
+  { name:'เพลงแห่งความสุข 😊',   notes:[2,2,3,4,4,3,2,1, 0,0,1,2,2,1,1, 2,2,3,4,4,3,2,1, 0,0,1,2,1,0,0] }, /* Ode to Joy */
+  { name:'ลุงมากมีฟาร์ม 🚜',     notes:[0,0,0,4,5,5,4, 2,2,1,1,0, 4,0,0,0, 4,5,5,4, 2,2,1,1,0] }, /* Old MacDonald */
+  { name:'พายเรือน้อย 🚣',       notes:[0,0,0,1,2, 2,1,2,3,4, 7,7,7,4,4,4,2,2,2,0,0,0, 4,3,2,1,0] }, /* Row Your Boat */
+  { name:'สะพานลอนดอน 🌉',       notes:[4,5,4,3,2,3,4, 1,2,3, 2,3,4, 4,5,4,3,2,3,4, 1,4,2,0] }, /* London Bridge */
+  { name:'ขนมปังปิ้ง 🍞',        notes:[2,1,0, 2,1,0, 0,0,0,0, 1,1,1,1, 2,1,0] }, /* Hot Cross Buns */
+  { name:'จิงเกิ้ลเบล 🔔',       notes:[2,2,2,2,2,2,2,4,0,1, 2, 3,3,3,3, 3,2,2,2, 2,1,1,2, 1,4] }, /* Jingle Bells */
+  { name:'พี่จอห์นหลับ 😴',      notes:[0,1,2,0, 0,1,2,0, 2,3,4, 2,3,4, 4,5,4,3,2,0, 4,5,4,3,2,0, 0,4,0, 0,4,0] }, /* Frère Jacques */
+  { name:'สุขสันต์วันเกิด 🎂',   notes:[4,4,5,4,7,6, 4,4,5,4,8,7, 4,4,11,9,7,6,5, 10,10,9,7,8,7] }  /* Happy Birthday */
+];

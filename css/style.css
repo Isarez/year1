@@ -485,7 +485,7 @@
     transform:scale(1.18);
   }
   /* confirm modal */
-  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal{
+  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal,#free-piano-modal{
     position:fixed; inset:0; z-index:200;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
@@ -688,6 +688,15 @@
   }
   @keyframes newBadgePop{0%{transform:scale(0) rotate(-15deg); opacity:0;} 100%{transform:scale(1) rotate(-6deg); opacity:1;}}
   @keyframes newBadgePulse{0%,100%{transform:scale(1) rotate(-6deg);} 50%{transform:scale(1.08) rotate(-6deg);}}
+  /* ป้ายบอกรางวัลปลดล็อกเปียโน (บนการ์ดเกมดนตรี 3) — absolute ไม่ดันขนาดการ์ด (การ์ดทุกใบเท่ากันเสมอ) */
+  .cat-card-tag{
+    position:absolute; bottom:-9px; right:12px; z-index:2; white-space:nowrap;
+    background:linear-gradient(135deg,#C86FB0,#7B6FD0); color:#fff;
+    font-size:12px; font-weight:800; letter-spacing:.2px;
+    padding:5px 12px; border-radius:999px; box-shadow:0 4px 12px rgba(123,111,208,.5);
+    animation:catTagPop .5s cubic-bezier(.34,1.56,.64,1) .35s backwards;
+  }
+  @keyframes catTagPop{0%{transform:scale(0); opacity:0;} 100%{transform:scale(1); opacity:1;}}
 
   /* ---------- quiz view ---------- */
   .quiz-top{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
@@ -1522,6 +1531,144 @@
     .listen-card{width:80px; height:80px; font-size:34px;}
     .listen-speak-btn{padding:12px 22px; font-size:17px;}
   }
+
+  /* ===== ปุ่มเปียโนของหนู (gimmick มุมล่างซ้าย เหนือปุ่มติดตั้ง) + modal เปียโนอิสระ ===== */
+  .free-piano-btn{
+    bottom:60px;
+    background:linear-gradient(135deg, #C86FB0, #7B6FD0); color:#fff; border-color:transparent;
+    box-shadow:0 4px 14px rgba(123,111,208,.38); animation:fpBtnGlow 2.4s ease-in-out infinite;
+  }
+  body.night-mode .free-piano-btn{ background:linear-gradient(135deg, #C86FB0, #7B6FD0); color:#fff; border-color:transparent; }
+  @keyframes fpBtnGlow{0%,100%{box-shadow:0 4px 14px rgba(123,111,208,.38);} 50%{box-shadow:0 4px 22px rgba(200,111,176,.66);}}
+  body.music-open .install-link-btn, body.music-open .free-piano-btn{ display:none; }
+
+  .free-piano-card{
+    max-width:min(840px, 96vw); width:100%; max-height:92vh; overflow-y:auto;
+    text-align:center;
+  }
+  @media (min-width:1025px){ .free-piano-card{ max-width:min(1120px, 94vw); } }
+  .fp-sub{font-size:15px; font-weight:600; color:var(--ink-soft); margin:2px 0 14px;}
+  .fp-songs{display:flex; justify-content:center; margin-bottom:14px;}
+  .fp-song-select{
+    font-family:inherit; font-weight:800; font-size:16px; color:#fff; text-align:center;
+    background:linear-gradient(135deg,#C86FB0,#7B6FD0); border:none; border-radius:16px;
+    padding:11px 46px 11px 20px; cursor:pointer; max-width:92%;
+    box-shadow:0 5px 0 #6a5cbf; -webkit-appearance:none; appearance:none;
+    /* ลูกศรวางเป็น layer บนสุด (ต้องมาก่อน gradient ไม่งั้นถูกทับ) */
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"), linear-gradient(135deg,#C86FB0,#7B6FD0);
+    background-repeat:no-repeat, no-repeat; background-position:right 15px center, center; background-size:16px, auto;
+  }
+  .fp-song-select:active{transform:translateY(2px); box-shadow:0 3px 0 #6a5cbf;}
+  .fp-song-select option{color:var(--ink); background:#FFF7EA; font-weight:700;}
+  .fp-notes-wrap{min-height:44px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .fp-notes{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-items:center;}
+  /* โน้ตในเปียโนของหนู (modal) เล็กกว่าในเกม เพราะโชว์ทั้งเพลง (โน้ตเยอะ) */
+  .fp-notes .music-note-bubble{
+    width:clamp(30px,6.5vw,38px); height:clamp(30px,6.5vw,38px);
+    font-size:clamp(14px,3.4vw,18px); border-width:2.5px;
+  }
+  .fp-notes .music-note-bubble .mnb-check{ top:-5px; right:-5px; width:16px; height:16px; font-size:11px; }
+  .fp-hint-free{font-size:15px; font-weight:700; color:var(--ink-soft);}
+  .fp-tools{margin-bottom:16px;}
+
+  /* ===== เกมดนตรี (เปียโน) — skill-music ===== */
+  .music-board{
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+    padding:14px 4px 44px; width:100%; max-width:100%; margin:0 auto;
+  }
+  .music-prompt-card{
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    background:linear-gradient(180deg, #FFFDF5, #FFF3DC);
+    border:4px solid var(--cat-color, #C86FB0); border-radius:26px;
+    padding:16px 26px 20px; box-shadow:0 8px 0 rgba(0,0,0,.08);
+    max-width:min(680px, 94vw);
+  }
+  .music-prompt-label{font-size:18px; font-weight:800; color:var(--ink); text-align:center;}
+  .music-notes{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; min-height:58px;}
+  .music-note-bubble{
+    width:clamp(46px,13vw,58px); height:clamp(46px,13vw,58px); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; position:relative;
+    font-weight:800; font-size:clamp(22px,6vw,27px);
+    background:color-mix(in srgb, var(--key-color,#C86FB0) 16%, #fff);
+    border:3px solid var(--key-color,#C86FB0);
+    color:color-mix(in srgb, var(--key-color,#C86FB0) 62%, #3a2b2b);
+    transition:transform .15s;
+  }
+  .music-note-bubble.current{
+    box-shadow:0 0 0 5px color-mix(in srgb, var(--key-color,#C86FB0) 28%, #fff);
+    animation:mnbPulse 1s ease-in-out infinite;
+  }
+  @keyframes mnbPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.12);}}
+  .music-note-bubble.done{background:var(--key-color,#C86FB0); color:#fff; border-color:var(--key-color,#C86FB0);}
+  .music-note-bubble .mnb-check{
+    position:absolute; top:-8px; right:-8px; width:24px; height:24px; border-radius:50%;
+    background:#43AA8B; color:#fff; font-size:15px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 0 rgba(0,0,0,.15);
+  }
+  .music-note-bubble.mystery{background:#F0EDE6; border:3px dashed #C3B9AC; color:#B4A796;}
+  .music-note-bubble.shake{animation:mnbShake .4s;}
+  @keyframes mnbShake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);}}
+  .music-prompt-tools{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+  .music-tool-btn{
+    font-family:inherit; font-weight:800; font-size:15px; color:var(--ink);
+    background:var(--white,#fff); border:3px solid var(--cat-color,#C86FB0); border-radius:999px;
+    padding:9px 18px; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.08); transition:transform .12s;
+  }
+  .music-tool-btn:active{transform:translateY(3px); box-shadow:none;}
+  .music-listen-btn{background:linear-gradient(135deg, var(--cat-color,#C86FB0), color-mix(in srgb, var(--cat-color,#C86FB0) 70%, white)); color:#fff; border-color:transparent;}
+  .music-msg{
+    background:#fff; border:3px solid var(--cat-color,#C86FB0); border-radius:18px;
+    padding:9px 20px; font-size:20px; font-weight:800; color:var(--ink);
+    box-shadow:0 4px 0 rgba(0,0,0,.08); text-align:center;
+  }
+  .music-msg[hidden]{display:none;}
+  .music-piano-wrap{width:100%; overflow-x:auto; padding:6px 10px 16px; -webkit-overflow-scrolling:touch;}
+  .music-piano{
+    position:relative; display:flex; gap:0; height:200px; width:max-content; margin:0 auto;
+    touch-action:manipulation; user-select:none;
+  }
+  .music-key{font-family:inherit; padding:0; cursor:pointer; touch-action:manipulation;}
+  .music-white{
+    position:relative; flex:0 0 auto; width:clamp(46px,5.6vw,66px); height:100%;
+    background:linear-gradient(180deg, #fff 55%, color-mix(in srgb, var(--key-color,#ccc) 22%, #fff));
+    border:2px solid color-mix(in srgb, var(--key-color,#ccc) 42%, #fff);
+    border-radius:7px 7px 14px 14px; margin-right:-2px;
+    box-shadow:0 6px 0 color-mix(in srgb, var(--key-color,#999) 35%, #d8cfc4), inset 0 2px 4px rgba(255,255,255,.9);
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:14px;
+    transition:transform .07s, box-shadow .07s, background .1s;
+  }
+  .music-white .mk-label{
+    width:clamp(28px,4vw,38px); height:clamp(28px,4vw,38px); border-radius:50%;
+    background:var(--key-color,#C86FB0); color:#fff; font-weight:800; font-size:clamp(16px,2.4vw,21px);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,.18);
+  }
+  .no-key-labels .mk-label{display:none;}
+  .music-white.pressed{transform:translateY(5px); box-shadow:0 1px 0 color-mix(in srgb, var(--key-color,#999) 35%, #d8cfc4); background:linear-gradient(180deg, #fff 40%, color-mix(in srgb, var(--key-color,#ccc) 38%, #fff));}
+  .music-white.key-wrong{background:linear-gradient(180deg, #FFE1E1, #FFB4B4); border-color:#E8635E;}
+  .music-black{
+    position:absolute; top:0; z-index:3; transform:translateX(-50%);
+    width:clamp(28px,3.4vw,40px); height:62%;
+    background:linear-gradient(180deg, #4a4658, #201d2c);
+    border:0; border-radius:0 0 8px 8px;
+    box-shadow:0 5px 0 rgba(0,0,0,.45), inset 0 -7px 9px rgba(255,255,255,.07);
+    transition:transform .07s, box-shadow .07s;
+  }
+  .music-black.pressed{transform:translateX(-50%) translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.45);}
+  @media (min-width:1025px){ .music-piano{height:240px;} }
+  @media (max-width:480px){
+    .music-prompt-card{padding:13px 16px 16px;}
+    .music-prompt-label{font-size:16px;}
+    .music-tool-btn{font-size:14px; padding:8px 14px;}
+    .music-piano{height:176px;}
+  }
+  /* เปียโนของหนู (free-piano modal): ให้เห็นเปียโนเต็มความกว้าง ไม่ต้อง scroll — คีย์ขาวยืด/หดพอดี modal */
+  .free-piano-card .music-piano-wrap{overflow-x:hidden; padding-left:2px; padding-right:2px;}
+  #fp-piano{width:100%; height:238px;}
+  #fp-piano .music-white{flex:1 1 0; width:auto; min-width:0; padding-bottom:12px;}
+  #fp-piano .music-white .mk-label{width:clamp(15px,2.6vw,25px); height:clamp(15px,2.6vw,25px); font-size:clamp(9px,1.7vw,14px);}
+  #fp-piano .music-black{width:clamp(16px,3vw,32px);}
+  @media (min-width:1025px){ #fp-piano{height:288px;} }
+  @media (max-width:480px){ #fp-piano{height:196px;} }
 
   /* ===== CUSTOM OWL CURSOR (pointer) — ต้องอยู่ท้ายสุดเพื่อ override cursor:pointer ทั้งหมด ===== */
   body button, body a, body [role="button"], body label[for], body select,
