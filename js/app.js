@@ -493,6 +493,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
 
 /* ============================= HOME RENDER ============================= */
 function renderHome(){
+  resumeBgMusicAfterMusicGame(); // กลับมาหน้าหลัก = เล่นเพลงพื้นหลังต่อ (เผื่อออกจากเกมดนตรีทางอื่น)
   const name = activeChild ? activeChild.name : 'นักสู้ตัวน้อย';
   $('hero-greeting').textContent = 'สวัสดีจ้า '+name+'! 🎉';
   const grid = $('cat-grid');
@@ -1558,14 +1559,31 @@ $('mix-back').addEventListener('click', ()=>{
 });
 
 /* ============================= เกมดนตรี (เปียโน) — skill-music 1/2/3 ============================= */
-/* musicMode 1: คีย์มีตัวโน้ตกำกับ กดตามโจทย์ 1-3 ตัวเรียงลำดับ (MUSIC_LEVEL1)
-   musicMode 2: เกมความจำสะสม เพลง "ดาวน้อย" ด่าน n กดโน้ตตัวที่ 1..n เปิดเผยเฉพาะตัวใหม่ ต้องจำตัวเก่าเอง (MUSIC_LEVEL2_SONG)
-   musicMode 3: เอาตัวโน้ตกำกับที่คีย์ออก โจทย์บอกโน้ต เด็กหาคีย์เอง 1-3 ตัว (MUSIC_LEVEL3)
+/* musicMode 1: คีย์มีตัวโน้ตกำกับ สุ่มโจทย์ 1-3 ตัวเรียงลำดับ (randMusicTarget)
+   musicMode 2: เกมความจำสะสม สุ่ม 1 เพลงจาก MUSIC_LEVEL2_SONGS ด่าน n กดโน้ตตัวที่ 1..n เปิดเผยเฉพาะตัวใหม่ ต้องจำตัวเก่าเอง
+   musicMode 3: เอาตัวโน้ตกำกับที่คีย์ออก สุ่มโจทย์ เด็กหาคีย์เอง 1-3 ตัว (randMusicTarget)
+   เช็คคำตอบด้วยชื่อโน้ต (octave-agnostic) กดคีย์ชื่อเดียวกัน octave ไหนก็ถูก
    คีย์ดำกดได้มีเสียงจริง แต่ไม่เกี่ยวกับโจทย์ (ไม่นับผิด) */
-let musicGame = null; // {catId, mode, level, totalLevels, mistakes, target:[whiteIdx], pos, locked}
+let musicGame = null; // {catId, mode, level, totalLevels, mistakes, target:[whiteIdx], pos, locked, song}
 let musicNotation = (localStorage.getItem('p1quiz_music_notation')==='en') ? 'en' : 'th';
+let musicPausedBg = false; // จำว่าเกมนี้เป็นคนสั่งพักเพลงพื้นหลังไว้ (จะได้เล่นต่อตอนออก)
 
 function musicKeyLabel(k){ return musicNotation==='en' ? k.en : k.th; }
+/* เทียบชื่อโน้ตแบบไม่สนใจ octave (ด ที่ index 0/7/14 ถือว่าเหมือนกัน) */
+function sameNote(a, b){ return MUSIC_WHITE_KEYS[a].th === MUSIC_WHITE_KEYS[b].th; }
+/* สุ่มโจทย์ Level 1/3: ด่าน 1-3 = 1 โน้ต, 4-7 = 2 โน้ต, 8-10 = 3 โน้ต จากคีย์ ด..ด (index 0-7) ไม่ให้ตัวติดกันซ้ำ */
+function randMusicTarget(level){
+  const count = level<=3 ? 1 : (level<=7 ? 2 : 3);
+  const t = [];
+  for(let i=0;i<count;i++){
+    let n; do { n = Math.floor(Math.random()*8); } while(i>0 && n===t[i-1]);
+    t.push(n);
+  }
+  return t;
+}
+/* พักเพลงพื้นหลังตอนอยู่ในเกมดนตรี / เล่นต่อตอนออก (ไม่แตะค่า setting musicOn ของผู้ใช้) */
+function pauseBgMusicForMusicGame(){ if(musicOn && !musicPausedBg){ stopMusic(); musicPausedBg = true; } }
+function resumeBgMusicAfterMusicGame(){ if(musicPausedBg){ musicPausedBg = false; if(musicOn) startMusic(); } }
 function pianoWhiteEl(i){ return $('music-piano').querySelector('.music-white[data-white="'+i+'"]'); }
 function flashKey(key){ if(!key) return; key.classList.add('pressed'); setTimeout(()=>key.classList.remove('pressed'), 200); }
 
@@ -1642,14 +1660,13 @@ function renderMusicLevel(){
   const g = musicGame;
   g.pos = 0; g.locked = false;
   $('music-msg').hidden = true;
-  if(g.mode===2)      g.target = MUSIC_LEVEL2_SONG.notes.slice(0, g.level);
-  else if(g.mode===1) g.target = MUSIC_LEVEL1[g.level-1].slice();
-  else                g.target = MUSIC_LEVEL3[g.level-1].slice();
+  if(g.mode===2) g.target = g.song.notes.slice(0, g.level);
+  else           g.target = randMusicTarget(g.level);
   $('music-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('music-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const hint = $('music-hint'), plabel = $('music-prompt-label');
   if(g.mode===1){ hint.textContent = '🎹 กดคีย์ตามโน้ตในโจทย์ให้ครบตามลำดับนะ'; plabel.textContent = 'กดคีย์ตามนี้เลย 👇'; }
-  else if(g.mode===2){ hint.textContent = '🧠 จำโน้ตให้ได้! กดตั้งแต่ตัวแรกจนถึงตัวใหม่ล่าสุด'; plabel.textContent = 'เพลง '+MUSIC_LEVEL2_SONG.name+' — เล่นต่อ เพิ่มโน้ตใหม่!'; }
+  else if(g.mode===2){ hint.textContent = '🧠 จำโน้ตให้ได้! กดตั้งแต่ตัวแรกจนถึงตัวใหม่ล่าสุด'; plabel.textContent = 'เพลง '+g.song.name+' — เล่นต่อ เพิ่มโน้ตใหม่!'; }
   else { hint.textContent = '🔍 คีย์ไม่มีตัวโน้ตแล้ว หาคีย์ให้ถูกตามโจทย์นะ'; plabel.textContent = 'หาคีย์ให้ถูก 🔍'; }
   renderMusicNotes();
   if(g.mode===2){
@@ -1664,7 +1681,7 @@ function renderMusicLevel(){
 function musicPressWhite(wi){
   const g = musicGame;
   if(!g || g.locked) return;
-  if(wi === g.target[g.pos]){
+  if(sameNote(wi, g.target[g.pos])){
     g.pos++;
     renderMusicNotes();
     if(g.pos >= g.target.length) musicLevelComplete();
@@ -1696,7 +1713,9 @@ function musicLevelComplete(){
 function startMusicGame(catId){
   lastGameType = 'music'; lastCatId = catId;
   const cat = catById(catId);
-  musicGame = { catId, mode:cat.musicMode, level:1, totalLevels:cat.levels, mistakes:0, target:[], pos:0, locked:false };
+  musicGame = { catId, mode:cat.musicMode, level:1, totalLevels:cat.levels, mistakes:0, target:[], pos:0, locked:false, song:null };
+  if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
+  pauseBgMusicForMusicGame();
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -1712,6 +1731,7 @@ function startMusicGame(catId){
 function finishMusicGame(){
   const cat = catById(musicGame.catId);
   const mistakes = musicGame.mistakes, totalLevels = musicGame.totalLevels;
+  resumeBgMusicAfterMusicGame();
   musicView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
@@ -1765,6 +1785,7 @@ $('music-notation-toggle').addEventListener('click', function(){
 });
 $('music-back').addEventListener('click', ()=>{
   playClick();
+  resumeBgMusicAfterMusicGame();
   musicView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
