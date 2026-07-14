@@ -162,6 +162,7 @@ function renderChildSelect(){
   $('clear-btn').hidden = true;
   homeView.hidden = true;
   $('owl-widget').hidden = true;
+  $('free-piano-btn').hidden = true;
 }
 
 /* child-select submit */
@@ -494,6 +495,8 @@ $('switch-child-btn').addEventListener('click', ()=>{
 /* ============================= HOME RENDER ============================= */
 function renderHome(){
   resumeBgMusicAfterMusicGame(); // กลับมาหน้าหลัก = เล่นเพลงพื้นหลังต่อ (เผื่อออกจากเกมดนตรีทางอื่น)
+  document.body.classList.remove('music-open');
+  updateFreePianoBtn();
   const name = activeChild ? activeChild.name : 'นักสู้ตัวน้อย';
   $('hero-greeting').textContent = 'สวัสดีจ้า '+name+'! 🎉';
   const grid = $('cat-grid');
@@ -1617,9 +1620,9 @@ function playMusicSequence(seq, noFlash){
   });
 }
 
-function buildPiano(){
-  const piano = $('music-piano'), g = musicGame;
-  piano.classList.toggle('no-key-labels', g.mode===3);
+/* วาดคีย์เปียโนลงใน element ที่ระบุ (ใช้ทั้งเกมดนตรีและ modal เปียโนอิสระ) */
+function renderPianoKeys(piano, hideLabels){
+  piano.classList.toggle('no-key-labels', !!hideLabels);
   const n = MUSIC_WHITE_KEYS.length;
   let html = '';
   MUSIC_WHITE_KEYS.forEach((k,i)=>{
@@ -1631,6 +1634,7 @@ function buildPiano(){
   });
   piano.innerHTML = html;
 }
+function buildPiano(){ renderPianoKeys($('music-piano'), musicGame.mode===3); }
 
 function renderMusicNotes(allDone){
   const g = musicGame, wrap = $('music-notes');
@@ -1716,6 +1720,7 @@ function startMusicGame(catId){
   musicGame = { catId, mode:cat.musicMode, level:1, totalLevels:cat.levels, mistakes:0, target:[], pos:0, locked:false, song:null };
   if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
   pauseBgMusicForMusicGame();
+  document.body.classList.add('music-open'); // ซ่อนปุ่มมุมล่าง (ติดตั้ง/เปียโน) ไม่ให้ทับคีย์
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -1732,6 +1737,8 @@ function finishMusicGame(){
   const cat = catById(musicGame.catId);
   const mistakes = musicGame.mistakes, totalLevels = musicGame.totalLevels;
   resumeBgMusicAfterMusicGame();
+  document.body.classList.remove('music-open');
+  const wasAllDone = musicAllDone();
   musicView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
@@ -1739,6 +1746,8 @@ function finishMusicGame(){
   const newlyUnlocked = !wasUnlocked && stars>=2;
   progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
   saveProgress();
+  const freePianoJustUnlocked = !wasAllDone && musicAllDone(); // เพิ่งเล่นเกมดนตรีครบทั้ง 3 เกม
+  if(freePianoJustUnlocked){ setTimeout(()=>showToast('🎹','ปลดล็อกเปียโนของหนูแล้ว! กดปุ่มมุมล่างซ้ายเล่นได้เลย'), 1800); }
   const cname = activeChild ? activeChild.name+' ' : '';
   $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
   $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
@@ -1786,9 +1795,93 @@ $('music-notation-toggle').addEventListener('click', function(){
 $('music-back').addEventListener('click', ()=>{
   playClick();
   resumeBgMusicAfterMusicGame();
+  document.body.classList.remove('music-open');
   musicView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* ===== gimmick: เปียโนของหนู (ปลดล็อกเมื่อเล่นเกมดนตรีครบทั้ง 3 เกม) ===== */
+const MUSIC_CAT_IDS = ['skill-music','skill-music2','skill-music3'];
+function musicAllDone(){ return MUSIC_CAT_IDS.every(id => progress[id] && progress[id].stars>=1); }
+function updateFreePianoBtn(){ const b = $('free-piano-btn'); if(b) b.hidden = !(activeChild && musicAllDone()); }
+
+let freePiano = { song:null, pos:0 };
+
+function renderFreePianoSongs(){
+  const wrap = $('fp-songs');
+  let html = '<button class="fp-song-chip'+(freePiano.song?'':' active')+'" data-song="-1">🎹 เล่นอิสระ</button>';
+  MUSIC_LEVEL2_SONGS.forEach((s,i)=>{
+    html += '<button class="fp-song-chip'+(freePiano.song===s?' active':'')+'" data-song="'+i+'">'+s.name+'</button>';
+  });
+  wrap.innerHTML = html;
+}
+function renderFreePianoNotes(){
+  const wrap = $('fp-notes');
+  if(!freePiano.song){ wrap.innerHTML = '<div class="fp-hint-free">กดคีย์เล่นได้เลย ทุกคีย์มีเสียงจริง! 🎶</div>'; return; }
+  wrap.innerHTML = '';
+  freePiano.song.notes.forEach((wi,i)=>{
+    const k = MUSIC_WHITE_KEYS[wi];
+    const b = document.createElement('div');
+    b.className = 'music-note-bubble'+(i<freePiano.pos?' done':'')+((i===freePiano.pos)?' current':'');
+    b.style.setProperty('--key-color', k.color);
+    if(i<freePiano.pos) b.innerHTML = '<span class="mnb-note">'+musicKeyLabel(k)+'</span><span class="mnb-check">✓</span>';
+    else b.innerHTML = '<span class="mnb-note">'+musicKeyLabel(k)+'</span>';
+    wrap.appendChild(b);
+  });
+}
+function selectFreeSong(idx){
+  freePiano.song = idx<0 ? null : MUSIC_LEVEL2_SONGS[idx];
+  freePiano.pos = 0;
+  renderFreePianoSongs();
+  renderFreePianoNotes();
+}
+function openFreePiano(){
+  playClick();
+  pauseBgMusicForMusicGame();
+  document.documentElement.style.setProperty('--cat-color', '#C86FB0');
+  freePiano = { song:null, pos:0 };
+  renderPianoKeys($('fp-piano'), false);
+  renderFreePianoSongs();
+  renderFreePianoNotes();
+  $('fp-notation').textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
+  openOverlay('free-piano-modal');
+}
+function closeFreePiano(){ resumeBgMusicAfterMusicGame(); closeOverlay('free-piano-modal'); }
+
+$('free-piano-btn').addEventListener('click', openFreePiano);
+$('free-piano-x').addEventListener('click', ()=>{ playClick(); closeFreePiano(); });
+$('free-piano-backdrop').addEventListener('click', closeFreePiano);
+$('fp-songs').addEventListener('click', e=>{
+  const chip = e.target.closest('.fp-song-chip'); if(!chip) return;
+  playClick(); selectFreeSong(+chip.dataset.song);
+});
+$('fp-listen').addEventListener('click', ()=>{ if(freePiano.song) playMusicSequence(freePiano.song.notes); });
+$('fp-notation').addEventListener('click', function(){
+  musicNotation = musicNotation==='en' ? 'th' : 'en';
+  localStorage.setItem('p1quiz_music_notation', musicNotation);
+  this.textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
+  renderPianoKeys($('fp-piano'), false);
+  renderFreePianoNotes();
+});
+$('fp-piano').addEventListener('pointerdown', e=>{
+  const key = e.target.closest('.music-key'); if(!key) return;
+  e.preventDefault();
+  if(key.classList.contains('music-black')){ playPianoNote(MUSIC_BLACK_KEYS[+key.dataset.black].freq, 0.7); flashKey(key); return; }
+  const wi = +key.dataset.white;
+  playPianoNote(MUSIC_WHITE_KEYS[wi].freq, 0.9);
+  flashKey(key);
+  // โหมดเล่นตามเพลง: กดถูกตัวถัดไป (เทียบชื่อโน้ต) แล้วเดินหน้าไฮไลต์ กดผิดไม่เป็นไร (เล่นอิสระ)
+  if(freePiano.song && sameNote(wi, freePiano.song.notes[freePiano.pos])){
+    freePiano.pos++;
+    if(freePiano.pos >= freePiano.song.notes.length){
+      renderFreePianoNotes();
+      mascotHappy(); playCorrect();
+      setTimeout(()=>{ freePiano.pos = 0; renderFreePianoNotes(); }, 900);
+    } else {
+      renderFreePianoNotes();
+    }
+  }
 });
 
 /* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */

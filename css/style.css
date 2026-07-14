@@ -485,7 +485,7 @@
     transform:scale(1.18);
   }
   /* confirm modal */
-  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal{
+  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal,#free-piano-modal{
     position:fixed; inset:0; z-index:200;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
@@ -1522,6 +1522,34 @@
     .listen-card{width:80px; height:80px; font-size:34px;}
     .listen-speak-btn{padding:12px 22px; font-size:17px;}
   }
+
+  /* ===== ปุ่มเปียโนของหนู (gimmick มุมล่างซ้าย เหนือปุ่มติดตั้ง) + modal เปียโนอิสระ ===== */
+  .free-piano-btn{
+    bottom:60px;
+    background:linear-gradient(135deg, #C86FB0, #7B6FD0); color:#fff; border-color:transparent;
+    box-shadow:0 4px 14px rgba(123,111,208,.38); animation:fpBtnGlow 2.4s ease-in-out infinite;
+  }
+  body.night-mode .free-piano-btn{ background:linear-gradient(135deg, #C86FB0, #7B6FD0); color:#fff; border-color:transparent; }
+  @keyframes fpBtnGlow{0%,100%{box-shadow:0 4px 14px rgba(123,111,208,.38);} 50%{box-shadow:0 4px 22px rgba(200,111,176,.66);}}
+  body.music-open .install-link-btn, body.music-open .free-piano-btn{ display:none; }
+
+  .free-piano-card{
+    max-width:min(840px, 96vw); width:100%; max-height:92vh; overflow-y:auto;
+    text-align:center;
+  }
+  .fp-sub{font-size:15px; font-weight:600; color:var(--ink-soft); margin:2px 0 14px;}
+  .fp-songs{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:14px;}
+  .fp-song-chip{
+    font-family:inherit; font-weight:800; font-size:14px; color:var(--ink);
+    background:#FFF7EA; border:2.5px solid #EBD9C4; border-radius:999px;
+    padding:7px 14px; cursor:pointer; transition:transform .12s;
+  }
+  .fp-song-chip:active{transform:scale(.95);}
+  .fp-song-chip.active{background:var(--cat-color,#C86FB0); border-color:transparent; color:#fff;}
+  .fp-notes-wrap{min-height:56px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .fp-notes{display:flex; flex-wrap:wrap; gap:9px; justify-content:center; align-items:center;}
+  .fp-hint-free{font-size:15px; font-weight:700; color:var(--ink-soft);}
+  .fp-tools{margin-bottom:16px;}
 
   /* ===== เกมดนตรี (เปียโน) — skill-music ===== */
   .music-board{
