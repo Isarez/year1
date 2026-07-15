@@ -100,8 +100,27 @@ function toonMat(hex){
   matCache.set(hex, m);
   return m;
 }
-function box(w,h,d,hex){
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), toonMat(hex));
+/* กล่องขอบมน (ลบเหลี่ยมคมให้ดู friendly กับเด็ก) — BoxGeometry แบ่ง segment
+   แล้วดันจุดยอดให้โค้งรอบกล่องใน (clamp + normalize) พร้อมตั้ง normal ตามทิศโค้ง
+   ให้แสง toon ไล่นุ่มตามขอบ — r ไม่ระบุ = อัตโนมัติตามสัดส่วนด้านสั้นสุด (cap .08) */
+function roundedBoxGeo(w,h,d,r){
+  if(r == null) r = Math.min(Math.min(w,h,d)*.3, .12);
+  r = Math.min(r, w/2, h/2, d/2);
+  const geo = new THREE.BoxGeometry(w,h,d,2,2,2);
+  const pos = geo.attributes.position, nor = geo.attributes.normal;
+  const hw = w/2-r, hh = h/2-r, hd = d/2-r;
+  const v = new THREE.Vector3(), c = new THREE.Vector3();
+  for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i);
+    c.set(Math.max(-hw,Math.min(hw,v.x)), Math.max(-hh,Math.min(hh,v.y)), Math.max(-hd,Math.min(hd,v.z)));
+    v.sub(c).normalize();
+    nor.setXYZ(i, v.x, v.y, v.z);
+    pos.setXYZ(i, c.x+v.x*r, c.y+v.y*r, c.z+v.z*r);
+  }
+  return geo;
+}
+function box(w,h,d,hex,r){
+  const m = new THREE.Mesh(roundedBoxGeo(w,h,d,r), toonMat(hex));
   m.castShadow = hShadows; return m;
 }
 function sphere(r,hex,seg){
@@ -117,26 +136,27 @@ function disposeGroup(g){
 
 function addHair(head, style, hex){
   const c = hex;
-  const cap = () => { const m = box(.68,.15,.68,c); m.position.y = .3; head.add(m);
-                      const back = box(.68,.42,.1,c); back.position.set(0,.05,-.3); head.add(back); };
+  /* ชิ้นผมเป็นแผ่นบาง — สั่งรัศมีมนใกล้ค่า max ของด้านบางเอง ไม่งั้นขอบยังดูคม */
+  const cap = () => { const m = box(.68,.15,.68,c,.07); m.position.y = .3; head.add(m);
+                      const back = box(.68,.42,.1,c,.05); back.position.set(0,.05,-.3); head.add(back); };
   switch(style){
     case 0: cap(); break;                                             /* สั้นเรียบ */
-    case 1: { const m = box(.8,.2,.8,c); m.position.y = .3; head.add(m); /* ทรงเห็ด */
-              const b = box(.8,.34,.12,c); b.position.set(0,.1,-.35); head.add(b); break; }
-    case 2: { cap(); const f = box(.62,.16,.08,c); f.position.set(0,.2,.32); head.add(f); break; } /* หน้าม้า */
+    case 1: { const m = box(.8,.2,.8,c,.09); m.position.y = .3; head.add(m); /* ทรงเห็ด */
+              const b = box(.8,.34,.12,c,.055); b.position.set(0,.1,-.35); head.add(b); break; }
+    case 2: { cap(); const f = box(.62,.16,.08,c,.038); f.position.set(0,.2,.32); head.add(f); break; } /* หน้าม้า */
     case 3: { cap(); const b = sphere(.15,c); b.position.set(0,.46,0); head.add(b); break; }       /* จุก */
     case 4: { cap(); [-1,1].forEach(s=>{ const b = sphere(.12,c); b.position.set(.38*s,.34,0); head.add(b); }); break; } /* สองแกละ */
     case 5: { cap(); const t = box(.16,.5,.14,c); t.position.set(0,-.05,-.4); t.rotation.x = .18; head.add(t); break; }  /* หางม้า */
-    case 6: { cap(); const f = box(.62,.16,.08,c); f.position.set(0,.2,.32); head.add(f);          /* เปียคู่ */
+    case 6: { cap(); const f = box(.62,.16,.08,c,.038); f.position.set(0,.2,.32); head.add(f);     /* เปียคู่ */
               [-1,1].forEach(s=>{ const p = box(.13,.55,.13,c); p.position.set(.34*s,-.12,-.18); head.add(p); }); break; }
     case 7: { [[0,.36,0,.2],[.2,.3,.12,.16],[-.2,.3,.12,.16],[.12,.32,-.16,.16],[-.12,.32,-.16,.16],[0,.26,-.26,.15]]
               .forEach(p=>{ const b = sphere(p[3],c); b.position.set(p[0],p[1],p[2]); head.add(b); }); break; }          /* หยิกฟู */
     case 8: { cap(); [[-.16,.1],[0,0],[.16,.1]].forEach((p,i)=>{                                    /* ตั้งชี้ */
               const s = new THREE.Mesh(new THREE.ConeGeometry(.08,.22,6), toonMat(c));
               s.castShadow = hShadows; s.position.set(p[0],.46,p[1]); head.add(s); }); break; }
-    case 9: { cap(); const f = box(.62,.16,.08,c); f.position.set(0,.2,.32); head.add(f);           /* ยาวตรง */
-              [-1,1].forEach(s=>{ const p = box(.12,.62,.5,c); p.position.set(.4*s,-.14,-.06); head.add(p); });
-              const bk = box(.66,.62,.12,c); bk.position.set(0,-.14,-.36); head.add(bk); break; }
+    case 9: { cap(); const f = box(.62,.16,.08,c,.038); f.position.set(0,.2,.32); head.add(f);      /* ยาวตรง */
+              [-1,1].forEach(s=>{ const p = box(.12,.62,.5,c,.055); p.position.set(.4*s,-.14,-.06); head.add(p); });
+              const bk = box(.66,.62,.12,c,.055); bk.position.set(0,-.14,-.36); head.add(bk); break; }
   }
 }
 
@@ -230,7 +250,7 @@ function buildWorld(){
   /* พื้นสไตล์ isometric บล็อกหนา (อ้างอิง house_example/isomatic2d_style_1.png):
      หน้าหญ้าเป็นแผ่นบางด้านบน 2 เฉดสลับ checker + ฐานดินน้ำตาลหนาทั้งผืนให้เห็นขอบข้างเป็นชั้นดิน
      น้ำเป็นแอ่งต่ำกว่าระดับหญ้า โปร่งแสงเล็กน้อย เห็นชั้นดินเป็นตลิ่งริมคลอง */
-  const topGeo = new THREE.BoxGeometry(1,.24,1);
+  const topGeo = roundedBoxGeo(1,.24,1,.05);
   const counts = {g1:0,g2:0};
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
     if(outGrid[z][x]!==1) ((x+z)%2 ? counts.g2++ : counts.g1++);
@@ -254,12 +274,12 @@ function buildWorld(){
   const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(RIVER_X.length, .14, OUT_D), waterMat);
   waterMesh.position.set(outWX(11.5), -.25, 0);
   worldGroup.add(waterMesh);
-  const dirtBase = new THREE.Mesh(new THREE.BoxGeometry(OUT_W,.6,OUT_D), toonMat(0x9c6b45));
+  const dirtBase = new THREE.Mesh(roundedBoxGeo(OUT_W,.6,OUT_D,.1), toonMat(0x9c6b45));
   dirtBase.position.y = -.54; worldGroup.add(dirtBase);
 
   /* ทางเดินหินหน้าประตูบ้าน */
   [[4,5],[4,6],[4,7]].forEach(([x,z],i)=>{
-    const s = new THREE.Mesh(new THREE.BoxGeometry(.6,.07,.6), toonMat(0xe3ddd0));
+    const s = new THREE.Mesh(roundedBoxGeo(.6,.07,.6,.03), toonMat(0xe3ddd0));
     s.rotation.y = .35*(i%2 ? 1 : -1);
     s.position.set(outWX(x), .04, outWZ(z));
     s.receiveShadow = hShadows;
@@ -335,7 +355,7 @@ function buildInterior(){
   inGrid = [];
   for(let z=0; z<IN_D; z++){ inGrid.push(new Array(IN_W).fill(0)); }
 
-  const tileGeo = new THREE.BoxGeometry(1,.24,1);
+  const tileGeo = roundedBoxGeo(1,.24,1,.05);
   const im1 = new THREE.InstancedMesh(tileGeo, toonMat(0xe6bc7f), Math.ceil(IN_W*IN_D/2));
   const im2 = new THREE.InstancedMesh(tileGeo, toonMat(0xd9a967), Math.floor(IN_W*IN_D/2));
   const idx = [0,0]; const m4 = new THREE.Matrix4();
@@ -345,7 +365,7 @@ function buildInterior(){
   }
   [im1,im2].forEach(im=>{ im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; interiorGroup.add(im); });
   /* ฐานใต้พื้นห้อง ให้เป็นบล็อกหนาแบบเดียวกับข้างนอก */
-  const floorBase = new THREE.Mesh(new THREE.BoxGeometry(IN_W,.5,IN_D), toonMat(0x9c6b45));
+  const floorBase = new THREE.Mesh(roundedBoxGeo(IN_W,.5,IN_D,.1), toonMat(0x9c6b45));
   floorBase.position.y = -.49; interiorGroup.add(floorBase);
 
   /* ผนัง 2 ด้านไกลกล้อง (กล้องมองจาก +x,+z) คือด้าน x ต่ำ และ z ต่ำ */
@@ -1240,12 +1260,16 @@ function startHouseGame(){
   if(!data || !data.char){
     openCreator(false);
   }else{
+    /* กดย้อนกลับค้างไว้ตอนอยู่ใน creator แล้วเข้าใหม่: openCreator เคยปิด worldGroup
+       และ rebuildChar เป็นหน้าตาพรีวิวที่ยังไม่ save — ต้อง restore ฉาก + ตัวละครจากที่ save จริงเสมอ */
+    const wasCreator = hMode === 'creator';
     hMode = 'world';
     $('house-creator').hidden = true;
     $('house-rotate-wrap').hidden = true;
     $('house-edit-btn').hidden = false;
     creatorGroup.visible = false;
-    if(childChanged || !charGroup) rebuildChar(data.char);
+    worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
+    if(childChanged || wasCreator || !charGroup) rebuildChar(data.char);
     const p = tileWorld(hChar.tile);
     charGroup.position.copy(p);
     charGroup.rotation.y = hChar.targetRotY;
