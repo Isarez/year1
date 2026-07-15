@@ -28,7 +28,7 @@ function loadData(){
   });
 }
 function saveProfile(){ try{ localStorage.setItem(LS_PROFILE, JSON.stringify(profile)); }catch(e){} }
-function saveGames(){ try{ localStorage.setItem(LS_GAMES, JSON.stringify(games)); }catch(e){} }
+function saveGames(){ try{ localStorage.setItem(LS_GAMES, JSON.stringify(games)); return true; }catch(e){ return false; } }
 
 /* ---------- grades ---------- */
 const GRADES = [
@@ -817,6 +817,84 @@ function buildCountBlock(qData){
   }
   return block;
 }
+/* ---------- รูปภาพประกอบโจทย์ (เฉพาะ quiz ถาม-ตอบปรนัย) ----------
+   ย่อรูปด้วย canvas ให้ด้านยาวสุด <= QUIZ_IMG_MAXDIM แล้ว export เป็น JPEG
+   ถ้าไฟล์ยังใหญ่กว่า QUIZ_IMG_MAX_BYTES ก็ลดคุณภาพ/ขนาดลงเรื่อยๆ จนพอดี
+   เก็บใน localStorage เป็น data URL (ไป export/import กับชุดโจทย์อัตโนมัติ) — ต้องเล็กพอ ไม่งั้น quota เต็ม */
+const QUIZ_IMG_MAXDIM = 560;
+const QUIZ_IMG_MAX_BYTES = 90 * 1024; /* ~90KB ต่อรูป */
+function dataUrlBytes(u){ const i = u.indexOf(','); return i < 0 ? u.length : Math.floor((u.length - i - 1) * 3 / 4); }
+function compressQuizImage(file){
+  return new Promise((resolve, reject)=>{
+    if(!file || !/^image\//.test(file.type)){ reject(new Error('not-image')); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      const w0 = img.naturalWidth, h0 = img.naturalHeight;
+      if(!w0 || !h0){ reject(new Error('bad-size')); return; }
+      const render = (maxDim, quality)=>{
+        const scale = Math.min(1, maxDim / Math.max(w0, h0));
+        const w = Math.max(1, Math.round(w0*scale)), h = Math.max(1, Math.round(h0*scale));
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); /* กันพื้นโปร่งใสของ PNG กลายเป็นดำตอนแปลงเป็น JPEG */
+        ctx.drawImage(img, 0, 0, w, h);
+        return cv.toDataURL('image/jpeg', quality);
+      };
+      try{
+        let maxDim = QUIZ_IMG_MAXDIM, quality = 0.72;
+        let out = render(maxDim, quality), guard = 0;
+        /* ลดคุณภาพก่อน (จนถึง 0.4) แล้วค่อยลดขนาดภาพลง จนไฟล์เล็กพอ (กันลูปไม่จบ) */
+        while(dataUrlBytes(out) > QUIZ_IMG_MAX_BYTES && guard < 8){
+          if(quality > 0.42) quality -= 0.12;
+          else maxDim = Math.round(maxDim * 0.85);
+          out = render(maxDim, quality);
+          guard++;
+        }
+        resolve(out);
+      }catch(e){ reject(e); }
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('load-fail')); };
+    img.src = url;
+  });
+}
+/* ผูกปุ่มแนบรูป + พรีวิว เข้ากับ block โจทย์ (เก็บ data URL ไว้บน block._imgData อ่านตอน save) */
+function attachQuizImageControl(block, imgData){
+  block._imgData = imgData || null;
+  const field = document.createElement('div');
+  field.className = 'bq-img-field';
+  /* ลำดับให้เหมือนตอนแสดงผลจริง: รูปอยู่บนสุด (ปุ่มลบต่อท้ายรูป) แล้วปุ่มเพิ่มรูป + ข้อความแจ้งเตือน จากนั้นค่อยเป็นช่องโจทย์ */
+  field.innerHTML =
+    '<div class="bq-img-preview" hidden><img class="bq-img-thumb" alt="รูปประกอบโจทย์"><button type="button" class="bq-img-remove">✕ ลบรูป</button></div>'+
+    '<input type="file" accept="image/*" class="bq-img-input" hidden>'+
+    '<button type="button" class="bq-img-btn"></button>'+
+    '<p class="bq-img-note">💡 ใส่รูปได้ถ้าต้องการ — ระบบจะย่อขนาดรูปให้เล็กลงอัตโนมัติ และรูปจะแสดงอยู่ด้านบนโจทย์ตอนเด็กเล่น</p>';
+  const fileInput = field.querySelector('.bq-img-input');
+  const pickBtn   = field.querySelector('.bq-img-btn');
+  const preview   = field.querySelector('.bq-img-preview');
+  const thumb     = field.querySelector('.bq-img-thumb');
+  const removeBtn = field.querySelector('.bq-img-remove');
+  function refresh(){
+    const has = !!block._imgData;
+    preview.hidden = !has;
+    pickBtn.textContent = has ? '🖼️ เปลี่ยนรูปภาพ' : '🖼️ เพิ่มรูปภาพประกอบโจทย์ (ถ้ามี)';
+    if(has) thumb.src = block._imgData;
+  }
+  pickBtn.addEventListener('click', ()=>{ playClick(); fileInput.click(); });
+  fileInput.addEventListener('change', ()=>{
+    const f = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if(!f) return;
+    compressQuizImage(f)
+      .then(dataUrl=>{ block._imgData = dataUrl; refresh(); showToast('🖼️','ใส่รูปประกอบโจทย์แล้วค่ะ'); })
+      .catch(()=>{ showToast('🚫','ใช้รูปนี้ไม่ได้ ลองรูปอื่นนะคะ'); });
+  });
+  removeBtn.addEventListener('click', ()=>{ playClick(); block._imgData = null; refresh(); });
+  block.querySelector('.bq-q-input').insertAdjacentElement('beforebegin', field);
+  refresh();
+}
 /* ฟอร์มแบบตัวเลือก (quiz / ar-pick): โจทย์ + คำตอบหลายช่อง ติ๊กข้อถูก */
 function buildChoicesBlock(qData){
   const block = bqShell(
@@ -852,6 +930,8 @@ function buildChoicesBlock(qData){
     addAnswerRow('', false);
     addAnswerRow('', false);
   }
+  /* รูปภาพประกอบโจทย์รองรับเฉพาะ quiz (ถาม-ตอบปรนัย) ไม่รวม ar-pick */
+  if(selectedMechanic === 'quiz') attachQuizImageControl(block, qData ? qData.img : null);
   return block;
 }
 function renumberQuestions(){
@@ -939,7 +1019,9 @@ function collectBuilderData(){
       if(answers.some(a=>!a)){ showToast('✏️','ข้อที่ '+(i+1)+' มีช่องคำตอบว่างอยู่นะคะ (ลบช่องที่ไม่ใช้ออกได้)'); return null; }
       if(answers.length < 2){ showToast('⚠️','ข้อที่ '+(i+1)+' ต้องมีคำตอบอย่างน้อย 2 ช่องนะคะ'); return null; }
       if(correct < 0){ showToast('☑️','ข้อที่ '+(i+1)+' ยังไม่ได้ติ๊กคำตอบที่ถูกนะคะ'); return null; }
-      questions.push({ q:qText, answers, correct });
+      const qObj = { q:qText, answers, correct };
+      if(b._imgData) qObj.img = b._imgData; /* รูปประกอบโจทย์ (quiz เท่านั้น) */
+      questions.push(qObj);
     }
   }
   if(!questions.length){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return null; }
@@ -963,6 +1045,7 @@ function saveBuilder(publish){
     showToast('🚫','เผยแพร่ไม่ได้: มีโจทย์ '+data.questions.length+' ข้อ แต่ตั้งไว้ '+data.questionCount+' ข้อ/รอบ — เพิ่มโจทย์หรือลดจำนวนต่อรอบก่อนนะคะ');
     return;
   }
+  const prevSnapshot = JSON.stringify(games); /* กันไว้ rollback ถ้าเซฟไม่ผ่าน (เช่น รูปเยอะจน quota เต็ม) */
   if(editingGameId){
     const game = games.find(g=>g.id===editingGameId);
     Object.assign(game, data);
@@ -975,7 +1058,11 @@ function saveBuilder(publish){
       createdAt: Date.now(), updatedAt: Date.now()
     }, data));
   }
-  saveGames();
+  if(!saveGames()){
+    games = JSON.parse(prevSnapshot); /* คืนสภาพเดิม ไม่ให้เกมค้างในหน่วยความจำทั้งที่เซฟไม่ได้ */
+    showToast('🚫','พื้นที่เก็บข้อมูลเต็ม บันทึกไม่สำเร็จ — ลองลบรูปบางข้อ หรือใช้รูปที่เล็กลงนะคะ');
+    return;
+  }
   playCorrect();
   closeEmojiPop();
   /* publish แล้วพากลับหน้า home ให้เห็นเกมโชว์เลย / save draft กลับหน้าที่มา */
@@ -1055,6 +1142,7 @@ function prepareQuestion(qd, shuffleChoices){
   if(shuffleChoices) shuffleArray(idxs);
   return {
     q: qd.q,
+    img: qd.img || null,
     choices: idxs.map(i=>qd.answers[i]),
     correct: idxs.indexOf(qd.correct)
   };
@@ -1088,6 +1176,11 @@ function renderQuestion(){
   $('progress-fill').style.width = ((quiz.qIndex)/total*100)+'%';
   $('progress-fill').style.background = quiz.color;
   $('q-emoji').textContent = '';
+  const qImg = $('q-image');
+  if(qImg){
+    if(q.img){ qImg.src = q.img; qImg.hidden = false; }
+    else { qImg.hidden = true; qImg.removeAttribute('src'); }
+  }
   $('q-text').textContent = q.q;
   const grid = $('choice-grid');
   grid.innerHTML = '';
@@ -1333,10 +1426,45 @@ function bigSvg(svg, px){ return svg.replace(/width="\d+" height="\d+"/, 'width=
   document.querySelector('#confirm-del-modal .modal-icon').innerHTML = bigSvg(SVG_TRASH, 44);
 })();
 
+/* ---------- รายละเอียดการอัพเดท (changelog เฉพาะโหมดคุณครู) ----------
+   version/changelog แยกจากฝั่งเด็ก: อ่าน teacher/version + teacher/changelog (path relative กับ teacher/index.html)
+   parseChangelog/renderChangelogBody port มาจาก js/app.js — reuse CSS .changelog-* จาก css/style.css */
+function parseChangelog(text){
+  const lines = text.split('\n').map(l=>l.replace(/\r$/,'')).filter(l=>l.trim()!=='');
+  if(!lines.length) return {version:'', categories:[]};
+  const version = lines[0];
+  const categories = [];
+  let cur = null;
+  for(let i=1; i<lines.length; i++){
+    const line = lines[i];
+    if(line.startsWith('## ')){ cur = {title:line.slice(3).trim(), items:[]}; categories.push(cur); }
+    else if(line.startsWith('- ') && cur){ cur.items.push(line.slice(2).trim()); }
+  }
+  return {version, categories};
+}
+function renderChangelogBody(data){
+  const body = $('changelog-body');
+  if(!data.categories.length){ body.innerHTML = '<p>ยังไม่มีรายละเอียดการอัพเดทนะคะ</p>'; return; }
+  body.innerHTML = `<div class="changelog-version">${data.version}</div>` +
+    data.categories.map(cat=>
+      `<div class="changelog-cat">${cat.title}</div><ul class="changelog-list">${cat.items.map(it=>`<li>${it}</li>`).join('')}</ul>`
+    ).join('');
+}
+function openChangelog(){
+  fetch('changelog').then(r=>r.text()).then(text=> renderChangelogBody(parseChangelog(text)))
+    .catch(()=>{ $('changelog-body').innerHTML = '<p>โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้งนะคะ</p>'; });
+  openOverlay('changelog-modal');
+}
+$('changelog-open-btn').addEventListener('click', ()=>{ playClick(); openChangelog(); });
+$('changelog-x-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('changelog-modal'); });
+$('changelog-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('changelog-modal'); });
+$('changelog-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('changelog-modal'); });
+$('app-version').addEventListener('click', ()=>{ playClick(); openChangelog(); });
+
 /* ---------- init ---------- */
 loadData();
 renderAvatarPicker();
-fetch('../version').then(r=>r.text()).then(v=>{ $('app-version').textContent = v.trim()+' (teacher)'; }).catch(()=>{});
+fetch('version').then(r=>r.text()).then(v=>{ $('app-version').textContent = v.trim()+' (teacher)'; }).catch(()=>{});
 if(profile){
   renderTeacherHome();
 } else {

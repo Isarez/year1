@@ -226,6 +226,7 @@
 
     <div class="question-card">
       <div class="q-emoji" id="q-emoji"></div>
+      <img class="q-image" id="q-image" alt="รูปประกอบโจทย์" hidden>
       <div class="q-text" id="q-text"></div>
       <div class="choice-grid" id="choice-grid"></div>
       <div class="feedback" id="feedback" role="status" aria-live="polite">
@@ -324,7 +325,7 @@
   </div>
 </div>
 
-<footer>โหมดคุณครู — สร้างโจทย์เองเพื่อเป็นสื่อการสอน 💛<span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net%2Fteacher&label=visitors&icon=eye&color=%234fa9e8" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer><button class="child-import-btn changelog-open-btn footer-changelog-btn" id="changelog-open-btn"><svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f7fb5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" fill="#DCF0FB"/><rect x="9" y="2.5" width="6" height="4" rx="1.5" fill="#fff"/><line x1="8.5" y1="11" x2="15.5" y2="11"/><line x1="8.5" y1="14.5" x2="15.5" y2="14.5"/><line x1="8.5" y1="18" x2="13" y2="18"/></svg> รายละเอียดการอัพเดท</button>โหมดคุณครู — สร้างโจทย์เองเพื่อเป็นสื่อการสอน 💛<span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net%2Fteacher&label=visitors&icon=eye&color=%234fa9e8" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version" style="cursor:pointer;" title="ดูรายละเอียดการอัพเดท"></span></span></footer>
 
 <!-- TEACHER PROFILE EDIT MODAL (แก้ชื่อครู/โรงเรียน/avatar) -->
 <div id="teacher-edit-modal" hidden>
@@ -368,6 +369,18 @@
     <p class="modal-body">ขอบคุณที่สนับสนุนนะครับ 💛</p>
     <img src="../assets/img/qr.jpg" alt="QR code สำหรับสนับสนุน" style="width:100%;max-width:260px;border-radius:16px;margin:0 auto 16px;display:block;">
     <button class="modal-cancel-btn" id="qr-close-btn" style="width:100%;">ปิด ✕</button>
+  </div>
+</div>
+
+<!-- CHANGELOG MODAL (รายละเอียดการอัพเดท — เฉพาะโหมดคุณครู, reuse .changelog-* จาก css/style.css) -->
+<div id="changelog-modal" hidden>
+  <div class="modal-backdrop" id="changelog-modal-backdrop"></div>
+  <div class="modal-card changelog-card">
+    <button class="modal-x-btn" id="changelog-x-btn" aria-label="ปิด">✕</button>
+    <div class="modal-icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#2f7fb5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" fill="#DCF0FB"/><rect x="9" y="2.5" width="6" height="4" rx="1.5" fill="#fff"/><line x1="8.5" y1="11" x2="15.5" y2="11"/><line x1="8.5" y1="14.5" x2="15.5" y2="14.5"/><line x1="8.5" y1="18" x2="13" y2="18"/></svg></div>
+    <h3 class="modal-title">รายละเอียดการอัพเดท</h3>
+    <div class="modal-body changelog-body" id="changelog-body"></div>
+    <button class="modal-cancel-btn" id="changelog-close-btn" style="width:100%;">ปิด ✕</button>
   </div>
 </div>
 
