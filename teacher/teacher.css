@@ -260,3 +260,40 @@ body.emoji-pop-open .emoji-fab{display:none;}
 
 /* กลางคืน: การ์ดฟอร์ม/empty state ยังพื้นขาวครีม อ่านได้ปกติ — เสริมเฉพาะ select บนพื้นมืด */
 body.night-mode .builder-select{background:#fff;}
+
+/* ---------- รูปภาพประกอบโจทย์ (quiz ถาม-ตอบปรนัย) ---------- */
+/* รูปในการ์ดตอนเล่น */
+.q-image{
+  display:block; max-width:100%; max-height:240px; margin:2px auto 14px;
+  border-radius:18px; object-fit:contain; background:#fff;
+  box-shadow:0 4px 14px rgba(74,63,53,.14);
+}
+.q-image[hidden]{display:none;}
+/* ปุ่ม/พรีวิวแนบรูปในฟอร์มสร้างโจทย์ */
+.bq-img-field{margin:8px 0 4px;}
+.bq-img-btn{
+  font-family:inherit; font-size:14px; font-weight:800; color:#3D7FBF;
+  background:#EAF5FF; border:2px dashed #A9D3F5; border-radius:14px;
+  padding:9px 14px; cursor:pointer; transition:background .15s ease, transform .12s ease;
+}
+.bq-img-btn:hover{background:#DCEEFF;}
+.bq-img-btn:active{transform:translateY(1px) scale(.98);}
+/* พรีวิวในฟอร์มให้เหมือนตอนแสดงผลจริง: รูปอยู่บน จัดกึ่งกลาง ปุ่มลบต่อท้ายรูป */
+.bq-img-preview{display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:10px;}
+.bq-img-preview[hidden]{display:none;}
+.bq-img-thumb{
+  display:block; max-width:100%; max-height:180px; object-fit:contain; background:#fff;
+  border-radius:14px; border:2px solid var(--cream-2); box-shadow:0 3px 10px rgba(74,63,53,.14);
+}
+.bq-img-remove{
+  font-family:inherit; font-size:13px; font-weight:800; color:#C0527A;
+  background:#FFEBF2; border:2px solid #FFC9DD; border-radius:12px;
+  padding:7px 12px; cursor:pointer;
+}
+.bq-img-remove:active{transform:translateY(1px);}
+.bq-img-note{margin:6px 0 0; font-size:12.5px; font-weight:600; color:var(--ink-soft); line-height:1.5;}
+body.night-mode .bq-img-btn{background:rgba(60,120,180,.18); border-color:rgba(140,190,235,.5); color:#BFE0FF;}
+
+/* ---------- ปุ่ม "รายละเอียดการอัพเดท" ใน footer (สไตล์เดียวกับหน้าหลัก: ไอคอนหนังสือ + ข้อความขีดเส้นใต้; อยู่ก่อน text ใน footer) ---------- */
+.footer-changelog-btn{ width:fit-content; margin:0 auto 10px; padding:4px 8px; display:flex; align-items:center; gap:5px; }
+.footer-changelog-btn .btn-svg{ vertical-align:-3px; }
