@@ -1214,7 +1214,7 @@ function startHouseGame(){
   }
   /* ซ่อน view อื่นทั้งหมด (pattern เดียวกับ startQuiz/startARGame) */
   homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true;
-  memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true;
+  memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
   houseView.hidden = false;
   document.body.classList.add('house-open');
   houseOpen = true;

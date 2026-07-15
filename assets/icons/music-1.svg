@@ -1,0 +1,43 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เกมดนตรี 1">
+  <defs>
+    <linearGradient id="mus1Body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E58FCB"/>
+      <stop offset="1" stop-color="#C86FB0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="22" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- โน้ตลอยด้านบน -->
+  <g>
+    <path d="M45 5v13.5a4 4 0 1 1-2.5-3.7V8.5l8-2v10a4 4 0 1 1-2.5-3.7V4z" fill="#F94144" stroke="#B71C1C" stroke-width="1.6" stroke-linejoin="round"/>
+  </g>
+
+  <!-- ตัวเปียโน -->
+  <rect x="7" y="24" width="50" height="30" rx="6" fill="url(#mus1Body)" stroke="#A85596" stroke-width="2.5"/>
+  <rect x="10.5" y="34" width="43" height="17" rx="3" fill="#FFFDF7" stroke="#A85596" stroke-width="1.6"/>
+
+  <!-- คีย์ขาว + แถบสีใต้คีย์ (รุ้ง) -->
+  <g stroke="#CBB8C6" stroke-width="1.1">
+    <line x1="17.6" y1="35" x2="17.6" y2="50"/>
+    <line x1="24.7" y1="35" x2="24.7" y2="50"/>
+    <line x1="31.8" y1="35" x2="31.8" y2="50"/>
+    <line x1="38.9" y1="35" x2="38.9" y2="50"/>
+    <line x1="46" y1="35" x2="46" y2="50"/>
+  </g>
+  <g>
+    <rect x="11.5" y="46.5" width="5.6" height="4" rx="1" fill="#F94144"/>
+    <rect x="18.1" y="46.5" width="5.6" height="4" rx="1" fill="#F8961E"/>
+    <rect x="25.2" y="46.5" width="5.6" height="4" rx="1" fill="#F9C74F"/>
+    <rect x="32.3" y="46.5" width="5.6" height="4" rx="1" fill="#90BE6D"/>
+    <rect x="39.4" y="46.5" width="5.6" height="4" rx="1" fill="#4D96FF"/>
+    <rect x="46.5" y="46.5" width="5.6" height="4" rx="1" fill="#9D4EDD"/>
+  </g>
+
+  <!-- คีย์ดำ -->
+  <g fill="#2b2733">
+    <rect x="15.5" y="34" width="4" height="9" rx="1.2"/>
+    <rect x="22.6" y="34" width="4" height="9" rx="1.2"/>
+    <rect x="36.8" y="34" width="4" height="9" rx="1.2"/>
+    <rect x="43.9" y="34" width="4" height="9" rx="1.2"/>
+  </g>
+</svg>

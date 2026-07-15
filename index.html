@@ -236,6 +236,33 @@
     </div>
   </section>
 
+  <!-- MUSIC (PIANO) VIEW — เกมดนตรี -->
+  <section id="music-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="music-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="music-cat-label">เกมดนตรี</div>
+        <div class="progress-track"><div class="progress-fill" id="music-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="music-hint">🎹 กดคีย์เปียโนตามโน้ตที่โจทย์บอกนะ!</div>
+      </div>
+      <div class="q-counter" id="music-level-counter">1/10</div>
+    </div>
+    <div class="music-board">
+      <div class="music-prompt-card">
+        <div class="music-prompt-label" id="music-prompt-label">กดคีย์ตามนี้เลย 👇</div>
+        <div class="music-notes" id="music-notes"></div>
+        <div class="music-prompt-tools">
+          <button class="music-tool-btn music-listen-btn" id="music-listen-btn">🔊 ฟังเพลง</button>
+          <button class="music-tool-btn music-notation-toggle" id="music-notation-toggle" aria-pressed="false">โน้ต: ไทย</button>
+        </div>
+      </div>
+      <div class="music-msg" id="music-msg" hidden></div>
+      <div class="music-piano-wrap">
+        <div class="music-piano" id="music-piano"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- LISTEN WORD-SPELLING VIEW (เกมฟังคำศัพท์ 1/2) -->
   <section id="listen-view" hidden>
     <div class="quiz-top">
@@ -377,6 +404,7 @@
     <span class="sticker-count-badge" id="tally-text">0/10</span>
   </button>
 </div>
+<button class="install-link-btn free-piano-btn" id="free-piano-btn" aria-label="เปียโนของหนู" hidden>🎹 เปียโนของหนู</button>
 <button class="install-link-btn" id="install-toggle" aria-label="ติดตั้งบนแท็บเล็ต">ติดตั้งบนแท็บเล็ต</button>
 <canvas id="confetti-canvas"></canvas>
 
@@ -472,6 +500,23 @@
     <h3 class="modal-title">รายละเอียดการอัพเดท</h3>
     <div class="modal-body changelog-body" id="changelog-body"></div>
     <button class="modal-cancel-btn" id="changelog-close-btn" style="width:100%;">ปิด ✕</button>
+  </div>
+</div>
+
+<!-- FREE PIANO MODAL (gimmick ปลดล็อกเมื่อเล่นเกมดนตรีครบ 3 เกม) -->
+<div id="free-piano-modal" hidden>
+  <div class="modal-backdrop" id="free-piano-backdrop"></div>
+  <div class="modal-card free-piano-card">
+    <button class="modal-x-btn" id="free-piano-x" aria-label="ปิด">✕</button>
+    <h3 class="modal-title">🎹 เปียโนของหนู</h3>
+    <p class="fp-sub">เลือกเพลงแล้วกดโน้ตตามสีทีละตัว หรือกดเล่นอิสระได้เลย!</p>
+    <div class="fp-songs" id="fp-songs"></div>
+    <div class="fp-notes-wrap"><div class="fp-notes" id="fp-notes"></div></div>
+    <div class="music-prompt-tools fp-tools">
+      <button class="music-tool-btn music-listen-btn" id="fp-listen">🔊 ฟังเพลง</button>
+      <button class="music-tool-btn" id="fp-notation" aria-pressed="false">โน้ต: ไทย</button>
+    </div>
+    <div class="music-piano-wrap"><div class="music-piano" id="fp-piano"></div></div>
   </div>
 </div>
 
