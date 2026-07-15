@@ -1587,7 +1587,7 @@ function randMusicTarget(level){
 }
 /* พักเพลงพื้นหลังตอนอยู่ในเกมดนตรี / เล่นต่อตอนออก (ไม่แตะค่า setting musicOn ของผู้ใช้) */
 function pauseBgMusicForMusicGame(){ if(musicOn && !musicPausedBg){ stopMusic(); musicPausedBg = true; } }
-function resumeBgMusicAfterMusicGame(){ if(musicPausedBg){ musicPausedBg = false; if(musicOn) startMusic(); } }
+function resumeBgMusicAfterMusicGame(){ stopMusicSequence(); /* ออกจากเปียโน/เกมดนตรีทุกทาง = หยุดเพลงตัวอย่างที่ค้าง */ if(musicPausedBg){ musicPausedBg = false; if(musicOn) startMusic(); } }
 function pianoWhiteEl(i){ return $('music-piano').querySelector('.music-white[data-white="'+i+'"]'); }
 function flashKey(key){ if(!key) return; key.classList.add('pressed'); setTimeout(()=>key.classList.remove('pressed'), 200); }
 
@@ -1611,13 +1611,18 @@ function playPianoNote(freq, dur){
 }
 
 /* noFlash=true: เล่นแต่เสียง ไม่ไฮไลต์คีย์ (ใช้กับ mode 3 ที่ต้องให้เด็กหาคีย์เอง ไม่เฉลยตำแหน่ง) */
+/* เก็บ timer ของเพลงที่กำลังเล่นไว้ยกเลิกได้ — กดฟังซ้ำ = เริ่มใหม่ (ไม่เล่นทับกัน)
+   และปิด modal เปียโน/เปลี่ยนเพลงต้องหยุดเพลงที่ค้างอยู่ด้วย stopMusicSequence() */
+let musicSeqTimers = [];
+function stopMusicSequence(){ musicSeqTimers.forEach(clearTimeout); musicSeqTimers = []; }
 function playMusicSequence(seq, noFlash){
+  stopMusicSequence();
   if(!seq || !seq.length) return;
   seq.forEach((wi,i)=>{
-    setTimeout(()=>{
+    musicSeqTimers.push(setTimeout(()=>{
       playPianoNote(MUSIC_WHITE_KEYS[wi].freq, 0.5);
       if(!noFlash) flashKey(pianoWhiteEl(wi));
-    }, i*520);
+    }, i*520));
   });
 }
 
@@ -1834,6 +1839,7 @@ function renderFreePianoNotes(){
   });
 }
 function selectFreeSong(idx){
+  stopMusicSequence(); /* เปลี่ยนเพลงระหว่างเพลงเดิมยังเล่นค้าง ต้องหยุดก่อน */
   freePiano.song = idx<0 ? null : MUSIC_LEVEL2_SONGS[idx];
   freePiano.pos = 0;
   renderFreePianoSongs();
@@ -1850,7 +1856,7 @@ function openFreePiano(){
   $('fp-notation').textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
   openOverlay('free-piano-modal');
 }
-function closeFreePiano(){ resumeBgMusicAfterMusicGame(); closeOverlay('free-piano-modal'); }
+function closeFreePiano(){ stopMusicSequence(); resumeBgMusicAfterMusicGame(); closeOverlay('free-piano-modal'); }
 
 $('free-piano-btn').addEventListener('click', openFreePiano);
 $('free-piano-x').addEventListener('click', ()=>{ playClick(); closeFreePiano(); });
