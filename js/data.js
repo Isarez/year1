@@ -204,23 +204,23 @@ const CATS = [
   },
   {
     id:'skill-mix', name:'ผสมสี 1', emoji:'🎨', icon:'assets/icons/mix-1.svg', color:'#E8734C', light:'#FDE7DC',
-    type:'skill', mode:'mix', levels:10, isNew:true
+    type:'skill', mode:'mix', levels:10
   },
   {
     id:'skill-mix2', name:'ผสมสี 2', emoji:'🌈', icon:'assets/icons/mix-2.svg', color:'#5E8FD8', light:'#E2ECFB',
-    type:'skill', mode:'mix', mixAdvanced:true, levels:10, isNew:true
+    type:'skill', mode:'mix', mixAdvanced:true, levels:10
   },
   {
     id:'skill-music', name:'เกมดนตรี 1', emoji:'🎹', icon:'assets/icons/music-1.svg', color:'#C86FB0', light:'#F8E3F1',
-    type:'skill', mode:'music', musicMode:1, levels:10, isNew:true
+    type:'skill', mode:'music', musicMode:1, levels:10
   },
   {
     id:'skill-music2', name:'เกมดนตรี 2', emoji:'🎼', icon:'assets/icons/music-2.svg', color:'#7B6FD0', light:'#E7E3F8',
-    type:'skill', mode:'music', musicMode:2, levels:10, isNew:true
+    type:'skill', mode:'music', musicMode:2, levels:10
   },
   {
     id:'skill-music3', name:'เกมดนตรี 3', emoji:'🎤', icon:'assets/icons/music-3.svg', color:'#D08A5E', light:'#FBEBDD',
-    type:'skill', mode:'music', musicMode:3, levels:10, isNew:true, cardTag:'🎹 เล่นผ่านปลดล็อกเปียโน'
+    type:'skill', mode:'music', musicMode:3, levels:10, cardTag:'🎹 เล่นผ่านปลดล็อกเปียโน'
   },
   {
     id:'listen1', name:'ฟังคำศัพท์ 1', emoji:'🎧', icon:'assets/icons/listen-1.svg', color:'#6C5CE7', light:'#E6E1FB',
