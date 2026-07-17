@@ -18,23 +18,38 @@ const HOUSE_KEY = id => 'p1quiz_house_' + id;
 const H_SKIN = 0xffd9b3;
 const H_HAIR_COLORS = [0x3b2a1a,0x6b4423,0xa5692a,0xe8c05c,0xf28c28,0xd94f30,0xf48fb1,0x9b59b6,0x5aa7e8,0x58c473];
 const H_EYE_COLORS  = [0x33261d,0x6b4423,0x3a79d8,0x3f9d5a,0x8e5bc0,0xe56aa4,0x7a8894,0xd8a520];
-const H_SHIRT_COLORS  = [0xef5350,0xffa726,0xffd54f,0x9ccc65,0x4db6ac,0x42a5f5,0x7986cb,0xba68c8,0xf06292,0x8d6e63];
-const H_BOTTOM_COLORS = [0x3f5aa8,0x6d4c41,0x455a64,0x00897b,0xc62828,0xf48fb1,0x9575cd,0x558b2f,0xffb74d,0x263238];
+const H_SHIRT_COLORS  = [0xef5350,0xffa726,0xffd54f,0x9ccc65,0x4db6ac,0x42a5f5,0x7986cb,0xba68c8,0xf06292,0x8d6e63,
+  /* แบบ 2 สี (ท่อนบนสี a / ท่อนล่างสี b) */
+  {a:0xef5350,b:0xffffff},{a:0x42a5f5,b:0xffd54f},{a:0x66bb6a,b:0xffffff},{a:0x9575cd,b:0xf06292},{a:0x26a69a,b:0xffa726}];
+const H_BOTTOM_COLORS = [0x3f5aa8,0x6d4c41,0x455a64,0x00897b,0xc62828,0xf48fb1,0x9575cd,0x558b2f,0xffb74d,0x263238,
+  /* แบบ 2 สี (กางเกงท่อนบน a / ท่อนล่าง b, กระโปรงตัว a / ชายกระโปรง b) */
+  {a:0x3f5aa8,b:0xffffff},{a:0xf48fb1,b:0xffffff},{a:0xc62828,b:0x3f5aa8},{a:0x558b2f,b:0xffd54f},{a:0x7e57c2,b:0xffffff}];
 const H_SHOE_COLORS   = [0xffffff,0x333333,0xef5350,0x42a5f5,0xffca28,0x66bb6a,0xab47bc,0x8d6e63];
-const H_HAIR_N = 10, H_EYE_N = 8;
+const H_HAIR_N = 6, H_EYE_N = 8;
 
 const H_DEFAULT_CHAR = {gender:0, hair:0, hairC:0, eyes:1, eyeC:0, shirt:5, bottom:0, shoes:0};
 
 const H_ROWS = [
-  {key:'gender', label:'🧒 หนูเป็น...', type:'text', options:['👦 เด็กชาย','👧 เด็กหญิง']},
-  {key:'hair',   label:'💇 ทรงผม',      type:'num',  n:H_HAIR_N},
-  {key:'hairC',  label:'🖌️ สีผม',       type:'color', colors:H_HAIR_COLORS},
-  {key:'eyes',   label:'👀 ดวงตา',      type:'num',  n:H_EYE_N},
-  {key:'eyeC',   label:'🔮 สีตา',       type:'color', colors:H_EYE_COLORS},
-  {key:'shirt',  label:'👕 สีเสื้อ',     type:'color', colors:H_SHIRT_COLORS},
-  {key:'bottom', label:'👖 สีกางเกง/กระโปรง', type:'color', colors:H_BOTTOM_COLORS},
-  {key:'shoes',  label:'👟 สีรองเท้า',   type:'color', colors:H_SHOE_COLORS},
+  {key:'gender', label:'หนูเป็น...', type:'text', options:['👦 เด็กชาย','👧 เด็กหญิง']},
+  {key:'hair',   label:'ทรงผม',      type:'num',  n:H_HAIR_N},
+  {key:'hairC',  label:'สีผม',       type:'color', colors:H_HAIR_COLORS},
+  {key:'eyes',   label:'ดวงตา',      type:'num',  n:H_EYE_N},
+  {key:'eyeC',   label:'สีตา',       type:'color', colors:H_EYE_COLORS},
+  {key:'shirt',  label:'สีเสื้อ',     type:'color', colors:H_SHIRT_COLORS},
+  {key:'bottom', label:'สีกางเกง/กระโปรง', type:'color', colors:H_BOTTOM_COLORS},
+  {key:'shoes',  label:'สีรองเท้า',   type:'color', colors:H_SHOE_COLORS},
 ];
+/* ไอคอน SVG แบนๆ พาสเทลขอบมน ชุดเดียวกับธีมไอคอนหมวดในแอป (แทน emoji ระบบเดิมที่ไม่เข้ากับ template) */
+const H_ROW_ICONS = {
+  gender: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  hair:   '<svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="5" rx="2.2" fill="#c8a2f0" stroke="#8e5bc0" stroke-width="1.8"/><line x1="7" y1="10.5" x2="7" y2="17.5" stroke="#8e5bc0" stroke-width="1.8" stroke-linecap="round"/><line x1="10.5" y1="10.5" x2="10.5" y2="17.5" stroke="#8e5bc0" stroke-width="1.8" stroke-linecap="round"/><line x1="14" y1="10.5" x2="14" y2="17.5" stroke="#8e5bc0" stroke-width="1.8" stroke-linecap="round"/><line x1="17.5" y1="10.5" x2="17.5" y2="17.5" stroke="#8e5bc0" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  hairC:  '<svg viewBox="0 0 24 24"><path d="M12 3 C 8.5 8.5, 6.5 11.5, 6.5 14.5 a5.5 5.5 0 0 0 11 0 c0-3-2-6-5.5-11.5 z" fill="#ffb27d" stroke="#f07a3e" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="10" cy="13.5" rx="1.4" ry="2.1" fill="#fff" opacity=".55"/></svg>',
+  eyes:   '<svg viewBox="0 0 24 24"><path d="M3 12 Q12 5 21 12 Q12 19 3 12 z" fill="#dff1fb" stroke="#5b9fc9" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.4" fill="#3a79d8"/><circle cx="12" cy="12" r="1.5" fill="#1c2b4a"/><circle cx="13.4" cy="10.7" r=".8" fill="#fff"/></svg>',
+  eyeC:   '<svg viewBox="0 0 24 24"><path d="M12 3 C 8.5 8.5, 6.5 11.5, 6.5 14.5 a5.5 5.5 0 0 0 11 0 c0-3-2-6-5.5-11.5 z" fill="#8fbef0" stroke="#3a79d8" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="10" cy="13.5" rx="1.4" ry="2.1" fill="#fff" opacity=".55"/></svg>',
+  shirt:  '<svg viewBox="0 0 24 24"><path d="M8.5 4 L4 7 L6 10.2 L8 9 V20 H16 V9 L18 10.2 L20 7 L15.5 4 Q12 6.8 8.5 4 z" fill="#7ec0f5" stroke="#3a86c9" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  bottom: '<svg viewBox="0 0 24 24"><path d="M6.5 4 H17.5 L16.6 20 H13 L12 10.5 L11 20 H7.4 z" fill="#7f8fd6" stroke="#4a5aa8" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  shoes:  '<svg viewBox="0 0 24 24"><path d="M3 15.5 V11.5 Q3 9.5 5 9.5 L8 9.5 L11 12.5 L18 14.2 Q21 14.8 21 17 V18.5 H3 z" fill="#ffd24d" stroke="#d99a1f" stroke-width="1.8" stroke-linejoin="round"/><line x1="8" y1="11" x2="9.6" y2="12.6" stroke="#d99a1f" stroke-width="1.5" stroke-linecap="round"/><line x1="10.2" y1="12" x2="11.8" y2="13.6" stroke="#d99a1f" stroke-width="1.5" stroke-linecap="round"/></svg>',
+};
 
 /* ---------- แผนที่นอกบ้าน (grid) ----------
    ค่า tile: 0 = หญ้าเดินได้, 1 = น้ำ (คลอง), 2 = สะพานเดินได้, 3 = ถูกบล็อก (ต้นไม้/บ้าน) */
@@ -100,6 +115,22 @@ function toonMat(hex){
   matCache.set(hex, m);
   return m;
 }
+/* วัสดุผิวนุ่ม: ไล่โทนสว่างกว่า toon ปกติ เพื่อให้เงาบนใบหน้า/ผิวตัวละครนุ่มลง ไม่เข้มเป็นหย่อม */
+let softGradientMap = null;
+function softMat(hex){
+  const key = 'soft_' + hex;
+  if(matCache.has(key)) return matCache.get(key);
+  if(!softGradientMap){
+    const data = new Uint8Array([196, 222, 240]); /* min สูงกว่า toon ปกติ (120) → ด้านมืดสว่างขึ้น เงานุ่ม */
+    softGradientMap = new THREE.DataTexture(data, 3, 1, THREE.RedFormat);
+    softGradientMap.minFilter = THREE.NearestFilter;
+    softGradientMap.magFilter = THREE.NearestFilter;
+    softGradientMap.needsUpdate = true;
+  }
+  const m = new THREE.MeshToonMaterial({color: hex, gradientMap: softGradientMap});
+  matCache.set(key, m);
+  return m;
+}
 /* กล่องขอบมน (ลบเหลี่ยมคมให้ดู friendly กับเด็ก) — BoxGeometry แบ่ง segment
    แล้วดันจุดยอดให้โค้งรอบกล่องใน (clamp + normalize) พร้อมตั้ง normal ตามทิศโค้ง
    ให้แสง toon ไล่นุ่มตามขอบ — r ไม่ระบุ = อัตโนมัติตามสัดส่วนด้านสั้นสุด (cap .08) */
@@ -134,29 +165,119 @@ function disposeGroup(g){
   g.traverse(o=>{ if(o.isMesh && o.geometry) o.geometry.dispose(); });
 }
 
-function addHair(head, style, hex){
+/* เปลือกผมหลัก: โดมขอบมนครอบหัวเป็นก้อนเดียว — ทุกทรงต่อยอดจากเปลือกนี้แล้วเอาชิ้นเสริม
+   (หน้าม้า/หาง/มวย) วางทับสีเดียวกัน ให้ toon shading รวมเป็นผมก้อนเดียว ไม่ใช่บล็อกแปะกัน */
+function hairShell(head, c, o){
+  o = o || {};
+  const d = o.d ?? .76;
+  const w = o.w ?? .8, h = o.h + .2 ?? .5, y = o.y ?? .16;
+  const m = box(w, h, d, c, o.r ?? .28);
+  /* หน้าเปลือกผมต้องไม่ล้ำมาข้างหน้าถึงระดับตา (ตาอยู่ z ~.345) — คุมให้หน้าสุดอยู่ที่ ~.3 เสมอ */
+  m.position.set(0, y, o.z ?? (.31 - d/2));
+  head.add(m);
+  /* จำยอด/ความกว้างเปลือกผมไว้ ให้หน้าม้าอ้างอิงทำให้ "สูงเท่ากัน" และกว้างพอดีเชื่อมเป็นก้อนเดียว */
+  head.userData._hairTop = y + h/2;
+  head.userData._hairW = w;
+  return m;
+}
+/* หน้าม้า/ไรผมด้านหน้า — แผ่นหน้าผากด้านหน้า (z พ้นหน้าหัว) เต็มจากเหนือคิ้ว (bottom) ขึ้นไป "จรดยอดเปลือกผม" (top เท่ากันเสมอ)
+   ทับหน้าเปลือกผมลึก + สีเดียวกัน → toon shading รวมเป็นผมก้อนเดียว smooth ไม่เป็นแผ่นปะติด ไม่มีขั้น/ช่องผิวคั่น
+   ขอบล่างมนหนา (r สูง) ให้ไรผมโค้งนุ่มน่ารัก */
+function hairBang(head, c, o){
+  o = o || {};
+  const top = o.top ?? head.userData._hairTop - 0.05 ?? .4;     /* เท่ายอดเปลือกผมเสมอ → บน-หน้าสูงเท่ากัน */
+  const bottom = Math.max(.13, o.drop ?? .14);           /* ขอบล่างเหนือตา กันปิดตา (คลุมหน้าผากเต็ม) */
+  const H = Math.max(.14, top - bottom);
+  const w = o.w ?? ((head.userData._hairW ?? .8) - .22);  /* กว้างพอดีขอบเปลือกผม เชื่อมด้านข้างไม่มีช่อง */
+  /* rounding พอประมาณ (มนนุ่มแต่ไม่ม้วนจนหน้าผากโล่ง) — หน้าฟริงจ์เต็มคลุมถึงระดับคิ้ว */
+  const m = box(w, H, o.d ?? .16, c, o.r ?? .07);
+  m.position.set(o.x ?? 0, (top + bottom)/2, o.z ?? .27);
+  if(o.rz) m.rotation.z = o.rz;
+  if(o.rx) m.rotation.x = o.rx;
+  head.add(m);
+  return m;
+}
+/* เปีย/หางผมเป็นลูกกลมเรียงต่อ (นุ่ม ดูเป็นเส้นผมมากกว่าแท่งบล็อก) */
+function hairStrand(head, c, x, y, z, n, r, dy){
+  for(let i=0; i<n; i++){
+    const b = sphere(r - i*.008, c);
+    b.position.set(x, y - i*(dy ?? .19), z);
+    head.add(b);
+  }
+}
+function hairSpike(head, c, x, y, z, h){
+  const s = new THREE.Mesh(new THREE.ConeGeometry(.085, h ?? .24, 6), toonMat(c));
+  s.castShadow = hShadows; s.position.set(x, y, z); head.add(s);
+}
+/* ผมข้าง/หาง/แกละ เป็นทรงกระบอกเรียว (โคนใหญ่ปลายเรียว) ผิวโค้งมนรอบตัว ไม่มีหน้าแบน จึงไม่ดูเป็นแผ่น
+   sz>1 = แบนหน้า-หลังให้แผ่คลุมข้างหน้าเป็นม่านผม, tilt = เอียงเข้าหาคาง/สะบัดออก */
+function hairLock(head, c, o){
+  o = o || {};
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(o.rt ?? .15, o.rb ?? .09, o.h ?? .55, 14), toonMat(c));
+  m.castShadow = hShadows;
+  m.scale.set(o.sx ?? 1, 1, o.sz ?? 1);
+  m.position.set(o.x ?? 0, o.y ?? -.05, o.z ?? .02);
+  if(o.tilt) m.rotation.z = o.tilt;
+  if(o.rx) m.rotation.x = o.rx;
+  head.add(m); return m;
+}
+/* cap ผมพื้นฐาน = เปลือกผม (โดมมน) + หน้าม้า เชื่อมเป็นก้อนเดียว smooth คลุมหน้าผากถึงเหนือตา
+   ใช้เป็นฐาน "ทุกทรง" ให้ผมบน-หน้าติดกันสูงเท่ากันเสมอ ไม่เป็นแผ่นปะแยก (fringe:false = ไม่เอาหน้าม้า เช่นโมฮอว์ก/ปอมปาดัวร์) */
+function hairCap(head, c, o){
+  o = o || {};
+  hairShell(head, c, {h:o.h ?? .48, y:o.y ?? .18, d:o.d ?? .78, w:o.w ?? .82, z:o.z, r:o.r});
+  if(o.fringe !== false) hairBang(head, c, {w:o.fw, drop:o.drop, z:o.fz, rz:o.rz, x:o.fx, d:o.fd});
+}
+function addHair(head, girl, style, hex){
   const c = hex;
-  /* ชิ้นผมเป็นแผ่นบาง — สั่งรัศมีมนใกล้ค่า max ของด้านบางเอง ไม่งั้นขอบยังดูคม */
-  const cap = () => { const m = box(.68,.15,.68,c,.07); m.position.y = .3; head.add(m);
-                      const back = box(.68,.42,.1,c,.05); back.position.set(0,.05,-.3); head.add(back); };
-  switch(style){
-    case 0: cap(); break;                                             /* สั้นเรียบ */
-    case 1: { const m = box(.8,.2,.8,c,.09); m.position.y = .3; head.add(m); /* ทรงเห็ด */
-              const b = box(.8,.34,.12,c,.055); b.position.set(0,.1,-.35); head.add(b); break; }
-    case 2: { cap(); const f = box(.62,.16,.08,c,.038); f.position.set(0,.2,.32); head.add(f); break; } /* หน้าม้า */
-    case 3: { cap(); const b = sphere(.15,c); b.position.set(0,.46,0); head.add(b); break; }       /* จุก */
-    case 4: { cap(); [-1,1].forEach(s=>{ const b = sphere(.12,c); b.position.set(.38*s,.34,0); head.add(b); }); break; } /* สองแกละ */
-    case 5: { cap(); const t = box(.16,.5,.14,c); t.position.set(0,-.05,-.4); t.rotation.x = .18; head.add(t); break; }  /* หางม้า */
-    case 6: { cap(); const f = box(.62,.16,.08,c,.038); f.position.set(0,.2,.32); head.add(f);     /* เปียคู่ */
-              [-1,1].forEach(s=>{ const p = box(.13,.55,.13,c); p.position.set(.34*s,-.12,-.18); head.add(p); }); break; }
-    case 7: { [[0,.36,0,.2],[.2,.3,.12,.16],[-.2,.3,.12,.16],[.12,.32,-.16,.16],[-.12,.32,-.16,.16],[0,.26,-.26,.15]]
-              .forEach(p=>{ const b = sphere(p[3],c); b.position.set(p[0],p[1],p[2]); head.add(b); }); break; }          /* หยิกฟู */
-    case 8: { cap(); [[-.16,.1],[0,0],[.16,.1]].forEach((p,i)=>{                                    /* ตั้งชี้ */
-              const s = new THREE.Mesh(new THREE.ConeGeometry(.08,.22,6), toonMat(c));
-              s.castShadow = hShadows; s.position.set(p[0],.46,p[1]); head.add(s); }); break; }
-    case 9: { cap(); const f = box(.62,.16,.08,c,.038); f.position.set(0,.2,.32); head.add(f);      /* ยาวตรง */
-              [-1,1].forEach(s=>{ const p = box(.12,.62,.5,c,.055); p.position.set(.4*s,-.14,-.06); head.add(p); });
-              const bk = box(.66,.62,.12,c,.055); bk.position.set(0,-.14,-.36); head.add(bk); break; }
+  if(!girl){
+    /* ---- ทรงผมเด็กชาย 6 แบบ (สั้นเป็นหลัก) ---- */
+    switch(style){
+      case 0: /* แสกข้าง (หน้าม้าเฉียงข้าง) */
+        hairCap(head,c,{h:.47,y:.19,rz:.17,fx:-.04}); break;
+      case 1: /* สไปก์ตั้ง (หน้าม้าเตี้ย + หนามบน) */
+        hairCap(head,c,{h:.4,y:.2,d:.68,drop:.16});
+        [[-.2,.03],[0,-.04],[.2,.03],[-.1,-.2],[.1,-.2]].forEach(p=>hairSpike(head,c,p[0],.46,p[1])); break;
+      case 2: /* บ๊อบเด็ก/หน้าม้าเต็ม */
+        hairCap(head,c,{h:.5,y:.16,d:.76,w:.82,drop:.12}); break;
+      case 3: /* หยิกฟู (ก้อนกลมรอบหัว) */
+        hairCap(head,c,{h:.4,y:.2,d:.7,drop:.15});
+        [[0,.45,.13,.16],[.26,.43,.06,.15],[-.26,.43,.06,.15],[.17,.44,-.22,.14],[-.17,.44,-.22,.14],[0,.4,-.32,.14]]
+          .forEach(p=>{ const b=sphere(p[3],c); b.position.set(p[0],p[1],p[2]); head.add(b); }); break;
+      case 4: /* ผมเรียบมีเส้นชี้ (อาโฮเกะ) น่ารัก */
+        hairCap(head,c,{h:.46,y:.19,d:.72,w:.78});
+        { [[-.01,.5,.055],[.05,.61,.046],[.13,.67,.037],[.22,.68,.03]]
+            .forEach(p=>{ const a=sphere(p[2],c); a.position.set(p[0],p[1],.02); head.add(a); }); } break;
+      case 5: /* มัดจุกเล็กด้านหลัง */
+        hairCap(head,c,{h:.44,y:.19});
+        { const bun=sphere(.15,c); bun.position.set(0,.34,-.44); head.add(bun); } break;
+    }
+  }else{
+    /* ---- ทรงผมเด็กหญิง 6 แบบ (ยาว/ตกแต่งมากขึ้น) ---- */
+    switch(style){
+      case 0: /* หางม้าสูง */
+        hairCap(head,c,{h:.46,y:.19,fw:.66});
+        { const tie=sphere(.1,c); tie.position.set(0,.42,-.3); head.add(tie); }
+        hairLock(head,c,{x:0,y:.12,z:-.46,h:.66,rt:.15,rb:.08,sz:1.1,rx:.26}); break;
+      case 1: /* สองแกละ — ตัวเปียคงแบบแท่งขอบมนของ version ก่อน (ตามคำขอ) ไม่ใช้ hairLock ทรงกระบอก */
+        hairCap(head,c,{h:.48,y:.17,d:.74,fw:.68});
+        [-1,1].forEach(s=>{ const tie=sphere(.1,c); tie.position.set(.42*s,.16,-.04); head.add(tie);
+          const p=box(.13,.55,.13,c); p.position.set(.51*s,-.17,-.03); p.rotation.z=.175*s; head.add(p); }); break;
+      case 2: /* เปียคู่ */
+        hairCap(head,c,{h:.48,y:.17,d:.74,fw:.68});
+        [-1,1].forEach(s=>hairStrand(head,c,.44*s,.08,-.04,4,.11)); break;
+      case 3: /* มวยผมบนหัว */
+        hairCap(head,c,{h:.46,y:.18,fw:.66});
+        { const bun=sphere(.19,c); bun.position.set(0,.52,-.02); head.add(bun);
+          const ring=new THREE.Mesh(new THREE.TorusGeometry(.15,.045,8,16), toonMat(c));
+          ring.rotation.x=Math.PI/2; ring.position.set(0,.4,-.02); ring.castShadow=hShadows; head.add(ring); } break;
+      case 4: /* ยาวลอนสลวย */
+        hairCap(head,c,{h:.5,y:.13,d:.82,w:.86,drop:.13});
+        [-1,1].forEach(s=>hairStrand(head,c,.44*s,.02,-.04,4,.16,.22)); break;
+      case 5: /* เปียข้างเดี่ยว */
+        hairCap(head,c,{h:.5,y:.13,d:.8,w:.84,rz:.14});
+        hairStrand(head,c,.4,.04,.12,4,.12,.2); break;
+    }
   }
 }
 
@@ -186,34 +307,72 @@ function buildCharacter(cfg){
   const g = new THREE.Group();
   const rig = new THREE.Group(); g.add(rig);
   const girl = cfg.gender === 1;
-  const shirtC = H_SHIRT_COLORS[cfg.shirt] ?? H_SHIRT_COLORS[0];
-  const botC = H_BOTTOM_COLORS[cfg.bottom] ?? H_BOTTOM_COLORS[0];
+  /* เสื้อ/กางเกง-กระโปรง รองรับ "แบบ 2 สี" (entry เป็น object {a,b}) — a สีหลัก, b สีท่อนล่าง/ชาย */
+  const shirtE = H_SHIRT_COLORS[cfg.shirt] ?? H_SHIRT_COLORS[0];
+  const shirt2 = (shirtE && typeof shirtE === 'object') ? shirtE : null;
+  const shirtC = shirt2 ? shirt2.a : shirtE;
+  const shirtB = shirt2 ? shirt2.b : shirtE;
+  const botE = H_BOTTOM_COLORS[cfg.bottom] ?? H_BOTTOM_COLORS[0];
+  const bot2 = (botE && typeof botE === 'object') ? botE : null;
+  const botC = bot2 ? bot2.a : botE;
+  const botB = bot2 ? bot2.b : botE;
   const shoeC = H_SHOE_COLORS[cfg.shoes] ?? H_SHOE_COLORS[0];
 
-  /* ขา (pivot ที่สะโพก y .42 ให้แกว่งได้) — เด็กชายขากางเกงยาวถึงเท้า เด็กหญิงใส่กระโปรง+ขาสีผิว */
+  /* สะโพกกางเกง (เด็กชาย) — บล็อกมนกว้างเชื่อมลำตัวกับขา ให้ขาไม่ดูขาดลอยจากตัว
+     (เด็กหญิงไม่ต้อง เพราะกระโปรงคลุมสะโพกเชื่อมให้อยู่แล้ว) */
+  if(!girl){
+    const hip = box(.5,.22,.31, botC, .09); hip.position.y = .46; rig.add(hip);
+  }
+  /* ขา (pivot ที่สะโพก y .44 ให้แกว่งได้) — แท่งมนโผล่จากสะโพก ปลายบนซ้อนเข้าสะโพกให้เชื่อมเนียนเหมือนแขน
+     เด็กชายเป็นกางเกงถึงเท้า เด็กหญิงเป็นขาสีผิว (กระโปรงคลุมสะโพก) */
   const legs = [-1,1].map(s=>{
-    const piv = new THREE.Group(); piv.position.set(.12*s,.42,0);
-    const leg = box(.17,.32,.17, girl ? H_SKIN : botC); leg.position.y = -.16; piv.add(leg);
-    const shoe = box(.19,.11,.24, shoeC); shoe.position.set(0,-.33,.03); piv.add(shoe);
+    const piv = new THREE.Group(); piv.position.set(.14*s,.44,0);
+    if(girl){
+      const leg = box(.18,.42,.18, H_SKIN, .06); leg.position.y = -.17; piv.add(leg);
+    }else if(bot2){                                   /* กางเกง 2 สี: ท่อนบน a / ท่อนล่าง b */
+      const up = box(.18,.26,.18, botC, .06); up.position.y = -.08; piv.add(up);
+      const lo = box(.182,.22,.182, botB, .06); lo.position.y = -.3; piv.add(lo);
+    }else{
+      const leg = box(.18,.42,.18, botC, .06); leg.position.y = -.17; piv.add(leg);
+    }
+    const shoe = box(.2,.11,.25, shoeC, .045); shoe.position.set(0,-.35,.03); piv.add(shoe);
     rig.add(piv); return piv;
   });
   if(girl){
     const skirt = new THREE.Mesh(new THREE.CylinderGeometry(.24,.4,.24,10), toonMat(botC));
     skirt.castShadow = hShadows; skirt.position.y = .42; rig.add(skirt);
+    if(bot2){                                         /* กระโปรง 2 สี: ตัวกระโปรง a + ชายกระโปรง b */
+      const hem = new THREE.Mesh(new THREE.CylinderGeometry(.385,.42,.09,10), toonMat(botB));
+      hem.castShadow = hShadows; hem.position.y = .335; rig.add(hem);
+    }
   }
-  /* ตัว */
-  const body = box(.52,.5,.32, shirtC); body.position.y = .68; rig.add(body);
-  /* แขน (pivot ที่ไหล่) */
+  /* ตัว (เสื้อ) — ใช้ทรงเดียวกับแบบสีเดียวเสมอ (กล่องขอบมน) ให้ silhouette เหมือนกัน
+     แบบ 2 สี = วางแถบสี b 2 แถบแนบหน้าเสื้อสีหลัก a ให้เห็นเป็นลายทางแนวตั้ง a/b/a/b/a
+     โดยตัวเสื้อฐานยังเป็นกล่องขอบมน มุม/ข้างจึงมนเหมือนแบบสีเดียว ไม่เป็นเหลี่ยม */
+  {
+    const body = box(.52,.5,.32, shirtC); body.position.y = .68; rig.add(body);
+    if(shirt2){
+      [-.104, .104].forEach(x=>{
+        const strip = box(.104,.5,.33, shirtB); /* ขอบมน แนบหน้าเสื้อ (ยื่นราวๆ .005 พอเห็นเป็นทาง ไม่นูน) */
+        strip.position.set(x, .68, 0); rig.add(strip);
+      });
+    }
+  }
+  /* แขน (pivot ที่ไหล่) — แขนเป็นแท่งมนแท่งเดียวยาวเท่าลำตัว ปลายบนซ้อนเข้าไหล่ให้เชื่อมเนียน
+     (เลิกใช้ลูกกลมที่ไหล่ เพราะดูป่องเป็นก้อนกลมเกินไป ไม่เป็นทรงแขน) */
   const arms = [-1,1].map(s=>{
-    const piv = new THREE.Group(); piv.position.set(.33*s,.88,0);
-    const arm = box(.13,.38,.15, shirtC); arm.position.y = -.13; piv.add(arm);
-    const hand = box(.11,.09,.13, H_SKIN); hand.position.y = -.35; piv.add(hand);
+    const piv = new THREE.Group(); piv.position.set(.28*s,.9,0);
+    piv.rotation.z = .16*s;                        /* ไหล่คงที่ แต่ปลายแขนกางออกจากลำตัวเล็กน้อย ให้ท่าดูเป็นธรรมชาติ + ปลายแขนพ้นกระโปรงเด็กหญิง */
+    const arm = box(.15,.46,.16, shirtC, .075); arm.position.y = -.21; piv.add(arm);  /* สั้นลงนิด (เดิม .52) กันปลายแขน/มือจมกระโปรง */
+    const hand = box(.12,.1,.14, H_SKIN, .045); hand.position.y = -.46; piv.add(hand);
     rig.add(piv); return piv;
   });
-  /* หัว + หน้า */
+  /* หัว + หน้า — ใช้ softMat กับกะโหลกให้เงาบนใบหน้านุ่มลง (ไม่เข้มเป็นหย่อม) */
   const head = new THREE.Group(); head.position.y = 1.26; rig.add(head);
-  const skull = box(.64,.6,.66, H_SKIN); head.add(skull);
-  addHair(head, cfg.hair|0, H_HAIR_COLORS[cfg.hairC] ?? H_HAIR_COLORS[0]);
+  const skull = new THREE.Mesh(roundedBoxGeo(.64,.6,.66), softMat(H_SKIN));
+  skull.castShadow = hShadows; head.add(skull);
+  /* % H_HAIR_N: ตัวละครที่ save ไว้ตอนยังมี 10 ทรง (index 6-9) ให้วนกลับเข้าช่วง 6 ทรงปัจจุบัน ไม่กลายเป็นหัวล้าน */
+  addHair(head, girl, (cfg.hair|0) % H_HAIR_N, H_HAIR_COLORS[cfg.hairC] ?? H_HAIR_COLORS[0]);
   addEyes(head, cfg.eyes|0, H_EYE_COLORS[cfg.eyeC] ?? H_EYE_COLORS[0]);
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(.06,.018,6,10,Math.PI), toonMat(0xc9573f));
   mouth.rotation.z = Math.PI; mouth.position.set(0,-.12,.345); head.add(mouth);
@@ -248,17 +407,18 @@ function buildWorld(){
   outGrid = buildOutGrid();
 
   /* พื้นสไตล์ isometric บล็อกหนา (อ้างอิง house_example/isomatic2d_style_1.png):
-     หน้าหญ้าเป็นแผ่นบางด้านบน 2 เฉดสลับ checker + ฐานดินน้ำตาลหนาทั้งผืนให้เห็นขอบข้างเป็นชั้นดิน
-     น้ำเป็นแอ่งต่ำกว่าระดับหญ้า โปร่งแสงเล็กน้อย เห็นชั้นดินเป็นตลิ่งริมคลอง */
-  const topGeo = roundedBoxGeo(1,.24,1,.05);
+     หน้าหญ้าเป็นแผ่นบางด้านบนสลับ 2 เฉด (เขียวอ่อน/เข้ม) + ฐานดินน้ำตาลหนาทั้งผืนให้เห็นขอบข้างเป็นชั้นดิน
+     ใช้ BoxGeometry หน้าเรียบ (ไม่ใช่ roundedBox) เพราะ bevel มุมของ roundedBox ทำให้ toon shading
+     เกิดเงาสามเหลี่ยมตรงมุมบล็อกทุกช่อง ดูลายตา — หน้าเรียบจะไล่เฉดเรียบทั้งช่อง ไม่มีสามเหลี่ยม */
+  const topGeo = new THREE.BoxGeometry(1,.24,1);
   const counts = {g1:0,g2:0};
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
     if(outGrid[z][x]!==1) ((x+z)%2 ? counts.g2++ : counts.g1++);
   }
-  const grassMat1 = toonMat(0x8fd06c); /* เรียกก่อนเพื่อให้ gradientMap ถูกสร้างก่อนใช้กับ waterMat */
+  const grassMat1 = toonMat(0x8fd06c); /* เขียวอ่อน — เรียกก่อนเพื่อให้ gradientMap ถูกสร้างก่อนใช้กับ waterMat */
   const inst = {
     g1: new THREE.InstancedMesh(topGeo, grassMat1, counts.g1),
-    g2: new THREE.InstancedMesh(topGeo, toonMat(0x7cc25a), counts.g2),
+    g2: new THREE.InstancedMesh(topGeo, toonMat(0x7cc25a), counts.g2), /* เขียวเข้ม */
   };
   const idx = {g1:0,g2:0};
   const m4 = new THREE.Matrix4();
@@ -299,8 +459,31 @@ function buildWorld(){
   /* บ้าน */
   const house = new THREE.Group();
   const base = box(3.4,1.6,2.6,0xfff2dc); base.position.y = .8; house.add(base);
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(2.6,1.3,4), toonMat(0xef8354));
-  roof.castShadow = hShadows; roof.rotation.y = Math.PI/4; roof.position.y = 2.25; house.add(roof);
+  /* หลังคาจั่ว (gable/A-frame) — ทรงสามเหลี่ยมแบบบ้านการ์ตูน (อ้างอิงภาพ house_example)
+     2 หน้าลาดเอียงคนละมุม flatShading จับแสงต่างกันเอง หน้าหนึ่งสว่างหน้าหนึ่งเงา = เห็นมิติชัด
+     ไม่แบนเป็นก้อนเดียวเหมือนปิรามิดเดิม + หน้าจั่วสามเหลี่ยมสีผนัง (หน้า/หลัง) + สันครีมพาดยอด */
+  const ROOF_TOP_Y = 1.6;                              /* ระดับที่หลังคาวางบนผนัง */
+  const RISE = 1.02, HALF = 1.9, DEP = 2.9;            /* สูงหลังคา, ครึ่งกว้าง(รวมชายคายื่นข้าง), ลึก(รวมยื่นหน้า-หลัง) */
+  const roofMat = new THREE.MeshToonMaterial({color:0xef8354, gradientMap});
+  const slopeLen = Math.hypot(HALF, RISE), slopeAng = Math.atan2(RISE, HALF);
+  [1,-1].forEach(s=>{                                  /* 2 หน้าลาด: ขวา(+x) / ซ้าย(-x) */
+    const plane = new THREE.Mesh(roundedBoxGeo(slopeLen, .18, DEP, .06), roofMat);
+    plane.castShadow = hShadows;
+    plane.rotation.z = -s*slopeAng;
+    plane.position.set(s*HALF/2, ROOF_TOP_Y + RISE/2, 0);
+    house.add(plane);
+  });
+  /* หน้าจั่วสามเหลี่ยม (ผนังต่อขึ้นเป็นสามเหลี่ยม) หน้า+หลัง สีเดียวกับผนังบ้าน ซุกใต้หน้าลาดพอดี */
+  const gableShape = new THREE.Shape();
+  gableShape.moveTo(-1.7, 0); gableShape.lineTo(1.7, 0); gableShape.lineTo(0, RISE); gableShape.closePath();
+  const gableGeo = new THREE.ExtrudeGeometry(gableShape, {depth:.12, bevelEnabled:false});
+  [1.18, -1.30].forEach(z=>{
+    const gable = new THREE.Mesh(gableGeo, toonMat(0xfff2dc));
+    gable.position.set(0, ROOF_TOP_Y, z); house.add(gable);
+  });
+  /* สันหลังคา (ridge) แท่งครีมขอบมนพาดตามยอด */
+  const ridge = new THREE.Mesh(roundedBoxGeo(.16, .16, DEP + .05, .06), toonMat(0xffe4c4));
+  ridge.castShadow = hShadows; ridge.position.set(0, ROOF_TOP_Y + RISE, 0); house.add(ridge);
   const door = box(.76,1.14,.1,0x9c6238); door.position.set(.5,.57,1.32); house.add(door);
   const knob = sphere(.05,0xffd54f,8); knob.position.set(.78,.55,1.4); house.add(knob);
   const win1 = box(.62,.62,.1,0xaadcf5); win1.position.set(-.8,.95,1.32); house.add(win1);
@@ -355,7 +538,8 @@ function buildInterior(){
   inGrid = [];
   for(let z=0; z<IN_D; z++){ inGrid.push(new Array(IN_W).fill(0)); }
 
-  const tileGeo = roundedBoxGeo(1,.24,1,.05);
+  /* พื้นห้องสลับ 2 เฉด (อ่อน/เข้ม) เหมือนเดิม — ใช้ BoxGeometry หน้าเรียบ กันเงาสามเหลี่ยมตรงมุมบล็อก */
+  const tileGeo = new THREE.BoxGeometry(1,.24,1);
   const im1 = new THREE.InstancedMesh(tileGeo, toonMat(0xe6bc7f), Math.ceil(IN_W*IN_D/2));
   const im2 = new THREE.InstancedMesh(tileGeo, toonMat(0xd9a967), Math.floor(IN_W*IN_D/2));
   const idx = [0,0]; const m4 = new THREE.Matrix4();
@@ -368,10 +552,16 @@ function buildInterior(){
   const floorBase = new THREE.Mesh(roundedBoxGeo(IN_W,.5,IN_D,.1), toonMat(0x9c6b45));
   floorBase.position.y = -.49; interiorGroup.add(floorBase);
 
-  /* ผนัง 2 ด้านไกลกล้อง (กล้องมองจาก +x,+z) คือด้าน x ต่ำ และ z ต่ำ */
+  /* ผนัง 2 ด้านไกลกล้อง (กล้องมองจาก +x,+z) คือด้าน x ต่ำ และ z ต่ำ
+     - ยืดให้ซ้อนกันตรงมุม (แต่ละผนังยาวเกินไปคลุมรอยต่ออีกด้าน) ไม่มีช่องมุมโหว่ = ผนังไม่แยกจากกัน
+     - ขอบล่างหยั่งลงต่ำกว่าผิวพื้น (WBOT ติดลบ) + หน้าผนังล้ำเข้าห้องเล็กน้อย ให้ผนังจมติดพื้นสนิท ไม่ลอย */
   const wallC = 0xfbe3c0;
-  const wallBack = box(IN_W,2.1,.2,wallC); wallBack.position.set(0,1.05,inWZ(0)-.6); interiorGroup.add(wallBack);
-  const wallLeft = box(.2,2.1,IN_D,wallC); wallLeft.position.set(inWX(0)-.6,1.05,0); interiorGroup.add(wallLeft);
+  const WT = .24, WTOP = 2.1, WBOT = -.3, WH = WTOP - WBOT, WY = (WTOP + WBOT)/2;
+  const xL = inWX(0) - .5, zB = inWZ(0) - .5;   /* ขอบพื้นด้านซ้าย/หลัง */
+  const wallBack = box(IN_W + WT, WH, WT, wallC);
+  wallBack.position.set(-WT/2, WY, zB - WT/2 + .04); interiorGroup.add(wallBack);
+  const wallLeft = box(WT, WH, IN_D + WT, wallC);
+  wallLeft.position.set(xL - WT/2 + .04, WY, -WT/2); interiorGroup.add(wallLeft);
   /* ประตู (บนผนังหลัง) — คลิกเพื่อออกไปนอกบ้าน */
   interiorDoorMesh = box(.8,1.3,.12,0x9c6238);
   interiorDoorMesh.position.set(inWX(IN_DOOR_TILE.x),.65,inWZ(0)-.48); interiorGroup.add(interiorDoorMesh);
@@ -527,7 +717,7 @@ function initThree(){
 
   /* พื้นที่กลมสำหรับโหมดสร้างตัวละคร */
   creatorGroup = new THREE.Group();
-  const plat = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.45,.22,24), toonMat(0xa5d6a7));
+  const plat = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.45,.22,24), toonMat(0x7cc25a));
   plat.position.y = -.11; plat.receiveShadow = hShadows; creatorGroup.add(plat);
   creatorGroup.visible = false;
   scene.add(creatorGroup);
@@ -728,7 +918,9 @@ function buildCreatorRows(cfg){
   H_ROWS.forEach(row=>{
     const div = document.createElement('div');
     const lab = document.createElement('div');
-    lab.className = 'house-row-label'; lab.textContent = row.label;
+    lab.className = 'house-row-label';
+    lab.innerHTML = (H_ROW_ICONS[row.key] ? '<span class="house-row-ic">'+H_ROW_ICONS[row.key]+'</span>' : '')
+                    + '<span>'+row.label+'</span>';
     div.appendChild(lab);
     const chips = document.createElement('div');
     chips.className = 'house-chip-wrap';
@@ -738,7 +930,13 @@ function buildCreatorRows(cfg){
       b.className = 'house-chip' + (row.type==='color' ? ' house-chip-color' : '');
       b.type = 'button';
       if(row.type==='color'){
-        b.style.background = '#'+row.colors[i].toString(16).padStart(6,'0');
+        const col = row.colors[i];
+        if(col && typeof col === 'object'){          /* แบบ 2 สี: สวอตช์แบ่งครึ่งบน/ล่างเส้นคม สะอาดเหมือนชิปสีเดียว */
+          const hx = v => '#'+v.toString(16).padStart(6,'0');
+          b.style.background = 'linear-gradient('+hx(col.a)+' 0 50%, '+hx(col.b)+' 50% 100%)';
+        }else{
+          b.style.background = '#'+col.toString(16).padStart(6,'0');
+        }
         b.setAttribute('aria-label', row.label+' แบบที่ '+(i+1));
       }else if(row.type==='num'){ b.textContent = i+1; }
       else{ b.textContent = row.options[i]; }
@@ -768,7 +966,10 @@ function openCreator(fromWorld){
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
   $('house-hint').hidden = true;
-  $('house-creator-title').textContent = fromWorld ? '✏️ แก้ไขตัวละครของหนู' : '🧒 สร้างตัวละครของหนู';
+  /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (ดินสอ = ชุดเดียวกับปุ่มแก้ไข, หน้าเด็ก = ชุด row "หนูเป็น...") */
+  const _icChild = '<svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  const _icPencil = '<svg class="house-title-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg>';
+  $('house-creator-title').innerHTML = fromWorld ? (_icPencil + ' แก้ไขตัวละครของหนู') : (_icChild + ' สร้างตัวละครของหนู');
   worldGroup.visible = false; interiorGroup.visible = false;
   creatorGroup.visible = true;
   rebuildChar(creatorCfg);
@@ -1178,7 +1379,7 @@ function frame(t){
     if(charGroup){
       charGroup.rotation.y = creatorState.rotY;
       /* ท่ายืนหายใจเบาๆ ให้ดูมีชีวิต */
-      if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = .06+Math.sin(t*.0022)*.03; u.arms[1].rotation.z = -.06-Math.sin(t*.0022)*.03; }
+      if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03; u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03; }
     }
   }else if(charGroup){
     if(hChar.walking && hChar.path.length){
@@ -1206,8 +1407,8 @@ function frame(t){
       /* idle: โยกเบาๆ แขนขากลับท่ายืน */
       ['legs','arms'].forEach(part=>u[part].forEach(p=>{ p.rotation.x *= .82; }));
       u.rig.position.y = Math.sin(t*.0022)*.02;
-      u.arms[0].rotation.z = .06+Math.sin(t*.0022)*.03;
-      u.arms[1].rotation.z = -.06-Math.sin(t*.0022)*.03;
+      u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03;
+      u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03;
     }
     /* หมุนตัวนุ่มๆ เข้าหาทิศเดิน */
     let dr = hChar.targetRotY - charGroup.rotation.y;

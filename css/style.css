@@ -1759,7 +1759,12 @@
   .house-creator-title{font-size:clamp(19px,4.6vw,23px); font-weight:800; color:var(--ink); text-align:center;}
   .house-creator-sub{font-size:14.5px; font-weight:600; color:var(--ink-soft); text-align:center;}
   .house-creator-rows{overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px 2px 8px; min-height:0;}
-  .house-row-label{font-size:15.5px; font-weight:800; color:var(--ink); margin-bottom:4px;}
+  .house-row-label{font-size:15.5px; font-weight:800; color:var(--ink); margin-bottom:4px; display:flex; align-items:center; gap:7px;}
+  .house-row-ic{flex:0 0 auto; width:24px; height:24px; display:inline-flex;}
+  .house-row-ic svg{width:100%; height:100%; display:block;}
+  .house-title-ic{width:1.2em; height:1.2em; vertical-align:-.22em; display:inline-block;}
+  .house-btn-ic{width:22px; height:22px; display:block;}
+  .house-done-ic{width:1.15em; height:1.15em; vertical-align:-.2em; display:inline-block;}
   .house-chip-wrap{display:flex; flex-wrap:wrap; gap:8px;}
   .house-chip{
     min-width:42px; height:42px; border-radius:14px; border:3px solid rgba(0,0,0,.08);
