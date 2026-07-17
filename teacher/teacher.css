@@ -125,6 +125,13 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
   font-size:14px; padding:7px 16px; border-radius:999px; cursor:pointer; margin-top:8px;
   align-self:flex-start;
 }
+/* ปุ่มลองฟังเสียงอ่านคำ (ฟอร์มเกมฟังคำศัพท์) */
+.bq-word-listen{
+  border:none; background:#EAF5FE; color:#2f7fb5; font-family:inherit; font-weight:700;
+  font-size:14px; padding:9px 14px; border-radius:999px; cursor:pointer; flex-shrink:0;
+  transition:transform .12s;
+}
+.bq-word-listen:hover{transform:translateY(-2px);}
 .builder-add-q-btn{
   width:100%; border:3px dashed #B9D6FF; background:#F2F8FF; color:#2f7fb5;
   font-family:inherit; font-weight:800; font-size:17px; padding:13px; border-radius:18px;
@@ -293,6 +300,7 @@ body.night-mode .builder-select{background:#fff;}
 .bq-img-remove:active{transform:translateY(1px);}
 .bq-img-note{margin:6px 0 0; font-size:12.5px; font-weight:600; color:var(--ink-soft); line-height:1.5;}
 body.night-mode .bq-img-btn{background:rgba(60,120,180,.18); border-color:rgba(140,190,235,.5); color:#BFE0FF;}
+body.night-mode .bq-word-listen{background:rgba(60,120,180,.25); color:#BFE0FF;}
 
 /* ---------- ปุ่ม "รายละเอียดการอัพเดท" ใน footer (สไตล์เดียวกับหน้าหลัก: ไอคอนหนังสือ + ข้อความขีดเส้นใต้; อยู่ก่อน text ใน footer) ---------- */
 .footer-changelog-btn{ width:fit-content; margin:0 auto 10px; padding:4px 8px; display:flex; align-items:center; gap:5px; }

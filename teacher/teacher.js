@@ -46,8 +46,10 @@ const MECHANICS = [
   {id:'ar-sentence', name:'AR หยิบการ์ดเรียงลำดับ', emoji:'🔤', enabled:true,  form:'sentence', icon:'../assets/icons/section-ar.svg'},
   {id:'ar-connect',  name:'AR โยงเส้น', emoji:'🪢', enabled:true,  form:'pairs',    icon:'../assets/icons/section-ar.svg'},
   {id:'ar-count',    name:'AR หยิบให้ครบ', emoji:'🧺', enabled:true,  form:'count',    icon:'../assets/icons/section-ar.svg', desktopOnly:true},
+  {id:'listen',      name:'ฟังคำศัพท์ สะกดคำ', emoji:'🎧', enabled:true,  form:'words',    icon:'../assets/icons/section-listen.svg'},
   {id:'match',       name:'จับคู่ความจำ', emoji:'🎴', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'},
-  {id:'listen',      name:'ฟังคำศัพท์', emoji:'🎧', enabled:false, form:'choices',  icon:'../assets/icons/section-listen.svg'}
+  {id:'mix',         name:'ผสมสี', emoji:'🎨', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'},
+  {id:'music',       name:'ดนตรี', emoji:'🎹', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'}
 ];
 function mechById(id){ return MECHANICS.find(m=>m.id===id) || MECHANICS[0]; }
 
@@ -266,9 +268,10 @@ const homeView    = $('teacher-home-view');
 const manageView  = $('manage-view');
 const builderView = $('builder-view');
 const quizView    = $('quiz-view');
+const listenView  = $('listen-view');
 const resultView  = $('result-view');
 function showView(v){
-  [setupView, homeView, manageView, builderView, quizView, resultView].forEach(x=>{ x.hidden = (x!==v); });
+  [setupView, homeView, manageView, builderView, quizView, listenView, resultView].forEach(x=>{ x.hidden = (x!==v); });
   const av = $('ar-view');
   if(av) av.hidden = true; /* ar-view จัดการแยกใน startTeacherAR (teacher-ar.js) — ที่นี่แค่กันซ้อน */
   window.scrollTo({top:0, behavior:'smooth'});
@@ -521,7 +524,7 @@ function buildGameCard(game){
   card.innerHTML =
     '<div class="cat-emoji"><img src="'+game.logo+'" class="cat-icon-img" alt=""></div>'+
     '<div class="cat-name">'+escapeHtml(game.title)+'</div>'+
-    '<div class="cat-meta">'+game.questionCount+' '+(mechById(game.mechanic).form==='pairs' ? 'ด่าน' : 'ข้อ/รอบ')+'</div>';
+    '<div class="cat-meta">'+game.questionCount+' '+(['pairs','words'].includes(mechById(game.mechanic).form) ? 'ด่าน' : 'ข้อ/รอบ')+'</div>';
   card.addEventListener('click', ()=>{ playClick(); playTeacherGame(game.id); });
   return card;
 }
@@ -535,6 +538,7 @@ function playTeacherGame(gameId){
     return;
   }
   if(game.mechanic==='quiz') startTeacherQuiz(gameId);
+  else if(game.mechanic==='listen') startTeacherListen(gameId);
   else startTeacherAR(gameId);
 }
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -591,7 +595,8 @@ function buildManageRow(game){
       '<img class="mg-logo" src="'+game.logo+'" alt="">'+
       '<div class="mg-info">'+
         '<div class="mg-title">'+escapeHtml(game.title)+' '+(game.published?'<span class="mg-status mg-pub">เผยแพร่แล้ว</span>':'<span class="mg-status mg-draft">แบบร่าง</span>')+'</div>'+
-        '<div class="mg-meta"><img src="'+mech.icon+'" class="mg-mech-icon" alt=""> '+mech.name+' · '+game.questionCount+' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)</div>'+
+        '<div class="mg-meta"><img src="'+mech.icon+'" class="mg-mech-icon" alt=""> '+mech.name+' · '+game.questionCount+
+          (mech.form==='words' ? ' ด่าน/รอบ (มี '+game.questions.length+' คำ)' : ' ข้อ/รอบ (มี '+game.questions.length+' ข้อ)')+'</div>'+
       '</div>'+
       '<div class="mg-actions">'+
         (game.published?'':'<button class="tg-action-btn tg-pub">'+SVG_ROCKET_S+' เผยแพร่</button>')+
@@ -707,11 +712,16 @@ function renderQuestionArea(){
     form==='choices'  ? '(ติ๊ก ✔ หน้าคำตอบที่ถูก ช่องอื่นเป็นตัวลวง)' :
     form==='sentence' ? '(พิมพ์คำหรือประโยค เว้นวรรคระหว่างการ์ดแต่ละใบ ระบบจะตัดเป็นการ์ดให้เด็กเรียงตามลำดับ)' :
     form==='count'    ? '(ใส่โจทย์ + ของที่ต้องหยิบพร้อมจำนวน + ของหลอก 1-3 ชนิด — แนะนำใช้ emoji เป็นของ)' :
+    form==='words'    ? '(1 ข้อ = 1 คำ — เด็กจะฟังเสียงอ่านแล้วเลือกตัวอักษรมาสะกดคำ ระบบสร้างตัวอักษรลวงให้อัตโนมัติ)' :
                         '(ใส่คู่ที่ตรงกัน ซ้าย ↔ ขวา ตอนเล่นจะสุ่มมาโยงครั้งละไม่เกิน 4 คู่)';
   $('b-count-note').textContent =
     form==='pairs'
       ? '💡 จำนวนนี้คือจำนวนด่านต่อรอบเล่น — ใส่คู่ได้มากกว่าจำนวนด่าน ระบบจะสุ่มคู่มาให้เล่นไม่ซ้ำ'
+      : form==='words'
+      ? '💡 จำนวนนี้คือจำนวนด่านต่อรอบเล่น (1 คำ = 1 ด่าน) — ใส่คำมากกว่านี้ได้ ระบบจะสุ่มคำมาให้ทุกรอบเล่น'
       : '💡 ใส่โจทย์มากกว่าจำนวนนี้ได้ ระบบจะสุ่มโจทย์มาให้ตามจำนวนที่เลือกทุกรอบเล่น';
+  /* checkbox เฉลยตัวอักษรช่วย โชว์เฉพาะเกมฟังคำศัพท์ */
+  $('b-listen-hint-row').hidden = form!=='words';
 }
 function renderLogoPicker(){
   const wrap = $('logo-picker');
@@ -736,6 +746,7 @@ function buildQuestionBlock(qData){
   if(form==='sentence') return buildSentenceBlock(qData);
   if(form==='pairs')    return buildPairBlock(qData);
   if(form==='count')    return buildCountBlock(qData);
+  if(form==='words')    return buildWordBlock(qData);
   return buildChoicesBlock(qData);
 }
 /* โครง block ร่วม: หัวเลขข้อ + ปุ่มลบข้อ */
@@ -814,6 +825,32 @@ function buildCountBlock(qData){
     if(!(qData.decoys||[]).length) addDecoyRow('', 3);
   } else {
     addDecoyRow('', 3);
+  }
+  return block;
+}
+/* ฟอร์มแบบคำศัพท์ (listen ฟังคำศัพท์): 1 ข้อ = 1 คำ + รูปใบ้ emoji (ไม่บังคับ)
+   ปุ่ม 🔊 ให้ครูลองฟังเสียงอ่านของเครื่องก่อน (speakTeacherWord อยู่ใน teacher-listen.js ที่โหลดทีหลัง
+   เรียกตอนคลิกจึงหาเจอเสมอ) */
+function buildWordBlock(qData){
+  const block = bqShell(
+    '<div class="bq-ans-row bq-word-row">'+
+      '<input class="child-name-input bq-ans-input bq-word-input" type="text" placeholder="คำศัพท์ เช่น cat หรือ แมว" maxlength="10">'+
+      '<button type="button" class="bq-word-listen" title="ลองฟังเสียงอ่านคำนี้">🔊 ลองฟัง</button>'+
+    '</div>'+
+    '<div class="bq-ans-row">'+
+      '<span class="bq-count-label">🖼️ รูปใบ้</span>'+
+      '<input class="child-name-input bq-ans-input bq-word-emoji" type="text" placeholder="ไม่บังคับ เช่น 🐱" maxlength="4">'+
+    '</div>'+
+    '<p class="bq-img-note">💡 รูปใบ้จะโชว์ให้เด็กเห็นเฉพาะตอนที่เครื่องนั้นอ่านออกเสียงคำไม่ได้ (เช่น ไม่มีเสียงภาษาไทย)</p>');
+  block.querySelector('.bq-word-listen').addEventListener('click', ()=>{
+    playClick();
+    const w = block.querySelector('.bq-word-input').value.trim();
+    if(!w){ showToast('✏️','พิมพ์คำศัพท์ก่อนแล้วค่อยกดฟังนะคะ'); return; }
+    speakTeacherWord(w);
+  });
+  if(qData){
+    block.querySelector('.bq-word-input').value = qData.w;
+    block.querySelector('.bq-word-emoji').value = qData.e || '';
   }
   return block;
 }
@@ -956,6 +993,7 @@ function openBuilder(gameId, from){
   selectedLogo = game ? game.logo : LOGOS[Math.floor(Math.random()*LOGOS.length)];
   $('b-count').value = game ? game.questionCount : 10;
   $('b-shuffle').checked = game ? !!game.shuffle : true;
+  $('b-listen-hint').checked = game ? game.listenHint!==false : true; /* default เปิด (เหมาะเด็กเล็ก) */
   renderMechanicPicker();
   renderLogoPicker();
   renderQuestionArea();
@@ -1010,6 +1048,20 @@ function collectBuilderData(){
       const right = b.querySelector('.bq-pair-right').value.trim();
       if(!left || !right){ showToast('✏️','คู่ที่ '+(i+1)+' ยังใส่ไม่ครบทั้งสองฝั่งนะคะ'); return null; }
       questions.push({ left, right });
+    } else if(form==='words'){
+      let w = b.querySelector('.bq-word-input').value.trim();
+      const e = b.querySelector('.bq-word-emoji').value.trim();
+      if(!w){ showToast('✏️','ข้อที่ '+(i+1)+' ยังไม่ได้ใส่คำศัพท์นะคะ'); return null; }
+      if(/\s/.test(w)){ showToast('⚠️','ข้อที่ '+(i+1)+' ต้องเป็นคำเดียว ไม่เว้นวรรคนะคะ'); return null; }
+      const hasThai = /[฀-๿]/.test(w), hasLatin = /[a-zA-Z]/.test(w);
+      if(hasThai && hasLatin){ showToast('⚠️','ข้อที่ '+(i+1)+' ใช้ภาษาไทยหรืออังกฤษอย่างใดอย่างหนึ่งต่อคำนะคะ'); return null; }
+      if(hasLatin) w = w.toLowerCase(); /* การ์ดตัวอักษรอังกฤษเป็นตัวพิมพ์เล็กแบบเกมหน้าหลัก */
+      const len = w.split('').length;
+      if(len < 2){ showToast('⚠️','ข้อที่ '+(i+1)+' คำสั้นเกินไป ต้องมีอย่างน้อย 2 ตัวอักษรนะคะ'); return null; }
+      if(len > 8){ showToast('⚠️','ข้อที่ '+(i+1)+' คำยาวเกิน 8 ตัวอักษร ช่องสะกดจะล้นจอเด็กนะคะ'); return null; }
+      const qObj = { w };
+      if(e) qObj.e = e;
+      questions.push(qObj);
     } else {
       const qText = b.querySelector('.bq-q-input').value.trim();
       const rows = Array.from(b.querySelectorAll('.bq-ans-row'));
@@ -1027,7 +1079,7 @@ function collectBuilderData(){
   if(!questions.length){ showToast('⚠️','ต้องมีโจทย์อย่างน้อย 1 ข้อนะคะ'); return null; }
   /* ar-connect: ต้องมีอย่างน้อย 2 คู่ถึงจะโยงเส้นได้ */
   if(form==='pairs' && questions.length < 2){ showToast('⚠️','เกมโยงเส้นต้องมีอย่างน้อย 2 คู่นะคะ'); return null; }
-  return {
+  const data = {
     grade: $('b-grade').value,
     mechanic: selectedMechanic,
     title,
@@ -1036,6 +1088,8 @@ function collectBuilderData(){
     shuffle: $('b-shuffle').checked,
     questions
   };
+  if(form==='words') data.listenHint = $('b-listen-hint').checked;
+  return data;
 }
 function saveBuilder(publish){
   const data = collectBuilderData();
@@ -1276,6 +1330,7 @@ $('retry-btn').addEventListener('click', ()=>{
   playClick();
   if(!lastPlay) return;
   if(lastPlay.type==='ar') startTeacherAR(lastPlay.gameId);
+  else if(lastPlay.type==='listen') startTeacherListen(lastPlay.gameId);
   else startTeacherQuiz(lastPlay.gameId);
 });
 $('home-btn').addEventListener('click', ()=>{ playClick(); renderTeacherHome(); });
