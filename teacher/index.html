@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/style.css?v=1.13.0">
-<link rel="stylesheet" href="teacher.css?v=1.13.0">
+<link rel="stylesheet" href="teacher.css?v=1.14.0">
 </head>
 <body>
 
@@ -203,6 +203,11 @@
           <input type="checkbox" id="b-shuffle" checked>
           <span>สุ่มลำดับโจทย์และสลับตำแหน่งคำตอบตอนเล่น</span>
         </label>
+        <!-- ตัวเลือกเฉพาะเกมฟังคำศัพท์ (form 'words') — ซ่อน/โชว์ใน renderQuestionArea() -->
+        <label class="builder-check-row" id="b-listen-hint-row" hidden>
+          <input type="checkbox" id="b-listen-hint" checked>
+          <span>เฉลยตัวอักษรช่วยบางตำแหน่ง (เหมาะกับเด็กเล็ก)</span>
+        </label>
       </div>
 
       <div class="builder-actions">
@@ -236,6 +241,25 @@
       <div class="next-btn-wrap">
         <button class="next-btn" id="next-btn">ข้อต่อไป ➜</button>
       </div>
+    </div>
+  </section>
+
+  <!-- LISTEN VIEW (เกมฟังคำศัพท์ สะกดคำ — id/class ชุดเดียวกับหน้าหลัก reuse .listen-* จาก css/style.css) -->
+  <section id="listen-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="listen-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="listen-cat-label">ฟังคำศัพท์</div>
+        <div class="progress-track"><div class="progress-fill" id="listen-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="listen-hint">🎧 กดปุ่มฟังคำศัพท์ แล้วเลือกตัวอักษรมาต่อคำให้ถูกนะ!</div>
+      </div>
+      <div class="q-counter" id="listen-level-counter">1/10</div>
+    </div>
+    <div class="listen-board">
+      <button class="listen-speak-btn" id="listen-speak-btn">🔊 ฟังคำศัพท์</button>
+      <div class="listen-symbol" id="listen-symbol" hidden></div>
+      <div class="listen-slots" id="listen-slots"></div>
+      <div class="listen-cards" id="listen-cards"></div>
     </div>
   </section>
 
@@ -384,7 +408,8 @@
   </div>
 </div>
 
-<script src="teacher.js?v=1.13.0"></script>
-<script src="teacher-ar.js?v=1.13.0"></script>
+<script src="teacher.js?v=1.14.0"></script>
+<script src="teacher-ar.js?v=1.14.0"></script>
+<script src="teacher-listen.js?v=1.14.0"></script>
 </body>
 </html>
