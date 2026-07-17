@@ -1,0 +1,36 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เกมฝึกเขียน">
+  <defs>
+    <linearGradient id="swP" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd9a8"/>
+      <stop offset="1" stop-color="#f08a24"/>
+    </linearGradient>
+    <linearGradient id="swPaper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#fdf3e0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="19" ry="3.5" fill="#000" opacity="0.09"/>
+
+  <!-- กระดาษ -->
+  <rect x="8" y="10" width="38" height="44" rx="5" fill="url(#swPaper)" stroke="#d8b98a" stroke-width="2.5"/>
+  <!-- เส้นบรรทัด -->
+  <line x1="14" y1="20" x2="40" y2="20" stroke="#e8d4b4" stroke-width="2" stroke-linecap="round"/>
+  <line x1="14" y1="28" x2="40" y2="28" stroke="#e8d4b4" stroke-width="2" stroke-linecap="round"/>
+  <!-- เส้นลากต่อจุดบนกระดาษ -->
+  <path d="M15 44 L22 36 L30 44" fill="none" stroke="#f08a24" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 44 L37 36" fill="none" stroke="#f5b56b" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1.2 3.8"/>
+  <circle cx="15" cy="44" r="3.2" fill="#fff" stroke="#f08a24" stroke-width="2"/>
+  <circle cx="22" cy="36" r="3.2" fill="#fff" stroke="#f08a24" stroke-width="2"/>
+  <circle cx="30" cy="44" r="3.2" fill="#ffe9ce" stroke="#f08a24" stroke-width="2"/>
+  <circle cx="37" cy="36" r="3.2" fill="#fff" stroke="#f5b56b" stroke-width="2"/>
+
+  <!-- ดินสอเอียงเขียน -->
+  <g transform="rotate(42 50 34)">
+    <rect x="45" y="16" width="11" height="30" rx="2" fill="url(#swP)" stroke="#c96f10" stroke-width="2.5"/>
+    <path d="M45 46 L50.5 55 L56 46 Z" fill="#ffe3b8" stroke="#c96f10" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M48.6 51 L50.5 55 L52.4 51 Z" fill="#7a5230"/>
+    <rect x="45" y="11" width="11" height="5.5" rx="2" fill="#ff9db8" stroke="#c96f10" stroke-width="2.5"/>
+  </g>
+  <!-- sparkle -->
+  <path d="M55 6 l1 2.6 2.6 1 -2.6 1 -1 2.6 -1-2.6 -2.6-1 2.6-1 z" fill="#ffd54f"/>
+</svg>
