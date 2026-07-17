@@ -1298,9 +1298,10 @@ function renderDotsLevel(){
   $('dots-reveal').classList.remove('show');
   stage.querySelectorAll('.dot-pt').forEach(el=>el.remove());
 
+  stage.classList.remove('revealed');
   g.els = g.shape.pts.map((pt, i)=>{
     const d = document.createElement('div');
-    d.className = 'dot-pt'+(i===0 ? ' next' : '');
+    d.className = 'dot-pt';
     d.style.left = pt[0]+'%';
     d.style.top = pt[1]+'%';
     d.innerHTML = '<span>'+(i+1)+'</span>';
@@ -1351,14 +1352,9 @@ function dotsConnect(idx){
   const pts = g.shape.pts;
   if(idx > 0) $('dots-lines').appendChild(dotsSvgLine(pts[idx-1], pts[idx]));
   g.connected = idx+1;
-  g.els[idx].classList.remove('next');
   g.els[idx].classList.add('done');
-  if(g.connected < pts.length){
-    playClick();
-    g.els[g.connected].classList.add('next');
-  } else {
-    completeDotsLevel();
-  }
+  if(g.connected < pts.length){ playClick(); }
+  else { completeDotsLevel(); }
 }
 
 function dotsMistake(idx, x, y){
@@ -1386,6 +1382,7 @@ function completeDotsLevel(){
   const fill = $('dots-fill');
   fill.setAttribute('points', pts.map(p=>p[0]+','+p[1]).join(' '));
   fill.classList.add('show');
+  $('dots-stage').classList.add('revealed'); // จางจุดตัวเลขลง ไม่ให้บัง emoji เฉลย
   g.els.forEach(el=>el.classList.add('done'));
   const reveal = $('dots-reveal');
   $('dots-reveal-emoji').textContent = g.shape.e;
@@ -1408,32 +1405,27 @@ function wireDotsStage(){
   dotsStageWired = true;
   const stage = $('dots-stage');
   stage.addEventListener('pointerdown', e=>{
+    /* mechanic แบบลากเท่านั้น: แตะเฉยๆ ไม่ต่อจุด — เริ่มเกมต้องกดที่จุด 1 แล้วลาก,
+       ระหว่างเกมกดที่ "จุดล่าสุดที่ต่อแล้ว" (anchor) เพื่อจับเส้นลากต่อ กดที่อื่นเฉยๆ ไม่มีผล */
     const g = dotsGame;
     if(!g || g.locked) return;
     e.preventDefault();
     const pos = dotsStagePos(e);
-    const near = dotsNearest(pos.x, pos.y);
-    if(near.idx < 0 || near.dist > DOTS_HIT_R){
-      /* แตะโดนจุดที่ต่อแล้ว (จุดล่าสุด) = จับลากต่อจากจุดนั้นได้ */
-      if(g.connected > 0){
-        const anchor = g.shape.pts[g.connected-1];
-        if(Math.hypot(anchor[0]-pos.x, anchor[1]-pos.y) <= DOTS_HIT_R){
-          g.dragging = true;
-          try{ stage.setPointerCapture(e.pointerId); }catch(err){}
-          dotsUpdateTemp(pos.x, pos.y);
-        }
-      }
-      return;
-    }
-    if(near.idx === g.connected){
-      dotsConnect(near.idx);
-      if(!g.locked){
+    if(g.connected === 0){
+      const p0 = g.shape.pts[0];
+      if(Math.hypot(p0[0]-pos.x, p0[1]-pos.y) <= DOTS_HIT_R){
+        dotsConnect(0);
         g.dragging = true;
         try{ stage.setPointerCapture(e.pointerId); }catch(err){}
         dotsUpdateTemp(pos.x, pos.y);
       }
-    } else {
-      dotsMistake(near.idx, pos.x, pos.y);
+      return;
+    }
+    const anchor = g.shape.pts[g.connected-1];
+    if(Math.hypot(anchor[0]-pos.x, anchor[1]-pos.y) <= DOTS_HIT_R){
+      g.dragging = true;
+      try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+      dotsUpdateTemp(pos.x, pos.y);
     }
   });
   stage.addEventListener('pointermove', e=>{
