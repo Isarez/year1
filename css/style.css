@@ -1722,6 +1722,9 @@
     opacity:0; transition:opacity .4s ease .15s;
   }
   .dots-reveal.show .dots-reveal-name{opacity:1;}
+  @media (min-width:1025px){
+    .dots-stage-card{width:min(94vw, 76vh, 760px);}
+  }
   @media (max-width:480px){
     .dots-stage-card{padding:12px;}
     .dot-pt{width:37px; height:37px; font-size:16px; border-width:2.5px;}
