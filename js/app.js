@@ -544,7 +544,7 @@ function renderHome(){
         ? '<div class="cat-lock-msg">🔐 ผ่าน '+catById(reqId).name+' ก่อนนะ</div>'
         : isDeviceLocked
           ? '<div class="cat-lock-msg">🖥️ เล่นได้บนแท็บเล็ต/คอมพิวเตอร์เท่านั้นนะ</div>'
-          : (p ? '<div class="cat-progress">ทำแล้ว '+p.best+'/'+total+' '+'⭐'.repeat(p.stars)+'</div>'
+          : (p ? '<div class="cat-progress">ทำแล้ว '+Math.min(p.best, total)+'/'+total+' '+'⭐'.repeat(p.stars)+'</div>' /* clamp กัน best เก่าเกิน total ใหม่ (เช่น เกมดนตรี 2 เคย 10 ด่าน ลดเหลือ 7) */
                 : '<div class="cat-progress cat-progress-new">ยังไม่เคยทำ ✨</div>'));
     card.addEventListener('click', ()=>{
       if(isLocked){
@@ -1878,14 +1878,20 @@ function playPianoNote(freq, dur){
    และปิด modal เปียโน/เปลี่ยนเพลงต้องหยุดเพลงที่ค้างอยู่ด้วย stopMusicSequence() */
 let musicSeqTimers = [];
 function stopMusicSequence(){ musicSeqTimers.forEach(clearTimeout); musicSeqTimers = []; }
-function playMusicSequence(seq, noFlash){
+function playMusicSequence(seq, noFlash, beats){
+  /* beats (optional): ความยาวโน้ตแต่ละตัวเป็นจังหวะ (1 = ตัวดำ) จาก MUSIC_LEVEL2_SONGS.beats
+     ทำให้ทำนองเล่นถูกจังหวะจริง — ไม่ส่ง beats = ทุกตัวยาว 1 จังหวะเท่ากัน (โจทย์สุ่ม mode 1/3) */
   stopMusicSequence();
   if(!seq || !seq.length) return;
+  const BEAT_MS = 500;
+  let at = 0;
   seq.forEach((wi,i)=>{
+    const b = (beats && beats[i]) || 1;
     musicSeqTimers.push(setTimeout(()=>{
-      playPianoNote(MUSIC_WHITE_KEYS[wi].freq, 0.5);
+      playPianoNote(MUSIC_WHITE_KEYS[wi].freq, Math.min(1.6, b*BEAT_MS/1000*0.95));
       if(!noFlash) flashKey(pianoWhiteEl(wi));
-    }, i*520));
+    }, at));
+    at += b*BEAT_MS;
   });
 }
 
@@ -2128,7 +2134,7 @@ $('fp-songs').addEventListener('change', e=>{
   const sel = e.target.closest('.fp-song-select'); if(!sel) return;
   playClick(); selectFreeSong(+sel.value);
 });
-$('fp-listen').addEventListener('click', ()=>{ if(freePiano.song) playMusicSequence(freePiano.song.notes); });
+$('fp-listen').addEventListener('click', ()=>{ if(freePiano.song) playMusicSequence(freePiano.song.notes, false, freePiano.song.beats); });
 $('fp-notation').addEventListener('click', function(){
   musicNotation = musicNotation==='en' ? 'th' : 'en';
   localStorage.setItem('p1quiz_music_notation', musicNotation);
