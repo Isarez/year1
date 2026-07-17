@@ -1336,14 +1336,15 @@ function dotsUpdateTemp(x, y){
   const g = dotsGame;
   const anchor = g.shape.pts[g.connected-1];
   const temp = $('dots-temp');
-  temp.hidden = false;
+  /* ระวัง: <line> เป็น SVG element ไม่มี property .hidden (มีเฉพาะ HTMLElement) ต้องจัดการ attribute ตรงๆ */
+  temp.removeAttribute('hidden');
   temp.classList.remove('bad');
   temp.setAttribute('x1',anchor[0]); temp.setAttribute('y1',anchor[1]);
   temp.setAttribute('x2',x); temp.setAttribute('y2',y);
 }
 function dotsHideTemp(){
   const temp = $('dots-temp');
-  temp.hidden = true;
+  temp.setAttribute('hidden','');
   temp.classList.remove('bad');
 }
 
