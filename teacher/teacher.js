@@ -46,8 +46,10 @@ const MECHANICS = [
   {id:'ar-sentence', name:'AR หยิบการ์ดเรียงลำดับ', emoji:'🔤', enabled:true,  form:'sentence', icon:'../assets/icons/section-ar.svg'},
   {id:'ar-connect',  name:'AR โยงเส้น', emoji:'🪢', enabled:true,  form:'pairs',    icon:'../assets/icons/section-ar.svg'},
   {id:'ar-count',    name:'AR หยิบให้ครบ', emoji:'🧺', enabled:true,  form:'count',    icon:'../assets/icons/section-ar.svg', desktopOnly:true},
+  {id:'listen',      name:'ฟังคำศัพท์ สะกดคำ', emoji:'🎧', enabled:true,  form:'words',    icon:'../assets/icons/section-listen.svg'},
   {id:'match',       name:'จับคู่ความจำ', emoji:'🎴', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'},
-  {id:'listen',      name:'ฟังคำศัพท์ สะกดคำ', emoji:'🎧', enabled:true,  form:'words',    icon:'../assets/icons/section-listen.svg'}
+  {id:'mix',         name:'ผสมสี', emoji:'🎨', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'},
+  {id:'music',       name:'ดนตรี', emoji:'🎹', enabled:false, form:'choices',  icon:'../assets/icons/section-skill.svg'}
 ];
 function mechById(id){ return MECHANICS.find(m=>m.id===id) || MECHANICS[0]; }
 
