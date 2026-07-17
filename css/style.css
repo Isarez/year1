@@ -1676,7 +1676,7 @@
     background:linear-gradient(180deg, #FFFDF5, #FFF3DC);
     border:4px solid var(--cat-color, #F08A24); border-radius:26px;
     padding:18px; box-shadow:0 8px 0 rgba(0,0,0,.08);
-    width:min(92vw, 62vh, 520px); max-width:100%;
+    width:min(94vw, 66vh, 620px); max-width:100%;
   }
   .dots-stage{
     position:relative; width:100%; aspect-ratio:1/1;
