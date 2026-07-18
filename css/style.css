@@ -1795,8 +1795,9 @@
   .clock-start-chip[hidden]{display:none;}
   .clock-task-text{font-size:clamp(20px,5.5vw,27px); font-weight:800; color:var(--ink); line-height:1.4;}
   .clock-task-text b{color:var(--cat-color,#4A9EDF);}
-  /* จองพื้นที่กล่อง feedback ไว้เสมอ — ไม่ให้ layout/ปุ่มตอบกระโดดตอนข้อความโผล่ (เด็กกดพลาด) */
-  .clock-msg-slot{min-height:56px; display:flex; align-items:center; justify-content:center;}
+  /* จองพื้นที่กล่อง feedback ไว้เสมอ — ไม่ให้ layout/ปุ่มตอบกระโดดตอนข้อความโผล่ (เด็กกดพลาด)
+     z-index สูงกว่า .clock-frame เพราะ decor กรอบ (หูสัตว์/กลีบ/รัศมี) ยื่นขึ้นมาเหนือหน้าปัด เคยบังข้อความ */
+  .clock-msg-slot{min-height:56px; display:flex; align-items:center; justify-content:center; position:relative; z-index:2;}
   .clock-msg{
     background:var(--white,#fff); border:3px solid var(--cat-color,#4A9EDF); border-radius:18px;
     padding:9px 20px; font-size:19px; font-weight:800; color:var(--ink);
