@@ -1449,15 +1449,25 @@ function updateCritters(dt, t){
 /* ---------- สัตว์เลี้ยง (เฟส 2) — เลือกเลี้ยง 1 ตัว (ไม่บังคับ) ตั้งชื่อได้ เดินตามตัวละคร
    แตะตัวสัตว์ = เล่นด้วยกัน (กระโดดดีใจ+หัวใจ) ตอนตัวละครหยุด สัตว์จะนั่งคอย/เดินวนใกล้ๆ/
    กระโดดเอง/ส่ง emoji น่ารักๆ สลับกันไป ---------- */
+/* แต่ละชนิดมี colors = สีขนที่เลือกได้ (คัดเฉพาะสีที่เหมาะกับสัตว์ชนิดนั้นจริงๆ
+   ยกเว้นยูนิคอร์นที่เป็นสัตว์แฟนตาซี ใช้พาสเทลได้อิสระ) — index 0 คือสีดั้งเดิม/default */
 const PET_TYPES = [
-  {id:'dog',     emoji:'🐶', label:'หมาน้อย',   def:'บราวนี่'},
-  {id:'cat',     emoji:'🐱', label:'แมวเหมียว', def:'โมจิ'},
-  {id:'rabbit',  emoji:'🐰', label:'กระต่าย',   def:'ปุยฝ้าย'},
-  {id:'chick',   emoji:'🐥', label:'ลูกเจี๊ยบ',  def:'ไข่หวาน'},
-  {id:'hamster', emoji:'🐹', label:'แฮมสเตอร์', def:'ข้าวปั้น'},
-  {id:'turtle',  emoji:'🐢', label:'เต่าน้อย',   def:'เต้าหู้'},
+  {id:'dog',     emoji:'🐶', label:'หมาน้อย',   def:'บราวนี่',  colors:[{c:0xd7a86e,n:'น้ำตาลทอง'},{c:0x8d6e63,n:'ช็อกโกแลต'},{c:0xf3e2c6,n:'ครีม'},{c:0x9aa5ae,n:'เทา'}]},
+  {id:'cat',     emoji:'🐱', label:'แมวเหมียว', def:'โมจิ',     colors:[{c:0xffb74d,n:'ส้ม'},{c:0x90a4ae,n:'เทา'},{c:0xfaf3e8,n:'ขาว'},{c:0x5d4b41,n:'น้ำตาลเข้ม'}]},
+  {id:'rabbit',  emoji:'🐰', label:'กระต่าย',   def:'ปุยฝ้าย',  colors:[{c:0xf7f3ee,n:'ขาว'},{c:0xcfc4b8,n:'เทา'},{c:0xc4a184,n:'น้ำตาล'},{c:0xf6cdd9,n:'ชมพู'}]},
+  {id:'chick',   emoji:'🐥', label:'ลูกเจี๊ยบ',  def:'ไข่หวาน',  colors:[{c:0xffe082,n:'เหลือง'},{c:0xfff6dc,n:'ขาวครีม'},{c:0xffb74d,n:'ส้ม'}]},
+  {id:'hamster', emoji:'🐹', label:'แฮมสเตอร์', def:'ข้าวปั้น', colors:[{c:0xffcc80,n:'ส้มครีม'},{c:0xbcaaa4,n:'น้ำตาลเทา'},{c:0xf7ead8,n:'ขาว'}]},
+  {id:'turtle',  emoji:'🐢', label:'เต่าน้อย',   def:'เต้าหู้',   colors:[{c:0x66a15c,n:'เขียว'},{c:0x8d6e63,n:'น้ำตาล'},{c:0x4db6ac,n:'เขียวน้ำทะเล'}]},
+  {id:'pig',     emoji:'🐷', label:'หมูน้อย',    def:'ชมพู่',    colors:[{c:0xf8a8c0,n:'ชมพู'},{c:0xf5d0b5,n:'ครีม'},{c:0x8a7468,n:'เทาน้ำตาล'}]},
+  {id:'sheep',   emoji:'🐑', label:'แกะน้อย',   def:'ปุกปุย',   colors:[{c:0xf5f1e6,n:'ขาว'},{c:0xe8d7b7,n:'ครีม'},{c:0x6f625c,n:'เทาเข้ม'}]},
+  {id:'frog',    emoji:'🐸', label:'กบน้อย',    def:'อ๊บอ๊บ',    colors:[{c:0x7cb342,n:'เขียว'},{c:0x4fc3f7,n:'ฟ้า'},{c:0xd4e157,n:'เขียวมะนาว'}]},
+  {id:'penguin', emoji:'🐧', label:'เพนกวิน',   def:'พิงกุ',    colors:[{c:0x3d4f5c,n:'กรมท่า'},{c:0x263238,n:'ดำ'},{c:0x7986cb,n:'ม่วงฟ้า'}]},
+  {id:'unicorn', emoji:'🦄', label:'ยูนิคอร์น',  def:'สายรุ้ง',   colors:[{c:0xfdfaf2,n:'ขาว'},{c:0xf9c9da,n:'ชมพู'},{c:0xcdbcec,n:'ม่วงอ่อน'},{c:0xbfe3f7,n:'ฟ้าอ่อน'}]},
+  {id:'panda',   emoji:'🐼', label:'แพนด้า',    def:'ไผ่หวาน',  colors:[{c:0xf7f3ee,n:'ขาวดำ'},{c:0xe3cfae,n:'น้ำตาลอ่อน'}]},
 ];
-const PET_SPEED = {dog:3.6, cat:3.4, rabbit:3.5, chick:3.1, hamster:3.3, turtle:2.4};
+const PET_SPEED = {dog:3.6, cat:3.4, rabbit:3.5, chick:3.1, hamster:3.3, turtle:2.6,
+                   pig:3.2, sheep:3.0, frog:3.3, penguin:2.9, unicorn:3.7, panda:2.8};
+const PET_SCALE = 1.45;   /* สัตว์เลี้ยงตัวใหญ่กว่าสัตว์ป่าในฉากชัดเจน (โมเดล base ขนาดใกล้กัน) */
 const PET_IDLE_EMOJI = ['❤️','⭐','🎵','😊','🦋','💤'];
 const hPet = {cfg:null, group:null, tile:null, path:[], seg:0, segT:0, segFrom:null,
               t:0, repathT:0, behT:2.5, beh:null, behK:0, happy:0, happyDur:1, spin:false,
@@ -1469,29 +1479,49 @@ function curGridInfo(){
 }
 function petParent(){ return hScene==='out' ? worldGroup : interiorGroup; }
 
-function addPetCollar(g, y, r){
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(r, .022, 6, 14), toonMat(0xe53935));
-  collar.rotation.x = Math.PI/2; collar.position.y = y; collar.castShadow = hShadows;
+/* คูณสี rgb ด้วย factor (f<1 เข้มลง, f>1 อ่อนลง) — ใช้ทำสีหู/หาง/เงาขนจากสีขนหลัก
+   ให้ทุกสีที่ผู้เล่นเลือกได้ accent ที่เข้ากันอัตโนมัติ */
+function petShade(c, f){
+  const r = Math.min(255, Math.round(((c>>16)&255)*f)),
+        g = Math.min(255, Math.round(((c>>8)&255)*f)),
+        b = Math.min(255, Math.round((c&255)*f));
+  return (r<<16)|(g<<8)|b;
+}
+function petColor(type, idx){
+  const p = petTypeInfo(type);
+  return (p.colors[idx|0] || p.colors[0]).c;
+}
+/* ปลอกคอแดง + เหรียญทอง — ตำแหน่ง/ขนาดตามสรีระแต่ละชนิด: y ความสูงช่วงคอ,
+   z เยื้องไปทางหัว, r รัศมีวง, tilt เอียงวงไปด้านหน้าให้แนบคอ (ยกด้านหลังพ้นตัว),
+   vertical = วงตั้งฉากกับแกน z สำหรับคอที่ยื่นแนวนอน (เต่า) */
+function addPetCollar(g, o){
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(o.r, .017, 8, 18), toonMat(0xe53935));
+  collar.rotation.x = o.vertical ? 0 : Math.PI/2 + (o.tilt||0);
+  collar.position.set(0, o.y, o.z||0);
+  collar.castShadow = hShadows;
   g.add(collar);
+  const tag = sphere(.021, 0xffd54f, 8);   /* เหรียญห้อยหน้า ให้อ่านว่าเป็นปลอกคอชัดๆ */
+  if(o.vertical) tag.position.set(0, o.y-o.r-.01, o.z||0);
+  else tag.position.set(0, o.y-(o.tilt?Math.sin(o.tilt)*o.r:0)-.028, (o.z||0)+o.r*.92);
+  g.add(tag);
 }
 /* โมเดลสัตว์เลี้ยงสไตล์เดียวกับ critter (บล็อกมน ไม่มีขา เด้งตามจังหวะ) + ปลอกคอแดง
-   ให้แยกออกจากสัตว์ป่าที่เดินผ่านไปมา */
-function buildPet(type){
+   ให้แยกออกจากสัตว์ป่าที่เดินผ่านไปมา — colIdx = index สีขนใน PET_TYPES[].colors */
+function buildPet(type, colIdx){
   const g = new THREE.Group(); const u = {};
+  const c = petColor(type, colIdx);
   if(type==='dog'){
-    const c = 0xd7a86e;
     const body = box(.28,.2,.36,c); body.position.y = .16; g.add(body);
     const head = box(.22,.19,.2,c); head.position.set(0,.33,.24); g.add(head);
     const muzzle = box(.1,.07,.05,0xf3e0c2); muzzle.position.set(0,.29,.35); g.add(muzzle);
     const nose = sphere(.022,0x5d4037,6); nose.position.set(0,.315,.37); g.add(nose);
     [-1,1].forEach(s=>{
-      const ear = box(.05,.15,.04,0xb98a52); ear.position.set(.105*s,.36,.2); ear.rotation.z = .5*s; g.add(ear);
+      const ear = box(.05,.15,.04,petShade(c,.82)); ear.position.set(.105*s,.36,.2); ear.rotation.z = .5*s; g.add(ear);
       const eye = sphere(.02,0x33261d,6); eye.position.set(.06*s,.36,.34); g.add(eye);
     });
     const tail = box(.05,.24,.05,c); tail.rotation.x = -.8; tail.position.set(0,.28,-.2); g.add(tail); u.tail = tail;
-    addPetCollar(g, .26, .12);
+    addPetCollar(g, {y:.225, z:.2, r:.12, tilt:.3});
   }else if(type==='cat'){
-    const c = 0xffb74d;
     const body = box(.22,.18,.36,c); body.position.y = .15; g.add(body);
     const head = box(.2,.17,.16,c); head.position.set(0,.32,.2); g.add(head);
     [-1,1].forEach(s=>{ const ear = new THREE.Mesh(new THREE.ConeGeometry(.045,.09,4), toonMat(c));
@@ -1500,9 +1530,8 @@ function buildPet(type){
     const muzzle = box(.08,.05,.03,0xfff3e0); muzzle.position.set(0,.28,.285); g.add(muzzle);
     const nose = sphere(.016,0xe57373,6); nose.position.set(0,.31,.29); g.add(nose);
     [-1,1].forEach(s=>{ const eye = sphere(.018,0x2e7d32,6); eye.position.set(.06*s,.34,.285); g.add(eye); });
-    addPetCollar(g, .25, .11);
+    addPetCollar(g, {y:.215, z:.17, r:.11, tilt:.28});
   }else if(type==='rabbit'){
-    const c = 0xf7f3ee;
     const body = box(.26,.2,.32,c); body.position.y = .16; g.add(body);
     const head = box(.2,.18,.18,c); head.position.set(0,.32,.16); g.add(head);
     [-1,1].forEach(s=>{
@@ -1512,38 +1541,112 @@ function buildPet(type){
     });
     const tail = sphere(.07,0xffffff,8); tail.position.set(0,.18,-.18); g.add(tail);
     const nose = sphere(.025,0xf48fb1,6); nose.position.set(0,.31,.26); g.add(nose);
-    addPetCollar(g, .25, .11);
+    addPetCollar(g, {y:.215, z:.13, r:.11, tilt:.28});
   }else if(type==='chick'){
-    const c = 0xffe082;
     const body = sphere(.13,c,10); body.scale.set(1,1.05,1); body.position.y = .15; g.add(body);
     const head = sphere(.1,c,10); head.position.set(0,.32,.05); g.add(head); u.head = head;
     const beak = new THREE.Mesh(new THREE.ConeGeometry(.025,.07,6), toonMat(0xf5a623));
     beak.castShadow = hShadows; beak.rotation.x = Math.PI/2; beak.position.set(0,.31,.16); g.add(beak);
     u.wings = [-1,1].map(s=>{
-      const w = box(.04,.09,.12,0xffd54f); w.position.set(.125*s,.16,0); g.add(w); return w;
+      const w = box(.04,.09,.12,petShade(c,.92)); w.position.set(.125*s,.16,0); g.add(w); return w;
     });
     [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.34,.12); g.add(eye); });
-    addPetCollar(g, .21, .09);
+    addPetCollar(g, {y:.21, z:.05, r:.09, tilt:.12});
   }else if(type==='hamster'){
-    const c = 0xffcc80;
     const body = sphere(.16,c,10); body.scale.set(1,.85,1.05); body.position.y = .14; g.add(body);
     [-1,1].forEach(s=>{
-      const ear = sphere(.035,0xefb36a,6); ear.position.set(.07*s,.28,.05); g.add(ear);
+      const ear = sphere(.035,petShade(c,.88),6); ear.position.set(.07*s,.28,.05); g.add(ear);
       const cheek = sphere(.045,0xfff3e0,6); cheek.position.set(.078*s,.15,.13); g.add(cheek);
       const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.2,.15); g.add(eye);
     });
     const nose = sphere(.018,0xf48fb1,6); nose.position.set(0,.17,.18); g.add(nose);
-    const tail = sphere(.03,0xefb36a,6); tail.position.set(0,.12,-.16); g.add(tail);
-    addPetCollar(g, .18, .105);
-  }else{ /* turtle */
-    const shell = sphere(.17,0x66a15c,10); shell.scale.set(1,.62,1.15); shell.position.y = .14; g.add(shell);
-    const shellTop = sphere(.12,0x4e8a4a,10); shellTop.scale.set(1,.5,1.1); shellTop.position.y = .2; g.add(shellTop);
+    const tail = sphere(.03,petShade(c,.88),6); tail.position.set(0,.12,-.16); g.add(tail);
+    addPetCollar(g, {y:.13, z:.02, r:.14, tilt:.38});
+  }else if(type==='turtle'){
+    const shell = sphere(.17,c,10); shell.scale.set(1,.62,1.15); shell.position.y = .14; g.add(shell);
+    const shellTop = sphere(.12,petShade(c,.76),10); shellTop.scale.set(1,.5,1.1); shellTop.position.y = .2; g.add(shellTop);
     const head = sphere(.07,0x9ccc65,8); head.position.set(0,.13,.24); g.add(head); u.head = head;
     [-1,1].forEach(s=>{ const eye = sphere(.016,0x33261d,6); eye.position.set(.04*s,.16,.29); g.add(eye); });
     [[-.11,.12],[.11,.12],[-.11,-.12],[.11,-.12]].forEach(([lx,lz])=>{
       const leg = box(.06,.05,.08,0x9ccc65); leg.position.set(lx,.04,lz); g.add(leg);
     });
+    addPetCollar(g, {y:.09, z:.24, r:.078, tilt:.22});
+  }else if(type==='pig'){
+    const body = box(.3,.22,.36,c); body.position.y = .17; g.add(body);
+    const head = box(.24,.2,.16,c); head.position.set(0,.34,.22); g.add(head);
+    const snout = box(.11,.08,.05,petShade(c,1.12)); snout.position.set(0,.32,.315); g.add(snout);
+    [-1,1].forEach(s=>{
+      const nostril = sphere(.012,petShade(c,.6),6); nostril.position.set(.025*s,.32,.345); g.add(nostril);
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(.05,.09,4), toonMat(petShade(c,.85)));
+      ear.castShadow = hShadows; ear.position.set(.085*s,.47,.2); ear.rotation.z = .25*s; g.add(ear);
+      const eye = sphere(.02,0x33261d,6); eye.position.set(.065*s,.38,.305); g.add(eye);
+    });
+    const tail = sphere(.035,petShade(c,.9),6); tail.position.set(0,.22,-.195); g.add(tail); u.tail = tail;
+    addPetCollar(g, {y:.245, z:.18, r:.14, tilt:.3});
+  }else if(type==='sheep'){
+    const body = sphere(.18,c,10); body.scale.set(1,.9,1.15); body.position.y = .18; g.add(body);
+    [[-.09,.31,.05],[.09,.31,.05],[0,.33,-.05],[-.08,.29,-.13],[.08,.29,-.13]].forEach(([px,py,pz])=>{
+      const puff = sphere(.07,c,8); puff.position.set(px,py,pz); g.add(puff);
+    });
+    const head = box(.15,.15,.13,0xd9b98c); head.position.set(0,.3,.235); g.add(head); u.head = head;
+    [-1,1].forEach(s=>{
+      const ear = box(.05,.03,.08,0xcaa87e); ear.position.set(.095*s,.31,.21); g.add(ear);
+      const eye = sphere(.018,0x33261d,6); eye.position.set(.045*s,.33,.3); g.add(eye);
+    });
+    const tail = sphere(.05,c,8); tail.position.set(0,.2,-.21); g.add(tail);
+    addPetCollar(g, {y:.2, z:.235, r:.1, tilt:.25});
+  }else if(type==='frog'){
+    const body = sphere(.16,c,10); body.scale.set(1.05,.75,1.1); body.position.y = .13; g.add(body);
+    const belly = sphere(.11,0xf3f7dc,8); belly.scale.set(1,.7,.8); belly.position.set(0,.1,.08); g.add(belly);
+    [-1,1].forEach(s=>{
+      const eb = sphere(.055,c,8); eb.position.set(.08*s,.26,.1); g.add(eb);
+      const pupil = sphere(.024,0x33261d,6); pupil.position.set(.08*s,.27,.148); g.add(pupil);
+      const cheek = sphere(.02,0xf6a5b6,6); cheek.position.set(.11*s,.13,.15); g.add(cheek);
+    });
+    addPetCollar(g, {y:.12, z:.02, r:.15, tilt:.25});
+  }else if(type==='penguin'){
+    const body = sphere(.16,c,10); body.scale.set(1,1.25,.95); body.position.y = .2; g.add(body);
+    const belly = sphere(.12,0xfdfdf8,10); belly.scale.set(.85,1.05,.6); belly.position.set(0,.17,.09); g.add(belly);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(.03,.08,6), toonMat(0xf5a623));
+    beak.castShadow = hShadows; beak.rotation.x = Math.PI/2; beak.position.set(0,.33,.17); g.add(beak);
+    u.wings = [-1,1].map(s=>{
+      const w = box(.045,.16,.1,petShade(c,.85)); w.position.set(.155*s,.2,0); w.rotation.z = .18*s; g.add(w); return w;
+    });
+    [-1,1].forEach(s=>{
+      const eye = sphere(.02,0xffffff,6); eye.position.set(.05*s,.36,.13); g.add(eye);
+      const pupil = sphere(.011,0x33261d,6); pupil.position.set(.05*s,.36,.148); g.add(pupil);
+      const foot = box(.06,.03,.09,0xf5a623); foot.position.set(.06*s,.015,.06); g.add(foot);
+    });
+    addPetCollar(g, {y:.27, z:.03, r:.12, tilt:.18});
+  }else if(type==='unicorn'){
+    const body = box(.26,.2,.4,c); body.position.y = .2; g.add(body);
+    const head = box(.16,.18,.16,c); head.position.set(0,.42,.22); g.add(head);
+    const muzzle = box(.12,.09,.07,0xf5d2c8); muzzle.position.set(0,.38,.31); g.add(muzzle);
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(.028,.13,6), toonMat(0xffd54f));
+    horn.castShadow = hShadows; horn.position.set(0,.57,.22); g.add(horn);
+    [0xf48fb1,0xba9fe0,0x81d4fa].forEach((mc,i)=>{      /* แผงคอสายรุ้งไล่ติดท้ายทอยหัวลงถึงหลัง */
+      const m = box(.055,.12,.09,mc); m.position.set(0,.53-i*.075,.12); g.add(m);
+    });
+    [-1,1].forEach(s=>{
+      const ear = box(.035,.07,.03,c); ear.position.set(.055*s,.53,.18); g.add(ear);
+      const eye = sphere(.02,0x33261d,6); eye.position.set(.055*s,.44,.3); g.add(eye);
+    });
+    const tail = box(.06,.2,.06,0xf48fb1); tail.rotation.x = -.7; tail.position.set(0,.28,-.2); g.add(tail); u.tail = tail;
+    addPetCollar(g, {y:.3, z:.21, r:.095, tilt:.3});
+  }else{ /* panda */
+    const body = sphere(.17,c,10); body.scale.set(1,.95,1.1); body.position.y = .17; g.add(body);
+    const head = sphere(.13,c,10); head.position.set(0,.38,.1); g.add(head); u.head = head;
+    [-1,1].forEach(s=>{
+      const ear = sphere(.045,0x3a3a3a,6); ear.position.set(.095*s,.49,.08); g.add(ear);
+      const patch = sphere(.035,0x3a3a3a,6); patch.scale.set(1,1.25,.55); patch.position.set(.055*s,.4,.205); g.add(patch);
+      const eye = sphere(.014,0xffffff,6); eye.position.set(.055*s,.41,.228); g.add(eye);
+      const arm = sphere(.05,0x3a3a3a,6); arm.position.set(.135*s,.2,.08); g.add(arm);
+    });
+    const nose = sphere(.02,0x3a3a3a,6); nose.position.set(0,.36,.225); g.add(nose);
+    const tail = sphere(.04,0x3a3a3a,6); tail.position.set(0,.14,-.195); g.add(tail);
+    addPetCollar(g, {y:.26, z:.09, r:.13, tilt:.22});
   }
+  g.scale.setScalar(PET_SCALE);        /* ตัวใหญ่กว่าสัตว์ป่าในฉาก — ชี้ชัดว่าเป็นสัตว์เลี้ยงของหนู */
   g.userData.hPet = true;              /* tag ที่ group — ancestor walk ตอน raycast เจอแน่ */
   g.userData.anim = u;
   return g;
@@ -1560,7 +1663,7 @@ function tileNearPlayer(){
 function spawnPet(cfg){
   removePetGroup();
   hPet.cfg = cfg;
-  hPet.group = buildPet(cfg.type);
+  hPet.group = buildPet(cfg.type, cfg.color);
   hPet.tile = tileNearPlayer();
   hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
   hPet.happy = 0; hPet.spin = false; hPet.sitK = 0; hPet.beh = null;
@@ -1582,9 +1685,25 @@ function removePetGroup(){
 function petPathTo(target){
   const {grid,W,D} = curGridInfo();
   const t = nearestWalkable(grid, W, D, target.x, target.z);
-  const path = t && findPath(grid, W, D, hPet.tile, t);
+  if(!t) return false;
+  /* กำลังเดินค้างอยู่กลางช่อง: ห้ามรีเซ็ต segment ปัจจุบัน (เดิม repath ทุก .35s แล้ว
+     segT=0 ทำให้ตำแหน่งสแนปถอยกลับไปกึ่งกลางช่องล่าสุดทุกครั้ง — ตัวเร็วเดินกระตุก
+     ส่วนตัวช้าอย่างเต่า (1 ช่องใช้เวลา > .35s) ไม่เคยเดินจบช่องเลย = ย่ำอยู่กับที่)
+     ให้เดินช่องที่ค้างให้จบ แล้วต่อ path ใหม่จากปลายช่องนั้นแทน */
+  const midTo = (hPet.path.length && hPet.segT > 0 && hPet.seg < hPet.path.length) ? hPet.path[hPet.seg] : null;
+  const startTile = midTo || hPet.tile;
+  if(startTile.x===t.x && startTile.z===t.z){
+    if(midTo){ hPet.path = [midTo]; hPet.seg = 0; return true; }  /* ช่องค้างคือเป้าหมายพอดี */
+    return false;
+  }
+  const path = findPath(grid, W, D, startTile, t);
   if(!path || !path.length) return false;
-  hPet.path = path; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = {...hPet.tile};
+  if(midTo){
+    hPet.path = [midTo].concat(path);
+    hPet.seg = 0;                       /* segT/segFrom คงเดิม — เดินต่อเนื่องไม่สะดุด */
+  }else{
+    hPet.path = path; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = {...hPet.tile};
+  }
   return true;
 }
 function petBubble(txt){
@@ -1681,8 +1800,11 @@ function updatePet(dt){
   /* เด้งตอนเดินตามชนิด + กระโดดดีใจ (arc เดียวจบ ไม่ค้าง) */
   let y = 0;
   if(moving){
-    y = ({dog:.09, cat:.05, rabbit:.14, chick:.07, hamster:.06, turtle:.02})[type] * Math.abs(Math.sin(hPet.t*10));
+    y = ({dog:.09, cat:.05, rabbit:.14, chick:.07, hamster:.06, turtle:.02,
+          pig:.06, sheep:.07, frog:.16, penguin:.04, unicorn:.12, panda:.05})[type] * Math.abs(Math.sin(hPet.t*10));
   }
+  /* เพนกวินเดินส่ายตัวซ้ายขวา (waddle) น่ารักสมจริง */
+  hPet.group.rotation.z = (type==='penguin' && moving) ? Math.sin(hPet.t*11)*.12 : 0;
   if(hPet.happy > 0){
     hPet.happy -= dt;
     const hk = Math.min(1, 1 - hPet.happy/hPet.happyDur);
@@ -1704,7 +1826,7 @@ function updatePetLabels(){
     nameEl.hidden = true;
     return;
   }
-  _petV.set(hPet.group.position.x, hPet.group.position.y + .8, hPet.group.position.z).project(camera);
+  _petV.set(hPet.group.position.x, hPet.group.position.y + 1.05, hPet.group.position.z).project(camera);  /* สูงขึ้นตาม PET_SCALE (ยูนิคอร์นมีเขาสูงสุด) */
   const px = (_petV.x+1)/2*window.innerWidth, py = (1-_petV.y)/2*window.innerHeight;
   nameEl.style.left = px.toFixed(1)+'px';
   nameEl.style.top = py.toFixed(1)+'px';
@@ -1715,13 +1837,32 @@ function updatePetLabels(){
 }
 
 /* ---------- แผงเลือกสัตว์เลี้ยง (hMode 'pet') — reuse แท่นกลม/กล้อง/ปุ่มหมุนของ creator ---------- */
-let petPreview = null, petPickerType = null, petNameDirty = false;
+let petPreview = null, petPickerType = null, petPickerColor = 0, petNameDirty = false;
 function rebuildPetPreview(){
   if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); }
-  petPreview = buildPet(petPickerType);
+  petPreview = buildPet(petPickerType, petPickerColor);
   petPreview.scale.setScalar(3);          /* สัตว์ตัวจิ๋ว ขยายให้เต็มเฟรมพรีวิวพอๆ ตัวละคร */
   petPreview.rotation.y = creatorState.rotY;
   scene.add(petPreview);
+}
+function buildPetColorChips(){
+  const wrap = $('house-pet-colors');
+  wrap.innerHTML = '';
+  petTypeInfo(petPickerType).colors.forEach((col,i)=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'house-chip house-chip-color' + (i===petPickerColor ? ' active' : '');
+    b.style.background = '#'+col.c.toString(16).padStart(6,'0');
+    b.setAttribute('aria-label', 'สี'+col.n);
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      petPickerColor = i;
+      wrap.querySelectorAll('.house-chip').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      rebuildPetPreview();
+    });
+    wrap.appendChild(b);
+  });
 }
 function buildPetChips(){
   const wrap = $('house-pet-chips');
@@ -1734,9 +1875,11 @@ function buildPetChips(){
     b.addEventListener('click', ()=>{
       if(typeof playClick==='function') playClick();
       petPickerType = p.id;
+      petPickerColor = 0;                 /* เปลี่ยนชนิด = กลับสีดั้งเดิมของชนิดนั้น */
       wrap.querySelectorAll('.house-chip').forEach(c=>c.classList.remove('active'));
       b.classList.add('active');
       if(!petNameDirty) $('house-pet-name-input').value = p.def;
+      buildPetColorChips();
       rebuildPetPreview();
     });
     wrap.appendChild(b);
@@ -1747,6 +1890,7 @@ function openPetPicker(){
   creatorState.rotY = 0; creatorState.rotTarget = 0;
   const data = loadHouseData() || {};
   petPickerType = (data.pet && data.pet.type) || 'dog';
+  petPickerColor = (data.pet && data.pet.color) || 0;   /* save เก่าไม่มี color = 0 (สีดั้งเดิม) */
   petNameDirty = !!data.pet;              /* มีชื่อเดิมอยู่ = อย่าเขียนทับตอนสลับชนิด */
   $('house-pet-name-input').value = data.pet ? data.pet.name : petTypeInfo(petPickerType).def;
   $('house-pet-picker').hidden = false;
@@ -1760,13 +1904,14 @@ function openPetPicker(){
   creatorGroup.visible = true;
   if(charGroup) charGroup.visible = false;
   buildPetChips();
+  buildPetColorChips();
   rebuildPetPreview();
   applyCamera();
 }
 function closePetPicker(kind){
   if(kind==='adopt'){
     const name = ($('house-pet-name-input').value || '').trim().slice(0,14) || petTypeInfo(petPickerType).def;
-    saveHouseData({pet:{type:petPickerType, name}});
+    saveHouseData({pet:{type:petPickerType, name, color:petPickerColor}});
   }else if(kind==='remove'){
     saveHouseData({pet:null});
   }
@@ -1934,7 +2079,8 @@ function startHouseGame(){
     showHint();
     /* สัตว์เลี้ยงของเด็กคนปัจจุบัน: ข้อมูลเปลี่ยน = สร้างใหม่ตามที่ save จริง */
     if(data.pet){
-      if(!hPet.group || !hPet.cfg || hPet.cfg.type!==data.pet.type || hPet.cfg.name!==data.pet.name) spawnPet(data.pet);
+      if(!hPet.group || !hPet.cfg || hPet.cfg.type!==data.pet.type || hPet.cfg.name!==data.pet.name
+         || (hPet.cfg.color||0)!==(data.pet.color||0)) spawnPet(data.pet);
     }else{
       removePetGroup();
     }
