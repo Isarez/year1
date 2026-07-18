@@ -40,13 +40,6 @@ function progressKey(){ return 'p1quiz_progress_'+(activeChild ? activeChild.id 
 function loadProgressForChild(){
   try{ progress = JSON.parse(localStorage.getItem(progressKey()) || '{}'); }catch(e){ progress = {}; }
 }
-function totalStarsForChild(childId){
-  try{
-    const p = JSON.parse(localStorage.getItem('p1quiz_progress_'+childId) || '{}');
-    return Object.values(p).reduce((s,v)=>s+(v&&v.stars||0), 0);
-  }catch(e){ return 0; }
-}
-
 function selectChild(id){
   activeChild = children.find(c=>c.id===id) || null;
   if(activeChild){
@@ -117,7 +110,6 @@ function renderChildSelect(){
     csTitle.textContent = 'ใครจะมาเรียนวันนี้?';
     csSub.textContent = 'เลือกชื่อได้เลย 😊';
     children.forEach(child=>{
-      const stars = totalStarsForChild(child.id);
       const row = document.createElement('div');
       row.className = 'child-row';
       const card = document.createElement('button');
@@ -130,11 +122,7 @@ function renderChildSelect(){
       const cname = document.createElement('div');
       cname.className = 'cname';
       cname.textContent = child.name;
-      const cstars = document.createElement('div');
-      cstars.className = 'cstars';
-      cstars.textContent = stars ? '⭐'.repeat(Math.min(stars,12)) : 'ยังไม่เคยทำ ✨';
       cinfo.appendChild(cname);
-      cinfo.appendChild(cstars);
       const arrow = document.createElement('span');
       arrow.style.cssText = 'font-size:20px;color:var(--ink-soft)';
       arrow.textContent = '▶';
