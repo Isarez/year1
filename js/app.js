@@ -532,7 +532,7 @@ function renderHome(){
       card.style.animation = 'none';
       card.removeEventListener('animationend', onCardInEnd);
     }, {once:true});
-    const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen' || cat.type==='write') ? cat.levels : cat.questions.length;
+    const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen' || cat.type==='write') ? cat.levels : (cat.poolPick || cat.questions.length);
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
       (cat.cardTag ? '<div class="cat-card-tag">'+cat.cardTag+'</div>' : '')+
@@ -573,6 +573,15 @@ function renderHome(){
 }
 
 /* ============================= QUIZ FLOW ============================= */
+/* นับจำนวน "ตัว emoji จริง" ในสตริง (1️⃣/❤️ ประกอบจากหลาย code point ใช้ length ตรงๆ ไม่ได้)
+   ใช้แยกการ์ดแพทเทิร์นเดี่ยว vs หลายตัว (เช่น '🍎🍎🍎') เพื่อย่อฟอนต์ให้พอดีการ์ด */
+function graphemeLen(str){
+  if(window.Intl && Intl.Segmenter){
+    return [...new Intl.Segmenter('th',{granularity:'grapheme'}).segment(str)].length;
+  }
+  return Array.from(str.replace(/[\uFE0F\u20E3]/g,'')).length;
+}
+
 function shuffleChoices(q){
   const idxs = q.choices.map((_,i)=>i);
   for(let i=idxs.length-1;i>0;i--){
@@ -582,11 +591,27 @@ function shuffleChoices(q){
   return { ...q, choices: idxs.map(i=>q.choices[i]), correct: idxs.indexOf(q.correct) };
 }
 
+/* หมวดที่มี poolPick: สุ่มโจทย์จากคลังมาแค่ N ข้อต่อรอบ — ถ้าโจทย์มี tier ให้เกลี่ยจำนวนต่อ tier
+   แล้วเรียงง่าย→ยากเสมอ (เศษที่หารไม่ลงตัวเติมให้ tier ง่ายก่อน) */
+function pickQuizQuestions(cat){
+  if(!cat.poolPick) return cat.questions;
+  const tiers = [...new Set(cat.questions.map(q=>q.tier||1))].sort((a,b)=>a-b);
+  if(tiers.length<=1) return shuffleArray(cat.questions.slice()).slice(0, cat.poolPick);
+  const per = Math.floor(cat.poolPick / tiers.length);
+  let extra = cat.poolPick - per*tiers.length;
+  const out = [];
+  tiers.forEach(t=>{
+    const n = per + (extra>0 ? 1 : 0); if(extra>0) extra--;
+    out.push(...shuffleArray(cat.questions.filter(q=>(q.tier||1)===t)).slice(0, n));
+  });
+  return out;
+}
+
 function startQuiz(catId){
   stopARGame();
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
-  state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
+  state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: pickQuizQuestions(cat).map(shuffleChoices) };
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
@@ -606,7 +631,11 @@ function renderQuestion(){
   $('progress-fill').style.width = ((state.qIndex)/total*100)+'%';
   $('progress-fill').style.background = cat.color;
 
-  if(q.img){
+  if(q.pattern){
+    $('q-emoji').innerHTML = '<div class="pattern-row">'+
+      q.pattern.map(p=>'<span class="pat-tile'+(graphemeLen(p)>1?' pat-multi':'')+'">'+p+'</span>').join('')+
+      '<span class="pat-tile pat-missing">?</span></div>';
+  } else if(q.img){
     $('q-emoji').innerHTML = '<img src="'+q.img+'" alt="" style="max-width:100%;border-radius:12px;display:block;margin:0 auto;">';
   } else {
     $('q-emoji').textContent = q.emoji||'';
@@ -618,6 +647,10 @@ function renderQuestion(){
   q.choices.forEach((choiceText, idx)=>{
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
+    if(q.pattern){
+      btn.classList.add('choice-emoji');
+      if(graphemeLen(choiceText)>1) btn.classList.add('choice-emoji-multi');
+    }
     btn.style.setProperty('--cat-light', cat.light);
     btn.textContent = choiceText;
     btn.addEventListener('click', ()=> selectAnswer(idx, btn, cat, q));
@@ -659,7 +692,7 @@ function selectAnswer(idx, btnEl, cat, q){
     burstFromElement(btnEl, 34);
     showOwlMsg('correct');
   } else {
-    state.wrong.push({q:q.q, correctText:q.choices[q.correct], explain:q.explain});
+    state.wrong.push({q: q.pattern ? q.pattern.join(' ')+' ❓' : q.q, correctText:q.choices[q.correct], explain:q.explain});
     fb.classList.add('ng');
     $('fb-face').textContent = '💪';
     $('fb-text').textContent = 'ไม่เป็นไรนะ! '+q.explain;

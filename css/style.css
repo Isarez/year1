@@ -733,6 +733,39 @@
   .q-emoji{font-size:clamp(38px,10vw,54px); margin-bottom:6px; line-height:1;}
   .q-text{font-size:clamp(24px,6.8vw,33px); font-weight:700; line-height:1.5; color:var(--ink);}
 
+  /* ---- เติมแพทเทิร์น: แถวโจทย์เป็นการ์ด emoji + ช่อง ? เต้นตุบๆ ---- */
+  .pattern-row{
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:center;
+    gap:10px; margin:6px 0 12px;
+  }
+  .pat-tile{
+    display:flex; align-items:center; justify-content:center;
+    min-width:66px; height:66px; padding:0 9px; border-radius:18px;
+    background:var(--cat-light,var(--math-l));
+    box-shadow:0 3px 0 rgba(0,0,0,.09), inset 0 2px 0 rgba(255,255,255,.55);
+    font-size:38px; line-height:1;
+    animation:patTileIn .38s cubic-bezier(.34,1.4,.64,1) backwards;
+  }
+  .pat-tile:nth-child(2){animation-delay:.06s;} .pat-tile:nth-child(3){animation-delay:.12s;}
+  .pat-tile:nth-child(4){animation-delay:.18s;} .pat-tile:nth-child(5){animation-delay:.24s;}
+  .pat-tile:nth-child(6){animation-delay:.30s;} .pat-tile:nth-child(7){animation-delay:.36s;}
+  @keyframes patTileIn{ from{opacity:0; transform:scale(.4);} to{opacity:1; transform:scale(1);} }
+  .pat-tile.pat-multi{font-size:23px; letter-spacing:-3px; padding-right:12px;}
+  .pat-tile.pat-missing{
+    background:var(--white); border:3px dashed var(--cat-color,var(--math));
+    color:var(--cat-color,var(--math)); font-weight:900; font-size:34px;
+    animation:patTileIn .38s cubic-bezier(.34,1.4,.64,1) backwards, patPulse 1.15s ease-in-out .9s infinite;
+  }
+  @keyframes patPulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.12);} }
+  .choice-btn.choice-emoji{font-size:clamp(30px,8vw,42px); line-height:1.15; padding:14px 16px;}
+  .choice-btn.choice-emoji-multi{font-size:clamp(20px,5.5vw,27px); letter-spacing:-2px;}
+  @media (max-width:480px){
+    .pat-tile{min-width:52px; height:52px; font-size:30px; border-radius:14px; padding:0 7px;}
+    .pat-tile.pat-multi{font-size:18px; letter-spacing:-2px;}
+    .pat-tile.pat-missing{font-size:27px;}
+    .pattern-row{gap:8px;}
+  }
+
   .choice-grid{
     display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-top:22px;
   }
