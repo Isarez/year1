@@ -2285,15 +2285,16 @@ function buildClockFace(){
     +  '<path d="M111 161 Q120 154 129 161" class="cfe-mouth cfe-mouth-sad"/>'
     +  '<path d="M108 154 Q120 168 132 154" class="cfe-mouth cfe-mouth-grin"/>'
     +  '</g>';
-  s += '<g class="clock-hand-g clock-hour-g" id="clock-hour-g">'
-    +  '<line x1="120" y1="132" x2="120" y2="74" class="clock-hand-grab"/>'
-    +  '<line x1="120" y1="128" x2="120" y2="78" class="clock-hand clock-hand-hour"/>'
-    +  '<circle cx="120" cy="74" r="7" class="clock-hand-tip clock-hand-tip-hour"/>'
-    +  '</g>';
+  /* เข็มยาววาดก่อน เข็มสั้นวาดทีหลัง = เข็มสั้นอยู่หน้าเสมอ (ตอนซ้อนกันเด็กยังเห็น/จับเข็มสั้นได้) */
   s += '<g class="clock-hand-g clock-minute-g" id="clock-minute-g">'
     +  '<line x1="120" y1="134" x2="120" y2="36" class="clock-hand-grab"/>'
     +  '<line x1="120" y1="130" x2="120" y2="40" class="clock-hand clock-hand-minute"/>'
     +  '<circle cx="120" cy="36" r="6" class="clock-hand-tip clock-hand-tip-minute"/>'
+    +  '</g>';
+  s += '<g class="clock-hand-g clock-hour-g" id="clock-hour-g">'
+    +  '<line x1="120" y1="132" x2="120" y2="74" class="clock-hand-grab"/>'
+    +  '<line x1="120" y1="128" x2="120" y2="78" class="clock-hand clock-hand-hour"/>'
+    +  '<circle cx="120" cy="74" r="7" class="clock-hand-tip clock-hand-tip-hour"/>'
     +  '</g>';
   s += '<circle cx="120" cy="120" r="9" class="clock-cap"/><circle cx="120" cy="120" r="3.5" class="clock-cap-dot"/>';
   svg.innerHTML = s;
@@ -2345,18 +2346,15 @@ function clockPointerAngle(e){
   const a = Math.atan2(e.clientX-(rect.left+rect.width/2), (rect.top+rect.height/2)-e.clientY)*180/Math.PI;
   return (a+360)%360;
 }
-function angDist(a,b){ const d = Math.abs(a-b)%360; return d>180 ? 360-d : d; }
 
 function clockDragStart(e){
   if(!clockGame || clockGame.locked) return;
+  /* เริ่มลากได้เฉพาะเมื่อจับโดนตัวเข็มจริงๆ (hit area โปร่งใสของเข็ม) — คลิกหน้าปัด/ที่อื่นไม่มีผล
+     เข็มสั้นวาดอยู่หน้า จึงชนะเสมอตอนสองเข็มซ้อนกัน ส่วนเข็มยาวจับที่ปลายส่วนที่ยื่นออกมาได้ */
+  const handG = e.target.closest ? e.target.closest('.clock-hand-g') : null;
+  if(!handG) return;
   const a = clockPointerAngle(e);
-  const hourDeg = (clockGame.h%12)*30 + clockGame.m*0.5, minDeg = clockGame.m*6;
-  /* เลือกเข็มจากมุมที่นิ้วอยู่ใกล้สุด — ถ้ามุมใกล้กันมาก (เข็มซ้อน/เกือบซ้อน เช่น 12:00)
-     ใช้รัศมีตัดสินแทน: จับโซนในใกล้จุดหมุน = เข็มสั้น, โซนนอก = เข็มยาว */
-  const rect = $('clock-svg').getBoundingClientRect();
-  const dist = Math.hypot(e.clientX-(rect.left+rect.width/2), e.clientY-(rect.top+rect.height/2))/(rect.width/2);
-  const dH = angDist(a, hourDeg), dM = angDist(a, minDeg);
-  clockGame.drag = Math.abs(dH-dM) <= 14 ? (dist <= 0.5 ? 'hour' : 'minute') : (dH < dM ? 'hour' : 'minute');
+  clockGame.drag = handG.id==='clock-hour-g' ? 'hour' : 'minute';
   /* ลากแบบ relative: จำมุมนิ้ว+ค่าเวลาตอนเริ่มจับ แล้วขยับเข็มตามมุมที่นิ้ว "หมุนไปจริง" เท่านั้น
      (แตะเฉยๆ delta = 0 เข็มนิ่งสนิท ไม่กระโดดไปหานิ้ว — browser ยิง pointermove หลัง down เสมอ) */
   clockGame.lastA = a; clockGame.dragAccum = 0;

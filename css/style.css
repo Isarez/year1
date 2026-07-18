@@ -1813,7 +1813,7 @@
     filter:drop-shadow(0 10px 0 rgba(0,0,0,.10));
   }
   .clock-frame.shake{animation:shakeX .45s ease;}
-  #clock-svg{position:relative; z-index:1; width:100%; height:100%; display:block; touch-action:none; cursor:grab;}
+  #clock-svg{position:relative; z-index:1; width:100%; height:100%; display:block; touch-action:none;}
   .clock-bezel{fill:var(--bezel); stroke:rgba(0,0,0,.14); stroke-width:2.5;}
   .clock-face-bg{fill:#FFFDF6;}
   .clock-tick-major{stroke:#C9BCA4; stroke-width:4; stroke-linecap:round;}
