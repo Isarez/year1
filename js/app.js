@@ -1910,12 +1910,20 @@ function playPianoNote(freq, dur){
 /* เก็บ timer ของเพลงที่กำลังเล่นไว้ยกเลิกได้ — กดฟังซ้ำ = เริ่มใหม่ (ไม่เล่นทับกัน)
    และปิด modal เปียโน/เปลี่ยนเพลงต้องหยุดเพลงที่ค้างอยู่ด้วย stopMusicSequence() */
 let musicSeqTimers = [];
-function stopMusicSequence(){ musicSeqTimers.forEach(clearTimeout); musicSeqTimers = []; }
-function playMusicSequence(seq, noFlash, beats){
+let musicSeqCleanup = null; /* callback แจ้งผู้เรียกว่าเพลงหยุดแล้ว (จบเองหรือถูกสั่งหยุด) — เรียกครั้งเดียวเสมอ */
+function stopMusicSequence(){
+  musicSeqTimers.forEach(clearTimeout); musicSeqTimers = [];
+  if(musicSeqCleanup){ const fn = musicSeqCleanup; musicSeqCleanup = null; fn(); }
+}
+function playMusicSequence(seq, noFlash, beats, opts){
   /* beats (optional): ความยาวโน้ตแต่ละตัวเป็นจังหวะ (1 = ตัวดำ) จาก MUSIC_LEVEL2_SONGS.beats
-     ทำให้ทำนองเล่นถูกจังหวะจริง — ไม่ส่ง beats = ทุกตัวยาว 1 จังหวะเท่ากัน (โจทย์สุ่ม mode 1/3) */
+     ทำให้ทำนองเล่นถูกจังหวะจริง — ไม่ส่ง beats = ทุกตัวยาว 1 จังหวะเท่ากัน (โจทย์สุ่ม mode 1/3)
+     opts (optional): { onNote(i) เรียกตามจังหวะทุกโน้ตที่เริ่มเล่น, onStop() เรียกครั้งเดียวเมื่อเพลงหยุด
+     ไม่ว่าจะเล่นจบเองหรือถูกตัดด้วย stopMusicSequence() จากทางไหนก็ตาม } */
   stopMusicSequence();
   if(!seq || !seq.length) return;
+  opts = opts || {};
+  musicSeqCleanup = opts.onStop || null;
   const BEAT_MS = 500;
   let at = 0;
   seq.forEach((wi,i)=>{
@@ -1923,9 +1931,12 @@ function playMusicSequence(seq, noFlash, beats){
     musicSeqTimers.push(setTimeout(()=>{
       playPianoNote(MUSIC_WHITE_KEYS[wi].freq, Math.min(1.6, b*BEAT_MS/1000*0.95));
       if(!noFlash) flashKey(pianoWhiteEl(wi));
+      if(opts.onNote) opts.onNote(i);
     }, at));
     at += b*BEAT_MS;
   });
+  /* จบเพลงเอง: หยุดผ่านทางเดียวกับการสั่งหยุด เพื่อให้ onStop ทำงานเสมอ (เผื่อโน้ตท้ายกังวานอีกนิดค่อยแจ้ง) */
+  musicSeqTimers.push(setTimeout(stopMusicSequence, at + 300));
 }
 
 /* วาดคีย์เปียโนลงใน element ที่ระบุ (ใช้ทั้งเกมดนตรีและ modal เปียโนอิสระ) */
@@ -2155,6 +2166,7 @@ function openFreePiano(){
   renderPianoKeys($('fp-piano'), false);
   renderFreePianoSongs();
   renderFreePianoNotes();
+  updateFpListenBtn();
   $('fp-notation').textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
   openOverlay('free-piano-modal');
 }
@@ -2167,7 +2179,25 @@ $('fp-songs').addEventListener('change', e=>{
   const sel = e.target.closest('.fp-song-select'); if(!sel) return;
   playClick(); selectFreeSong(+sel.value);
 });
-$('fp-listen').addEventListener('click', ()=>{ if(freePiano.song) playMusicSequence(freePiano.song.notes, false, freePiano.song.beats); });
+/* ปุ่มฟังเพลง: กดแล้วตัวโน้ตด้านบนวิ่งไฮไลต์ตามจังหวะ + คีย์เปียโนกดเองตามเพลง
+   ระหว่างเล่นปุ่มเปลี่ยนเป็น "หยุดเพลง" กดซ้ำ = หยุดทันที, เล่นจบ/ถูกหยุด = reset ตัวโน้ตกลับจุดเริ่ม */
+let fpListening = false;
+function updateFpListenBtn(){
+  const btn = $('fp-listen');
+  btn.textContent = fpListening ? '⏹ หยุดเพลง' : '🔊 ฟังเพลง';
+  btn.classList.toggle('listening', fpListening);
+}
+$('fp-listen').addEventListener('click', ()=>{
+  if(!freePiano.song) return;
+  playClick();
+  if(fpListening){ stopMusicSequence(); return; } /* onStop จะ reset ให้เอง */
+  fpListening = true; updateFpListenBtn();
+  freePiano.pos = 0; renderFreePianoNotes();
+  playMusicSequence(freePiano.song.notes, false, freePiano.song.beats, {
+    onNote:(i)=>{ freePiano.pos = i; renderFreePianoNotes(); },
+    onStop:()=>{ fpListening = false; updateFpListenBtn(); freePiano.pos = 0; renderFreePianoNotes(); }
+  });
+});
 $('fp-notation').addEventListener('click', function(){
   musicNotation = musicNotation==='en' ? 'th' : 'en';
   localStorage.setItem('p1quiz_music_notation', musicNotation);

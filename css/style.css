@@ -1649,6 +1649,8 @@
   }
   .music-tool-btn:active{transform:translateY(3px); box-shadow:none;}
   .music-listen-btn{background:linear-gradient(135deg, var(--cat-color,#C86FB0), color-mix(in srgb, var(--cat-color,#C86FB0) 70%, white)); color:#fff; border-color:transparent;}
+  /* ปุ่มฟังเพลงระหว่างเพลงตัวอย่างกำลังเล่น: กลายเป็นปุ่มหยุด (โทนแดง) */
+  .music-listen-btn.listening{background:linear-gradient(135deg, #E4574F, #F08A7E);}
   .music-msg{
     background:#fff; border:3px solid var(--cat-color,#C86FB0); border-radius:18px;
     padding:9px 20px; font-size:20px; font-weight:800; color:var(--ink);
