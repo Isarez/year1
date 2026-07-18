@@ -294,6 +294,41 @@
     </div>
   </section>
 
+  <!-- CLOCK VIEW (เกมนาฬิกาวิเศษ 1/2/3 — ลากหมุนเข็มนาฬิกา) -->
+  <section id="clock-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="clock-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="clock-cat-label">นาฬิกาวิเศษ</div>
+        <div class="progress-track"><div class="progress-fill" id="clock-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="clock-hint">🕐 ลากเข็มนาฬิกาให้ตรงกับเวลาโจทย์ แล้วกดตอบนะ!</div>
+      </div>
+      <div class="q-counter" id="clock-level-counter">1/10</div>
+    </div>
+    <div class="clock-board">
+      <div class="clock-task-card">
+        <div class="clock-start-chip" id="clock-start-chip" hidden></div>
+        <div class="clock-task-text" id="clock-task-text"></div>
+        <button class="music-tool-btn music-listen-btn clock-speak-btn" id="clock-speak-btn">🔊 ฟังโจทย์</button>
+      </div>
+      <div class="clock-msg-slot"><div class="clock-msg" id="clock-msg" hidden></div></div>
+      <div class="clock-stage">
+        <div class="clock-frame" id="clock-frame">
+          <div class="clock-frame-decor" id="clock-frame-decor" aria-hidden="true"></div>
+          <svg id="clock-svg" viewBox="0 0 240 240" aria-label="นาฬิกา"></svg>
+        </div>
+      </div>
+      <div class="clock-bottom-row">
+        <div class="clock-nudge" id="clock-nudge" hidden>
+          <button class="clock-nudge-btn" id="clock-nudge-minus" aria-label="ลด 1 นาที">−1 นาที</button>
+          <button class="clock-nudge-btn" id="clock-nudge-plus" aria-label="เพิ่ม 1 นาที">+1 นาที</button>
+        </div>
+        <div class="clock-digital" id="clock-digital">12:00</div>
+        <button class="child-submit-btn clock-submit-btn" id="clock-submit">ตอบเลย! ✨</button>
+      </div>
+    </div>
+  </section>
+
   <!-- LISTEN WORD-SPELLING VIEW (เกมฟังคำศัพท์ 1/2) -->
   <section id="listen-view" hidden>
     <div class="quiz-top">
@@ -461,7 +496,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net%2Ftest&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>
