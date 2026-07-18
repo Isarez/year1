@@ -2193,8 +2193,13 @@ $('fp-listen').addEventListener('click', ()=>{
   if(fpListening){ stopMusicSequence(); return; } /* onStop จะ reset ให้เอง */
   fpListening = true; updateFpListenBtn();
   freePiano.pos = 0; renderFreePianoNotes();
-  playMusicSequence(freePiano.song.notes, false, freePiano.song.beats, {
-    onNote:(i)=>{ freePiano.pos = i; renderFreePianoNotes(); },
+  /* noFlash:true เพราะ flash ในตัว playMusicSequence ชี้เปียโนของเกม (#music-piano)
+     ใน modal ต้อง flash คีย์ของ #fp-piano เองใน onNote */
+  playMusicSequence(freePiano.song.notes, true, freePiano.song.beats, {
+    onNote:(i)=>{
+      flashKey($('fp-piano').querySelector('.music-white[data-white="'+freePiano.song.notes[i]+'"]'));
+      freePiano.pos = i; renderFreePianoNotes();
+    },
     onStop:()=>{ fpListening = false; updateFpListenBtn(); freePiano.pos = 0; renderFreePianoNotes(); }
   });
 });
