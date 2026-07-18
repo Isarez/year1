@@ -2236,6 +2236,7 @@ $('fp-piano').addEventListener('pointerdown', e=>{
 /* clockMode 1: ด่าน 1-5 ชั่วโมงตรง, 6-10 "x โมงครึ่ง"
    clockMode 2: ด่าน 1-5 นาทีหาร 5 ลงตัว, 6-10 นาทีใดๆ (snap เข็ม 1 นาที + ปุ่ม ±1 นาที)
    clockMode 3: โชว์เวลาตั้งต้นบนหน้าปัด โจทย์ "อีก N ชั่วโมงจะเป็นกี่โมง?" (N สุ่ม 1-3) — ด่าน 1-6 ตั้งต้นชั่วโมงตรง, 7-10 มีนาทีหาร 5 ลงตัวติดมาด้วย
+   clockMode 4: เหมือน mode 3 แต่ offset มีนาทีด้วย "อีก N ชั่วโมง M นาที" (M หาร 5 ลงตัว, นาทีรวมเกิน 60 ทดชั่วโมงเพิ่ม) — ด่าน 1-6 ตั้งต้นชั่วโมงตรง, 7-10 ตั้งต้นมีนาทีหาร 5
    กรอบนาฬิกาสุ่ม 1 จาก CLOCK_FRAMES ทุกครั้งที่เข้าเกม (ตกแต่งรอบหน้าปัด + สี bezel ผ่าน CSS class .frame-*) */
 let clockGame = null; // {catId, mode, level, totalLevels, mistakes, h, m, target:{h,m}, startTime, offsetH, snap, used:Set, locked, drag, angles:{hour,minute}}
 const CLOCK_FRAMES = ['owl','cat','flower','sun','bear'];
@@ -2402,7 +2403,7 @@ function randClockInt(min,max){ return min + Math.floor(Math.random()*(max-min+1
 function newClockLevel(){
   const g = clockGame;
   const stage = g.level;
-  let target = null, start = {h:12,m:0}, offsetH = 0;
+  let target = null, start = {h:12,m:0}, offsetH = 0, offsetM = 0;
   for(let tries=0; tries<80; tries++){
     if(g.mode===1){
       target = { h:randClockInt(1,12), m: stage<=5 ? 0 : 30 };
@@ -2410,13 +2411,15 @@ function newClockLevel(){
       target = { h:randClockInt(1,12), m: stage<=5 ? randClockInt(1,11)*5 : randClockInt(1,59) };
     } else {
       offsetH = randClockInt(1,3);
+      offsetM = g.mode===4 ? randClockInt(1,11)*5 : 0;
       start = { h:randClockInt(1,12), m: stage<=6 ? 0 : randClockInt(1,11)*5 };
-      target = { h:((start.h-1+offsetH)%12)+1, m:start.m };
+      const sumM = start.m + offsetM;
+      target = { h:((start.h-1+offsetH+(sumM>=60?1:0))%12)+1, m:sumM%60 };
     }
-    const key = target.h+':'+target.m+(g.mode===3?('@'+start.h+':'+start.m):'');
+    const key = target.h+':'+target.m+(g.mode>=3?('@'+start.h+':'+start.m):'');
     if(!g.used.has(key) && !(target.h===start.h && target.m===start.m)){ g.used.add(key); break; }
   }
-  g.target = target; g.startTime = start; g.offsetH = offsetH;
+  g.target = target; g.startTime = start; g.offsetH = offsetH; g.offsetM = offsetM;
   g.h = start.h; g.m = start.m; g.locked = false; g.drag = null;
   g.snap = (g.mode===2 && stage>=6) ? 1 : 5;
   $('clock-nudge').hidden = g.snap!==1;
@@ -2425,15 +2428,16 @@ function newClockLevel(){
   $('clock-msg').hidden = true;
   const svg = $('clock-svg');
   svg.classList.remove('happy','sad');
-  if(g.mode===3){
+  if(g.mode>=3){
+    const offText = offsetH+' ชั่วโมง'+(g.mode===4 ? ' '+offsetM+' นาที' : '');
     $('clock-start-chip').hidden = false;
     $('clock-start-chip').textContent = '🕐 ตอนนี้เวลา '+clockTimeText(start.h,start.m);
-    $('clock-task-text').innerHTML = 'อีก <b>'+offsetH+' ชั่วโมง</b> จะเป็นกี่โมง? หมุนเข็มเลย!';
-    g.speakText = 'ตอนนี้เวลา '+clockTimeText(start.h,start.m)+' อีก '+offsetH+' ชั่วโมง จะเป็นกี่โมง หมุนเข็มบอกครูหน่อยนะ';
+    $('clock-task-text').innerHTML = 'อีก <b>'+offText+'</b> จะเป็นกี่โมง? หมุนเข็มเลย!';
+    g.speakText = 'ตอนนี้เวลา '+clockTimeText(start.h,start.m)+' อีก '+offText+' จะเป็นกี่โมง';
   } else {
     $('clock-start-chip').hidden = true;
     $('clock-task-text').innerHTML = 'หมุนเข็มให้เป็น <b>'+clockTimeText(target.h,target.m)+'</b>';
-    g.speakText = 'หมุนเข็มนาฬิกาให้เป็น '+clockTimeText(target.h,target.m)+' นะ';
+    g.speakText = 'หมุนเข็มนาฬิกาให้เป็น '+clockTimeText(target.h,target.m);
   }
   updateClockHands(true);
   setTimeout(()=>speakClockText(g.speakText), 350);
