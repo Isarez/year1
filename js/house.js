@@ -668,7 +668,8 @@ function nearestWalkable(grid, W, D, tx, tz){
   }
   return null;
 }
-function findPath(grid, W, D, from, to){
+/* avoid (optional) = ช่องที่ห้ามเหยียบผ่าน เช่น ช่องที่ตัวเด็กยืนอยู่ตอนหา path ให้สัตว์เลี้ยง */
+function findPath(grid, W, D, from, to, avoid){
   if(from.x===to.x && from.z===to.z) return [];
   const prev = new Map(); const seen = new Set([from.z*W+from.x]);
   const q = [from];
@@ -677,6 +678,7 @@ function findPath(grid, W, D, from, to){
     for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const nx=c.x+dx, nz=c.z+dz, k=nz*W+nx;
       if(!isWalk(grid,W,D,nx,nz) || seen.has(k)) continue;
+      if(avoid && nx===avoid.x && nz===avoid.z) continue;
       seen.add(k); prev.set(k,c);
       if(nx===to.x && nz===to.z){
         const path = [{x:nx,z:nz}];
@@ -1491,22 +1493,8 @@ function petColor(type, idx){
   const p = petTypeInfo(type);
   return (p.colors[idx|0] || p.colors[0]).c;
 }
-/* ปลอกคอแดง + เหรียญทอง — ตำแหน่ง/ขนาดตามสรีระแต่ละชนิด: y ความสูงช่วงคอ,
-   z เยื้องไปทางหัว, r รัศมีวง, tilt เอียงวงไปด้านหน้าให้แนบคอ (ยกด้านหลังพ้นตัว),
-   vertical = วงตั้งฉากกับแกน z สำหรับคอที่ยื่นแนวนอน (เต่า) */
-function addPetCollar(g, o){
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(o.r, .017, 8, 18), toonMat(0xe53935));
-  collar.rotation.x = o.vertical ? 0 : Math.PI/2 + (o.tilt||0);
-  collar.position.set(0, o.y, o.z||0);
-  collar.castShadow = hShadows;
-  g.add(collar);
-  const tag = sphere(.021, 0xffd54f, 8);   /* เหรียญห้อยหน้า ให้อ่านว่าเป็นปลอกคอชัดๆ */
-  if(o.vertical) tag.position.set(0, o.y-o.r-.01, o.z||0);
-  else tag.position.set(0, o.y-(o.tilt?Math.sin(o.tilt)*o.r:0)-.028, (o.z||0)+o.r*.92);
-  g.add(tag);
-}
-/* โมเดลสัตว์เลี้ยงสไตล์เดียวกับ critter (บล็อกมน ไม่มีขา เด้งตามจังหวะ) + ปลอกคอแดง
-   ให้แยกออกจากสัตว์ป่าที่เดินผ่านไปมา — colIdx = index สีขนใน PET_TYPES[].colors */
+/* โมเดลสัตว์เลี้ยงสไตล์เดียวกับ critter (บล็อกมน ไม่มีขา เด้งตามจังหวะ)
+   — colIdx = index สีขนใน PET_TYPES[].colors */
 function buildPet(type, colIdx){
   const g = new THREE.Group(); const u = {};
   const c = petColor(type, colIdx);
@@ -1520,7 +1508,6 @@ function buildPet(type, colIdx){
       const eye = sphere(.02,0x33261d,6); eye.position.set(.06*s,.36,.34); g.add(eye);
     });
     const tail = box(.05,.24,.05,c); tail.rotation.x = -.8; tail.position.set(0,.28,-.2); g.add(tail); u.tail = tail;
-    addPetCollar(g, {y:.225, z:.2, r:.12, tilt:.3});
   }else if(type==='cat'){
     const body = box(.22,.18,.36,c); body.position.y = .15; g.add(body);
     const head = box(.2,.17,.16,c); head.position.set(0,.32,.2); g.add(head);
@@ -1530,7 +1517,6 @@ function buildPet(type, colIdx){
     const muzzle = box(.08,.05,.03,0xfff3e0); muzzle.position.set(0,.28,.285); g.add(muzzle);
     const nose = sphere(.016,0xe57373,6); nose.position.set(0,.31,.29); g.add(nose);
     [-1,1].forEach(s=>{ const eye = sphere(.018,0x2e7d32,6); eye.position.set(.06*s,.34,.285); g.add(eye); });
-    addPetCollar(g, {y:.215, z:.17, r:.11, tilt:.28});
   }else if(type==='rabbit'){
     const body = box(.26,.2,.32,c); body.position.y = .16; g.add(body);
     const head = box(.2,.18,.18,c); head.position.set(0,.32,.16); g.add(head);
@@ -1541,7 +1527,6 @@ function buildPet(type, colIdx){
     });
     const tail = sphere(.07,0xffffff,8); tail.position.set(0,.18,-.18); g.add(tail);
     const nose = sphere(.025,0xf48fb1,6); nose.position.set(0,.31,.26); g.add(nose);
-    addPetCollar(g, {y:.215, z:.13, r:.11, tilt:.28});
   }else if(type==='chick'){
     const body = sphere(.13,c,10); body.scale.set(1,1.05,1); body.position.y = .15; g.add(body);
     const head = sphere(.1,c,10); head.position.set(0,.32,.05); g.add(head); u.head = head;
@@ -1551,7 +1536,6 @@ function buildPet(type, colIdx){
       const w = box(.04,.09,.12,petShade(c,.92)); w.position.set(.125*s,.16,0); g.add(w); return w;
     });
     [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.34,.12); g.add(eye); });
-    addPetCollar(g, {y:.21, z:.05, r:.09, tilt:.12});
   }else if(type==='hamster'){
     const body = sphere(.16,c,10); body.scale.set(1,.85,1.05); body.position.y = .14; g.add(body);
     [-1,1].forEach(s=>{
@@ -1561,7 +1545,6 @@ function buildPet(type, colIdx){
     });
     const nose = sphere(.018,0xf48fb1,6); nose.position.set(0,.17,.18); g.add(nose);
     const tail = sphere(.03,petShade(c,.88),6); tail.position.set(0,.12,-.16); g.add(tail);
-    addPetCollar(g, {y:.13, z:.02, r:.14, tilt:.38});
   }else if(type==='turtle'){
     const shell = sphere(.17,c,10); shell.scale.set(1,.62,1.15); shell.position.y = .14; g.add(shell);
     const shellTop = sphere(.12,petShade(c,.76),10); shellTop.scale.set(1,.5,1.1); shellTop.position.y = .2; g.add(shellTop);
@@ -1570,7 +1553,6 @@ function buildPet(type, colIdx){
     [[-.11,.12],[.11,.12],[-.11,-.12],[.11,-.12]].forEach(([lx,lz])=>{
       const leg = box(.06,.05,.08,0x9ccc65); leg.position.set(lx,.04,lz); g.add(leg);
     });
-    addPetCollar(g, {y:.09, z:.24, r:.078, tilt:.22});
   }else if(type==='pig'){
     const body = box(.3,.22,.36,c); body.position.y = .17; g.add(body);
     const head = box(.24,.2,.16,c); head.position.set(0,.34,.22); g.add(head);
@@ -1582,7 +1564,6 @@ function buildPet(type, colIdx){
       const eye = sphere(.02,0x33261d,6); eye.position.set(.065*s,.38,.305); g.add(eye);
     });
     const tail = sphere(.035,petShade(c,.9),6); tail.position.set(0,.22,-.195); g.add(tail); u.tail = tail;
-    addPetCollar(g, {y:.245, z:.18, r:.14, tilt:.3});
   }else if(type==='sheep'){
     const body = sphere(.18,c,10); body.scale.set(1,.9,1.15); body.position.y = .18; g.add(body);
     [[-.09,.31,.05],[.09,.31,.05],[0,.33,-.05],[-.08,.29,-.13],[.08,.29,-.13]].forEach(([px,py,pz])=>{
@@ -1594,7 +1575,6 @@ function buildPet(type, colIdx){
       const eye = sphere(.018,0x33261d,6); eye.position.set(.045*s,.33,.3); g.add(eye);
     });
     const tail = sphere(.05,c,8); tail.position.set(0,.2,-.21); g.add(tail);
-    addPetCollar(g, {y:.2, z:.235, r:.1, tilt:.25});
   }else if(type==='frog'){
     const body = sphere(.16,c,10); body.scale.set(1.05,.75,1.1); body.position.y = .13; g.add(body);
     const belly = sphere(.11,0xf3f7dc,8); belly.scale.set(1,.7,.8); belly.position.set(0,.1,.08); g.add(belly);
@@ -1603,7 +1583,6 @@ function buildPet(type, colIdx){
       const pupil = sphere(.024,0x33261d,6); pupil.position.set(.08*s,.27,.148); g.add(pupil);
       const cheek = sphere(.02,0xf6a5b6,6); cheek.position.set(.11*s,.13,.15); g.add(cheek);
     });
-    addPetCollar(g, {y:.12, z:.02, r:.15, tilt:.25});
   }else if(type==='penguin'){
     const body = sphere(.16,c,10); body.scale.set(1,1.25,.95); body.position.y = .2; g.add(body);
     const belly = sphere(.12,0xfdfdf8,10); belly.scale.set(.85,1.05,.6); belly.position.set(0,.17,.09); g.add(belly);
@@ -1617,7 +1596,6 @@ function buildPet(type, colIdx){
       const pupil = sphere(.011,0x33261d,6); pupil.position.set(.05*s,.36,.148); g.add(pupil);
       const foot = box(.06,.03,.09,0xf5a623); foot.position.set(.06*s,.015,.06); g.add(foot);
     });
-    addPetCollar(g, {y:.27, z:.03, r:.12, tilt:.18});
   }else if(type==='unicorn'){
     const body = box(.26,.2,.4,c); body.position.y = .2; g.add(body);
     const head = box(.16,.18,.16,c); head.position.set(0,.42,.22); g.add(head);
@@ -1632,7 +1610,6 @@ function buildPet(type, colIdx){
       const eye = sphere(.02,0x33261d,6); eye.position.set(.055*s,.44,.3); g.add(eye);
     });
     const tail = box(.06,.2,.06,0xf48fb1); tail.rotation.x = -.7; tail.position.set(0,.28,-.2); g.add(tail); u.tail = tail;
-    addPetCollar(g, {y:.3, z:.21, r:.095, tilt:.3});
   }else{ /* panda */
     const body = sphere(.17,c,10); body.scale.set(1,.95,1.1); body.position.y = .17; g.add(body);
     const head = sphere(.13,c,10); head.position.set(0,.38,.1); g.add(head); u.head = head;
@@ -1644,7 +1621,6 @@ function buildPet(type, colIdx){
     });
     const nose = sphere(.02,0x3a3a3a,6); nose.position.set(0,.36,.225); g.add(nose);
     const tail = sphere(.04,0x3a3a3a,6); tail.position.set(0,.14,-.195); g.add(tail);
-    addPetCollar(g, {y:.26, z:.09, r:.13, tilt:.22});
   }
   g.scale.setScalar(PET_SCALE);        /* ตัวใหญ่กว่าสัตว์ป่าในฉาก — ชี้ชัดว่าเป็นสัตว์เลี้ยงของหนู */
   g.userData.hPet = true;              /* tag ที่ group — ancestor walk ตอน raycast เจอแน่ */
@@ -1686,6 +1662,7 @@ function petPathTo(target){
   const {grid,W,D} = curGridInfo();
   const t = nearestWalkable(grid, W, D, target.x, target.z);
   if(!t) return false;
+  if(t.x===hChar.tile.x && t.z===hChar.tile.z) return false;  /* ห้ามตั้งเป้าไปช่องที่เด็กยืนอยู่ */
   /* กำลังเดินค้างอยู่กลางช่อง: ห้ามรีเซ็ต segment ปัจจุบัน (เดิม repath ทุก .35s แล้ว
      segT=0 ทำให้ตำแหน่งสแนปถอยกลับไปกึ่งกลางช่องล่าสุดทุกครั้ง — ตัวเร็วเดินกระตุก
      ส่วนตัวช้าอย่างเต่า (1 ช่องใช้เวลา > .35s) ไม่เคยเดินจบช่องเลย = ย่ำอยู่กับที่)
@@ -1696,7 +1673,7 @@ function petPathTo(target){
     if(midTo){ hPet.path = [midTo]; hPet.seg = 0; return true; }  /* ช่องค้างคือเป้าหมายพอดี */
     return false;
   }
-  const path = findPath(grid, W, D, startTile, t);
+  const path = findPath(grid, W, D, startTile, t, hChar.tile);  /* เลี่ยงช่องตัวเด็ก ไม่เดินทะลุ/ทับ */
   if(!path || !path.length) return false;
   if(midTo){
     hPet.path = [midTo].concat(path);
@@ -1745,13 +1722,18 @@ function updatePet(dt){
   const pTile = hChar.tile;
   const dist = Math.max(Math.abs(pTile.x-hPet.tile.x), Math.abs(pTile.z-hPet.tile.z));
   hPet.repathT -= dt;
-  const following = hChar.walking || dist > 2;
+  /* dist===0 = เด็กเดินมายืนทับช่องสัตว์พอดี — ให้สัตว์ขยับหลบไปช่องข้างๆ เสมอ */
+  const following = hChar.walking || dist > 2 || dist === 0;
   if(following && hPet.repathT <= 0){
     hPet.repathT = .35;
     petPathTo(tileNearPlayer());
     hPet.beh = null;
   }
 
+  if(hPet.path.length && hPet.segT===0 && hPet.path[hPet.seg] &&
+     hPet.path[hPet.seg].x===pTile.x && hPet.path[hPet.seg].z===pTile.z){
+    hPet.path = [];   /* ช่องถัดไปมีเด็กยืนอยู่ (เด็กเพิ่งเดินมาขวาง path) — หยุดรอ ไม่เดินทับ */
+  }
   if(hPet.path.length){
     const from = hPet.segFrom || hPet.tile, to = hPet.path[hPet.seg];
     hPet.segT += dt * (PET_SPEED[type] || 3.3);
@@ -1774,7 +1756,8 @@ function updatePet(dt){
         const {grid,W,D} = curGridInfo();
         for(let i=0; i<8; i++){
           const nx = pTile.x + ((Math.random()*5)|0) - 2, nz = pTile.z + ((Math.random()*5)|0) - 2;
-          if((nx!==hPet.tile.x || nz!==hPet.tile.z) && isWalk(grid,W,D,nx,nz)){ petPathTo({x:nx, z:nz}); break; }
+          if((nx!==hPet.tile.x || nz!==hPet.tile.z) && (nx!==pTile.x || nz!==pTile.z) &&
+             isWalk(grid,W,D,nx,nz)){ petPathTo({x:nx, z:nz}); break; }
         }
       }
       else if(r < .8){ petHappy(.9, Math.random()<.35); if(Math.random()<.5) petBubble('😊'); } /* กระโดดดีใจ */
