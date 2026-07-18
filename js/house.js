@@ -1,5 +1,6 @@
 /* ============================================================
-   บ้านของหนู (My House) — เฟส 1: สร้างตัวละคร 3D + แผนที่นอกบ้าน + เข้าบ้าน
+   บ้านของหนู (My House) — เฟส 2: แผนที่นอกบ้านกว้างขึ้น + ในบ้าน 4 ห้อง + สัตว์เลี้ยง
+   (เฟส 1: สร้างตัวละคร 3D + แผนที่นอกบ้าน + เข้าบ้าน)
    ใช้ Three.js (self-host js/vendor/three.min.js, โหลดก่อไฟล์นี้ใน index.html)
    สไตล์ blocky/voxel + MeshToonMaterial กล้อง isometric fixed-angle
    canvas โปร่งใส ให้เห็นท้องฟ้ากลางวัน/กลางคืนของธีมแอปจริงด้านหลัง
@@ -53,18 +54,37 @@ const H_ROW_ICONS = {
 
 /* ---------- แผนที่นอกบ้าน (grid) ----------
    ค่า tile: 0 = หญ้าเดินได้, 1 = น้ำ (คลอง), 2 = สะพานเดินได้, 3 = ถูกบล็อก (ต้นไม้/บ้าน) */
-const OUT_W = 18, OUT_D = 14;
-const RIVER_X = [11,12];
-const BRIDGE_Z = [6,7];
-const HOUSE_FOOT = {x0:2, x1:5, z0:2, z1:4};
-const DOOR_TILE = {x:4, z:5};          /* ช่องหญ้าหน้าประตูบ้าน */
-const SPAWN_TILE = {x:7, z:8};
-const TREES = [[1,9],[3,11],[8,2],[9,11],[15,3],[16,10],[14,1],[6,12],[16,5],[1,4]];
-const FLOWERS = [[7,4],[9,8],[2,7],[15,7],[13,3],[5,10],[14,9],[6,1]];
+const OUT_W = 26, OUT_D = 20;          /* เฟส 2: ขยายจาก 18×14 → 26×20 */
+const RIVER_X = [16,17];
+const BRIDGE_Z = [9,10];
+const HOUSE_FOOT = {x0:3, x1:6, z0:3, z1:5};
+const DOOR_TILE = {x:5, z:6};          /* ช่องหญ้าหน้าประตูบ้าน */
+const SPAWN_TILE = {x:9, z:11};
+const TREES = [[1,3],[1,12],[3,17],[8,2],[9,15],[12,5],[13,12],[14,2],[6,13],[20,3],
+               [22,8],[24,15],[19,16],[21,12],[24,2],[2,8],[11,18],[15,16]];
+const FLOWERS = [[8,5],[10,9],[2,10],[19,10],[15,4],[6,16],[18,13],[7,1],[23,5],[12,16],[4,7],[22,17]];
 
-/* ห้องในบ้าน (เฟส 1: ห้องเดียวโล่งๆ เฟส 2 ค่อยแบ่งหลายห้อง) */
-const IN_W = 8, IN_D = 6;
-const IN_DOOR_TILE = {x:3, z:0};
+/* ---------- ห้องในบ้าน (เฟส 2: 16×11 แบ่ง 4 ห้อง — กว้างเผื่อวางเฟอร์นิเจอร์เฟส 3) ----------
+   ผังห้อง: กำแพงกั้นแนวนอนที่ z=5 + แนวตั้งที่ x=10 (กำแพงเตี้ย .95 มองข้ามได้ ไม่บังตัวละคร)
+   ├ ห้องนั่งเล่น (x0-9, z0-4 มีประตูเข้าบ้าน)  ├ ห้องครัว (x11-15, z0-4)
+   ├ ห้องนอน (x0-9, z6-10)                     ├ ห้องน้ำ (x11-15, z6-10)
+   ช่องประตูระหว่างห้อง: แถว z=5 เว้น x 2-3 (นั่งเล่น↔นอน) และ x 12-13 (ครัว↔น้ำ)
+   คอลัมน์ x=10 เว้น z 1-2 (นั่งเล่น↔ครัว) และ z 8-9 (นอน↔น้ำ) */
+const IN_W = 16, IN_D = 11;
+const IN_DOOR_TILE = {x:4, z:0};
+const IN_WALL_ROW = 5, IN_WALL_COL = 10;
+const IN_ROW_GAPS = [2,3,12,13], IN_COL_GAPS = [1,2,8,9];
+/* สีพื้นแต่ละห้อง (คู่สลับ checker อ่อน/เข้ม) ให้เด็กแยกห้องออกด้วยสายตา */
+const IN_ROOM_FLOORS = {
+  living:  [0xe6bc7f, 0xd9a967],   /* ไม้ส้มอบอุ่น (เดิม) */
+  kitchen: [0xcfe8f7, 0xb9d9ec],   /* ฟ้าครัวสะอาด */
+  bed:     [0xf4c7da, 0xe9aec9],   /* ชมพูห้องนอน */
+  bath:    [0xcdeee0, 0xb5e0cd],   /* มินต์ห้องน้ำ */
+};
+function roomOf(x, z){
+  return z <= IN_WALL_ROW ? (x <= IN_WALL_COL ? 'living' : 'kitchen')
+                          : (x <= IN_WALL_COL ? 'bed' : 'bath');
+}
 
 /* ---------- state ---------- */
 let hInit = false;
@@ -432,13 +452,13 @@ function buildWorld(){
   /* น้ำเป็นผืนเดียวยาวตลอดคลอง (เดิมเป็นบล็อกต่อช่อง เห็นรอยต่อเป็นตารางไม่เหมือนน้ำ) */
   const waterMat = new THREE.MeshToonMaterial({color:0x6cc6e8, gradientMap, transparent:true, opacity:.9});
   const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(RIVER_X.length, .14, OUT_D), waterMat);
-  waterMesh.position.set(outWX(11.5), -.25, 0);
+  waterMesh.position.set(outWX((RIVER_X[0]+RIVER_X[RIVER_X.length-1])/2), -.25, 0);
   worldGroup.add(waterMesh);
   const dirtBase = new THREE.Mesh(roundedBoxGeo(OUT_W,.6,OUT_D,.1), toonMat(0x9c6b45));
   dirtBase.position.y = -.54; worldGroup.add(dirtBase);
 
-  /* ทางเดินหินหน้าประตูบ้าน */
-  [[4,5],[4,6],[4,7]].forEach(([x,z],i)=>{
+  /* ทางเดินหินหน้าประตูบ้าน (ต่อจาก DOOR_TILE ลงมา 3 ช่อง) */
+  [[DOOR_TILE.x,DOOR_TILE.z],[DOOR_TILE.x,DOOR_TILE.z+1],[DOOR_TILE.x,DOOR_TILE.z+2]].forEach(([x,z],i)=>{
     const s = new THREE.Mesh(roundedBoxGeo(.6,.07,.6,.03), toonMat(0xe3ddd0));
     s.rotation.y = .35*(i%2 ? 1 : -1);
     s.position.set(outWX(x), .04, outWZ(z));
@@ -453,7 +473,7 @@ function buildWorld(){
     const rail = box(2.6,.12,.1,0xa96f35); rail.position.set(0,.42,1.02*s); bridge.add(rail);
     [-1.15,0,1.15].forEach(px=>{ const post = box(.1,.4,.1,0xa96f35); post.position.set(px,.2,1.02*s); bridge.add(post); });
   });
-  bridge.position.set(outWX(11.5), 0, outWZ(6.5));
+  bridge.position.set(outWX((RIVER_X[0]+RIVER_X[RIVER_X.length-1])/2), 0, outWZ((BRIDGE_Z[0]+BRIDGE_Z[BRIDGE_Z.length-1])/2));
   worldGroup.add(bridge);
 
   /* บ้าน */
@@ -489,24 +509,25 @@ function buildWorld(){
   const win1 = box(.62,.62,.1,0xaadcf5); win1.position.set(-.8,.95,1.32); house.add(win1);
   const winf = box(.74,.74,.06,0xffffff); winf.position.set(-.8,.95,1.3); house.add(winf);
   const win2 = box(.1,.62,.62,0xaadcf5); win2.position.set(1.72,.95,0); house.add(win2);
-  house.position.set(outWX(3.5), 0, outWZ(3));
+  house.position.set(outWX((HOUSE_FOOT.x0+HOUSE_FOOT.x1)/2), 0, outWZ((HOUSE_FOOT.z0+HOUSE_FOOT.z1)/2));
   house.userData.hHouse = true;
   worldGroup.add(house);
   houseClickables = [];
   house.traverse(o=>{ if(o.isMesh) houseClickables.push(o); });
 
-  /* ต้นไม้ */
+  /* ต้นไม้ — เฟส 2: ลำต้นสูงขึ้น (3 ระดับสลับกันให้ป่าดูมีจังหวะ ไม่เท่ากันเป็นแถว) */
   TREES.forEach(([x,z],i)=>{
     const tr = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.55,8), toonMat(0x9c6238));
-    trunk.castShadow = hShadows; trunk.position.y = .27; tr.add(trunk);
-    const f1 = sphere(.5,(i%3===1)?0x5cbf6e:0x4caf50); f1.position.y = .9; tr.add(f1);
-    const f2 = sphere(.36,0x66c878); f2.position.set(.3,.68,.18); tr.add(f2);
-    const f3 = sphere(.3,0x58b862); f3.position.set(-.28,.72,-.14); tr.add(f3);
+    const th = 1.0 + (i%3)*.22;          /* ความสูงลำต้น 1.0/1.22/1.44 */
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,th,8), toonMat(0x9c6238));
+    trunk.castShadow = hShadows; trunk.position.y = th/2; tr.add(trunk);
+    const f1 = sphere(.56,(i%3===1)?0x5cbf6e:0x4caf50); f1.position.y = th+.42; tr.add(f1);
+    const f2 = sphere(.4,0x66c878); f2.position.set(.32,th+.16,.2); tr.add(f2);
+    const f3 = sphere(.33,0x58b862); f3.position.set(-.3,th+.22,-.16); tr.add(f3);
     /* ดอกไม้ขาวแต้มบนพุ่ม (แบบต้นไม้ในภาพอ้างอิง) */
     if(i%2===0){
-      const b1 = sphere(.07,0xffffff,6); b1.position.set(.2,1.28,.28); tr.add(b1);
-      const b2 = sphere(.055,0xffffff,6); b2.position.set(-.3,1.05,.3); tr.add(b2);
+      const b1 = sphere(.07,0xffffff,6); b1.position.set(.22,th+.86,.3); tr.add(b1);
+      const b2 = sphere(.055,0xffffff,6); b2.position.set(-.32,th+.56,.34); tr.add(b2);
     }
     tr.position.set(outWX(x), 0, outWZ(z));
     tr.rotation.y = (x*7+z*13)%6;
@@ -533,24 +554,67 @@ function buildWorld(){
 function inWX(gx){ return gx - (IN_W-1)/2; }
 function inWZ(gz){ return gz - (IN_D-1)/2; }
 
+/* ช่องกำแพงกั้นห้อง (แนวนอน z=IN_WALL_ROW / แนวตั้ง x=IN_WALL_COL เว้นช่องประตู) */
+function isInWallTile(x, z){
+  if(z===IN_WALL_ROW && !IN_ROW_GAPS.includes(x)) return true;
+  if(x===IN_WALL_COL && z!==IN_WALL_ROW && !IN_COL_GAPS.includes(z)) return true;
+  return false;
+}
+
 function buildInterior(){
   interiorGroup = new THREE.Group();
   inGrid = [];
   for(let z=0; z<IN_D; z++){ inGrid.push(new Array(IN_W).fill(0)); }
+  for(let z=0; z<IN_D; z++) for(let x=0; x<IN_W; x++){ if(isInWallTile(x,z)) inGrid[z][x] = 3; }
 
-  /* พื้นห้องสลับ 2 เฉด (อ่อน/เข้ม) เหมือนเดิม — ใช้ BoxGeometry หน้าเรียบ กันเงาสามเหลี่ยมตรงมุมบล็อก */
+  /* พื้นห้องสลับ 2 เฉด แยกสีตามห้อง (IN_ROOM_FLOORS) ให้เด็กแยกห้องออกด้วยสายตา
+     — ใช้ BoxGeometry หน้าเรียบ กันเงาสามเหลี่ยมตรงมุมบล็อก, InstancedMesh คู่อ่อน/เข้มต่อห้อง */
   const tileGeo = new THREE.BoxGeometry(1,.24,1);
-  const im1 = new THREE.InstancedMesh(tileGeo, toonMat(0xe6bc7f), Math.ceil(IN_W*IN_D/2));
-  const im2 = new THREE.InstancedMesh(tileGeo, toonMat(0xd9a967), Math.floor(IN_W*IN_D/2));
-  const idx = [0,0]; const m4 = new THREE.Matrix4();
+  const m4 = new THREE.Matrix4();
+  const roomIms = {};
+  Object.entries(IN_ROOM_FLOORS).forEach(([rm,[cA,cB]])=>{
+    roomIms[rm] = [new THREE.InstancedMesh(tileGeo, toonMat(cA), IN_W*IN_D),
+                   new THREE.InstancedMesh(tileGeo, toonMat(cB), IN_W*IN_D), 0, 0];
+  });
   for(let z=0; z<IN_D; z++) for(let x=0; x<IN_W; x++){
     m4.makeTranslation(inWX(x), -.12, inWZ(z));
-    if((x+z)%2){ im2.setMatrixAt(idx[1]++, m4); } else { im1.setMatrixAt(idx[0]++, m4); }
+    const r = roomIms[roomOf(x,z)];
+    if((x+z)%2){ r[1].setMatrixAt(r[3]++, m4); } else { r[0].setMatrixAt(r[2]++, m4); }
   }
-  [im1,im2].forEach(im=>{ im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; interiorGroup.add(im); });
+  Object.values(roomIms).forEach(r=>{
+    r[0].count = r[2]; r[1].count = r[3];
+    [r[0],r[1]].forEach(im=>{ im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; interiorGroup.add(im); });
+  });
   /* ฐานใต้พื้นห้อง ให้เป็นบล็อกหนาแบบเดียวกับข้างนอก */
   const floorBase = new THREE.Mesh(roundedBoxGeo(IN_W,.5,IN_D,.1), toonMat(0x9c6b45));
   floorBase.position.y = -.49; interiorGroup.add(floorBase);
+
+  /* กำแพงกั้นห้องแบบเตี้ย (.95) สไตล์ dollhouse — มองข้ามได้ กล้อง isometric ไม่โดนบังตัวละคร
+     รวมช่องติดกันเป็นแท่งเดียวต่อ run ให้ผิวเรียบไม่มีรอยต่อ */
+  const partC = 0xf6d8a8, PART_H = .95, PART_T = .3;
+  const partRuns = [];
+  let run = null;                                   /* run แนวนอนบนแถว z=IN_WALL_ROW */
+  for(let x=0; x<=IN_W; x++){
+    const w = x<IN_W && isInWallTile(x, IN_WALL_ROW);
+    if(w && !run) run = {x0:x};
+    if(!w && run){ partRuns.push({h:true, x0:run.x0, x1:x-1}); run = null; }
+  }
+  run = null;                                       /* run แนวตั้งบนคอลัมน์ x=IN_WALL_COL */
+  for(let z=0; z<=IN_D; z++){
+    const w = z<IN_D && z!==IN_WALL_ROW && isInWallTile(IN_WALL_COL, z);
+    if(w && !run) run = {z0:z};
+    if(!w && run){ partRuns.push({h:false, z0:run.z0, z1:z-1}); run = null; }
+  }
+  partRuns.forEach(r=>{
+    const len = r.h ? (r.x1-r.x0+1) : (r.z1-r.z0+1);
+    const wall = box(r.h ? len : PART_T, PART_H, r.h ? PART_T : len, partC, .07);
+    wall.position.set(
+      r.h ? inWX((r.x0+r.x1)/2) : inWX(IN_WALL_COL),
+      PART_H/2 - .02,
+      r.h ? inWZ(IN_WALL_ROW) : inWZ((r.z0+r.z1)/2));
+    wall.castShadow = hShadows;
+    interiorGroup.add(wall);
+  });
 
   /* ผนัง 2 ด้านไกลกล้อง (กล้องมองจาก +x,+z) คือด้าน x ต่ำ และ z ต่ำ
      - ยืดให้ซ้อนกันตรงมุม (แต่ละผนังยาวเกินไปคลุมรอยต่ออีกด้าน) ไม่มีช่องมุมโหว่ = ผนังไม่แยกจากกัน
@@ -566,12 +630,20 @@ function buildInterior(){
   interiorDoorMesh = box(.8,1.3,.12,0x9c6238);
   interiorDoorMesh.position.set(inWX(IN_DOOR_TILE.x),.65,inWZ(0)-.48); interiorGroup.add(interiorDoorMesh);
   const knob = sphere(.05,0xffd54f,8); knob.position.set(inWX(IN_DOOR_TILE.x)+.28,.62,inWZ(0)-.4); interiorGroup.add(knob);
-  /* หน้าต่าง + พรม ให้ห้องไม่โล่งเกินไป (เฟอร์นิเจอร์จริงมาเฟส 3) */
-  const win = box(.9,.7,.12,0xaadcf5); win.position.set(inWX(6),1.2,inWZ(0)-.48); interiorGroup.add(win);
-  const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.15,1.15,.05,20), toonMat(0xf48fb1));
-  rug.position.set(inWX(4),.03,inWZ(3)); rug.receiveShadow = hShadows; interiorGroup.add(rug);
-  const rug2 = new THREE.Mesh(new THREE.CylinderGeometry(.75,.75,.06,20), toonMat(0xffc1d8));
-  rug2.position.set(inWX(4),.05,inWZ(3)); interiorGroup.add(rug2);
+  /* หน้าต่าง + พรม ให้ห้องไม่โล่งเกินไป (เฟอร์นิเจอร์จริงมาเฟส 3)
+     — ผนังหลัง: หน้าต่างห้องนั่งเล่น + ห้องครัว, ผนังซ้าย: หน้าต่างห้องนอน */
+  [inWX(7), inWX(13)].forEach(wx=>{
+    const win = box(.9,.7,.12,0xaadcf5); win.position.set(wx,1.2,inWZ(0)-.48); interiorGroup.add(win);
+  });
+  const winBed = box(.12,.7,.9,0xaadcf5); winBed.position.set(inWX(0)-.48,1.2,inWZ(8)); interiorGroup.add(winBed);
+  /* พรมกลางห้องนั่งเล่น */
+  const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,.05,20), toonMat(0xf48fb1));
+  rug.position.set(inWX(5),.03,inWZ(2.5)); rug.receiveShadow = hShadows; interiorGroup.add(rug);
+  const rug2 = new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,.06,20), toonMat(0xffc1d8));
+  rug2.position.set(inWX(5),.05,inWZ(2.5)); interiorGroup.add(rug2);
+  /* พรมเล็กห้องนอน (ม่วงอ่อน) ให้ห้องมีจุดสนใจก่อนเฟอร์นิเจอร์มา */
+  const rugB = new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,.05,20), toonMat(0xc9b8ec));
+  rugB.position.set(inWX(4.5),.03,inWZ(8)); rugB.receiveShadow = hShadows; interiorGroup.add(rugB);
 
   interiorGroup.visible = false;
   scene.add(interiorGroup);
@@ -622,7 +694,7 @@ function findPath(grid, W, D, from, to){
 const CAM_DIR = new THREE.Vector3(1,1.15,1).normalize();
 function applyCamera(){
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-  if(hMode==='creator'){
+  if(hMode==='creator' || hMode==='pet'){   /* แผงสัตว์เลี้ยงใช้เฟรมกล้องเดียวกับ creator */
     if(!isMobileViewport()){
       /* จอใหญ่: แผงตัวเลือกเป็นการ์ดชิดขวา (ดู .house-creator ใน media query ≥768px)
          → จัดตัวละครเต็มตัวกลางพื้นที่ว่างฝั่งซ้าย ด้วย frustum ซ้าย/ขวาไม่สมมาตร */
@@ -706,9 +778,9 @@ function initThree(){
   dirLight.position.set(6,12,4);
   if(hShadows){
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.set(1024,1024);
+    dirLight.shadow.mapSize.set(2048,2048);
     const sc = dirLight.shadow.camera;
-    sc.left = -12; sc.right = 12; sc.top = 12; sc.bottom = -12; sc.far = 40;
+    sc.left = -17; sc.right = 17; sc.top = 17; sc.bottom = -17; sc.far = 50;
   }
   scene.add(dirLight);
 
@@ -744,14 +816,14 @@ function bindCanvasInput(canvas){
       pinchDist = Math.hypot(a.x-b.x, a.y-b.y);
     }
     downX = e.clientX; downY = e.clientY; downT = performance.now(); moved = false;
-    if(hMode==='creator'){ creatorState.dragging = true; creatorState.lastX = e.clientX; }
+    if(hMode==='creator' || hMode==='pet'){ creatorState.dragging = true; creatorState.lastX = e.clientX; }
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', e=>{
     if(!pointers.has(e.pointerId)) return;
     pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     if(Math.hypot(e.clientX-downX, e.clientY-downY) > 10) moved = true;
-    if(hMode==='creator' && creatorState.dragging && pointers.size===1){
+    if((hMode==='creator' || hMode==='pet') && creatorState.dragging && pointers.size===1){
       creatorState.rotY += (e.clientX - creatorState.lastX) * .012;
       creatorState.rotTarget = creatorState.rotY;
       creatorState.lastX = e.clientX;
@@ -765,7 +837,7 @@ function bindCanvasInput(canvas){
   });
   const endPointer = e=>{
     pointers.delete(e.pointerId);
-    if(hMode==='creator') creatorState.dragging = false;
+    if(hMode==='creator' || hMode==='pet') creatorState.dragging = false;
     if(pointers.size<2) pinchDist = 0;
     if(hMode==='world' && !moved && pointers.size===0 && performance.now()-downT < 600){
       handleTap(e.clientX, e.clientY);
@@ -794,6 +866,7 @@ function handleTap(cx, cy){
     if(hits.length){
       let o = hits[0].object;
       while(o && o !== worldGroup){
+        if(o.userData.hPet){ playWithPet(); return; }
         if(o.userData.hCritter){ startleCritter(o.userData.hCritter); return; }
         if(o.userData.hHouse){ walkTo(DOOR_TILE.x, DOOR_TILE.z, {enter:true}); return; }
         if(o.userData.hTree){
@@ -812,6 +885,7 @@ function handleTap(cx, cy){
       }
     }
   }else{
+    if(hPet.group && raycaster.intersectObject(hPet.group, true).length){ playWithPet(); return; }
     if(interiorDoorMesh && raycaster.intersectObject(interiorDoorMesh, false).length){
       walkTo(IN_DOOR_TILE.x, IN_DOOR_TILE.z, {exit:true}); return;
     }
@@ -897,6 +971,14 @@ function switchScene(to){
     const p = tileWorld(hChar.tile);
     charGroup.position.copy(p);
     camTarget.copy(p);
+    /* สัตว์เลี้ยงตามเข้า/ออกบ้านด้วย: ย้าย group ไปฉากใหม่แล้ววาร์ปมาข้างๆ ตัวเด็ก */
+    if(hPet.group){
+      petParent().add(hPet.group);
+      hPet.tile = tileNearPlayer();
+      hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null; hPet.beh = null;
+      hPet.group.position.copy(tileWorld(hPet.tile));
+      hPet.group.rotation.set(0, hChar.targetRotY, 0);
+    }
     applyCamera();
   });
 }
@@ -965,6 +1047,7 @@ function openCreator(fromWorld){
   $('house-creator').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
+  $('house-pet-btn').hidden = true;
   $('house-hint').hidden = true;
   /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (ดินสอ = ชุดเดียวกับปุ่มแก้ไข, หน้าเด็ก = ชุด row "หนูเป็น...") */
   const _icChild = '<svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg>';
@@ -985,6 +1068,7 @@ function closeCreator(){
   $('house-creator').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
+  $('house-pet-btn').hidden = false;
   creatorGroup.visible = false;
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
   rebuildChar(creatorCfg);
@@ -994,6 +1078,12 @@ function closeCreator(){
   camTarget.copy(p);
   applyCamera();
   showHint();
+  /* ครั้งแรกหลังสร้างตัวละครเสร็จ: ชวนรับเลี้ยงสัตว์ต่อเลย (มีปุ่มข้ามได้ ไม่บังคับ) */
+  const d0 = loadHouseData() || {};
+  if(!creatorState.fromWorld && !d0.pet && !d0.petPromptSeen){
+    saveHouseData({petPromptSeen:true});
+    setTimeout(()=>{ if(houseOpen && hMode==='world') fadeSwap(()=>openPetPicker()); }, 1200);
+  }
 }
 
 function showHint(){
@@ -1006,12 +1096,13 @@ function showHint(){
 /* ---------- เอฟเฟกต์ interaction (เขย่าต้นไม้/ดอกไม้เด้ง + อนุภาคใบไม้ร่วง) ---------- */
 const fxList = [], particles = [];
 let particleGeo = null;
-function spawnParticle(x, y, z, color){
+function spawnParticle(x, y, z, color, parent){
   if(!particleGeo) particleGeo = new THREE.SphereGeometry(.055, 6, 5);
   const m = new THREE.Mesh(particleGeo, toonMat(color));  /* material แชร์จาก cache — animate ที่ scale ไม่แตะ opacity */
   m.position.set(x, y, z);
-  worldGroup.add(m);
-  particles.push({m, vx:(Math.random()-.5)*1.1, vy:.6+Math.random()*.7, vz:(Math.random()-.5)*1.1, life:1.1, max:1.1});
+  const par = parent || worldGroup;       /* หัวใจสัตว์เลี้ยงในบ้านต้องเกาะ interiorGroup */
+  par.add(m);
+  particles.push({m, parent:par, vx:(Math.random()-.5)*1.1, vy:.6+Math.random()*.7, vz:(Math.random()-.5)*1.1, life:1.1, max:1.1});
 }
 function shakeTree(g){
   fxList.push({g, t0:performance.now(), dur:900, kind:'shake'});
@@ -1042,7 +1133,7 @@ function updateFx(now, dt){
   for(let i=particles.length-1; i>=0; i--){
     const p = particles[i];
     p.life -= dt;
-    if(p.life <= 0){ worldGroup.remove(p.m); particles.splice(i,1); continue; }
+    if(p.life <= 0){ (p.parent || worldGroup).remove(p.m); particles.splice(i,1); continue; }
     p.vy -= 3*dt;
     p.m.position.x += p.vx*dt; p.m.position.y += p.vy*dt; p.m.position.z += p.vz*dt;
     if(p.m.position.y < .05) p.m.position.y = .05;
@@ -1052,7 +1143,7 @@ function updateFx(now, dt){
 }
 
 /* ---------- สัตว์ตัวเล็กเดินเข้า-ออกฉาก (นก/กระต่าย/กระรอก) ให้โลกมีชีวิต ---------- */
-const CRITTER_MAX = 4;
+const CRITTER_MAX = 6;               /* เฟส 2: แผนที่กว้างขึ้น เพิ่มสัตว์ป่าได้อีก */
 const critters = [];
 let critterSpawnT = 3;
 let outEdgeTiles = null;
@@ -1194,8 +1285,13 @@ function spawnCritter(){
     critterLine(c, g.position.clone(), critterTileV(land), 3.2, .3);
   }else if(domain==='water'){
     const north = Math.random() < .5;
-    c.water = {xmin:2.15, xmax:3.85, zmin: north ? -6.3 : 1.7, zmax: north ? -1.7 : 6.3, exitZ: north ? -9 : 9};
-    const start = new THREE.Vector3(2.15 + Math.random()*1.7, WATER_Y, c.water.exitZ);
+    /* ขอบเขตน้ำคำนวณจากตำแหน่งแม่น้ำ/สะพานจริง (อย่า hardcode — แผนที่ขยายแล้วค่าเปลี่ยน) */
+    const wx0 = outWX(RIVER_X[0]) - .35, wx1 = outWX(RIVER_X[RIVER_X.length-1]) + .35;
+    c.water = {xmin:wx0, xmax:wx1,
+      zmin: north ? outWZ(0)+.2 : outWZ(BRIDGE_Z[BRIDGE_Z.length-1])+1.2,
+      zmax: north ? outWZ(BRIDGE_Z[0])-1.2 : outWZ(OUT_D-1)-.2,
+      exitZ: north ? outWZ(0)-2.5 : outWZ(OUT_D-1)+2.5};
+    const start = new THREE.Vector3(wx0 + Math.random()*(wx1-wx0), WATER_Y, c.water.exitZ);
     g.position.copy(start);
     critterLine(c, start, randWaterPoint(c.water), c.speed);
   }else{
@@ -1350,11 +1446,357 @@ function updateCritters(dt, t){
   }
 }
 
+/* ---------- สัตว์เลี้ยง (เฟส 2) — เลือกเลี้ยง 1 ตัว (ไม่บังคับ) ตั้งชื่อได้ เดินตามตัวละคร
+   แตะตัวสัตว์ = เล่นด้วยกัน (กระโดดดีใจ+หัวใจ) ตอนตัวละครหยุด สัตว์จะนั่งคอย/เดินวนใกล้ๆ/
+   กระโดดเอง/ส่ง emoji น่ารักๆ สลับกันไป ---------- */
+const PET_TYPES = [
+  {id:'dog',     emoji:'🐶', label:'หมาน้อย',   def:'บราวนี่'},
+  {id:'cat',     emoji:'🐱', label:'แมวเหมียว', def:'โมจิ'},
+  {id:'rabbit',  emoji:'🐰', label:'กระต่าย',   def:'ปุยฝ้าย'},
+  {id:'chick',   emoji:'🐥', label:'ลูกเจี๊ยบ',  def:'ไข่หวาน'},
+  {id:'hamster', emoji:'🐹', label:'แฮมสเตอร์', def:'ข้าวปั้น'},
+  {id:'turtle',  emoji:'🐢', label:'เต่าน้อย',   def:'เต้าหู้'},
+];
+const PET_SPEED = {dog:3.6, cat:3.4, rabbit:3.5, chick:3.1, hamster:3.3, turtle:2.4};
+const PET_IDLE_EMOJI = ['❤️','⭐','🎵','😊','🦋','💤'];
+const hPet = {cfg:null, group:null, tile:null, path:[], seg:0, segT:0, segFrom:null,
+              t:0, repathT:0, behT:2.5, beh:null, behK:0, happy:0, happyDur:1, spin:false,
+              sitK:0, bubbleTimer:null};
+
+function petTypeInfo(id){ return PET_TYPES.find(p=>p.id===id) || PET_TYPES[0]; }
+function curGridInfo(){
+  return hScene==='out' ? {grid:outGrid, W:OUT_W, D:OUT_D} : {grid:inGrid, W:IN_W, D:IN_D};
+}
+function petParent(){ return hScene==='out' ? worldGroup : interiorGroup; }
+
+function addPetCollar(g, y, r){
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(r, .022, 6, 14), toonMat(0xe53935));
+  collar.rotation.x = Math.PI/2; collar.position.y = y; collar.castShadow = hShadows;
+  g.add(collar);
+}
+/* โมเดลสัตว์เลี้ยงสไตล์เดียวกับ critter (บล็อกมน ไม่มีขา เด้งตามจังหวะ) + ปลอกคอแดง
+   ให้แยกออกจากสัตว์ป่าที่เดินผ่านไปมา */
+function buildPet(type){
+  const g = new THREE.Group(); const u = {};
+  if(type==='dog'){
+    const c = 0xd7a86e;
+    const body = box(.28,.2,.36,c); body.position.y = .16; g.add(body);
+    const head = box(.22,.19,.2,c); head.position.set(0,.33,.24); g.add(head);
+    const muzzle = box(.1,.07,.05,0xf3e0c2); muzzle.position.set(0,.29,.35); g.add(muzzle);
+    const nose = sphere(.022,0x5d4037,6); nose.position.set(0,.315,.37); g.add(nose);
+    [-1,1].forEach(s=>{
+      const ear = box(.05,.15,.04,0xb98a52); ear.position.set(.105*s,.36,.2); ear.rotation.z = .5*s; g.add(ear);
+      const eye = sphere(.02,0x33261d,6); eye.position.set(.06*s,.36,.34); g.add(eye);
+    });
+    const tail = box(.05,.24,.05,c); tail.rotation.x = -.8; tail.position.set(0,.28,-.2); g.add(tail); u.tail = tail;
+    addPetCollar(g, .26, .12);
+  }else if(type==='cat'){
+    const c = 0xffb74d;
+    const body = box(.22,.18,.36,c); body.position.y = .15; g.add(body);
+    const head = box(.2,.17,.16,c); head.position.set(0,.32,.2); g.add(head);
+    [-1,1].forEach(s=>{ const ear = new THREE.Mesh(new THREE.ConeGeometry(.045,.09,4), toonMat(c));
+      ear.castShadow = hShadows; ear.position.set(.07*s,.44,.18); g.add(ear); });
+    const tail = box(.05,.3,.05,c); tail.rotation.x = -.6; tail.position.set(0,.26,-.3); g.add(tail); u.tail = tail;
+    const muzzle = box(.08,.05,.03,0xfff3e0); muzzle.position.set(0,.28,.285); g.add(muzzle);
+    const nose = sphere(.016,0xe57373,6); nose.position.set(0,.31,.29); g.add(nose);
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x2e7d32,6); eye.position.set(.06*s,.34,.285); g.add(eye); });
+    addPetCollar(g, .25, .11);
+  }else if(type==='rabbit'){
+    const c = 0xf7f3ee;
+    const body = box(.26,.2,.32,c); body.position.y = .16; g.add(body);
+    const head = box(.2,.18,.18,c); head.position.set(0,.32,.16); g.add(head);
+    [-1,1].forEach(s=>{
+      const ear = box(.055,.2,.05,c); ear.position.set(.055*s,.5,.13); g.add(ear);
+      const inner = box(.025,.12,.02,0xf4b8c8); inner.position.set(.055*s,.49,.156); g.add(inner);
+      const eye = sphere(.02,0x33261d,6); eye.position.set(.06*s,.35,.245); g.add(eye);
+    });
+    const tail = sphere(.07,0xffffff,8); tail.position.set(0,.18,-.18); g.add(tail);
+    const nose = sphere(.025,0xf48fb1,6); nose.position.set(0,.31,.26); g.add(nose);
+    addPetCollar(g, .25, .11);
+  }else if(type==='chick'){
+    const c = 0xffe082;
+    const body = sphere(.13,c,10); body.scale.set(1,1.05,1); body.position.y = .15; g.add(body);
+    const head = sphere(.1,c,10); head.position.set(0,.32,.05); g.add(head); u.head = head;
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(.025,.07,6), toonMat(0xf5a623));
+    beak.castShadow = hShadows; beak.rotation.x = Math.PI/2; beak.position.set(0,.31,.16); g.add(beak);
+    u.wings = [-1,1].map(s=>{
+      const w = box(.04,.09,.12,0xffd54f); w.position.set(.125*s,.16,0); g.add(w); return w;
+    });
+    [-1,1].forEach(s=>{ const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.34,.12); g.add(eye); });
+    addPetCollar(g, .21, .09);
+  }else if(type==='hamster'){
+    const c = 0xffcc80;
+    const body = sphere(.16,c,10); body.scale.set(1,.85,1.05); body.position.y = .14; g.add(body);
+    [-1,1].forEach(s=>{
+      const ear = sphere(.035,0xefb36a,6); ear.position.set(.07*s,.28,.05); g.add(ear);
+      const cheek = sphere(.045,0xfff3e0,6); cheek.position.set(.078*s,.15,.13); g.add(cheek);
+      const eye = sphere(.018,0x33261d,6); eye.position.set(.05*s,.2,.15); g.add(eye);
+    });
+    const nose = sphere(.018,0xf48fb1,6); nose.position.set(0,.17,.18); g.add(nose);
+    const tail = sphere(.03,0xefb36a,6); tail.position.set(0,.12,-.16); g.add(tail);
+    addPetCollar(g, .18, .105);
+  }else{ /* turtle */
+    const shell = sphere(.17,0x66a15c,10); shell.scale.set(1,.62,1.15); shell.position.y = .14; g.add(shell);
+    const shellTop = sphere(.12,0x4e8a4a,10); shellTop.scale.set(1,.5,1.1); shellTop.position.y = .2; g.add(shellTop);
+    const head = sphere(.07,0x9ccc65,8); head.position.set(0,.13,.24); g.add(head); u.head = head;
+    [-1,1].forEach(s=>{ const eye = sphere(.016,0x33261d,6); eye.position.set(.04*s,.16,.29); g.add(eye); });
+    [[-.11,.12],[.11,.12],[-.11,-.12],[.11,-.12]].forEach(([lx,lz])=>{
+      const leg = box(.06,.05,.08,0x9ccc65); leg.position.set(lx,.04,lz); g.add(leg);
+    });
+  }
+  g.userData.hPet = true;              /* tag ที่ group — ancestor walk ตอน raycast เจอแน่ */
+  g.userData.anim = u;
+  return g;
+}
+
+function tileNearPlayer(){
+  const {grid,W,D} = curGridInfo();
+  const t = hChar.tile;
+  for(const [dx,dz] of [[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){
+    if(isWalk(grid,W,D,t.x+dx,t.z+dz)) return {x:t.x+dx, z:t.z+dz};
+  }
+  return {x:t.x, z:t.z};
+}
+function spawnPet(cfg){
+  removePetGroup();
+  hPet.cfg = cfg;
+  hPet.group = buildPet(cfg.type);
+  hPet.tile = tileNearPlayer();
+  hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
+  hPet.happy = 0; hPet.spin = false; hPet.sitK = 0; hPet.beh = null;
+  hPet.behT = 2 + Math.random()*2; hPet.repathT = 0;
+  hPet.group.position.copy(tileWorld(hPet.tile));
+  petParent().add(hPet.group);
+}
+function removePetGroup(){
+  if(hPet.group){
+    if(hPet.group.parent) hPet.group.parent.remove(hPet.group);
+    disposeGroup(hPet.group);
+    hPet.group = null;
+  }
+  hPet.cfg = null;
+  const nameEl = $('house-pet-name'), bubEl = $('house-pet-bubble');
+  if(nameEl) nameEl.hidden = true;
+  if(bubEl) bubEl.classList.remove('on');
+}
+function petPathTo(target){
+  const {grid,W,D} = curGridInfo();
+  const t = nearestWalkable(grid, W, D, target.x, target.z);
+  const path = t && findPath(grid, W, D, hPet.tile, t);
+  if(!path || !path.length) return false;
+  hPet.path = path; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = {...hPet.tile};
+  return true;
+}
+function petBubble(txt){
+  const el = $('house-pet-bubble');
+  el.textContent = txt;
+  el.classList.remove('on'); void el.offsetWidth;   /* restart pop animation */
+  el.classList.add('on');
+  clearTimeout(hPet.bubbleTimer);
+  hPet.bubbleTimer = setTimeout(()=>el.classList.remove('on'), 1700);
+}
+function petHappy(dur, spin){
+  hPet.happy = dur; hPet.happyDur = dur; hPet.spin = !!spin; hPet.beh = null;
+}
+/* แตะตัวสัตว์เลี้ยง = เล่นด้วยกัน: หันหน้าเข้าหากัน กระโดดหมุนตัวดีใจ + หัวใจฟุ้ง */
+function playWithPet(){
+  if(!hPet.group) return;
+  if(typeof playClick==='function') playClick();
+  hPet.path = [];
+  petHappy(1.1, true);
+  petBubble(Math.random()<.5 ? '❤️' : '💖');
+  if(charGroup){
+    hPet.group.rotation.y = Math.atan2(charGroup.position.x-hPet.group.position.x, charGroup.position.z-hPet.group.position.z);
+    hChar.targetRotY = Math.atan2(hPet.group.position.x-charGroup.position.x, hPet.group.position.z-charGroup.position.z);
+  }
+  for(let i=0; i<6; i++){
+    spawnParticle(hPet.group.position.x+(Math.random()-.5)*.5, .5+Math.random()*.4,
+                  hPet.group.position.z+(Math.random()-.5)*.5, i%2 ? 0xf06292 : 0xff8fb3, petParent());
+  }
+}
+
+function updatePet(dt){
+  if(!hPet.group || hMode!=='world') return;
+  hPet.t += dt;
+  const u = hPet.group.userData.anim || {};
+  const type = hPet.cfg.type;
+  let moving = false;
+
+  /* เดินตามตัวละคร: ถ้าเด็กกำลังเดินหรืออยู่ไกลเกิน 2 ช่อง วิ่งไปหาช่องข้างๆ ตัวเด็ก */
+  const pTile = hChar.tile;
+  const dist = Math.max(Math.abs(pTile.x-hPet.tile.x), Math.abs(pTile.z-hPet.tile.z));
+  hPet.repathT -= dt;
+  const following = hChar.walking || dist > 2;
+  if(following && hPet.repathT <= 0){
+    hPet.repathT = .35;
+    petPathTo(tileNearPlayer());
+    hPet.beh = null;
+  }
+
+  if(hPet.path.length){
+    const from = hPet.segFrom || hPet.tile, to = hPet.path[hPet.seg];
+    hPet.segT += dt * (PET_SPEED[type] || 3.3);
+    const k = Math.min(1, hPet.segT);
+    hPet.group.position.lerpVectors(tileWorld(from), tileWorld(to), k);
+    if(from.x!==to.x || from.z!==to.z) hPet.group.rotation.y = Math.atan2(to.x-from.x, to.z-from.z);
+    moving = true;
+    if(k>=1){
+      hPet.segT = 0; hPet.tile = to; hPet.segFrom = to; hPet.seg++;
+      if(hPet.seg >= hPet.path.length){ hPet.path = []; hPet.behT = Math.min(hPet.behT, 1.2 + Math.random()*1.5); }
+    }
+  }else if(!following){
+    /* อยู่ใกล้เด็กและเด็กหยุดเดิน: สุ่มพฤติกรรมน่ารักๆ เป็นจังหวะ */
+    hPet.behT -= dt;
+    if(hPet.behT <= 0){
+      const r = Math.random();
+      if(r < .3){ hPet.beh = 'sit'; hPet.behK = 2.5 + Math.random()*2; }          /* นั่งคอย */
+      else if(r < .55){                                                            /* เดินวนใกล้ๆ ตัวเด็ก */
+        hPet.beh = null;
+        const {grid,W,D} = curGridInfo();
+        for(let i=0; i<8; i++){
+          const nx = pTile.x + ((Math.random()*5)|0) - 2, nz = pTile.z + ((Math.random()*5)|0) - 2;
+          if((nx!==hPet.tile.x || nz!==hPet.tile.z) && isWalk(grid,W,D,nx,nz)){ petPathTo({x:nx, z:nz}); break; }
+        }
+      }
+      else if(r < .8){ petHappy(.9, Math.random()<.35); if(Math.random()<.5) petBubble('😊'); } /* กระโดดดีใจ */
+      else { hPet.beh = null; petBubble(PET_IDLE_EMOJI[(Math.random()*PET_IDLE_EMOJI.length)|0]); }
+      hPet.behT = 3 + Math.random()*3.5;
+    }
+    if(hPet.beh==='sit'){
+      hPet.behK -= dt;
+      if(hPet.behK <= 0) hPet.beh = null;
+    }
+  }
+
+  /* ท่านั่งคอย: เอนตัวตั้งขึ้นนุ่มๆ (เต่า = หดหัวเข้ากระดองแทน น่ารักคนละแบบ) */
+  const sitTarget = (hPet.beh==='sit' && !moving) ? 1 : 0;
+  hPet.sitK += (sitTarget - hPet.sitK) * Math.min(1, dt*6);
+  if(type==='turtle'){
+    if(u.head) u.head.scale.setScalar(1 - hPet.sitK*.75);
+    hPet.group.rotation.x = 0;
+  }else{
+    hPet.group.rotation.x = -.42 * hPet.sitK;
+  }
+
+  /* เด้งตอนเดินตามชนิด + กระโดดดีใจ (arc เดียวจบ ไม่ค้าง) */
+  let y = 0;
+  if(moving){
+    y = ({dog:.09, cat:.05, rabbit:.14, chick:.07, hamster:.06, turtle:.02})[type] * Math.abs(Math.sin(hPet.t*10));
+  }
+  if(hPet.happy > 0){
+    hPet.happy -= dt;
+    const hk = Math.min(1, 1 - hPet.happy/hPet.happyDur);
+    y += Math.sin(hk*Math.PI)*.42;
+    if(hPet.spin) hPet.group.rotation.y += dt*9;
+    if(hPet.happy <= 0){ hPet.happy = 0; hPet.spin = false; }
+  }
+  hPet.group.position.y = y + hPet.sitK*.05;
+  if(u.tail) u.tail.rotation.z = Math.sin(hPet.t*(moving?12:5))*.3;
+  if(u.wings) u.wings.forEach((w,i)=>{ w.rotation.z = (moving || hPet.happy>0) ? Math.sin(hPet.t*18)*.6*(i?1:-1) : 0; });
+  if(type==='chick' && u.head && !moving) u.head.rotation.x = Math.max(0, Math.sin(hPet.t*4))*.4; /* จิกพื้นเล่น */
+}
+
+/* ป้ายชื่อ + bubble emoji ของสัตว์เลี้ยง (DOM ลอยตามตำแหน่ง 3D แบบเดียวกับชื่อเด็ก) */
+const _petV = new THREE.Vector3();
+function updatePetLabels(){
+  const nameEl = $('house-pet-name'), bubEl = $('house-pet-bubble');
+  if(!hPet.group || !houseOpen || hMode!=='world'){
+    nameEl.hidden = true;
+    return;
+  }
+  _petV.set(hPet.group.position.x, hPet.group.position.y + .8, hPet.group.position.z).project(camera);
+  const px = (_petV.x+1)/2*window.innerWidth, py = (1-_petV.y)/2*window.innerHeight;
+  nameEl.style.left = px.toFixed(1)+'px';
+  nameEl.style.top = py.toFixed(1)+'px';
+  nameEl.textContent = '🐾 ' + hPet.cfg.name;
+  nameEl.hidden = false;
+  bubEl.style.left = px.toFixed(1)+'px';
+  bubEl.style.top = (py-28).toFixed(1)+'px';
+}
+
+/* ---------- แผงเลือกสัตว์เลี้ยง (hMode 'pet') — reuse แท่นกลม/กล้อง/ปุ่มหมุนของ creator ---------- */
+let petPreview = null, petPickerType = null, petNameDirty = false;
+function rebuildPetPreview(){
+  if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); }
+  petPreview = buildPet(petPickerType);
+  petPreview.scale.setScalar(3);          /* สัตว์ตัวจิ๋ว ขยายให้เต็มเฟรมพรีวิวพอๆ ตัวละคร */
+  petPreview.rotation.y = creatorState.rotY;
+  scene.add(petPreview);
+}
+function buildPetChips(){
+  const wrap = $('house-pet-chips');
+  wrap.innerHTML = '';
+  PET_TYPES.forEach(p=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'house-chip house-pet-chip' + (p.id===petPickerType ? ' active' : '');
+    b.innerHTML = '<span class="house-pet-chip-emoji">'+p.emoji+'</span><span class="house-pet-chip-name">'+p.label+'</span>';
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      petPickerType = p.id;
+      wrap.querySelectorAll('.house-chip').forEach(c=>c.classList.remove('active'));
+      b.classList.add('active');
+      if(!petNameDirty) $('house-pet-name-input').value = p.def;
+      rebuildPetPreview();
+    });
+    wrap.appendChild(b);
+  });
+}
+function openPetPicker(){
+  hMode = 'pet';
+  creatorState.rotY = 0; creatorState.rotTarget = 0;
+  const data = loadHouseData() || {};
+  petPickerType = (data.pet && data.pet.type) || 'dog';
+  petNameDirty = !!data.pet;              /* มีชื่อเดิมอยู่ = อย่าเขียนทับตอนสลับชนิด */
+  $('house-pet-name-input').value = data.pet ? data.pet.name : petTypeInfo(petPickerType).def;
+  $('house-pet-picker').hidden = false;
+  $('house-rotate-wrap').hidden = false;
+  $('house-edit-btn').hidden = true;
+  $('house-pet-btn').hidden = true;
+  $('house-hint').hidden = true;
+  $('house-pet-remove').hidden = !data.pet;
+  $('house-pet-done').textContent = data.pet ? 'บันทึกเลย 💕' : 'รับเลี้ยงเลย 💕';
+  worldGroup.visible = false; interiorGroup.visible = false;
+  creatorGroup.visible = true;
+  if(charGroup) charGroup.visible = false;
+  buildPetChips();
+  rebuildPetPreview();
+  applyCamera();
+}
+function closePetPicker(kind){
+  if(kind==='adopt'){
+    const name = ($('house-pet-name-input').value || '').trim().slice(0,14) || petTypeInfo(petPickerType).def;
+    saveHouseData({pet:{type:petPickerType, name}});
+  }else if(kind==='remove'){
+    saveHouseData({pet:null});
+  }
+  hMode = 'world';
+  $('house-pet-picker').hidden = true;
+  $('house-rotate-wrap').hidden = true;
+  $('house-edit-btn').hidden = false;
+  $('house-pet-btn').hidden = false;
+  creatorGroup.visible = false;
+  if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
+  worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
+  if(charGroup) charGroup.visible = true;
+  const data = loadHouseData() || {};
+  if(kind==='adopt'){
+    spawnPet(data.pet);
+    if(typeof showToast==='function') showToast('🐾', data.pet.name+' มาอยู่กับหนูแล้ว! แตะตัวน้อยๆ เพื่อเล่นด้วยกันนะ');
+    setTimeout(()=>{ if(hPet.group && houseOpen) petBubble('❤️'); }, 800);
+  }else if(kind==='remove'){
+    removePetGroup();
+    if(typeof showToast==='function') showToast('🌿', 'ส่งเพื่อนตัวน้อยกลับธรรมชาติแล้ว');
+  }
+  if(charGroup){ camTarget.copy(charGroup.position); }
+  applyCamera();
+}
+
 /* ---------- ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว ---------- */
 const _nameV = new THREE.Vector3();
 function updateNameLabel(){
   const el = $('house-char-name');
-  if(!charGroup || !houseOpen){ el.hidden = true; return; }
+  if(!charGroup || !houseOpen || !charGroup.visible){ el.hidden = true; return; }
   _nameV.set(charGroup.position.x, charGroup.position.y + 2.05, charGroup.position.z).project(camera);
   el.style.left = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
   el.style.top = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
@@ -1371,12 +1813,17 @@ function frame(t){
   updateLightLerp(dt);
   const u = charGroup && charGroup.userData;
 
-  if(hMode==='creator'){
+  if(hMode==='creator' || hMode==='pet'){
     /* ไม่มี auto-rotate (ผู้ใช้ขอเอาออก) — หมุนนุ่มๆ เข้าหามุมจากปุ่ม ↺/↻ หรือหมุนตามนิ้วลากตรงๆ */
     if(!creatorState.dragging){
       creatorState.rotY += (creatorState.rotTarget - creatorState.rotY) * Math.min(1, dt*9);
     }
-    if(charGroup){
+    if(hMode==='pet'){
+      if(petPreview){
+        petPreview.rotation.y = creatorState.rotY;
+        petPreview.position.y = Math.sin(t*.0022)*.04;   /* ลอยหายใจเบาๆ แบบเดียวกับตัวละคร */
+      }
+    }else if(charGroup){
       charGroup.rotation.y = creatorState.rotY;
       /* ท่ายืนหายใจเบาๆ ให้ดูมีชีวิต */
       if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03; u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03; }
@@ -1420,8 +1867,10 @@ function frame(t){
     applyCamera();
     updateCritters(dt, t);
     updateFx(t, dt);
+    updatePet(dt);
   }
   updateNameLabel();
+  updatePetLabels();
   renderer.render(scene, camera);
 }
 
@@ -1458,25 +1907,36 @@ function startHouseGame(){
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   const data = loadHouseData();
+  if(childChanged) removePetGroup();      /* สัตว์เลี้ยงของเด็กคนก่อนต้องไม่ติดมาฉากเด็กคนใหม่ */
   if(!data || !data.char){
     openCreator(false);
   }else{
-    /* กดย้อนกลับค้างไว้ตอนอยู่ใน creator แล้วเข้าใหม่: openCreator เคยปิด worldGroup
-       และ rebuildChar เป็นหน้าตาพรีวิวที่ยังไม่ save — ต้อง restore ฉาก + ตัวละครจากที่ save จริงเสมอ */
-    const wasCreator = hMode === 'creator';
+    /* กดย้อนกลับค้างไว้ตอนอยู่ใน creator/แผงสัตว์เลี้ยงแล้วเข้าใหม่: เคยปิด worldGroup
+       และ rebuild เป็นหน้าตาพรีวิวที่ยังไม่ save — ต้อง restore ฉาก + ตัวละครจากที่ save จริงเสมอ */
+    const wasCreator = hMode === 'creator' || hMode === 'pet';
     hMode = 'world';
     $('house-creator').hidden = true;
+    $('house-pet-picker').hidden = true;
     $('house-rotate-wrap').hidden = true;
     $('house-edit-btn').hidden = false;
+    $('house-pet-btn').hidden = false;
+    if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
     creatorGroup.visible = false;
     worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
     if(childChanged || wasCreator || !charGroup) rebuildChar(data.char);
+    charGroup.visible = true;
     const p = tileWorld(hChar.tile);
     charGroup.position.copy(p);
     charGroup.rotation.y = hChar.targetRotY;
     camTarget.copy(p);
     applyCamera();
     showHint();
+    /* สัตว์เลี้ยงของเด็กคนปัจจุบัน: ข้อมูลเปลี่ยน = สร้างใหม่ตามที่ save จริง */
+    if(data.pet){
+      if(!hPet.group || !hPet.cfg || hPet.cfg.type!==data.pet.type || hPet.cfg.name!==data.pet.name) spawnPet(data.pet);
+    }else{
+      removePetGroup();
+    }
   }
   lastT = performance.now();
   rafId = requestAnimationFrame(frame);
@@ -1488,6 +1948,8 @@ function stopHouseGame(){
   document.body.classList.remove('house-open');
   houseView.hidden = true;
   $('house-char-name').hidden = true;
+  $('house-pet-name').hidden = true;
+  $('house-pet-bubble').classList.remove('on');
   homeView.hidden = false;
 }
 
@@ -1518,6 +1980,23 @@ $('house-done-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   fadeSwap(()=>closeCreator());
 });
+$('house-pet-btn').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  if(hMode==='world') fadeSwap(()=>openPetPicker());
+});
+$('house-pet-done').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  fadeSwap(()=>closePetPicker('adopt'));
+});
+$('house-pet-skip').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  fadeSwap(()=>closePetPicker(null));
+});
+$('house-pet-remove').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  fadeSwap(()=>closePetPicker('remove'));
+});
+$('house-pet-name-input').addEventListener('input', ()=>{ petNameDirty = true; });
 HOUSE_CTRL_PROXY.forEach(([hid,sid])=>{
   $(hid).addEventListener('click', ()=>{
     $(sid).click();
