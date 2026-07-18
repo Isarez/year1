@@ -136,6 +136,11 @@
       <p class="cat-section-note">🔄 โจทย์สุ่มหลากหลาย เล่นซ้ำได้เรื่อยๆ ไม่มีเบื่อ!</p>
       <div class="cat-grid" id="cat-grid-listen"></div>
     </div>
+    <div class="cat-section">
+      <div class="cat-section-title"><img src="assets/icons/section-write.svg" class="cst-icon" alt=""> เกมฝึกเขียน</div>
+      <p class="cat-section-note">✍️ ลากเส้นต่อจุดตามตัวเลข ฝึกกล้ามเนื้อมือก่อนหัดเขียนจริง!</p>
+      <div class="cat-grid" id="cat-grid-write"></div>
+    </div>
   </section>
 
   <!-- QUIZ VIEW -->
@@ -196,6 +201,34 @@
         <div class="shadow-prompt" id="shadow-prompt">🐘</div>
       </div>
       <div class="shadow-choices" id="shadow-choices"></div>
+    </div>
+  </section>
+
+  <!-- CONNECT DOTS VIEW (เกมลากเส้นต่อจุด 1/2) -->
+  <section id="dots-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="dots-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="dots-cat-label">ลากเส้นต่อจุด</div>
+        <div class="progress-track"><div class="progress-fill" id="dots-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="dots-hint">✏️ แตะจุดหมายเลข 1 ค้างไว้ แล้วลากเส้นไปหาจุดต่อไปตามตัวเลขนะ!</div>
+      </div>
+      <div class="q-counter" id="dots-level-counter">1/10</div>
+    </div>
+    <div class="dots-board">
+      <div class="dots-stage-card">
+        <div class="dots-stage" id="dots-stage">
+          <svg id="dots-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon id="dots-fill" points="" fill="transparent"></polygon>
+            <g id="dots-lines"></g>
+            <line id="dots-temp" x1="0" y1="0" x2="0" y2="0" hidden></line>
+          </svg>
+          <div class="dots-reveal" id="dots-reveal" hidden>
+            <div class="dots-reveal-emoji" id="dots-reveal-emoji"></div>
+            <div class="dots-reveal-name" id="dots-reveal-name"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 

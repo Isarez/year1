@@ -1,0 +1,35 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ลากเส้นต่อจุด 1">
+  <defs>
+    <linearGradient id="dt1P" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd9a8"/>
+      <stop offset="1" stop-color="#f08a24"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="19" ry="3.5" fill="#000" opacity="0.09"/>
+
+  <!-- เส้นประรูปดาวที่ต่อแล้วบางส่วน -->
+  <path d="M30 8 L39 34 L14 18" fill="none" stroke="#f08a24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 18 L46 18 L21 34" fill="none" stroke="#f5b56b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1.5 4.5"/>
+
+  <!-- จุดตัวเลข -->
+  <g font-family="Arial, sans-serif" font-size="6.5" font-weight="bold" text-anchor="middle">
+    <circle cx="30" cy="8" r="5.6" fill="#fff" stroke="#f08a24" stroke-width="2.4"/>
+    <text x="30" y="10.4" fill="#b05e08">1</text>
+    <circle cx="39" cy="34" r="5.6" fill="#fff" stroke="#f08a24" stroke-width="2.4"/>
+    <text x="39" y="36.4" fill="#b05e08">2</text>
+    <circle cx="14" cy="18" r="5.6" fill="#ffe9ce" stroke="#f08a24" stroke-width="2.4"/>
+    <text x="14" y="20.4" fill="#b05e08">3</text>
+    <circle cx="46" cy="18" r="5.6" fill="#fff" stroke="#f5b56b" stroke-width="2.4"/>
+    <text x="46" y="20.4" fill="#cf9146">4</text>
+    <circle cx="21" cy="34" r="5.6" fill="#fff" stroke="#f5b56b" stroke-width="2.4"/>
+    <text x="21" y="36.4" fill="#cf9146">5</text>
+  </g>
+
+  <!-- ดินสอ -->
+  <g transform="rotate(38 47 46)">
+    <rect x="42" y="40" width="10" height="16" rx="1.6" fill="url(#dt1P)" stroke="#c96f10" stroke-width="2"/>
+    <path d="M42 56 L47 63.5 L52 56 Z" fill="#ffe3b8" stroke="#c96f10" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M45.4 59.5 L47 63.5 L48.6 59.5 Z" fill="#7a5230"/>
+    <rect x="42" y="37" width="10" height="4.6" rx="1.6" fill="#ff9db8" stroke="#c96f10" stroke-width="2"/>
+  </g>
+</svg>
