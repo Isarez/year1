@@ -60,20 +60,33 @@ const BRIDGE_Z = [9,10];
 const HOUSE_FOOT = {x0:3, x1:6, z0:3, z1:5};
 const DOOR_TILE = {x:5, z:6};          /* ช่องหญ้าหน้าประตูบ้าน */
 const SPAWN_TILE = {x:9, z:11};
-const TREES = [[1,3],[1,12],[3,17],[8,2],[9,15],[12,5],[13,12],[14,2],[6,13],[20,3],
-               [22,8],[24,15],[19,16],[21,12],[24,2],[2,8],[11,18],[15,16]];
-const FLOWERS = [[8,5],[10,9],[2,10],[19,10],[15,4],[6,16],[18,13],[7,1],[23,5],[12,16],[4,7],[22,17]];
+const TREES = [[3,11],[1,12],[3,17],[12,2],[9,15],[12,5],[13,12],[14,2],[6,13],[20,3],
+               [22,8],[24,15],[19,16],[21,12],[24,2],[13,17],[11,18],[15,16]];
+const FLOWERS = [[8,5],[10,9],[2,10],[19,10],[15,4],[6,16],[18,13],[11,3],[23,5],[12,16],[4,7],[22,17]];
 
-/* ---------- ห้องในบ้าน (เฟส 2: 16×11 แบ่ง 4 ห้อง — กว้างเผื่อวางเฟอร์นิเจอร์เฟส 3) ----------
-   ผังห้อง: กำแพงกั้นแนวนอนที่ z=5 + แนวตั้งที่ x=10 (กำแพงเตี้ย .95 มองข้ามได้ ไม่บังตัวละคร)
-   ├ ห้องนั่งเล่น (x0-9, z0-4 มีประตูเข้าบ้าน)  ├ ห้องครัว (x11-15, z0-4)
-   ├ ห้องนอน (x0-9, z6-10)                     ├ ห้องน้ำ (x11-15, z6-10)
-   ช่องประตูระหว่างห้อง: แถว z=5 เว้น x 2-3 (นั่งเล่น↔นอน) และ x 12-13 (ครัว↔น้ำ)
-   คอลัมน์ x=10 เว้น z 1-2 (นั่งเล่น↔ครัว) และ z 8-9 (นอน↔น้ำ) */
-const IN_W = 16, IN_D = 11;
+/* บริเวณบ้าน: รั้วไม้ครีมล้อมสนามรอบบ้าน มีช่องประตูรั้วตรงแนวทางเดินหิน + บ้านสัตว์เลี้ยงในสนาม
+   (ต้นไม้/ดอกไม้ที่เคยทับแนวรั้ว [1,3],[8,2],[2,8],[7,1] ถูกย้ายออกไปนอกสนามแล้ว) */
+const YARD = {x0:1, x1:9, z0:1, z1:8};
+const GATE_TILE = {x:5, z:8};            /* ช่องรั้วเปิด (x เดียวกับ DOOR_TILE ให้ทางเดินหินทะลุ) */
+const PET_HOUSE_TILE = {x:8, z:3};       /* ในสนาม ข้างขวาบ้านใหญ่ */
+function isFenceTile(x, z){
+  const edge = ((x===YARD.x0 || x===YARD.x1) && z>=YARD.z0 && z<=YARD.z1) ||
+               ((z===YARD.z0 || z===YARD.z1) && x>=YARD.x0 && x<=YARD.x1);
+  return edge && !(x===GATE_TILE.x && z===GATE_TILE.z);
+}
+
+/* ---------- ห้องในบ้าน (20×14 แบ่ง 4 ห้อง ขนาดสมส่วนตามการใช้งาน — กว้างเผื่อเฟอร์นิเจอร์เฟส 3) ----------
+   กำแพงกั้นแนวนอนที่ z=7 + แนวตั้ง "คนละแนว" บน/ล่าง (กำแพงเตี้ย .95 มองข้ามได้ ไม่บังตัวละคร)
+   ├ ห้องนั่งเล่น (x0-11, z0-6 ใหญ่สุด มีประตูเข้าบ้าน)  ├ ห้องครัว (x13-19, z0-6 กลาง)
+   ├ ห้องนอน (x0-13, z8-13 ใหญ่รอง)                    ├ ห้องน้ำ (x15-19, z8-13 เล็กสุด)
+   ช่องประตูระหว่างห้อง: แถว z=7 เว้น x 3-4 (นั่งเล่น↔นอน) และ x 16-17 (ครัว↔น้ำ)
+   คอลัมน์บน x=12 เว้น z 2-3 (นั่งเล่น↔ครัว), คอลัมน์ล่าง x=14 เว้น z 10-11 (นอน↔น้ำ) */
+const IN_W = 20, IN_D = 14;
 const IN_DOOR_TILE = {x:4, z:0};
-const IN_WALL_ROW = 5, IN_WALL_COL = 10;
-const IN_ROW_GAPS = [2,3,12,13], IN_COL_GAPS = [1,2,8,9];
+const IN_WALL_ROW = 7;
+const IN_COL_TOP = 12, IN_COL_BOT = 14;  /* กำแพงแนวตั้งครึ่งบน/ครึ่งล่าง คนละแนว ให้ขนาดห้องต่างกัน */
+const IN_ROW_GAPS = [3,4,16,17];
+const IN_COL_TOP_GAPS = [2,3], IN_COL_BOT_GAPS = [10,11];
 /* สีพื้นแต่ละห้อง (คู่สลับ checker อ่อน/เข้ม) ให้เด็กแยกห้องออกด้วยสายตา */
 const IN_ROOM_FLOORS = {
   living:  [0xe6bc7f, 0xd9a967],   /* ไม้ส้มอบอุ่น (เดิม) */
@@ -82,8 +95,8 @@ const IN_ROOM_FLOORS = {
   bath:    [0xcdeee0, 0xb5e0cd],   /* มินต์ห้องน้ำ */
 };
 function roomOf(x, z){
-  return z <= IN_WALL_ROW ? (x <= IN_WALL_COL ? 'living' : 'kitchen')
-                          : (x <= IN_WALL_COL ? 'bed' : 'bath');
+  return z <= IN_WALL_ROW ? (x <= IN_COL_TOP ? 'living' : 'kitchen')
+                          : (x <= IN_COL_BOT ? 'bed' : 'bath');
 }
 
 /* ---------- state ---------- */
@@ -419,6 +432,11 @@ function buildOutGrid(){
     grid.push(row);
   }
   TREES.forEach(([x,z])=>{ grid[z][x] = 3; });
+  /* รั้วรอบสนามบล็อกเดิน (เว้นช่องประตูรั้ว) + บ้านสัตว์เลี้ยง */
+  for(let z=YARD.z0; z<=YARD.z1; z++) for(let x=YARD.x0; x<=YARD.x1; x++){
+    if(isFenceTile(x,z)) grid[z][x] = 3;
+  }
+  grid[PET_HOUSE_TILE.z][PET_HOUSE_TILE.x] = 3;
   return grid;
 }
 
@@ -457,8 +475,9 @@ function buildWorld(){
   const dirtBase = new THREE.Mesh(roundedBoxGeo(OUT_W,.6,OUT_D,.1), toonMat(0x9c6b45));
   dirtBase.position.y = -.54; worldGroup.add(dirtBase);
 
-  /* ทางเดินหินหน้าประตูบ้าน (ต่อจาก DOOR_TILE ลงมา 3 ช่อง) */
-  [[DOOR_TILE.x,DOOR_TILE.z],[DOOR_TILE.x,DOOR_TILE.z+1],[DOOR_TILE.x,DOOR_TILE.z+2]].forEach(([x,z],i)=>{
+  /* ทางเดินหินหน้าประตูบ้าน (ต่อจาก DOOR_TILE ลอดช่องประตูรั้วออกไปนอกสนาม 1 ช่อง) */
+  [[DOOR_TILE.x,DOOR_TILE.z],[DOOR_TILE.x,DOOR_TILE.z+1],[DOOR_TILE.x,DOOR_TILE.z+2],
+   [DOOR_TILE.x,DOOR_TILE.z+3]].forEach(([x,z],i)=>{
     const s = new THREE.Mesh(roundedBoxGeo(.6,.07,.6,.03), toonMat(0xe3ddd0));
     s.rotation.y = .35*(i%2 ? 1 : -1);
     s.position.set(outWX(x), .04, outWZ(z));
@@ -515,19 +534,79 @@ function buildWorld(){
   houseClickables = [];
   house.traverse(o=>{ if(o.isMesh) houseClickables.push(o); });
 
-  /* ต้นไม้ — เฟส 2: ลำต้นสูงขึ้น (3 ระดับสลับกันให้ป่าดูมีจังหวะ ไม่เท่ากันเป็นแถว) */
+  /* รั้วไม้ครีมพาสเทลรอบสนามบ้าน — เสา+หมุดกลมทุกช่อง, ราว 2 เส้นวิ่งตาม run ยาว
+     (merge ช่องรั้วติดกันเป็น run เดียวแบบกำแพงในบ้าน ลดจำนวน mesh) เว้นช่องประตูรั้วที่ GATE_TILE */
+  const fenceRuns = [];
+  let fr = null;
+  [YARD.z0, YARD.z1].forEach(fz=>{                    /* run แนวนอน บน/ล่าง (รวมช่องมุม) */
+    fr = null;
+    for(let x=YARD.x0; x<=YARD.x1+1; x++){
+      const f = x<=YARD.x1 && isFenceTile(x, fz);
+      if(f && !fr) fr = {x0:x};
+      if(!f && fr){ fenceRuns.push({h:true, z:fz, x0:fr.x0, x1:x-1}); fr = null; }
+    }
+  });
+  [YARD.x0, YARD.x1].forEach(fx=>{                    /* run แนวตั้ง ซ้าย/ขวา (เว้นช่องมุม ให้เสาไม่ซ้อน) */
+    fr = null;
+    for(let z=YARD.z0+1; z<=YARD.z1; z++){
+      const f = z<=YARD.z1-1 && isFenceTile(fx, z);
+      if(f && !fr) fr = {z0:z};
+      if(!f && fr){ fenceRuns.push({h:false, x:fx, z0:fr.z0, z1:z-1}); fr = null; }
+    }
+  });
+  fenceRuns.forEach(r=>{
+    const len = r.h ? (r.x1-r.x0+1) : (r.z1-r.z0+1);
+    const cx = r.h ? outWX((r.x0+r.x1)/2) : outWX(r.x);
+    const cz = r.h ? outWZ(r.z) : outWZ((r.z0+r.z1)/2);
+    /* run แนวตั้งไม่มีช่องมุม — ยืดราวเพิ่มข้างละครึ่งช่องให้ชนเสามุมพอดี ไม่มีรอยขาด */
+    const railLen = (r.h ? len : len+1) - .06;
+    [.2,.44].forEach(ry=>{
+      const rail = box(r.h?railLen:.09, .08, r.h?.09:railLen, 0xf6e3c2, .04);
+      rail.position.set(cx, ry, cz); rail.castShadow = hShadows; worldGroup.add(rail);
+    });
+    for(let i=0;i<len;i++){
+      const px = r.h ? outWX(r.x0+i) : cx, pz = r.h ? cz : outWZ(r.z0+i);
+      const post = box(.13,.62,.13, 0xfdf1da, .05); post.position.set(px,.31,pz);
+      post.castShadow = hShadows; worldGroup.add(post);
+      const cap = sphere(.075, 0xf0d3a0, 8); cap.position.set(px,.64,pz); worldGroup.add(cap);
+    }
+  });
+
+  /* บ้านสัตว์เลี้ยงในสนาม — จั่วเล็กสีชุดเดียวกับบ้านใหญ่ ช่องประตูโค้งมืด หันหน้าเข้าสนาม */
+  const petHouse = new THREE.Group();
+  const phBase = box(1.05,.75,.95, 0xe9bd80, .08); phBase.position.y = .38; petHouse.add(phBase);
+  const PH_RISE = .4, PH_HALF = .66, PH_DEP = 1.1;
+  const phLen = Math.hypot(PH_HALF, PH_RISE), phAng = Math.atan2(PH_RISE, PH_HALF);
+  [1,-1].forEach(s=>{
+    const p = new THREE.Mesh(roundedBoxGeo(phLen,.12,PH_DEP,.04), roofMat);
+    p.castShadow = hShadows; p.rotation.z = -s*phAng; p.position.set(s*PH_HALF/2, .75+PH_RISE/2, 0);
+    petHouse.add(p);
+  });
+  const phRidge = box(.13,.13,PH_DEP+.04, 0xffe4c4, .05);
+  phRidge.position.set(0,.75+PH_RISE,0); petHouse.add(phRidge);
+  const phDoor = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.12,16), toonMat(0x6d4530));
+  phDoor.rotation.x = Math.PI/2; phDoor.position.set(0,.4,.45); petHouse.add(phDoor);
+  const phDoorB = box(.4,.28,.12, 0x6d4530, .03); phDoorB.position.set(0,.22,.45); petHouse.add(phDoorB);
+  petHouse.position.set(outWX(PET_HOUSE_TILE.x), 0, outWZ(PET_HOUSE_TILE.z));
+  petHouse.rotation.y = -Math.PI/2;                   /* หันประตูไปทางบ้านใหญ่ (ฝั่ง -x) */
+  worldGroup.add(petHouse);
+
+  /* ต้นไม้ — ความสูงลำต้น/ขนาดพุ่มสุ่มต่อต้น (hash จากพิกัดช่อง ให้ deterministic:
+     เข้าฉากใหม่กี่ครั้งต้นเดิมก็สูงเท่าเดิม ไม่สุ่มใหม่ทุกรอบ) คละสูงต่ำทั้งป่าเป็นธรรมชาติ */
   TREES.forEach(([x,z],i)=>{
     const tr = new THREE.Group();
-    const th = 1.0 + (i%3)*.22;          /* ความสูงลำต้น 1.0/1.22/1.44 */
+    const rnd = ((x*73 + z*151 + 37) % 100) / 100;
+    const th = .8 + rnd*.95;             /* ลำต้นสูง .8 – 1.75 */
+    const fs = .85 + rnd*.3;             /* พุ่มใบใหญ่ตามความสูงต้น */
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,th,8), toonMat(0x9c6238));
     trunk.castShadow = hShadows; trunk.position.y = th/2; tr.add(trunk);
-    const f1 = sphere(.56,(i%3===1)?0x5cbf6e:0x4caf50); f1.position.y = th+.42; tr.add(f1);
-    const f2 = sphere(.4,0x66c878); f2.position.set(.32,th+.16,.2); tr.add(f2);
-    const f3 = sphere(.33,0x58b862); f3.position.set(-.3,th+.22,-.16); tr.add(f3);
+    const f1 = sphere(.56*fs,(i%3===1)?0x5cbf6e:0x4caf50); f1.position.y = th+.42*fs; tr.add(f1);
+    const f2 = sphere(.4*fs,0x66c878); f2.position.set(.32*fs,th+.16,.2*fs); tr.add(f2);
+    const f3 = sphere(.33*fs,0x58b862); f3.position.set(-.3*fs,th+.22,-.16*fs); tr.add(f3);
     /* ดอกไม้ขาวแต้มบนพุ่ม (แบบต้นไม้ในภาพอ้างอิง) */
     if(i%2===0){
-      const b1 = sphere(.07,0xffffff,6); b1.position.set(.22,th+.86,.3); tr.add(b1);
-      const b2 = sphere(.055,0xffffff,6); b2.position.set(-.32,th+.56,.34); tr.add(b2);
+      const b1 = sphere(.07,0xffffff,6); b1.position.set(.22*fs,th+.86*fs,.3*fs); tr.add(b1);
+      const b2 = sphere(.055,0xffffff,6); b2.position.set(-.32*fs,th+.56*fs,.34*fs); tr.add(b2);
     }
     tr.position.set(outWX(x), 0, outWZ(z));
     tr.rotation.y = (x*7+z*13)%6;
@@ -554,10 +633,11 @@ function buildWorld(){
 function inWX(gx){ return gx - (IN_W-1)/2; }
 function inWZ(gz){ return gz - (IN_D-1)/2; }
 
-/* ช่องกำแพงกั้นห้อง (แนวนอน z=IN_WALL_ROW / แนวตั้ง x=IN_WALL_COL เว้นช่องประตู) */
+/* ช่องกำแพงกั้นห้อง (แนวนอน z=IN_WALL_ROW / แนวตั้งครึ่งบน x=IN_COL_TOP ครึ่งล่าง x=IN_COL_BOT เว้นช่องประตู) */
 function isInWallTile(x, z){
   if(z===IN_WALL_ROW && !IN_ROW_GAPS.includes(x)) return true;
-  if(x===IN_WALL_COL && z!==IN_WALL_ROW && !IN_COL_GAPS.includes(z)) return true;
+  if(z<IN_WALL_ROW && x===IN_COL_TOP && !IN_COL_TOP_GAPS.includes(z)) return true;
+  if(z>IN_WALL_ROW && x===IN_COL_BOT && !IN_COL_BOT_GAPS.includes(z)) return true;
   return false;
 }
 
@@ -599,17 +679,19 @@ function buildInterior(){
     if(w && !run) run = {x0:x};
     if(!w && run){ partRuns.push({h:true, x0:run.x0, x1:x-1}); run = null; }
   }
-  run = null;                                       /* run แนวตั้งบนคอลัมน์ x=IN_WALL_COL */
-  for(let z=0; z<=IN_D; z++){
-    const w = z<IN_D && z!==IN_WALL_ROW && isInWallTile(IN_WALL_COL, z);
-    if(w && !run) run = {z0:z};
-    if(!w && run){ partRuns.push({h:false, z0:run.z0, z1:z-1}); run = null; }
-  }
+  [IN_COL_TOP, IN_COL_BOT].forEach(cx=>{            /* run แนวตั้ง 2 คอลัมน์ (ครึ่งบน/ครึ่งล่าง) */
+    run = null;
+    for(let z=0; z<=IN_D; z++){
+      const w = z<IN_D && z!==IN_WALL_ROW && isInWallTile(cx, z);
+      if(w && !run) run = {z0:z};
+      if(!w && run){ partRuns.push({h:false, cx, z0:run.z0, z1:z-1}); run = null; }
+    }
+  });
   partRuns.forEach(r=>{
     const len = r.h ? (r.x1-r.x0+1) : (r.z1-r.z0+1);
     const wall = box(r.h ? len : PART_T, PART_H, r.h ? PART_T : len, partC, .07);
     wall.position.set(
-      r.h ? inWX((r.x0+r.x1)/2) : inWX(IN_WALL_COL),
+      r.h ? inWX((r.x0+r.x1)/2) : inWX(r.cx),
       PART_H/2 - .02,
       r.h ? inWZ(IN_WALL_ROW) : inWZ((r.z0+r.z1)/2));
     wall.castShadow = hShadows;
@@ -632,18 +714,23 @@ function buildInterior(){
   const knob = sphere(.05,0xffd54f,8); knob.position.set(inWX(IN_DOOR_TILE.x)+.28,.62,inWZ(0)-.4); interiorGroup.add(knob);
   /* หน้าต่าง + พรม ให้ห้องไม่โล่งเกินไป (เฟอร์นิเจอร์จริงมาเฟส 3)
      — ผนังหลัง: หน้าต่างห้องนั่งเล่น + ห้องครัว, ผนังซ้าย: หน้าต่างห้องนอน */
-  [inWX(7), inWX(13)].forEach(wx=>{
+  [inWX(6), inWX(16)].forEach(wx=>{
     const win = box(.9,.7,.12,0xaadcf5); win.position.set(wx,1.2,inWZ(0)-.48); interiorGroup.add(win);
   });
-  const winBed = box(.12,.7,.9,0xaadcf5); winBed.position.set(inWX(0)-.48,1.2,inWZ(8)); interiorGroup.add(winBed);
+  const winBed = box(.12,.7,.9,0xaadcf5); winBed.position.set(inWX(0)-.48,1.2,inWZ(10.5)); interiorGroup.add(winBed);
   /* พรมกลางห้องนั่งเล่น */
   const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,.05,20), toonMat(0xf48fb1));
-  rug.position.set(inWX(5),.03,inWZ(2.5)); rug.receiveShadow = hShadows; interiorGroup.add(rug);
+  rug.position.set(inWX(6),.03,inWZ(3)); rug.receiveShadow = hShadows; interiorGroup.add(rug);
   const rug2 = new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,.06,20), toonMat(0xffc1d8));
-  rug2.position.set(inWX(5),.05,inWZ(2.5)); interiorGroup.add(rug2);
+  rug2.position.set(inWX(6),.05,inWZ(3)); interiorGroup.add(rug2);
   /* พรมเล็กห้องนอน (ม่วงอ่อน) ให้ห้องมีจุดสนใจก่อนเฟอร์นิเจอร์มา */
   const rugB = new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,.05,20), toonMat(0xc9b8ec));
-  rugB.position.set(inWX(4.5),.03,inWZ(8)); rugB.receiveShadow = hShadows; interiorGroup.add(rugB);
+  rugB.position.set(inWX(6.5),.03,inWZ(10.5)); rugB.receiveShadow = hShadows; interiorGroup.add(rugB);
+  /* เสื่อน้ำมินต์ห้องน้ำ + พรมครีมหน้าครัว ให้ทุกห้องมีจุดสนใจของตัวเอง */
+  const rugBa = new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.05,20), toonMat(0xbfe8dc));
+  rugBa.position.set(inWX(17),.03,inWZ(10.5)); rugBa.receiveShadow = hShadows; interiorGroup.add(rugBa);
+  const rugK = new THREE.Mesh(new THREE.CylinderGeometry(.75,.75,.05,20), toonMat(0xf9dfae));
+  rugK.position.set(inWX(16),.03,inWZ(3.5)); rugK.receiveShadow = hShadows; interiorGroup.add(rugK);
 
   interiorGroup.visible = false;
   scene.add(interiorGroup);
