@@ -1967,6 +1967,46 @@
     }
   }
 
+  /* ---------- เพื่อนซี้หน้าหลัก (home buddy — ตัวละคร+สัตว์เลี้ยงจากบ้านของหนู ยืนให้กำลังใจใน hero) ---------- */
+  .house-buddy{
+    position:relative; display:flex; justify-content:center;
+    margin:42px auto 0; width:280px; max-width:94vw;  /* เว้นหัวไว้ให้ bubble (top:-8px) ไม่ทับข้อความด้านบน */
+  }
+  #house-buddy-canvas{
+    display:block; width:280px; height:190px; max-width:100%;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .house-buddy-bubble{
+    position:absolute; top:-8px; left:50%; transform:translateX(-50%) scale(1);
+    background:#fff; color:var(--ink,#5b4636);
+    border-radius:16px; padding:7px 14px;
+    font-size:15px; font-weight:700; line-height:1.35; text-align:center;
+    max-width:min(320px,88vw); width:max-content;
+    box-shadow:0 4px 12px rgba(0,0,0,.14);
+    z-index:2; pointer-events:none;
+    animation:hbBubblePop .35s ease;
+  }
+  .house-buddy-bubble::after{
+    content:''; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%);
+    border:8px solid transparent; border-top-color:#fff; border-bottom:none;
+  }
+  @keyframes hbBubblePop{
+    0%{transform:translateX(-50%) scale(.6); opacity:0;}
+    60%{transform:translateX(-50%) scale(1.08);}
+    100%{transform:translateX(-50%) scale(1); opacity:1;}
+  }
+  /* หัวใจ/ดาวลอยตอนแตะตัวละคร */
+  .hb-float{
+    position:absolute; bottom:40%; font-size:22px; z-index:3; pointer-events:none;
+    animation:hbFloatUp 1.1s ease-out forwards;
+  }
+  @keyframes hbFloatUp{
+    0%{transform:translateY(0) scale(.6); opacity:0;}
+    20%{opacity:1;}
+    100%{transform:translateY(-74px) scale(1.15); opacity:0;}
+  }
+  /* กลางคืน: bubble ยังเป็นการ์ดขาวอ่านง่าย ไม่ต้อง override สี */
+
   /* ============================= CLOCK GAME (นาฬิกาวิเศษ 1/2/3) ============================= */
   .clock-board{display:flex; flex-direction:column; align-items:center; gap:14px; padding:10px 8px 46px;}
   .clock-task-card{

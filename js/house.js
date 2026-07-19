@@ -2168,7 +2168,173 @@ function stopHouseGame(){
   $('house-pet-name').hidden = true;
   $('house-pet-bubble').classList.remove('on');
   homeView.hidden = false;
+  houseBuddyRefresh();   /* เผื่อเพิ่งแก้ชุด/เปลี่ยนสัตว์เลี้ยงในบ้านมา ให้ตัวจิ๋วหน้าหลักอัปเดตตาม */
 }
+
+/* ---------- เพื่อนซี้หน้าหลัก (home buddy) ----------
+   ตัวละคร+สัตว์เลี้ยงของเด็ก (จากบ้านของหนู) มายืนให้กำลังใจใน hero หน้าเลือกหมวด
+   renderer/scene ขนาดเล็กแยกของตัวเอง บน canvas #house-buddy-canvas โปร่งใส
+   แสดงเฉพาะเด็กที่สร้างตัวละครแล้ว — loop หยุดเองเมื่อ homeView ถูกซ่อน
+   แล้ว restart ผ่าน window.houseBuddyRefresh() (เรียกจาก renderHome ใน app.js
+   และตอนออกจากโหมดบ้าน เผื่อเพิ่งแก้ชุด/เปลี่ยนสัตว์เลี้ยงมา) */
+let hbRenderer=null, hbScene=null, hbCam=null, hbChar=null, hbPet=null, hbPetName='';
+let hbShadC=null, hbShadP=null;
+let hbRaf=null, hbLast=0, hbT=0, hbKey='';
+let hbWaveT=2, hbWaveK=0, hbHopT=1.6, hbHopK=0, hbJumpK=0, hbMsgT=0, hbSparkT=3;
+const HB_W=280, HB_H=190, HB_WAVE_DUR=1.6, HB_HOP_DUR=.55;
+function hbMsgs(){
+  const m = [
+    'สู้ๆ นะ! วันนี้ต้องเก่งกว่าเมื่อวานแน่นอน 💪',
+    'ค่อยๆ คิด ไม่ต้องรีบนะ 😊',
+    'มาทำโจทย์กันเถอะ เก็บดาวให้ครบเลย ⭐',
+    'หนูเก่งที่สุดเลย! ✨',
+    'ผิดบ้างไม่เป็นไร ลองใหม่ได้เสมอนะ 🌈',
+    'เราเป็นกำลังใจให้เสมอเลยนะ 💖',
+  ];
+  if(hbPetName){
+    m.push(hbPetName + ' บอกว่า สู้ๆ นะ! 🐾');
+    m.push('ทำโจทย์เสร็จแล้วมาเล่นกับ ' + hbPetName + ' ที่บ้านนะ 🏠');
+  }
+  return m;
+}
+function hbInit(){
+  if(hbRenderer) return true;
+  const canvas = $('house-buddy-canvas');
+  if(!canvas) return false;
+  try{ hbRenderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true}); }
+  catch(e){ return false; }
+  hbRenderer.setClearColor(0x000000, 0);
+  hbRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  hbRenderer.setSize(HB_W, HB_H, false);
+  hbScene = new THREE.Scene();
+  hbCam = new THREE.OrthographicCamera(-1.55, 1.55, 1.05, -1.05, .1, 30);
+  hbCam.position.set(2.0, 1.9, 4.4);
+  hbCam.lookAt(0, .8, 0);
+  hbScene.add(new THREE.HemisphereLight(0xfff6e0, 0xcde8b0, .8));
+  const dl = new THREE.DirectionalLight(0xffffff, .65);
+  dl.position.set(3, 6, 5);
+  hbScene.add(dl);
+  /* เงากลมนุ่มใต้เท้า (ไม่ใช้ shadow map — วงรี alpha ต่ำพอ) */
+  const shadMat = new THREE.MeshBasicMaterial({color:0x1d3a1d, transparent:true, opacity:.14, depthWrite:false});
+  hbShadC = new THREE.Mesh(new THREE.CircleGeometry(.46, 24), shadMat);
+  hbShadC.rotation.x = -Math.PI/2; hbShadC.scale.set(1.15,1,.7); hbShadC.position.y = .01;
+  hbScene.add(hbShadC);
+  hbShadP = new THREE.Mesh(new THREE.CircleGeometry(.34, 24), shadMat);
+  hbShadP.rotation.x = -Math.PI/2; hbShadP.scale.set(1.1,1,.7); hbShadP.position.y = .01;
+  hbScene.add(hbShadP);
+  return true;
+}
+function hbShowMsg(){
+  const b = $('house-buddy-bubble');
+  if(!b) return;
+  const list = hbMsgs();
+  let msg = list[Math.floor(Math.random()*list.length)];
+  if(msg === b.textContent) msg = list[(list.indexOf(msg)+1) % list.length];
+  b.textContent = msg;
+  b.hidden = false;
+  b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';  /* restart pop */
+}
+function hbSpark(emoji){
+  const wrap = $('house-buddy');
+  if(!wrap || wrap.hidden) return;
+  const s = document.createElement('span');
+  s.className = 'hb-float';
+  s.textContent = emoji;
+  s.style.left = (14 + Math.random()*68) + '%';
+  s.style.bottom = (26 + Math.random()*28) + '%';
+  wrap.appendChild(s);
+  setTimeout(()=>s.remove(), 1200);
+}
+function hbLoop(now){
+  if(homeView.hidden || $('house-buddy').hidden){ hbRaf = null; return; }
+  hbRaf = requestAnimationFrame(hbLoop);
+  const dt = Math.min(.05, (now - hbLast)/1000 || .016);
+  hbLast = now; hbT += dt;
+  const t = hbT;
+  if(hbChar){
+    const u = hbChar.userData;
+    u.rig.position.y = Math.sin(t*2.4)*.03;                       /* หายใจ */
+    u.head.rotation.z = Math.sin(t*1.1)*.05;                      /* เอียงหัวน่ารักๆ */
+    hbWaveT -= dt;
+    if(hbWaveT<=0 && hbWaveK<=0){ hbWaveK = HB_WAVE_DUR; hbWaveT = 5 + Math.random()*4; }
+    u.arms[0].rotation.z = -.16 - Math.sin(t*2.4)*.03;
+    if(hbWaveK>0){                                                /* โบกมือทักทาย */
+      hbWaveK -= dt;
+      const k = Math.max(0, Math.min(1, (HB_WAVE_DUR-hbWaveK)*4, hbWaveK*4));
+      u.arms[1].rotation.z = (1-k)*(.16+Math.sin(t*2.4)*.03) + k*(2.35+Math.sin(t*14)*.4);
+    }else{
+      u.arms[1].rotation.z = .16 + Math.sin(t*2.4)*.03;
+    }
+    if(hbJumpK>0){                                                /* กระโดดดีใจตอนแตะ */
+      hbJumpK = Math.max(0, hbJumpK - dt*2.4);
+      hbChar.position.y = Math.sin((1-hbJumpK)*Math.PI)*.3;
+    }
+  }
+  if(hbPet){
+    const u = hbPet.userData.anim || {};
+    hbHopT -= dt;
+    if(hbHopT<=0 && hbHopK<=0){ hbHopT = 1.8 + Math.random()*2.4; hbHopK = HB_HOP_DUR; }
+    if(hbHopK>0){                                                 /* เด้งหยองๆ เป็นพักๆ */
+      hbHopK = Math.max(0, hbHopK - dt);
+      hbPet.position.y = Math.sin((1-hbHopK/HB_HOP_DUR)*Math.PI)*.15;
+    }else hbPet.position.y = 0;
+    if(u.tail) u.tail.rotation.z = Math.sin(t*8)*.3;
+    if(u.wings) u.wings.forEach(w=>{ w.rotation.z = (hbHopK>0 ? Math.sin(t*26)*.6 : Math.sin(t*3)*.1)*w.userData.side; });
+    if(u.head) u.head.rotation.z = Math.sin(t*1.4)*.06;
+  }
+  hbMsgT -= dt;                                                   /* สลับข้อความให้กำลังใจ */
+  if(hbMsgT<=0){ hbShowMsg(); hbMsgT = 8; }
+  hbSparkT -= dt;                                                 /* ประกายวิบวับรอบตัว */
+  if(hbSparkT<=0){ hbSpark('✨'); hbSparkT = 3.5 + Math.random()*3; }
+  hbRenderer.render(hbScene, hbCam);
+}
+function houseBuddyRefresh(){
+  const wrap = $('house-buddy');
+  if(!wrap) return;
+  let data = null;
+  try{
+    if(typeof activeChild !== 'undefined' && activeChild)
+      data = JSON.parse(localStorage.getItem(HOUSE_KEY(activeChild.id)) || 'null');
+  }catch(e){}
+  if(!data || !data.char){
+    wrap.hidden = true;
+    if(hbRaf){ cancelAnimationFrame(hbRaf); hbRaf = null; }
+    return;
+  }
+  if(!hbInit()){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const key = activeChild.id + '|' + JSON.stringify(data.char) + '|' + JSON.stringify(data.pet||null);
+  if(key !== hbKey){
+    hbKey = key;
+    if(hbChar){ hbScene.remove(hbChar); disposeGroup(hbChar); hbChar = null; }
+    if(hbPet){ hbScene.remove(hbPet); disposeGroup(hbPet); hbPet = null; }
+    hbChar = buildCharacter(data.char);
+    hbChar.position.set(data.pet ? -.45 : 0, 0, 0);
+    hbChar.rotation.y = data.pet ? .3 : .1;
+    hbScene.add(hbChar);
+    hbShadC.position.x = hbChar.position.x;
+    hbPetName = '';
+    if(data.pet){
+      hbPet = buildPet(data.pet.type, data.pet.color||0);
+      hbPet.position.set(.62, 0, .12);
+      hbPet.rotation.y = -.4;
+      hbScene.add(hbPet);
+      hbPetName = data.pet.name || '';
+    }
+    hbShadP.visible = !!hbPet;
+    if(hbPet) hbShadP.position.set(hbPet.position.x, .01, hbPet.position.z);
+  }
+  hbMsgT = .5;                            /* โชว์ข้อความแรกไวๆ หลังกลับเข้าหน้าหลัก */
+  if(!hbRaf){ hbLast = performance.now(); hbRaf = requestAnimationFrame(hbLoop); }
+}
+window.houseBuddyRefresh = houseBuddyRefresh;
+$('house-buddy-canvas').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  hbJumpK = 1; hbWaveK = HB_WAVE_DUR; hbHopK = HB_HOP_DUR;        /* เด้งดีใจกันทั้งคู่ */
+  hbShowMsg(); hbMsgT = 8;
+  const em = ['💖','⭐','✨','💛','🌟'];
+  for(let i=0;i<5;i++) setTimeout(()=>hbSpark(em[Math.floor(Math.random()*em.length)]), i*90);
+});
 
 /* ---------- ปุ่มควบคุมธีม/เพลง/เสียงในโหมดบ้าน ----------
    เป็น proxy คลิกปุ่มจริงใน header (ถูกซ่อนด้วย body.house-open) แล้ว mirror icon/class
@@ -2228,4 +2394,8 @@ $('house-rot-right').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   creatorState.rotTarget -= Math.PI/4;
 });
+
+/* หน้าหลักเปิดค้างอยู่แล้วตอนไฟล์นี้โหลดเสร็จ (เช่น reload กลางเซสชัน) → โชว์เพื่อนซี้เลย
+   กรณีปกติ (เลือกโปรไฟล์เด็กก่อน) renderHome ใน app.js จะเรียกให้เอง */
+if(!homeView.hidden) houseBuddyRefresh();
 })();

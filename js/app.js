@@ -559,6 +559,7 @@ function renderHome(){
     (cat.type==='skill' ? gridSkill : (cat.type==='ar' ? gridInteractive : (cat.type==='listen' ? gridListen : (cat.type==='write' ? gridWrite : grid)))).appendChild(card);
   });
   updateTally();
+  if(window.houseBuddyRefresh) window.houseBuddyRefresh(); // เพื่อนซี้หน้าหลัก (js/house.js โหลดทีหลัง — ครั้งแรกสุด house.js เรียกเองตอนโหลดเสร็จ)
 }
 
 /* ============================= QUIZ FLOW ============================= */
