@@ -40,13 +40,6 @@ function progressKey(){ return 'p1quiz_progress_'+(activeChild ? activeChild.id 
 function loadProgressForChild(){
   try{ progress = JSON.parse(localStorage.getItem(progressKey()) || '{}'); }catch(e){ progress = {}; }
 }
-function totalStarsForChild(childId){
-  try{
-    const p = JSON.parse(localStorage.getItem('p1quiz_progress_'+childId) || '{}');
-    return Object.values(p).reduce((s,v)=>s+(v&&v.stars||0), 0);
-  }catch(e){ return 0; }
-}
-
 function selectChild(id){
   activeChild = children.find(c=>c.id===id) || null;
   if(activeChild){
@@ -117,7 +110,6 @@ function renderChildSelect(){
     csTitle.textContent = 'ใครจะมาเรียนวันนี้?';
     csSub.textContent = 'เลือกชื่อได้เลย 😊';
     children.forEach(child=>{
-      const stars = totalStarsForChild(child.id);
       const row = document.createElement('div');
       row.className = 'child-row';
       const card = document.createElement('button');
@@ -130,11 +122,7 @@ function renderChildSelect(){
       const cname = document.createElement('div');
       cname.className = 'cname';
       cname.textContent = child.name;
-      const cstars = document.createElement('div');
-      cstars.className = 'cstars';
-      cstars.textContent = stars ? '⭐'.repeat(Math.min(stars,12)) : 'ยังไม่เคยทำ ✨';
       cinfo.appendChild(cname);
-      cinfo.appendChild(cstars);
       const arrow = document.createElement('span');
       arrow.style.cssText = 'font-size:20px;color:var(--ink-soft)';
       arrow.textContent = '▶';
@@ -447,7 +435,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -489,7 +477,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
   document.body.classList.remove('dots-open');
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   renderChildSelect();
 });
 
@@ -532,7 +520,7 @@ function renderHome(){
       card.style.animation = 'none';
       card.removeEventListener('animationend', onCardInEnd);
     }, {once:true});
-    const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen' || cat.type==='write') ? cat.levels : cat.questions.length;
+    const total = (cat.type==='ar' || cat.type==='skill' || cat.type==='listen' || cat.type==='write') ? cat.levels : (cat.poolPick || cat.questions.length);
     card.innerHTML =
       (cat.isNew ? '<div class="cat-new-badge">NEW ✨</div>' : '')+
       (cat.cardTag ? '<div class="cat-card-tag">'+cat.cardTag+'</div>' : '')+
@@ -562,6 +550,7 @@ function renderHome(){
       else if(cat.type==='skill' && cat.mode==='shadow') startShadowGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='mix') startMixGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='music') startMusicGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='clock') startClockGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else if(cat.type==='write') startDotsGame(cat.id);
@@ -573,6 +562,15 @@ function renderHome(){
 }
 
 /* ============================= QUIZ FLOW ============================= */
+/* นับจำนวน "ตัว emoji จริง" ในสตริง (1️⃣/❤️ ประกอบจากหลาย code point ใช้ length ตรงๆ ไม่ได้)
+   ใช้แยกการ์ดแพทเทิร์นเดี่ยว vs หลายตัว (เช่น '🍎🍎🍎') เพื่อย่อฟอนต์ให้พอดีการ์ด */
+function graphemeLen(str){
+  if(window.Intl && Intl.Segmenter){
+    return [...new Intl.Segmenter('th',{granularity:'grapheme'}).segment(str)].length;
+  }
+  return Array.from(str.replace(/[\uFE0F\u20E3]/g,'')).length;
+}
+
 function shuffleChoices(q){
   const idxs = q.choices.map((_,i)=>i);
   for(let i=idxs.length-1;i>0;i--){
@@ -582,12 +580,28 @@ function shuffleChoices(q){
   return { ...q, choices: idxs.map(i=>q.choices[i]), correct: idxs.indexOf(q.correct) };
 }
 
+/* หมวดที่มี poolPick: สุ่มโจทย์จากคลังมาแค่ N ข้อต่อรอบ — ถ้าโจทย์มี tier ให้เกลี่ยจำนวนต่อ tier
+   แล้วเรียงง่าย→ยากเสมอ (เศษที่หารไม่ลงตัวเติมให้ tier ง่ายก่อน) */
+function pickQuizQuestions(cat){
+  if(!cat.poolPick) return cat.questions;
+  const tiers = [...new Set(cat.questions.map(q=>q.tier||1))].sort((a,b)=>a-b);
+  if(tiers.length<=1) return shuffleArray(cat.questions.slice()).slice(0, cat.poolPick);
+  const per = Math.floor(cat.poolPick / tiers.length);
+  let extra = cat.poolPick - per*tiers.length;
+  const out = [];
+  tiers.forEach(t=>{
+    const n = per + (extra>0 ? 1 : 0); if(extra>0) extra--;
+    out.push(...shuffleArray(cat.questions.filter(q=>(q.tier||1)===t)).slice(0, n));
+  });
+  return out;
+}
+
 function startQuiz(catId){
   stopARGame();
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
-  state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: cat.questions.map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
+  state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: pickQuizQuestions(cat).map(shuffleChoices) };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -606,7 +620,11 @@ function renderQuestion(){
   $('progress-fill').style.width = ((state.qIndex)/total*100)+'%';
   $('progress-fill').style.background = cat.color;
 
-  if(q.img){
+  if(q.pattern){
+    $('q-emoji').innerHTML = '<div class="pattern-row">'+
+      q.pattern.map(p=>'<span class="pat-tile'+(graphemeLen(p)>1?' pat-multi':'')+'">'+p+'</span>').join('')+
+      '<span class="pat-tile pat-missing">?</span></div>';
+  } else if(q.img){
     $('q-emoji').innerHTML = '<img src="'+q.img+'" alt="" style="max-width:100%;border-radius:12px;display:block;margin:0 auto;">';
   } else {
     $('q-emoji').textContent = q.emoji||'';
@@ -618,6 +636,10 @@ function renderQuestion(){
   q.choices.forEach((choiceText, idx)=>{
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
+    if(q.pattern){
+      btn.classList.add('choice-emoji');
+      if(graphemeLen(choiceText)>1) btn.classList.add('choice-emoji-multi');
+    }
     btn.style.setProperty('--cat-light', cat.light);
     btn.textContent = choiceText;
     btn.addEventListener('click', ()=> selectAnswer(idx, btn, cat, q));
@@ -659,7 +681,7 @@ function selectAnswer(idx, btnEl, cat, q){
     burstFromElement(btnEl, 34);
     showOwlMsg('correct');
   } else {
-    state.wrong.push({q:q.q, correctText:q.choices[q.correct], explain:q.explain});
+    state.wrong.push({q: q.pattern ? q.pattern.join(' ')+' ❓' : q.q, correctText:q.choices[q.correct], explain:q.explain});
     fb.classList.add('ng');
     $('fb-face').textContent = '💪';
     $('fb-text').textContent = 'ไม่เป็นไรนะ! '+q.explain;
@@ -753,12 +775,13 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='mix'){ startMixGame(lastCatId); }
   else if(lastGameType==='music'){ startMusicGame(lastCatId); }
   else if(lastGameType==='dots'){ startDotsGame(lastCatId); }
+  else if(lastGameType==='clock'){ startClockGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -781,7 +804,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1030,7 +1053,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1271,7 +1294,7 @@ function startDotsGame(catId){
     queue: shuffleArray(DOTS_SHAPES[cat.dotsPool].slice()).slice(0, cat.levels),
     shape:null, connected:0, els:[], dragging:false, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true;
   document.body.classList.add('dots-open'); // จอแคบ: ย่อนกฮูกลงมุม กันบังจุดแถวล่างของกระดาน (ดู CSS body.dots-open)
   document.documentElement.style.setProperty('--cat-color', cat.color);
   dotsView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -1462,7 +1485,7 @@ function finishDotsGame(){
   const totalLevels = dotsGame.totalLevels;
   dotsGame = null;
   document.body.classList.remove('dots-open');
-  dotsView.hidden = true; resultView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; resultView.hidden = false;
 
   /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
@@ -1503,7 +1526,7 @@ function finishDotsGame(){
 $('dots-back').addEventListener('click', ()=>{
   playClick();
   dotsGame = null;
-  dotsView.hidden = true; homeView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1563,7 +1586,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -1877,12 +1900,20 @@ function playPianoNote(freq, dur){
 /* เก็บ timer ของเพลงที่กำลังเล่นไว้ยกเลิกได้ — กดฟังซ้ำ = เริ่มใหม่ (ไม่เล่นทับกัน)
    และปิด modal เปียโน/เปลี่ยนเพลงต้องหยุดเพลงที่ค้างอยู่ด้วย stopMusicSequence() */
 let musicSeqTimers = [];
-function stopMusicSequence(){ musicSeqTimers.forEach(clearTimeout); musicSeqTimers = []; }
-function playMusicSequence(seq, noFlash, beats){
+let musicSeqCleanup = null; /* callback แจ้งผู้เรียกว่าเพลงหยุดแล้ว (จบเองหรือถูกสั่งหยุด) — เรียกครั้งเดียวเสมอ */
+function stopMusicSequence(){
+  musicSeqTimers.forEach(clearTimeout); musicSeqTimers = [];
+  if(musicSeqCleanup){ const fn = musicSeqCleanup; musicSeqCleanup = null; fn(); }
+}
+function playMusicSequence(seq, noFlash, beats, opts){
   /* beats (optional): ความยาวโน้ตแต่ละตัวเป็นจังหวะ (1 = ตัวดำ) จาก MUSIC_LEVEL2_SONGS.beats
-     ทำให้ทำนองเล่นถูกจังหวะจริง — ไม่ส่ง beats = ทุกตัวยาว 1 จังหวะเท่ากัน (โจทย์สุ่ม mode 1/3) */
+     ทำให้ทำนองเล่นถูกจังหวะจริง — ไม่ส่ง beats = ทุกตัวยาว 1 จังหวะเท่ากัน (โจทย์สุ่ม mode 1/3)
+     opts (optional): { onNote(i) เรียกตามจังหวะทุกโน้ตที่เริ่มเล่น, onStop() เรียกครั้งเดียวเมื่อเพลงหยุด
+     ไม่ว่าจะเล่นจบเองหรือถูกตัดด้วย stopMusicSequence() จากทางไหนก็ตาม } */
   stopMusicSequence();
   if(!seq || !seq.length) return;
+  opts = opts || {};
+  musicSeqCleanup = opts.onStop || null;
   const BEAT_MS = 500;
   let at = 0;
   seq.forEach((wi,i)=>{
@@ -1890,9 +1921,12 @@ function playMusicSequence(seq, noFlash, beats){
     musicSeqTimers.push(setTimeout(()=>{
       playPianoNote(MUSIC_WHITE_KEYS[wi].freq, Math.min(1.6, b*BEAT_MS/1000*0.95));
       if(!noFlash) flashKey(pianoWhiteEl(wi));
+      if(opts.onNote) opts.onNote(i);
     }, at));
     at += b*BEAT_MS;
   });
+  /* จบเพลงเอง: หยุดผ่านทางเดียวกับการสั่งหยุด เพื่อให้ onStop ทำงานเสมอ (เผื่อโน้ตท้ายกังวานอีกนิดค่อยแจ้ง) */
+  musicSeqTimers.push(setTimeout(stopMusicSequence, at + 300));
 }
 
 /* วาดคีย์เปียโนลงใน element ที่ระบุ (ใช้ทั้งเกมดนตรีและ modal เปียโนอิสระ) */
@@ -1996,7 +2030,7 @@ function startMusicGame(catId){
   if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
   pauseBgMusicForMusicGame();
   document.body.classList.add('music-open'); // ซ่อนปุ่มมุมล่าง (ติดตั้ง/เปียโน) ไม่ให้ทับคีย์
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('music-cat-label', cat);
@@ -2122,6 +2156,7 @@ function openFreePiano(){
   renderPianoKeys($('fp-piano'), false);
   renderFreePianoSongs();
   renderFreePianoNotes();
+  updateFpListenBtn();
   $('fp-notation').textContent = 'โน้ต: '+(musicNotation==='en'?'อังกฤษ':'ไทย');
   openOverlay('free-piano-modal');
 }
@@ -2134,7 +2169,30 @@ $('fp-songs').addEventListener('change', e=>{
   const sel = e.target.closest('.fp-song-select'); if(!sel) return;
   playClick(); selectFreeSong(+sel.value);
 });
-$('fp-listen').addEventListener('click', ()=>{ if(freePiano.song) playMusicSequence(freePiano.song.notes, false, freePiano.song.beats); });
+/* ปุ่มฟังเพลง: กดแล้วตัวโน้ตด้านบนวิ่งไฮไลต์ตามจังหวะ + คีย์เปียโนกดเองตามเพลง
+   ระหว่างเล่นปุ่มเปลี่ยนเป็น "หยุดเพลง" กดซ้ำ = หยุดทันที, เล่นจบ/ถูกหยุด = reset ตัวโน้ตกลับจุดเริ่ม */
+let fpListening = false;
+function updateFpListenBtn(){
+  const btn = $('fp-listen');
+  btn.textContent = fpListening ? '⏹ หยุดเพลง' : '🔊 ฟังเพลง';
+  btn.classList.toggle('listening', fpListening);
+}
+$('fp-listen').addEventListener('click', ()=>{
+  if(!freePiano.song) return;
+  playClick();
+  if(fpListening){ stopMusicSequence(); return; } /* onStop จะ reset ให้เอง */
+  fpListening = true; updateFpListenBtn();
+  freePiano.pos = 0; renderFreePianoNotes();
+  /* noFlash:true เพราะ flash ในตัว playMusicSequence ชี้เปียโนของเกม (#music-piano)
+     ใน modal ต้อง flash คีย์ของ #fp-piano เองใน onNote */
+  playMusicSequence(freePiano.song.notes, true, freePiano.song.beats, {
+    onNote:(i)=>{
+      flashKey($('fp-piano').querySelector('.music-white[data-white="'+freePiano.song.notes[i]+'"]'));
+      freePiano.pos = i; renderFreePianoNotes();
+    },
+    onStop:()=>{ fpListening = false; updateFpListenBtn(); freePiano.pos = 0; renderFreePianoNotes(); }
+  });
+});
 $('fp-notation').addEventListener('click', function(){
   musicNotation = musicNotation==='en' ? 'th' : 'en';
   localStorage.setItem('p1quiz_music_notation', musicNotation);
@@ -2160,6 +2218,311 @@ $('fp-piano').addEventListener('pointerdown', e=>{
       renderFreePianoNotes();
     }
   }
+});
+
+/* ============================= CLOCK GAME (นาฬิกาวิเศษ 1/2/3 — ลากหมุนเข็มนาฬิกา) ============================= */
+/* clockMode 1: ด่าน 1-5 ชั่วโมงตรง, 6-10 "x โมงครึ่ง"
+   clockMode 2: ด่าน 1-5 นาทีหาร 5 ลงตัว, 6-10 นาทีใดๆ (snap เข็ม 1 นาที + ปุ่ม ±1 นาที)
+   clockMode 3: โชว์เวลาตั้งต้นบนหน้าปัด โจทย์ "อีก N ชั่วโมงจะเป็นกี่โมง?" (N สุ่ม 1-3) — ด่าน 1-6 ตั้งต้นชั่วโมงตรง, 7-10 มีนาทีหาร 5 ลงตัวติดมาด้วย
+   clockMode 4: เหมือน mode 3 แต่ offset มีนาทีด้วย "อีก N ชั่วโมง M นาที" (M หาร 5 ลงตัว, นาทีรวมเกิน 60 ทดชั่วโมงเพิ่ม) — ด่าน 1-6 ตั้งต้นชั่วโมงตรง, 7-10 ตั้งต้นมีนาทีหาร 5
+   กรอบนาฬิกาสุ่ม 1 จาก CLOCK_FRAMES ทุกครั้งที่เข้าเกม (ตกแต่งรอบหน้าปัด + สี bezel ผ่าน CSS class .frame-*) */
+let clockGame = null; // {catId, mode, level, totalLevels, mistakes, h, m, target:{h,m}, startTime, offsetH, snap, used:Set, locked, drag, angles:{hour,minute}}
+const CLOCK_FRAMES = ['owl','cat','flower','sun','bear'];
+const CLOCK_NUM_COLORS = ['#E4574F','#E0813F','#D9A821','#7CB342','#2FAE86','#3EC6C6','#4A9EDF','#5B6EE8','#7E57C2','#B25D9E','#E45788','#E4574F'];
+
+function clockTimeText(h, m){
+  if(m===0) return h+' โมง';
+  if(m===30) return h+' โมงครึ่ง';
+  return h+' โมง '+m+' นาที';
+}
+
+/* อ่านโจทย์ด้วยเสียงพูดไทย — pattern เดียวกับ speakListenWord: ไม่บล็อกถ้าไม่เจอ voice ไทย, หน่วง 30ms หลัง cancel กันบั๊ก Chrome */
+function speakClockText(text){
+  try{
+    const synth = window.speechSynthesis; if(!synth) return;
+    synth.cancel();
+    setTimeout(()=>{
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'th-TH'; u.rate = 0.85;
+      const voice = pickThaiVoice(); if(voice) u.voice = voice;
+      synth.speak(u);
+    }, 30);
+  }catch(e){}
+}
+
+/* สร้างหน้าปัดนาฬิกาลง #clock-svg (ครั้งเดียวตอนเข้าเกม): ขีดนาที 60 ขีด, เลข 1-12 สีพาสเทลไล่โทน, หน้ายิ้ม, เข็ม 2 เข็ม (มี hit area โปร่งใสกว้างให้นิ้วเด็กจับง่าย) */
+function buildClockFace(){
+  const svg = $('clock-svg');
+  let s = '';
+  s += '<circle cx="120" cy="120" r="114" class="clock-bezel"/>';
+  s += '<circle cx="120" cy="120" r="103" class="clock-face-bg"/>';
+  for(let i=0;i<60;i++){
+    const a = i*6*Math.PI/180;
+    const major = i%5===0;
+    const r1 = major?90:95, r2 = 99;
+    s += '<line x1="'+(120+r1*Math.sin(a)).toFixed(1)+'" y1="'+(120-r1*Math.cos(a)).toFixed(1)+'" x2="'+(120+r2*Math.sin(a)).toFixed(1)+'" y2="'+(120-r2*Math.cos(a)).toFixed(1)+'" class="'+(major?'clock-tick-major':'clock-tick-minor')+'"/>';
+  }
+  for(let n=1;n<=12;n++){
+    const a = n*30*Math.PI/180;
+    s += '<text x="'+(120+76*Math.sin(a)).toFixed(1)+'" y="'+(120-76*Math.cos(a)+8).toFixed(1)+'" class="clock-num" fill="'+CLOCK_NUM_COLORS[n-1]+'">'+n+'</text>';
+  }
+  /* หน้ายิ้มใต้จุดหมุน — สลับอารมณ์ผ่าน class บน svg (.happy/.sad) เหมือนหม้อผสมสี */
+  s += '<g class="clock-face-emote">'
+    +  '<circle cx="106" cy="146" r="4.2" class="cfe-eye"/><circle cx="134" cy="146" r="4.2" class="cfe-eye"/>'
+    +  '<circle cx="99" cy="155" r="4.5" class="cfe-cheek"/><circle cx="141" cy="155" r="4.5" class="cfe-cheek"/>'
+    +  '<path d="M111 156 Q120 163 129 156" class="cfe-mouth cfe-mouth-smile"/>'
+    +  '<path d="M111 161 Q120 154 129 161" class="cfe-mouth cfe-mouth-sad"/>'
+    +  '<path d="M108 154 Q120 168 132 154" class="cfe-mouth cfe-mouth-grin"/>'
+    +  '</g>';
+  /* เข็มยาววาดก่อน เข็มสั้นวาดทีหลัง = เข็มสั้นอยู่หน้าเสมอ (ตอนซ้อนกันเด็กยังเห็น/จับเข็มสั้นได้) */
+  s += '<g class="clock-hand-g clock-minute-g" id="clock-minute-g">'
+    +  '<line x1="120" y1="134" x2="120" y2="36" class="clock-hand-grab"/>'
+    +  '<line x1="120" y1="130" x2="120" y2="40" class="clock-hand clock-hand-minute"/>'
+    +  '<circle cx="120" cy="36" r="6" class="clock-hand-tip clock-hand-tip-minute"/>'
+    +  '</g>';
+  s += '<g class="clock-hand-g clock-hour-g" id="clock-hour-g">'
+    +  '<line x1="120" y1="132" x2="120" y2="74" class="clock-hand-grab"/>'
+    +  '<line x1="120" y1="128" x2="120" y2="78" class="clock-hand clock-hand-hour"/>'
+    +  '<circle cx="120" cy="74" r="7" class="clock-hand-tip clock-hand-tip-hour"/>'
+    +  '</g>';
+  s += '<circle cx="120" cy="120" r="9" class="clock-cap"/><circle cx="120" cy="120" r="3.5" class="clock-cap-dot"/>';
+  svg.innerHTML = s;
+}
+
+/* ตกแต่งกรอบตามแบบสุ่ม — inject span ให้ CSS จัดตำแหน่ง/วาดต่อ */
+function buildClockDecor(frame){
+  const d = $('clock-frame-decor');
+  if(frame==='owl') d.innerHTML = '<span class="d-owl-ear l"></span><span class="d-owl-ear r"></span><span class="d-owl-beak"></span>';
+  else if(frame==='cat') d.innerHTML = '<span class="d-cat-ear l"></span><span class="d-cat-ear r"></span><span class="d-whisker l w1"></span><span class="d-whisker l w2"></span><span class="d-whisker r w1"></span><span class="d-whisker r w2"></span>';
+  else if(frame==='flower') d.innerHTML = [0,1,2,3,4,5,6,7].map(i=>'<span class="d-petal" style="--i:'+i+'"></span>').join('');
+  else if(frame==='sun') d.innerHTML = [0,1,2,3,4,5,6,7,8,9,10,11].map(i=>'<span class="d-ray" style="--i:'+i+'"></span>').join('');
+  else d.innerHTML = '<span class="d-bear-ear l"></span><span class="d-bear-ear r"></span>';
+}
+
+/* หมุนเข็มด้วยมุมสะสม (เลือกทางหมุนที่ใกล้สุดเสมอ) กันเข็มตีกลับยาวข้ามหน้าปัดตอนค่า mod 360 กระโดด เช่น 59→0 นาที */
+function rotateClockHand(which, targetDeg, noAnim){
+  const g = which==='hour' ? $('clock-hour-g') : $('clock-minute-g');
+  const cur = clockGame.angles[which];
+  const delta = ((targetDeg - (cur%360+360)%360) + 540) % 360 - 180;
+  clockGame.angles[which] = cur + delta;
+  if(noAnim) g.classList.add('dragging');
+  g.style.transform = 'rotate('+clockGame.angles[which]+'deg)';
+  if(noAnim) requestAnimationFrame(()=>{ requestAnimationFrame(()=>g.classList.remove('dragging')); });
+}
+
+function updateClockHands(noAnim){
+  const g = clockGame;
+  rotateClockHand('hour', (g.h%12)*30 + g.m*0.5, noAnim);
+  rotateClockHand('minute', g.m*6, noAnim);
+  $('clock-digital').textContent = g.h+':'+String(g.m).padStart(2,'0');
+}
+
+function clockBumpHour(dir){ clockGame.h = dir>0 ? (clockGame.h===12?1:clockGame.h+1) : (clockGame.h===1?12:clockGame.h-1); }
+
+/* ปรับนาทีทีละ 1 (ปุ่ม ±1 นาที) — ข้ามเลข 12 แล้วชั่วโมงขยับตามจริง */
+function clockNudgeMinute(dir){
+  if(!clockGame || clockGame.locked) return;
+  playTone(1150,.04,'sine',0,.06);
+  let m = clockGame.m + dir;
+  if(m>59){ m = 0; clockBumpHour(1); }
+  if(m<0){ m = 59; clockBumpHour(-1); }
+  clockGame.m = m;
+  updateClockHands();
+}
+
+function clockPointerAngle(e){
+  const rect = $('clock-svg').getBoundingClientRect();
+  const a = Math.atan2(e.clientX-(rect.left+rect.width/2), (rect.top+rect.height/2)-e.clientY)*180/Math.PI;
+  return (a+360)%360;
+}
+
+function clockDragStart(e){
+  if(!clockGame || clockGame.locked) return;
+  /* เริ่มลากได้เฉพาะเมื่อจับโดนตัวเข็มจริงๆ (hit area โปร่งใสของเข็ม) — คลิกหน้าปัด/ที่อื่นไม่มีผล
+     เข็มสั้นวาดอยู่หน้า จึงชนะเสมอตอนสองเข็มซ้อนกัน ส่วนเข็มยาวจับที่ปลายส่วนที่ยื่นออกมาได้ */
+  const handG = e.target.closest ? e.target.closest('.clock-hand-g') : null;
+  if(!handG) return;
+  const a = clockPointerAngle(e);
+  clockGame.drag = handG.id==='clock-hour-g' ? 'hour' : 'minute';
+  /* ลากแบบ relative: จำมุมนิ้ว+ค่าเวลาตอนเริ่มจับ แล้วขยับเข็มตามมุมที่นิ้ว "หมุนไปจริง" เท่านั้น
+     (แตะเฉยๆ delta = 0 เข็มนิ่งสนิท ไม่กระโดดไปหานิ้ว — browser ยิง pointermove หลัง down เสมอ) */
+  clockGame.lastA = a; clockGame.dragAccum = 0;
+  clockGame.dragStartH = clockGame.h; clockGame.dragStartM = clockGame.m;
+  $('clock-hour-g').classList.toggle('active', clockGame.drag==='hour');
+  $('clock-minute-g').classList.toggle('active', clockGame.drag==='minute');
+  e.preventDefault();
+}
+function clockDragMove(e){
+  const g = clockGame;
+  if(!g || !g.drag) return;
+  const a = clockPointerAngle(e);
+  let d = a - g.lastA; d = ((d+540)%360)-180;
+  g.dragAccum += d; g.lastA = a;
+  if(g.drag==='minute'){
+    let m = Math.round((g.dragStartM + g.dragAccum/6)/g.snap)*g.snap;
+    m = ((m%60)+60)%60;
+    if(m!==g.m){
+      /* ลากข้ามเลข 12: 50+นาที → 0-9 = หมุนไปข้างหน้า (ชั่วโมง+1), กลับทางก็ลดชั่วโมง */
+      if(g.m>=45 && m<=15) clockBumpHour(1);
+      else if(g.m<=15 && m>=45) clockBumpHour(-1);
+      g.m = m;
+      playTone(1150,.03,'sine',0,.05);
+      updateClockHands(true);
+    }
+  } else {
+    let h = ((Math.round(g.dragStartH + g.dragAccum/30)-1)%12+12)%12+1;
+    if(h!==g.h){
+      g.h = h;
+      playTone(880,.04,'sine',0,.06);
+      updateClockHands(true);
+    }
+  }
+}
+function clockDragEnd(){
+  if(!clockGame) return;
+  clockGame.drag = null;
+  $('clock-hour-g').classList.remove('active');
+  $('clock-minute-g').classList.remove('active');
+}
+
+function randClockInt(min,max){ return min + Math.floor(Math.random()*(max-min+1)); }
+
+/* สุ่มโจทย์ตาม mode/ด่าน (กันซ้ำในรอบด้วย used Set) แล้วตั้งเข็มไปเวลาเริ่มต้น */
+function newClockLevel(){
+  const g = clockGame;
+  const stage = g.level;
+  let target = null, start = {h:12,m:0}, offsetH = 0, offsetM = 0;
+  for(let tries=0; tries<80; tries++){
+    if(g.mode===1){
+      target = { h:randClockInt(1,12), m: stage<=5 ? 0 : 30 };
+    } else if(g.mode===2){
+      target = { h:randClockInt(1,12), m: stage<=5 ? randClockInt(1,11)*5 : randClockInt(1,59) };
+    } else {
+      offsetH = randClockInt(1,3);
+      offsetM = g.mode===4 ? randClockInt(1,11)*5 : 0;
+      start = { h:randClockInt(1,12), m: stage<=6 ? 0 : randClockInt(1,11)*5 };
+      const sumM = start.m + offsetM;
+      target = { h:((start.h-1+offsetH+(sumM>=60?1:0))%12)+1, m:sumM%60 };
+    }
+    const key = target.h+':'+target.m+(g.mode>=3?('@'+start.h+':'+start.m):'');
+    if(!g.used.has(key) && !(target.h===start.h && target.m===start.m)){ g.used.add(key); break; }
+  }
+  g.target = target; g.startTime = start; g.offsetH = offsetH; g.offsetM = offsetM;
+  g.h = start.h; g.m = start.m; g.locked = false; g.drag = null;
+  g.snap = (g.mode===2 && stage>=6) ? 1 : 5;
+  $('clock-nudge').hidden = g.snap!==1;
+  $('clock-level-counter').textContent = stage+'/'+g.totalLevels;
+  $('clock-progress-fill').style.width = ((stage-1)/g.totalLevels*100)+'%';
+  $('clock-msg').hidden = true;
+  const svg = $('clock-svg');
+  svg.classList.remove('happy','sad');
+  if(g.mode>=3){
+    const offText = offsetH+' ชั่วโมง'+(g.mode===4 ? ' '+offsetM+' นาที' : '');
+    $('clock-start-chip').hidden = false;
+    $('clock-start-chip').textContent = '🕐 ตอนนี้เวลา '+clockTimeText(start.h,start.m);
+    $('clock-task-text').innerHTML = 'อีก <b>'+offText+'</b> จะเป็นกี่โมง? หมุนเข็มเลย!';
+    g.speakText = 'ตอนนี้เวลา '+clockTimeText(start.h,start.m)+' อีก '+offText+' จะเป็นกี่โมง';
+  } else {
+    $('clock-start-chip').hidden = true;
+    $('clock-task-text').innerHTML = 'หมุนเข็มให้เป็น <b>'+clockTimeText(target.h,target.m)+'</b>';
+    g.speakText = 'หมุนเข็มนาฬิกาให้เป็น '+clockTimeText(target.h,target.m);
+  }
+  updateClockHands(true);
+  setTimeout(()=>speakClockText(g.speakText), 350);
+}
+
+function checkClockAnswer(){
+  const g = clockGame;
+  if(!g || g.locked) return;
+  const svg = $('clock-svg'), msg = $('clock-msg');
+  if(g.h===g.target.h && g.m===g.target.m){
+    g.locked = true;
+    svg.classList.remove('sad'); svg.classList.add('happy');
+    msg.hidden = false; msg.className = 'clock-msg ok';
+    msg.textContent = '🎉 เก่งมาก! '+clockTimeText(g.target.h,g.target.m)+'พอดีเลย!';
+    playCorrect(); mascotHappy();
+    burstFromElement($('clock-frame'), 30);
+    showOwlMsg('correct');
+    setTimeout(()=>{
+      if(g.level >= g.totalLevels){ finishClockGame(); }
+      else { g.level++; newClockLevel(); }
+    }, 1500);
+  } else {
+    g.mistakes++;
+    svg.classList.remove('happy'); svg.classList.add('sad');
+    msg.hidden = false; msg.className = 'clock-msg ng';
+    msg.textContent = '💪 ยังไม่ตรงนะ ดูเข็มอีกทีแล้วลองใหม่!';
+    $('clock-frame').classList.add('shake');
+    setTimeout(()=>$('clock-frame').classList.remove('shake'), 500);
+    playWrong(); mascotOops();
+    showOwlMsg('wrong');
+    setTimeout(()=>{ svg.classList.remove('sad'); }, 1400);
+  }
+}
+
+function startClockGame(catId){
+  lastGameType = 'clock'; lastCatId = catId;
+  const cat = catById(catId);
+  clockGame = { catId, mode:cat.clockMode, level:1, totalLevels:cat.levels, mistakes:0, h:12, m:0, target:null, startTime:null, offsetH:0, snap:5, used:new Set(), locked:false, drag:null, angles:{hour:0, minute:0} };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  clockView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('clock-cat-label', cat);
+  const frame = CLOCK_FRAMES[Math.floor(Math.random()*CLOCK_FRAMES.length)];
+  $('clock-frame').className = 'clock-frame frame-'+frame;
+  buildClockDecor(frame);
+  buildClockFace();
+  newClockLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function finishClockGame(){
+  const cat = catById(clockGame.catId);
+  const mistakes = clockGame.mistakes, totalLevels = clockGame.totalLevels;
+  try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
+  clockView.hidden = true; resultView.hidden = false;
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row'); starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s = document.createElement('span'); s.textContent = '⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+  $('score-line').textContent = 'หมุนนาฬิกาถูกครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'เก่งสุด ๆ ไม่พลาดเลยสักครั้ง!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'ลองอีกนิดได้เต็มดาว!' : 'ไม่เป็นไรนะ ลองทำอีกครั้งเพื่อเก็บดาวเพิ่ม!';
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){
+    stickerBlock.hidden = false; setStickerEarned(cat); pendingSticker = cat.id;
+    setTimeout(()=>{ burstCenterTop(40); playCongrats(); }, 250);
+    setTimeout(()=>showOwlMsg('sticker'), 400);
+  } else {
+    stickerBlock.hidden = true;
+    if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'), 400); }
+    if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); }, 250);
+  }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('clock-svg').addEventListener('pointerdown', clockDragStart);
+window.addEventListener('pointermove', e=>{ if(clockGame && clockGame.drag && !clockView.hidden) clockDragMove(e); });
+window.addEventListener('pointerup', clockDragEnd);
+window.addEventListener('pointercancel', clockDragEnd);
+$('clock-submit').addEventListener('click', ()=>{ playClick(); checkClockAnswer(); });
+$('clock-speak-btn').addEventListener('click', ()=>{ playClick(); if(clockGame) speakClockText(clockGame.speakText); });
+$('clock-nudge-minus').addEventListener('click', ()=>clockNudgeMinute(-1));
+$('clock-nudge-plus').addEventListener('click', ()=>clockNudgeMinute(1));
+$('clock-back').addEventListener('click', ()=>{
+  playClick();
+  try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
+  clockView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
 });
 
 /* ============================= LISTEN WORD-SPELLING GAME (เกมฟังคำศัพท์ 1/2) ============================= */
@@ -2213,7 +2576,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -3496,7 +3859,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
