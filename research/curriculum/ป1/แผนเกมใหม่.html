@@ -1,0 +1,642 @@
+<title>แผนเกมใหม่จากหลักสูตร ป.1 — Owlkids</title>
+<style>
+  :root{
+    color-scheme: light;
+    --page:#F5F8FC; --surface:#FFFFFF; --surface-2:#EDF2F8; --surface-3:#E3EBF5;
+    --ink:#111826; --ink-2:#4B5768; --muted:#8792A3;
+    --border:rgba(17,24,38,.11); --border-strong:rgba(17,24,38,.20);
+    --accent:#EB6834; --accent-soft:#FCE4D8; --accent-ink:#8A3413;
+    --subj-math:#2A78D6; --subj-math-soft:#DCEAFA;
+    --subj-thai:#008300; --subj-thai-soft:#DCF3DD;
+    --subj-eng:#D45C89;  --subj-eng-soft:#FBE3EC;
+    --subj-sci:#B27700;  --subj-sci-soft:#FBEBCE;
+    --subj-soc:#178F63;  --subj-soc-soft:#DBF3E9;
+    --good:#0CA30C; --good-soft:#DFF3DF;
+    --warn-ink:#8A5A00; --warn-soft:#FCEFCE;
+    --crit:#D03B3B; --crit-soft:#FBE1E1;
+    --shadow:0 1px 2px rgba(17,24,38,.06), 0 10px 28px -14px rgba(17,24,38,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --page:#0A0E15; --surface:#131A25; --surface-2:#19212F; --surface-3:#212B3B;
+      --ink:#F1F5FB; --ink-2:#B9C3D2; --muted:#7C879A;
+      --border:rgba(255,255,255,.10); --border-strong:rgba(255,255,255,.20);
+      --accent:#E4783F; --accent-soft:#3A2114; --accent-ink:#F6C4A4;
+      --subj-math:#4E92E8; --subj-math-soft:#152B45;
+      --subj-thai:#3FB35C; --subj-thai-soft:#122C1B;
+      --subj-eng:#E68CAE; --subj-eng-soft:#3A1F2A;
+      --subj-sci:#E0AA3B; --subj-sci-soft:#3A2C10;
+      --subj-soc:#3FC79A; --subj-soc-soft:#0F2F26;
+      --good:#3FB35C; --good-soft:#122C1B;
+      --warn-ink:#E0AA3B; --warn-soft:#3A2C10;
+      --crit:#E4696A; --crit-soft:#3A1616;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px -16px rgba(0,0,0,.65);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:#0A0E15; --surface:#131A25; --surface-2:#19212F; --surface-3:#212B3B;
+    --ink:#F1F5FB; --ink-2:#B9C3D2; --muted:#7C879A;
+    --border:rgba(255,255,255,.10); --border-strong:rgba(255,255,255,.20);
+    --accent:#E4783F; --accent-soft:#3A2114; --accent-ink:#F6C4A4;
+    --subj-math:#4E92E8; --subj-math-soft:#152B45;
+    --subj-thai:#3FB35C; --subj-thai-soft:#122C1B;
+    --subj-eng:#E68CAE; --subj-eng-soft:#3A1F2A;
+    --subj-sci:#E0AA3B; --subj-sci-soft:#3A2C10;
+    --subj-soc:#3FC79A; --subj-soc-soft:#0F2F26;
+    --good:#3FB35C; --good-soft:#122C1B;
+    --warn-ink:#E0AA3B; --warn-soft:#3A2C10;
+    --crit:#E4696A; --crit-soft:#3A1616;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px -16px rgba(0,0,0,.65);
+  }
+  :root[data-theme="light"]{
+    color-scheme: light;
+    --page:#F5F8FC; --surface:#FFFFFF; --surface-2:#EDF2F8; --surface-3:#E3EBF5;
+    --ink:#111826; --ink-2:#4B5768; --muted:#8792A3;
+    --border:rgba(17,24,38,.11); --border-strong:rgba(17,24,38,.20);
+    --accent:#EB6834; --accent-soft:#FCE4D8; --accent-ink:#8A3413;
+    --subj-math:#2A78D6; --subj-math-soft:#DCEAFA;
+    --subj-thai:#008300; --subj-thai-soft:#DCF3DD;
+    --subj-eng:#D45C89;  --subj-eng-soft:#FBE3EC;
+    --subj-sci:#B27700;  --subj-sci-soft:#FBEBCE;
+    --subj-soc:#178F63;  --subj-soc-soft:#DBF3E9;
+    --good:#0CA30C; --good-soft:#DFF3DF;
+    --warn-ink:#8A5A00; --warn-soft:#FCEFCE;
+    --crit:#D03B3B; --crit-soft:#FBE1E1;
+    --shadow:0 1px 2px rgba(17,24,38,.06), 0 10px 28px -14px rgba(17,24,38,.22);
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--page); color:var(--ink);
+    font-family:"Sarabun","Noto Sans Thai","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.65;
+  }
+  ::selection{ background:var(--accent-soft); color:var(--accent-ink); }
+  a{ color:var(--accent-ink); }
+  h1,h2,h3,h4{ font-family:"Kanit","Prompt","Noto Sans Thai","Segoe UI",system-ui,sans-serif; text-wrap:balance; margin:0; color:var(--ink); }
+  p{ margin:0; }
+  .mono{ font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; }
+  .tab-num{ font-variant-numeric: tabular-nums; }
+
+  .shell{ max-width:1180px; margin:0 auto; padding:0 24px 96px; }
+  .layout{ display:grid; grid-template-columns: 232px minmax(0,1fr); gap:44px; align-items:start; padding-top:36px; }
+  @media (max-width:980px){ .layout{ grid-template-columns:1fr; } }
+
+  /* ---------- side nav ---------- */
+  .sidenav{ position:sticky; top:20px; display:flex; flex-direction:column; gap:18px; }
+  @media (max-width:980px){
+    .sidenav{ position:sticky; top:0; z-index:20; background:var(--page); padding:12px 0 10px; border-bottom:1px solid var(--border); flex-direction:row; overflow-x:auto; gap:8px; margin:0 -24px; padding-left:24px; padding-right:24px; }
+  }
+  .sidenav-brand{ display:flex; align-items:center; gap:10px; }
+  @media (max-width:980px){ .sidenav-brand{ display:none; } }
+  .owl-badge{ width:34px; height:34px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; font-size:18px; flex:none; }
+  .sidenav-brand b{ font-family:"Kanit","Prompt",sans-serif; font-size:.92rem; letter-spacing:.02em; }
+  .sidenav-brand span{ display:block; font-size:.72rem; color:var(--muted); }
+  .navlist{ display:flex; flex-direction:column; gap:2px; list-style:none; margin:0; padding:0; }
+  @media (max-width:980px){ .navlist{ flex-direction:row; flex:none; } }
+  .navlist a{
+    display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:9px;
+    color:var(--ink-2); text-decoration:none; font-size:.86rem; white-space:nowrap;
+  }
+  .navlist a:hover{ background:var(--surface-2); color:var(--ink); }
+  .navdot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .navcount{
+    margin-top:6px; padding:12px 14px; border-radius:14px; background:var(--surface-2);
+    border:1px solid var(--border); font-size:.78rem; color:var(--ink-2);
+  }
+  @media (max-width:980px){ .navcount{ display:none; } }
+  .navcount b{ display:block; font-size:1.5rem; color:var(--ink); font-family:"Kanit",sans-serif; }
+
+  /* ---------- masthead ---------- */
+  .eyebrow{ font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-ink); display:flex; align-items:center; gap:8px; }
+  .eyebrow::before{ content:""; width:16px; height:2px; background:var(--accent); display:inline-block; border-radius:2px; }
+  .masthead h1{ margin-top:12px; font-size:clamp(1.7rem,3.6vw,2.5rem); font-weight:700; line-height:1.22; }
+  .masthead .lede{ margin-top:14px; max-width:62ch; color:var(--ink-2); font-size:1.04rem; }
+  .meta-row{ margin-top:20px; display:flex; flex-wrap:wrap; gap:8px 18px; font-size:.82rem; color:var(--muted); }
+  .meta-row b{ color:var(--ink-2); font-weight:600; }
+
+  /* ---------- stat tiles ---------- */
+  .stats{ margin-top:34px; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .stat-tile{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 18px; box-shadow:var(--shadow); }
+  .stat-tile .v{ font-family:"Kanit",sans-serif; font-size:1.9rem; font-weight:700; font-variant-numeric:tabular-nums; }
+  .stat-tile .l{ margin-top:2px; font-size:.8rem; color:var(--muted); }
+
+  /* ---------- section shell ---------- */
+  section{ margin-top:64px; scroll-margin-top:20px; }
+  @media (max-width:980px){ section{ scroll-margin-top:64px; } }
+  .sec-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .sec-head h2{ font-size:1.5rem; font-weight:700; }
+  .sec-sub{ margin-top:6px; color:var(--ink-2); max-width:70ch; font-size:.98rem; }
+
+  /* ---------- bar chart ---------- */
+  .chart-card{ margin-top:22px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:22px 24px; box-shadow:var(--shadow); }
+  .bar-row{ display:grid; grid-template-columns:120px 1fr 34px; align-items:center; gap:12px; padding:8px 0; }
+  .bar-row + .bar-row{ border-top:1px solid var(--border); }
+  .bar-label{ display:flex; align-items:center; gap:8px; font-size:.88rem; color:var(--ink-2); }
+  .bar-track{ height:15px; border-radius:8px; background:var(--surface-3); overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:8px; }
+  .bar-val{ text-align:right; font-variant-numeric:tabular-nums; font-weight:700; font-size:.92rem; }
+  .chart-foot{ margin-top:14px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:.78rem; color:var(--muted); }
+  details.table-toggle summary{ cursor:pointer; color:var(--accent-ink); font-weight:600; }
+  .fallback-table{ margin-top:10px; width:100%; border-collapse:collapse; font-size:.85rem; }
+  .fallback-table th,.fallback-table td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+
+  /* ---------- subject section ---------- */
+  .subj-head{ display:flex; align-items:center; gap:12px; }
+  .subj-icon{ width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:22px; flex:none; }
+  .subj-title-wrap{ display:flex; flex-direction:column; gap:3px; }
+  .subj-title-wrap h2{ font-size:1.4rem; }
+  .confidence{ display:inline-flex; align-items:center; gap:6px; font-size:.74rem; color:var(--muted); }
+  .confidence i{ width:7px; height:7px; border-radius:50%; background:var(--good); display:inline-block; }
+  .confidence.ocr i{ background:var(--warn-ink); }
+
+  .gap-box{ margin-top:16px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:14px 18px; font-size:.92rem; color:var(--ink-2); }
+  .gap-box b{ color:var(--ink); }
+
+  .cards{ margin-top:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
+  .game-card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px; }
+  .game-card-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .game-card-title{ display:flex; align-items:center; gap:9px; }
+  .game-card-title .ic{ font-size:20px; }
+  .game-card-title h3{ font-size:1.04rem; font-weight:700; }
+  .id-tag{ font-size:.72rem; color:var(--muted); }
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+  .pill i{ width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .pill.reuse{ background:var(--good-soft); color:var(--good); }
+  .pill.reuse i{ background:var(--good); }
+  .pill.extend{ background:var(--warn-soft); color:var(--warn-ink); }
+  .pill.extend i{ background:var(--warn-ink); }
+  .pill.new{ background:var(--crit-soft); color:var(--crit); }
+  .pill.new i{ background:var(--crit); }
+  .std-line{ font-size:.78rem; color:var(--muted); }
+  .std-line b{ color:var(--ink-2); font-weight:700; }
+  .game-card ul{ margin:0; padding-left:18px; font-size:.9rem; color:var(--ink-2); display:flex; flex-direction:column; gap:5px; }
+  .game-card ul li::marker{ color:var(--muted); }
+  .card-note{ margin-top:2px; font-size:.78rem; color:var(--muted); border-top:1px dashed var(--border); padding-top:9px; }
+
+  .extra-box{ margin-top:14px; border:1px dashed var(--border-strong); border-radius:14px; padding:13px 18px; font-size:.87rem; color:var(--ink-2); background:transparent; }
+  .extra-box b{ color:var(--ink); }
+
+  /* ---------- mechanics table ---------- */
+  .mech-grid{ margin-top:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+  .mech-card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); }
+  .mech-card .pill{ margin-bottom:10px; }
+  .mech-card h3{ font-size:1rem; margin-bottom:6px; }
+  .mech-card p{ font-size:.88rem; color:var(--ink-2); }
+  .mech-card .used-by{ margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{ font-size:.72rem; padding:3px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--ink-2); }
+
+  /* ---------- phases ---------- */
+  .phase-track{ margin-top:22px; display:flex; flex-direction:column; gap:14px; }
+  .phase-card{ display:grid; grid-template-columns:56px 1fr; gap:16px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); }
+  .phase-num{ width:44px; height:44px; border-radius:12px; background:var(--accent-soft); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-family:"Kanit",sans-serif; font-weight:700; font-size:1.2rem; }
+  .phase-body h3{ font-size:1.05rem; }
+  .phase-body .phase-meta{ margin-top:3px; font-size:.8rem; color:var(--muted); }
+  .phase-games{ margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
+  .phase-note{ margin-top:10px; font-size:.86rem; color:var(--ink-2); }
+
+  /* ---------- architecture callout ---------- */
+  .callout{ margin-top:20px; background:var(--surface-2); border-left:3px solid var(--accent); border-radius:4px 14px 14px 4px; padding:20px 24px; }
+  .opt-list{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
+  .opt{ display:grid; grid-template-columns:28px 1fr; gap:10px; }
+  .opt .k{ font-family:"Kanit",sans-serif; font-weight:700; color:var(--accent-ink); }
+  .opt p{ font-size:.9rem; color:var(--ink-2); }
+  .opt p b{ color:var(--ink); }
+  .lean{ margin-top:14px; font-size:.88rem; padding:12px 14px; border-radius:10px; background:var(--surface); border:1px solid var(--border); }
+
+  /* ---------- cta ---------- */
+  .cta{ margin-top:64px; background:linear-gradient(155deg,var(--surface),var(--surface-2)); border:1px solid var(--border-strong); border-radius:22px; padding:32px 30px; box-shadow:var(--shadow); }
+  .cta h2{ font-size:1.4rem; }
+  .cta p{ margin-top:10px; color:var(--ink-2); max-width:68ch; font-size:.96rem; }
+  .cta .cf-badge{ display:inline-flex; align-items:center; gap:8px; margin-top:18px; padding:10px 18px; border-radius:999px; background:var(--accent); color:#fff; font-weight:700; font-family:"Kanit",sans-serif; letter-spacing:.02em; }
+  .cta ol{ margin-top:16px; padding-left:20px; color:var(--ink-2); font-size:.9rem; display:flex; flex-direction:column; gap:6px; }
+
+  footer.src{ margin-top:40px; padding-top:20px; border-top:1px solid var(--border); font-size:.78rem; color:var(--muted); }
+
+  @media (prefers-reduced-motion: no-preference){
+    .game-card, .stat-tile, .mech-card, .phase-card{ transition: transform .15s ease, box-shadow .15s ease; }
+    .game-card:hover, .mech-card:hover{ transform: translateY(-2px); }
+  }
+  a:focus-visible, summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+</style>
+
+<div class="shell">
+  <div class="layout">
+
+    <nav class="sidenav" id="top">
+      <div class="sidenav-brand">
+        <div class="owl-badge">🦉</div>
+        <div><b>Owlkids</b><span>แผนวิจัยเกม ป.1</span></div>
+      </div>
+      <ul class="navlist">
+        <li><a href="#stats">ภาพรวม</a></li>
+        <li><a href="#math"><span class="navdot" style="background:var(--subj-math)"></span>คณิตศาสตร์</a></li>
+        <li><a href="#thai"><span class="navdot" style="background:var(--subj-thai)"></span>ภาษาไทย</a></li>
+        <li><a href="#english"><span class="navdot" style="background:var(--subj-eng)"></span>ภาษาอังกฤษ</a></li>
+        <li><a href="#science"><span class="navdot" style="background:var(--subj-sci)"></span>วิทยาศาสตร์</a></li>
+        <li><a href="#social"><span class="navdot" style="background:var(--subj-soc)"></span>สังคมศึกษา</a></li>
+        <li><a href="#mechanics">กลไกเกม</a></li>
+        <li><a href="#phases">แผนเฟส</a></li>
+        <li><a href="#architecture">ประเด็นตัดสินใจ</a></li>
+        <li><a href="#cta">สรุป / cf</a></li>
+      </ul>
+      <div class="navcount"><b>11</b>หมวดเกมใหม่ที่เสนอ (ป.1)</div>
+    </nav>
+
+    <main>
+      <div class="masthead">
+        <div class="eyebrow">Owlkids · Research → Game Plan</div>
+        <h1>แผนเกมใหม่จากหลักสูตรแกนกลาง ป.1</h1>
+        <p class="lede">สรุปคลังหลักสูตร 5 วิชาของ ป.1 (คณิตศาสตร์ ภาษาไทย ภาษาอังกฤษ วิทยาศาสตร์ สังคมศึกษา) เทียบกับสิ่งที่แอปมีอยู่แล้ว แล้วเสนอเป็นหมวดเกมใหม่ 11 หมวด — ใช้กลไกเดิมของแอปให้มากที่สุด เพิ่มกลไกใหม่เท่าที่จำเป็นจริงๆ เท่านั้น เอกสารนี้ไว้อ่านตัดสินใจก่อน ยังไม่มีการเขียนโค้ดใดๆ</p>
+        <div class="meta-row">
+          <span><b>แหล่งข้อมูล:</b> branch <span class="mono">research/curriculum-p1-p6</span> — เอกสารทางการ สสวท./สพฐ.</span>
+          <span><b>ขอบเขตรอบนี้:</b> เฉพาะ ป.1 (ป.2–ป.6 ทำต่อทีหลัง)</span>
+          <span><b>สถานะ:</b> รอ cf ก่อนสร้าง branch feature/</span>
+        </div>
+      </div>
+
+      <section id="stats">
+        <div class="stats">
+          <div class="stat-tile"><div class="v">11</div><div class="l">หมวดเกมใหม่ที่เสนอ</div></div>
+          <div class="stat-tile"><div class="v">5</div><div class="l">วิชาที่ครอบคลุม</div></div>
+          <div class="stat-tile"><div class="v">1</div><div class="l">กลไกใหม่ที่ต้องสร้าง</div></div>
+          <div class="stat-tile"><div class="v">7</div><div class="l">เกมที่ใช้กลไกเดิม 100%</div></div>
+          <div class="stat-tile"><div class="v">3</div><div class="l">เฟสการพัฒนาที่แนะนำ</div></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="sec-head" style="margin-bottom:2px;"><h2 style="font-size:1.1rem;">จำนวนหมวดเกมใหม่ต่อวิชา</h2></div>
+          <p class="sec-sub" style="margin-top:4px;">วิทยาศาสตร์และสังคมศึกษามีเนื้อหาที่แอปยังไม่เคยแตะเลย จึงมีหมวดใหม่เสนอมากที่สุด ส่วนคณิต/ไทย/อังกฤษเนื้อหาส่วนใหญ่ต่อยอดจากหมวดเดิมได้โดยแค่เพิ่มโจทย์ (ดูกล่อง "โจทย์เสริมในหมวดเดิม" ของแต่ละวิชา)</p>
+          <div style="margin-top:18px;">
+            <div class="bar-row">
+              <div class="bar-label"><span class="navdot" style="background:var(--subj-sci)"></span>วิทยาศาสตร์</div>
+              <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--subj-sci)"></div></div>
+              <div class="bar-val tab-num">4</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label"><span class="navdot" style="background:var(--subj-soc)"></span>สังคมศึกษา</div>
+              <div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--subj-soc)"></div></div>
+              <div class="bar-val tab-num">3</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label"><span class="navdot" style="background:var(--subj-math)"></span>คณิตศาสตร์</div>
+              <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--subj-math)"></div></div>
+              <div class="bar-val tab-num">2</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label"><span class="navdot" style="background:var(--subj-thai)"></span>ภาษาไทย</div>
+              <div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--subj-thai)"></div></div>
+              <div class="bar-val tab-num">1</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label"><span class="navdot" style="background:var(--subj-eng)"></span>ภาษาอังกฤษ</div>
+              <div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--subj-eng)"></div></div>
+              <div class="bar-val tab-num">1</div>
+            </div>
+          </div>
+          <div class="chart-foot">
+            <span>รวม 11 หมวด</span>
+            <details class="table-toggle"><summary>ดูเป็นตาราง</summary>
+              <table class="fallback-table">
+                <tr><th>วิชา</th><th>หมวดใหม่</th></tr>
+                <tr><td>วิทยาศาสตร์</td><td class="tab-num">4</td></tr>
+                <tr><td>สังคมศึกษา</td><td class="tab-num">3</td></tr>
+                <tr><td>คณิตศาสตร์</td><td class="tab-num">2</td></tr>
+                <tr><td>ภาษาไทย</td><td class="tab-num">1</td></tr>
+                <tr><td>ภาษาอังกฤษ</td><td class="tab-num">1</td></tr>
+              </table>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MATH ================= -->
+      <section id="math">
+        <div class="subj-head">
+          <div class="subj-icon" style="background:var(--subj-math-soft);color:var(--subj-math)">🔢</div>
+          <div class="subj-title-wrap">
+            <h2>คณิตศาสตร์ ป.1</h2>
+            <span class="confidence"><i></i>ความมั่นใจสูงมาก — อ่านจากเอกสาร สสวท. โดยตรงทุกตัวชี้วัด</span>
+          </div>
+        </div>
+        <div class="gap-box"><b>ช่องว่างหลัก:</b> เนื้อหา ป.1 ใกล้เคียงหมวด <span class="mono">math</span>/<span class="mono">ar-math</span> เดิมมากที่สุดในบรรดา 5 วิชา แต่ยังขาดการนับทีละ 10 อย่างเป็นระบบ, มุมมองส่วนย่อย-ส่วนรวม, การวัดความยาว/น้ำหนักจริงจัง, การจำแนกรูปทรง 2 มิติ/3 มิติ และการอ่านแผนภูมิรูปภาพ — ส่วน "แบบรูป" (ค1.1) มีหมวด <span class="mono">pattern</span> 🔮 ครอบคลุมไว้แล้ว ไม่ต้องทำซ้ำ</div>
+
+        <div class="cards">
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🔷</span><h3>รูปทรงแสนสนุก</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-math-shape</span>
+            <div class="std-line"><b>ค 2.2 ป.1/1</b> — จำแนกรูปสามเหลี่ยม สี่เหลี่ยม วงกลม วงรี ทรงสี่เหลี่ยมมุมฉาก ทรงกลม ทรงกระบอก กรวย</div>
+            <ul>
+              <li>จับคู่รูปทรงกับชื่อ (ต่อยอด engine <span class="mono">ar-match</span> แบบ label ที่โหมดครูใช้แล้ว)</li>
+              <li>เกม "หารูปทรงนี้ในบ้าน" — จับคู่รูปทรงกับของใช้จริง (ลูกบอล = ทรงกลม, กระป๋อง = ทรงกระบอก)</li>
+            </ul>
+          </div>
+
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">📏</span><h3>วัด-ชั่ง-ตวง</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-math-measure</span>
+            <div class="std-line"><b>ค 2.1 ป.1/1-2</b> — วัด/เปรียบเทียบความยาว (ซม./ม.) และน้ำหนัก (กก./ขีด)</div>
+            <ul>
+              <li>ปรนัยเทียบภาพ 2 เส้น/2 สิ่งของ เลือกอันที่ยาวกว่า/หนักกว่า</li>
+              <li>โจทย์บวก-ลบมีหน่วยกำกับ เช่น "เชือกเส้นแรกยาว 5 ซม. เส้นที่สองยาว 3 ซม. รวมกันยาวเท่าไร"</li>
+              <li class="card-note">แถม: อ่านแผนภูมิรูปภาพ (ค 3.1) ผนวกเป็นโจทย์ในหมวดนี้ ผ่าน component ใหม่ <span class="mono">q.pictograph</span> (แพทเทิร์นเดียวกับ <span class="mono">q.pattern</span> ที่มีอยู่แล้ว) ไม่ต้องเปิดหมวดแยก</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="extra-box"><b>โจทย์เสริมในหมวดเดิม (ไม่เปิดหมวดใหม่):</b> เพิ่มในหมวด <span class="mono">math</span> — นับทีละ 10, แตกจำนวนส่วนย่อย-ส่วนรวม (7 = 5+2), เรียงเลข 3-5 ตัว, แยกหลักสิบ-หลักหน่วย, โจทย์ปัญหาบวก-ลบมีรูปประกอบถึง 100</div>
+      </section>
+
+      <!-- ================= THAI ================= -->
+      <section id="thai">
+        <div class="subj-head">
+          <div class="subj-icon" style="background:var(--subj-thai-soft);color:var(--subj-thai)">ก</div>
+          <div class="subj-title-wrap">
+            <h2>ภาษาไทย ป.1</h2>
+            <span class="confidence ocr"><i></i>OCR จาก PDF ต้นฉบับ ~85-95% ยืนยันชั้นด้วยลำดับตัวชี้วัดแล้ว</span>
+          </div>
+        </div>
+        <div class="gap-box"><b>ช่องว่างหลัก:</b> หมวด <span class="mono">thai</span>/<span class="mono">thai2</span> เดิมครอบคลุมพยัญชนะ-สระ-คำศัพท์แล้ว (สาระที่ 4 บางส่วน) แต่ยังไม่มีเกมที่ครอบคลุม สาระที่ 2 (เขียนประโยค), สาระที่ 3 (ฟัง-ดู-พูดเชิงโต้ตอบ) และสาระที่ 5 (วรรณคดี/นิทาน/บทร้อยกรอง) เลย</div>
+
+        <div class="cards">
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🧚</span><h3>นิทานแสนสนุก</h3></div>
+              <span class="pill extend"><i></i>ขยายกลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-thai-story</span>
+            <div class="std-line"><b>สาระที่ 1 (การอ่าน) / สาระที่ 5 (วรรณคดี)</b> — ตอบคำถามเรื่องที่อ่าน, เล่าเรื่องย่อ, คาดคะเนเหตุการณ์, ข้อคิดจากนิทาน</div>
+            <ul>
+              <li>ฟัง/อ่านนิทานสั้น 3-4 ประโยค แล้วตอบปรนัย "ใครเป็นตัวเอกของเรื่อง" / เลือกข้อคิดที่ตรงกับเรื่อง</li>
+              <li>เรียงลำดับภาพเหตุการณ์ 3 ภาพจากนิทาน — ขยาย engine เรียงคำ <span class="mono">ar-thai</span> ให้รับ "การ์ดรูปภาพ/emoji" แทนคำ ไม่ใช่แค่ประโยค</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="extra-box"><b>โจทย์เสริมในหมวดเดิม:</b> เพิ่มในหมวด <span class="mono">thai</span>/<span class="mono">thai2</span> — คำคล้องจอง (เช่น "แมว" คล้องกับ "แถว"), จับคู่พยัญชนะต้นเสียงกับภาพ (ก ไก่, ข ไข่), เลือกคำสะกดถูกจาก 2 ตัวเลือก</div>
+      </section>
+
+      <!-- ================= ENGLISH ================= -->
+      <section id="english">
+        <div class="subj-head">
+          <div class="subj-icon" style="background:var(--subj-eng-soft);color:var(--subj-eng)">🔤</div>
+          <div class="subj-title-wrap">
+            <h2>ภาษาอังกฤษ ป.1</h2>
+            <span class="confidence"><i></i>เอกสารทางการ สพฐ. (16 ตัวชี้วัด ต้องรู้ 9 ควรรู้ 7)</span>
+          </div>
+        </div>
+        <div class="gap-box"><b>ช่องว่างหลัก:</b> หมวด <span class="mono">english</span>, <span class="mono">ar-eng</span>, <span class="mono">listen1/2</span> ครอบคลุมคำศัพท์/ต่อประโยค/ฟัง-สะกดคำแล้ว แต่ยังไม่มีเกมฟังคำสั่งแล้วทำตาม และเกมบทสนทนาโต้ตอบ (ทักทาย/ขอบคุณ/แนะนำตัว) เลย</div>
+
+        <div class="cards">
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🙋</span><h3>ฟังแล้วทำ</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-eng-listen-act</span>
+            <div class="std-line"><b>ต 1.1 ป.1/1</b> — ฟังคำสั่งในห้องเรียน <span class="mono">Stand up. / Sit down. / Listen. / Stop!</span> · <b>ต 1.2 ป.1/1</b> — ทักทาย/ขอบคุณ/แนะนำตัว</div>
+            <ul>
+              <li>เล่นเสียงคำสั่งอัตโนมัติ (ต่อยอด <span class="mono">speak()</span> แบบเดียวกับเกมฟังคำเดิม) แล้วเลือกภาพท่าทางที่ถูกจาก 2-3 ตัวเลือก</li>
+              <li>บทสนทนาแบบเลือกคำตอบที่เหมาะสม เช่น ตัวการ์ตูนพูด <span class="mono">"How are you?"</span> เลือก <span class="mono">"I am fine."</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="extra-box"><b>โจทย์เสริมในหมวดเดิม:</b> เพิ่มในหมวด <span class="mono">english</span> — จับคู่ตัวอักษร A-Z กับเสียง, นับเลข 1-20 ภาษาอังกฤษ, จับคู่คำสี (red/blue/yellow), ตำแหน่ง in/on/under</div>
+      </section>
+
+      <!-- ================= SCIENCE ================= -->
+      <section id="science">
+        <div class="subj-head">
+          <div class="subj-icon" style="background:var(--subj-sci-soft);color:var(--subj-sci)">🔬</div>
+          <div class="subj-title-wrap">
+            <h2>วิทยาศาสตร์ ป.1</h2>
+            <span class="confidence"><i></i>ความมั่นใจสูงมาก — อ่านจากเอกสาร สสวท./OBEC โดยตรงทุกหัวข้อ</span>
+          </div>
+        </div>
+        <div class="gap-box"><b>ช่องว่างหลัก:</b> เนื้อหาเป็น greenfield เกือบทั้งหมด หมวด <span class="mono">animals</span> เดิมครอบคลุมแค่การจำสัตว์พื้นฐาน ยังไม่แตะระบบนิเวศ/ที่อยู่อาศัย/หน้าที่อวัยวะ ส่วนสสาร-เสียง-โลก-อวกาศ-เทคโนโลยีไม่เคยมีในแอปเลย แต่ระดับความยากยังเป็น "สังเกตด้วยตา" ล้วนๆ เหมาะกับกลไกจับคู่/ปรนัยที่มีอยู่แล้ว</div>
+
+        <div class="cards">
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🏞️</span><h3>บ้านของสัตว์</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-sci-habitat</span>
+            <div class="std-line"><b>ว 1.1</b> — ระบุพืช/สัตว์ในบริเวณต่างๆ และสภาพแวดล้อมที่เหมาะสมกับสัตว์แต่ละชนิด</div>
+            <ul><li>จับคู่ภาพสัตว์กับที่อยู่อาศัย (ปลา→สระน้ำ, กระรอก→ต้นไม้) — <span class="mono">ar-match</span> เดิม เปลี่ยนแค่คลังคู่จับคู่</li></ul>
+          </div>
+
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🫀</span><h3>ร่างกายมหัศจรรย์</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-sci-body</span>
+            <div class="std-line"><b>ว 1.2</b> — ชื่อ ลักษณะ และหน้าที่ของอวัยวะมนุษย์/สัตว์/พืช</div>
+            <ul><li>จับคู่อวัยวะกับหน้าที่ (ตา-มองดู, หู-ฟัง, ราก-ดูดน้ำ, ใบ-สร้างอาหาร) — <span class="mono">ar-match</span> เดิม</li></ul>
+          </div>
+
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🧱</span><h3>วัสดุรอบตัว</h3></div>
+              <span class="pill new"><i></i>กลไกใหม่</span>
+            </div>
+            <span class="id-tag mono">p1-sci-material</span>
+            <div class="std-line"><b>ว 2.1</b> — สมบัติที่สังเกตได้ของวัสดุ (นุ่ม/แข็ง/ขรุขระ/เรียบ/ใส/ยืดหด) และการจัดกลุ่มวัสดุ</div>
+            <ul><li>ลากของ/วัตถุไปคัดแยกลงตะกร้าตามชนิดวัสดุ (ไม้/ผ้า/พลาสติก) — mechanic <b>คัดแยกลงตะกร้า</b> ที่ต้องสร้างใหม่</li></ul>
+          </div>
+
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🌠</span><h3>ท้องฟ้า-หิน-เสียง</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-sci-sky</span>
+            <div class="std-line"><b>ว 2.3 / ว 3.1 / ว 3.2</b> — การเกิดเสียง, ดาวที่เห็นกลางวัน-กลางคืน, ลักษณะภายนอกของหิน</div>
+            <ul><li>ปรนัยภาพประกอบล้วน — "กลางวันหรือกลางคืน", "เสียงเกิดจากอะไร", จับคู่ภาพหินกับลักษณะ (ขรุขระ/เรียบมัน/หนัก) — หมวดปรนัยเดิมทั้งหมด</li></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SOCIAL ================= -->
+      <section id="social">
+        <div class="subj-head">
+          <div class="subj-icon" style="background:var(--subj-soc-soft);color:var(--subj-soc)">🏛️</div>
+          <div class="subj-title-wrap">
+            <h2>สังคมศึกษา ป.1</h2>
+            <span class="confidence ocr"><i></i>OCR จาก PDF ต้นฉบับ ~85-95% ยืนยันชั้นด้วยลำดับตัวชี้วัดแล้ว</span>
+          </div>
+        </div>
+        <div class="gap-box"><b>ช่องว่างหลัก:</b> เป็นเรื่องใหม่เกือบทั้งหมดสำหรับแอป มีทับซ้อนเล็กน้อยกับหมวด <span class="mono">behavior</span> (มารยาท/พฤติกรรม) และ <span class="mono">days</span> (วันในสัปดาห์/ปฏิทิน) ส่วนเศรษฐศาสตร์ ภูมิศาสตร์ หน้าที่พลเมือง และมิติเวลา/ลำดับเหตุการณ์ยังไม่มีเลย</div>
+
+        <div class="cards">
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">👪</span><h3>ครอบครัว-โรงเรียน</h3></div>
+              <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-soc-family</span>
+            <div class="std-line">หน้าที่พลเมือง วัฒนธรรม และการดำเนินชีวิตในสังคม — บทบาทสมาชิกครอบครัว/โรงเรียน, สิทธิ-หน้าที่</div>
+            <ul>
+              <li>จับคู่สมาชิกครอบครัว (พ่อ-แม่-พี่-น้อง-ปู่ย่าตายาย) กับบทบาทหน้าที่ — <span class="mono">ar-match</span> เดิม</li>
+              <li>ปรนัย "เด็กคนไหนทำถูก?" เลือกภาพพฤติกรรมที่ดีเทียบกับไม่ดี</li>
+            </ul>
+          </div>
+
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🛒</span><h3>จำเป็น VS อยากได้</h3></div>
+              <span class="pill new"><i></i>กลไกใหม่</span>
+            </div>
+            <span class="id-tag mono">p1-soc-econ</span>
+            <div class="std-line">เศรษฐศาสตร์ — สินค้า/บริการ, การใช้จ่ายไม่เกินตัว, ประโยชน์ของการออม</div>
+            <ul><li>ลากของลงตะกร้า "จำเป็น" กับ "อยากได้" — ใช้ mechanic <b>คัดแยกลงตะกร้า</b> engine เดียวกับ p1-sci-material</li></ul>
+          </div>
+
+          <div class="game-card">
+            <div class="game-card-head">
+              <div class="game-card-title"><span class="ic">🧭</span><h3>ลำดับ-ทิศทาง</h3></div>
+              <span class="pill extend"><i></i>ขยายกลไกเดิม</span>
+            </div>
+            <span class="id-tag mono">p1-soc-time-place</span>
+            <div class="std-line">ประวัติศาสตร์ (เรียงลำดับเหตุการณ์) + ภูมิศาสตร์ (ทิศหลัก/ตำแหน่ง)</div>
+            <ul>
+              <li>เรียงลำดับภาพกิจวัตรในหนึ่งวัน (ตื่นนอน → แปรงฟัน → กินข้าว → ไปโรงเรียน) — engine เรียงภาพเดียวกับ p1-thai-story</li>
+              <li>ปรนัยทายทิศจากเข็มทิศการ์ตูน + ตำแหน่งของสิ่งของ (ซ้าย/ขวา/บน/ล่าง)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="extra-box"><b>โจทย์เสริมในหมวดเดิม:</b> เพิ่มในหมวด <span class="mono">behavior</span> — พฤติกรรมถูก-ผิดเชิงศาสนา/มารยาท (ขอบคุณ/ขอโทษ/สวัสดี) และหมวด <span class="mono">days</span> — วันสำคัญทางศาสนา/ปฏิทิน</div>
+      </section>
+
+      <!-- ================= MECHANICS ================= -->
+      <section id="mechanics">
+        <div class="sec-head"><h2>สรุปกลไกเกมที่ใช้</h2></div>
+        <p class="sec-sub">ยึดหลัก ROI จากไฟล์ <span class="mono">แนวคิด-mechanic-ใหม่.md</span> — reuse engine เดิมให้มากที่สุดก่อนสร้างใหม่ จาก 11 หมวด มีแค่ 1 mechanic ที่ต้องสร้างใหม่จริงๆ</p>
+        <div class="mech-grid">
+          <div class="mech-card">
+            <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            <h3>จับคู่ (ar-match)</h3>
+            <p>engine เดิมรองรับ non-emoji label แล้ว (ดู <span class="mono">matchLabelClass()</span> ฝั่งโหมดครู) — เพิ่มแค่คลังคู่จับคู่ใหม่ต่อวิชา ไม่ต้องแตะ engine เลย</p>
+            <div class="used-by">
+              <span class="chip">รูปทรง 2D/3D</span>
+              <span class="chip">บ้านของสัตว์</span>
+              <span class="chip">ร่างกายมหัศจรรย์</span>
+              <span class="chip">ครอบครัว-โรงเรียน</span>
+            </div>
+          </div>
+          <div class="mech-card">
+            <span class="pill reuse"><i></i>ใช้กลไกเดิม</span>
+            <h3>ปรนัย (quiz)</h3>
+            <p>engine ปรนัยเดิมรองรับรูปภาพต่อข้อ (<span class="mono">q.img</span>) และเสียงอ่านโจทย์อยู่แล้ว — เพิ่มแค่หมวด+คลังคำถามใหม่</p>
+            <div class="used-by">
+              <span class="chip">วัด-ชั่ง-ตวง</span>
+              <span class="chip">ฟังแล้วทำ</span>
+              <span class="chip">ท้องฟ้า-หิน-เสียง</span>
+            </div>
+          </div>
+          <div class="mech-card">
+            <span class="pill extend"><i></i>ขยายกลไกเดิม</span>
+            <h3>เรียงลำดับด้วยภาพ</h3>
+            <p>generalize engine เรียงคำ <span class="mono">ar-thai</span>/<span class="mono">ar-eng</span> ให้การ์ดเป็น emoji/รูปภาพได้ ไม่จำกัดแค่คำ — งานขยายเล็กน้อย ไม่ใช่ engine ใหม่</p>
+            <div class="used-by">
+              <span class="chip">นิทานแสนสนุก</span>
+              <span class="chip">ลำดับ-ทิศทาง</span>
+            </div>
+          </div>
+          <div class="mech-card">
+            <span class="pill new"><i></i>กลไกใหม่</span>
+            <h3>คัดแยกลงตะกร้า</h3>
+            <p>ลากของ/คำไปใส่ตะกร้าตามหมวดที่ถูกต้อง ต่างจาก <span class="mono">ar-count</span> เดิมตรงที่ต้องมี <b>หลายตะกร้าพร้อมกัน</b> — engine ใหม่ทั้งหมด แต่คุ้มเพราะใช้ซ้ำได้ทันที 2 เกมตั้งแต่รอบแรก และจะใช้ซ้ำได้อีกในเนื้อหา ป.2 ขึ้นไป (สารอาหาร, ของแข็ง/เหลว/แก๊ส)</p>
+            <div class="used-by">
+              <span class="chip">วัสดุรอบตัว</span>
+              <span class="chip">จำเป็น VS อยากได้</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PHASES ================= -->
+      <section id="phases">
+        <div class="sec-head"><h2>แผนเฟสที่แนะนำ</h2></div>
+        <p class="sec-sub">เรียงตามงาน engine ที่ต้องทำ ไม่ใช่ตามวิชา — เริ่มจากเกมที่ reuse ได้ 100% ก่อนเพื่อเห็นผลไว แล้วค่อยลงทุนกลไกใหม่ทีหลัง</p>
+        <div class="phase-track">
+          <div class="phase-card">
+            <div class="phase-num">1</div>
+            <div class="phase-body">
+              <h3>Reuse ล้วน — เพิ่มแค่คลังข้อมูล</h3>
+              <div class="phase-meta">7 หมวด · ไม่ต้องแตะ engine เลย · ROI สูงสุด เริ่มได้ทันทีหลัง cf</div>
+              <div class="phase-games">
+                <span class="chip">รูปทรงแสนสนุก</span><span class="chip">วัด-ชั่ง-ตวง</span><span class="chip">ฟังแล้วทำ</span>
+                <span class="chip">บ้านของสัตว์</span><span class="chip">ร่างกายมหัศจรรย์</span><span class="chip">ท้องฟ้า-หิน-เสียง</span>
+                <span class="chip">ครอบครัว-โรงเรียน</span>
+              </div>
+            </div>
+          </div>
+          <div class="phase-card">
+            <div class="phase-num">2</div>
+            <div class="phase-body">
+              <h3>ขยาย engine เรียงลำดับให้รับภาพ</h3>
+              <div class="phase-meta">2 หมวด · generalize <span class="mono">ar-thai</span>/<span class="mono">ar-eng</span> เพิ่ม card type ใหม่</div>
+              <div class="phase-games"><span class="chip">นิทานแสนสนุก</span><span class="chip">ลำดับ-ทิศทาง</span></div>
+            </div>
+          </div>
+          <div class="phase-card">
+            <div class="phase-num">3</div>
+            <div class="phase-body">
+              <h3>สร้าง mechanic คัดแยกลงตะกร้า</h3>
+              <div class="phase-meta">2 หมวด · engine ใหม่ทั้งหมด (drag-to-bin หลายตะกร้า) · ทำหลังสุดเพราะเสี่ยงสุด</div>
+              <div class="phase-games"><span class="chip">วัสดุรอบตัว</span><span class="chip">จำเป็น VS อยากได้</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="phase-note">แนะนำแยก branch <span class="mono">feature/</span> ต่อเฟส (ไม่รวมเป็น branch เดียวก้อนใหญ่) เทสและขอ merge ทีละเฟสตามกติกาโปรเจกต์ — เฟส 1 จบก่อนค่อยเริ่มเฟส 2</p>
+      </section>
+
+      <!-- ================= ARCHITECTURE ================= -->
+      <section id="architecture">
+        <div class="sec-head"><h2>ประเด็นสถาปัตยกรรมที่ต้องตัดสินใจก่อนเริ่ม</h2></div>
+        <p class="sec-sub">นี่คือจุดใหญ่สุด: แอปกำลังขยายจาก "เตรียมสอบเข้า ป.1 สำหรับเด็ก 5 ขวบ" ไปเป็น "รองรับหลักสูตร ป.1-6" — ต้องตัดสินใจว่าจะจัดวางเนื้อหาใหม่บนหน้าเลือกหมวดยังไง ก่อนเริ่มเขียนโค้ดจริง</p>
+        <div class="callout">
+          <b>ทางเลือกที่เป็นไปได้</b>
+          <div class="opt-list">
+            <div class="opt"><span class="k">A</span><p><b>เพิ่ม grade selector หน้าแรก</b> คล้าย <span class="mono">.grade-chip</span> ที่โหมดครูมีอยู่แล้ว กรอง <span class="mono">#cat-grid*</span> ตามชั้นที่เลือก เก็บชั้นที่เลือกไว้ต่อโปรไฟล์เด็ก (ขยาย object โปรไฟล์เดิมใน localStorage)</p></div>
+            <div class="opt"><span class="k">B</span><p><b>แยก "เตรียม ป.1" ออกจาก "ป.1 หลักสูตรทางการ"</b> เป็นคนละชุดที่เลือกเล่นได้อิสระ ไม่ผสมกัน — ของเดิมทั้งหมด (30 หมวด) ยังอยู่เหมือนเดิมเป๊ะ ไม่กระทบ progress/สติกเกอร์ผู้ใช้เก่า</p></div>
+            <div class="opt"><span class="k">C</span><p><b>รวมเป็นชุดเดียวต่อชั้น</b> ยุบของเดิมเข้ารวมกับเนื้อหาใหม่ตามหลักสูตรทางการทั้งหมด — เปลี่ยนโครงสร้างมากสุด เสี่ยงกระทบผู้ใช้เดิมมากสุด</p></div>
+          </div>
+          <div class="lean"><b>ความเห็นเบื้องต้น:</b> A+B ร่วมกันดูปลอดภัยสุด — มี grade selector แบบ A แต่ให้ "เตรียมสอบ ป.1" เป็นตัวเลือกแยกอยู่เสมอ (ไม่ใช่แค่ history) กันกระทบผู้ใช้เดิมตามแบบ B ยังไม่ฟันธง รอฟังความเห็นก่อนเริ่มออกแบบ UI จริง</div>
+        </div>
+        <p class="phase-note" style="margin-top:16px;">ข้อเสนอเพิ่ม: ใช้ prefix <span class="mono">p1-</span>, <span class="mono">p2-</span> … นำหน้า id หมวดทุกอันที่มาจากหลักสูตรทางการ (ต่างจาก id เดิมที่ไม่มี prefix) เพื่อกันชนกับหมวดเดิมและแยกกรองตามชั้นได้ง่ายเมื่อทำ ป.2-6 ต่อ — อีโมจิทั้ง 11 ตัวที่เสนอ (🔷📏🧚🙋🏞️🫀🧱🌠👪🛒🧭) ตรวจแล้วว่าไม่ซ้ำกับอีโมจิที่ใช้อยู่ในแอปปัจจุบันทั้งหมด</p>
+      </section>
+
+      <section id="cta">
+        <div class="cta">
+          <h2>สรุปก่อนเริ่มลงมือ</h2>
+          <p>เอกสารนี้ครอบคลุมเฉพาะ <b style="color:var(--ink)">ป.1</b> ตามคำแนะนำในไฟล์วิจัย mechanic ที่ให้เริ่มจากชั้นที่เนื้อหาใกล้เคียงแอปปัจจุบันที่สุดก่อน ป.2-6 จะทำเป็นรอบถัดไปหลัง ป.1 ผ่านการทดสอบจริงแล้ว ยังไม่มีการแก้โค้ดใดๆ ในรอบนี้ทั้งสิ้น</p>
+          <ol>
+            <li>ยืนยันขอบเขต — จะเริ่มทั้ง 11 หมวดพร้อมกัน หรือเริ่มแค่เฟส 1 (7 หมวด reuse ล้วน) ก่อน</li>
+            <li>ตอบประเด็นสถาปัตยกรรม grade selector (ตัวเลือก A/B/C ด้านบน) อย่างน้อยคร่าวๆ ก่อนเริ่ม UI หน้าแรก</li>
+            <li>ยืนยัน naming convention <span class="mono">p1-</span> prefix</li>
+            <li>เมื่อ cf แล้วจะสร้าง branch <span class="mono">feature/p1-curriculum</span> (หรือแยกตามเฟส) ตามกติกาโปรเจกต์ทันที ไม่ commit ตรง <span class="mono">main</span></li>
+          </ol>
+          <div class="cf-badge">⏳ รอ "cf" เพื่อเริ่มลงมือ</div>
+        </div>
+
+        <footer class="src">
+          อ้างอิงจาก <span class="mono">research/curriculum/README.md</span>, <span class="mono">research/curriculum/แนวคิด-mechanic-ใหม่.md</span> และ <span class="mono">research/curriculum/ป1/*.md</span> (5 ไฟล์วิชา) บน branch <span class="mono">research/curriculum-p1-p6</span> — เอกสารนี้เป็นแค่สรุปเพื่ออ่านตัดสินใจ ไม่ใช่ spec สุดท้าย รายละเอียดโจทย์จริงจะปรับได้อีกตอนลงมือทำ
+        </footer>
+      </section>
+    </main>
+  </div>
+</div>
