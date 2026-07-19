@@ -1,0 +1,25 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นาฬิกาวิเศษ 1">
+  <defs>
+    <linearGradient id="ck1A" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9BD8FF"/>
+      <stop offset="1" stop-color="#59AEF2"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="31" r="24" fill="url(#ck1A)" stroke="#3D87C9" stroke-width="3"/>
+  <circle cx="32" cy="31" r="18" fill="#FFFDF6" stroke="#CBE6F8" stroke-width="1.5"/>
+  <g stroke="#B9CBD8" stroke-width="2" stroke-linecap="round">
+    <line x1="32" y1="16.5" x2="32" y2="19.5"/>
+    <line x1="32" y1="42.5" x2="32" y2="45.5"/>
+    <line x1="17.5" y1="31" x2="20.5" y2="31"/>
+    <line x1="43.5" y1="31" x2="46.5" y2="31"/>
+  </g>
+  <line x1="32" y1="31" x2="32" y2="21.5" stroke="#4A9EDF" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="32" y1="31" x2="39.5" y2="31" stroke="#E4574F" stroke-width="3.6" stroke-linecap="round"/>
+  <circle cx="32" cy="31" r="2.6" fill="#5A4636"/>
+  <circle cx="26.5" cy="36.5" r="1.5" fill="#F8A9C4"/>
+  <circle cx="37.5" cy="36.5" r="1.5" fill="#F8A9C4"/>
+  <path d="M28.5 40 Q32 43 35.5 40" fill="none" stroke="#5A4636" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M12 10 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2 Z" fill="#FFD34E"/>
+  <path d="M50 6 l1 2.4 2.4 1 -2.4 1 -1 2.4 -1 -2.4 -2.4 -1 2.4 -1 Z" fill="#8FD3FF"/>
+</svg>
