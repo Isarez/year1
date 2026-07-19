@@ -1970,14 +1970,14 @@
   /* ---------- เพื่อนซี้หน้าหลัก (home buddy — ตัวละคร+สัตว์เลี้ยงจากบ้านของหนู ยืนให้กำลังใจใน hero) ---------- */
   .house-buddy{
     position:relative; display:flex; justify-content:center;
-    margin:42px auto 0; width:280px; max-width:94vw;  /* เว้นหัวไว้ให้ bubble (top:-8px) ไม่ทับข้อความด้านบน */
+    margin:62px auto 0; width:280px; max-width:94vw;  /* เว้นหัวไว้ให้ bubble (top:-30px) ไม่ทับข้อความด้านบน */
   }
   #house-buddy-canvas{
     display:block; width:280px; height:190px; max-width:100%;
     cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .house-buddy-bubble{
-    position:absolute; top:-8px; left:50%; transform:translateX(-50%) scale(1);
+    position:absolute; top:-30px; left:50%; transform:translateX(-50%) scale(1);
     background:#fff; color:var(--ink,#5b4636);
     border-radius:16px; padding:7px 14px;
     font-size:15px; font-weight:700; line-height:1.35; text-align:center;
