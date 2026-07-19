@@ -263,6 +263,87 @@
     </div>
   </section>
 
+  <!-- MEMORY VIEW (จับคู่ความจำ — reuse .memory-* จาก css/style.css, engine teacher-match.js) -->
+  <section id="memory-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="memory-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="memory-cat-label">จับคู่ความจำ</div>
+        <div class="progress-track"><div class="progress-fill" id="memory-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="memory-hint">🎴 แตะการ์ดฝั่งซ้าย 1 ใบ แล้วแตะฝั่งขวา 1 ใบ ให้เป็นคู่กันนะ!</div>
+      </div>
+      <div class="q-counter" id="memory-level-counter">1/1</div>
+    </div>
+    <div class="memory-board">
+      <div class="memory-col memory-col-dots" id="memory-col-dots"></div>
+      <div class="memory-col memory-col-numbers" id="memory-col-numbers"></div>
+    </div>
+  </section>
+
+  <!-- MIX VIEW (ผสมสี — reuse .mix-* จาก css/style.css, engine teacher-mix.js) -->
+  <section id="mix-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="mix-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="mix-cat-label">ผสมสี</div>
+        <div class="progress-track"><div class="progress-fill" id="mix-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="mix-hint">🎨 แตะกระปุกสีเพื่อหยอดสีลงหม้อนะ!</div>
+      </div>
+      <div class="q-counter" id="mix-level-counter">1/10</div>
+    </div>
+    <div class="mix-board">
+      <div class="mix-target-card">
+        <div class="mix-target-text" id="mix-target-text">ช่วยทำ<b>สีส้ม</b>ให้หน่อยนะ!</div>
+        <div class="mix-target-swatch" id="mix-target-swatch"></div>
+      </div>
+      <div class="mix-pot-wrap">
+        <div class="mix-msg" id="mix-msg" hidden></div>
+        <div class="mix-pot" id="mix-pot">
+          <div class="mix-ladle"><span class="mix-ladle-bowl"></span></div>
+          <div class="mix-pot-rim"></div>
+          <div class="mix-pot-body">
+            <div class="mix-pot-liquid" id="mix-pot-liquid"></div>
+            <div class="mix-pot-face">
+              <span class="mpf-eye l"></span><span class="mpf-eye r"></span>
+              <span class="mpf-cheek l"></span><span class="mpf-cheek r"></span>
+              <span class="mpf-mouth"></span>
+              <span class="mpf-tear"></span>
+            </div>
+          </div>
+        </div>
+        <div class="mix-pot-chips" id="mix-pot-chips"></div>
+      </div>
+      <div class="mix-jars" id="mix-jars"></div>
+    </div>
+  </section>
+
+  <!-- MUSIC VIEW (ดนตรี — reuse .music-* จาก css/style.css, engine teacher-music.js) -->
+  <section id="music-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="music-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="music-cat-label">ดนตรี</div>
+        <div class="progress-track"><div class="progress-fill" id="music-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="music-hint">🎹 ฟังทำนองแล้วกดคีย์เปียโนตามให้ถูกนะ!</div>
+      </div>
+      <div class="q-counter" id="music-level-counter">1/10</div>
+    </div>
+    <div class="music-board">
+      <div class="music-prompt-card">
+        <div class="music-prompt-label" id="music-prompt-label">กดคีย์ตามนี้เลย 👇</div>
+        <div class="music-notes" id="music-notes"></div>
+        <div class="music-prompt-tools">
+          <button class="music-tool-btn music-listen-btn" id="music-listen-btn">🔊 ฟังเพลง</button>
+          <button class="music-tool-btn music-notation-toggle" id="music-notation-toggle" aria-pressed="false">โน้ต: ไทย</button>
+        </div>
+      </div>
+      <div class="music-msg" id="music-msg" hidden></div>
+      <div class="music-piano-wrap">
+        <div class="music-piano" id="music-piano"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- RESULT VIEW (ไม่มีสติกเกอร์) -->
   <section id="result-view" hidden>
     <div class="result-card">
@@ -411,5 +492,8 @@
 <script src="teacher.js?v=1.14.0"></script>
 <script src="teacher-ar.js?v=1.14.0"></script>
 <script src="teacher-listen.js?v=1.14.0"></script>
+<script src="teacher-match.js?v=1.14.0"></script>
+<script src="teacher-mix.js?v=1.14.0"></script>
+<script src="teacher-music.js?v=1.14.0"></script>
 </body>
 </html>

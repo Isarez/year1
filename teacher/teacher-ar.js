@@ -996,7 +996,7 @@ function startTeacherAR(gameId){
   const [color] = CARD_COLORS[idx % CARD_COLORS.length];
   document.documentElement.style.setProperty('--cat-color', color);
   const arView = $('ar-view');
-  [setupView, homeView, manageView, builderView, quizView, listenView, resultView].forEach(x=>{ x.hidden = true; });
+  [setupView, homeView, manageView, builderView, quizView, listenView, memoryView, mixView, musicView, resultView].forEach(x=>{ x.hidden = true; });
   arView.hidden = false;
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', color));
   $('ar-cat-label').innerHTML = '<img src="'+game.logo+'" alt="" style="width:24px;height:24px;vertical-align:-6px;margin-right:6px;">'+escapeHtml(game.title);

@@ -73,8 +73,14 @@ body.night-mode .teacher-grade-title{color:#F2E8FF;}
   background:#fff; max-width:240px; cursor:pointer;
 }
 
-/* mechanic picker */
-.mechanic-picker{display:flex; flex-wrap:wrap; gap:10px;}
+/* mechanic picker — จัดกลุ่มเป็นหมวด (หัวข้อ + แถวชิป) */
+.mechanic-picker{display:flex; flex-direction:column; gap:14px;}
+.mech-group-title{
+  display:flex; align-items:center; gap:8px;
+  font-size:15px; font-weight:800; color:var(--ink-soft);
+}
+.mech-group-icon{width:24px; height:24px;}
+.mech-group-row{display:flex; flex-wrap:wrap; gap:10px;}
 .mechanic-chip{
   border:3px solid #F3E2C0; background:#fff; border-radius:16px;
   padding:10px 16px; font-family:inherit; font-size:16px; font-weight:700;
@@ -305,3 +311,45 @@ body.night-mode .bq-word-listen{background:rgba(60,120,180,.25); color:#BFE0FF;}
 /* ---------- ปุ่ม "รายละเอียดการอัพเดท" ใน footer (สไตล์เดียวกับหน้าหลัก: ไอคอนหนังสือ + ข้อความขีดเส้นใต้; อยู่ก่อน text ใน footer) ---------- */
 .footer-changelog-btn{ width:fit-content; margin:0 auto 10px; padding:4px 8px; display:flex; align-items:center; gap:5px; }
 .footer-changelog-btn .btn-svg{ vertical-align:-3px; }
+
+/* ---------- ฟอร์มผสมสี (mechanic 'mix') ---------- */
+.bq-mix{display:flex; flex-direction:column; gap:8px;}
+.bq-mix-label{font-weight:800; color:var(--ink-soft); font-size:14px;}
+.bq-mix-result-label{margin-top:6px;}
+.bq-mix-ings{display:flex; flex-direction:column; gap:8px;}
+.bq-mix-row{display:flex; align-items:center; gap:10px;}
+.bq-mix-row .bq-ans-input{flex:1 1 auto; min-width:0;}
+.bq-color-input{width:48px; height:42px; flex-shrink:0; border:2px solid #cdd8e6; border-radius:10px; padding:3px; background:#fff; cursor:pointer;}
+.bq-color-input::-webkit-color-swatch-wrapper{padding:0;}
+.bq-color-input::-webkit-color-swatch{border:none; border-radius:6px;}
+.bq-color-input::-moz-color-swatch{border:none; border-radius:6px;}
+.bq-mix-add{align-self:flex-start;}
+.bq-mix-result{background:#FFF7E9; border:2px dashed #F0C674; border-radius:12px; padding:8px 10px;}
+body.night-mode .bq-color-input{border-color:#3a4a63; background:#20304a;}
+body.night-mode .bq-mix-result{background:rgba(240,198,116,.12); border-color:#8a6f3a;}
+
+/* ---------- ฟอร์มดนตรี (mechanic 'music') — เปียโนจิ๋วแต่งทำนอง ---------- */
+.bq-music{display:flex; flex-direction:column; gap:8px;}
+.bq-music-label{font-weight:800; color:var(--ink-soft); font-size:14px;}
+.bq-music-notes{display:flex; flex-wrap:wrap; gap:6px; min-height:36px; align-items:center;
+  background:#F6FAFF; border:2px solid #E1EAF5; border-radius:12px; padding:8px;}
+.bq-music-chip{display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px;
+  padding:0 8px; border-radius:9px; background:#fff; border:2px solid var(--key-color); color:var(--ink); font-weight:800;}
+.bq-music-empty{font-size:13px; color:var(--ink-soft);}
+.bq-music-tools{display:flex; flex-wrap:wrap; gap:8px;}
+.bq-music-btn{border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px;
+  cursor:pointer; background:#EAF5FE; color:#2f7fb5;}
+.bq-music-btn:active{transform:scale(.96);}
+.bq-music-piano{display:flex; gap:3px; overflow-x:auto; padding:8px; background:#EEF3FA; border-radius:14px;
+  -webkit-overflow-scrolling:touch;}
+.bq-music-key{flex:0 0 auto; width:34px; height:96px; border:2px solid #cdd8e6; border-bottom:6px solid var(--key-color);
+  border-radius:0 0 9px 9px; background:#fff; display:flex; align-items:flex-end; justify-content:center;
+  padding-bottom:8px; cursor:pointer;}
+.bq-music-key:active{background:#EAF3FE; transform:translateY(1px);}
+.bq-music-key span{font-size:13px; font-weight:800; color:var(--ink-soft);}
+body.night-mode .bq-music-notes{background:#22324c; border-color:#3a4a63;}
+body.night-mode .bq-music-chip{background:#1a2942; color:#EAF3FE;}
+body.night-mode .bq-music-btn{background:rgba(60,120,180,.25); color:#BFE0FF;}
+body.night-mode .bq-music-piano{background:#1a2740;}
+body.night-mode .bq-music-key{background:#2b3c58; border-color:#3a4a63;}
+body.night-mode .bq-music-key span{color:#cfe0f5;}
