@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แผนเกมภาพรวม ป.1-6 | Owlkids Research</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+@media (max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;text-align:center}
+.stat-card .num{font-size:2.1rem;font-weight:800;color:var(--merge)}
+.stat-card .lbl{font-size:.82rem;color:var(--ink-soft);margin-top:4px}
+.chain{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin:14px 0}
+.chain h4{margin:0 0 10px}
+.chain-flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.85rem}
+.chain-flow .step{background:var(--merge-soft);color:var(--merge);border-radius:999px;padding:5px 12px;font-weight:600;white-space:nowrap}
+.chain-flow .arrow{color:var(--ink-soft)}
+details{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;margin:14px 0}
+summary{cursor:pointer;font-weight:700;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page-head">
+  <div class="crumb"><a href="index.html">← สารบัญทุกชั้น</a></div>
+  <h1>แผนเกมภาพรวม ป.1-6 — กี่หมวดหมู่ กี่เกม กี่เลเวล</h1>
+  <span class="age-tag">รวมไอเดียจากเฟส 1-6 ทั้งหมด</span>
+  <p class="lede">นับและจัดกลุ่มไอเดียเกมทั้งหมดจากหัวข้อ "ไอเดียเกม/หมวดใหม่" ใน <code>หลักสูตรที่ดีที่สุด.md</code> ของทั้ง 6 ชั้น — เน้นชี้ว่า mechanic ไหนใช้ซ้ำได้หลายหมวดหมู่/หลายชั้น เพื่อให้ได้เกมหลากหลายโดยไม่ต้องสร้างกลไกใหม่ทุกครั้ง อ่านฉบับเต็มพร้อมตารางละเอียดที่ <a href="../แผนเกมภาพรวม-ป1-6.md">แผนเกมภาพรวม-ป1-6.md</a></p>
+  <div class="grade-strip">
+    <a href="ป1.html">ป.1</a><a href="ป2.html">ป.2</a><a href="ป3.html">ป.3</a>
+    <a href="ป4.html">ป.4</a><a href="ป5.html">ป.5</a><a href="ป6.html">ป.6</a>
+  </div>
+</header>
+
+<section>
+  <h2>ตัวเลขรวม</h2>
+  <div class="stat-row">
+    <div class="stat-card"><div class="num">38</div><div class="lbl">หมวดใหม่ (ยังไม่มีในแอป)</div></div>
+    <div class="stat-card"><div class="num">27</div><div class="lbl">ขยายหมวดเดิม</div></div>
+    <div class="stat-card"><div class="num">65</div><div class="lbl">รวมไอเดียเกมทั้งหมด</div></div>
+    <div class="stat-card"><div class="num">3</div><div class="lbl">สาย mechanic ที่ใช้ข้าม ≥4 ชั้น</div></div>
+  </div>
+  <div class="callout note">"38 หมวดใหม่" ไม่ได้แปลว่าต้องคิด mechanic ใหม่ 38 แบบ — ส่วนใหญ่ใช้กลไกที่แอปมีอยู่แล้ว (ลากจับคู่ ลากเรียงลำดับ ลากการ์ดคำตอบ ปรนัยจับใจความ) แค่เปลี่ยนเนื้อหา ดูหมวดถัดไป</div>
+</section>
+
+<section>
+  <h2 class="merge">สรุปต่อระดับชั้น</h2>
+  <div class="table-scroll">
+  <table>
+    <tr><th>ชั้น</th><th>อายุ</th><th>หมวดใหม่</th><th>ขยายหมวดเดิม</th><th>รวม</th><th>โครงสร้างเลเวล</th></tr>
+    <tr><td><strong>ป.1</strong></td><td>6-7</td><td>3</td><td>7</td><td>10</td><td>5 เลเวล (1-3 ป.1 + 4-5 เร่ง ป.2)</td></tr>
+    <tr><td><strong>ป.2</strong></td><td>7-8</td><td>3</td><td>4</td><td>7</td><td>5 เลเวล (1-3 ป.2 + 4-5 เร่ง ป.3)</td></tr>
+    <tr><td><strong>ป.3</strong></td><td>8-9</td><td>6</td><td>5</td><td>11</td><td>5 เลเวล (1-3 ป.3 + 4-5 เร่ง ป.4)</td></tr>
+    <tr><td><strong>ป.4</strong></td><td>9-10</td><td>9</td><td>4</td><td>13</td><td>5 เลเวล (1-3 ป.4 + 4-5 เร่ง ป.5)</td></tr>
+    <tr><td><strong>ป.5</strong></td><td>10-11</td><td>7</td><td>5</td><td>12</td><td>5 เลเวล (1-3 ป.5 + 4-5 เร่ง ป.6)</td></tr>
+    <tr><td><strong>ป.6</strong></td><td>11-12</td><td>10</td><td>2</td><td>12</td><td>5 เลเวล (ทั้งหมดจาก ป.6 เอง — ไม่มีโบนัสข้ามชั้น)</td></tr>
+  </table>
+  </div>
+  <p class="lede">หมวดใหม่เพิ่มขึ้นชัดเจนตั้งแต่ ป.3 (6→9→7→10) เพราะเนื้อหาวิชาหลักห่างจากที่แอปมีอยู่มากขึ้นเรื่อยๆ — ป.1-2 ยังพอ "ขยายหมวดเดิม" ได้เยอะ ป.3 เป็นต้นไปแทบไม่ทับซ้อนกับแอปเลย</p>
+</section>
+
+<section>
+  <h2 class="cath">Mechanic ที่ใช้ซ้ำได้หลายหมวดหมู่</h2>
+
+  <div class="chain">
+    <h4>🥇 สาย A — "เรียงบัตรคำสั่ง" (coding) — ยาวที่สุด ครบทุกชั้น ป.1-6</h4>
+    <p>สร้าง mechanic ใหม่ครั้งเดียว (ลากบัตรคำสั่งเรียงเป็นลำดับ) ใช้ได้ทั้ง 6 ชั้น เพิ่มแค่ชนิดบัตรคำสั่งตามความยาก</p>
+    <div class="chain-flow">
+      <span class="step">ป.1 sequence</span><span class="arrow">→</span>
+      <span class="step">ป.2 +loop</span><span class="arrow">→</span>
+      <span class="step">ป.3 +เงื่อนไข</span><span class="arrow">→</span>
+      <span class="step">ป.4 +เงื่อนไขซ้อน</span><span class="arrow">→</span>
+      <span class="step">ป.5 +if-then หลายชั้น</span><span class="arrow">→</span>
+      <span class="step">ป.6 +parameter</span>
+    </div>
+  </div>
+
+  <div class="chain">
+    <h4>🥈 สาย B — "ลากการ์ดคำตอบคำนวณ" (ต่อยอด <code>ar-math</code> เดิม)</h4>
+    <p>ใช้ mechanic เดิมของแอปตรงๆ แค่เปลี่ยนคลังโจทย์ — 5 หมวดใหม่จาก mechanic เดียว</p>
+    <div class="chain-flow">
+      <span class="step">ป.2 คูณ-หาร</span><span class="arrow">→</span>
+      <span class="step">ป.3 เศษส่วน</span><span class="arrow">→</span>
+      <span class="step">ป.4 ทศนิยม</span><span class="arrow">→</span>
+      <span class="step">ป.5 เศษส่วน-ทศนิยม-ร้อยละ</span><span class="arrow">→</span>
+      <span class="step">ป.6 อัตราส่วน+ห.ร.ม./ค.ร.น.</span>
+    </div>
+  </div>
+
+  <div class="chain">
+    <h4>🥉 สาย C — "ลากเรียงลำดับ/ไทม์ไลน์" (ต่อยอด <code>ar-order</code>/<code>dots</code>)</h4>
+    <p>ใช้กลไกลากเรียงลำดับที่แอปมีอยู่แล้ว — 5 หมวดจากเนื้อหาประวัติศาสตร์/ร่างกายที่ต่างกัน</p>
+    <div class="chain-flow">
+      <span class="step">ป.3 เส้นเวลาประวัติศาสตร์</span><span class="arrow">→</span>
+      <span class="step">ป.4 ไทม์ไลน์สุโขทัย</span><span class="arrow">→</span>
+      <span class="step">ป.5 นักประวัติศาสตร์น้อย</span><span class="arrow">→</span>
+      <span class="step">ป.6 ไทม์ไลน์รัตนโกสินทร์</span><span class="arrow">·</span>
+      <span class="step">ป.6 ระบบย่อยอาหาร</span>
+    </div>
+  </div>
+
+  <h3>กลุ่มอื่นๆ (สมาชิก 2-3 หมวด — ยังคุ้มสร้างร่วมกัน)</h3>
+  <div class="minor-grid">
+    <div class="minor-card"><h4>🔮 ทำนายก่อน-ตรวจทีหลัง</h4><p>ป.1 STEM ทดลองคิด + นักวิทยาศาสตร์น้อย, ป.2 นักวิทยาศาสตร์น้อย 2, ป.5 นักวิทยาศาสตร์น้อย 3</p></div>
+    <div class="minor-card"><h4>🔗 ลากจับคู่ (<code>ar-match</code>)</h4><p>ป.3 นักสืบแม่เหล็ก, ป.5 จับคู่ความหมายไทยขั้นสูง, ป.6 พับกล่อง</p></div>
+    <div class="minor-card"><h4>🧺 ลากใส่ตะกร้า/จัดกลุ่ม</h4><p>ป.3 จัดหมวดหมู่คำอังกฤษ, ป.4 จัดหมวดนักสืบวิทยาศาสตร์</p></div>
+    <div class="minor-card"><h4>🧭 ลากหมุน/วางตำแหน่ง (ต่อยอด <code>skill-clock</code>)</h4><p>ป.4 นักสำรวจมุม, ป.6 จำลองคราส</p></div>
+    <div class="minor-card"><h4>📖 ปรนัยอ่านจับใจความ</h4><p>ป.4 แยกจริง-แยกคิด, ป.5 จับใจความภาษาอังกฤษ, ป.6 เกมโน้มน้าวใจ</p></div>
+    <div class="minor-card"><h4>🕐 ต่อยอดนาฬิกาวิเศษเดิม</h4><p>ป.2 นาฬิกา+ปฏิทิน, ป.3 นาฬิกา+ภาษาอังกฤษ</p></div>
+    <div class="minor-card"><h4>🎵 ต่อยอดดนตรี/ผสมสีเดิม</h4><p>ป.1-5 ทุกชั้น (เพิ่มด่านจังหวะ/สี ไม่ต้อง mechanic ใหม่เลย)</p></div>
+    <div class="minor-card"><h4>🛠️ Mechanic เฉพาะตัว (สร้างครั้งเดียว)</h4><p>ร้านค้าจำลอง, แผนภาพความคิด, โซ่อาหาร-วัฏจักรน้ำ, ต่อวงจรไฟฟ้า, เกมบอกทิศทาง</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>หมวดที่โดนขยายซ้ำมากที่สุด — จุดคุ้มค่าที่สุดถ้าจะเริ่มพัฒนาก่อน</h2>
+  <div class="table-scroll">
+  <table>
+    <tr><th>หมวด/เกมเดิม</th><th>โดนเสนอขยายกี่ชั้น</th><th>ชั้นที่เสนอ</th></tr>
+    <tr><td><code>behavior</code> (คุณธรรม/EQ)</td><td><strong>6/6</strong></td><td>ป.1 ×2, ป.2, ป.3, ป.4 (สถานการณ์ยุติธรรม), ป.5, ป.6</td></tr>
+    <tr><td>เรียงคำสั่งหุ่นยนต์ (coding ใหม่)</td><td><strong>6/6</strong></td><td>สร้างที่ ป.1 แล้วขยายทุกชั้นถัดมา</td></tr>
+    <tr><td>เกมวิชาหลัก (<code>math/thai/english</code> → 5 เลเวล)</td><td><strong>6/6</strong></td><td>ทุกชั้นเสนอให้ขยายเป็น 5 เลเวลไล่ระดับ</td></tr>
+    <tr><td><code>iq1-4</code> / <code>skill-memory</code></td><td>5/6</td><td>ป.1, ป.2, ป.3, ป.5, ป.6</td></tr>
+    <tr><td><code>skill-music</code> / <code>skill-mix</code></td><td>5/6</td><td>ป.1, ป.2, ป.3, ป.4, ป.5</td></tr>
+    <tr><td>"นักวิทยาศาสตร์น้อย" ซีรีส์</td><td>3/6</td><td>ป.1, ป.2, ป.5</td></tr>
+    <tr><td><code>pattern</code> / <code>days</code></td><td>2/6</td><td>ป.1, ป.3 (โลกหมุน)</td></tr>
+    <tr><td>นาฬิกาวิเศษ (<code>skill-clock</code>)</td><td>2/6</td><td>ป.3, ป.4 (มุม)</td></tr>
+  </table>
+  </div>
+  <div class="callout warn"><strong>สรุปเชิงกลยุทธ์:</strong> ถ้าจะเริ่มพัฒนาจริง ควรเริ่มจาก 3 อย่างที่ "6/6 ชั้น" เสนอให้ทำ (<code>behavior</code> ขยาย, เรียงคำสั่งหุ่นยนต์ mechanic ใหม่, เลเวล 5 ระดับของวิชาหลัก) เพราะลงทุนครั้งเดียวได้ประโยชน์ตลอดสาย ป.1-6</div>
+</section>
+
+<section>
+  <details>
+    <summary>ดูรายการเต็ม 38 หมวดใหม่ (เรียงตามชั้น)</summary>
+    <div class="table-scroll">
+    <table>
+      <tr><th>#</th><th>ชั้น</th><th>ชื่อหมวด</th><th>Mechanic กลุ่ม</th></tr>
+      <tr><td>1</td><td>ป.1</td><td>เรียงคำสั่งหุ่นยนต์</td><td>สาย A (coding)</td></tr>
+      <tr><td>2</td><td>ป.1</td><td>STEM ทดลองคิด</td><td>ทำนาย-ตรวจ</td></tr>
+      <tr><td>3</td><td>ป.1</td><td>นักวิทยาศาสตร์น้อย</td><td>ทำนาย-ตรวจ</td></tr>
+      <tr><td>4</td><td>ป.2</td><td>คูณ-หารมหัศจรรย์</td><td>สาย B (คำนวณ)</td></tr>
+      <tr><td>5</td><td>ป.2</td><td>นาฬิกา+ปฏิทิน</td><td>ต่อยอดนาฬิกา</td></tr>
+      <tr><td>6</td><td>ป.2</td><td>นักวิทยาศาสตร์น้อย 2</td><td>ทำนาย-ตรวจ</td></tr>
+      <tr><td>7</td><td>ป.3</td><td>เศษส่วนแสนสนุก</td><td>สาย B (คำนวณ)</td></tr>
+      <tr><td>8</td><td>ป.3</td><td>ร้านค้าจำลอง</td><td>mechanic เฉพาะ</td></tr>
+      <tr><td>9</td><td>ป.3</td><td>จัดหมวดหมู่คำอังกฤษ</td><td>ลากใส่ตะกร้า</td></tr>
+      <tr><td>10</td><td>ป.3</td><td>นักสืบแม่เหล็ก</td><td>ลากจับคู่</td></tr>
+      <tr><td>11</td><td>ป.3</td><td>เส้นเวลาประวัติศาสตร์</td><td>สาย C (ไทม์ไลน์)</td></tr>
+      <tr><td>12</td><td>ป.3</td><td>โลกหมุน</td><td>ลากหมุน/วางตำแหน่ง</td></tr>
+      <tr><td>13</td><td>ป.4</td><td>ทศนิยมมหัศจรรย์</td><td>สาย B (คำนวณ)</td></tr>
+      <tr><td>14</td><td>ป.4</td><td>นักสำรวจมุม</td><td>ลากหมุน/วางตำแหน่ง</td></tr>
+      <tr><td>15</td><td>ป.4</td><td>พื้นที่และเส้นรอบรูป</td><td>นับตาราง/grid</td></tr>
+      <tr><td>16</td><td>ป.4</td><td>นักสืบระบบสุริยะ</td><td>สาย C (เรียงลำดับ)</td></tr>
+      <tr><td>17</td><td>ป.4</td><td>จัดหมวดนักสืบวิทยาศาสตร์</td><td>ลากใส่ตะกร้า</td></tr>
+      <tr><td>18</td><td>ป.4</td><td>แยกจริง-แยกคิด</td><td>ปรนัยจับใจความ</td></tr>
+      <tr><td>19</td><td>ป.4</td><td>แผนภาพความคิด (mind map)</td><td>mechanic เฉพาะ</td></tr>
+      <tr><td>20</td><td>ป.4</td><td>ผันกริยาตามประธาน</td><td>ปรนัยเดิม</td></tr>
+      <tr><td>21</td><td>ป.4</td><td>ไทม์ไลน์สุโขทัย</td><td>สาย C (ไทม์ไลน์)</td></tr>
+      <tr><td>22</td><td>ป.5</td><td>เศษส่วน-ทศนิยม-ร้อยละมหัศจรรย์</td><td>สาย B (คำนวณ)</td></tr>
+      <tr><td>23</td><td>ป.5</td><td>ปริมาตร-พื้นที่</td><td>นับตาราง/grid</td></tr>
+      <tr><td>24</td><td>ป.5</td><td>จับคู่ความหมายไทยขั้นสูง</td><td>ลากจับคู่</td></tr>
+      <tr><td>25</td><td>ป.5</td><td>จับใจความภาษาอังกฤษ</td><td>ปรนัยจับใจความ</td></tr>
+      <tr><td>26</td><td>ป.5</td><td>โซ่อาหาร-วัฏจักรน้ำ</td><td>mechanic เฉพาะ</td></tr>
+      <tr><td>27</td><td>ป.5</td><td>นักประวัติศาสตร์น้อย</td><td>สาย C (ไทม์ไลน์)</td></tr>
+      <tr><td>28</td><td>ป.5</td><td>นักวิทยาศาสตร์น้อย 3</td><td>ทำนาย-ตรวจ</td></tr>
+      <tr><td>29</td><td>ป.6</td><td>อัตราส่วน + ห.ร.ม./ค.ร.น.</td><td>สาย B (คำนวณ)</td></tr>
+      <tr><td>30</td><td>ป.6</td><td>พับกล่อง</td><td>ลากจับคู่</td></tr>
+      <tr><td>31</td><td>ป.6</td><td>ระบบย่อยอาหาร</td><td>สาย C (เรียงลำดับ)</td></tr>
+      <tr><td>32</td><td>ป.6</td><td>ต่อวงจรไฟฟ้า</td><td>mechanic เฉพาะ</td></tr>
+      <tr><td>33</td><td>ป.6</td><td>จำลองคราส</td><td>ลากหมุน/วางตำแหน่ง</td></tr>
+      <tr><td>34</td><td>ป.6</td><td>ไทม์ไลน์รัตนโกสินทร์</td><td>สาย C (ไทม์ไลน์)</td></tr>
+      <tr><td>35</td><td>ป.6</td><td>เรียงคำสั่งหุ่นยนต์ 3 (parameter)</td><td>สาย A (coding)</td></tr>
+      <tr><td>36</td><td>ป.6</td><td>เกมโน้มน้าวใจ</td><td>ปรนัยจับใจความ</td></tr>
+      <tr><td>37</td><td>ป.6</td><td>เกมบอกทิศทาง</td><td>mechanic เฉพาะ</td></tr>
+      <tr><td>38</td><td>ป.6</td><td>รวมทุกอย่าง ป.1-6 (capstone, ยังไม่ยืนยัน)</td><td>สุ่มข้ามชั้น</td></tr>
+    </table>
+    </div>
+  </details>
+</section>
+
+<div class="callout warn"><strong>ข้อจำกัด:</strong> ทุกอย่างในหน้านี้เป็นการสังเคราะห์จากไอเดียที่มีอยู่แล้วใน <code>หลักสูตรที่ดีที่สุด.md</code> ของแต่ละชั้น ไม่ใช่แผนพัฒนาที่ตัดสินใจแล้ว จำนวนเลเวลของ 38 หมวดใหม่ยังไม่ได้กำหนดชัดเจน (ต้องตัดสินใจตอนออกแบบจริง) — ก่อนพัฒนาหมวดใดต้องผ่าน IDEA.md → FEATURE.md → cf ตามปกติเสมอ</div>
+
+<footer class="page-foot">
+  <span>ฉบับเต็ม: <a href="../แผนเกมภาพรวม-ป1-6.md">แผนเกมภาพรวม-ป1-6.md</a></span>
+  <span>Owlkids research — ไม่ใช่แผนพัฒนาที่ตัดสินใจแล้ว</span>
+</footer>
+
+</div>
+</body>
+</html>
