@@ -110,8 +110,19 @@ let hScene = 'out';                  /* 'out' | 'in' */
 let hZoom = 1, camTarget = new THREE.Vector3();
 let loadedChildId = null;
 let outGrid = null, inGrid = null;
+let outGridBase = null, inGridBase = null;   /* กริดพื้นฐาน (ก่อนแสตมป์เฟอร์นิเจอร์) — ใช้ recompute เวลาย้าย/เพิ่ม/ลบของ */
 let houseClickables = [], interiorDoorMesh = null;
 let hintTimer = null;
+
+/* ---------- เฟส 3: ระบบตกแต่ง ---------- */
+let decorGroups = {out:[], in:[]};   /* Three group ที่วางแล้วต่อฉาก (userData.deco = {rec, item, scene}) */
+let editMode = false;                /* อยู่ในโหมดตกแต่งไหม */
+let editSel = null;                  /* ชิ้นที่เลือกอยู่ (group) */
+let editSelRing = null;              /* วงแหวนไฮไลต์ใต้ชิ้นที่เลือก */
+let editDrag = null;                 /* {group, moved, lastValid} ระหว่างลากวาง */
+let editPan = null;                  /* {prev} ระหว่างแพนกล้องในโหมดตกแต่ง */
+let editCat = null;                  /* หมวดที่เปิดในกล่องเลือก */
+let sitState = null;                 /* {group,item,act,seat,ry} ตอนตัวละครนั่ง/นอนกับเฟอร์นิเจอร์ */
 
 const hChar = {                       /* สถานะตัวละครในฉาก */
   cfg: null, tile: {x:SPAWN_TILE.x, z:SPAWN_TILE.z},
@@ -191,7 +202,24 @@ function sphere(r,hex,seg){
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg||14, seg||12), toonMat(hex));
   m.castShadow = hShadows; return m;
 }
+function cyl(rt,rb,h,hex,seg){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||12), toonMat(hex));
+  m.castShadow = hShadows; return m;
+}
+function cone(r,h,hex,seg){
+  const m = new THREE.Mesh(new THREE.ConeGeometry(r,h,seg||10), toonMat(hex));
+  m.castShadow = hShadows; return m;
+}
+function torus(r,t,hex,seg){
+  const m = new THREE.Mesh(new THREE.TorusGeometry(r,t,8,seg||16), toonMat(hex));
+  m.castShadow = hShadows; return m;
+}
 let hShadows = false;
+
+/* คลังเฟอร์นิเจอร์เฟส 3 (js/house-furniture.js โหลดก่อนไฟล์นี้) — ส่ง kit ทรงเรขาคณิตให้ build */
+const FURN = (typeof window.HOUSE_FURNITURE === 'function')
+  ? window.HOUSE_FURNITURE({THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat, shade:petShade})
+  : {items:[], byId:{}, cats:{in:[], out:[]}};
 
 /* ---------- ตัวละคร blocky ---------- */
 function disposeGroup(g){
@@ -431,18 +459,15 @@ function buildOutGrid(){
     }
     grid.push(row);
   }
-  TREES.forEach(([x,z])=>{ grid[z][x] = 3; });
-  /* รั้วรอบสนามบล็อกเดิน (เว้นช่องประตูรั้ว) + บ้านสัตว์เลี้ยง */
-  for(let z=YARD.z0; z<=YARD.z1; z++) for(let x=YARD.x0; x<=YARD.x1; x++){
-    if(isFenceTile(x,z)) grid[z][x] = 3;
-  }
-  grid[PET_HOUSE_TILE.z][PET_HOUSE_TILE.x] = 3;
+  /* เฟส 3: ต้นไม้/รั้ว/บ้านสัตว์เลี้ยง ย้ายไปเป็น decor ที่ย้าย/ลบได้ (seed ครั้งแรก) —
+     การบล็อกเดินของสิ่งเหล่านี้มาจาก rebuildDecorGrid ไม่ใช่ base grid แล้ว */
   return grid;
 }
 
 function buildWorld(){
   worldGroup = new THREE.Group();
   outGrid = buildOutGrid();
+  outGridBase = cloneGrid(outGrid);
 
   /* พื้นสไตล์ isometric บล็อกหนา (อ้างอิง house_example/isomatic2d_style_1.png):
      หน้าหญ้าเป็นแผ่นบางด้านบนสลับ 2 เฉด (เขียวอ่อน/เข้ม) + ฐานดินน้ำตาลหนาทั้งผืนให้เห็นขอบข้างเป็นชั้นดิน
@@ -475,15 +500,7 @@ function buildWorld(){
   const dirtBase = new THREE.Mesh(roundedBoxGeo(OUT_W,.6,OUT_D,.1), toonMat(0x9c6b45));
   dirtBase.position.y = -.54; worldGroup.add(dirtBase);
 
-  /* ทางเดินหินหน้าประตูบ้าน (ต่อจาก DOOR_TILE ลอดช่องประตูรั้วออกไปนอกสนาม 1 ช่อง) */
-  [[DOOR_TILE.x,DOOR_TILE.z],[DOOR_TILE.x,DOOR_TILE.z+1],[DOOR_TILE.x,DOOR_TILE.z+2],
-   [DOOR_TILE.x,DOOR_TILE.z+3]].forEach(([x,z],i)=>{
-    const s = new THREE.Mesh(roundedBoxGeo(.6,.07,.6,.03), toonMat(0xe3ddd0));
-    s.rotation.y = .35*(i%2 ? 1 : -1);
-    s.position.set(outWX(x), .04, outWZ(z));
-    s.receiveShadow = hShadows;
-    worldGroup.add(s);
-  });
+  /* เฟส 3: แผ่นทางเดินหน้าประตู ย้ายไปเป็น decor (seed ใน seedWorldDecor) ที่ย้าย/ลบได้ */
 
   /* สะพานไม้ข้ามคลอง */
   const bridge = new THREE.Group();
@@ -534,85 +551,8 @@ function buildWorld(){
   houseClickables = [];
   house.traverse(o=>{ if(o.isMesh) houseClickables.push(o); });
 
-  /* รั้วไม้ครีมพาสเทลรอบสนามบ้าน — เสา+หมุดกลมทุกช่อง, ราว 2 เส้นวิ่งตาม run ยาว
-     (merge ช่องรั้วติดกันเป็น run เดียวแบบกำแพงในบ้าน ลดจำนวน mesh) เว้นช่องประตูรั้วที่ GATE_TILE */
-  const fenceRuns = [];
-  let fr = null;
-  [YARD.z0, YARD.z1].forEach(fz=>{                    /* run แนวนอน บน/ล่าง (รวมช่องมุม) */
-    fr = null;
-    for(let x=YARD.x0; x<=YARD.x1+1; x++){
-      const f = x<=YARD.x1 && isFenceTile(x, fz);
-      if(f && !fr) fr = {x0:x};
-      if(!f && fr){ fenceRuns.push({h:true, z:fz, x0:fr.x0, x1:x-1}); fr = null; }
-    }
-  });
-  [YARD.x0, YARD.x1].forEach(fx=>{                    /* run แนวตั้ง ซ้าย/ขวา (เว้นช่องมุม ให้เสาไม่ซ้อน) */
-    fr = null;
-    for(let z=YARD.z0+1; z<=YARD.z1; z++){
-      const f = z<=YARD.z1-1 && isFenceTile(fx, z);
-      if(f && !fr) fr = {z0:z};
-      if(!f && fr){ fenceRuns.push({h:false, x:fx, z0:fr.z0, z1:z-1}); fr = null; }
-    }
-  });
-  fenceRuns.forEach(r=>{
-    const len = r.h ? (r.x1-r.x0+1) : (r.z1-r.z0+1);
-    const cx = r.h ? outWX((r.x0+r.x1)/2) : outWX(r.x);
-    const cz = r.h ? outWZ(r.z) : outWZ((r.z0+r.z1)/2);
-    /* run แนวตั้งไม่มีช่องมุม — ยืดราวเพิ่มข้างละครึ่งช่องให้ชนเสามุมพอดี ไม่มีรอยขาด */
-    const railLen = (r.h ? len : len+1) - .06;
-    [.2,.44].forEach(ry=>{
-      const rail = box(r.h?railLen:.09, .08, r.h?.09:railLen, 0xf6e3c2, .04);
-      rail.position.set(cx, ry, cz); rail.castShadow = hShadows; worldGroup.add(rail);
-    });
-    for(let i=0;i<len;i++){
-      const px = r.h ? outWX(r.x0+i) : cx, pz = r.h ? cz : outWZ(r.z0+i);
-      const post = box(.13,.62,.13, 0xfdf1da, .05); post.position.set(px,.31,pz);
-      post.castShadow = hShadows; worldGroup.add(post);
-      const cap = sphere(.075, 0xf0d3a0, 8); cap.position.set(px,.64,pz); worldGroup.add(cap);
-    }
-  });
-
-  /* บ้านสัตว์เลี้ยงในสนาม — จั่วเล็กสีชุดเดียวกับบ้านใหญ่ ช่องประตูโค้งมืด หันหน้าเข้าสนาม */
-  const petHouse = new THREE.Group();
-  const phBase = box(1.05,.75,.95, 0xe9bd80, .08); phBase.position.y = .38; petHouse.add(phBase);
-  const PH_RISE = .4, PH_HALF = .66, PH_DEP = 1.1;
-  const phLen = Math.hypot(PH_HALF, PH_RISE), phAng = Math.atan2(PH_RISE, PH_HALF);
-  [1,-1].forEach(s=>{
-    const p = new THREE.Mesh(roundedBoxGeo(phLen,.12,PH_DEP,.04), roofMat);
-    p.castShadow = hShadows; p.rotation.z = -s*phAng; p.position.set(s*PH_HALF/2, .75+PH_RISE/2, 0);
-    petHouse.add(p);
-  });
-  const phRidge = box(.13,.13,PH_DEP+.04, 0xffe4c4, .05);
-  phRidge.position.set(0,.75+PH_RISE,0); petHouse.add(phRidge);
-  const phDoor = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.12,16), toonMat(0x6d4530));
-  phDoor.rotation.x = Math.PI/2; phDoor.position.set(0,.4,.45); petHouse.add(phDoor);
-  const phDoorB = box(.4,.28,.12, 0x6d4530, .03); phDoorB.position.set(0,.22,.45); petHouse.add(phDoorB);
-  petHouse.position.set(outWX(PET_HOUSE_TILE.x), 0, outWZ(PET_HOUSE_TILE.z));
-  petHouse.rotation.y = -Math.PI/2;                   /* หันประตูไปทางบ้านใหญ่ (ฝั่ง -x) */
-  worldGroup.add(petHouse);
-
-  /* ต้นไม้ — ความสูงลำต้น/ขนาดพุ่มสุ่มต่อต้น (hash จากพิกัดช่อง ให้ deterministic:
-     เข้าฉากใหม่กี่ครั้งต้นเดิมก็สูงเท่าเดิม ไม่สุ่มใหม่ทุกรอบ) คละสูงต่ำทั้งป่าเป็นธรรมชาติ */
-  TREES.forEach(([x,z],i)=>{
-    const tr = new THREE.Group();
-    const rnd = ((x*73 + z*151 + 37) % 100) / 100;
-    const th = .8 + rnd*.95;             /* ลำต้นสูง .8 – 1.75 */
-    const fs = .85 + rnd*.3;             /* พุ่มใบใหญ่ตามความสูงต้น */
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,th,8), toonMat(0x9c6238));
-    trunk.castShadow = hShadows; trunk.position.y = th/2; tr.add(trunk);
-    const f1 = sphere(.56*fs,(i%3===1)?0x5cbf6e:0x4caf50); f1.position.y = th+.42*fs; tr.add(f1);
-    const f2 = sphere(.4*fs,0x66c878); f2.position.set(.32*fs,th+.16,.2*fs); tr.add(f2);
-    const f3 = sphere(.33*fs,0x58b862); f3.position.set(-.3*fs,th+.22,-.16*fs); tr.add(f3);
-    /* ดอกไม้ขาวแต้มบนพุ่ม (แบบต้นไม้ในภาพอ้างอิง) */
-    if(i%2===0){
-      const b1 = sphere(.07,0xffffff,6); b1.position.set(.22*fs,th+.86*fs,.3*fs); tr.add(b1);
-      const b2 = sphere(.055,0xffffff,6); b2.position.set(-.32*fs,th+.56*fs,.34*fs); tr.add(b2);
-    }
-    tr.position.set(outWX(x), 0, outWZ(z));
-    tr.rotation.y = (x*7+z*13)%6;
-    tr.userData.hTree = {tile:{x,z}};
-    worldGroup.add(tr);
-  });
+  /* เฟส 3: รั้ว/บ้านสัตว์เลี้ยง/ต้นไม้ ย้ายไปเป็น decor ที่ย้าย/ลบได้ (seed ครั้งแรกใน seedWorldDecor)
+     — ไม่สร้างตายตัวใน buildWorld อีกต่อไป */
 
   /* ดอกไม้เล็กๆ (ไม่บล็อกทางเดิน) */
   FLOWERS.forEach(([x,z],i)=>{
@@ -646,6 +586,7 @@ function buildInterior(){
   inGrid = [];
   for(let z=0; z<IN_D; z++){ inGrid.push(new Array(IN_W).fill(0)); }
   for(let z=0; z<IN_D; z++) for(let x=0; x<IN_W; x++){ if(isInWallTile(x,z)) inGrid[z][x] = 3; }
+  inGridBase = cloneGrid(inGrid);
 
   /* พื้นห้องสลับ 2 เฉด แยกสีตามห้อง (IN_ROOM_FLOORS) ให้เด็กแยกห้องออกด้วยสายตา
      — ใช้ BoxGeometry หน้าเรียบ กันเงาสามเหลี่ยมตรงมุมบล็อก, InstancedMesh คู่อ่อน/เข้มต่อห้อง */
@@ -671,7 +612,7 @@ function buildInterior(){
 
   /* กำแพงกั้นห้องแบบเตี้ย (.95) สไตล์ dollhouse — มองข้ามได้ กล้อง isometric ไม่โดนบังตัวละคร
      รวมช่องติดกันเป็นแท่งเดียวต่อ run ให้ผิวเรียบไม่มีรอยต่อ */
-  const partC = 0xf6d8a8, PART_H = .95, PART_T = .3;
+  const partC = 0xfbe3c0, PART_H = 1.15, PART_T = 1.0;   /* ผนังกั้นห้อง = กำแพงจริงเหมือนผนังนอก (สีเดียวกัน เต็มบล็อค) วางของติดผนังได้ */
   const partRuns = [];
   let run = null;                                   /* run แนวนอนบนแถว z=IN_WALL_ROW */
   for(let x=0; x<=IN_W; x++){
@@ -718,19 +659,7 @@ function buildInterior(){
     const win = box(.9,.7,.12,0xaadcf5); win.position.set(wx,1.2,inWZ(0)-.48); interiorGroup.add(win);
   });
   const winBed = box(.12,.7,.9,0xaadcf5); winBed.position.set(inWX(0)-.48,1.2,inWZ(10.5)); interiorGroup.add(winBed);
-  /* พรมกลางห้องนั่งเล่น */
-  const rug = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,.05,20), toonMat(0xf48fb1));
-  rug.position.set(inWX(6),.03,inWZ(3)); rug.receiveShadow = hShadows; interiorGroup.add(rug);
-  const rug2 = new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,.06,20), toonMat(0xffc1d8));
-  rug2.position.set(inWX(6),.05,inWZ(3)); interiorGroup.add(rug2);
-  /* พรมเล็กห้องนอน (ม่วงอ่อน) ให้ห้องมีจุดสนใจก่อนเฟอร์นิเจอร์มา */
-  const rugB = new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,.05,20), toonMat(0xc9b8ec));
-  rugB.position.set(inWX(6.5),.03,inWZ(10.5)); rugB.receiveShadow = hShadows; interiorGroup.add(rugB);
-  /* เสื่อน้ำมินต์ห้องน้ำ + พรมครีมหน้าครัว ให้ทุกห้องมีจุดสนใจของตัวเอง */
-  const rugBa = new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.05,20), toonMat(0xbfe8dc));
-  rugBa.position.set(inWX(17),.03,inWZ(10.5)); rugBa.receiveShadow = hShadows; interiorGroup.add(rugBa);
-  const rugK = new THREE.Mesh(new THREE.CylinderGeometry(.75,.75,.05,20), toonMat(0xf9dfae));
-  rugK.position.set(inWX(16),.03,inWZ(3.5)); rugK.receiveShadow = hShadows; interiorGroup.add(rugK);
+  /* (เฟส 3) เอาพรมสำเร็จรูปที่ติดมากับบ้านออก — ให้เด็กวาง/ลบพรมเองผ่านโหมดตกแต่ง */
 
   interiorGroup.visible = false;
   scene.add(interiorGroup);
@@ -820,6 +749,7 @@ function lightTargets(night){
 }
 function updateLights(instant){
   const to = lightTargets((typeof isNightMode==='function') && isNightMode());
+  refreshLamps();   /* กลางคืน → เปิดไฟโคม/เสาไฟอัตโนมัติ, กลางวัน → ปิด */
   if(instant){
     hemiLight.intensity = to.hi; dirLight.intensity = to.di;
     hemiLight.color.copy(to.hc); hemiLight.groundColor.copy(to.hg); dirLight.color.copy(to.dc);
@@ -887,7 +817,7 @@ function initThree(){
   new MutationObserver(()=>{ if(houseOpen) updateLights(); })
     .observe(document.body, {attributes:true, attributeFilter:['class']});
 
-  window.addEventListener('resize', ()=>{ if(!houseOpen) return; renderer.setSize(window.innerWidth, window.innerHeight); applyCamera(); });
+  window.addEventListener('resize', ()=>{ if(!houseOpen) return; renderer.setSize(window.innerWidth, window.innerHeight); applyCamera(); if(editMode) positionToolbar(); });
   bindCanvasInput(canvas);
   hInit = true;
   return true;
@@ -906,6 +836,14 @@ function bindCanvasInput(canvas){
     }
     downX = e.clientX; downY = e.clientY; downT = performance.now(); moved = false;
     if(hMode==='creator' || hMode==='pet'){ creatorState.dragging = true; creatorState.lastX = e.clientX; }
+    if(hMode==='world' && editMode){
+      if(pointers.size===2){ editDragCancel(); editPan = null; }   /* เริ่ม pinch → ยกเลิกลาก/แพน */
+      else {
+        const g = editRaycastDecor(e.clientX, e.clientY);
+        if(g){ const r=g.userData.deco.rec; selectDecor(g); editDrag = {group:g, moved:false, lastValid:{x:r.x, z:r.z, rot:r.rot}}; editPan = null; }
+        else { editDrag = null; editPanStart(e.clientX, e.clientY); }   /* แตะที่ว่าง → เตรียมแพนกล้อง */
+      }
+    }
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', e=>{
@@ -916,6 +854,10 @@ function bindCanvasInput(canvas){
       creatorState.rotY += (e.clientX - creatorState.lastX) * .012;
       creatorState.rotTarget = creatorState.rotY;
       creatorState.lastX = e.clientX;
+    }
+    if(hMode==='world' && editMode && pointers.size===1){
+      if(editDrag) editDragMove(e.clientX, e.clientY);
+      else if(editPan) editPanMove(e.clientX, e.clientY);
     }
     if(pointers.size===2 && hMode==='world'){
       const [a,b] = [...pointers.values()];
@@ -928,6 +870,15 @@ function bindCanvasInput(canvas){
     pointers.delete(e.pointerId);
     if(hMode==='creator' || hMode==='pet') creatorState.dragging = false;
     if(pointers.size<2) pinchDist = 0;
+    if(hMode==='world' && editMode){
+      if(editDrag){
+        if(editDrag.moved) editDragCommit(); else editDrag = null;
+      }else if(!moved && pointers.size===0 && performance.now()-downT < 600){
+        if(!editRaycastDecor(e.clientX, e.clientY)) deselectDecor();   /* แตะที่ว่าง → ยกเลิกเลือก */
+      }
+      editPan = null;
+      return;
+    }
     if(hMode==='world' && !moved && pointers.size===0 && performance.now()-downT < 600){
       handleTap(e.clientX, e.clientY);
     }
@@ -970,11 +921,14 @@ function handleTap(cx, cy){
           if(adj) walkTo(adj.x, adj.z, {action:{type:'flower', group:g}});
           return;
         }
+        if(o.userData.hDecor){ decorInteract(o); return; }
         o = o.parent;
       }
     }
   }else{
     if(hPet.group && raycaster.intersectObject(hPet.group, true).length){ playWithPet(); return; }
+    const dg = pickDecorGroup();
+    if(dg){ decorInteract(dg); return; }
     if(interiorDoorMesh && raycaster.intersectObject(interiorDoorMesh, false).length){
       walkTo(IN_DOOR_TILE.x, IN_DOOR_TILE.z, {exit:true}); return;
     }
@@ -1010,6 +964,17 @@ function walkTo(gx, gz, opts){
   hChar.pendingEnter = !!opts.enter;
   hChar.pendingExit = !!opts.exit;
   hChar.action = opts.action || null;
+  if(sitState){
+    /* ลุกจากที่นั่ง/นอน: สไลด์ออกจากเฟอร์นิเจอร์กลับช่องข้างๆ พร้อมยืดตัวยืนก่อนเริ่มเดิน
+       (กันตัวจมทะลุเฟอร์นิเจอร์ที่เกิดจากการดึง y ลงพื้นทันทีขณะยังนอน/เอนอยู่) */
+    if(charGroup && hChar.walking){
+      hChar.getUpFrom = charGroup.position.clone();
+      hChar.getUpTo = tileWorld(hChar.tile);
+      hChar.getUpT0 = performance.now();
+      hChar.getUpDur = 360;
+    }
+    endSit();
+  }
   if(!hChar.walking){ finishArrive(); }
 }
 
@@ -1024,6 +989,13 @@ function finishArrive(){
     }
     if(a.type==='tree') shakeTree(a.group);
     else if(a.type==='flower') bounceFlower(a.group);
+    else if(a.type==='decor'){
+      const g = a.group, item = a.item, act = a.act;
+      if(act==='sit' || act==='sleep') startSit(g, item, act);
+      else if(act==='toggle') decorToggle(g);
+      else if(act==='spin') decorSpin(g);
+      else decorBounce(g);
+    }
   }
 }
 
@@ -1078,6 +1050,9 @@ function rebuildChar(cfg){
   const oldPos = charGroup ? charGroup.position.clone() : null;
   if(charGroup){ scene.remove(charGroup); disposeGroup(charGroup); }
   charGroup = buildCharacter(cfg);
+  /* YXZ: yaw (หันหน้าตามเฟอร์นิเจอร์) มาก่อน แล้ว pitch (นอนราบ/เอนโยกชิงช้า) หมุนรอบแกนซ้าย-ขวาของตัวเองเสมอ
+     — ไม่งั้น XYZ เดิมทำให้ตอนเฟอร์นิเจอร์หมุนไปทิศอื่น การนอน/โยกเพี้ยนทิศ (นอนกลายเป็นนั่งพิงเอียง) */
+  charGroup.rotation.order = 'YXZ';
   if(oldPos) charGroup.position.copy(oldPos);
   charGroup.rotation.y = oldRot;
   scene.add(charGroup);
@@ -1136,7 +1111,7 @@ function openCreator(fromWorld){
   $('house-creator').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
-  $('house-pet-btn').hidden = true;
+  $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true;
   $('house-hint').hidden = true;
   /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (ดินสอ = ชุดเดียวกับปุ่มแก้ไข, หน้าเด็ก = ชุด row "หนูเป็น...") */
   const _icChild = '<svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg>';
@@ -1157,7 +1132,7 @@ function closeCreator(){
   $('house-creator').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
-  $('house-pet-btn').hidden = false;
+  $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false;
   creatorGroup.visible = false;
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
   rebuildChar(creatorCfg);
@@ -1171,7 +1146,7 @@ function closeCreator(){
   const d0 = loadHouseData() || {};
   if(!creatorState.fromWorld && !d0.pet && !d0.petPromptSeen){
     saveHouseData({petPromptSeen:true});
-    setTimeout(()=>{ if(houseOpen && hMode==='world') fadeSwap(()=>openPetPicker()); }, 1200);
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) fadeSwap(()=>openPetPicker()); }, 1200);
   }
 }
 
@@ -1213,10 +1188,12 @@ function updateFx(now, dt){
     const k = (now - f.t0) / f.dur;
     if(k >= 1){
       if(f.kind==='shake') f.g.rotation.z = 0;
+      else if(f.kind==='spin'){ if(f.baseRy!=null) f.g.rotation.y = f.baseRy; }
       else f.g.scale.set(1,1,1);
       fxList.splice(i,1); continue;
     }
     if(f.kind==='shake') f.g.rotation.z = Math.sin(k*Math.PI*5)*(1-k)*.14;
+    else if(f.kind==='spin'){ if(f.baseRy==null) f.baseRy = f.g.rotation.y; f.g.rotation.y = f.baseRy + k*Math.PI*2; }
     else { const s = 1 + Math.sin(k*Math.PI)*.4; f.g.scale.set(s,s,s); }
   }
   for(let i=particles.length-1; i>=0; i--){
@@ -1892,7 +1869,7 @@ function updatePet(dt){
 const _petV = new THREE.Vector3();
 function updatePetLabels(){
   const nameEl = $('house-pet-name'), bubEl = $('house-pet-bubble');
-  if(!hPet.group || !houseOpen || hMode!=='world'){
+  if(!hPet.group || !houseOpen || hMode!=='world' || editMode){
     nameEl.hidden = true;
     return;
   }
@@ -1956,6 +1933,7 @@ function buildPetChips(){
   });
 }
 function openPetPicker(){
+  if(editMode) return;   /* กันแผงสัตว์เลี้ยงเด้งทับตอนกำลังตกแต่ง */
   hMode = 'pet';
   creatorState.rotY = 0; creatorState.rotTarget = 0;
   const data = loadHouseData() || {};
@@ -1966,7 +1944,7 @@ function openPetPicker(){
   $('house-pet-picker').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
-  $('house-pet-btn').hidden = true;
+  $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true;
   $('house-hint').hidden = true;
   $('house-pet-remove').hidden = !data.pet;
   $('house-pet-done').textContent = data.pet ? 'บันทึกเลย 💕' : 'รับเลี้ยงเลย 💕';
@@ -1989,7 +1967,7 @@ function closePetPicker(kind){
   $('house-pet-picker').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
-  $('house-pet-btn').hidden = false;
+  $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false;
   creatorGroup.visible = false;
   if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
@@ -2009,13 +1987,543 @@ function closePetPicker(kind){
 
 /* ---------- ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว ---------- */
 const _nameV = new THREE.Vector3();
+const _swingV = new THREE.Vector3();   /* ตำแหน่งที่นั่งชิงช้าตอนแกว่ง (reuse) */
 function updateNameLabel(){
   const el = $('house-char-name');
   if(!charGroup || !houseOpen || !charGroup.visible){ el.hidden = true; return; }
   _nameV.set(charGroup.position.x, charGroup.position.y + 2.05, charGroup.position.z).project(camera);
-  el.style.left = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
-  el.style.top = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
+  const lx = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
+  const ty = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
+  el.style.left = lx; el.style.top = ty;
   el.hidden = false;
+  /* ฟองอีโมจิเหนือหัวตอน interaction (นั่ง/เล่นของ) */
+  const hb = $('house-char-bubble');
+  if(hb && hb.classList.contains('on')){
+    _nameV.set(charGroup.position.x, charGroup.position.y + 2.75, charGroup.position.z).project(camera);
+    hb.style.left = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
+    hb.style.top = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
+  }
+}
+
+/* ============================================================
+   เฟส 3 — ระบบตกแต่งบ้าน (คลังของ + วาง/ลาก/หมุน + interaction)
+   ============================================================ */
+function cloneGrid(g){ return g.map(r=>r.slice()); }
+function decorKit(){ return {THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat, shade:petShade}; }
+function itemFootprint(item, rot){ const w=item.fw||1, d=item.fd||1; return (rot%2) ? {w:d, d:w} : {w, d}; }
+function footTiles(item, anchor, rot){
+  const f = itemFootprint(item, rot), out = [];
+  for(let dz=0; dz<f.d; dz++) for(let dx=0; dx<f.w; dx++) out.push({x:anchor.x+dx, z:anchor.z+dz});
+  return out;
+}
+function decorWorldPos(sc, item, anchor, rot){
+  const f = itemFootprint(item, rot);
+  const cx = anchor.x + (f.w-1)/2, cz = anchor.z + (f.d-1)/2;
+  return sc==='out' ? new THREE.Vector3(outWX(cx),0,outWZ(cz)) : new THREE.Vector3(inWX(cx),0,inWZ(cz));
+}
+/* วางได้ไหม: in-bounds + พื้นเดินได้ (base) + ไม่ทับประตู + ไม่ทับชิ้น block อื่น */
+function decorCanPlace(sc, item, anchor, rot, ignoreRec){
+  const base = sc==='out' ? outGridBase : inGridBase;
+  const W = sc==='out' ? OUT_W : IN_W, D = sc==='out' ? OUT_D : IN_D;
+  const tiles = footTiles(item, anchor, rot);
+  for(const tl of tiles){
+    if(tl.x<0 || tl.z<0 || tl.x>=W || tl.z>=D) return false;
+    const bv = base[tl.z][tl.x];
+    if(bv===1 || bv===3) return false;   /* น้ำ/บล็อก(ต้นไม้/บ้าน/รั้ว/กำแพง) */
+    /* ห้ามเฉพาะของที่บล็อกทางเดิน วางทับช่องประตู/ประตูรั้ว — ของเดินผ่านได้ (แผ่นทางเดิน/พรม) วางได้ */
+    if(item.block!==false){
+      if(sc==='out' && tl.x===DOOR_TILE.x && (tl.z===DOOR_TILE.z || tl.z===GATE_TILE.z)) return false;
+      if(sc==='in'  && tl.x===IN_DOOR_TILE.x && tl.z<=1) return false;
+    }
+  }
+  /* ชิ้น stack (เช่นโคมไฟตั้งโต๊ะ) วางทับของอื่นได้ (ไปนั่งบนผิว) — ข้ามเช็คทับ */
+  if(item.block!==false && !item.stack){
+    for(const g of decorGroups[sc]){
+      const r = g.userData.deco.rec; if(r===ignoreRec) continue;
+      const it = g.userData.deco.item; if(it.block===false || it.stack) continue;
+      const oth = footTiles(it, {x:r.x,z:r.z}, r.rot);
+      for(const a of tiles) for(const b of oth) if(a.x===b.x && a.z===b.z) return false;
+    }
+  }
+  return true;
+}
+function buildDecorGroup(sc, rec){
+  const item = FURN.byId[rec.id]; if(!item) return null;
+  const g = new THREE.Group();
+  const pal = item.colors || [0xcccccc];
+  const col = pal[(rec.col||0) % pal.length];
+  try { item.build(g, col, decorKit(), rec); } catch(err){ console.error('decor build', rec.id, err); }
+  if(item.wall){   /* วัดขอบหลังชิ้น (local -z) ไว้ snap แนบผนังพอดีทุกความลึก */
+    const bb = new THREE.Box3().setFromObject(g);
+    g.userData.localMinZ = isFinite(bb.min.z) ? bb.min.z : 0;
+  }
+  applyRecToGroup2(g, sc, item, rec);
+  if(item.rock){   /* ชิงช้า: เก็บ pivot + จุดที่นั่ง ไว้ใช้ตอนโยก */
+    g.traverse(o=>{ if(o.userData.swingPivot) g.userData.swingPiv = o; if(o.userData.swingSeat) g.userData.swingSeat = o; });
+  }
+  if(item.light) setupLamp(g, item);   /* โคมไฟ/เสาไฟ/กองไฟ: สร้าง PointLight + หลอดเรืองแสง เปิด/ปิดได้ */
+  g.userData.deco = {rec, item, scene:sc};
+  g.userData.hDecor = g.userData.deco;
+  return g;
+}
+function applyRecToGroup2(g, sc, item, rec){
+  g.position.copy(decorWorldPos(sc, item, {x:rec.x,z:rec.z}, rec.rot||0));
+  g.position.y = decorYOffset(sc, item, {x:rec.x,z:rec.z}, rec.rot||0, rec);  /* ยกขึ้นถ้าวางบนของอื่น */
+  g.rotation.y = (rec.rot||0) * Math.PI/2;
+  if(item.wall){   /* เลื่อนให้ขอบหลัง (local -z) ไปแนบผิวผนัง (ห่างกึ่งกลางช่องขอบ 0.5) — ชิ้นตื้น/ลึกแนบเท่ากัน */
+    const ang = (rec.rot||0) * Math.PI/2;
+    const sh = -(0.5 + (g.userData.localMinZ || 0));  /* ระยะเลื่อนตามแกน -z local */
+    g.position.x += sh * Math.sin(ang);
+    g.position.z += sh * Math.cos(ang);
+  }
+}
+function applyRecToGroup(g){ const d=g.userData.deco; applyRecToGroup2(g, d.scene, d.item, d.rec); }
+
+function rebuildDecorGrid(sc){
+  const base = sc==='out' ? outGridBase : inGridBase; if(!base) return;
+  const live = cloneGrid(base);
+  decorGroups[sc].forEach(g=>{
+    const {rec, item} = g.userData.deco; if(item.block===false) return;
+    footTiles(item, {x:rec.x,z:rec.z}, rec.rot).forEach(tl=>{
+      if(tl.z>=0 && tl.z<live.length && tl.x>=0 && tl.x<live[0].length) live[tl.z][tl.x] = 3;
+    });
+  });
+  if(sc==='out') outGrid = live; else inGrid = live;
+}
+function saveDecor(){
+  saveHouseData({decor:{
+    out: decorGroups.out.map(g=>g.userData.deco.rec),
+    in:  decorGroups.in.map(g=>g.userData.deco.rec),
+  }});
+}
+/* seed ต้นไม้/รั้ว/บ้านสัตว์เลี้ยงเริ่มต้นเป็น decor ที่ย้าย/ลบได้ (ครั้งเดียวต่อเด็ก, ตำแหน่งเดิมเป๊ะ) */
+function seedWorldDecor(data){
+  data = data || {};
+  const decor = data.decor || {out:[], in:[]};
+  const seed = [];
+  TREES.forEach(([x,z])=>{ seed.push({id:'tree', x, z, rot:(x*7+z*13)%4, col:(x+z)%4}); });
+  /* มุมรั้ว 4 มุม (L หมุนตามมุม: บนซ้าย=0, ล่างซ้าย=1, ล่างขวา=2, บนขวา=3) */
+  seed.push({id:'fence-corner', x:YARD.x0, z:YARD.z0, rot:0, col:0});
+  seed.push({id:'fence-corner', x:YARD.x0, z:YARD.z1, rot:1, col:0});
+  seed.push({id:'fence-corner', x:YARD.x1, z:YARD.z1, rot:2, col:0});
+  seed.push({id:'fence-corner', x:YARD.x1, z:YARD.z0, rot:3, col:0});
+  /* รั้วตรงระหว่างมุม (ข้ามช่องมุม) — แนวนอนบน/ล่าง (rot 0), แนวตั้งซ้าย/ขวา (rot 1) */
+  [YARD.z0, YARD.z1].forEach(fz=>{ for(let x=YARD.x0+1; x<=YARD.x1-1; x++){ if(isFenceTile(x,fz)) seed.push({id:'fence-seg', x, z:fz, rot:0, col:0}); } });
+  [YARD.x0, YARD.x1].forEach(fx=>{ for(let z=YARD.z0+1; z<=YARD.z1-1; z++){ if(isFenceTile(fx,z)) seed.push({id:'fence-seg', x:fx, z, rot:1, col:0}); } });
+  seed.push({id:'pet-house', x:PET_HOUSE_TILE.x, z:PET_HOUSE_TILE.z, rot:3, col:0});
+  /* แผ่นทางเดินหน้าประตู (ลอดช่องประตูรั้ว) — ย้าย/ลบได้ */
+  for(let i=0;i<4;i++) seed.push({id:'path', x:DOOR_TILE.x, z:DOOR_TILE.z+i, rot:0, col:0});
+  decor.out = seed.concat(decor.out || []);
+  decor.in = decor.in || [];
+  saveHouseData({decor, worldSeeded:true});
+}
+function loadDecorForChild(){
+  lampAll = []; _lampsNight = null;   /* ล้าง ref ไฟเก่าก่อนสร้างของเด็กคนใหม่ */
+  ['out','in'].forEach(sc=>{
+    const parent = sc==='out' ? worldGroup : interiorGroup;
+    decorGroups[sc].forEach(g=>{ parent.remove(g); disposeGroup(g); });
+    decorGroups[sc] = [];
+  });
+  let data = loadHouseData();
+  if(!data || !data.worldSeeded){ seedWorldDecor(data); data = loadHouseData(); }
+  const decor = (data && data.decor) || {out:[], in:[]};
+  ['out','in'].forEach(sc=>{
+    const parent = sc==='out' ? worldGroup : interiorGroup;
+    (decor[sc]||[]).forEach(rec=>{
+      const g = buildDecorGroup(sc, rec);
+      if(g){ parent.add(g); decorGroups[sc].push(g); }
+    });
+    rebuildDecorGrid(sc);
+  });
+}
+/* หาช่องว่างข้างตัวละครสำหรับวางชิ้นใหม่ (เริ่มวงถัดจากช่องตัวละคร ไม่ทับตัวเด็ก) */
+function footHasTile(item, anchor, rot, tx, tz){
+  return footTiles(item, anchor, rot).some(t=>t.x===tx && t.z===tz);
+}
+function findFreeAnchor(sc, item, rot){
+  const W = sc==='out'?OUT_W:IN_W, D = sc==='out'?OUT_D:IN_D;
+  const c = hChar.tile;
+  for(let r=1; r<Math.max(W,D); r++){       /* r เริ่มที่ 1 → วางข้างตัว ไม่ทับ */
+    for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dz))!==r) continue;
+      const a = {x:c.x+dx, z:c.z+dz};
+      if(footHasTile(item, a, rot, c.x, c.z)) continue;   /* กันฐานของกินช่องที่เด็กยืน */
+      if(decorCanPlace(sc, item, a, rot)) return a;
+    }
+  }
+  return null;
+}
+function searchNear(sc, item, center, rot, ignoreRec, R){
+  for(let r=0; r<=R; r++) for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dz))!==r) continue;
+    const a = {x:center.x+dx, z:center.z+dz};
+    if(decorCanPlace(sc, item, a, rot, ignoreRec)) return a;
+  }
+  return null;
+}
+
+/* ---------- โหมดตกแต่ง (edit) ---------- */
+function enterEditMode(){
+  if(hMode!=='world' || !houseOpen) return;
+  if(sitState) endSit();
+  editMode = true;
+  document.body.classList.add('house-edit');
+  /* ซ่อนตัวละคร + สัตว์เลี้ยง + ป้ายชื่อ ระหว่างตกแต่ง (ไม่ให้บังของ/สับสน) */
+  if(charGroup) charGroup.visible = false;
+  if(hPet.group) hPet.group.visible = false;
+  const cn = $('house-char-name'); if(cn) cn.hidden = true;
+  const pn = $('house-pet-name'); if(pn) pn.hidden = true;
+  const first = (FURN.cats[hScene]||[])[0];
+  editCat = first ? first.id : null;
+  const hint = $('house-hint'); if(hint) hint.hidden = true;
+  renderEditTabs(); renderEditItems();
+  const p = $('house-edit-panel'); if(p) p.hidden = false;
+  const d = $('house-edit-done'); if(d) d.hidden = false;
+  deselectDecor();
+}
+function exitEditMode(){
+  editMode = false;
+  editPan = null;
+  deselectDecor();
+  document.body.classList.remove('house-edit');
+  /* คืนตัวละคร + สัตว์เลี้ยง (ป้ายชื่อโชว์เองผ่าน frame loop) */
+  if(charGroup) charGroup.visible = true;
+  if(hPet.group) hPet.group.visible = true;
+  const p = $('house-edit-panel'); if(p) p.hidden = true;
+  const d = $('house-edit-done'); if(d) d.hidden = true;
+  const tb = $('house-edit-toolbar'); if(tb) tb.hidden = true;
+  saveDecor();
+}
+function renderEditTabs(){
+  const wrap = $('house-edit-tabs'); if(!wrap) return;
+  wrap.innerHTML = '';
+  (FURN.cats[hScene]||[]).forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'he-tab' + (c.id===editCat ? ' active' : '');
+    b.innerHTML = '<span class="he-tab-emoji">'+c.emoji+'</span><span>'+c.label+'</span>';
+    b.onclick = ()=>{ if(typeof playClick==='function') playClick(); editCat=c.id; renderEditTabs(); renderEditItems(); };
+    wrap.appendChild(b);
+  });
+}
+function renderEditItems(){
+  const wrap = $('house-edit-items'); if(!wrap) return;
+  wrap.innerHTML = '';
+  FURN.items.filter(it=>it.scope===hScene && it.cat===editCat).forEach(it=>{
+    const b = document.createElement('button');
+    b.className = 'he-item';
+    b.innerHTML = '<span class="he-item-emoji">'+it.emoji+'</span><span class="he-item-name">'+it.name+'</span>';
+    b.onclick = ()=>addDecorItem(it.id);
+    wrap.appendChild(b);
+  });
+  positionToolbar();   /* จำนวนของต่อหมวดต่างกัน → panel สูงเปลี่ยน → เลื่อน toolbar ตาม */
+}
+/* ความสูงที่วางซ้อน: ชิ้น stack (เช่นโคมไฟตั้งโต๊ะ) ยกขึ้นไปนั่งบนผิวของที่มี top อยู่ใต้ */
+function decorYOffset(sc, item, anchor, rot, ignoreRec){
+  if(!item.stack) return 0;
+  let y = 0;
+  const tiles = footTiles(item, anchor, rot);
+  for(const g of decorGroups[sc]){
+    const r = g.userData.deco.rec; if(r===ignoreRec) continue;
+    const it = g.userData.deco.item; if(it.top==null) continue;
+    const oth = footTiles(it, {x:r.x,z:r.z}, r.rot);
+    if(tiles.some(a=>oth.some(bb=>bb.x===a.x && bb.z===a.z))) y = Math.max(y, it.top);
+  }
+  return y;
+}
+/* ---------- แพนกล้อง (โหมดตกแต่ง) ---------- */
+function groundPoint(cx, cy){
+  raycaster.setFromCamera(ndcFromClient(cx, cy), camera);
+  const pt = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(groundPlane, pt) ? pt : null;
+}
+function clampCamTarget(){
+  const out = hScene==='out';
+  const hw = (out?OUT_W:IN_W)/2 + 2, hd = (out?OUT_D:IN_D)/2 + 2;
+  camTarget.x = Math.max(-hw, Math.min(hw, camTarget.x));
+  camTarget.z = Math.max(-hd, Math.min(hd, camTarget.z));
+}
+function editPanStart(cx, cy){ const p = groundPoint(cx, cy); editPan = p ? {prev:p} : null; }
+function editPanMove(cx, cy){
+  if(!editPan) return;
+  const cur = groundPoint(cx, cy); if(!cur) return;
+  camTarget.x += editPan.prev.x - cur.x;
+  camTarget.z += editPan.prev.z - cur.z;
+  clampCamTarget(); applyCamera();
+  const re = groundPoint(cx, cy); if(re) editPan.prev = re;   /* จับจุดใหม่หลังเลื่อน ให้จุดเดิมอยู่ใต้นิ้ว */
+}
+function addDecorItem(id){
+  if(typeof playClick==='function') playClick();
+  const item = FURN.byId[id]; if(!item) return;
+  const sc = hScene;
+  const anchor = findFreeAnchor(sc, item, 0);
+  if(!anchor){ if(typeof showToast==='function') showToast('🪑','ตรงนี้เต็มแล้ว ลองเก็บของอื่นออกก่อนนะ'); return; }
+  const rec = {id, x:anchor.x, z:anchor.z, rot:0, col:0};
+  const g = buildDecorGroup(sc, rec);
+  (sc==='out'?worldGroup:interiorGroup).add(g);
+  decorGroups[sc].push(g);
+  rebuildDecorGrid(sc); saveDecor();
+  selectDecor(g);
+  decorBounce(g);
+}
+function ensureSelRing(){
+  if(editSelRing) return;
+  editSelRing = new THREE.Mesh(
+    new THREE.TorusGeometry(.5,.055,8,26),
+    new THREE.MeshBasicMaterial({color:0x33b7ee, transparent:true, opacity:.92}));
+  editSelRing.rotation.x = Math.PI/2;
+  editSelRing.renderOrder = 6;
+  editSelRing.visible = false;
+  scene.add(editSelRing);
+}
+function updateSelRing(){
+  if(!editSel || !editSelRing) return;
+  const {rec, item} = editSel.userData.deco;
+  const f = itemFootprint(item, rec.rot);
+  editSelRing.position.copy(editSel.position);
+  editSelRing.position.y = .05;
+  const s = Math.max(f.w, f.d) * .96 + .1;
+  editSelRing.scale.set(s, s, 1);
+}
+function setSelTint(valid){ if(editSelRing) editSelRing.material.color.setHex(valid ? 0x33b7ee : 0xff5a5a); }
+/* วางแถบเครื่องมือให้ลอยชิดขอบบนของกล่อง panel (panel สูงไม่คงที่ตามจำนวนของ) */
+function positionToolbar(){
+  const tb = $('house-edit-toolbar'), panel = $('house-edit-panel');
+  if(!tb || !panel) return;
+  const h = panel.hidden ? 0 : panel.offsetHeight;
+  tb.style.bottom = (h + 8) + 'px';
+}
+function selectDecor(g){
+  editSel = g;
+  ensureSelRing();
+  editSelRing.visible = true;
+  setSelTint(true);
+  updateSelRing();
+  renderToolbar();
+  const tb = $('house-edit-toolbar'); if(tb) tb.hidden = false;
+  positionToolbar();
+}
+function deselectDecor(){
+  editSel = null;
+  if(editSelRing) editSelRing.visible = false;
+  const tb = $('house-edit-toolbar'); if(tb) tb.hidden = true;
+}
+function renderToolbar(){
+  const cwrap = $('house-edit-colors'); if(!cwrap || !editSel) return;
+  cwrap.innerHTML = '';
+  const {rec, item} = editSel.userData.deco;
+  const pal = item.colors || [];
+  pal.forEach((hex,i)=>{
+    const b = document.createElement('button');
+    b.className = 'he-color' + (i===(rec.col||0) ? ' active' : '');
+    b.style.background = '#'+hex.toString(16).padStart(6,'0');
+    b.onclick = ()=>recolorSel(i);
+    cwrap.appendChild(b);
+  });
+}
+function rebuildSelGroup(){
+  const deco = editSel.userData.deco, sc = deco.scene, parent = editSel.parent;
+  const idx = decorGroups[sc].indexOf(editSel);
+  parent.remove(editSel); disposeGroup(editSel);
+  const g = buildDecorGroup(sc, deco.rec);
+  parent.add(g);
+  if(idx>=0) decorGroups[sc][idx] = g; else decorGroups[sc].push(g);
+  editSel = g;
+  updateSelRing();
+}
+function recolorSel(i){
+  if(!editSel) return;
+  if(typeof playClick==='function') playClick();
+  editSel.userData.deco.rec.col = i;
+  rebuildSelGroup(); renderToolbar(); saveDecor();
+}
+function rotateSel(){
+  if(!editSel) return;
+  if(typeof playClick==='function') playClick();
+  const deco = editSel.userData.deco, rec = deco.rec, sc = deco.scene, item = deco.item;
+  const nr = (rec.rot+1)%4;
+  let anchor = {x:rec.x, z:rec.z};
+  if(!decorCanPlace(sc, item, anchor, nr, rec)) anchor = searchNear(sc, item, anchor, nr, rec, 2);
+  if(!anchor){ if(typeof showToast==='function') showToast('🔄','หมุนตรงนี้ไม่ได้ ลองย้ายที่ก่อนนะ'); return; }
+  rec.rot = nr; rec.x = anchor.x; rec.z = anchor.z;
+  applyRecToGroup(editSel);
+  updateSelRing(); rebuildDecorGrid(sc); saveDecor();
+}
+function deleteSel(){
+  if(!editSel) return;
+  if(typeof playClick==='function') playClick();
+  const deco = editSel.userData.deco, sc = deco.scene;
+  const idx = decorGroups[sc].indexOf(editSel);
+  editSel.parent.remove(editSel); disposeGroup(editSel);
+  if(idx>=0) decorGroups[sc].splice(idx,1);
+  deselectDecor(); rebuildDecorGrid(sc); saveDecor();
+}
+/* ---------- ลากวางในโหมด edit ---------- */
+function editRaycastDecor(cx, cy){
+  raycaster.setFromCamera(ndcFromClient(cx, cy), camera);
+  return pickDecorGroup();
+}
+function pickDecorGroup(){
+  const parent = hScene==='out' ? worldGroup : interiorGroup;
+  const hits = raycaster.intersectObjects(decorGroups[hScene], true);
+  for(const h of hits){ let o = h.object; while(o && o!==parent){ if(o.userData.hDecor) return o; o = o.parent; } }
+  return null;
+}
+function editGroundTile(cx, cy){
+  raycaster.setFromCamera(ndcFromClient(cx, cy), camera);
+  const pt = new THREE.Vector3();
+  if(!raycaster.ray.intersectPlane(groundPlane, pt)) return null;
+  const out = hScene==='out';
+  const W = out?OUT_W:IN_W, D = out?OUT_D:IN_D;
+  return {x:Math.round(pt.x+(W-1)/2), z:Math.round(pt.z+(D-1)/2)};
+}
+function editDragMove(cx, cy){
+  if(!editSel || !editDrag) return;
+  const sc = hScene, {rec, item} = editSel.userData.deco;
+  const t = editGroundTile(cx, cy); if(!t) return;
+  const rot = rec.rot;
+  const f = itemFootprint(item, rot);
+  const anchor = {x:t.x-Math.floor((f.w-1)/2), z:t.z-Math.floor((f.d-1)/2)};
+  const valid = decorCanPlace(sc, item, anchor, rot, rec);
+  editSel.position.copy(decorWorldPos(sc, item, anchor, rot));
+  editSel.rotation.y = rot * Math.PI/2;
+  editSel.position.y = valid ? decorYOffset(sc, item, anchor, rot, rec) : .12;
+  updateSelRing(); setSelTint(valid);
+  if(valid) editDrag.lastValid = {x:anchor.x, z:anchor.z, rot};
+  editDrag.moved = true;
+}
+function editDragCommit(){
+  if(!editSel || !editDrag){ editDrag = null; return; }
+  const deco = editSel.userData.deco, rec = deco.rec, sc = deco.scene;
+  const a = editDrag.lastValid || {x:rec.x, z:rec.z, rot:rec.rot};
+  rec.x = a.x; rec.z = a.z; if(a.rot!=null) rec.rot = a.rot;
+  applyRecToGroup(editSel);
+  setSelTint(true); updateSelRing();
+  rebuildDecorGrid(sc); saveDecor();
+  editDrag = null;
+}
+function editDragCancel(){
+  if(editSel && editDrag){ applyRecToGroup(editSel); setSelTint(true); updateSelRing(); }
+  editDrag = null;
+}
+/* ---------- interaction (world mode) ---------- */
+function decorInteract(g){
+  if(editMode) return;
+  const {rec, item, scene:sc} = g.userData.deco;
+  const W = sc==='out'?OUT_W:IN_W, D = sc==='out'?OUT_D:IN_D;
+  const grid = sc==='out'?outGrid:inGrid;
+  const f = itemFootprint(item, rec.rot);
+  const cx = Math.round(rec.x+(f.w-1)/2), cz = Math.round(rec.z+(f.d-1)/2);
+  const adj = nearestWalkable(grid, W, D, cx, cz);
+  if(!adj) return;
+  walkTo(adj.x, adj.z, {action:{type:'decor', group:g, item, act:item.action||'bounce'}});
+}
+function startSit(g, item, act){
+  const sit = item.sit || {};
+  const ang = g.rotation.y;
+  const ry = ang + (sit.ry!=null ? sit.ry : 0);   /* หันหน้าตามด้านหน้าเฟอร์นิเจอร์ (+z ที่ rot 0) */
+  const seat = g.position.clone();
+  if(act==='sleep'){
+    /* นอนบนเตียง/เอนบนเก้าอี้ผ้าใบ: จุดวางเลื่อนไปทางปลาย (+z local) ตัวจะเหยียดยาวไปหาหมอน (-z)
+       recline = มุมเอน (เรเดียน) 0=ตั้งตรง, PI/2=ราบเต็ม (เตียง). เก้าอี้ผ้าใบตั้งน้อยกว่าให้เอนตามพนักพิง */
+    const off = sit.sleepOff != null ? sit.sleepOff : 0.5;
+    seat.x += Math.sin(ang)*off; seat.z += Math.cos(ang)*off;
+    seat.y = sit.sleepY != null ? sit.sleepY : 0.58;
+  }else{
+    /* นั่ง: offset ที่นั่ง (local) หมุนตามทิศชิ้น + ยกสะโพกไปแตะเบาะ */
+    const dx = sit.dx||0, dz = sit.dz||0;
+    seat.x += dx*Math.cos(ang) + dz*Math.sin(ang);
+    seat.z += -dx*Math.sin(ang) + dz*Math.cos(ang);
+    seat.y = Math.max(0, (sit.sy!=null ? sit.sy : .5) - 0.4);
+  }
+  sitState = {group:g, item, act, seat, ry, swingLean:0, recline: sit.recline};
+  if(item.rock && g.userData.swingPiv && g.userData.swingSeat){
+    sitState.swing = {piv:g.userData.swingPiv, anc:g.userData.swingSeat};
+  }
+  charBubble(act==='sleep' ? '💤' : (Math.random()<.5?'😊':'🎵'));
+}
+function endSit(){
+  if(sitState && sitState.swing) sitState.swing.piv.rotation.x = 0;   /* คืนชิงช้าให้หยุดนิ่ง */
+  sitState = null;
+  /* ไม่ snap ท่าทันที — ปล่อยให้ loop lerp rotation.x→0 (บรรทัด trx) + position.y→0 (idle) ให้ลุก/ยืนนุ่มนวล */
+  const hb = $('house-char-bubble'); if(hb) hb.classList.remove('on');
+}
+function decorBounce(g){ fxList.push({g, t0:performance.now(), dur:650, kind:'bounce'}); const p=g.position; spawnParticle(p.x,(g.userData.deco?1.2:.6),p.z,0xfff1a8,g.parent); }
+function decorSpin(g){ fxList.push({g, t0:performance.now(), dur:900, kind:'spin'}); }
+function decorToggle(g){
+  if(g.userData.lamp){   /* โคมไฟ/เสาไฟ: สลับเปิด-ปิดไฟจริง */
+    if(g.userData.lamp.alwaysOn){ charBubble('🔥'); return; }  /* กองไฟติดตลอด */
+    setLampState(g, !g.userData.lamp.on);
+    charBubble(g.userData.lamp.on ? '💡' : '🌙');
+    return;
+  }
+  const p = g.position;
+  for(let i=0;i<5;i++) spawnParticle(p.x+(Math.random()-.5)*.6, 1+Math.random()*.8, p.z+(Math.random()-.5)*.6, 0xfff59d, g.parent);
+  charBubble('✨');
+}
+/* ---------- ระบบไฟ decor (โคมไฟ/เสาไฟ/กองไฟ) ---------- */
+let lampAll = [];                     /* ไฟทุกดวงในฉาก (อัปเดต fade + กะพริบทุกเฟรม) */
+let _lampsNight = null;               /* จำสถานะกลางวัน/คืนล่าสุด สลับไฟอัตโนมัติเมื่อเปลี่ยนจริง */
+/* กลางวันฉากสว่างอยู่แล้ว → หรี่ไฟลง (กันแสง over), กลางคืน → เต็มดวง */
+function lampDim(){ return ((typeof isNightMode==='function') && isNightMode()) ? {light:1, em:1} : {light:.1, em:.32}; }
+function setupLamp(g, item){
+  const L = item.light;
+  const bulbs = [];
+  g.traverse(o=>{ if(o.userData.bulb && o.material){ o.material = o.material.clone(); o.userData.emOn = (o.material.color ? o.material.color.clone() : new THREE.Color(L.color||0xfff2c0)); bulbs.push(o); } });
+  const light = new THREE.PointLight(L.color||0xfff2c0, 0, L.dist||4, 1.6);
+  light.position.set(L.x||0, L.y!=null?L.y:1, L.z||0);
+  light.castShadow = false;
+  g.add(light);
+  const lamp = { light, bulbs, on:false, intensity:(L.intensity!=null?L.intensity:1),
+                 alwaysOn:!!L.alwaysOn, flicker:!!L.flicker, curLight:0, curEm:0 };
+  g.userData.lamp = lamp;
+  lamp.on = lamp.alwaysOn || ((typeof isNightMode==='function') && isNightMode());
+  /* snap ค่าเริ่มต้นตอนเข้าบ้าน (ไม่ fade) แล้วให้ updateLamps ค่อยๆ ปรับตอนสลับโหมด/กด toggle */
+  const dim = lampDim();
+  lamp.curLight = lamp.on ? lamp.intensity * dim.light : 0;
+  lamp.curEm    = lamp.on ? dim.em : 0;
+  applyLampVisual(g, 0);
+  lampAll.push(g);
+}
+function setLampState(g, on){   /* แค่ตั้งเป้า — ความสว่างจริง fade เข้าหาเป้าใน updateLamps */
+  const lamp = g.userData.lamp; if(lamp) lamp.on = on;
+}
+function applyLampVisual(g, t){
+  const lamp = g.userData.lamp;
+  const fL = (lamp.flicker && lamp.on) ? (0.75 + 0.25*Math.sin(t*.012) + 0.12*Math.sin(t*.037)) : 1;
+  lamp.light.intensity = lamp.curLight * fL;
+  lamp.bulbs.forEach((b,bi)=>{ if(b.material.emissive){
+    const fe = (lamp.flicker && lamp.on) ? (0.7 + 0.3*Math.sin(t*.02 + bi)) : 1;
+    b.material.emissive.copy(b.userData.emOn).multiplyScalar(lamp.curEm * fe);
+  } });
+}
+function updateLamps(t, dt){   /* fade ความสว่างเข้าหาเป้า (เปิด/ปิด + หรี่กลางวัน/คืน) นุ่มตามธีม + กองไฟกะพริบ */
+  const dim = lampDim();
+  const kk = Math.min(1, dt*1.8);   /* ~ ตามจังหวะ crossfade ธีม 2 วิ */
+  for(let i=lampAll.length-1; i>=0; i--){
+    const g = lampAll[i];
+    if(!g.parent || !g.userData.lamp){ lampAll.splice(i,1); continue; }
+    const lamp = g.userData.lamp;
+    const tgtL = lamp.on ? lamp.intensity * dim.light : 0;
+    const tgtE = lamp.on ? dim.em : 0;
+    lamp.curLight += (tgtL - lamp.curLight) * kk;
+    lamp.curEm    += (tgtE - lamp.curEm) * kk;
+    applyLampVisual(g, t);
+  }
+}
+function refreshLamps(){   /* เรียกจาก updateLights — สลับเปิด/ปิดตามกลางวัน/คืน (ความสว่างค่อย fade ใน updateLamps) */
+  const night = (typeof isNightMode==='function') && isNightMode();
+  if(night === _lampsNight) return;
+  _lampsNight = night;
+  ['in','out'].forEach(sc=>{ (decorGroups[sc]||[]).forEach(g=>{
+    const lamp = g.userData.lamp; if(!lamp || lamp.alwaysOn) return;
+    lamp.on = night;   /* โคม/เสาไฟ: เปิดกลางคืน ปิดกลางวันอัตโนมัติ (fade เอง) */
+  }); });
+}
+function charBubble(txt){
+  const hb = $('house-char-bubble'); if(!hb) return;
+  hb.textContent = txt; hb.classList.add('on');
+  clearTimeout(charBubble._t);
+  charBubble._t = setTimeout(()=>hb.classList.remove('on'), 1600);
 }
 
 /* ---------- loop ---------- */
@@ -2044,7 +2552,16 @@ function frame(t){
       if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03; u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03; }
     }
   }else if(charGroup){
-    if(hChar.walking && hChar.path.length){
+    const gettingUp = hChar.getUpT0 && (performance.now() - hChar.getUpT0) < hChar.getUpDur;
+    if(gettingUp){
+      /* ลุกจากที่นั่ง/นอน: สไลด์ออกจากเฟอร์นิเจอร์กลับช่องข้างๆ + ยืดแขนขากลับท่ายืน
+         (rotation.x คืนศูนย์ผ่าน trx ด้านล่างเพราะ sitState=null แล้ว) — ยังไม่เดินจนกว่าจะยืนเสร็จ */
+      const gp = (performance.now() - hChar.getUpT0) / hChar.getUpDur;
+      const e = gp<.5 ? 2*gp*gp : 1-Math.pow(-2*gp+2,2)/2;   /* easeInOut */
+      charGroup.position.lerpVectors(hChar.getUpFrom, hChar.getUpTo, e);
+      if(u){ ['legs','arms'].forEach(pp=>u[pp].forEach(o=>{ o.rotation.x *= .85; })); u.rig.position.y = 0; }
+    }else if(hChar.walking && hChar.path.length){
+      hChar.getUpT0 = 0;
       const from = hChar.segFrom || hChar.tile;
       const to = hChar.path[hChar.seg];
       hChar.segT += dt*WALK_SPEED;
@@ -2065,9 +2582,41 @@ function frame(t){
         u.arms[0].rotation.x = -sw*.8; u.arms[1].rotation.x = sw*.8;
         u.rig.position.y = Math.abs(Math.sin(t*.014))*.05;
       }
+    }else if(u && sitState){
+      hChar.targetRotY = sitState.ry;
+      const kk = Math.min(1, dt*10);
+      if(sitState.act==='sleep'){
+        /* นอนราบ: เหยียดแขนขา (ตัวจะเอนเป็นแนวนอนด้วย rotation.x ด้านล่าง) */
+        charGroup.position.lerp(sitState.seat, Math.min(1, dt*8));
+        u.legs[0].rotation.x += (-.06 - u.legs[0].rotation.x)*kk;
+        u.legs[1].rotation.x += ( .06 - u.legs[1].rotation.x)*kk;
+        u.arms[0].rotation.x += (-.12 - u.arms[0].rotation.x)*kk;
+        u.arms[1].rotation.x += (-.12 - u.arms[1].rotation.x)*kk;
+        u.rig.position.y = 0;
+      }else{
+        /* นั่ง: งอเข่า แขนวางตัก (legBend ปรับได้ต่อชิ้น เช่นเก้าอี้ผ้าใบงอน้อย ขาเหยียดตามเบาะ) */
+        const _lb = (sitState.item.sit && sitState.item.sit.legBend!=null) ? sitState.item.sit.legBend : -1.2;
+        u.legs[0].rotation.x += (_lb - u.legs[0].rotation.x)*kk;
+        u.legs[1].rotation.x += (_lb - u.legs[1].rotation.x)*kk;
+        u.arms[0].rotation.x += (-.35 - u.arms[0].rotation.x)*kk;
+        u.arms[1].rotation.x += (-.35 - u.arms[1].rotation.x)*kk;
+        u.rig.position.y = Math.sin(t*.0022)*.015;
+        if(sitState.swing){
+          /* ชิงช้าโยก: แกว่ง pivot + ตัวละครแกว่งตามที่นั่ง + เอนตัวตามจังหวะ */
+          const ang = Math.sin(t*.003)*0.5;
+          sitState.swing.piv.rotation.x = ang;
+          sitState.swingLean = ang;
+          sitState.swing.anc.getWorldPosition(_swingV);
+          charGroup.position.lerp(new THREE.Vector3(_swingV.x, _swingV.y-0.4, _swingV.z), Math.min(1, dt*12));
+        }else{
+          charGroup.position.lerp(sitState.seat, Math.min(1, dt*6));   /* ค่อยๆ เลื่อนลงนั่ง/นอน (นุ่มขึ้น) */
+        }
+      }
     }else if(u){
-      /* idle: โยกเบาๆ แขนขากลับท่ายืน */
+      /* idle: โยกเบาๆ แขนขากลับท่ายืน + ลุกจากที่นั่ง/นอนนุ่มๆ (position.y คืนสู่พื้น) */
       ['legs','arms'].forEach(part=>u[part].forEach(p=>{ p.rotation.x *= .82; }));
+      if(charGroup.position.y > 0.001) charGroup.position.y += (0 - charGroup.position.y) * Math.min(1, dt*8);
+      else charGroup.position.y = 0;
       u.rig.position.y = Math.sin(t*.0022)*.02;
       u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03;
       u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03;
@@ -2077,8 +2626,15 @@ function frame(t){
     while(dr > Math.PI) dr -= Math.PI*2;
     while(dr < -Math.PI) dr += Math.PI*2;
     charGroup.rotation.y += dr * Math.min(1, dt*10);
-    /* กล้องตามตัวละคร */
-    camTarget.lerp(charGroup.position, Math.min(1, dt*4));
+    /* เอนตัว: นอน = ราบ (-90°), ชิงช้า = เอนตามการแกว่ง, อื่นๆ = ตั้งตรง */
+    let trx = 0;
+    if(sitState && sitState.act==='sleep') trx = -(sitState.recline!=null ? sitState.recline : Math.PI/2);
+    else if(sitState && sitState.swing) trx = sitState.swingLean || 0;
+    else if(sitState && sitState.act==='sit' && sitState.item.sit && sitState.item.sit.lean!=null) trx = sitState.item.sit.lean;  /* นั่งเอนหลังตามพนักพิง (เก้าอี้ผ้าใบ) */
+    if(sitState && sitState.swing) charGroup.rotation.x = trx;
+    else charGroup.rotation.x += (trx - charGroup.rotation.x) * Math.min(1, dt*5);   /* เอน/นอน/ลุก ค่อยๆ พลิก (นุ่มขึ้น) */
+    /* กล้องตามตัวละคร (ยกเว้นตอนตกแต่ง — ปล่อยให้แพนกล้องอิสระ, กลับหาตัวละครเองตอนออก) */
+    if(!editMode) camTarget.lerp(charGroup.position, Math.min(1, dt*4));
     applyCamera();
     updateCritters(dt, t);
     updateFx(t, dt);
@@ -2086,6 +2642,7 @@ function frame(t){
   }
   updateNameLabel();
   updatePetLabels();
+  updateLamps(t, dt);
   renderer.render(scene, camera);
 }
 
@@ -2123,6 +2680,7 @@ function startHouseGame(){
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   const data = loadHouseData();
+  loadDecorForChild();                    /* โหลดเฟอร์นิเจอร์ที่วางไว้ของเด็กคนนี้ (เฟส 3) */
   if(childChanged) removePetGroup();      /* สัตว์เลี้ยงของเด็กคนก่อนต้องไม่ติดมาฉากเด็กคนใหม่ */
   if(!data || !data.char){
     openCreator(false);
@@ -2135,7 +2693,7 @@ function startHouseGame(){
     $('house-pet-picker').hidden = true;
     $('house-rotate-wrap').hidden = true;
     $('house-edit-btn').hidden = false;
-    $('house-pet-btn').hidden = false;
+    $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false;
     if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
     creatorGroup.visible = false;
     worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
@@ -2160,6 +2718,8 @@ function startHouseGame(){
 }
 
 function stopHouseGame(){
+  if(editMode) exitEditMode();
+  if(sitState) endSit();
   houseOpen = false;
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.remove('house-open');
@@ -2354,11 +2914,18 @@ function syncHouseCtrls(){
 
 /* ---------- bind ปุ่ม ---------- */
 $('house-entry-btn').addEventListener('click', startHouseGame);
-$('house-back').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); stopHouseGame(); });
+$('house-back').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); if(editMode){ exitEditMode(); return; } stopHouseGame(); });
 $('house-edit-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   if(hMode!=='creator') fadeSwap(()=>openCreator(true));
 });
+$('house-decorate-btn').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  if(hMode==='world' && !editMode) enterEditMode();
+});
+$('house-edit-done').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); exitEditMode(); });
+$('house-edit-rotate').addEventListener('click', rotateSel);
+$('house-edit-delete').addEventListener('click', deleteSel);
 $('house-done-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   fadeSwap(()=>closeCreator());

@@ -439,11 +439,10 @@
   <div class="house-overlay-ui">
     <div class="quiz-top">
       <button class="back-btn" id="house-back" aria-label="กลับหน้าหลัก">←</button>
-      <div class="quiz-top-info">
-        <div class="cat-label house-label-chip" id="house-label"><img class="house-label-icon" src="assets/icons/my-house.svg" alt=""> บ้านของหนู</div>
-      </div>
+      <div class="quiz-top-info" aria-hidden="true"></div>
       <button class="back-btn" id="house-pet-btn" aria-label="สัตว์เลี้ยงของหนู" data-tooltip="สัตว์เลี้ยงของหนู"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15.5" rx="4.8" ry="3.9" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="5.8" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="12" cy="8.6" r="2.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="18.2" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/></svg></button>
       <button class="back-btn" id="house-edit-btn" aria-label="แก้ไขตัวละคร" data-tooltip="แก้ไขตัวละคร"><svg class="house-btn-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg></button>
+      <button class="back-btn" id="house-decorate-btn" aria-label="ตกแต่งบ้าน" data-tooltip="ตกแต่งบ้าน"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v.6a2.4 2.4 0 0 0-2.4 2.4V17H6.4v-2A2.4 2.4 0 0 0 4 12.6z" fill="#FFD6A0" stroke="#E59A5B" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 9V7.5A1.5 1.5 0 0 1 8.5 6h7A1.5 1.5 0 0 1 17 7.5V9" fill="#FFE9C8" stroke="#E59A5B" stroke-width="1.2"/><path d="M5.5 17v2M18.5 17v2" stroke="#E59A5B" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     </div>
     <!-- ปุ่มควบคุมชุดเดียวกับ header หลัก (header ถูกซ่อนในโหมดบ้าน) — เป็น proxy คลิกแทนปุ่มจริง icon mirror อัตโนมัติใน js/house.js ยกเว้น fullscreen ที่ผูกกับ fsBtns ใน js/app.js ตรงๆ -->
     <div class="house-ctrl-wrap">
@@ -457,6 +456,7 @@
   <div class="house-char-name" id="house-char-name" hidden></div>
   <div class="house-char-name house-pet-name" id="house-pet-name" hidden></div>
   <div class="house-pet-bubble" id="house-pet-bubble">❤️</div>
+  <div class="house-char-bubble" id="house-char-bubble">✨</div>
   <div class="house-creator" id="house-creator" hidden>
     <div class="house-creator-panel">
       <div class="house-creator-title" id="house-creator-title"><svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg> สร้างตัวละครของหนู</div>
@@ -486,6 +486,19 @@
     <button class="house-rotate-btn" id="house-rot-left" aria-label="หมุนตัวละครไปทางซ้าย">↺</button>
     <button class="house-rotate-btn" id="house-rot-right" aria-label="หมุนตัวละครไปทางขวา">↻</button>
   </div>
+  <!-- เฟส 3: แถบเครื่องมือชิ้นที่เลือก (เปลี่ยนสี/หมุน/เก็บออก) ลอยเหนือกล่องเมื่อเลือกของ -->
+  <div class="house-edit-toolbar" id="house-edit-toolbar" hidden>
+    <div class="he-colors" id="house-edit-colors"></div>
+    <button class="he-tool-btn" id="house-edit-rotate" aria-label="หมุน">🔄</button>
+    <button class="he-tool-btn he-del" id="house-edit-delete" aria-label="เก็บออก">🗑️</button>
+  </div>
+  <!-- เฟส 3: กล่องเลือกของตกแต่งแบ่งหมวด (โหมด edit) -->
+  <div class="house-edit-panel" id="house-edit-panel" hidden>
+    <div class="he-panel-title">🛋️ แตะเลือกของมาวาง แล้วลาก/หมุนได้เลย</div>
+    <div class="he-tabs" id="house-edit-tabs"></div>
+    <div class="he-items" id="house-edit-items"></div>
+  </div>
+  <button class="house-edit-done" id="house-edit-done" hidden>เสร็จแล้ว ✓</button>
   <div class="house-fade" id="house-fade"></div>
 </section>
 
@@ -560,7 +573,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net%2Ftest&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>
@@ -647,6 +660,7 @@
 <script src="js/data.js?v=1.3.24"></script>
 <script src="js/owl-messages.js?v=1.3.24"></script>
 <script src="js/app.js?v=1.3.24"></script>
+<script src="js/house-furniture.js?v=1.5.0"></script>
 <script src="js/house.js?v=1.5.0"></script>
 </body>
 </html>

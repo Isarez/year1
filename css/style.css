@@ -1950,6 +1950,105 @@
     .house-rotate-wrap{bottom:calc(60vh + 70px); bottom:calc(60dvh + 70px);}
     .house-rotate-btn{width:48px; height:48px; font-size:24px;}
   }
+  /* ---------- เฟส 3: โหมดตกแต่งบ้าน (edit) ---------- */
+  /* ซ่อนปุ่มบนที่ไม่เกี่ยวตอนตกแต่ง (คงปุ่มย้อนกลับ = ปิดโหมดตกแต่ง) */
+  body.house-edit #house-pet-btn,
+  body.house-edit #house-edit-btn,
+  body.house-edit #house-decorate-btn{display:none;}
+
+  /* กล่องเลือกของ — ลิ้นชักด้านล่าง */
+  .house-edit-panel{
+    position:fixed; left:0; right:0; bottom:0; z-index:8; pointer-events:auto;
+    background:rgba(255,255,255,.95); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border-radius:24px 24px 0 0; box-shadow:0 -6px 24px rgba(70,40,10,.18);
+    padding:10px 12px calc(12px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:8px; max-height:46vh; max-height:46dvh;
+  }
+  .house-edit-panel[hidden]{display:none;}
+  .he-panel-title{font-size:14.5px; font-weight:800; color:var(--ink); text-align:center;}
+  .he-tabs{display:flex; gap:7px; overflow-x:auto; padding:2px 2px 4px; -webkit-overflow-scrolling:touch;}
+  .he-tab{
+    flex:0 0 auto; border:3px solid rgba(0,0,0,.06); border-radius:14px; padding:6px 12px;
+    background:#F6EFE3; color:var(--ink); font-family:inherit; font-size:13.5px; font-weight:800;
+    display:inline-flex; align-items:center; gap:5px; cursor:pointer;
+    transition:transform .1s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .he-tab:active{transform:scale(.94);}
+  .he-tab.active{border-color:#33B7EE; box-shadow:0 0 0 3px rgba(51,183,238,.22); background:#EAF7FE;}
+  .he-tab-emoji{font-size:17px; line-height:1;}
+  .he-items{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(72px,1fr)); gap:8px;
+    overflow-y:auto; padding:4px 2px 2px; min-height:0;
+  }
+  .he-item{
+    border:3px solid rgba(0,0,0,.06); border-radius:16px; padding:8px 4px 6px;
+    background:#FFF9EE; color:var(--ink); font-family:inherit; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    transition:transform .1s ease, border-color .12s ease;
+  }
+  .he-item:active{transform:scale(.9);}
+  .he-item:hover{border-color:#FFCF7A;}
+  .he-item-emoji{font-size:28px; line-height:1;}
+  .he-item-name{font-size:11.5px; font-weight:800; text-align:center; line-height:1.15;}
+
+  /* แถบเครื่องมือชิ้นที่เลือก (ลอยเหนือกล่อง panel) */
+  .house-edit-toolbar{
+    position:fixed; left:50%; transform:translateX(-50%); z-index:9; pointer-events:auto;
+    bottom:calc(46vh + 12px); bottom:calc(46dvh + 12px);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;
+    background:rgba(255,255,255,.96); border-radius:999px; padding:6px 10px;
+    box-shadow:0 6px 20px rgba(70,40,10,.2); max-width:94vw;
+  }
+  .house-edit-toolbar[hidden]{display:none;}
+  .he-colors{display:flex; gap:5px; flex-wrap:wrap; max-width:60vw;}
+  .he-color{
+    width:26px; height:26px; border-radius:50%; border:3px solid rgba(0,0,0,.12); cursor:pointer;
+    padding:0; transition:transform .1s ease;
+  }
+  .he-color:active{transform:scale(.86);}
+  .he-color.active{border-color:#33B7EE; box-shadow:0 0 0 2px rgba(51,183,238,.3); transform:scale(1.12);}
+  .he-tool-btn{
+    width:40px; height:40px; border-radius:50%; border:none; cursor:pointer;
+    background:#EAF7FE; font-size:20px; line-height:1; display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:var(--shadow-btn); transition:transform .1s ease;
+  }
+  .he-tool-btn:active{transform:scale(.9);}
+  .he-tool-btn.he-del{background:#FFE4E1;}
+
+  /* ปุ่มเสร็จแล้ว (ลอยกลางบน) — ใหญ่ เด่น สะดุดตา */
+  .house-edit-done{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:9; pointer-events:auto;
+    border:4px solid #fff; border-radius:999px; padding:15px 38px; cursor:pointer;
+    background:linear-gradient(135deg,#5FD36A,#2E9E44); color:#fff;
+    font-family:inherit; font-size:22px; font-weight:800; letter-spacing:.3px;
+    box-shadow:0 8px 22px rgba(46,158,68,.5), 0 3px 8px rgba(0,0,0,.18);
+    transition:transform .12s ease, box-shadow .12s ease;
+    animation:houseDonePulse 1.8s ease-in-out infinite;
+  }
+  .house-edit-done[hidden]{display:none;}
+  .house-edit-done:hover{box-shadow:0 10px 26px rgba(46,158,68,.6), 0 3px 8px rgba(0,0,0,.2);}
+  .house-edit-done:active{transform:translateX(-50%) scale(.94); animation:none;}
+  @keyframes houseDonePulse{
+    0%,100%{transform:translateX(-50%) scale(1);}
+    50%{transform:translateX(-50%) scale(1.06);}
+  }
+
+  /* ฟองอีโมจิเหนือหัวตัวละครตอน interaction */
+  .house-char-bubble{
+    position:fixed; z-index:6; transform:translate(-50%,-100%) scale(.6);
+    background:rgba(255,255,255,.94); border-radius:14px; padding:4px 9px;
+    font-size:22px; line-height:1; box-shadow:0 3px 10px rgba(70,40,10,.15);
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .house-char-bubble.on{opacity:1; transform:translate(-50%,-100%) scale(1);}
+
+  @media (max-width:480px){
+    .house-edit-panel{max-height:42vh; max-height:42dvh;}
+    .house-edit-toolbar{bottom:calc(42vh + 10px); bottom:calc(42dvh + 10px);}
+    .he-items{grid-template-columns:repeat(auto-fill, minmax(64px,1fr)); gap:6px;}
+    .he-item-emoji{font-size:24px;}
+  }
+
   /* จอใหญ่ (แท็บเล็ต/เดสก์ท็อป): แผงตัวเลือกย้ายไปชิดขวาเป็นการ์ดแนวตั้ง
      ตัวละครพรีวิวอยู่พื้นที่ว่างฝั่งซ้าย (กล้องเลื่อนให้ใน js/house.js) ไม่โดนแผง/แถบบนทับ */
   @media (min-width:768px){
