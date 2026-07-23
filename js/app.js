@@ -194,6 +194,13 @@ function renderChildSelect(){
       cname.className = 'cname';
       cname.textContent = child.name;
       cinfo.appendChild(cname);
+      const ageY = childAgeYears(child);
+      if(ageY != null){
+        const csub = document.createElement('div');
+        csub.className = 'csub';
+        csub.textContent = 'อายุ ' + Math.floor(ageY) + ' ปี · ' + gradeById(resolveGradeForChild(child)).short;
+        cinfo.appendChild(csub);
+      }
       const arrow = document.createElement('span');
       arrow.style.cssText = 'font-size:20px;color:var(--ink-soft)';
       arrow.textContent = '▶';

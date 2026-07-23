@@ -425,6 +425,8 @@
   .child-card .cav{font-size:30px;}
   .child-card .cinfo{flex:1;}
   .child-card .cname{font-size:clamp(18px,4.5vw,21px); font-weight:800; color:var(--ink);}
+  .child-card .csub{font-size:13px; font-weight:700; color:var(--ink-soft); margin-top:1px;}
+  body.night-mode .child-card .csub{color:#B7C2E8;}
   .cs-divider{font-size:13px; color:var(--ink-soft); font-weight:600; margin:14px 0 10px;}
   .child-name-input{
     width:100%; padding:13px 16px; border-radius:var(--radius-md);
