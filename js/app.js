@@ -261,10 +261,10 @@ function buildDobPicker(container, current, onChange){
   };
   const days = []; for(let d=1;d<=31;d++) days.push({v:d,t:d});
   const mons = THAI_MONTHS.map((nm,i)=>({v:i+1,t:nm}));
-  const years = []; for(let ce=curCE-3; ce>=curCE-14; ce--) years.push({v:ce, t:(ce+543)});  // แสดง พ.ศ. อายุ ~3-14 ปี
+  const years = []; for(let ce=curCE-3; ce>=curCE-14; ce--) years.push({v:ce, t:ce});  // แสดงปี ค.ศ. อายุ ~3-14 ปี
   const daySel = mkSel('dob-day','วัน', days, current&&current.d);
   const monSel = mkSel('dob-mon','เดือน', mons, current&&current.m);
-  const yearSel = mkSel('dob-year','ปีเกิด (พ.ศ.)', years, current&&current.y);
+  const yearSel = mkSel('dob-year','ปีเกิด (ค.ศ.)', years, current&&current.y);
   const emit = ()=>{ const d=+daySel.value, m=+monSel.value, y=+yearSel.value; onChange((d&&m&&y)?{d,m,y}:null); };
   [daySel,monSel,yearSel].forEach(s=> s.addEventListener('change', ()=>{ playClick(); emit(); }));
   container.append(daySel, monSel, yearSel);
