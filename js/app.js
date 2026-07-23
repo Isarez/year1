@@ -32,28 +32,66 @@ let activeChild = null;
 
 /* ===================== ระดับชั้น + อายุ ===================== */
 let selectedGrade = 'prep-p1';   // ระดับชั้นที่กำลังดูอยู่ในหน้าหลัก
-let selectedAge = null;          // อายุที่เลือกในฟอร์มสร้างโปรไฟล์
-const AGE_OPTIONS = [4,5,6,7,8,9,10,11,12];
+let selectedDob = null;          // {d,m,y(ค.ศ.)} วันเกิดที่เลือกในฟอร์มสร้างโปรไฟล์
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 function gradeById(id){ return GRADES.find(g=>g.id===id) || GRADES[0]; }
 /* หมวดที่ไม่มี cat.grade = ของเดิมทั้งหมด ถือเป็นระดับ 'prep-p1' */
 function catsForGrade(gid){ return CATS.filter(c=>(c.grade||'prep-p1')===gid); }
-/* ระดับชั้นที่ "เหมาะกับอายุ" (ตาม min/max ใน GRADES) — คืน index ใน GRADES */
-function idealGradeIndexForAge(age){
-  const i = GRADES.findIndex(g=>age>=g.minAge && age<=g.maxAge);
-  return i<0 ? 0 : i;
+
+/* อายุ (ปี ทศนิยม) คำนวณจากวันเกิด — เผื่อโปรไฟล์เก่าที่เก็บ age ไว้ (fallback) */
+function childAgeYears(child){
+  if(!child) return null;
+  if(child.birthDate){
+    const p = child.birthDate.split('-').map(Number);
+    const b = new Date(p[0], (p[1]||1)-1, p[2]||1);
+    const ms = Date.now() - b.getTime();
+    return ms>0 ? ms/(365.25*24*3600*1000) : 0;
+  }
+  return (typeof child.age==='number') ? child.age : null;
 }
-/* ระดับชั้น default ตามอายุ — ถ้าชั้นที่เหมาะยังไม่มีเนื้อหา (available:false) ถอยลงมาชั้นที่ใกล้สุดที่มีเนื้อหา */
-function defaultGradeForAge(age){
-  const idx = idealGradeIndexForAge(age);
-  for(let i=idx;i>=0;i--){ if(GRADES[i].available) return GRADES[i].id; }
-  return 'prep-p1';
+
+/* index ระดับชั้นสูงสุดที่ "อายุ" ปลดล็อก (ปลดชั้นต่ำกว่าทั้งหมดด้วย)
+   5-6ปี→ป.1(1), 6-7→ป.2(2), 7-8→ป.3(3)... >11→ป.6(6) — อ่านขอบบนของช่วง = อายุเต็มปี */
+function ageTopIndex(age){
+  if(age==null) return 1;
+  if(age < 5) return 0;
+  return Math.max(1, Math.min(GRADES.length-1, Math.floor(age)-5));
 }
-/* ตั้ง selectedGrade จากโปรไฟล์เด็ก (จำชั้นที่เลือกล่าสุด ถ้าไม่มีใช้ default ตามอายุ) */
+/* index ระดับชั้นที่ "ควรเปิดดู" ตามอายุ (ชั้นที่เด็กกำลังเรียนจริง) */
+function ageDefaultIndex(age){
+  if(age==null) return 0;
+  if(age < 6) return 0;
+  return Math.min(GRADES.length-1, Math.floor(age)-5);
+}
+/* สัดส่วนดาวที่เก็บได้ของระดับชั้น (0-1) — ใช้เช็คเงื่อนไข >80% ปลดชั้นถัดไป */
+function gradeStarPct(gid){
+  const cats = catsForGrade(gid);
+  if(!cats.length) return 0;
+  let earned = 0;
+  cats.forEach(c=>{ earned += (progress[c.id] && progress[c.id].stars) ? progress[c.id].stars : 0; });
+  return earned / (cats.length*3);
+}
+/* index ระดับชั้นสูงสุดที่ปลดล็อกจริง = อายุ + ต่อยอดถ้าเก็บดาว >80% ของชั้นบนสุด (ไล่ต่อได้เรื่อยๆ) */
+function unlockedTopIndex(child){
+  let top = ageTopIndex(childAgeYears(child));
+  while(top < GRADES.length-1 && gradeStarPct(GRADES[top].id) > 0.8) top++;
+  return top;
+}
+function isGradeUnlocked(child, idx){ return idx <= unlockedTopIndex(child); }
+
+/* ระดับชั้นที่ควรเลือกให้เด็ก = ชั้นที่มีเนื้อหา (available) สูงสุดที่ปลดล็อกแล้ว
+   (จำชั้นที่เด็กเลือกล่าสุดถ้ายังปลดล็อก+มีเนื้อหา ไม่งั้นใช้ชั้นตามอายุ) */
 function resolveGradeForChild(child){
   if(!child) return 'prep-p1';
-  if(child.grade && gradeById(child.grade).available) return child.grade;
-  return child.age ? defaultGradeForAge(child.age) : 'prep-p1';
+  const top = unlockedTopIndex(child);
+  if(child.grade){
+    const gi = GRADES.findIndex(g=>g.id===child.grade);
+    if(gi>=0 && gi<=top && GRADES[gi].available) return child.grade;
+  }
+  const def = Math.min(ageDefaultIndex(childAgeYears(child)), top);
+  for(let i=def; i>=0; i--){ if(GRADES[i].available) return GRADES[i].id; }
+  return 'prep-p1';
 }
 
 function loadChildren(){
@@ -71,8 +109,8 @@ function selectChild(id){
   if(activeChild){
     try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
     loadProgressForChild();
-    /* โปรไฟล์เดิมที่ยังไม่เคยใส่อายุ → ถามอายุก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
-    if(!activeChild.age){ openAgeModal(); return; }
+    /* โปรไฟล์เดิมที่ยังไม่เคยใส่วันเกิด/อายุ → ถามวันเกิดก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
+    if(!activeChild.birthDate && activeChild.age==null){ openAgeModal(); return; }
     selectedGrade = resolveGradeForChild(activeChild);
     enterHome();
   }
@@ -90,14 +128,15 @@ function addChild(name){
   }
   const id = 'child_'+Date.now();
   const emoji = selectedEmoji;
-  const age = selectedAge;
-  const grade = defaultGradeForAge(age);
-  children.push({id, name, emoji, age, grade});
+  const birthDate = dobToStr(selectedDob);
+  const child = {id, name, emoji, birthDate};
+  child.grade = resolveGradeForChild(child);
+  children.push(child);
   saveChildren();
-  activeChild = {id, name, emoji, age, grade};
+  activeChild = child;
   try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
   progress = {};
-  selectedGrade = grade;
+  selectedGrade = child.grade;
   enterHome();
 }
 
@@ -177,9 +216,9 @@ function renderChildSelect(){
   }
   $('child-name-input').value = '';
   selectedEmoji = CHILD_AVATARS[0];
-  selectedAge = null;
+  selectedDob = null;
   initEmojiPicker();
-  initAgePicker();
+  initDobPicker();
   $('child-select-view').hidden = false;
   $('clear-btn').hidden = true;
   homeView.hidden = true;
@@ -192,48 +231,58 @@ function handleChildSubmit(){
   const input = document.getElementById('child-name-input');
   const name = input.value.trim();
   if(!name){ input.focus(); showToast('✏️','ใส่ชื่อก่อนนะ'); return; }
-  if(!selectedAge){ showToast('🎂','เลือกอายุด้วยนะ จะได้จัดบทเรียนให้พอดี'); return; }
+  if(!selectedDob){ showToast('🎂','เลือกวันเกิดให้ครบด้วยนะ จะได้จัดระดับชั้นให้พอดี'); return; }
   playClick();
   addChild(name);
 }
-/* สร้างปุ่มเลือกอายุ (ใช้ทั้งฟอร์มสร้างโปรไฟล์และ popup ถามอายุ) — onPick(age) เรียกเมื่อกด */
-function buildAgeButtons(container, current, onPick){
+function pad2(n){ return (n<10?'0':'')+n; }
+/* {d,m,y(ค.ศ.)} → 'YYYY-MM-DD' (ค.ศ.) */
+function dobToStr(dob){ return dob ? (dob.y+'-'+pad2(dob.m)+'-'+pad2(dob.d)) : ''; }
+function strToDob(str){ if(!str) return null; const p=str.split('-').map(Number); return {y:p[0], m:p[1], d:p[2]}; }
+
+/* ตัวเลือกวัน/เดือน/ปีเกิด (ใช้ทั้งฟอร์มสร้างโปรไฟล์และ popup) — onChange({d,m,y}|null) */
+function buildDobPicker(container, current, onChange){
   if(!container) return;
   container.innerHTML = '';
-  AGE_OPTIONS.forEach(a=>{
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'age-btn'+(a===current?' selected':'');
-    b.dataset.age = a;
-    b.innerHTML = '<span class="age-num">'+a+'</span><span class="age-unit">ขวบ</span>';
-    b.addEventListener('click', ()=>{
-      playClick();
-      onPick(a);
-      container.querySelectorAll('.age-btn').forEach(x=>x.classList.toggle('selected', +x.dataset.age===a));
-    });
-    container.appendChild(b);
-  });
+  const curCE = new Date().getFullYear();
+  const mkSel = (cls, ph, items, val)=>{
+    const s = document.createElement('select');
+    s.className = 'dob-select '+cls;
+    const o0 = document.createElement('option'); o0.value=''; o0.textContent=ph; o0.disabled=true; o0.selected=!val; s.appendChild(o0);
+    items.forEach(it=>{ const o=document.createElement('option'); o.value=it.v; o.textContent=it.t; if(String(it.v)===String(val)) o.selected=true; s.appendChild(o); });
+    return s;
+  };
+  const days = []; for(let d=1;d<=31;d++) days.push({v:d,t:d});
+  const mons = THAI_MONTHS.map((nm,i)=>({v:i+1,t:nm}));
+  const years = []; for(let ce=curCE-3; ce>=curCE-14; ce--) years.push({v:ce, t:(ce+543)});  // แสดง พ.ศ. อายุ ~3-14 ปี
+  const daySel = mkSel('dob-day','วัน', days, current&&current.d);
+  const monSel = mkSel('dob-mon','เดือน', mons, current&&current.m);
+  const yearSel = mkSel('dob-year','ปีเกิด (พ.ศ.)', years, current&&current.y);
+  const emit = ()=>{ const d=+daySel.value, m=+monSel.value, y=+yearSel.value; onChange((d&&m&&y)?{d,m,y}:null); };
+  [daySel,monSel,yearSel].forEach(s=> s.addEventListener('change', ()=>{ playClick(); emit(); }));
+  container.append(daySel, monSel, yearSel);
 }
-function initAgePicker(){
-  buildAgeButtons(document.getElementById('age-picker'), selectedAge, a=>{ selectedAge = a; });
+function initDobPicker(){
+  buildDobPicker(document.getElementById('dob-picker'), selectedDob, dob=>{ selectedDob = dob; });
 }
 
-/* ===================== popup ถามอายุ (โปรไฟล์เดิมที่ยังไม่เคยใส่อายุ) ===================== */
-let ageModalAge = null;
+/* ===================== popup ถามวันเกิด (โปรไฟล์เดิมที่ยังไม่เคยใส่) ===================== */
+let ageModalDob = null;
 function openAgeModal(){
-  ageModalAge = null;
+  ageModalDob = null;
   $('age-modal-name').textContent = activeChild ? activeChild.name : '';
-  buildAgeButtons($('age-modal-picker'), null, a=>{ ageModalAge = a; });
+  buildDobPicker($('age-modal-picker'), null, dob=>{ ageModalDob = dob; });
   openOverlay('age-modal');
 }
 function confirmAgeModal(){
-  if(!ageModalAge){ showToast('🎂','เลือกอายุก่อนนะ'); return; }
+  if(!ageModalDob){ showToast('🎂','เลือกวันเกิดให้ครบก่อนนะ'); return; }
   playClick();
   if(activeChild){
-    activeChild.age = ageModalAge;
-    activeChild.grade = defaultGradeForAge(ageModalAge);
+    activeChild.birthDate = dobToStr(ageModalDob);
+    delete activeChild.age;
+    activeChild.grade = resolveGradeForChild(activeChild);
     const idx = children.findIndex(c=>c.id===activeChild.id);
-    if(idx>=0){ children[idx].age = ageModalAge; children[idx].grade = activeChild.grade; }
+    if(idx>=0){ children[idx].birthDate = activeChild.birthDate; delete children[idx].age; children[idx].grade = activeChild.grade; }
     saveChildren();
     selectedGrade = activeChild.grade;
   }
@@ -245,25 +294,33 @@ function confirmAgeModal(){
 function renderGradeBar(){
   const bar = $('grade-bar');
   if(!bar) return;
+  const top = activeChild ? unlockedTopIndex(activeChild) : 1;
+  notifyGradeUnlock(top);   // แจ้งเตือนถ้าเก็บดาวจนปลดล็อกชั้นใหม่
   bar.innerHTML = '';
-  GRADES.forEach(g=>{
+  GRADES.forEach((g, idx)=>{
+    const unlocked = idx <= top;
+    const playable = unlocked && g.available;     // ปลดล็อก + มีเนื้อหา = เล่นได้
+    const soon = unlocked && !g.available;        // ปลดล็อกแล้วแต่ยังไม่มีเนื้อหา
+    const locked = !unlocked;                     // ยังไม่ถึงเกณฑ์อายุ/ดาว
     const isSel = g.id===selectedGrade;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'grade-pill'+(isSel?' active':'')+(g.available?'':' soon');
+    btn.className = 'grade-pill'+(isSel&&playable?' active':'')+(playable?'':' soon')+(locked?' locked':'');
     btn.innerHTML =
       '<span class="gp-emoji">'+(g.icon?'<img src="'+g.icon+'" class="gp-owl" alt="" draggable="false">':g.emoji)+'</span>'+
+      (locked?'<span class="gp-lock">🔒</span>':'')+
       '<span class="gp-label">'+g.short+'</span>'+
-      (g.available?'':'<span class="gp-soon">เร็วๆ นี้</span>');
+      (playable?'':'<span class="gp-soon">'+(locked?'ล็อกอยู่':'เร็วๆ นี้')+'</span>');
     btn.addEventListener('click', ()=>{
-      if(!g.available){ playClick(); showToast('🚧','ระดับ '+g.name+' กำลังพัฒนาอยู่ เร็วๆ นี้นะ!'); return; }
-      if(g.id===selectedGrade) return;
       playClick();
+      if(locked){ showToast('🔒', gradeUnlockHint(idx)); return; }
+      if(soon){ showToast('🎉','ปลดล็อก '+g.short+' แล้ว! เนื้อหากำลังมาเร็วๆ นี้นะ'); return; }
+      if(g.id===selectedGrade) return;
       selectedGrade = g.id;
       if(activeChild){
         activeChild.grade = g.id;
-        const idx = children.findIndex(c=>c.id===activeChild.id);
-        if(idx>=0){ children[idx].grade = g.id; }
+        const i = children.findIndex(c=>c.id===activeChild.id);
+        if(i>=0){ children[i].grade = g.id; }
         saveChildren();
       }
       renderHome();
@@ -271,6 +328,29 @@ function renderGradeBar(){
     });
     bar.appendChild(btn);
   });
+}
+/* คำใบ้วิธีปลดล็อกระดับชั้นที่ยังล็อก */
+function gradeUnlockHint(idx){
+  const prev = GRADES[idx-1];
+  if(prev && catsForGrade(prev.id).length){
+    return 'เก็บดาวใน '+prev.short+' ให้ถึง 80% แล้วจะเปิด '+GRADES[idx].short+' ให้เลย!';
+  }
+  return 'อีกนิดนะ! โตขึ้นอีกหน่อยหรือเก็บดาวให้ครบ จะเปิด '+GRADES[idx].short+' ให้จ้ะ';
+}
+/* แจ้งเตือนครั้งเดียวเมื่อปลดล็อกชั้นใหม่จากการเก็บดาว (เก็บ unlockNotified ในโปรไฟล์กันแจ้งซ้ำ) */
+function notifyGradeUnlock(top){
+  if(!activeChild) return;
+  const ageTop = ageTopIndex(childAgeYears(activeChild));
+  const base = (typeof activeChild.unlockNotified==='number') ? activeChild.unlockNotified : ageTop;
+  if(top > base && top > ageTop){
+    const g = GRADES[top];
+    setTimeout(()=>{ showToast('🎉','เก่งมาก! ปลดล็อก '+g.short+' แล้ว'+(g.available?'':' (เนื้อหากำลังมาเร็วๆ นี้)')); playCongrats && playCongrats(); }, 500);
+  }
+  if(top !== activeChild.unlockNotified){
+    activeChild.unlockNotified = top;
+    const i = children.findIndex(c=>c.id===activeChild.id);
+    if(i>=0){ children[i].unlockNotified = top; saveChildren(); }
+  }
 }
 function initEmojiPicker(){
   const picker = document.getElementById('emoji-picker');
@@ -296,12 +376,12 @@ function wireChildSelectEvents(){
   document.getElementById('child-add-new-btn').addEventListener('click', ()=>{
     playClick();
     selectedEmoji = CHILD_AVATARS[0];
-    selectedAge = null;
+    selectedDob = null;
     document.getElementById('child-name-input').value = '';
     document.getElementById('child-add-new-btn').hidden = true;
     document.getElementById('child-add-form').hidden = false;
     initEmojiPicker();
-    initAgePicker();
+    initDobPicker();
     document.getElementById('child-name-input').focus();
   });
   document.getElementById('child-import-btn').addEventListener('click', ()=>{
@@ -4971,7 +5051,7 @@ function owkHash(str){
 function exportChildData(){
   if(!activeChild){ showToast('⚠️','เลือกเด็กก่อนนะ'); return; }
   const prog = JSON.parse(localStorage.getItem('p1quiz_progress_'+activeChild.id) || '{}');
-  const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒', age:activeChild.age}, progress:prog};
+  const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒', age:activeChild.age, birthDate:activeChild.birthDate}, progress:prog};
   const body = JSON.stringify(payload);
   const sig = owkHash(body);
   const full = JSON.stringify({v:payload.v, child:payload.child, progress:payload.progress, sig});
@@ -5017,7 +5097,7 @@ function importChildData(file){
       if(!sig || !child || !child.id || !child.name){
         showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
       }
-      const body = JSON.stringify({v, child:{id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age}, progress:progress||{}});
+      const body = JSON.stringify({v, child:{id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age, birthDate:child.birthDate}, progress:progress||{}});
       if(owkHash(body) !== sig){
         showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
       }
@@ -5026,7 +5106,7 @@ function importChildData(file){
         showImportConflictModal(child, progress||{}, conflictChild);
         return;
       }
-      children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age});
+      children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age, birthDate:child.birthDate});
       saveChildren();
       if(progress) try{ localStorage.setItem('p1quiz_progress_'+child.id, JSON.stringify(progress)); }catch(er){}
       renderChildSelect();
@@ -5087,7 +5167,7 @@ $('import-rename-confirm-btn').addEventListener('click', ()=>{
   playClick();
   const {child, progress} = pendingImport;
   const newId = 'child_'+Date.now();
-  children.push({id:newId, name:newName, emoji:child.emoji||'🧒', age:child.age});
+  children.push({id:newId, name:newName, emoji:child.emoji||'🧒', age:child.age, birthDate:child.birthDate});
   saveChildren();
   if(progress) try{ localStorage.setItem('p1quiz_progress_'+newId, JSON.stringify(progress)); }catch(e){}
   hideImportConflictModal();

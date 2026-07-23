@@ -696,6 +696,10 @@ const CATS = [
     type:'skill', mode:'mix', levels:10, grade:'p1', isNew:true
   },
   {
+    id:'p1-colormix2', name:'ผสมสีวิเศษ 2 ป.1', emoji:'🫧', icon:'assets/icons/p1-colormix2.svg', color:'#5E8FD8', light:'#E2ECFB',
+    type:'skill', mode:'mix', mixAdvanced:true, levels:10, grade:'p1', isNew:true
+  },
+  {
     /* Phase 1.3 — coding mechanic ใหม่ "เรียงคำสั่งหุ่นยนต์": เรียงบัตรคำสั่ง (เดินหน้า/เลี้ยวซ้าย-ขวา) ให้หุ่นยนต์ไปถึงเป้าบนกริด
        ดู startCodeGame ใน app.js (คลังด่าน ROBOT_LEVELS) — ออกแบบ engine เผื่อ loop/เงื่อนไข (ป.2-6) ในอนาคต */
     id:'p1-code', name:'พาแมวกลับบ้าน 1', emoji:'🤖', icon:'assets/icons/p1-code.svg', color:'#2BB3A3', light:'#D6F5F1',
@@ -1357,7 +1361,8 @@ const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'l
   'p1-shadow2':'p1-shadow', 'p1-shadow3':'p1-shadow2',
   'p1-piano2':'p1-piano', 'p1-piano3':'p1-piano2',
   'p1-code2':'p1-code', 'p1-code3':'p1-code2',
-  'p1-sci2':'p1-sci1' };
+  'p1-sci2':'p1-sci1',
+  'p1-colormix2':'p1-colormix' };
 
 /* จำนวนคู่ (pairs) ต่อด่านของเกม skill-memory (จับคู่ตัวเลขกับจุด), index 0 = ด่าน 1 */
 const MEMORY_LEVEL_PAIRS = [4, 8, 12];

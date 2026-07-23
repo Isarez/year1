@@ -485,6 +485,22 @@
   }
   /* ===================== ตัวเลือกอายุ (age picker) ===================== */
   .age-picker-label{font-size:14px;font-weight:700;color:var(--ink-soft);margin:2px 0 8px;text-align:left;}
+  /* ตัวเลือกวันเกิด (วัน/เดือน/ปี พ.ศ.) */
+  .dob-picker{ display:flex; gap:8px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
+  #age-modal-picker.dob-picker{ margin:4px 0 20px; }
+  .dob-select{
+    flex:1 1 0; min-width:0; padding:11px 8px; border-radius:var(--radius-md);
+    border:3px solid var(--cream-2); background:var(--cream); color:var(--ink);
+    font-family:inherit; font-size:15px; font-weight:700; cursor:pointer;
+    -webkit-appearance:none; appearance:none; text-align:center; text-align-last:center;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23B08968' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 8px center; padding-right:22px;
+    transition:border-color .14s, background-color .14s;
+  }
+  .dob-select.dob-day{ flex:0 0 22%; }
+  .dob-select:focus{ outline:none; border-color:#FF9F45; background:#FFF0DE; }
+  body.night-mode .dob-select{ background:#2A3352; border-color:#3B4468; color:#EAF0FF; }
+  body.night-mode .dob-select:focus{ background:#4A3A22; border-color:#FF9F45; }
   .age-picker{
     display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
     margin-bottom:16px;
@@ -546,8 +562,14 @@
     box-shadow:0 4px 0 #2597c9; transform:translateY(-1px);
   }
   .grade-pill.active .gp-label{color:#1E7BA8;}
-  .grade-pill.soon{opacity:.62;}
-  .grade-pill.soon .gp-emoji{filter:grayscale(.7);}
+  /* ปลดล็อกแล้วแต่ยังไม่มีเนื้อหา = จางเบาๆ ยังเห็นสี (ให้ความรู้สึกปลดล็อกแล้ว) */
+  .grade-pill.soon{opacity:.78;}
+  .grade-pill.soon .gp-emoji{filter:grayscale(.35);}
+  /* ยังล็อก (ไม่ถึงเกณฑ์อายุ/ดาว) = จางมาก เทา + กุญแจ */
+  .grade-pill.locked{opacity:.55;}
+  .grade-pill.locked .gp-emoji{filter:grayscale(.9);}
+  .grade-pill{position:relative;}
+  .grade-pill .gp-lock{position:absolute; top:5px; right:7px; font-size:13px; line-height:1;}
   body.night-mode .grade-pill{background:#222B45; border-color:#37406A; box-shadow:0 3px 0 #171E33; color:#EAF0FF;}
   body.night-mode .grade-pill.active{background:#123A52; border-color:var(--thai); box-shadow:0 4px 0 #0B2636;}
   body.night-mode .grade-pill.active .gp-label{color:#8FD6F7;}
