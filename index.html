@@ -99,6 +99,8 @@
         <div class="emoji-picker-label">เลือก avatar ให้ตัวเอง 🎭</div>
         <div class="emoji-picker" id="emoji-picker"></div>
         <input class="child-name-input" id="child-name-input" type="text" placeholder="ใส่ชื่อเล่นหรือชื่อจริง" maxlength="20" autocomplete="off">
+        <div class="age-picker-label">อายุกี่ขวบ? 🎂</div>
+        <div class="age-picker" id="age-picker"></div>
         <button class="child-submit-btn" id="child-submit-btn">เริ่มเรียนเลย! 🚀</button>
       </div>
       <button class="child-add-new-btn" id="child-add-new-btn" hidden><svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#D8F3DC"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> เพิ่มเด็กคนใหม่</button>
@@ -114,6 +116,10 @@
       <div class="hero-mascot"><img src="assets/owl_full.svg" alt="นกฮูก" width="80" height="85"></div>
       <h2 id="hero-greeting">สวัสดีจ้า นักสู้ตัวน้อย!</h2>
       <p>เลือกหมวดที่อยากลองทำก่อนได้เลย 🎯</p>
+    </div>
+    <div class="grade-bar-wrap">
+      <div class="grade-bar-title">📚 เลือกระดับชั้น</div>
+      <div class="grade-bar" id="grade-bar"></div>
     </div>
     <div class="cat-section">
       <div class="cat-section-title"><img src="assets/icons/section-quiz.svg" class="cst-icon" alt=""> คำถาม-คำตอบ</div>
@@ -199,6 +205,28 @@
         <div class="shadow-prompt" id="shadow-prompt">🐘</div>
       </div>
       <div class="shadow-choices" id="shadow-choices"></div>
+    </div>
+  </section>
+
+  <!-- EF VIEW (นกฮูกสั่ง — ฝึก executive function) -->
+  <section id="ef-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="ef-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="ef-cat-label">นกฮูกสั่ง</div>
+        <div class="progress-track"><div class="progress-fill" id="ef-progress-fill" style="width:0%"></div></div>
+        <div class="ef-rule" id="ef-rule">🦉 นกฮูกสั่ง: แตะเฉพาะผลไม้ 🍎</div>
+      </div>
+      <div class="q-counter" id="ef-level-counter">1/10</div>
+    </div>
+    <div class="ef-board">
+      <div class="ef-timer-track"><div class="ef-timer-fill" id="ef-timer-fill"></div></div>
+      <div class="ef-item-card"><div class="ef-item" id="ef-item">🍎</div></div>
+      <div class="ef-feedback" id="ef-feedback"></div>
+      <div class="ef-buttons">
+        <button class="ef-btn ef-tap" id="ef-tap-btn">✋ แตะเลย!</button>
+        <button class="ef-btn ef-skip" id="ef-skip-btn">🚫 ไม่แตะ</button>
+      </div>
     </div>
   </section>
 
@@ -481,6 +509,20 @@
   </div>
 </div>
 
+<!-- AGE MODAL (ถามอายุโปรไฟล์เดิมที่ยังไม่มีอายุ) -->
+<div id="age-modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-icon">🎂</div>
+    <h3 class="modal-title">น้อง<span id="age-modal-name"></span> อายุกี่ขวบ?</h3>
+    <p class="modal-sub">บอกอายุหน่อยนะ จะได้เลือกบทเรียนให้พอดีกับหนู 😊</p>
+    <div class="age-picker" id="age-modal-picker"></div>
+    <div class="modal-actions">
+      <button class="modal-confirm-btn" id="age-modal-confirm-btn">ไปเรียนกันเลย! 🚀</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT EMOJI MODAL -->
 <div id="edit-emoji-modal" hidden>
   <div class="modal-backdrop" id="edit-emoji-modal-backdrop"></div>
@@ -496,7 +538,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net%2Ftest&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>

@@ -1,0 +1,17 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="รู้ใจเพื่อน ป.1">
+  <defs>
+    <linearGradient id="p1emoG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9db5"/>
+      <stop offset="1" stop-color="#ff7a9c"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- heart -->
+  <path d="M32 52C14 40 10 28 16 20c4-5.5 12-5 16 1 4-6 12-6.5 16-1 6 8 2 20-16 32z"
+        fill="url(#p1emoG)" stroke="#d94f74" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M20 21c3-3.5 8-3 11 .6" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" opacity="0.45"/>
+  <!-- little face -->
+  <circle cx="26" cy="29" r="2.3" fill="#fff"/>
+  <circle cx="38" cy="29" r="2.3" fill="#fff"/>
+  <path d="M26 35c2.5 3 9.5 3 12 0" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+</svg>

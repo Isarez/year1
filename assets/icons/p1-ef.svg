@@ -1,0 +1,25 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นกฮูกสั่ง ป.1">
+  <defs>
+    <linearGradient id="p1efG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd6a0"/>
+      <stop offset="1" stop-color="#2fb673"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="16" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- owl body/head -->
+  <path d="M32 8c-11 0-18 8-18 20 0 12 8 22 18 22s18-10 18-22C50 16 43 8 32 8z" fill="url(#p1efG)" stroke="#1f9c60" stroke-width="3"/>
+  <!-- ear tufts -->
+  <path d="M18 14l4 8-8-2z" fill="url(#p1efG)" stroke="#1f9c60" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M46 14l-4 8 8-2z" fill="url(#p1efG)" stroke="#1f9c60" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- eyes -->
+  <circle cx="25" cy="27" r="8" fill="#fff" stroke="#1f9c60" stroke-width="2.5"/>
+  <circle cx="39" cy="27" r="8" fill="#fff" stroke="#1f9c60" stroke-width="2.5"/>
+  <circle cx="25" cy="28" r="3.4" fill="#3a3a3a"/>
+  <circle cx="39" cy="28" r="3.4" fill="#3a3a3a"/>
+  <!-- beak -->
+  <path d="M32 32l-4 6h8z" fill="#ffb020" stroke="#d99000" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- command "!" bubble -->
+  <circle cx="49" cy="13" r="8" fill="#ffd54f" stroke="#e0a512" stroke-width="2.5"/>
+  <path d="M49 9v5" stroke="#8a5a00" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="49" cy="17" r="1.4" fill="#8a5a00"/>
+</svg>

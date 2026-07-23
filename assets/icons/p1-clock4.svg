@@ -1,0 +1,26 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นาฬิกาวิเศษ 4">
+  <defs>
+    <linearGradient id="ck4A" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F8A9BE"/>
+      <stop offset="1" stop-color="#DE5F82"/>
+    </linearGradient>
+    <linearGradient id="ck4B" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9BD8FF"/>
+      <stop offset="1" stop-color="#59AEF2"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="26" cy="31" r="21" fill="url(#ck4A)" stroke="#BE3F63" stroke-width="3"/>
+  <circle cx="26" cy="31" r="15.5" fill="#FFFDF6" stroke="#F6DAE2" stroke-width="1.5"/>
+  <line x1="26" y1="31" x2="26" y2="22.5" stroke="#4A9EDF" stroke-width="3" stroke-linecap="round"/>
+  <line x1="26" y1="31" x2="31.5" y2="35" stroke="#E4574F" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="26" cy="31" r="2.4" fill="#5A4636"/>
+  <!-- ลูกศรเวลาเดินหน้า + ป้ายบวกชั่วโมง:นาที -->
+  <path d="M40 14 a20 20 0 0 1 12 17" fill="none" stroke="#3D87C9" stroke-width="4" stroke-linecap="round"/>
+  <path d="M54.5 24 L52 34 L44.5 27.5 Z" fill="url(#ck4B)" stroke="#3D87C9" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="34" y="39" width="26" height="13" rx="6.5" fill="url(#ck4B)" stroke="#3D87C9" stroke-width="2"/>
+  <text x="47" y="49" text-anchor="middle" font-family="Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#0d4c7f">+1:30</text>
+  <path d="M10 8 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2 Z" fill="#FFD34E"/>
+  <circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#3A7FC0" stroke-width="2.5"/>
+  <text x="53" y="56.5" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#3A7FC0" text-anchor="middle">ป.1</text>
+</svg>

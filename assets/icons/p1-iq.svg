@@ -1,0 +1,15 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ ป.1">
+  <defs>
+    <linearGradient id="p1iqG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd6a0"/>
+      <stop offset="1" stop-color="#2fb673"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- puzzle piece -->
+  <path d="M14 16h11a4 4 0 0 1 8 0h11v11a4 4 0 0 1 0 8v11H33a4 4 0 0 0-8 0H14V35a4 4 0 0 0 0-8z"
+        fill="url(#p1iqG)" stroke="#1f9c60" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M18 20h6" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+  <!-- sparkle idea -->
+  <path d="M46 12l1.5 3.4L51 17l-3.5 1.6L46 22l-1.5-3.4L41 17l3.5-1.6z" fill="#ffd54f"/>
+</svg>

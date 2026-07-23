@@ -30,6 +30,32 @@ let selectedEmoji = CHILD_AVATARS[0];
 let children = [];
 let activeChild = null;
 
+/* ===================== ระดับชั้น + อายุ ===================== */
+let selectedGrade = 'prep-p1';   // ระดับชั้นที่กำลังดูอยู่ในหน้าหลัก
+let selectedAge = null;          // อายุที่เลือกในฟอร์มสร้างโปรไฟล์
+const AGE_OPTIONS = [4,5,6,7,8,9,10,11,12];
+
+function gradeById(id){ return GRADES.find(g=>g.id===id) || GRADES[0]; }
+/* หมวดที่ไม่มี cat.grade = ของเดิมทั้งหมด ถือเป็นระดับ 'prep-p1' */
+function catsForGrade(gid){ return CATS.filter(c=>(c.grade||'prep-p1')===gid); }
+/* ระดับชั้นที่ "เหมาะกับอายุ" (ตาม min/max ใน GRADES) — คืน index ใน GRADES */
+function idealGradeIndexForAge(age){
+  const i = GRADES.findIndex(g=>age>=g.minAge && age<=g.maxAge);
+  return i<0 ? 0 : i;
+}
+/* ระดับชั้น default ตามอายุ — ถ้าชั้นที่เหมาะยังไม่มีเนื้อหา (available:false) ถอยลงมาชั้นที่ใกล้สุดที่มีเนื้อหา */
+function defaultGradeForAge(age){
+  const idx = idealGradeIndexForAge(age);
+  for(let i=idx;i>=0;i--){ if(GRADES[i].available) return GRADES[i].id; }
+  return 'prep-p1';
+}
+/* ตั้ง selectedGrade จากโปรไฟล์เด็ก (จำชั้นที่เลือกล่าสุด ถ้าไม่มีใช้ default ตามอายุ) */
+function resolveGradeForChild(child){
+  if(!child) return 'prep-p1';
+  if(child.grade && gradeById(child.grade).available) return child.grade;
+  return child.age ? defaultGradeForAge(child.age) : 'prep-p1';
+}
+
 function loadChildren(){
   try{ children = JSON.parse(localStorage.getItem('p1quiz_children') || '[]'); }catch(e){ children = []; }
 }
@@ -45,6 +71,9 @@ function selectChild(id){
   if(activeChild){
     try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
     loadProgressForChild();
+    /* โปรไฟล์เดิมที่ยังไม่เคยใส่อายุ → ถามอายุก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
+    if(!activeChild.age){ openAgeModal(); return; }
+    selectedGrade = resolveGradeForChild(activeChild);
     enterHome();
   }
 }
@@ -61,11 +90,14 @@ function addChild(name){
   }
   const id = 'child_'+Date.now();
   const emoji = selectedEmoji;
-  children.push({id, name, emoji});
+  const age = selectedAge;
+  const grade = defaultGradeForAge(age);
+  children.push({id, name, emoji, age, grade});
   saveChildren();
-  activeChild = {id, name, emoji};
+  activeChild = {id, name, emoji, age, grade};
   try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
   progress = {};
+  selectedGrade = grade;
   enterHome();
 }
 
@@ -145,7 +177,9 @@ function renderChildSelect(){
   }
   $('child-name-input').value = '';
   selectedEmoji = CHILD_AVATARS[0];
+  selectedAge = null;
   initEmojiPicker();
+  initAgePicker();
   $('child-select-view').hidden = false;
   $('clear-btn').hidden = true;
   homeView.hidden = true;
@@ -157,9 +191,86 @@ function renderChildSelect(){
 function handleChildSubmit(){
   const input = document.getElementById('child-name-input');
   const name = input.value.trim();
-  if(!name){ input.focus(); return; }
+  if(!name){ input.focus(); showToast('✏️','ใส่ชื่อก่อนนะ'); return; }
+  if(!selectedAge){ showToast('🎂','เลือกอายุด้วยนะ จะได้จัดบทเรียนให้พอดี'); return; }
   playClick();
   addChild(name);
+}
+/* สร้างปุ่มเลือกอายุ (ใช้ทั้งฟอร์มสร้างโปรไฟล์และ popup ถามอายุ) — onPick(age) เรียกเมื่อกด */
+function buildAgeButtons(container, current, onPick){
+  if(!container) return;
+  container.innerHTML = '';
+  AGE_OPTIONS.forEach(a=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'age-btn'+(a===current?' selected':'');
+    b.dataset.age = a;
+    b.innerHTML = '<span class="age-num">'+a+'</span><span class="age-unit">ขวบ</span>';
+    b.addEventListener('click', ()=>{
+      playClick();
+      onPick(a);
+      container.querySelectorAll('.age-btn').forEach(x=>x.classList.toggle('selected', +x.dataset.age===a));
+    });
+    container.appendChild(b);
+  });
+}
+function initAgePicker(){
+  buildAgeButtons(document.getElementById('age-picker'), selectedAge, a=>{ selectedAge = a; });
+}
+
+/* ===================== popup ถามอายุ (โปรไฟล์เดิมที่ยังไม่เคยใส่อายุ) ===================== */
+let ageModalAge = null;
+function openAgeModal(){
+  ageModalAge = null;
+  $('age-modal-name').textContent = activeChild ? activeChild.name : '';
+  buildAgeButtons($('age-modal-picker'), null, a=>{ ageModalAge = a; });
+  openOverlay('age-modal');
+}
+function confirmAgeModal(){
+  if(!ageModalAge){ showToast('🎂','เลือกอายุก่อนนะ'); return; }
+  playClick();
+  if(activeChild){
+    activeChild.age = ageModalAge;
+    activeChild.grade = defaultGradeForAge(ageModalAge);
+    const idx = children.findIndex(c=>c.id===activeChild.id);
+    if(idx>=0){ children[idx].age = ageModalAge; children[idx].grade = activeChild.grade; }
+    saveChildren();
+    selectedGrade = activeChild.grade;
+  }
+  closeOverlay('age-modal');
+  enterHome();
+}
+
+/* ===================== แถบเลือกระดับชั้นในหน้าหลัก ===================== */
+function renderGradeBar(){
+  const bar = $('grade-bar');
+  if(!bar) return;
+  bar.innerHTML = '';
+  GRADES.forEach(g=>{
+    const isSel = g.id===selectedGrade;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'grade-pill'+(isSel?' active':'')+(g.available?'':' soon');
+    btn.innerHTML =
+      '<span class="gp-emoji">'+g.emoji+'</span>'+
+      '<span class="gp-label">'+g.short+'</span>'+
+      (g.available?'':'<span class="gp-soon">เร็วๆ นี้</span>');
+    btn.addEventListener('click', ()=>{
+      if(!g.available){ playClick(); showToast('🚧','ระดับ '+g.name+' กำลังพัฒนาอยู่ เร็วๆ นี้นะ!'); return; }
+      if(g.id===selectedGrade) return;
+      playClick();
+      selectedGrade = g.id;
+      if(activeChild){
+        activeChild.grade = g.id;
+        const idx = children.findIndex(c=>c.id===activeChild.id);
+        if(idx>=0){ children[idx].grade = g.id; }
+        saveChildren();
+      }
+      renderHome();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+    bar.appendChild(btn);
+  });
 }
 function initEmojiPicker(){
   const picker = document.getElementById('emoji-picker');
@@ -185,10 +296,12 @@ function wireChildSelectEvents(){
   document.getElementById('child-add-new-btn').addEventListener('click', ()=>{
     playClick();
     selectedEmoji = CHILD_AVATARS[0];
+    selectedAge = null;
     document.getElementById('child-name-input').value = '';
     document.getElementById('child-add-new-btn').hidden = true;
     document.getElementById('child-add-form').hidden = false;
     initEmojiPicker();
+    initAgePicker();
     document.getElementById('child-name-input').focus();
   });
   document.getElementById('child-import-btn').addEventListener('click', ()=>{
@@ -200,6 +313,8 @@ function wireChildSelectEvents(){
     const file = e.target.files[0];
     if(file) importChildData(file);
   });
+  const ageConfirm = document.getElementById('age-modal-confirm-btn');
+  if(ageConfirm) ageConfirm.addEventListener('click', confirmAgeModal);
 }
 
 /* ============================= SOUND ============================= */
@@ -435,7 +550,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view'), efView = $('ef-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -458,7 +573,8 @@ function saveProgress(){
   try{ localStorage.setItem(progressKey(), JSON.stringify(progress)); }catch(e){}
 }
 function catById(id){ return CATS.find(c=>c.id===id); }
-function stickerCount(){ return Object.values(progress).filter(p=>p && p.unlocked).length; }
+/* นับสติกเกอร์เฉพาะระดับชั้นที่กำลังดูอยู่ (สติกเกอร์แยกตามระดับชั้น) */
+function stickerCount(){ return catsForGrade(selectedGrade).filter(c=>progress[c.id] && progress[c.id].unlocked).length; }
 function setStickerEarned(cat){
   const el = $('sticker-earned');
   if(cat.icon){ el.innerHTML = '<img src="'+cat.icon+'" class="sticker-earned-img" alt="'+cat.name+'">'; }
@@ -469,7 +585,7 @@ function setCatLabel(id, cat){
   el.innerHTML = (cat.icon ? '<img src="'+cat.icon+'" class="cat-label-icon" alt=""> ' : cat.emoji+' ')+cat.name;
   el.style.color = cat.color;
 }
-function updateTally(){ $('tally-text').textContent = stickerCount()+'/'+CATS.length; }
+function updateTally(){ $('tally-text').textContent = stickerCount()+'/'+catsForGrade(selectedGrade).length; }
 
 /* wire child-select events now that $ is available */
 wireChildSelectEvents();
@@ -477,7 +593,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
   document.body.classList.remove('dots-open');
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   renderChildSelect();
 });
 
@@ -499,7 +615,9 @@ function renderHome(){
   gridSkill.innerHTML = '';
   gridListen.innerHTML = '';
   gridWrite.innerHTML = '';
-  CATS.forEach(cat=>{
+  if(!gradeById(selectedGrade).available) selectedGrade = 'prep-p1';
+  renderGradeBar();
+  catsForGrade(selectedGrade).forEach(cat=>{
     const p = progress[cat.id];
     const unlocked = p && p.unlocked;
     const reqId = CAT_REQUIRES[cat.id];
@@ -551,12 +669,18 @@ function renderHome(){
       else if(cat.type==='skill' && cat.mode==='mix') startMixGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='music') startMusicGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='clock') startClockGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='ef') startEfGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else if(cat.type==='write') startDotsGame(cat.id);
       else startQuiz(cat.id);
     });
     (cat.type==='skill' ? gridSkill : (cat.type==='ar' ? gridInteractive : (cat.type==='listen' ? gridListen : (cat.type==='write' ? gridWrite : grid)))).appendChild(card);
+  });
+  /* ซ่อนทั้ง section ถ้าระดับชั้นนี้ไม่มีหมวดในกลุ่มนั้นเลย (เช่น ป.1 ยังไม่มีเกม AR/ฟังคำ/ฝึกเขียน) */
+  [grid, gridInteractive, gridSkill, gridListen, gridWrite].forEach(g=>{
+    const sec = g.closest('.cat-section');
+    if(sec) sec.hidden = g.children.length===0;
   });
   updateTally();
 }
@@ -601,7 +725,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: pickQuizQuestions(cat).map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -776,12 +900,13 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='music'){ startMusicGame(lastCatId); }
   else if(lastGameType==='dots'){ startDotsGame(lastCatId); }
   else if(lastGameType==='clock'){ startClockGame(lastCatId); }
+  else if(lastGameType==='ef'){ startEfGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -804,7 +929,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1053,7 +1178,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1274,6 +1399,133 @@ $('shadow-back').addEventListener('click', ()=>{
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
+/* ============================= EF GAME ("นกฮูกสั่ง" — Phase 1.2 executive function)
+   ฝึก inhibitory control (แตะเฉพาะของที่ตรงกติกา ห้ามแตะของอื่น) + cognitive flexibility (กติกาสลับกลางเกมที่ด่าน 6)
+   + มีตัวจับเวลาต่อด่าน (หมดเวลานับเป็น "ไม่แตะ") — mechanic ใหม่ reuse ได้กับชั้น/วิชาอื่นผ่าน EF_CATEGORIES ============================= */
+let efGame = null;
+let efTimer = null;
+const EF_ROUND_MS = 4500;   // เวลาต่อด่าน
+const EF_SWITCH_AT = 6;     // ด่านที่กติกาเปลี่ยน (cognitive flexibility)
+
+function startEfGame(catId){
+  stopARGame();
+  clearTimeout(efTimer); efTimer = null;
+  lastGameType = 'ef'; lastCatId = catId;
+  const cat = catById(catId);
+  const keys = shuffleArray(Object.keys(EF_CATEGORIES).slice());
+  efGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, ruleA:keys[0], ruleB:keys[1], curRule:keys[0], answered:false };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  efView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('ef-cat-label', cat);
+  renderEfRound(true);
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+
+function renderEfRound(first){
+  const g = efGame;
+  clearTimeout(efTimer);
+  g.answered = false;
+  const ruleKey = g.level < EF_SWITCH_AT ? g.ruleA : g.ruleB;
+  const switched = !first && g.level === EF_SWITCH_AT;
+  g.curRule = ruleKey;
+  const ruleCat = EF_CATEGORIES[ruleKey];
+  /* ~55% เป็นของที่ตรงกติกา (ต้องแตะ), ที่เหลือเป็นของหมวดอื่น (ห้ามแตะ) */
+  const shouldTap = Math.random() < 0.55;
+  let fromKey = ruleKey;
+  if(!shouldTap){ const others = Object.keys(EF_CATEGORIES).filter(k=>k!==ruleKey); fromKey = others[Math.floor(Math.random()*others.length)]; }
+  const pool = EF_CATEGORIES[fromKey].items;
+  g.item = pool[Math.floor(Math.random()*pool.length)];
+  g.shouldTap = shouldTap;
+
+  $('ef-rule').innerHTML = '🦉 นกฮูกสั่ง: แตะเฉพาะ <b>'+ruleCat.name+' '+ruleCat.items[0]+'</b>';
+  const itemEl = $('ef-item');
+  itemEl.textContent = g.item;
+  itemEl.classList.remove('ef-correct','ef-wrong');
+  $('ef-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('ef-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('ef-feedback').textContent = '';
+  $('ef-tap-btn').disabled = false; $('ef-skip-btn').disabled = false;
+
+  if(switched){ showToast('🔄','เปลี่ยนกติกาแล้ว! ตอนนี้แตะเฉพาะ '+ruleCat.name+' '+ruleCat.items[0]); flashEfRule(); }
+
+  /* ตัวจับเวลา: แถบหดจาก 100% → 0% ตาม EF_ROUND_MS, หมดเวลา = นับเป็น "ไม่แตะ" */
+  const bar = $('ef-timer-fill');
+  bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth;
+  bar.style.transition = 'width '+EF_ROUND_MS+'ms linear'; bar.style.width = '0%';
+  efTimer = setTimeout(()=>{ if(!g.answered) efAnswer(null); }, EF_ROUND_MS);
+}
+
+function flashEfRule(){
+  const el = $('ef-rule');
+  el.classList.remove('ef-rule-flash'); void el.offsetWidth; el.classList.add('ef-rule-flash');
+}
+
+/* tapped: true = กด "แตะ", false = กด "ไม่แตะ", null = หมดเวลา (นับเป็นไม่แตะ) */
+function efAnswer(tapped){
+  const g = efGame;
+  if(!g || g.answered) return;
+  g.answered = true;
+  clearTimeout(efTimer); efTimer = null;
+  $('ef-timer-fill').style.transition = 'none';
+  $('ef-tap-btn').disabled = true; $('ef-skip-btn').disabled = true;
+  const correct = (tapped===true) === g.shouldTap;
+  const itemEl = $('ef-item');
+  if(correct){
+    playCorrect(); mascotHappy();
+    itemEl.classList.add('ef-correct');
+    $('ef-feedback').textContent = g.shouldTap ? '✅ ถูกต้อง! แตะได้เลย' : '✅ เก่งมาก! อันนี้ไม่ต้องแตะ';
+  } else {
+    g.mistakes++;
+    playWrong();
+    itemEl.classList.add('ef-wrong');
+    $('ef-feedback').textContent = tapped===null ? '⏰ หมดเวลา! อันนี้ต้องแตะนะ'
+      : (g.shouldTap ? '❌ อันนี้ต้องแตะจ้ะ' : '❌ อันนี้ไม่ใช่ ห้ามแตะนะ');
+  }
+  $('ef-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+  setTimeout(()=>{
+    if(g.level >= g.totalLevels){ finishEfGame(); }
+    else { g.level++; renderEfRound(false); }
+  }, correct ? 900 : 1500);
+}
+
+function finishEfGame(){
+  clearTimeout(efTimer); efTimer = null;
+  const cat = catById(efGame.catId);
+  const mistakes = efGame.mistakes;
+  const totalLevels = efGame.totalLevels;
+  efView.hidden = true; resultView.hidden = false;
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row'); starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s=document.createElement('span'); s.textContent='⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+  $('score-line').textContent = 'ทำตามนกฮูกสั่งครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'ตั้งใจฟังกติกาสุดๆ ไม่พลาดเลย!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'!' : 'ไม่เป็นไรนะ ลองอีกครั้งเก็บดาวเพิ่ม!';
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){ stickerBlock.hidden=false; setStickerEarned(cat); pendingSticker=cat.id; setTimeout(()=>{ burstCenterTop(40); playCongrats(); },250); setTimeout(()=>showOwlMsg('sticker'),400); }
+  else { stickerBlock.hidden=true; if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'),400);} if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); },250); }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('ef-tap-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ playClick(); efAnswer(true); } });
+$('ef-skip-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ playClick(); efAnswer(false); } });
+$('ef-back').addEventListener('click', ()=>{
+  playClick(); clearTimeout(efTimer); efTimer=null;
+  efView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
 /* ============================= CONNECT DOTS GAME (เกมลากเส้นต่อจุด 1/2 — เกมฝึกเขียน) ============================= */
 /* mechanic: จุดวงกลมมีตัวเลขกำกับกระจายบนกระดานจัตุรัส แตะจุดที่ 1 แล้วลากต่อไปทีละจุดตามลำดับเลข
    (แตะทีละจุดเรียงลำดับเฉยๆ ก็ได้ ไม่บังคับต้องลากรวด — เผื่อเด็กเล็กที่ยังลากยาวไม่ถนัด)
@@ -1294,7 +1546,7 @@ function startDotsGame(catId){
     queue: shuffleArray(DOTS_SHAPES[cat.dotsPool].slice()).slice(0, cat.levels),
     shape:null, connected:0, els:[], dragging:false, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true;
   document.body.classList.add('dots-open'); // จอแคบ: ย่อนกฮูกลงมุม กันบังจุดแถวล่างของกระดาน (ดู CSS body.dots-open)
   document.documentElement.style.setProperty('--cat-color', cat.color);
   dotsView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -1485,7 +1737,7 @@ function finishDotsGame(){
   const totalLevels = dotsGame.totalLevels;
   dotsGame = null;
   document.body.classList.remove('dots-open');
-  dotsView.hidden = true; clockView.hidden = true; resultView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; resultView.hidden = false;
 
   /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
@@ -1526,7 +1778,7 @@ function finishDotsGame(){
 $('dots-back').addEventListener('click', ()=>{
   playClick();
   dotsGame = null;
-  dotsView.hidden = true; clockView.hidden = true; homeView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1586,7 +1838,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -2030,7 +2282,7 @@ function startMusicGame(catId){
   if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
   pauseBgMusicForMusicGame();
   document.body.classList.add('music-open'); // ซ่อนปุ่มมุมล่าง (ติดตั้ง/เปียโน) ไม่ให้ทับคีย์
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('music-cat-label', cat);
@@ -2464,7 +2716,7 @@ function startClockGame(catId){
   lastGameType = 'clock'; lastCatId = catId;
   const cat = catById(catId);
   clockGame = { catId, mode:cat.clockMode, level:1, totalLevels:cat.levels, mistakes:0, h:12, m:0, target:null, startTime:null, offsetH:0, snap:5, used:new Set(), locked:false, drag:null, angles:{hour:0, minute:0} };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   clockView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('clock-cat-label', cat);
@@ -2480,7 +2732,7 @@ function finishClockGame(){
   const cat = catById(clockGame.catId);
   const mistakes = clockGame.mistakes, totalLevels = clockGame.totalLevels;
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; resultView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -2520,7 +2772,7 @@ $('clock-nudge-plus').addEventListener('click', ()=>clockNudgeMinute(1));
 $('clock-back').addEventListener('click', ()=>{
   playClick();
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; homeView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -2576,7 +2828,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -3859,7 +4111,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -3996,7 +4248,7 @@ function showToast(emoji, msg){
 function renderStickerBook(stampCatId){
   const grid = $('sb-grid');
   grid.innerHTML = '';
-  CATS.forEach((cat, i)=>{
+  catsForGrade(selectedGrade).forEach((cat, i)=>{
     const p = progress[cat.id];
     const isEarned = p && p.unlocked;
     const isNew = cat.id === stampCatId;
@@ -4022,7 +4274,7 @@ function renderStickerBook(stampCatId){
 }
 
 function openStickerBook(stampCatId){
-  $('sb-sub').textContent = activeChild ? '📖 ของ '+activeChild.name : '📖 สมุดสติกเกอร์';
+  $('sb-sub').textContent = (activeChild ? '📖 ของ '+activeChild.name : '📖 สมุดสติกเกอร์')+' • '+gradeById(selectedGrade).short;
   renderStickerBook(stampCatId);
   openOverlay('sticker-book');
   if(stampCatId){
@@ -4090,7 +4342,7 @@ function owkHash(str){
 function exportChildData(){
   if(!activeChild){ showToast('⚠️','เลือกเด็กก่อนนะ'); return; }
   const prog = JSON.parse(localStorage.getItem('p1quiz_progress_'+activeChild.id) || '{}');
-  const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒'}, progress:prog};
+  const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒', age:activeChild.age}, progress:prog};
   const body = JSON.stringify(payload);
   const sig = owkHash(body);
   const full = JSON.stringify({v:payload.v, child:payload.child, progress:payload.progress, sig});
@@ -4136,7 +4388,7 @@ function importChildData(file){
       if(!sig || !child || !child.id || !child.name){
         showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
       }
-      const body = JSON.stringify({v, child:{id:child.id, name:child.name, emoji:child.emoji||'🧒'}, progress:progress||{}});
+      const body = JSON.stringify({v, child:{id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age}, progress:progress||{}});
       if(owkHash(body) !== sig){
         showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
       }
@@ -4145,7 +4397,7 @@ function importChildData(file){
         showImportConflictModal(child, progress||{}, conflictChild);
         return;
       }
-      children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒'});
+      children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age});
       saveChildren();
       if(progress) try{ localStorage.setItem('p1quiz_progress_'+child.id, JSON.stringify(progress)); }catch(er){}
       renderChildSelect();
@@ -4206,7 +4458,7 @@ $('import-rename-confirm-btn').addEventListener('click', ()=>{
   playClick();
   const {child, progress} = pendingImport;
   const newId = 'child_'+Date.now();
-  children.push({id:newId, name:newName, emoji:child.emoji||'🧒'});
+  children.push({id:newId, name:newName, emoji:child.emoji||'🧒', age:child.age});
   saveChildren();
   if(progress) try{ localStorage.setItem('p1quiz_progress_'+newId, JSON.stringify(progress)); }catch(e){}
   hideImportConflictModal();

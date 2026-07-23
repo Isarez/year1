@@ -483,11 +483,76 @@
     border-color:#FFB020; background:rgba(255,176,32,.18);
     transform:scale(1.18);
   }
+  /* ===================== ตัวเลือกอายุ (age picker) ===================== */
+  .age-picker-label{font-size:14px;font-weight:700;color:var(--ink-soft);margin:2px 0 8px;text-align:left;}
+  .age-picker{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+    margin-bottom:16px;
+  }
+  #age-modal-picker{margin:4px 0 20px;}
+  .age-btn{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    width:56px; height:58px; border-radius:var(--radius-md);
+    border:3px solid var(--cream-2); background:var(--cream);
+    cursor:pointer; font-family:inherit; color:var(--ink);
+    transition:transform .14s cubic-bezier(.34,1.56,.64,1), border-color .14s, background .14s, box-shadow .14s;
+  }
+  .age-btn .age-num{font-size:24px; font-weight:800; line-height:1;}
+  .age-btn .age-unit{font-size:11px; font-weight:700; color:var(--ink-soft); margin-top:2px;}
+  .age-btn:active{transform:scale(.9);}
+  .age-btn.selected{
+    border-color:#FF9F45; background:#FFF0DE;
+    transform:scale(1.1); box-shadow:0 5px 0 rgba(255,159,69,.35);
+  }
+  .age-btn.selected .age-unit{color:#E07B12;}
+  body.night-mode .age-btn{background:#2A3352; border-color:#3B4468; color:#EAF0FF;}
+  body.night-mode .age-btn .age-unit{color:#B7C2E8;}
+  body.night-mode .age-btn.selected{background:#4A3A22; border-color:#FF9F45;}
+
+  /* ===================== แถบเลือกระดับชั้น (grade bar) ===================== */
+  .grade-bar-wrap{margin:0 0 26px;}
+  .grade-bar-title{
+    font-size:15px; font-weight:800; color:var(--ink-soft);
+    margin-bottom:10px; padding-left:2px;
+  }
+  body.night-mode .grade-bar-title{color:#EAF0FF;}
+  .grade-bar{
+    display:flex; gap:10px; overflow-x:auto; padding:4px 2px 12px;
+    scrollbar-width:thin; scrollbar-color:var(--thai) transparent;
+    -webkit-overflow-scrolling:touch;
+  }
+  .grade-bar::-webkit-scrollbar{height:7px;}
+  .grade-bar::-webkit-scrollbar-track{background:transparent;}
+  .grade-bar::-webkit-scrollbar-thumb{background:var(--thai); border-radius:8px;}
+  .grade-pill{
+    flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px;
+    min-width:78px; padding:11px 14px 9px; border-radius:20px;
+    border:3px solid var(--cream-2); background:var(--white);
+    cursor:pointer; font-family:inherit; color:var(--ink);
+    box-shadow:0 3px 0 var(--cream-2);
+    transition:transform .16s cubic-bezier(.34,1.56,.64,1), border-color .16s, background .16s, box-shadow .16s, color .16s;
+  }
+  .grade-pill .gp-emoji{font-size:26px; line-height:1;}
+  .grade-pill .gp-label{font-size:14px; font-weight:800; white-space:nowrap;}
+  .grade-pill .gp-soon{font-size:10px; font-weight:700; color:#B08968; line-height:1;}
+  .grade-pill:active{transform:translateY(3px); box-shadow:0 1px 0 var(--cream-2);}
+  .grade-pill.active{
+    border-color:var(--thai); background:var(--thai-l);
+    box-shadow:0 4px 0 #2597c9; transform:translateY(-1px);
+  }
+  .grade-pill.active .gp-label{color:#1E7BA8;}
+  .grade-pill.soon{opacity:.62;}
+  .grade-pill.soon .gp-emoji{filter:grayscale(.7);}
+  body.night-mode .grade-pill{background:#222B45; border-color:#37406A; box-shadow:0 3px 0 #171E33; color:#EAF0FF;}
+  body.night-mode .grade-pill.active{background:#123A52; border-color:var(--thai); box-shadow:0 4px 0 #0B2636;}
+  body.night-mode .grade-pill.active .gp-label{color:#8FD6F7;}
+  body.night-mode .grade-pill .gp-soon{color:#8FA0C8;}
   /* confirm modal */
-  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal,#free-piano-modal{
+  #confirm-modal,#clear-modal,#qr-modal,#install-modal,#edit-emoji-modal,#import-conflict-modal,#changelog-modal,#free-piano-modal,#age-modal{
     position:fixed; inset:0; z-index:200;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
+  .modal-sub{font-size:clamp(14px,3.6vw,16px);color:var(--ink-soft);font-weight:600;line-height:1.5;margin-bottom:18px;}
   .modal-backdrop{
     position:absolute; inset:0; background:rgba(74,63,53,0);
     backdrop-filter:blur(0px);
@@ -1292,6 +1357,59 @@
   .shadow-board{
     display:flex; flex-direction:column; align-items:center; gap:24px;
     padding:14px 6px 40px; width:100%; max-width:100%; margin:0 auto;
+  }
+  /* ===================== EF GAME (นกฮูกสั่ง) ===================== */
+  .ef-rule{
+    font-size:clamp(14px,3.6vw,17px); font-weight:800; color:var(--ink);
+    background:#FFF3DC; border:2.5px solid var(--cat-color,#17A65B); border-radius:14px;
+    padding:6px 12px; margin-top:4px; text-align:center; line-height:1.35;
+  }
+  .ef-rule b{ color:var(--cat-color,#17A65B); }
+  body.night-mode .ef-rule{ background:#2A3352; color:#EAF0FF; }
+  @keyframes efRuleFlash{ 0%{transform:scale(1);} 30%{transform:scale(1.08); background:#FFE08A;} 100%{transform:scale(1);} }
+  .ef-rule.ef-rule-flash{ animation:efRuleFlash .6s ease; }
+  .ef-board{
+    display:flex; flex-direction:column; align-items:center; gap:22px;
+    padding:18px 12px 40px; width:100%; max-width:520px; margin:0 auto;
+  }
+  .ef-timer-track{
+    width:100%; max-width:420px; height:14px; border-radius:10px;
+    background:#EADFC6; overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,.12);
+  }
+  body.night-mode .ef-timer-track{ background:#2A3352; }
+  .ef-timer-fill{
+    height:100%; width:100%; border-radius:10px;
+    background:linear-gradient(90deg,#5fd6a0,var(--cat-color,#17A65B));
+  }
+  .ef-item-card{
+    background:linear-gradient(180deg,#FFFDF5,#FFF3DC);
+    border:4px solid var(--cat-color,#17A65B); border-radius:30px;
+    padding:26px 54px; box-shadow:0 8px 0 rgba(0,0,0,.08);
+    transition:transform .15s, border-color .2s, background .2s;
+  }
+  .ef-item{ font-size:clamp(72px,20vw,120px); line-height:1; }
+  .ef-item-card:has(.ef-item.ef-correct){ border-color:#3B9E5B; background:linear-gradient(180deg,#EAF9EE,#D3F1DC); }
+  .ef-item-card:has(.ef-item.ef-wrong){ border-color:#E45B5B; background:linear-gradient(180deg,#FDECEC,#FAD7D7); }
+  .ef-item.ef-correct{ animation:efPop .4s ease; }
+  .ef-item.ef-wrong{ animation:efShake .4s ease; }
+  @keyframes efPop{ 0%{transform:scale(1);} 50%{transform:scale(1.18);} 100%{transform:scale(1);} }
+  @keyframes efShake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+  .ef-feedback{ min-height:26px; font-size:clamp(15px,4vw,18px); font-weight:800; color:var(--ink); text-align:center; }
+  body.night-mode .ef-feedback{ color:#EAF0FF; }
+  .ef-buttons{ display:flex; gap:16px; width:100%; max-width:420px; }
+  .ef-btn{
+    flex:1; padding:18px 10px; border-radius:20px; border:none; cursor:pointer;
+    font-family:inherit; font-size:clamp(17px,4.6vw,21px); font-weight:800; color:#fff;
+    transition:transform .12s, box-shadow .12s, filter .12s;
+  }
+  .ef-btn:disabled{ opacity:.5; cursor:default; }
+  .ef-btn.ef-tap{ background:#3B9E5B; box-shadow:0 5px 0 #2b7a44; }
+  .ef-btn.ef-skip{ background:#F0794A; box-shadow:0 5px 0 #c25a30; }
+  .ef-btn:not(:disabled):active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.2); }
+  @media (max-width:480px){
+    .ef-item-card{ padding:20px 36px; }
+    .ef-buttons{ gap:12px; }
+    .ef-btn{ padding:15px 8px; }
   }
   .shadow-prompt-card{
     background:linear-gradient(180deg, #FFFDF5, #FFF3DC);
