@@ -1538,11 +1538,17 @@ $('ef-back').addEventListener('click', ()=>{
 let sciGame = null;
 let sciTimer = null;
 /* กล้อง/มือ ของเกมวิทย์ (แยกจาก arCam/arHands เพื่อไม่ชนกับ ar-view) */
-let sciCam = null, sciHands = null, sciStream = null, sciLandmarks = null;
-let sciRaf = null, sciActive = false, sciHandSmooth = null, sciResize = null;
+let sciCam = null, sciHands = null, sciStream = null;
+let sciLandmarks = null;      // array ของมือ (multiHandLandmarks) — รับได้ 2 มือ
+let sciHandedness = null;     // array ของ handedness ('Left'/'Right') คู่กับ sciLandmarks
+let sciRaf = null, sciActive = false, sciHandSmooth = [], sciResize = null;
 let sciDwell = { side:-1, elapsed:0, last:0 };
 const SCI_DWELL_MS = 2000;
 const SCI_RING_CIRC = 327;   // 2*pi*52 ปัดเศษ (ต้องตรงกับ r ใน .sci-ring)
+/* เราส่ง video ดิบ (ไม่ flip) ให้ MediaPipe แต่วาด/แสดงแบบ mirror (selfie) — MediaPipe ตัดสิน
+   handedness โดยสมมติว่าภาพ mirror แล้ว ค่า label จึงต้องสลับเพื่อให้ตรง "มือจริง" ของเด็ก
+   (ถ้าทดสอบบนกล้องจริงแล้วซ้าย/ขวากลับด้าน ให้สลับค่าคงที่นี้เป็น false ที่เดียวจบ) */
+const SCI_SWAP_HANDEDNESS = true;
 
 function startScienceGame(catId){
   stopARGame();
@@ -1587,13 +1593,16 @@ async function sciInitCamera(){
     sciResize = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     sciResize(); window.addEventListener('resize', sciResize);
     sciHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
-    sciHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
-    sciHands.onResults(res=>{ sciLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
+    sciHands.setOptions({ maxNumHands:2, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    sciHands.onResults(res=>{
+      sciLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks.length) ? res.multiHandLandmarks : null;
+      sciHandedness = res.multiHandedness || null;
+    });
     sciCam = new Camera(video, { onFrame: async ()=>{ if(sciHands){ await sciHands.send({ image:video }); } }, width:480, height:360 });
     await sciCam.start();
     sciActive = true;
     document.body.classList.remove('sci-nocam');
-    $('sci-hint').textContent = '🖐️ แบมือค้างฝั่งคำตอบ 2 วินาที';
+    $('sci-hint').textContent = '✋ มือซ้าย = ฝั่งซ้าย · 🤚 มือขวา = ฝั่งขวา · แบมือค้าง 2 วิ';
     if(toggle) toggle.hidden = false;
     sciUpdateCamBtn();
     sciRaf = requestAnimationFrame(sciDrawLoop);
@@ -1607,7 +1616,7 @@ async function sciInitCamera(){
 }
 
 function sciStopCamera(){
-  sciActive = false; sciLandmarks = null; sciHandSmooth = null;
+  sciActive = false; sciLandmarks = null; sciHandedness = null; sciHandSmooth = [];
   if(sciRaf){ cancelAnimationFrame(sciRaf); sciRaf = null; }
   if(sciCam){ try{ sciCam.stop(); }catch(e){} sciCam = null; }
   if(sciStream){ sciStream.getTracks().forEach(t=>t.stop()); sciStream = null; }
@@ -1628,6 +1637,13 @@ function sciPalmOpen(pts){
   let ext = 0;
   [[8,6],[12,10],[16,14],[20,18]].forEach(([t,p])=>{ if(pts[t].y < pts[p].y - 8) ext++; });
   return ext >= 3;
+}
+/* แปลง label ของ MediaPipe เป็น "มือจริง" ของเด็ก ('left'/'right') — สลับตาม SCI_SWAP_HANDEDNESS */
+function sciTrueHand(label){
+  if(!label) return null;
+  const isLeftLabel = label === 'Left';
+  const physicalLeft = SCI_SWAP_HANDEDNESS ? !isLeftLabel : isLeftLabel;
+  return physicalLeft ? 'left' : 'right';
 }
 
 function sciResetDwell(){
@@ -1656,20 +1672,31 @@ function sciDrawLoop(){
   if(!sciActive) return;
   const canvas = $('sci-canvas'); const ctx = canvas.getContext('2d');
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(sciLandmarks){
-    const raw = sciLandmarks.map(p=>({ x:(1-p.x)*canvas.width, y:p.y*canvas.height }));
-    if(!sciHandSmooth || sciHandSmooth.length !== raw.length) sciHandSmooth = raw;
-    else sciHandSmooth = sciHandSmooth.map((p,i)=>({ x:p.x+(raw[i].x-p.x)*0.5, y:p.y+(raw[i].y-p.y)*0.5 }));
-    const hpts = sciHandSmooth;
+  const hands = sciLandmarks || [];
+  /* zone ที่มี "มือถูกข้าง อยู่ฝั่งถูก" อยู่ (present) และที่แบมือด้วย (open)
+     กติกา: มือซ้ายจริงต้องอยู่ฝั่งซ้าย(zone 0), มือขวาจริงต้องอยู่ฝั่งขวา(zone 1) */
+  const openZones = [], presentZones = [];
+  hands.forEach((lm, hi)=>{
+    const raw = lm.map(p=>({ x:(1-p.x)*canvas.width, y:p.y*canvas.height }));
+    if(!sciHandSmooth[hi] || sciHandSmooth[hi].length !== raw.length) sciHandSmooth[hi] = raw;
+    else sciHandSmooth[hi] = sciHandSmooth[hi].map((p,i)=>({ x:p.x+(raw[i].x-p.x)*0.5, y:p.y+(raw[i].y-p.y)*0.5 }));
+    const hpts = sciHandSmooth[hi];
     drawCartoonHand(ctx, hpts);
     if(sciGame && !sciGame.answered){
-      const open = sciPalmOpen(hpts);
-      const side = hpts[9].x < canvas.width*0.5 ? 0 : 1;   // 0=ซ้าย 1=ขวา (พิกัดกระจกตรงกับที่เด็กเห็น)
-      sciTickDwell(side, open);
+      const side = hpts[9].x < canvas.width*0.5 ? 0 : 1;         // ฝั่งที่มืออยู่บนจอ (พิกัดกระจก)
+      const wantHand = side === 0 ? 'left' : 'right';           // ฝั่งซ้ายอยากได้มือซ้าย, ฝั่งขวาอยากได้มือขวา
+      const trueHand = sciTrueHand(sciHandedness && sciHandedness[hi] ? sciHandedness[hi].label : null);
+      if(trueHand === wantHand){                                 // มือถูกข้าง + อยู่ฝั่งถูก
+        presentZones.push(side);
+        if(sciPalmOpen(hpts)) openZones.push(side);
+      }
     }
-  } else {
-    sciHandSmooth = null;
-    if(sciGame && !sciGame.answered) sciResetDwell();
+  });
+  sciHandSmooth.length = hands.length;   // ตัด smoothing ของมือที่หายไป
+  if(sciGame && !sciGame.answered){
+    if(openZones.length === 1){ sciTickDwell(openZones[0], true); }
+    else if(presentZones.length === 1 && presentZones[0] === sciDwell.side && sciDwell.side !== -1){ sciTickDwell(sciDwell.side, false); }
+    else { sciResetDwell(); }
   }
   sciRaf = requestAnimationFrame(sciDrawLoop);
 }
