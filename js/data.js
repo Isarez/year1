@@ -698,15 +698,15 @@ const CATS = [
   {
     /* Phase 1.3 — coding mechanic ใหม่ "เรียงคำสั่งหุ่นยนต์": เรียงบัตรคำสั่ง (เดินหน้า/เลี้ยวซ้าย-ขวา) ให้หุ่นยนต์ไปถึงเป้าบนกริด
        ดู startCodeGame ใน app.js (คลังด่าน ROBOT_LEVELS) — ออกแบบ engine เผื่อ loop/เงื่อนไข (ป.2-6) ในอนาคต */
-    id:'p1-code', name:'เรียงคำสั่งหุ่นยนต์ 1', emoji:'🤖', icon:'assets/icons/p1-code.svg', color:'#2BB3A3', light:'#D6F5F1',
+    id:'p1-code', name:'พาแมวกลับบ้าน 1', emoji:'🤖', icon:'assets/icons/p1-code.svg', color:'#2BB3A3', light:'#D6F5F1',
     type:'skill', mode:'code', codeSet:'code1', levels:10, grade:'p1', isNew:true
   },
   {
-    id:'p1-code2', name:'เรียงคำสั่งหุ่นยนต์ 2', emoji:'🦾', icon:'assets/icons/p1-code2.svg', color:'#2596A0', light:'#D6F1F5',
+    id:'p1-code2', name:'พาแมวกลับบ้าน 2', emoji:'🦾', icon:'assets/icons/p1-code2.svg', color:'#2596A0', light:'#D6F1F5',
     type:'skill', mode:'code', codeSet:'code2', levels:8, grade:'p1', isNew:true
   },
   {
-    id:'p1-code3', name:'เรียงคำสั่งหุ่นยนต์ 3', emoji:'🕹️', icon:'assets/icons/p1-code3.svg', color:'#1F7E88', light:'#D6EDF0',
+    id:'p1-code3', name:'พาแมวกลับบ้าน 3', emoji:'🕹️', icon:'assets/icons/p1-code3.svg', color:'#1F7E88', light:'#D6EDF0',
     type:'skill', mode:'code', codeSet:'code3', levels:8, grade:'p1', isNew:true
   },
   {
@@ -938,25 +938,25 @@ const ROBOT_LEVELS = [
 ];
 /* code2 — กลาง (5×5-6×6, กำแพงมากขึ้น ต้องอ้อม) */
 const ROBOT_LEVELS2 = [
-  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:0}, walls:[[2,0],[2,1]] },
-  { size:5, start:{r:4,c:0,dir:1}, goal:{r:0,c:4}, walls:[[2,2]] },
-  { size:5, start:{r:4,c:4,dir:3}, goal:{r:0,c:0}, walls:[[2,2],[2,3]] },
-  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[[2,1],[2,3]] },
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[3,2],[3,3]] },
-  { size:6, start:{r:5,c:0,dir:1}, goal:{r:0,c:0}, walls:[[3,0],[3,1],[3,2]] },
-  { size:6, start:{r:5,c:5,dir:0}, goal:{r:0,c:0}, walls:[[3,3],[2,3]] },
-  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:4}, walls:[[3,2],[3,3],[2,4]] }
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[[2,0],[2,1],[2,2]] },
+  { size:5, start:{r:4,c:0,dir:1}, goal:{r:0,c:0}, walls:[[3,1],[2,1],[1,1]] },
+  { size:5, start:{r:4,c:4,dir:3}, goal:{r:0,c:0}, walls:[[2,1],[2,2],[2,3]] },
+  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[[3,1],[3,2],[1,2],[1,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[3,1],[3,2],[3,3],[3,4]] },
+  { size:6, start:{r:5,c:0,dir:1}, goal:{r:0,c:0}, walls:[[4,1],[3,1],[2,1],[1,1]] },
+  { size:6, start:{r:5,c:5,dir:0}, goal:{r:0,c:0}, walls:[[2,2],[2,3],[3,2],[3,3]] },
+  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:4}, walls:[[3,1],[3,2],[3,3],[1,3],[1,4]] }
 ];
 /* code3 — ยาก (6×6 คล้ายเขาวงกต ทางยาว) */
 const ROBOT_LEVELS3 = [
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[1,1],[2,1],[3,1],[3,2],[3,3]] },
-  { size:6, start:{r:5,c:0,dir:1}, goal:{r:0,c:0}, walls:[[4,1],[3,1],[2,1],[2,2],[2,3]] },
-  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:5}, walls:[[4,4],[3,4],[2,4],[2,3],[2,2]] },
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:5,c:5}, walls:[[4,1],[3,1],[2,1],[1,1],[1,2],[1,3]] },
-  { size:6, start:{r:0,c:0,dir:2}, goal:{r:5,c:5}, walls:[[1,1],[2,1],[3,1],[3,2],[3,3],[1,4],[2,4]] },
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[2,1],[2,2],[2,3],[4,3],[4,4]] },
-  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:3}, walls:[[3,2],[3,3],[3,4],[1,1],[1,2],[1,3]] },
-  { size:6, start:{r:5,c:5,dir:0}, goal:{r:0,c:0}, walls:[[4,4],[4,3],[2,1],[2,2],[3,4],[1,3]] }
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[1,1],[2,1],[3,1],[3,2],[3,3],[1,3],[1,4]] },
+  { size:6, start:{r:5,c:0,dir:1}, goal:{r:0,c:0}, walls:[[4,1],[3,1],[2,1],[2,2],[2,3],[0,3],[1,3]] },
+  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:5}, walls:[[4,4],[3,4],[2,4],[2,3],[2,2],[4,2],[4,1]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:5,c:5}, walls:[[4,1],[3,1],[2,1],[1,1],[1,2],[1,3],[3,3],[3,4]] },
+  { size:6, start:{r:0,c:0,dir:2}, goal:{r:5,c:5}, walls:[[1,1],[2,1],[3,1],[3,2],[3,3],[1,4],[2,4],[4,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[2,1],[2,2],[2,3],[4,3],[4,4],[0,4]] },
+  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:3}, walls:[[3,1],[3,2],[3,3],[3,4],[1,1],[1,2],[1,3]] },
+  { size:6, start:{r:5,c:5,dir:0}, goal:{r:0,c:0}, walls:[[4,4],[4,3],[2,1],[2,2],[3,4],[1,3],[1,4],[3,0]] }
 ];
 
 /* ============================= LISTEN WORDS (เกมฟังคำศัพท์ 1/2) ============================= */

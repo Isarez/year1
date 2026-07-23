@@ -1428,22 +1428,30 @@
     aspect-ratio:var(--iso-aspect, 1 / 1); margin:2px auto 4px;
   }
   .code-iso-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-  .code-goal-star{ animation:codeGoalPulse 1.4s ease-in-out infinite; transform-origin:center; transform-box:fill-box; }
-  @keyframes codeGoalPulse{ 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-3px) scale(1.12);} }
+  .code-goal-char{ animation:codeGoalPulse 1.6s ease-in-out infinite; transform-box:view-box; }
+  @keyframes codeGoalPulse{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-3px);} }
   .code-char{
-    position:absolute; left:50%; top:50%;
-    transform:translate(-50%,-74%);
-    transition:left .42s cubic-bezier(.4,0,.3,1), top .42s cubic-bezier(.4,0,.3,1);
-    pointer-events:none; text-align:center; line-height:1;
-    filter:drop-shadow(0 3px 2px rgba(0,0,0,.28));
+    position:absolute; left:50%; top:50%; width:16%;
+    transform:translate(-50%,-60%);
+    transition:left .38s cubic-bezier(.4,0,.3,1), top .38s cubic-bezier(.4,0,.3,1);
+    pointer-events:none;
   }
-  .code-char .cchar-bot{ font-size:clamp(26px,7.5vw,36px); display:block; }
-  .code-char .cchar-arrow{
-    display:block; font-size:15px; font-weight:900; color:#fff; margin-top:-4px;
-    text-shadow:0 0 3px var(--cat-color,#2BB3A3), 0 1px 2px rgba(0,0,0,.4);
+  .code-char .cchar-svg{ width:100%; height:auto; display:block; overflow:visible; filter:drop-shadow(0 3px 2px rgba(0,0,0,.22)); }
+  .code-char::before{  /* เงาสัมผัสพื้นใต้ตัวละคร */
+    content:''; position:absolute; left:50%; top:90%; transform:translate(-50%,-50%);
+    width:60%; height:11%; border-radius:50%; z-index:-1;
+    background:radial-gradient(rgba(0,0,0,.28), rgba(0,0,0,0) 72%);
   }
   .code-char.code-bump{ animation:codeBump .32s ease; }
-  @keyframes codeBump{ 0%,100%{transform:translate(-50%,-74%);} 45%{transform:translate(-50%,-68%) scale(.92);} }
+  @keyframes codeBump{ 0%,100%{transform:translate(-50%,-60%);} 45%{transform:translate(-50%,-54%) scale(.94);} }
+  /* animation เดิน: ตัวเด้ง + ขาสลับซ้าย-ขวา */
+  .code-char.walking .cchar-svg{ animation:rbBob .46s ease-in-out infinite; }
+  .code-char.walking .rb-legL{ animation:rbStep .46s ease-in-out infinite; }
+  .code-char.walking .rb-legR{ animation:rbStep .46s ease-in-out infinite; animation-delay:.23s; }
+  @keyframes rbBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-1.6px);} }
+  @keyframes rbStep{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-3px);} }
+  .rb-arrow{ animation:rbArrowPulse 1s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes rbArrowPulse{ 0%,100%{opacity:.75;} 50%{opacity:1;} }
   .code-program-label{ font-size:13px; font-weight:800; color:var(--ink-soft); align-self:flex-start; margin-left:6px; }
   body.night-mode .code-program-label{ color:#C9D3F5; }
   .code-program{
@@ -1460,7 +1468,9 @@
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 3px 0 rgba(0,0,0,.18); transition:transform .12s;
   }
-  .code-prog-card .cpc-num{ position:absolute; top:-6px; left:-4px; font-size:10px; font-weight:800; background:#fff; color:var(--cat-color,#2BB3A3); border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .code-prog-card .cpc-num{ position:absolute; top:-6px; left:-4px; font-size:10px; font-weight:800; background:#fff; color:var(--cat-color,#2BB3A3); border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(0,0,0,.2); z-index:1; }
+  .code-prog-card .cpc-ico{ display:flex; }
+  .code-prog-card .cpc-ico svg{ width:27px; height:27px; display:block; }
   .code-prog-card.active{ transform:translateY(-4px) scale(1.12); box-shadow:0 6px 0 rgba(0,0,0,.18); filter:brightness(1.12); }
   .code-prog-card:active{ transform:scale(.9); }
   .code-palette{ display:flex; gap:10px; width:100%; justify-content:center; flex-wrap:wrap; }
@@ -1471,7 +1481,8 @@
     box-shadow:0 4px 0 rgba(43,179,163,.35); transition:transform .12s, box-shadow .12s;
   }
   body.night-mode .code-cmd-btn{ background:#222B45; color:#EAF0FF; }
-  .code-cmd-btn .ccmd-ico{ font-size:26px; line-height:1; }
+  .code-cmd-btn .ccmd-ico{ display:flex; }
+  .code-cmd-btn .ccmd-ico svg{ width:32px; height:32px; display:block; }
   .code-cmd-btn .ccmd-lbl{ font-size:13px; font-weight:800; }
   .code-cmd-btn:not(:disabled):active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(43,179,163,.35); }
   .code-cmd-btn:disabled{ opacity:.5; cursor:default; }
