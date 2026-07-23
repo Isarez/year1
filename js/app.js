@@ -692,6 +692,14 @@ function renderHome(){
   updateFreePianoBtn();
   const name = activeChild ? activeChild.name : 'นักสู้ตัวน้อย';
   $('hero-greeting').textContent = 'สวัสดีจ้า '+name+'! 🎉';
+  const heroAge = $('hero-age');
+  if(heroAge){
+    const ageY = activeChild ? childAgeYears(activeChild) : null;
+    if(ageY != null){
+      heroAge.textContent = '🎂 อายุ '+Math.floor(ageY)+' ปี · ระดับชั้น '+gradeById(resolveGradeForChild(activeChild)).short;
+      heroAge.hidden = false;
+    } else heroAge.hidden = true;
+  }
   const grid = $('cat-grid');
   const gridInteractive = $('cat-grid-interactive');
   const gridSkill = $('cat-grid-skill');
@@ -5249,12 +5257,15 @@ function initEditEmojiPicker(currentEmoji){
     picker.appendChild(btn);
   });
 }
+let editDobSelected = null;
 function openEditEmojiModal(childId){
   const child = children.find(c=>c.id===childId);
   if(!child) return;
   editingChildId = childId;
   initEditEmojiPicker(child.emoji);
   $('edit-name-input').value = child.name;
+  editDobSelected = child.birthDate ? strToDob(child.birthDate) : null;
+  buildDobPicker($('edit-dob-picker'), editDobSelected, dob=>{ editDobSelected = dob; });
   openOverlay('edit-emoji-modal');
 }
 $('header-edit-emoji-btn').addEventListener('click', ()=>{
@@ -5275,9 +5286,17 @@ $('edit-emoji-save-btn').addEventListener('click', ()=>{
       $('edit-name-input').focus();
       return;
     }
+    if(!editDobSelected){ showToast('🎂','เลือกวันเกิดให้ครบด้วยนะ'); return; }
     rec.emoji = editEmojiSelected;
     rec.name = newName;
-    if(activeChild && activeChild.id===editingChildId){ activeChild.emoji = editEmojiSelected; activeChild.name = newName; }
+    rec.birthDate = dobToStr(editDobSelected);
+    delete rec.age;
+    rec.grade = resolveGradeForChild(rec);
+    if(activeChild && activeChild.id===editingChildId){
+      activeChild.emoji = editEmojiSelected; activeChild.name = newName;
+      activeChild.birthDate = rec.birthDate; delete activeChild.age; activeChild.grade = rec.grade;
+      selectedGrade = resolveGradeForChild(activeChild);
+    }
     saveChildren();
     updateHeaderChild();
     renderHome();

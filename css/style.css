@@ -671,6 +671,12 @@
   .hero-mascot{font-size:64px; display:inline-block; animation:idleBounce 1.2s ease-in-out infinite alternate;}
   .hero h2{font-size:clamp(28px,7vw,38px); font-weight:800; margin-top:6px; transition:color 2s ease, text-shadow 2s ease;}
   .hero p{font-size:clamp(17px,4.2vw,21px); color:var(--ink-soft); font-weight:600; margin-top:6px; transition:color 2s ease;}
+  .hero-age{
+    display:inline-block; margin:8px auto 0; padding:5px 16px; border-radius:999px;
+    background:var(--cream); border:2.5px solid var(--cream-2);
+    font-size:clamp(13px,3.4vw,15px); font-weight:800; color:var(--ink-soft);
+  }
+  body.night-mode .hero-age{background:#2A3352; border-color:#3B4468; color:#C9D3F5;}
 
   .cat-section-title{
     display:flex; align-items:center; gap:10px;
