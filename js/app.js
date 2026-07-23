@@ -3087,21 +3087,29 @@ $('music-back').addEventListener('click', ()=>{
 });
 
 /* ===== gimmick: เปียโนของหนู (ปลดล็อกเมื่อเล่นเกมดนตรีครบทั้ง 3 เกม) ===== */
-/* จัดกลุ่มเกมดนตรี (mode:'music') ตามระดับชั้น — เผื่อทุกระดับชั้นในอนาคต */
+/* จัดกลุ่มเกมดนตรี (mode:'music') ตามระดับชั้น — เผื่อทุกระดับชั้นในอนาคต (คืน cat object) */
 function musicGroupsByGrade(){
   const groups = {};
   CATS.forEach(c=>{
     if(c.type==='skill' && c.mode==='music'){
       const g = c.grade || 'prep-p1';
-      (groups[g] = groups[g] || []).push(c.id);
+      (groups[g] = groups[g] || []).push(c);
     }
   });
   return groups;
 }
-/* ปลดล็อกเปียโนเมื่อเล่นเกมดนตรี "ครบทุกเกมของระดับชั้นใดชั้นหนึ่ง" (แต่ละเกม ≥1 ดาว) */
+/* ปลดล็อกเปียโนเมื่อผ่านเกมดนตรี "ของระดับชั้นใดชั้นหนึ่ง" (ครบชั้นเดียวก็พอ):
+   - ผ่านครบทุกเกมในชั้น (แต่ละเกม ≥1 ดาว) หรือ
+   - ผ่านเกมดนตรีเกมสุดท้าย (musicMode สูงสุด เช่น "ดนตรี 3") ของชั้นนั้น — เกมสุดท้ายล็อกอยู่หลังเกมก่อนหน้า
+     อยู่แล้ว การผ่านได้จึงถือว่าเล่นครบ (robust กับ progress เก่าที่ดาวเกมแรกๆ อาจหาย) */
 function musicAllDone(){
   const groups = musicGroupsByGrade();
-  return Object.values(groups).some(ids => ids.length>0 && ids.every(id => progress[id] && progress[id].stars>=1));
+  return Object.values(groups).some(cats=>{
+    if(!cats.length) return false;
+    if(cats.every(c => progress[c.id] && progress[c.id].stars>=1)) return true;
+    const last = cats.reduce((a,b)=> (b.musicMode||0) > (a.musicMode||0) ? b : a);
+    return progress[last.id] && progress[last.id].stars>=1;
+  });
 }
 function updateFreePianoBtn(){ const b = $('free-piano-btn'); if(b) b.hidden = !(activeChild && musicAllDone()); }
 
