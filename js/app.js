@@ -550,7 +550,7 @@ function burstCenterTop(count){
 
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
-const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view'), efView = $('ef-view'), codeView = $('code-view');
+const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view'), efView = $('ef-view'), codeView = $('code-view'), sciView = $('science-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -593,7 +593,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
   document.body.classList.remove('dots-open');
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   renderChildSelect();
 });
 
@@ -671,6 +671,7 @@ function renderHome(){
       else if(cat.type==='skill' && cat.mode==='clock') startClockGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='ef') startEfGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='code') startCodeGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='science') startScienceGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else if(cat.type==='write') startDotsGame(cat.id);
@@ -726,7 +727,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: pickQuizQuestions(cat).map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -903,12 +904,13 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='clock'){ startClockGame(lastCatId); }
   else if(lastGameType==='ef'){ startEfGame(lastCatId); }
   else if(lastGameType==='code'){ startCodeGame(lastCatId); }
+  else if(lastGameType==='science'){ startScienceGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -931,7 +933,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1180,7 +1182,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1416,7 +1418,7 @@ function startEfGame(catId){
   const cat = catById(catId);
   const keys = shuffleArray(Object.keys(EF_CATEGORIES).slice());
   efGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, ruleA:keys[0], ruleB:keys[1], curRule:keys[0], answered:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   efView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('ef-cat-label', cat);
@@ -1497,7 +1499,7 @@ function finishEfGame(){
   const cat = catById(efGame.catId);
   const mistakes = efGame.mistakes;
   const totalLevels = efGame.totalLevels;
-  efView.hidden = true; codeView.hidden = true; resultView.hidden = false;
+  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -1523,7 +1525,268 @@ $('ef-tap-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ 
 $('ef-skip-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ playClick(); efAnswer(false); } });
 $('ef-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(efTimer); efTimer=null;
-  efView.hidden = true; codeView.hidden = true; homeView.hidden = false;
+  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
+  renderHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+/* ============================= SCIENCE PREDICT-CHECK AR ("นักวิทย์ทายผล" — Phase 1.4)
+   เด็กทายก่อนว่าจะเกิดอะไร (ลอย/จม, แม่เหล็กดูด/ไม่ดูด ฯลฯ) แล้วดูผลจริง + เหตุผลสั้นๆ
+   กลไก AR: แบ่งครึ่งจอ ซ้าย=คำตอบ 1 / ขวา=คำตอบ 2 — "แบมือค้าง" ฝั่งไหนครบ 2 วิ = เลือกข้อนั้น
+   ใช้กล้อง+MediaPipe (reuse loadMediaPipeScripts/drawCartoonHand) แยก state จากเกม AR เดิม
+   มือถือ/กล้องพัง = fallback แตะฝั่งคำตอบ — engine อ่านคลัง SCIENCE_POOLS/SCIENCE_KINDS ============================= */
+let sciGame = null;
+let sciTimer = null;
+/* กล้อง/มือ ของเกมวิทย์ (แยกจาก arCam/arHands เพื่อไม่ชนกับ ar-view) */
+let sciCam = null, sciHands = null, sciStream = null, sciLandmarks = null;
+let sciRaf = null, sciActive = false, sciHandSmooth = null, sciResize = null;
+let sciDwell = { side:-1, elapsed:0, last:0 };
+const SCI_DWELL_MS = 2000;
+const SCI_RING_CIRC = 327;   // 2*pi*52 ปัดเศษ (ต้องตรงกับ r ใน .sci-ring)
+
+function startScienceGame(catId){
+  stopARGame();
+  clearTimeout(sciTimer); sciTimer = null;
+  lastGameType = 'science'; lastCatId = catId;
+  const cat = catById(catId);
+  const pool = (SCIENCE_POOLS[cat.sciSet] || SCIENCE_FLOAT).slice();
+  const items = shuffleArray(pool).slice(0, cat.levels);
+  sciGame = { catId, level:1, mistakes:0, totalLevels:items.length, items, answered:false };
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = false;
+  document.body.classList.add('sci-open');
+  document.body.classList.remove('sci-nocam');
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  sciView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  sciView.querySelectorAll('.sci-ring-fill').forEach(c=>{ c.style.strokeDasharray = SCI_RING_CIRC; c.style.strokeDashoffset = SCI_RING_CIRC; });
+  setCatLabel('sci-cat-label', cat);
+  sciResetDwell();
+  renderSciRound();
+  window.scrollTo({top:0, behavior:'smooth'});
+  sciInitCamera();
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+
+/* ---- กล้อง/มือ ---- */
+async function sciInitCamera(){
+  const toggle = $('sci-camera-toggle');
+  if(isMobileViewport()){
+    document.body.classList.add('sci-nocam');
+    $('sci-hint').textContent = '👆 แตะฝั่งคำตอบที่เลือกได้เลย';
+    if(toggle) toggle.hidden = true;
+    sciActive = false;
+    return;
+  }
+  try{
+    await loadMediaPipeScripts();
+    const video = $('sci-video');
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{ width:480, height:360, facingMode:'user' }, audio:false });
+    /* กันกล้องรั่ว: ถ้าเด็กออกจากเกมก่อนกดอนุญาต (view ถูกซ่อนไปแล้ว) ให้ปิด stream ทิ้งเลย */
+    if(sciView.hidden){ stream.getTracks().forEach(t=>t.stop()); return; }
+    sciStream = stream; video.srcObject = stream; await video.play().catch(()=>{});
+    const canvas = $('sci-canvas');
+    sciResize = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    sciResize(); window.addEventListener('resize', sciResize);
+    sciHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    sciHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    sciHands.onResults(res=>{ sciLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
+    sciCam = new Camera(video, { onFrame: async ()=>{ if(sciHands){ await sciHands.send({ image:video }); } }, width:480, height:360 });
+    await sciCam.start();
+    sciActive = true;
+    document.body.classList.remove('sci-nocam');
+    $('sci-hint').textContent = '🖐️ แบมือค้างฝั่งคำตอบ 2 วินาที';
+    if(toggle) toggle.hidden = false;
+    sciUpdateCamBtn();
+    sciRaf = requestAnimationFrame(sciDrawLoop);
+  }catch(err){
+    console.warn('science AR camera unavailable, tap fallback:', err);
+    document.body.classList.add('sci-nocam');
+    $('sci-hint').textContent = '👆 แตะฝั่งคำตอบที่เลือกได้เลย';
+    if(toggle) toggle.hidden = true;
+    sciActive = false;
+  }
+}
+
+function sciStopCamera(){
+  sciActive = false; sciLandmarks = null; sciHandSmooth = null;
+  if(sciRaf){ cancelAnimationFrame(sciRaf); sciRaf = null; }
+  if(sciCam){ try{ sciCam.stop(); }catch(e){} sciCam = null; }
+  if(sciStream){ sciStream.getTracks().forEach(t=>t.stop()); sciStream = null; }
+  if(sciResize){ window.removeEventListener('resize', sciResize); sciResize = null; }
+  sciHands = null;
+  const cv = $('sci-canvas'); if(cv){ const c = cv.getContext('2d'); if(c) c.clearRect(0,0,cv.width,cv.height); }
+  sciResetDwell();
+}
+
+function sciUpdateCamBtn(){
+  const btn = $('sci-camera-toggle'); if(!btn) return;
+  btn.classList.toggle('muted', !sciActive);
+  btn.textContent = sciActive ? '📷' : '📵';
+}
+
+/* แบมือ = ปลายนิ้ว 8/12/16/20 อยู่เหนือข้อ 6/10/14/18 (y น้อยกว่า) อย่างน้อย 3 นิ้ว */
+function sciPalmOpen(pts){
+  let ext = 0;
+  [[8,6],[12,10],[16,14],[20,18]].forEach(([t,p])=>{ if(pts[t].y < pts[p].y - 8) ext++; });
+  return ext >= 3;
+}
+
+function sciResetDwell(){
+  if(sciDwell.side!==-1 || sciDwell.elapsed!==0){ sciDwell.side=-1; sciDwell.elapsed=0; sciUpdateRings(-1,0); }
+}
+function sciTickDwell(side, open){
+  const now = performance.now();
+  if(side !== sciDwell.side){ sciDwell.side = side; sciDwell.elapsed = 0; sciDwell.last = now; }
+  if(open){ sciDwell.elapsed += now - sciDwell.last; }
+  sciDwell.last = now;
+  const prog = Math.min(1, sciDwell.elapsed / SCI_DWELL_MS);
+  sciUpdateRings(side, prog);
+  if(prog >= 1){ sciResetDwell(); sciSelect(side); }
+}
+function sciUpdateRings(activeSide, prog){
+  for(let i=0;i<2;i++){
+    const zone = $('sci-zone-'+i); if(!zone) continue;
+    const active = (i===activeSide);
+    zone.classList.toggle('dwelling', active && prog>0);
+    const fill = zone.querySelector('.sci-ring-fill');
+    if(fill) fill.style.strokeDashoffset = active ? SCI_RING_CIRC*(1-prog) : SCI_RING_CIRC;
+  }
+}
+
+function sciDrawLoop(){
+  if(!sciActive) return;
+  const canvas = $('sci-canvas'); const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(sciLandmarks){
+    const raw = sciLandmarks.map(p=>({ x:(1-p.x)*canvas.width, y:p.y*canvas.height }));
+    if(!sciHandSmooth || sciHandSmooth.length !== raw.length) sciHandSmooth = raw;
+    else sciHandSmooth = sciHandSmooth.map((p,i)=>({ x:p.x+(raw[i].x-p.x)*0.5, y:p.y+(raw[i].y-p.y)*0.5 }));
+    const hpts = sciHandSmooth;
+    drawCartoonHand(ctx, hpts);
+    if(sciGame && !sciGame.answered){
+      const open = sciPalmOpen(hpts);
+      const side = hpts[9].x < canvas.width*0.5 ? 0 : 1;   // 0=ซ้าย 1=ขวา (พิกัดกระจกตรงกับที่เด็กเห็น)
+      sciTickDwell(side, open);
+    }
+  } else {
+    sciHandSmooth = null;
+    if(sciGame && !sciGame.answered) sciResetDwell();
+  }
+  sciRaf = requestAnimationFrame(sciDrawLoop);
+}
+
+/* ---- รอบเกม ---- */
+function renderSciRound(){
+  const g = sciGame;
+  clearTimeout(sciTimer);
+  g.answered = false;
+  sciResetDwell();
+  const it = g.items[g.level-1];
+  const kind = SCIENCE_KINDS[it.kind];
+  g.cur = it; g.kind = kind;
+  $('sci-question').textContent = it.q;
+  $('sci-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('sci-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  const obj = $('sci-obj'); obj.textContent = it.obj; obj.className = 'sci-obj'; obj.setAttribute('data-reveal','');
+  const fb = $('sci-feedback'); fb.textContent=''; fb.className='sci-feedback';
+  kind.choices.forEach((ch,i)=>{
+    const zone = $('sci-zone-'+i);
+    zone.disabled = false;
+    zone.className = 'sci-zone ' + (i===0?'sci-zone-left':'sci-zone-right');
+    zone.dataset.key = ch.k;
+    $('sci-zone-'+i+'-emoji').textContent = ch.e;
+    $('sci-zone-'+i+'-lbl').textContent = ch.l;
+    const chk = zone.querySelector('.sci-zone-check'); if(chk) chk.remove();
+    const fill = zone.querySelector('.sci-ring-fill'); if(fill) fill.style.strokeDashoffset = SCI_RING_CIRC;
+  });
+}
+
+function sciSelect(idx){
+  const g = sciGame;
+  if(!g || g.answered) return;
+  g.answered = true;
+  sciResetDwell();
+  const it = g.cur, kind = g.kind;
+  const correctIdx = kind.choices.findIndex(c=>c.k===it.ans);
+  const correct = idx === correctIdx;
+  for(let i=0;i<2;i++){
+    const zone = $('sci-zone-'+i); zone.disabled = true; zone.classList.remove('dwelling');
+    const fill = zone.querySelector('.sci-ring-fill'); if(fill) fill.style.strokeDashoffset = SCI_RING_CIRC;
+  }
+  const correctZone = $('sci-zone-'+correctIdx);
+  correctZone.classList.add('sci-correct');
+  const chk = document.createElement('span'); chk.className='sci-zone-check'; chk.textContent='✅'; correctZone.appendChild(chk);
+  if(!correct){
+    const wz = $('sci-zone-'+idx); wz.classList.add('sci-wrong');
+    const x = document.createElement('span'); x.className='sci-zone-check'; x.textContent='❌'; wz.appendChild(x);
+  }
+  const obj = $('sci-obj'); obj.setAttribute('data-reveal', it.ans);
+  if(kind.stage==='water') obj.classList.add(it.ans==='float' ? 'sci-float' : 'sci-sink');
+  else obj.classList.add('sci-pop');
+  const fb = $('sci-feedback');
+  if(correct){
+    playCorrect(); mascotHappy();
+    fb.className = 'sci-feedback sci-fb-ok show';
+    fb.innerHTML = '🎉 ทายถูก! '+it.why;
+    burstCenterTop(24);
+  } else {
+    g.mistakes++;
+    playWrong();
+    fb.className = 'sci-feedback sci-fb-no show';
+    fb.innerHTML = '🔎 ลองดูนะ — '+it.why;
+  }
+  $('sci-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+  clearTimeout(sciTimer);
+  sciTimer = setTimeout(()=>{
+    if(g.level >= g.totalLevels){ finishScienceGame(); }
+    else { g.level++; renderSciRound(); }
+  }, correct ? 2000 : 2700);
+}
+
+/* ปุ่มโซนซ้าย/ขวา — แตะเลือกได้ (fallback มือถือ/กล้องพัง และเผื่อเดสก์ท็อป) */
+[0,1].forEach(i=>{
+  const z = $('sci-zone-'+i);
+  if(z) z.addEventListener('click', ()=>{ if(sciGame && !sciGame.answered){ playClick(); sciSelect(i); } });
+});
+$('sci-camera-toggle').addEventListener('click', ()=>{
+  playClick();
+  if(sciActive){ sciStopCamera(); document.body.classList.add('sci-nocam'); $('sci-hint').textContent='👆 แตะฝั่งคำตอบที่เลือกได้เลย'; sciUpdateCamBtn(); }
+  else { sciInitCamera().then(sciUpdateCamBtn); }
+});
+
+function finishScienceGame(){
+  clearTimeout(sciTimer); sciTimer=null;
+  sciStopCamera();
+  document.body.classList.remove('sci-open','sci-nocam');
+  const cat = catById(sciGame.catId);
+  const mistakes = sciGame.mistakes;
+  const totalLevels = sciGame.totalLevels;
+  sciView.hidden = true; resultView.hidden = false;
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดนักวิทย์!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row'); starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s=document.createElement('span'); s.textContent='⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+  $('score-line').textContent = 'ทายผลครบ '+totalLevels+' ข้อ! (ทายพลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'ทายแม่นสุดๆ ไม่พลาดเลย!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'!' : 'ไม่เป็นไรนะ ลองทายอีกครั้งเก็บดาวเพิ่ม!';
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){ stickerBlock.hidden=false; setStickerEarned(cat); pendingSticker=cat.id; setTimeout(()=>{ burstCenterTop(40); playCongrats(); },250); setTimeout(()=>showOwlMsg('sticker'),400); }
+  else { stickerBlock.hidden=true; if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'),400);} if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); },250); }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+$('sci-back').addEventListener('click', ()=>{
+  playClick(); clearTimeout(sciTimer); sciTimer=null;
+  sciStopCamera();
+  document.body.classList.remove('sci-open','sci-nocam');
+  sciView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1624,7 +1887,7 @@ function startCodeGame(catId){
   lastGameType = 'code'; lastCatId = catId;
   const cat = catById(catId);
   codeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, set:robotLevelsFor(cat), program:[], running:false, robot:null, lv:null };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   codeView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('code-cat-label', cat);
@@ -1824,7 +2087,7 @@ function finishCodeGame(){
   const cat = catById(codeGame.catId);
   const mistakes = codeGame.mistakes;
   const totalLevels = codeGame.totalLevels;
-  codeView.hidden = true; resultView.hidden = false;
+  codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -1858,7 +2121,7 @@ $('code-clear-btn').addEventListener('click', ()=>{
 });
 $('code-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(codeTimer); codeTimer=null;
-  codeView.hidden = true; homeView.hidden = false;
+  codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1883,7 +2146,7 @@ function startDotsGame(catId){
     queue: shuffleArray(DOTS_SHAPES[cat.dotsPool].slice()).slice(0, cat.levels),
     shape:null, connected:0, els:[], dragging:false, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.body.classList.add('dots-open'); // จอแคบ: ย่อนกฮูกลงมุม กันบังจุดแถวล่างของกระดาน (ดู CSS body.dots-open)
   document.documentElement.style.setProperty('--cat-color', cat.color);
   dotsView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2074,7 +2337,7 @@ function finishDotsGame(){
   const totalLevels = dotsGame.totalLevels;
   dotsGame = null;
   document.body.classList.remove('dots-open');
-  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; resultView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
 
   /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
@@ -2115,7 +2378,7 @@ function finishDotsGame(){
 $('dots-back').addEventListener('click', ()=>{
   playClick();
   dotsGame = null;
-  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; homeView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -2175,7 +2438,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -2619,7 +2882,7 @@ function startMusicGame(catId){
   if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
   pauseBgMusicForMusicGame();
   document.body.classList.add('music-open'); // ซ่อนปุ่มมุมล่าง (ติดตั้ง/เปียโน) ไม่ให้ทับคีย์
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('music-cat-label', cat);
@@ -3053,7 +3316,7 @@ function startClockGame(catId){
   lastGameType = 'clock'; lastCatId = catId;
   const cat = catById(catId);
   clockGame = { catId, mode:cat.clockMode, level:1, totalLevels:cat.levels, mistakes:0, h:12, m:0, target:null, startTime:null, offsetH:0, snap:5, used:new Set(), locked:false, drag:null, angles:{hour:0, minute:0} };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   clockView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('clock-cat-label', cat);
@@ -3069,7 +3332,7 @@ function finishClockGame(){
   const cat = catById(clockGame.catId);
   const mistakes = clockGame.mistakes, totalLevels = clockGame.totalLevels;
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; resultView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -3109,7 +3372,7 @@ $('clock-nudge-plus').addEventListener('click', ()=>clockNudgeMinute(1));
 $('clock-back').addEventListener('click', ()=>{
   playClick();
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; homeView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -3165,7 +3428,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -4448,7 +4711,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
