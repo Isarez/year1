@@ -1,0 +1,31 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เรียงคำสั่งหุ่นยนต์ ป.1">
+  <defs>
+    <linearGradient id="p1codeG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd6cb"/>
+      <stop offset="1" stop-color="#2bb3a3"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="16" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- antenna -->
+  <path d="M32 7v6" stroke="#1f8f82" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="6" r="3.2" fill="#ffd54f" stroke="#e0a512" stroke-width="1.6"/>
+  <!-- head -->
+  <rect x="14" y="14" width="36" height="30" rx="10" fill="url(#p1codeG)" stroke="#1f8f82" stroke-width="3"/>
+  <rect x="18" y="18" width="8" height="22" rx="4" fill="#fff" opacity="0.18"/>
+  <!-- screen face -->
+  <rect x="20" y="21" width="24" height="16" rx="5" fill="#12303c"/>
+  <!-- eyes -->
+  <circle cx="27" cy="29" r="3.2" fill="#5fe0d8"/>
+  <circle cx="37" cy="29" r="3.2" fill="#5fe0d8"/>
+  <!-- smile -->
+  <path d="M27 33c2 2 8 2 10 0" fill="none" stroke="#5fe0d8" stroke-width="2" stroke-linecap="round"/>
+  <!-- side ears -->
+  <rect x="10" y="26" width="4" height="8" rx="2" fill="#1f8f82"/>
+  <rect x="50" y="26" width="4" height="8" rx="2" fill="#1f8f82"/>
+  <!-- arrow (คำสั่งเดินหน้า) -->
+  <g stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M32 52v-6"/><path d="M28 50l4-4 4 4"/>
+  </g>
+  <circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#1f8f82" stroke-width="2.5"/>
+  <text x="53" y="57.5" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#1f8f82" text-anchor="middle">2</text>
+</svg>

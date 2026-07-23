@@ -1411,6 +1411,85 @@
     .ef-buttons{ gap:12px; }
     .ef-btn{ padding:15px 8px; }
   }
+  /* ===================== CODE GAME (เรียงคำสั่งหุ่นยนต์) ===================== */
+  .code-hint{
+    font-size:clamp(13px,3.4vw,16px); font-weight:800; color:var(--ink);
+    background:#E6F7F4; border:2.5px solid var(--cat-color,#2BB3A3); border-radius:14px;
+    padding:6px 12px; margin-top:4px; text-align:center; line-height:1.35;
+  }
+  body.night-mode .code-hint{ background:#22343A; color:#EAF0FF; }
+  .code-board{
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    padding:14px 10px 44px; width:100%; max-width:560px; margin:0 auto;
+  }
+  /* isometric 2.5D board */
+  .code-iso-stage{
+    position:relative; width:min(92vw, 420px);
+    aspect-ratio:var(--iso-aspect, 1 / 1); margin:2px auto 4px;
+  }
+  .code-iso-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .code-goal-star{ animation:codeGoalPulse 1.4s ease-in-out infinite; transform-origin:center; transform-box:fill-box; }
+  @keyframes codeGoalPulse{ 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-3px) scale(1.12);} }
+  .code-char{
+    position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-74%);
+    transition:left .42s cubic-bezier(.4,0,.3,1), top .42s cubic-bezier(.4,0,.3,1);
+    pointer-events:none; text-align:center; line-height:1;
+    filter:drop-shadow(0 3px 2px rgba(0,0,0,.28));
+  }
+  .code-char .cchar-bot{ font-size:clamp(26px,7.5vw,36px); display:block; }
+  .code-char .cchar-arrow{
+    display:block; font-size:15px; font-weight:900; color:#fff; margin-top:-4px;
+    text-shadow:0 0 3px var(--cat-color,#2BB3A3), 0 1px 2px rgba(0,0,0,.4);
+  }
+  .code-char.code-bump{ animation:codeBump .32s ease; }
+  @keyframes codeBump{ 0%,100%{transform:translate(-50%,-74%);} 45%{transform:translate(-50%,-68%) scale(.92);} }
+  .code-program-label{ font-size:13px; font-weight:800; color:var(--ink-soft); align-self:flex-start; margin-left:6px; }
+  body.night-mode .code-program-label{ color:#C9D3F5; }
+  .code-program{
+    display:flex; flex-wrap:wrap; gap:6px; width:100%; min-height:52px;
+    background:var(--cream); border:3px dashed var(--cream-2); border-radius:14px; padding:8px;
+    align-items:center;
+  }
+  body.night-mode .code-program{ background:#2A3352; border-color:#3B4468; }
+  .code-prog-empty{ font-size:13px; color:var(--ink-soft); font-weight:600; padding:0 6px; }
+  body.night-mode .code-prog-empty{ color:#B7C2E8; }
+  .code-prog-card{
+    position:relative; width:42px; height:42px; border-radius:11px; border:none; cursor:pointer;
+    background:var(--cat-color,#2BB3A3); color:#fff; font-size:20px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 0 rgba(0,0,0,.18); transition:transform .12s;
+  }
+  .code-prog-card .cpc-num{ position:absolute; top:-6px; left:-4px; font-size:10px; font-weight:800; background:#fff; color:var(--cat-color,#2BB3A3); border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .code-prog-card.active{ transform:translateY(-4px) scale(1.12); box-shadow:0 6px 0 rgba(0,0,0,.18); filter:brightness(1.12); }
+  .code-prog-card:active{ transform:scale(.9); }
+  .code-palette{ display:flex; gap:10px; width:100%; justify-content:center; flex-wrap:wrap; }
+  .code-cmd-btn{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    min-width:88px; padding:10px 8px; border-radius:16px; border:3px solid var(--cat-color,#2BB3A3);
+    background:#fff; cursor:pointer; font-family:inherit; color:var(--ink);
+    box-shadow:0 4px 0 rgba(43,179,163,.35); transition:transform .12s, box-shadow .12s;
+  }
+  body.night-mode .code-cmd-btn{ background:#222B45; color:#EAF0FF; }
+  .code-cmd-btn .ccmd-ico{ font-size:26px; line-height:1; }
+  .code-cmd-btn .ccmd-lbl{ font-size:13px; font-weight:800; }
+  .code-cmd-btn:not(:disabled):active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(43,179,163,.35); }
+  .code-cmd-btn:disabled{ opacity:.5; cursor:default; }
+  .code-actions{ display:flex; gap:14px; width:100%; max-width:340px; }
+  .code-run-btn, .code-clear-btn{
+    flex:1; padding:15px 10px; border-radius:18px; border:none; cursor:pointer;
+    font-family:inherit; font-size:clamp(16px,4.4vw,19px); font-weight:800; color:#fff;
+    transition:transform .12s, box-shadow .12s;
+  }
+  .code-run-btn{ background:#3B9E5B; box-shadow:0 5px 0 #2b7a44; flex:2; }
+  .code-clear-btn{ background:#E8A33A; box-shadow:0 5px 0 #c07f1e; }
+  .code-run-btn:not(:disabled):active, .code-clear-btn:not(:disabled):active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.2); }
+  .code-run-btn:disabled, .code-clear-btn:disabled{ opacity:.5; cursor:default; }
+  @media (max-width:480px){
+    .code-cmd-btn{ min-width:72px; padding:8px 6px; }
+    .code-cmd-btn .ccmd-lbl{ font-size:11px; }
+    .code-prog-card{ width:38px; height:38px; font-size:18px; }
+  }
   .shadow-prompt-card{
     background:linear-gradient(180deg, #FFFDF5, #FFF3DC);
     border:4px solid var(--cat-color, #5D6D9E); border-radius:26px;
