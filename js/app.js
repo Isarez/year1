@@ -3087,8 +3087,22 @@ $('music-back').addEventListener('click', ()=>{
 });
 
 /* ===== gimmick: เปียโนของหนู (ปลดล็อกเมื่อเล่นเกมดนตรีครบทั้ง 3 เกม) ===== */
-const MUSIC_CAT_IDS = ['skill-music','skill-music2','skill-music3'];
-function musicAllDone(){ return MUSIC_CAT_IDS.every(id => progress[id] && progress[id].stars>=1); }
+/* จัดกลุ่มเกมดนตรี (mode:'music') ตามระดับชั้น — เผื่อทุกระดับชั้นในอนาคต */
+function musicGroupsByGrade(){
+  const groups = {};
+  CATS.forEach(c=>{
+    if(c.type==='skill' && c.mode==='music'){
+      const g = c.grade || 'prep-p1';
+      (groups[g] = groups[g] || []).push(c.id);
+    }
+  });
+  return groups;
+}
+/* ปลดล็อกเปียโนเมื่อเล่นเกมดนตรี "ครบทุกเกมของระดับชั้นใดชั้นหนึ่ง" (แต่ละเกม ≥1 ดาว) */
+function musicAllDone(){
+  const groups = musicGroupsByGrade();
+  return Object.values(groups).some(ids => ids.length>0 && ids.every(id => progress[id] && progress[id].stars>=1));
+}
 function updateFreePianoBtn(){ const b = $('free-piano-btn'); if(b) b.hidden = !(activeChild && musicAllDone()); }
 
 let freePiano = { song:null, pos:0 };
