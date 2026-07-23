@@ -109,8 +109,8 @@ function selectChild(id){
   if(activeChild){
     try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
     loadProgressForChild();
-    /* โปรไฟล์เดิมที่ยังไม่เคยใส่วันเกิด/อายุ → ถามวันเกิดก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
-    if(!activeChild.birthDate && activeChild.age==null){ openAgeModal(); return; }
+    /* โปรไฟล์ที่ยังไม่เคยใส่วันเกิด (รวมโปรไฟล์เก่าที่มีแต่อายุ) → ถามวันเกิดก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
+    if(!activeChild.birthDate){ openAgeModal(); return; }
     selectedGrade = resolveGradeForChild(activeChild);
     enterHome();
   }
