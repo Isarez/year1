@@ -252,7 +252,7 @@ function renderGradeBar(){
     btn.type = 'button';
     btn.className = 'grade-pill'+(isSel?' active':'')+(g.available?'':' soon');
     btn.innerHTML =
-      '<span class="gp-emoji">'+g.emoji+'</span>'+
+      '<span class="gp-emoji">'+(g.icon?'<img src="'+g.icon+'" class="gp-owl" alt="" draggable="false">':g.emoji)+'</span>'+
       '<span class="gp-label">'+g.short+'</span>'+
       (g.available?'':'<span class="gp-soon">เร็วๆ นี้</span>');
     btn.addEventListener('click', ()=>{

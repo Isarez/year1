@@ -1,0 +1,11 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ไข่นกฮูก">
+  <ellipse cx="32" cy="59" rx="14" ry="2.6" fill="#000" opacity=".1"/>
+  <path d="M32 7 C46 7 51 30 51 40 C51 52 42 59 32 59 C22 59 13 52 13 40 C13 30 18 7 32 7 Z" fill="#FBEFD6" stroke="#C9A96A" stroke-width="2.6"/>
+  <ellipse cx="25" cy="21" rx="4.5" ry="7" fill="#fff" opacity=".55"/>
+  <circle cx="24" cy="30" r="2.4" fill="#D8B98A"/>
+  <circle cx="40" cy="25" r="2" fill="#D8B98A"/>
+  <circle cx="39" cy="40" r="2.6" fill="#D8B98A"/>
+  <circle cx="22" cy="44" r="2" fill="#D8B98A"/>
+  <circle cx="32" cy="51" r="2.2" fill="#D8B98A"/>
+  <path d="M28 12 l3.4 4 l-3.4 3.4 l4 3.2" fill="none" stroke="#C9A96A" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

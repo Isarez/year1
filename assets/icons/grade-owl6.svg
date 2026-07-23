@@ -1,0 +1,28 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นกฮูกโตเต็มวัย">
+  <ellipse cx="32" cy="61" rx="17" ry="2.6" fill="#000" opacity=".1"/>
+  <!-- branch -->
+  <rect x="10" y="56" width="44" height="4.5" rx="2.2" fill="#7A5233"/>
+  <!-- feet gripping -->
+  <g stroke="#F5B93C" stroke-width="2.4" stroke-linecap="round" fill="none">
+    <path d="M25 52 v5 M25 57 l-3 -1.5 M25 57 l3 -1.5"/>
+    <path d="M39 52 v5 M39 57 l-3 -1.5 M39 57 l3 -1.5"/>
+  </g>
+  <!-- ear tufts -->
+  <path d="M17 14 L13 2 L27 12 Z" fill="#AC633C" stroke="#8A4A28" stroke-width="1.1"/>
+  <path d="M47 14 L51 2 L37 12 Z" fill="#AC633C" stroke="#8A4A28" stroke-width="1.1"/>
+  <!-- body -->
+  <ellipse cx="32" cy="32" rx="19" ry="23" fill="#AC633C"/>
+  <!-- wings -->
+  <path d="M14 24 q-6 12 1 24 q4.5 -2 5.5 -9 Z" fill="#8A4A28"/>
+  <path d="M50 24 q6 12 -1 24 q-4.5 -2 -5.5 -9 Z" fill="#8A4A28"/>
+  <!-- belly/face -->
+  <ellipse cx="32" cy="35" rx="13.5" ry="16.5" fill="#E09C64"/>
+  <!-- eyes big adult -->
+  <circle cx="24.5" cy="30" r="8.4" fill="#F7F5EE"/><circle cx="39.5" cy="30" r="8.4" fill="#F7F5EE"/>
+  <circle cx="25.2" cy="30.4" r="4.2" fill="#3A2416"/><circle cx="38.8" cy="30.4" r="4.2" fill="#3A2416"/>
+  <circle cx="26.8" cy="28.8" r="1.4" fill="#fff"/><circle cx="40.4" cy="28.8" r="1.4" fill="#fff"/>
+  <!-- brow -->
+  <path d="M16 23 q6.5 -5 13 -1 M35 22 q6.5 -4 13 1" fill="none" stroke="#8A4A28" stroke-width="2" stroke-linecap="round"/>
+  <!-- beak -->
+  <path d="M28 36 h8 l-4 5 Z" fill="#F5B93C" stroke="#D9902B" stroke-width="1.1" stroke-linejoin="round"/>
+</svg>

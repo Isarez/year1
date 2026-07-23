@@ -910,14 +910,15 @@ const CATS = [
 /* ระดับชั้นเป็นมิติจัดกลุ่มหมวด — หมวดที่ไม่มี cat.grade ถือเป็น 'prep-p1' (ของเดิมทั้งหมด)
    available:false = ยังไม่มีเนื้อหา (โชว์ในแถบเลือกชั้นแบบ "เร็วๆ นี้")
    minAge/maxAge ใช้ default ระดับชั้นตามอายุเด็ก (ดู defaultGradeForAge ใน app.js) */
+/* icon = สเตจการเติบโตของนกฮูก: ไข่ (เตรียม ป.1) → ฟักออก → โตขึ้นเรื่อยๆ จนเต็มวัย (ป.6) */
 const GRADES = [
-  { id:'prep-p1', name:'เตรียมสอบ ป.1', short:'เตรียม ป.1', emoji:'🐣', minAge:0,  maxAge:5,  available:true  },
-  { id:'p1',      name:'ประถมศึกษาปีที่ 1', short:'ป.1', emoji:'1️⃣', minAge:6,  maxAge:6,  available:true  },
-  { id:'p2',      name:'ประถมศึกษาปีที่ 2', short:'ป.2', emoji:'2️⃣', minAge:7,  maxAge:7,  available:false },
-  { id:'p3',      name:'ประถมศึกษาปีที่ 3', short:'ป.3', emoji:'3️⃣', minAge:8,  maxAge:8,  available:false },
-  { id:'p4',      name:'ประถมศึกษาปีที่ 4', short:'ป.4', emoji:'4️⃣', minAge:9,  maxAge:9,  available:false },
-  { id:'p5',      name:'ประถมศึกษาปีที่ 5', short:'ป.5', emoji:'5️⃣', minAge:10, maxAge:10, available:false },
-  { id:'p6',      name:'ประถมศึกษาปีที่ 6', short:'ป.6', emoji:'6️⃣', minAge:11, maxAge:99, available:false }
+  { id:'prep-p1', name:'เตรียมสอบ ป.1', short:'เตรียม ป.1', emoji:'🥚', icon:'assets/icons/grade-egg.svg',  minAge:0,  maxAge:5,  available:true  },
+  { id:'p1',      name:'ประถมศึกษาปีที่ 1', short:'ป.1', emoji:'🐣', icon:'assets/icons/grade-owl1.svg', minAge:6,  maxAge:6,  available:true  },
+  { id:'p2',      name:'ประถมศึกษาปีที่ 2', short:'ป.2', emoji:'🐤', icon:'assets/icons/grade-owl2.svg', minAge:7,  maxAge:7,  available:false },
+  { id:'p3',      name:'ประถมศึกษาปีที่ 3', short:'ป.3', emoji:'🦉', icon:'assets/icons/grade-owl3.svg', minAge:8,  maxAge:8,  available:false },
+  { id:'p4',      name:'ประถมศึกษาปีที่ 4', short:'ป.4', emoji:'🦉', icon:'assets/icons/grade-owl4.svg', minAge:9,  maxAge:9,  available:false },
+  { id:'p5',      name:'ประถมศึกษาปีที่ 5', short:'ป.5', emoji:'🦉', icon:'assets/icons/grade-owl5.svg', minAge:10, maxAge:10, available:false },
+  { id:'p6',      name:'ประถมศึกษาปีที่ 6', short:'ป.6', emoji:'🦉', icon:'assets/icons/grade-owl6.svg', minAge:11, maxAge:99, available:false }
 ];
 
 /* ============================= EF (เกม "นกฮูกสั่ง") ============================= */

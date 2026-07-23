@@ -1,0 +1,25 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นกฮูกวัยรุ่น">
+  <ellipse cx="32" cy="60" rx="14" ry="2.6" fill="#000" opacity=".1"/>
+  <g stroke="#F5B93C" stroke-width="2.1" stroke-linecap="round" fill="none">
+    <path d="M27 56 v4 M27 60 l-3 2 M27 60 l3 2"/>
+    <path d="M37 56 v4 M37 60 l-3 2 M37 60 l3 2"/>
+  </g>
+  <!-- ear tufts (เริ่มมี) -->
+  <path d="M20 18 L17 8 L26 15 Z" fill="#AC633C"/>
+  <path d="M44 18 L47 8 L38 15 Z" fill="#AC633C"/>
+  <!-- body -->
+  <ellipse cx="32" cy="35" rx="16.5" ry="20" fill="#AC633C"/>
+  <!-- wings -->
+  <path d="M17 28 q-5 10 1 20 q3.5 -2 4.5 -7 Z" fill="#8A4A28"/>
+  <path d="M47 28 q5 10 -1 20 q-3.5 -2 -4.5 -7 Z" fill="#8A4A28"/>
+  <!-- belly/face -->
+  <ellipse cx="32" cy="38" rx="11.5" ry="14.5" fill="#E09C64"/>
+  <!-- eyes -->
+  <circle cx="25.5" cy="33" r="7.4" fill="#F7F5EE"/><circle cx="38.5" cy="33" r="7.4" fill="#F7F5EE"/>
+  <circle cx="26.2" cy="33.4" r="3.7" fill="#3A2416"/><circle cx="37.8" cy="33.4" r="3.7" fill="#3A2416"/>
+  <circle cx="27.6" cy="32" r="1.2" fill="#fff"/><circle cx="39.2" cy="32" r="1.2" fill="#fff"/>
+  <!-- brow -->
+  <path d="M20 27 q5.5 -4 11 -1 M33 26 q5.5 -3 11 1" fill="none" stroke="#8A4A28" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- beak -->
+  <path d="M29 39 h6 l-3 4 Z" fill="#F5B93C" stroke="#D9902B" stroke-width=".9" stroke-linejoin="round"/>
+</svg>

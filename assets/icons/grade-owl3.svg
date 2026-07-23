@@ -1,0 +1,22 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นกฮูกวัยเด็ก">
+  <ellipse cx="32" cy="59" rx="13" ry="2.6" fill="#000" opacity=".1"/>
+  <g stroke="#F5B93C" stroke-width="2" stroke-linecap="round" fill="none">
+    <path d="M27 55 v4 M27 59 l-2.8 2 M27 59 l2.8 2"/>
+    <path d="M37 55 v4 M37 59 l-2.8 2 M37 59 l2.8 2"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="32" cy="36" rx="15.5" ry="19" fill="#AC633C"/>
+  <!-- wings -->
+  <path d="M18 30 q-4 9 1 18 q3 -2 4 -6 Z" fill="#8A4A28"/>
+  <path d="M46 30 q4 9 -1 18 q-3 -2 -4 -6 Z" fill="#8A4A28"/>
+  <!-- belly/face -->
+  <ellipse cx="32" cy="39" rx="10.5" ry="13.5" fill="#E09C64"/>
+  <!-- head fluff -->
+  <path d="M28 18 q1.5 -4 3.5 -1 M33 18 q1.5 -3 3 0" fill="none" stroke="#8A4A28" stroke-width="2" stroke-linecap="round"/>
+  <!-- eyes -->
+  <circle cx="26" cy="34" r="7" fill="#F7F5EE"/><circle cx="38" cy="34" r="7" fill="#F7F5EE"/>
+  <circle cx="26.6" cy="34.4" r="3.5" fill="#3A2416"/><circle cx="37.4" cy="34.4" r="3.5" fill="#3A2416"/>
+  <circle cx="27.9" cy="33.1" r="1.2" fill="#fff"/><circle cx="38.7" cy="33.1" r="1.2" fill="#fff"/>
+  <!-- beak -->
+  <path d="M29.2 40 h5.6 l-2.8 3.6 Z" fill="#F5B93C" stroke="#D9902B" stroke-width=".9" stroke-linejoin="round"/>
+</svg>
