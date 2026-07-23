@@ -1424,9 +1424,7 @@
   body.sci-nocam #science-view{ background:transparent; }
   body.sci-nocam .sci-video, body.sci-nocam .sci-video-tint{ background:transparent; opacity:0; }
   .sci-ar-ui{ position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; pointer-events:none; }
-  .sci-ar-ui .quiz-top{ pointer-events:auto; }
-  .sci-ar-ui .cat-label{ color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.4); }
-  .sci-camera-toggle, .ar-camera-toggle#sci-camera-toggle{ pointer-events:auto; }
+  .sci-ar-ui .quiz-top{ pointer-events:auto; }   /* top bar ใช้ธีมเดียวกับเกม AR (ar-label-chip + back-btn + hover) */
   /* คำถาม + ของทดลอง */
   .sci-question-bar{
     margin:6px auto 0; max-width:min(92vw,640px); display:flex; align-items:center; gap:14px;

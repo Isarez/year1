@@ -1628,8 +1628,10 @@ function sciStopCamera(){
 
 function sciUpdateCamBtn(){
   const btn = $('sci-camera-toggle'); if(!btn) return;
-  btn.classList.toggle('muted', !sciActive);
-  btn.textContent = sciActive ? '📷' : '📵';
+  const label = sciActive ? 'ปิดกล้อง' : 'เปิดกล้อง';
+  btn.classList.toggle('muted', !sciActive);   // .mute-stripe โผล่ตอนปิด (ธีมเดียวกับปุ่มกล้อง AR)
+  btn.setAttribute('aria-label', label);
+  btn.dataset.tooltip = label;
 }
 
 /* แบมือ = ปลายนิ้ว 8/12/16/20 อยู่เหนือข้อ 6/10/14/18 (y น้อยกว่า) อย่างน้อย 3 นิ้ว */
@@ -4839,7 +4841,7 @@ if(musicOn){
 }
 
 /* ============================= FULLSCREEN TOGGLE ============================= */
-const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle')];
+const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle'), $('sci-fullscreen-toggle')];
 function refreshFsBtn(){
   const label = document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ';
   fsBtns.forEach(btn=>{
