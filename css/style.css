@@ -496,18 +496,18 @@
     font-family:inherit; font-size:clamp(15px,3.9vw,17px); font-weight:800; cursor:pointer;
     -webkit-appearance:none; appearance:none; text-align:center; text-align-last:center;
     box-shadow:0 4px 0 var(--cream-2);
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'><path d='M1.5 1.5l5 5 5-5' fill='none' stroke='%23FF9F45' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'><path d='M1.5 1.5l5 5 5-5' fill='none' stroke='%23FFB020' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-repeat:no-repeat; background-position:right 9px center;
     transition:border-color .15s, background-color .15s, box-shadow .15s, transform .15s;
   }
   .dob-select.dob-day{ flex:0 0 23%; }
-  .dob-select:hover{ border-color:#FFD08A; }
-  .dob-select:focus{ outline:none; border-color:#FF9F45; background:#FFF0DE; box-shadow:0 4px 0 #FFD9A6; }
+  .dob-select:hover{ border-color:#FFD98A; }
+  .dob-select:focus{ outline:none; border-color:#FFB020; background:#FFF6E4; box-shadow:0 4px 0 #F3C466; }
   .dob-select:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--cream-2); }
   .dob-select option{ font-weight:700; color:var(--ink); background:#fff; }
   body.night-mode .dob-select{ background:#2A3352; border-color:#3B4468; color:#EAF0FF; box-shadow:0 4px 0 #1E263F; }
   body.night-mode .dob-select:hover{ border-color:#5A6796; }
-  body.night-mode .dob-select:focus{ background:#4A3A22; border-color:#FF9F45; box-shadow:0 4px 0 #2A3352; }
+  body.night-mode .dob-select:focus{ background:#4A3A22; border-color:#FFB020; box-shadow:0 4px 0 #2A3352; }
   body.night-mode .dob-select option{ color:#EAF0FF; background:#222B45; }
   .age-picker{
     display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
