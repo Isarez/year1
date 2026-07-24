@@ -487,22 +487,28 @@
   }
   /* ===================== ตัวเลือกอายุ (age picker) ===================== */
   .age-picker-label{font-size:14px;font-weight:700;color:var(--ink-soft);margin:2px 0 8px;text-align:left;}
-  /* ตัวเลือกวันเกิด (วัน/เดือน/ปี พ.ศ.) */
-  .dob-picker{ display:flex; gap:8px; margin-bottom:16px; justify-content:center; flex-wrap:wrap; }
-  #age-modal-picker.dob-picker{ margin:4px 0 20px; }
+  /* ตัวเลือกวันเกิด (วัน/เดือน/ปี ค.ศ.) — สไตล์เข้าธีม (มน นุ่ม เงาหนา แบบปุ่มเด็ก) */
+  .dob-picker{ display:flex; gap:10px; margin-bottom:16px; justify-content:center; align-items:stretch; }
+  #age-modal-picker.dob-picker{ margin:6px 0 20px; }
   .dob-select{
-    flex:1 1 0; min-width:0; padding:11px 8px; border-radius:var(--radius-md);
+    flex:1 1 0; min-width:0; padding:13px 26px 13px 12px; border-radius:var(--radius-md);
     border:3px solid var(--cream-2); background:var(--cream); color:var(--ink);
-    font-family:inherit; font-size:15px; font-weight:700; cursor:pointer;
+    font-family:inherit; font-size:clamp(15px,3.9vw,17px); font-weight:800; cursor:pointer;
     -webkit-appearance:none; appearance:none; text-align:center; text-align-last:center;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23B08968' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-repeat:no-repeat; background-position:right 8px center; padding-right:22px;
-    transition:border-color .14s, background-color .14s;
+    box-shadow:0 4px 0 var(--cream-2);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'><path d='M1.5 1.5l5 5 5-5' fill='none' stroke='%23FF9F45' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 9px center;
+    transition:border-color .15s, background-color .15s, box-shadow .15s, transform .15s;
   }
-  .dob-select.dob-day{ flex:0 0 22%; }
-  .dob-select:focus{ outline:none; border-color:#FF9F45; background:#FFF0DE; }
-  body.night-mode .dob-select{ background:#2A3352; border-color:#3B4468; color:#EAF0FF; }
-  body.night-mode .dob-select:focus{ background:#4A3A22; border-color:#FF9F45; }
+  .dob-select.dob-day{ flex:0 0 23%; }
+  .dob-select:hover{ border-color:#FFD08A; }
+  .dob-select:focus{ outline:none; border-color:#FF9F45; background:#FFF0DE; box-shadow:0 4px 0 #FFD9A6; }
+  .dob-select:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--cream-2); }
+  .dob-select option{ font-weight:700; color:var(--ink); background:#fff; }
+  body.night-mode .dob-select{ background:#2A3352; border-color:#3B4468; color:#EAF0FF; box-shadow:0 4px 0 #1E263F; }
+  body.night-mode .dob-select:hover{ border-color:#5A6796; }
+  body.night-mode .dob-select:focus{ background:#4A3A22; border-color:#FF9F45; box-shadow:0 4px 0 #2A3352; }
+  body.night-mode .dob-select option{ color:#EAF0FF; background:#222B45; }
   .age-picker{
     display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
     margin-bottom:16px;
