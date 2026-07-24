@@ -638,6 +638,8 @@ function burstCenterTop(count){
 /* ============================= HELPERS ============================= */
 const $ = id => document.getElementById(id);
 const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view'), efView = $('ef-view'), codeView = $('code-view'), sciView = $('science-view');
+/* ป.2 engine ใหม่ (IDEA + Phase 2.2): ร้านค้า(เงิน) / เศษส่วน / ตาชั่ง / ปฏิทิน */
+const moneyView = $('money-view'), fractionView = $('fraction-view'), balanceView = $('balance-view'), calendarView = $('calendar-view');
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -680,7 +682,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
   document.body.classList.remove('dots-open');
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   renderChildSelect();
 });
 
@@ -767,6 +769,10 @@ function renderHome(){
       else if(cat.type==='skill' && cat.mode==='ef') startEfGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='code') startCodeGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='science') startScienceGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='money') startMoneyGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='fraction') startFractionGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='balance') startBalanceGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='calendar') startCalendarGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else if(cat.type==='write') startDotsGame(cat.id);
@@ -822,7 +828,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: pickQuizQuestions(cat).map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -1000,12 +1006,16 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='ef'){ startEfGame(lastCatId); }
   else if(lastGameType==='code'){ startCodeGame(lastCatId); }
   else if(lastGameType==='science'){ startScienceGame(lastCatId); }
+  else if(lastGameType==='money'){ startMoneyGame(lastCatId); }
+  else if(lastGameType==='fraction'){ startFractionGame(lastCatId); }
+  else if(lastGameType==='balance'){ startBalanceGame(lastCatId); }
+  else if(lastGameType==='calendar'){ startCalendarGame(lastCatId); }
   else { startQuiz(state.catId); }
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -1028,7 +1038,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1277,7 +1287,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1513,7 +1523,7 @@ function startEfGame(catId){
   const cat = catById(catId);
   const keys = shuffleArray(Object.keys(EF_CATEGORIES).slice());
   efGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, ruleA:keys[0], ruleB:keys[1], curRule:keys[0], answered:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   efView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('ef-cat-label', cat);
@@ -1594,7 +1604,7 @@ function finishEfGame(){
   const cat = catById(efGame.catId);
   const mistakes = efGame.mistakes;
   const totalLevels = efGame.totalLevels;
-  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
+  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -1620,7 +1630,7 @@ $('ef-tap-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ 
 $('ef-skip-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ playClick(); efAnswer(false); } });
 $('ef-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(efTimer); efTimer=null;
-  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
+  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1653,7 +1663,7 @@ function startScienceGame(catId){
   const pool = (SCIENCE_POOLS[cat.sciSet] || SCIENCE_FLOAT).slice();
   const items = shuffleArray(pool).slice(0, cat.levels);
   sciGame = { catId, level:1, mistakes:0, totalLevels:items.length, items, answered:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; sciView.hidden = false;
   document.body.classList.add('sci-open');
   document.body.classList.remove('sci-nocam');
   document.documentElement.style.setProperty('--cat-color', cat.color);
@@ -1884,7 +1894,7 @@ function finishScienceGame(){
   const cat = catById(sciGame.catId);
   const mistakes = sciGame.mistakes;
   const totalLevels = sciGame.totalLevels;
-  sciView.hidden = true; resultView.hidden = false;
+  sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -1910,10 +1920,392 @@ $('sci-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(sciTimer); sciTimer=null;
   sciStopCamera();
   document.body.classList.remove('sci-open','sci-nocam');
-  sciView.hidden = true; homeView.hidden = false;
+  sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
+
+/* ============================= P2 ENGINE ใหม่ (IDEA + Phase 2.2): ร้านค้า(เงิน)/เศษส่วน/ตาชั่ง/ปฏิทิน
+   ทุกเกมเป็น type:'skill' mode ใหม่ ใช้ view แยกของตัวเอง กลไกแตะ (ไม่ลากซับซ้อน) ดาวเกณฑ์ mistakes เดิม ============================= */
+function p2rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function p2pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function p2GoHome(){
+  moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; homeView.hidden=false;
+  renderHome(); window.scrollTo({top:0, behavior:'smooth'});
+}
+/* result/ดาว ร่วมกัน (pattern เดียวกับ finishScienceGame) */
+function finishP2Game(catId, mistakes, totalLevels, doneWord){
+  const cat = catById(catId);
+  moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; resultView.hidden=false;
+  const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
+  const prev = progress[cat.id];
+  const wasUnlocked = prev && prev.unlocked;
+  const newlyUnlocked = !wasUnlocked && stars>=2;
+  progress[cat.id] = { best: prev ? Math.max(prev.best, totalLevels) : totalLevels, stars: prev ? Math.max(prev.stars, stars) : stars, unlocked: wasUnlocked || stars>=2 };
+  saveProgress();
+  const cname = activeChild ? activeChild.name+' ' : '';
+  $('result-emoji').textContent = stars===3 ? '🏆' : stars===2 ? '🎉' : '💪';
+  $('result-title').textContent = stars===3 ? cname+'สุดยอดไปเลย!' : stars===2 ? cname+'เก่งมากเลย!' : 'ทำได้ดีแล้วนะ '+cname+'!';
+  const starsRow = $('stars-row'); starsRow.innerHTML = '';
+  for(let i=0;i<3;i++){ const s=document.createElement('span'); s.textContent='⭐'; starsRow.appendChild(s); }
+  Array.from(starsRow.children).forEach((s,i)=>{ setTimeout(()=>{ if(i<stars) s.classList.add('lit'); }, 200+i*220); });
+  $('score-line').textContent = doneWord+'ครบ '+totalLevels+' ด่าน! (พลาด '+mistakes+' ครั้ง)';
+  $('score-sub').textContent = stars===3 ? cname+'ไม่พลาดเลย!' : stars===2 ? 'เก่งขึ้นทุกวันเลยนะ '+cname+'!' : 'ลองอีกครั้งเก็บดาวเพิ่มนะ!';
+  const stickerBlock = $('sticker-block');
+  if(newlyUnlocked){ stickerBlock.hidden=false; setStickerEarned(cat); pendingSticker=cat.id; setTimeout(()=>{ burstCenterTop(40); playCongrats(); },250); setTimeout(()=>showOwlMsg('sticker'),400); }
+  else { stickerBlock.hidden=true; if(mistakes===0){ setTimeout(()=>showOwlMsg('perfect'),400);} if(stars>=2) setTimeout(()=>{ burstCenterTop(50); playCongrats(); },250); }
+  $('review-wrap').hidden = true;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------------- 1) ร้านค้านกฮูก (เงิน/ทอนเงิน) ---------------- */
+let moneyGame = null;
+const MONEY_ITEMS = [ {e:'🍎',n:'แอปเปิล'},{e:'🍌',n:'กล้วย'},{e:'🍞',n:'ขนมปัง'},{e:'🍭',n:'อมยิ้ม'},{e:'🥤',n:'น้ำ'},{e:'🍪',n:'คุกกี้'},{e:'🧃',n:'น้ำกล่อง'},{e:'✏️',n:'ดินสอ'},{e:'📒',n:'สมุด'},{e:'🎈',n:'ลูกโป่ง'},{e:'🍩',n:'โดนัท'},{e:'🧸',n:'ตุ๊กตา'} ];
+const MONEY_CUSTOMERS = ['🐰','🐻','🐱','🐶','🐼','🦊','🐨','🐯'];
+function moneyLevelConfig(level){
+  if(level<=3) return { coins:[1,2,5], mode:'pay', priceMin:2, priceMax:10 };
+  if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:11, priceMax:30 };
+  return { coins:[1,2,5,10], mode:'change', bills:[20,50], priceMin:11, priceMax:45 };
+}
+function startMoneyGame(catId){
+  stopARGame();
+  lastGameType='money'; lastCatId=catId;
+  const cat = catById(catId);
+  moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, tray:[], locked:false };
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; moneyView.hidden=false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  moneyView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('money-cat-label', cat);
+  renderMoneyLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function renderMoneyLevel(){
+  const g = moneyGame; const cfg = moneyLevelConfig(g.level);
+  const item = p2pick(MONEY_ITEMS), cust = p2pick(MONEY_CUSTOMERS);
+  let price = p2rand(cfg.priceMin, cfg.priceMax), given=0, target;
+  if(cfg.mode==='change'){
+    const bills = cfg.bills.filter(b=>b>price);
+    given = bills.length ? p2pick(bills) : (Math.floor(price/10)*10+20);
+    target = given - price;
+  } else target = price;
+  g.cfg=cfg; g.item=item; g.price=price; g.target=target; g.given=given; g.mode=cfg.mode; g.tray=[]; g.locked=false;
+  $('money-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('money-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  const bubble = cfg.mode==='change'
+    ? '<div class="money-bubble">อยากได้ '+item.e+' ราคา <b>'+price+' บาท</b><br><span class="money-give">หนูจ่ายด้วยเหรียญ '+given+' บาท ช่วยทอนหน่อย</span></div>'
+    : '<div class="money-bubble">อยากได้ '+item.e+'<br>ราคา <b>'+price+' บาท</b></div>';
+  $('money-customer').innerHTML = '<div class="money-cust-face">'+cust+'</div>'+bubble;
+  $('money-hint').textContent = cfg.mode==='change' ? 'หยิบเหรียญ "ทอน" ให้พอดี แล้วกดจ่ายเงิน!' : 'หยิบเหรียญใส่ถาดให้ครบราคา แล้วกดจ่ายเงิน!';
+  renderMoneyCoins(); renderMoneyTray();
+}
+function coinFace(v){ const cls = v>=10?'c10':(v>=5?'c5':(v>=2?'c2':'c1')); return '<span class="money-coin '+cls+'">'+v+'</span>'; }
+function renderMoneyCoins(){
+  const g = moneyGame, wrap = $('money-coins'); wrap.innerHTML='';
+  g.cfg.coins.forEach(v=>{
+    const b = document.createElement('button'); b.className='money-coin-btn';
+    b.innerHTML = coinFace(v)+'<span class="money-coin-lbl">บาท</span>';
+    b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.tray.push(v); renderMoneyTray(); });
+    wrap.appendChild(b);
+  });
+}
+function moneyTotal(){ return moneyGame.tray.reduce((a,b)=>a+b,0); }
+function renderMoneyTray(){
+  const g = moneyGame, tray = $('money-tray'); tray.innerHTML='';
+  if(g.tray.length===0){ tray.innerHTML='<span class="money-tray-empty">แตะเหรียญด้านล่างใส่ถาดนะ 👇</span>'; }
+  g.tray.forEach((v,i)=>{
+    const c = document.createElement('button'); c.className='money-tray-coin'; c.innerHTML=coinFace(v);
+    c.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.tray.splice(i,1); renderMoneyTray(); });
+    tray.appendChild(c);
+  });
+  $('money-total').textContent = 'รวม '+moneyTotal()+' บาท';
+}
+function moneyPay(){
+  const g = moneyGame; if(g.locked) return;
+  const total = moneyTotal();
+  if(total===g.target){
+    g.locked=true; playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('money-hint').textContent = 'เยี่ยม! พอดีเป๊ะเลย 🎉';
+    $('money-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'ขายของ'); else { g.level++; renderMoneyLevel(); } }, 1300);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    $('money-hint').textContent = total>g.target ? 'เยอะไปนิดนะ ลองเอาเหรียญออกบ้าง' : 'ยังไม่พอนะ เติมเหรียญอีกหน่อย';
+    showToast('🪙','ต้องการ '+g.target+' บาท · ตอนนี้ '+total+' บาท');
+  }
+}
+$('money-pay').addEventListener('click', ()=>{ playClick(); moneyPay(); });
+$('money-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ---------------- 2) พิซซ่าเศษส่วน ---------------- */
+let fractionGame = null;
+const FRACTION_FOODS = [ {name:'พิซซ่า', crust:'#E8A33A', fill:'#FFD98A', topping:'#E1503A'}, {name:'เค้ก', crust:'#C97BB0', fill:'#FBE0F0', topping:'#E1503A'}, {name:'แตงโม', crust:'#3B9E5B', fill:'#FF6F7D', topping:'#2B2B2B'} ];
+function fractionLevelConfig(level){
+  if(level<=3) return { sliceOpts:[2,4] };
+  if(level<=7) return { sliceOpts:[4,6] };
+  return { sliceOpts:[6,8] };
+}
+function startFractionGame(catId){
+  stopARGame();
+  lastGameType='fraction'; lastCatId=catId;
+  const cat = catById(catId);
+  fractionGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; fractionView.hidden=false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  fractionView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('fraction-cat-label', cat);
+  renderFractionLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function renderFractionLevel(){
+  const g = fractionGame, cfg = fractionLevelConfig(g.level);
+  const slices = p2pick(cfg.sliceOpts);
+  const food = p2pick(FRACTION_FOODS);
+  const kinds = ['count'];
+  if(slices%2===0) kinds.push('half');
+  if(slices%4===0) kinds.push('quarter');
+  const kind = p2pick(kinds);
+  let target, qtext;
+  if(kind==='half'){ target = slices/2; qtext = 'แตะ'+food.name+'ให้ได้ "ครึ่งหนึ่ง" 🍕'; }
+  else if(kind==='quarter'){ target = slices/4; qtext = 'แตะให้ได้ "หนึ่งในสี่" (¼)'; }
+  else { target = p2rand(1, slices-1); qtext = 'แตะให้ได้ '+target+' ชิ้น จาก '+slices+' ชิ้น'; }
+  g.slices=slices; g.food=food; g.target=target; g.selected=new Set(); g.locked=false;
+  $('fraction-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('fraction-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('fraction-q').textContent = qtext;
+  $('fraction-hint').textContent = 'แตะชิ้นที่ต้องการ (แตะซ้ำเพื่อยกเลิก) แล้วกดตรวจคำตอบ';
+  drawFractionFood();
+}
+function drawFractionFood(){
+  const g = fractionGame, N = g.slices, f = g.food;
+  const cx=110, cy=110, r=100;
+  let paths='';
+  for(let i=0;i<N;i++){
+    const a0 = (i/N)*Math.PI*2 - Math.PI/2, a1 = ((i+1)/N)*Math.PI*2 - Math.PI/2;
+    const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+    const large = (a1-a0)>Math.PI?1:0;
+    const sel = g.selected.has(i);
+    const mid=(a0+a1)/2, tx=cx+r*0.55*Math.cos(mid), ty=cy+r*0.55*Math.sin(mid);
+    paths += '<path class="frac-slice'+(sel?' sel':'')+'" data-i="'+i+'" d="M'+cx+' '+cy+' L'+x0+' '+y0+' A'+r+' '+r+' 0 '+large+' 1 '+x1+' '+y1+' Z" fill="'+(sel?'var(--cat-color)':f.fill)+'" stroke="'+f.crust+'" stroke-width="3"/>';
+    if(N<=8) paths += '<circle cx="'+tx+'" cy="'+ty+'" r="6" fill="'+(sel?'#fff':f.topping)+'"/>';
+  }
+  const svg = '<svg viewBox="0 0 220 220" class="frac-svg">'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+4)+'" fill="'+f.crust+'"/>'+paths+'</svg>';
+  const el = $('fraction-food'); el.innerHTML = svg;
+  el.querySelectorAll('.frac-slice').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      if(g.locked) return; playClick();
+      const i = +p.dataset.i;
+      if(g.selected.has(i)) g.selected.delete(i); else g.selected.add(i);
+      drawFractionFood();
+    });
+  });
+}
+function fractionCheck(){
+  const g = fractionGame; if(g.locked) return;
+  if(g.selected.size===g.target){
+    g.locked=true; playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('fraction-hint').textContent = 'ถูกต้อง! เก่งมาก 🎉';
+    $('fraction-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'ตอบเศษส่วน'); else { g.level++; renderFractionLevel(); } }, 1300);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    $('fraction-hint').textContent = g.selected.size>g.target ? 'เลือกเยอะไปนิดนะ ลองแตะออกบ้าง' : 'ยังไม่ครบนะ เลือกเพิ่มอีกหน่อย';
+    showToast('🍕','ต้องการ '+g.target+' ชิ้น · เลือกแล้ว '+g.selected.size+' ชิ้น');
+  }
+}
+$('fraction-check').addEventListener('click', ()=>{ playClick(); fractionCheck(); });
+$('fraction-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ---------------- 3) ตาชั่งวิเศษ ---------------- */
+let balanceGame = null;
+function startBalanceGame(catId){
+  stopARGame();
+  lastGameType='balance'; lastCatId=catId;
+  const cat = catById(catId);
+  balanceGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; calendarView.hidden=true; balanceView.hidden=false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  balanceView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('balance-cat-label', cat);
+  renderBalanceLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function balanceMakeQuestion(level){
+  if(level<=4){
+    let a=p2rand(1,6), b=p2rand(1,6); if(a===b) b = b<6?b+1:b-1;
+    const item = p2pick(['🍎','🍊','🍋','🍓','🫐','🍒']);
+    return { type:'items', item, left:a, right:b, q:'ตาชั่งข้างไหนหนักกว่ากัน?', choices:['⬅️ ซ้าย','ขวา ➡️','เท่ากัน ⚖️'], ans: a>b?0:(b>a?1:2) };
+  }
+  if(level<=7){
+    let a=p2rand(1,9), b=p2rand(1,9); if(a===b) b = b<9?b+1:b-1;
+    return { type:'nums', left:a, right:b, q:'ตัวเลขข้างไหน "มากกว่า"?', choices:['⬅️ ซ้าย','ขวา ➡️','เท่ากัน ⚖️'], ans: a>b?0:(b>a?1:2) };
+  }
+  const a=p2rand(1,9), miss=p2rand(1,9), c=a+miss;
+  const set=new Set([miss]); let guard=0;
+  while(set.size<3 && guard<30){ guard++; const d=miss+p2rand(-2,2); if(d>=0) set.add(d); }
+  const choices = shuffleArray(Array.from(set));
+  return { type:'eq', a, c, miss, q:'เติมเลขให้ตาชั่งสมดุล: '+a+' + ❓ = '+c, choices: choices.map(String), ans: choices.indexOf(miss) };
+}
+function balancePanHtml(content){ return '<div class="bal-pan-content">'+content+'</div>'; }
+function renderBalanceLevel(){
+  const g = balanceGame; const Q = balanceMakeQuestion(g.level);
+  g.q = Q; g.locked=false;
+  $('balance-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('balance-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('balance-q').textContent = Q.q;
+  $('balance-hint').textContent = 'ดูตาชั่งแล้วแตะคำตอบที่ถูกนะ';
+  let leftC, rightC;
+  if(Q.type==='items'){ leftC = Q.item.repeat(Q.left); rightC = Q.item.repeat(Q.right); }
+  else if(Q.type==='nums'){ leftC = '<span class="bal-num">'+Q.left+'</span>'; rightC = '<span class="bal-num">'+Q.right+'</span>'; }
+  else { leftC = '<span class="bal-num">'+Q.a+'</span>'; rightC = '<span class="bal-num">'+Q.c+'</span>'; }
+  drawBalanceScene(leftC, rightC, 'level');
+  const wrap = $('balance-choices'); wrap.innerHTML='';
+  Q.choices.forEach((ch,i)=>{
+    const b = document.createElement('button'); b.className='bal-choice-btn'; b.textContent=ch;
+    b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); balanceAnswer(i); });
+    wrap.appendChild(b);
+  });
+}
+function drawBalanceScene(leftC, rightC, tilt){
+  $('balance-scene').innerHTML =
+    '<div class="bal-scale bal-'+tilt+'">'+
+      '<div class="bal-beam">'+
+        '<div class="bal-arm bal-arm-l"><div class="bal-string"></div><div class="bal-pan">'+balancePanHtml(leftC)+'</div></div>'+
+        '<div class="bal-arm bal-arm-r"><div class="bal-string"></div><div class="bal-pan">'+balancePanHtml(rightC)+'</div></div>'+
+      '</div>'+
+      '<div class="bal-post"></div><div class="bal-base"></div>'+
+    '</div>';
+}
+function balanceAnswer(i){
+  const g = balanceGame, Q = g.q; if(g.locked) return;
+  g.locked=true;
+  const btns = $('balance-choices').querySelectorAll('.bal-choice-btn');
+  const correct = i===Q.ans;
+  btns[Q.ans].classList.add('correct');
+  if(!correct) btns[i].classList.add('wrong');
+  /* เอียงตาชั่งเฉลย */
+  let tilt='level';
+  if(Q.type==='items'||Q.type==='nums'){ tilt = Q.ans===0?'left':(Q.ans===1?'right':'level'); }
+  const scale = $('balance-scene').querySelector('.bal-scale');
+  if(scale){ scale.classList.remove('bal-level','bal-left','bal-right'); scale.classList.add('bal-'+tilt); }
+  if(correct){
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('balance-hint').textContent = 'ถูกต้อง! 🎉';
+    $('balance-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'ชั่งน้ำหนัก'); else { g.level++; renderBalanceLevel(); } }, 1400);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    $('balance-hint').textContent = 'ยังไม่ถูกนะ ดูเฉลยแล้วลองข้อต่อไป!';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'ชั่งน้ำหนัก'); else { g.level++; renderBalanceLevel(); } }, 1700);
+  }
+}
+$('balance-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ---------------- 4) ปฏิทินวิเศษ ---------------- */
+let calendarGame = null;
+const TH_DOW = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const TH_DOW_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function startCalendarGame(catId){
+  stopARGame();
+  lastGameType='calendar'; lastCatId=catId;
+  const cat = catById(catId);
+  calendarGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  calendarView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('calendar-cat-label', cat);
+  renderCalendarLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function renderCalendarLevel(){
+  const g = calendarGame, level = g.level;
+  const daysIn = p2pick([28,30,31]);
+  const startDow = p2rand(0,6);
+  const month = p2pick(TH_MONTHS);
+  let q, ansVal, choices, highlight=0;
+  if(level<=4){
+    const date = p2rand(1, daysIn);
+    const dow = (startDow + date - 1) % 7;
+    q = 'วันที่ '+date+' ตรงกับวันอะไร?';
+    ansVal = TH_DOW[dow]; highlight = date;
+    const set=new Set([ansVal]); while(set.size<4){ set.add(TH_DOW[p2rand(0,6)]); }
+    choices = shuffleArray(Array.from(set));
+  } else if(level<=7){
+    const date = p2rand(1, Math.max(1,daysIn-5)); const add = p2rand(1,5);
+    const dow = (startDow+date-1)%7, dow2=(startDow+date-1+add)%7;
+    q = 'วันที่ '+date+' เป็นวัน'+TH_DOW[dow]+' อีก '+add+' วันเป็นวันอะไร?';
+    ansVal = TH_DOW[dow2]; highlight = date;
+    const set=new Set([ansVal]); while(set.size<4){ set.add(TH_DOW[p2rand(0,6)]); }
+    choices = shuffleArray(Array.from(set));
+  } else {
+    const type = p2pick(['count','which']);
+    if(type==='count'){
+      q = 'ปฏิทินเดือนนี้มีทั้งหมดกี่วัน?';
+      ansVal = String(daysIn);
+      const set=new Set([String(daysIn),'28','30','31']);
+      choices = shuffleArray(Array.from(set)).slice(0,4);
+      if(!choices.includes(String(daysIn))) choices[0]=String(daysIn);
+    } else {
+      const targetDow = p2rand(0,6);
+      let firstDate = ((targetDow - startDow + 7)%7) + 1;
+      if(firstDate>daysIn) firstDate -= 7;
+      if(firstDate<1) firstDate += 7;
+      q = 'วัน'+TH_DOW[targetDow]+'แรกของเดือนคือวันที่เท่าไร?';
+      ansVal = String(firstDate);
+      const set=new Set([String(firstDate)]); while(set.size<4){ const d=firstDate+p2rand(-3,7); if(d>=1&&d<=daysIn) set.add(String(d)); }
+      choices = shuffleArray(Array.from(set)).slice(0,4);
+      if(!choices.includes(String(firstDate))) choices[0]=String(firstDate);
+    }
+  }
+  g.ansVal = ansVal; g.locked=false;
+  $('calendar-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('calendar-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('calendar-month').textContent = '📅 เดือน'+month;
+  $('calendar-q').textContent = q;
+  $('calendar-hint').textContent = 'ดูปฏิทินให้ดี แล้วแตะคำตอบนะ';
+  drawCalendarGrid(daysIn, startDow, highlight);
+  const wrap = $('calendar-choices'); wrap.innerHTML='';
+  choices.forEach(ch=>{
+    const b = document.createElement('button'); b.className='cal-choice-btn'; b.textContent=ch;
+    b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); calendarAnswer(ch, b); });
+    wrap.appendChild(b);
+  });
+}
+function drawCalendarGrid(daysIn, startDow, highlight){
+  let html='';
+  TH_DOW_SHORT.forEach((d,i)=>{ html += '<div class="cal-head'+(i===0||i===6?' cal-wend':'')+'">'+d+'</div>'; });
+  for(let i=0;i<startDow;i++) html += '<div class="cal-cell cal-blank"></div>';
+  for(let d=1; d<=daysIn; d++){
+    const col = (startDow+d-1)%7;
+    const cls = 'cal-cell'+((col===0||col===6)?' cal-wend':'')+(d===highlight?' cal-hl':'');
+    html += '<div class="'+cls+'">'+d+'</div>';
+  }
+  $('calendar-grid').innerHTML = html;
+}
+function calendarAnswer(val, btn){
+  const g = calendarGame; if(g.locked) return;
+  g.locked=true;
+  const correct = val===g.ansVal;
+  const btns = $('calendar-choices').querySelectorAll('.cal-choice-btn');
+  btns.forEach(b=>{ if(b.textContent===g.ansVal) b.classList.add('correct'); });
+  if(!correct) btn.classList.add('wrong');
+  if(correct){
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('calendar-hint').textContent = 'ถูกต้อง! 🎉';
+    $('calendar-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'อ่านปฏิทิน'); else { g.level++; renderCalendarLevel(); } }, 1400);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    $('calendar-hint').textContent = 'ยังไม่ถูกนะ ดูเฉลยแล้วลองข้อต่อไป!';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'อ่านปฏิทิน'); else { g.level++; renderCalendarLevel(); } }, 1700);
+  }
+}
+$('calendar-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 
 /* ============================= CODE GAME ("เรียงคำสั่งหุ่นยนต์" — Phase 1.3 coding mechanic)
    เรียงบัตรคำสั่ง (เดินหน้า/เลี้ยวซ้าย-ขวา) เป็นลำดับ แล้วกด "เล่น" ให้หุ่นยนต์เดินบนกริดไปเก็บดาว
@@ -2000,6 +2392,9 @@ const GOAL_CHAR =
   '<path d="M-11 -19 l4 -3 M11 -19 l-4 -3" stroke="#c8542f" stroke-width="0" />'+
   '<circle cx="0" cy="-9.5" r="2" fill="#fff" opacity="0.85"/><circle cx="-2.6" cy="-11.6" r="1" fill="#fff" opacity="0.85"/><circle cx="2.6" cy="-11.6" r="1" fill="#fff" opacity="0.85"/><circle cx="-4.2" cy="-9.5" r="0.9" fill="#fff" opacity="0.85"/><circle cx="4.2" cy="-9.5" r="0.9" fill="#fff" opacity="0.85"/>'; // รอยเท้าแมวเหนือประตู
 function robotLevelsFor(cat){
+  if(cat.codeSet==='p2a') return ROBOT_LEVELS_P2A;
+  if(cat.codeSet==='p2b') return ROBOT_LEVELS_P2B;
+  if(cat.codeSet==='p2c') return ROBOT_LEVELS_P2C;
   if(cat.codeSet==='code3') return ROBOT_LEVELS3;
   if(cat.codeSet==='code2') return ROBOT_LEVELS2;
   return ROBOT_LEVELS;
@@ -2010,8 +2405,9 @@ function startCodeGame(catId){
   clearTimeout(codeTimer); codeTimer = null;
   lastGameType = 'code'; lastCatId = catId;
   const cat = catById(catId);
-  codeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, set:robotLevelsFor(cat), program:[], running:false, robot:null, lv:null };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false; sciView.hidden = true;
+  codeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, set:robotLevelsFor(cat), program:[], running:false, robot:null, lv:null, loop:!!cat.codeLoop, repeat:1 };
+  const repRow = $('code-repeat-row'); if(repRow) repRow.hidden = !cat.codeLoop;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   codeView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('code-cat-label', cat);
@@ -2027,9 +2423,12 @@ function renderCodeLevel(){
   g.robot = { r:lv.start.r, c:lv.start.c, dir:lv.start.dir };
   g.program = [];
   g.running = false;
+  g.repeat = 1; updateRepeatLabel();
   $('code-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('code-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
-  $('code-hint').textContent = 'เรียงบัตรคำสั่งให้แมวเดินกลับบ้าน แล้วกด "เล่น"!';
+  $('code-hint').textContent = g.loop
+    ? 'เรียงบัตร แล้วตั้ง "🔁 ทำซ้ำ" ให้แมวเดินซ้ำหลายรอบ จนถึงบ้าน!'
+    : 'เรียงบัตรคำสั่งให้แมวเดินกลับบ้าน แล้วกด "เล่น"!';
   $('code-run-btn').disabled = false;
   setCodeControlsDisabled(false);
   drawIsoBoard();
@@ -2134,7 +2533,16 @@ function codeAddCommand(cmd){
 }
 
 function setCodeControlsDisabled(dis){
-  codeView.querySelectorAll('.code-cmd-btn, #code-clear-btn').forEach(b=>{ b.disabled = dis; });
+  codeView.querySelectorAll('.code-cmd-btn, #code-clear-btn, #code-repeat-btn').forEach(b=>{ b.disabled = dis; });
+}
+
+/* ---- loop (ทำซ้ำ N รอบ) — Phase 2.2 ป.2 ---- */
+function updateRepeatLabel(){ const el = $('code-repeat-n'); if(el) el.textContent = (codeGame && codeGame.repeat) || 1; }
+function codeCycleRepeat(){
+  const g = codeGame; if(!g || g.running) return;
+  playClick();
+  g.repeat = ((g.repeat||1) % 6) + 1;  // วน 1→2→…→6→1 (เผื่อบันไดยาวของ code3 ที่ต้องซ้ำ 5 รอบ)
+  updateRepeatLabel();
 }
 
 function codeRun(){
@@ -2146,11 +2554,16 @@ function codeRun(){
   setCodeControlsDisabled(true);
   $('code-char').classList.add('walking');
   $('code-hint').textContent = 'แมวกำลังเดินตามคำสั่ง...';
+  /* ขยายโปรแกรมตามจำนวนรอบ (loop) — highlight การ์ดต้นฉบับด้วย index modulo */
+  const times = g.loop ? (g.repeat || 1) : 1;
+  const baseLen = g.program.length;
+  const full = [];
+  for(let k=0;k<times;k++) full.push(...g.program);
   let i = 0;
   const step = ()=>{
-    if(i >= g.program.length){ codeCheckResult(); return; }
-    const cmd = g.program[i];
-    codeHighlightProgCard(i);
+    if(i >= full.length){ codeCheckResult(); return; }
+    const cmd = full[i];
+    codeHighlightProgCard(i % baseLen);
     i++;
     applyCodeCommand(cmd);
     codeMoveChar(true);
@@ -2211,7 +2624,7 @@ function finishCodeGame(){
   const cat = catById(codeGame.catId);
   const mistakes = codeGame.mistakes;
   const totalLevels = codeGame.totalLevels;
-  codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
+  codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -2238,6 +2651,7 @@ codeView.querySelectorAll('.code-cmd-btn').forEach(btn=>{
   if(ico) ico.innerHTML = CMD_ICON[btn.dataset.cmd] || '';
   btn.addEventListener('click', ()=> codeAddCommand(btn.dataset.cmd));
 });
+(function(){ const rb = $('code-repeat-btn'); if(rb) rb.addEventListener('click', codeCycleRepeat); })();
 $('code-run-btn').addEventListener('click', ()=>{ playClick(); codeRun(); });
 $('code-clear-btn').addEventListener('click', ()=>{
   const g = codeGame; if(!g || g.running) return;
@@ -2245,7 +2659,7 @@ $('code-clear-btn').addEventListener('click', ()=>{
 });
 $('code-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(codeTimer); codeTimer=null;
-  codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
+  codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -2270,7 +2684,7 @@ function startDotsGame(catId){
     queue: shuffleArray(DOTS_SHAPES[cat.dotsPool].slice()).slice(0, cat.levels),
     shape:null, connected:0, els:[], dragging:false, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.body.classList.add('dots-open'); // จอแคบ: ย่อนกฮูกลงมุม กันบังจุดแถวล่างของกระดาน (ดู CSS body.dots-open)
   document.documentElement.style.setProperty('--cat-color', cat.color);
   dotsView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2461,7 +2875,7 @@ function finishDotsGame(){
   const totalLevels = dotsGame.totalLevels;
   dotsGame = null;
   document.body.classList.remove('dots-open');
-  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; resultView.hidden = false;
 
   /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
@@ -2502,7 +2916,7 @@ function finishDotsGame(){
 $('dots-back').addEventListener('click', ()=>{
   playClick();
   dotsGame = null;
-  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -2562,7 +2976,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -3006,7 +3420,7 @@ function startMusicGame(catId){
   if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
   pauseBgMusicForMusicGame();
   document.body.classList.add('music-open'); // ซ่อนปุ่มมุมล่าง (ติดตั้ง/เปียโน) ไม่ให้ทับคีย์
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('music-cat-label', cat);
@@ -3462,7 +3876,7 @@ function startClockGame(catId){
   lastGameType = 'clock'; lastCatId = catId;
   const cat = catById(catId);
   clockGame = { catId, mode:cat.clockMode, level:1, totalLevels:cat.levels, mistakes:0, h:12, m:0, target:null, startTime:null, offsetH:0, snap:5, used:new Set(), locked:false, drag:null, angles:{hour:0, minute:0} };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   clockView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('clock-cat-label', cat);
@@ -3478,7 +3892,7 @@ function finishClockGame(){
   const cat = catById(clockGame.catId);
   const mistakes = clockGame.mistakes, totalLevels = clockGame.totalLevels;
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; resultView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -3518,7 +3932,7 @@ $('clock-nudge-plus').addEventListener('click', ()=>clockNudgeMinute(1));
 $('clock-back').addEventListener('click', ()=>{
   playClick();
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; homeView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -3574,7 +3988,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -3979,12 +4393,26 @@ function buildMathLevel(cat){
   /* mathTiers: [[min,max] ด่าน 1-3, [min,max] ด่าน 4-7, [min,max] ด่าน 8-10] ไล่ตามความยากของแต่ละหมวด */
   const tier = level<=3 ? cat.mathTiers[0] : (level<=7 ? cat.mathTiers[1] : cat.mathTiers[2]);
   const [lo, hi] = tier;
-  let a, b;
-  const op = Math.random()<0.5 ? '+' : '-';
-  a = Math.floor(Math.random()*(hi-lo+1))+lo;
-  b = Math.floor(Math.random()*(hi-lo+1))+lo;
-  if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
-  const answer = op==='+' ? a+b : a-b;
+  /* mathOps: ชุดเครื่องหมายที่หมวดนี้ใช้ (default บวก-ลบ) — ป.2 เพิ่ม ×/÷ (calculation engine)
+     กรณี ×/÷ ให้ [lo,hi] = ช่วงของ "ตัวประกอบ/ผลหาร" (ไม่ใช่ตัวตั้ง) เพื่อคุมความยากตามสูตรคูณ */
+  const ops = cat.mathOps || ['+','-'];
+  const op = ops[Math.floor(Math.random()*ops.length)];
+  let a, b, answer;
+  if(op==='×'){
+    a = Math.floor(Math.random()*(hi-lo+1))+lo;
+    b = Math.floor(Math.random()*(hi-lo+1))+lo;
+    answer = a*b;
+  } else if(op==='÷'){
+    /* สร้างการหารลงตัวเสมอ (เกมลากคำตอบเดียว): ผลหาร q, ตัวหาร d, ตัวตั้ง = q×d */
+    const q = Math.floor(Math.random()*(hi-lo+1))+lo;
+    const d = Math.floor(Math.random()*(Math.max(2,hi)-2+1))+2;
+    answer = q; b = d; a = q*d;
+  } else {
+    a = Math.floor(Math.random()*(hi-lo+1))+lo;
+    b = Math.floor(Math.random()*(hi-lo+1))+lo;
+    if(op==='-' && b>a){ const t=a; a=b; b=t; } // avoid negative answers
+    answer = op==='+' ? a+b : a-b;
+  }
   renderMathPuzzle(a, b, op, answer, cat.mathChoices || 3);
   showARHint(isMobileViewport()
     ? '👆 แตะการ์ดคำตอบที่ถูกต้อง แล้วลากไปใส่ในช่องนะ!'
@@ -4857,7 +5285,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
