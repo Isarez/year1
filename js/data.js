@@ -1418,19 +1418,7 @@ const CATS = [
   },
 
   /* ---------- เกมฝึกทักษะ ป.2 (reuse engine เดิม แยก id/progress) ---------- */
-  { id:'p2-shadow1', name:'ทายเงา ป.2', emoji:'🌗', color:'#5D6D9E', light:'#E4E8F6', type:'skill', mode:'shadow', levels:12, grade:'p2', isNew:true },
-  { id:'p2-shadow2', name:'ทายเงา ป.2 · เงาซ้อน 2', emoji:'🕶️', color:'#4A5A8E', light:'#E4E8F6', type:'skill', mode:'shadow', overlap:2, levels:12, grade:'p2', isNew:true },
-  { id:'p2-shadow3', name:'ทายเงา ป.2 · เงาซ้อน 3', emoji:'🎭', color:'#404E7C', light:'#E4E8F6', type:'skill', mode:'shadow', overlap:3, levels:12, grade:'p2', isNew:true },
   { id:'p2-memory', name:'จับคู่โดมิโน ป.2', emoji:'🃏', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, grade:'p2', isNew:true },
-  { id:'p2-piano1', name:'เปียโน ป.2', emoji:'🎹', color:'#C86FB0', light:'#F8E3F1', type:'skill', mode:'music', musicMode:1, levels:10, grade:'p2', isNew:true },
-  { id:'p2-piano2', name:'เปียโน ป.2 · จำทำนอง', emoji:'🎺', color:'#B85FA0', light:'#F8E3F1', type:'skill', mode:'music', musicMode:2, levels:7, grade:'p2', isNew:true },
-  { id:'p2-piano3', name:'เปียโน ป.2 · หาโน้ตเอง', emoji:'🪗', color:'#A8508F', light:'#F8E3F1', type:'skill', mode:'music', musicMode:3, levels:10, grade:'p2', isNew:true },
-  { id:'p2-colormix1', name:'ผสมสีวิเศษ ป.2', emoji:'🪣', color:'#E8734C', light:'#FDE7DC', type:'skill', mode:'mix', levels:10, grade:'p2', isNew:true },
-  { id:'p2-colormix2', name:'ผสมสีวิเศษ 2 ป.2', emoji:'🫧', color:'#5E8FD8', light:'#E2ECFB', type:'skill', mode:'mix', mixAdvanced:true, levels:10, grade:'p2', isNew:true },
-  { id:'p2-clock1', name:'นาฬิกา ป.2 · บอกเวลา', emoji:'🕐', color:'#4A9EDF', light:'#DCEEFB', type:'skill', mode:'clock', clockMode:1, levels:10, grade:'p2', isNew:true },
-  { id:'p2-clock2', name:'นาฬิกา ป.2 · บอกนาที', emoji:'🕜', color:'#3A7FC0', light:'#DCEEFB', type:'skill', mode:'clock', clockMode:2, levels:10, grade:'p2', isNew:true },
-  { id:'p2-clock3', name:'นาฬิกา ป.2 · อีกกี่ชั่วโมง', emoji:'⏲️', color:'#3576B5', light:'#DCEEFB', type:'skill', mode:'clock', clockMode:3, levels:10, grade:'p2', isNew:true },
-  { id:'p2-clock4', name:'นาฬิกา ป.2 · ชั่วโมงและนาที', emoji:'⏰', color:'#2F6BA8', light:'#DCEEFB', type:'skill', mode:'clock', clockMode:4, levels:10, grade:'p2', isNew:true },
 
   /* ---------- coding ป.2 (พาแมวกลับบ้าน + บัตร "ทำซ้ำ N รอบ" loop — Phase 2.2 extend code engine) ---------- */
   { id:'p2-code1', name:'พาแมววนซ้ำ 1', emoji:'🤖', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p2a', codeLoop:true, levels:10, grade:'p2', isNew:true },
@@ -1972,10 +1960,6 @@ const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'l
   'p2-eng2':'p2-eng1', 'p2-eng3':'p2-eng2',
   'p2-iq2':'p2-iq1', 'p2-iq3':'p2-iq2',
   'p2-music2':'p2-music1', 'p2-art2':'p2-art1', 'p2-nature2':'p2-nature1',
-  'p2-shadow2':'p2-shadow1', 'p2-shadow3':'p2-shadow2',
-  'p2-piano2':'p2-piano1', 'p2-piano3':'p2-piano2',
-  'p2-colormix2':'p2-colormix1',
-  'p2-clock2':'p2-clock1', 'p2-clock3':'p2-clock2', 'p2-clock4':'p2-clock3',
   'p2-code2':'p2-code1', 'p2-code3':'p2-code2',
   'p2-sci2':'p2-sci1' };
 
