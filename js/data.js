@@ -1788,7 +1788,11 @@ const CATS = [
   { id:'p3-memory', name:'จับคู่โดมิโน ป.3', emoji:'🀄', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], grade:'p3', isNew:true },
 
   /* ---------- Phase 3.3: หมวดใหม่ "เส้นเวลามหัศจรรย์" (timeline engine ใหม่ — ต้นสายที่ ป.4-6 ใช้ต่อ) ---------- */
-  { id:'p3-timeline', name:'เส้นเวลามหัศจรรย์', emoji:'🏛️', color:'#B07A2E', light:'#F5E7CE', type:'skill', mode:'timeline', levels:10, grade:'p3', isNew:true }
+  { id:'p3-timeline', name:'เส้นเวลามหัศจรรย์', emoji:'🏛️', color:'#B07A2E', light:'#F5E7CE', type:'skill', mode:'timeline', levels:10, grade:'p3', isNew:true },
+
+  /* ---------- Phase 3.4: sort engine (ลากใส่ตะกร้า) — นักสืบแม่เหล็ก (วิทย์) + จัดหมวดหมู่คำอังกฤษ ---------- */
+  { id:'p3-magnet', name:'นักสืบแม่เหล็ก', emoji:'🧲', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'sort', sortSet:'magnet', levels:10, grade:'p3', isNew:true },
+  { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true }
 ];
 
 /* ============================= ระดับชั้น (GRADES) ============================= */
@@ -2350,6 +2354,44 @@ const TIMELINE_SETS = [
   { theme:'ทำเค้ก', items:[{e:'🥚',l:'ตอกไข่'},{e:'🥣',l:'ผสมแป้ง'},{e:'🎂',l:'อบเค้ก'},{e:'🍽️',l:'จัดใส่จาน'},{e:'😋',l:'ชิม'}] },
   { theme:'อาณาจักรไทยถึงปัจจุบัน', items:[{e:'🏯',l:'สุโขทัย'},{e:'🏰',l:'อยุธยา'},{e:'🏘️',l:'ธนบุรี'},{e:'🏙️',l:'รัตนโกสินทร์'},{e:'🇹🇭',l:'ปัจจุบัน'}] }
 ];
+
+/* ============ เกมจัดหมวดหมู่ลงตะกร้า (sort engine — Phase 3.4) ============
+   ใช้ร่วมกัน 2 เกม: นักสืบแม่เหล็ก (magnet) + จัดหมวดหมู่คำอังกฤษ (engword)
+   แต่ละ pool: bins = ตะกร้า (k=คีย์, l=ป้าย), items = ของ (มี k ตรงกับตะกร้าที่ถูก)
+   item แบบ emoji ใช้ {e,n} (n=ชื่อไทยกำกับ) / แบบคำ ใช้ {t}
+   เกมสุ่ม N ของต่อด่าน (ด่าน 1-3=4, 4-7=5, 8-10=6) ครอบคลุมทุกตะกร้าที่ใช้ (ดู startSortGame) */
+const SORT_POOLS = {
+  magnet: {
+    prompt:'แม่เหล็กดูดของชิ้นไหนได้? แยกลงตะกร้าให้ถูกนะ',
+    bins:[{k:'yes',l:'🧲 ดูดได้'},{k:'no',l:'🚫 ดูดไม่ได้'}],
+    items:[
+      {e:'🔩',n:'น็อต',k:'yes'},{e:'🔑',n:'กุญแจเหล็ก',k:'yes'},{e:'📎',n:'คลิปหนีบ',k:'yes'},
+      {e:'🔧',n:'ประแจ',k:'yes'},{e:'🔨',n:'ค้อน',k:'yes'},{e:'⚙️',n:'เฟือง',k:'yes'},
+      {e:'🖇️',n:'ลวดเสียบ',k:'yes'},{e:'🔗',n:'โซ่เหล็ก',k:'yes'},{e:'✂️',n:'กรรไกร',k:'yes'},
+      {e:'🧷',n:'เข็มกลัด',k:'yes'},{e:'🪝',n:'ตะขอเหล็ก',k:'yes'},
+      {e:'🍎',n:'แอปเปิล',k:'no'},{e:'✏️',n:'ดินสอไม้',k:'no'},{e:'📄',n:'กระดาษ',k:'no'},
+      {e:'🧊',n:'น้ำแข็ง',k:'no'},{e:'🎈',n:'ลูกโป่ง',k:'no'},{e:'🧸',n:'ตุ๊กตา',k:'no'},
+      {e:'🪵',n:'ท่อนไม้',k:'no'},{e:'🧶',n:'ไหมพรม',k:'no'},{e:'🪨',n:'ก้อนหิน',k:'no'},
+      {e:'🥤',n:'แก้วพลาสติก',k:'no'},{e:'🧽',n:'ฟองน้ำ',k:'no'},{e:'🌿',n:'ใบไม้',k:'no'},
+      {e:'👕',n:'เสื้อผ้า',k:'no'},{e:'⚽',n:'ลูกบอลยาง',k:'no'},{e:'🍌',n:'กล้วย',k:'no'}
+    ]
+  },
+  engword: {
+    prompt:'ลากคำภาษาอังกฤษใส่ตะกร้าตามหมวดหมู่ให้ถูก',
+    bins:[{k:'people',l:'👤 คน (People)'},{k:'animal',l:'🐾 สัตว์ (Animals)'},{k:'thing',l:'📦 สิ่งของ (Things)'}],
+    items:[
+      {t:'mother',k:'people'},{t:'father',k:'people'},{t:'teacher',k:'people'},{t:'doctor',k:'people'},
+      {t:'boy',k:'people'},{t:'girl',k:'people'},{t:'baby',k:'people'},{t:'nurse',k:'people'},
+      {t:'friend',k:'people'},{t:'farmer',k:'people'},
+      {t:'cat',k:'animal'},{t:'dog',k:'animal'},{t:'bird',k:'animal'},{t:'fish',k:'animal'},
+      {t:'lion',k:'animal'},{t:'cow',k:'animal'},{t:'pig',k:'animal'},{t:'duck',k:'animal'},
+      {t:'tiger',k:'animal'},{t:'bear',k:'animal'},
+      {t:'pen',k:'thing'},{t:'book',k:'thing'},{t:'ball',k:'thing'},{t:'cup',k:'thing'},
+      {t:'bag',k:'thing'},{t:'chair',k:'thing'},{t:'box',k:'thing'},{t:'key',k:'thing'},
+      {t:'desk',k:'thing'},{t:'doll',k:'thing'}
+    ]
+  }
+};
 
 /* จำนวนคู่ (pairs) ต่อด่านของเกม skill-memory (จับคู่ตัวเลขกับจุด), index 0 = ด่าน 1 */
 const MEMORY_LEVEL_PAIRS = [4, 8, 12];
