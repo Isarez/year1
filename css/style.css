@@ -2347,10 +2347,46 @@
   .cal-cell.cal-wend{ color:#E67E9C; }
   .cal-cell.cal-blank{ background:transparent; }
   .cal-cell.cal-hl{ background:var(--cat-color,#E67E9C); color:#fff; box-shadow:0 0 0 3px rgba(230,126,156,.4); transform:scale(1.08); }
+  /* ---- เส้นเวลามหัศจรรย์ (timeline — Phase 3.3) ---- */
+  .timeline-board{ display:flex; flex-direction:column; align-items:center; gap:18px; width:100%; max-width:860px; margin:8px auto 30px; padding:0 12px; }
+  .timeline-theme{ font-size:19px; font-weight:800; color:var(--ink); text-align:center; background:#fff; border-radius:16px; padding:10px 20px; box-shadow:0 3px 10px rgba(0,0,0,.06); }
+  body.night-mode .timeline-theme{ background:#222B45; color:#EAF0FF; }
+  .timeline-theme b{ color:var(--cat-color,#B07A2E); }
+  .timeline-track{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; width:100%; }
+  .tl-slot{ position:relative; width:120px; min-height:150px; border-radius:20px; background:#fff; border:3px dashed #d9c3a0; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,.05); transition:border-color .2s, transform .15s; }
+  body.night-mode .tl-slot{ background:#222B45; border-color:#5a4d33; }
+  .tl-slot.tl-filled{ border-style:solid; border-color:var(--cat-color,#B07A2E); background:var(--cat-light,#F5E7CE); }
+  body.night-mode .tl-slot.tl-filled{ background:#2C3552; }
+  .tl-slot-num{ position:absolute; top:-13px; left:50%; transform:translateX(-50%); width:28px; height:28px; border-radius:50%; background:var(--cat-color,#B07A2E); color:#fff; font-weight:900; font-size:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,.2); }
+  .tl-slot-empty{ font-size:14px; font-weight:800; color:#b9a681; }
+  body.night-mode .tl-slot-empty{ color:#8a7c5c; }
+  .tl-arrow{ font-size:20px; opacity:.7; }
+  .tl-card{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:8px; }
+  .tl-card-e{ font-size:44px; line-height:1; }
+  .tl-card-l{ font-size:15px; font-weight:800; color:var(--ink); text-align:center; line-height:1.15; }
+  body.night-mode .tl-card-l{ color:#EAF0FF; }
+  .tl-card-placed{ pointer-events:none; }
+  .timeline-tray{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; width:100%; min-height:120px; align-items:center; }
+  .tl-tray-empty{ font-size:15px; font-weight:700; color:var(--ink-soft); }
+  body.night-mode .tl-tray-empty{ color:#C7D2E8; }
+  .tl-card-tray{ width:120px; min-height:118px; border-radius:20px; background:#fff; border:3px solid #eadfca; cursor:pointer; font-family:inherit; box-shadow:0 4px 0 rgba(176,122,46,.28); transition:transform .12s, box-shadow .12s, border-color .15s; }
+  body.night-mode .tl-card-tray{ background:#222B45; border-color:#5a4d33; }
+  .tl-card-tray:hover{ transform:translateY(-4px); }
+  .tl-card-tray:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(176,122,46,.28); }
+  .tl-card-tray.tl-selected{ border-color:var(--cat-color,#B07A2E); box-shadow:0 0 0 4px rgba(176,122,46,.3), 0 6px 0 rgba(176,122,46,.3); transform:translateY(-6px) scale(1.04); }
+  .tl-slot.tl-correct{ animation:tlPop .45s ease; border-color:#39B54A !important; background:#E4F7E7 !important; }
+  body.night-mode .tl-slot.tl-correct{ background:#22402A !important; }
+  .tl-slot.tl-wrong{ animation:tlShake .4s ease; border-color:#E14E4E !important; background:#FBE3E1 !important; }
+  body.night-mode .tl-slot.tl-wrong{ background:#40222A !important; }
+  @keyframes tlPop{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.09);} }
+  @keyframes tlShake{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px);} 60%{transform:translateX(7px);} }
   @media (max-width:480px){
     .money-bubble{ font-size:16px; } .money-cust-face{ font-size:42px; }
     .money-coin{ width:38px; height:38px; font-size:16px; }
     .fraction-q, .balance-q, .calendar-q{ font-size:17px; }
     .bal-num{ font-size:28px; } .bal-scale{ transform:scale(.9); }
     .cal-cell{ font-size:13px; } .cal-head{ font-size:11px; }
+    .timeline-theme{ font-size:16px; padding:8px 14px; }
+    .tl-slot{ width:92px; min-height:120px; } .tl-card-tray{ width:92px; min-height:98px; }
+    .tl-card-e{ font-size:34px; } .tl-card-l{ font-size:12px; } .tl-arrow{ font-size:15px; }
   }
