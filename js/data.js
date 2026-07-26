@@ -1792,7 +1792,10 @@ const CATS = [
 
   /* ---------- Phase 3.4: sort engine (ลากใส่ตะกร้า) — นักสืบแม่เหล็ก (วิทย์) + จัดหมวดหมู่คำอังกฤษ ---------- */
   { id:'p3-magnet', name:'นักสืบแม่เหล็ก', emoji:'🧲', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'sort', sortSet:'magnet', levels:10, grade:'p3', isNew:true },
-  { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true }
+  { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true },
+
+  /* ---------- Phase 3.4b: หมวดใหม่ "โลกหมุน" (world engine ใหม่ — วิทย์ กลางวัน/กลางคืน) ---------- */
+  { id:'p3-world', name:'โลกหมุน กลางวัน-กลางคืน', emoji:'🌎', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'world', levels:10, grade:'p3', isNew:true }
 ];
 
 /* ============================= ระดับชั้น (GRADES) ============================= */
