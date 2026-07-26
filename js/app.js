@@ -778,7 +778,10 @@ function renderHome(){
       else if(cat.type==='write') startDotsGame(cat.id);
       else startQuiz(cat.id);
     });
-    (cat.type==='skill' ? gridSkill : (cat.type==='ar' ? gridInteractive : (cat.type==='listen' ? gridListen : (cat.type==='write' ? gridWrite : grid)))).appendChild(card);
+    /* เกมวิทยาศาสตร์ (predict-check ใช้กล้อง/มือ) จัดไว้ section "การโต้ตอบ (AR)" แม้ type เป็น skill */
+    (cat.type==='skill'
+      ? (cat.mode==='science' ? gridInteractive : gridSkill)
+      : (cat.type==='ar' ? gridInteractive : (cat.type==='listen' ? gridListen : (cat.type==='write' ? gridWrite : grid)))).appendChild(card);
   });
   /* ซ่อนทั้ง section ถ้าระดับชั้นนี้ไม่มีหมวดในกลุ่มนั้นเลย (เช่น ป.1 ยังไม่มีเกม AR/ฟังคำ/ฝึกเขียน) */
   [grid, gridInteractive, gridSkill, gridListen, gridWrite].forEach(g=>{
@@ -1053,7 +1056,9 @@ function startMemoryGame(catId){
 /* รูปแบบจุดโดมิโน (0-6 จุดต่อครึ่งการ์ด) วางตำแหน่งแบบเดียวกับลูกเต๋า/โดมิโนจริง */
 const DOMINO_PIPS = {
   0:[], 1:['c'], 2:['tl','br'], 3:['tl','c','br'],
-  4:['tl','tr','bl','br'], 5:['tl','tr','c','bl','br'], 6:['tl','ml','bl','tr','mr','br']
+  4:['tl','tr','bl','br'], 5:['tl','tr','c','bl','br'], 6:['tl','ml','bl','tr','mr','br'],
+  /* 7-8 จุด/ครึ่ง (สำหรับค่าโดมิโนถึง 16 = 8+8 ในเกมโดมิโน ป.2) — ใช้แถวกลาง tc/bc เพิ่ม */
+  7:['tl','tr','ml','c','mr','bl','br'], 8:['tl','tc','tr','ml','mr','bl','bc','br']
 };
 function dominoHalfHtml(n){
   return '<div class="domino-half">'+DOMINO_PIPS[n].map(p=>'<span class="domino-pip pip-'+p+'"></span>').join('')+'</div>';
@@ -1110,7 +1115,7 @@ function renderAnimalCards(pairCount){
 
 function renderMemoryLevel(){
   const cat = catById(memoryGame.catId);
-  const pairCount = MEMORY_LEVEL_PAIRS[memoryGame.level-1];
+  const pairCount = (cat.memoryPairs || MEMORY_LEVEL_PAIRS)[memoryGame.level-1];
   memoryGame.totalPairs = pairCount;
   memoryGame.matchedCount = 0;
   memoryGame.openNumber = null;
@@ -1124,7 +1129,10 @@ function renderMemoryLevel(){
     return;
   }
 
-  const pool = [1,2,3,4,5,6,7,8,9,10,11,12];
+  /* pool = 1..maxVal (maxVal = จำนวนคู่มากสุดของหมวดนี้) — โดมิโน ป.2 ถึง 16 คู่ (ค่า 1-16) */
+  const pairsArr = cat.memoryPairs || MEMORY_LEVEL_PAIRS;
+  const maxVal = Math.max.apply(null, pairsArr);
+  const pool = Array.from({length:maxVal}, (_,i)=>i+1);
   const values = shuffleArray(pool.slice()).slice(0, pairCount);
   const numberOrder = shuffleArray(values.slice());
   const dotOrder = shuffleArray(values.slice());
@@ -1670,6 +1678,9 @@ function startScienceGame(catId){
   sciView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   sciView.querySelectorAll('.sci-ring-fill').forEach(c=>{ c.style.strokeDasharray = SCI_RING_CIRC; c.style.strokeDashoffset = SCI_RING_CIRC; });
   setCatLabel('sci-cat-label', cat);
+  /* โชว์ปุ่มกล้องบนเดสก์ท็อปเสมอ (มือถือซ่อน) ให้แถบบนตรงกับเกม AR อื่น */
+  const sciCamBtn = $('sci-camera-toggle'); if(sciCamBtn) sciCamBtn.hidden = isMobileViewport();
+  sciActive = false; sciUpdateCamBtn();
   sciResetDwell();
   renderSciRound();
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1715,8 +1726,9 @@ async function sciInitCamera(){
     console.warn('science AR camera unavailable, tap fallback:', err);
     document.body.classList.add('sci-nocam');
     $('sci-hint').textContent = '👆 แตะฝั่งคำตอบที่เลือกได้เลย';
-    if(toggle) toggle.hidden = true;
-    sciActive = false;
+    /* เดสก์ท็อป: คงปุ่มกล้องไว้ (โชว์สถานะปิด/กดลองเปิดใหม่ได้) เหมือนเกม AR — ซ่อนเฉพาะมือถือ */
+    if(toggle) toggle.hidden = isMobileViewport();
+    sciActive = false; sciUpdateCamBtn();
   }
 }
 

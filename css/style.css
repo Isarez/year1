@@ -1343,6 +1343,8 @@
   .pip-mr{ grid-column:3; grid-row:2; }
   .pip-bl{ grid-column:1; grid-row:3; }
   .pip-br{ grid-column:3; grid-row:3; }
+  .pip-tc{ grid-column:2; grid-row:1; }   /* 8 จุด/ครึ่ง (โดมิโน ป.2 ถึง 16) */
+  .pip-bc{ grid-column:2; grid-row:3; }
 
   .memory-card.matched .card-face-value{ background:var(--correct-l); box-shadow:0 0 0 3px var(--correct) inset; }
   .memory-card.mismatch .card-face-value{ background:var(--wrong-l); box-shadow:0 0 0 3px var(--wrong) inset; }
