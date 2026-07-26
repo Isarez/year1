@@ -1433,7 +1433,97 @@ const CATS = [
   { id:'p2-money', name:'ร้านค้านกฮูก', emoji:'🪙', color:'#E5A93B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, grade:'p2', isNew:true },
   { id:'p2-fraction', name:'พิซซ่าเศษส่วน', emoji:'🍕', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, grade:'p2', isNew:true },
   { id:'p2-balance', name:'ตาชั่งวิเศษ', emoji:'⚖️', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', levels:10, grade:'p2', isNew:true },
-  { id:'p2-calendar', name:'ปฏิทินวิเศษ', emoji:'📅', color:'#E67E9C', light:'#FBE1EA', type:'skill', mode:'calendar', levels:10, grade:'p2', isNew:true }
+  { id:'p2-calendar', name:'ปฏิทินวิเศษ', emoji:'📅', color:'#E67E9C', light:'#FBE1EA', type:'skill', mode:'calendar', levels:10, grade:'p2', isNew:true },
+
+  /* ===================== ระดับชั้น ป.3 (grade:'p3') ===================== */
+  /* หมวดใหม่ของระดับ ป.3 — reuse engine เดิม แยก id/progress จาก ป.1-2 (ไม่ใส่ field icon → การ์ด fallback ใช้ cat.emoji)
+     Phase 3.1 (คณิต — แกนของ ป.3): จำนวนไม่เกิน 100,000 / บวก-ลบระคนมีทด / คูณ-หาร (แม่สูง+มีเศษ)
+     + calculation engine (ar-math ×÷ ตัวเลขใหญ่ขึ้น) + หมวดใหม่ "เศษส่วนแสนสนุก" (reuse fraction engine — แนวคิดใหม่แกนของ ป.3) */
+  /* ---------- คณิต ป.3 ---------- */
+  {
+    id:'p3-math1', name:'คณิต ป.3 · จำนวนไม่เกิน 100,000', emoji:'#️⃣', color:'#7C5CFC', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
+    questions:[
+      /* tier1 — หลักหมื่น-พัน/อ่าน-เขียน/นับกระโดด/เปรียบเทียบ (ง่าย) */
+      {q:'เลข 45,120 มีเลขในหลักหมื่นคือเลขใด?', emoji:'#️⃣', choices:['4','5','1','45'], correct:0, explain:'เลข 4 อยู่หลักหมื่น', tier:1},
+      {q:'"สองหมื่นห้าพัน" เขียนเป็นตัวเลขได้อย่างไร?', emoji:'🔢', choices:['25,000','20,500','2,500','25,500'], correct:0, explain:'สองหมื่นห้าพัน = 25,000', tier:1},
+      {q:'นับทีละ 1,000: 3,000, 4,000, 5,000, ▢', emoji:'💯', choices:['6,000','5,100','5,500','7,000'], correct:0, explain:'นับเพิ่มทีละ 1,000 ตัวต่อไปคือ 6,000', tier:1},
+      {q:'จำนวนใดมากที่สุด?', emoji:'📊', choices:['12,430','12,340','12,304','12,043'], correct:0, explain:'12,430 มากที่สุด', tier:1},
+      {q:'เลข 50,000 อ่านว่าอย่างไร?', emoji:'🗣️', choices:['ห้าหมื่น','ห้าพัน','ห้าแสน','ห้าร้อย'], correct:0, explain:'50,000 อ่านว่า ห้าหมื่น', tier:1},
+      {q:'จำนวนใดน้อยที่สุด?', emoji:'📉', choices:['8,090','8,900','9,080','9,800'], correct:0, explain:'8,090 น้อยที่สุด', tier:1},
+      {q:'นับทีละ 100: 4,700, 4,800, 4,900, ▢', emoji:'🔟', choices:['5,000','4,910','5,900','4,000'], correct:0, explain:'นับเพิ่มทีละ 100 ตัวต่อไปคือ 5,000', tier:1},
+      {q:'เลข 72,415 มีเลขในหลักพันคือเลขใด?', emoji:'#️⃣', choices:['2','7','4','1'], correct:0, explain:'เลข 2 อยู่หลักพัน', tier:1},
+      {q:'"หนึ่งหมื่น" มีค่าเท่ากับเลขใด?', emoji:'🔢', choices:['10,000','1,000','100,000','1,00'], correct:0, explain:'หนึ่งหมื่น = 10,000', tier:1},
+      /* tier2 — ค่าประจำหลัก/เรียงลำดับ/ปัดเศษ/เครื่องหมาย (ยาก) */
+      {q:'เรียงจากน้อยไปมากข้อใดถูกต้อง?', emoji:'📈', choices:['5,234; 5,342; 5,432','5,432; 5,342; 5,234','5,342; 5,234; 5,432','5,234; 5,432; 5,342'], correct:0, explain:'5,234 น้อยสุด แล้ว 5,342 แล้ว 5,432', tier:2},
+      {q:'เลข 8 ในจำนวน 80,000 มีค่าเท่าไร?', emoji:'#️⃣', choices:['80,000','8,000','800','8'], correct:0, explain:'เลข 8 อยู่หลักหมื่น จึงมีค่า 80,000', tier:2},
+      {q:'"หนึ่งหมื่นห้าร้อย" เขียนเป็นตัวเลขได้อย่างไร?', emoji:'🔢', choices:['10,500','15,000','1,500','10,050'], correct:0, explain:'หนึ่งหมื่นห้าร้อย = 10,500', tier:2},
+      {q:'เติมเครื่องหมายให้ถูก: 23,000 ▢ 23,100', emoji:'⚖️', choices:['<','>','=','≠'], correct:0, explain:'23,000 น้อยกว่า 23,100 จึงใช้ <', tier:2},
+      {q:'จำนวนใดอยู่ระหว่าง 9,990 กับ 10,010?', emoji:'🔢', choices:['10,000','9,980','10,020','9,090'], correct:0, explain:'10,000 อยู่ระหว่าง 9,990 กับ 10,010', tier:2},
+      {q:'ปัด 4,780 ให้เป็นจำนวนเต็มหลักพันได้เท่าไร?', emoji:'🎯', choices:['5,000','4,000','4,800','4,700'], correct:0, explain:'4,780 ใกล้ 5,000 มากกว่า จึงปัดเป็น 5,000', tier:2},
+      {q:'นับทีละ 10,000: 20,000, 30,000, 40,000, ▢', emoji:'💯', choices:['50,000','41,000','45,000','60,000'], correct:0, explain:'นับเพิ่มทีละ 10,000 ตัวต่อไปคือ 50,000', tier:2},
+      {q:'เรียงจากมากไปน้อยข้อใดถูกต้อง?', emoji:'📉', choices:['66,000; 60,600; 6,600','6,600; 60,600; 66,000','60,600; 66,000; 6,600','66,000; 6,600; 60,600'], correct:0, explain:'66,000 มากสุด แล้ว 60,600 แล้ว 6,600', tier:2},
+      {q:'เลข 34,567 มีเลขในหลักหมื่นคือเลขใด?', emoji:'#️⃣', choices:['3','4','5','7'], correct:0, explain:'เลข 3 อยู่หลักหมื่น', tier:2}
+    ]
+  },
+  {
+    id:'p3-math2', name:'คณิต ป.3 · บวก ลบ ระคน', emoji:'🧾', color:'#5E3FE0', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
+    questions:[
+      /* tier1 — บวก-ลบหลักพันแบบง่าย + โจทย์ปัญหา 1 ขั้น */
+      {q:'1,250 + 300 = ?', emoji:'➕', choices:['1,550','1,250','1,520','1,850'], correct:0, explain:'1,250 บวก 300 เท่ากับ 1,550', tier:1},
+      {q:'2,400 - 200 = ?', emoji:'➖', choices:['2,200','2,600','2,000','2,220'], correct:0, explain:'2,400 ลบ 200 เท่ากับ 2,200', tier:1},
+      {q:'3,120 + 450 = ?', emoji:'➕', choices:['3,570','3,170','3,520','3,560'], correct:0, explain:'3,120 บวก 450 เท่ากับ 3,570', tier:1},
+      {q:'มีเงินเก็บ 500 บาท ได้เพิ่มอีก 250 บาท รวมกี่บาท?', emoji:'💰', choices:['750','700','800','250'], correct:0, explain:'500 + 250 = 750 บาท', tier:1},
+      {q:'4,000 - 1,500 = ?', emoji:'➖', choices:['2,500','2,000','3,500','1,500'], correct:0, explain:'4,000 ลบ 1,500 เท่ากับ 2,500', tier:1},
+      {q:'1,340 + 260 = ?', emoji:'➕', choices:['1,600','1,500','1,660','1,400'], correct:0, explain:'1,340 บวก 260 เท่ากับ 1,600', tier:1},
+      {q:'มีสติกเกอร์ 320 ดวง ใช้ไป 120 ดวง เหลือกี่ดวง?', emoji:'✨', choices:['200','240','180','300'], correct:0, explain:'320 - 120 = 200 ดวง', tier:1},
+      {q:'640 + 280 = ? (มีการทด)', emoji:'➕', choices:['920','820','900','940'], correct:0, explain:'640 บวก 280 เท่ากับ 920', tier:1},
+      {q:'900 - 350 = ?', emoji:'➖', choices:['550','650','450','560'], correct:0, explain:'900 ลบ 350 เท่ากับ 550', tier:1},
+      /* tier2 — บวก-ลบมีทดหลายหลัก + โจทย์ปัญหา 2 ขั้น + เครื่องหมาย */
+      {q:'1,456 + 1,278 = ?', emoji:'➕', choices:['2,734','2,634','2,744','2,724'], correct:0, explain:'1,456 บวก 1,278 เท่ากับ 2,734', tier:2},
+      {q:'3,205 - 1,148 = ?', emoji:'➖', choices:['2,057','2,157','1,957','2,067'], correct:0, explain:'3,205 ลบ 1,148 เท่ากับ 2,057', tier:2},
+      {q:'มีเงิน 1,000 บาท ซื้อของ 350 บาท และ 275 บาท เหลือกี่บาท?', emoji:'🛒', choices:['375','325','475','625'], correct:0, explain:'1,000 - 350 - 275 = 375 บาท', tier:2},
+      {q:'2,470 + 1,750 = ?', emoji:'➕', choices:['4,220','4,120','4,210','4,320'], correct:0, explain:'2,470 บวก 1,750 เท่ากับ 4,220', tier:2},
+      {q:'เติมเครื่องหมายให้ถูก: 1,200 + 500 ▢ 1,800', emoji:'⚖️', choices:['<','>','=','≠'], correct:0, explain:'1,200 + 500 = 1,700 ซึ่งน้อยกว่า 1,800 จึงใช้ <', tier:2},
+      {q:'ร้านมีนม 450 ขวด ขายไป 180 ขวด เติมอีก 200 ขวด เหลือกี่ขวด?', emoji:'🥛', choices:['470','430','370','530'], correct:0, explain:'450 - 180 + 200 = 470 ขวด', tier:2},
+      {q:'4,200 - 2,750 = ?', emoji:'➖', choices:['1,450','1,550','1,350','2,450'], correct:0, explain:'4,200 ลบ 2,750 เท่ากับ 1,450', tier:2},
+      {q:'รถบัสมีผู้โดยสาร 640 คน ลง 250 คน ขึ้น 130 คน เหลือกี่คน?', emoji:'🚌', choices:['520','470','390','630'], correct:0, explain:'640 - 250 + 130 = 520 คน', tier:2},
+      {q:'3,680 + 2,540 = ?', emoji:'➕', choices:['6,220','6,120','6,210','6,320'], correct:0, explain:'3,680 บวก 2,540 เท่ากับ 6,220', tier:2}
+    ]
+  },
+  {
+    id:'p3-math3', name:'คณิต ป.3 · คูณ หาร', emoji:'🟰', color:'#4A2FC0', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
+    questions:[
+      /* tier1 — สูตรคูณแม่ 2-6 + หารแบ่งเท่าๆ กัน + โจทย์ปัญหาง่าย */
+      {q:'6 × 3 = ?', emoji:'✖️', choices:['18','15','21','12'], correct:0, explain:'6 × 3 = 18', tier:1},
+      {q:'7 × 2 = ?', emoji:'✖️', choices:['14','12','16','9'], correct:0, explain:'7 × 2 = 14', tier:1},
+      {q:'มีถุง 4 ถุง ถุงละ 6 ลูก รวมกี่ลูก?', emoji:'🛍️', choices:['24','20','28','10'], correct:0, explain:'4 × 6 = 24 ลูก', tier:1},
+      {q:'8 × 3 = ?', emoji:'✖️', choices:['24','21','27','16'], correct:0, explain:'8 × 3 = 24', tier:1},
+      {q:'แบ่งขนม 15 ชิ้น ให้ 3 คนเท่าๆ กัน คนละกี่ชิ้น?', emoji:'🍪', choices:['5','4','6','3'], correct:0, explain:'15 ÷ 3 = 5 ชิ้น', tier:1},
+      {q:'9 × 2 = ?', emoji:'✖️', choices:['18','16','20','11'], correct:0, explain:'9 × 2 = 18', tier:1},
+      {q:'16 ÷ 4 = ?', emoji:'➗', choices:['4','3','5','6'], correct:0, explain:'16 แบ่งเป็น 4 กลุ่มเท่าๆ กัน ได้กลุ่มละ 4', tier:1},
+      {q:'6 × 5 = ?', emoji:'✖️', choices:['30','25','35','24'], correct:0, explain:'6 × 5 = 30', tier:1},
+      {q:'รถ 5 คัน คันละ 4 ล้อ รวมมีกี่ล้อ?', emoji:'🚗', choices:['20','16','24','9'], correct:0, explain:'5 × 4 = 20 ล้อ', tier:1},
+      /* tier2 — สูตรคูณแม่สูง 7-9 + คูณสองหลัก + หารมีเศษ + โจทย์ปัญหา */
+      {q:'7 × 8 = ?', emoji:'✖️', choices:['56','54','58','48'], correct:0, explain:'7 × 8 = 56', tier:2},
+      {q:'9 × 6 = ?', emoji:'✖️', choices:['54','56','48','63'], correct:0, explain:'9 × 6 = 54', tier:2},
+      {q:'23 × 2 = ?', emoji:'✖️', choices:['46','44','48','43'], correct:0, explain:'23 × 2 = 46', tier:2},
+      {q:'45 ÷ 5 = ?', emoji:'➗', choices:['9','8','7','10'], correct:0, explain:'45 แบ่งเป็น 5 กลุ่มเท่าๆ กัน ได้กลุ่มละ 9', tier:2},
+      {q:'8 × 7 = ?', emoji:'✖️', choices:['56','54','63','49'], correct:0, explain:'8 × 7 = 56', tier:2},
+      {q:'มีดินสอ 48 แท่ง แบ่งใส่ 6 กล่องเท่าๆ กัน กล่องละกี่แท่ง?', emoji:'✏️', choices:['8','7','9','6'], correct:0, explain:'48 ÷ 6 = 8 แท่ง', tier:2},
+      {q:'13 × 3 = ?', emoji:'✖️', choices:['39','36','33','43'], correct:0, explain:'13 × 3 = 39', tier:2},
+      {q:'30 ÷ 4 ได้ผลลัพธ์เท่าไร (มีเศษ)?', emoji:'➗', choices:['7 เศษ 2','6 เศษ 2','7 เศษ 3','8 เศษ 0'], correct:0, explain:'4 × 7 = 28 เหลือเศษ 2 จึงได้ 7 เศษ 2', tier:2},
+      {q:'12 × 4 = ?', emoji:'✖️', choices:['48','44','52','46'], correct:0, explain:'12 × 4 = 48', tier:2}
+    ]
+  },
+  {
+    /* calculation engine: ar-math + mathOps ×÷ ตัวเลขใหญ่ขึ้นกว่า ป.2 (ต่อยอด calculation chain) */
+    id:'p3-math-ar', name:'คิดเลขเร็ว ป.3', emoji:'🔣', color:'#5E3FE0', light:'#E9E3FF',
+    type:'ar', mode:'math', levels:10, mathTiers:[[2,9],[3,12],[6,12]], mathOps:['×','÷'], mathChoices:4, grade:'p3', isNew:true
+  },
+  {
+    /* หมวดใหม่ "เศษส่วนแสนสนุก" — reuse fraction engine (แบ่งพิซซ่า/เค้ก) เนื้อหาแกนใหม่ของ ป.3 */
+    id:'p3-fraction', name:'เศษส่วนแสนสนุก', emoji:'🥧', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, grade:'p3', isNew:true
+  }
 ];
 
 /* ============================= ระดับชั้น (GRADES) ============================= */
@@ -1445,7 +1535,7 @@ const GRADES = [
   { id:'prep-p1', name:'เตรียมสอบ ป.1', short:'เตรียม ป.1', emoji:'🥚', icon:'assets/icons/grade-egg.svg',  minAge:0,  maxAge:5,  available:true  },
   { id:'p1',      name:'ประถมศึกษาปีที่ 1', short:'ป.1', emoji:'🐣', icon:'assets/icons/grade-owl1.svg', minAge:6,  maxAge:6,  available:true  },
   { id:'p2',      name:'ประถมศึกษาปีที่ 2', short:'ป.2', emoji:'🐤', icon:'assets/icons/grade-owl2.svg', minAge:7,  maxAge:7,  available:true  },
-  { id:'p3',      name:'ประถมศึกษาปีที่ 3', short:'ป.3', emoji:'🦉', icon:'assets/icons/grade-owl3.svg', minAge:8,  maxAge:8,  available:false },
+  { id:'p3',      name:'ประถมศึกษาปีที่ 3', short:'ป.3', emoji:'🦉', icon:'assets/icons/grade-owl3.svg', minAge:8,  maxAge:8,  available:true  },
   { id:'p4',      name:'ประถมศึกษาปีที่ 4', short:'ป.4', emoji:'🦉', icon:'assets/icons/grade-owl4.svg', minAge:9,  maxAge:9,  available:false },
   { id:'p5',      name:'ประถมศึกษาปีที่ 5', short:'ป.5', emoji:'🦉', icon:'assets/icons/grade-owl5.svg', minAge:10, maxAge:10, available:false },
   { id:'p6',      name:'ประถมศึกษาปีที่ 6', short:'ป.6', emoji:'🦉', icon:'assets/icons/grade-owl6.svg', minAge:11, maxAge:99, available:false }
@@ -1961,7 +2051,9 @@ const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'l
   'p2-iq2':'p2-iq1', 'p2-iq3':'p2-iq2',
   'p2-music2':'p2-music1', 'p2-art2':'p2-art1', 'p2-nature2':'p2-nature1',
   'p2-code2':'p2-code1', 'p2-code3':'p2-code2',
-  'p2-sci2':'p2-sci1' };
+  'p2-sci2':'p2-sci1',
+  /* ป.3: ล็อกลำดับ level ต่อวิชา + เกมฝึกทักษะไล่ลำดับ */
+  'p3-math2':'p3-math1', 'p3-math3':'p3-math2' };
 
 /* จำนวนคู่ (pairs) ต่อด่านของเกม skill-memory (จับคู่ตัวเลขกับจุด), index 0 = ด่าน 1 */
 const MEMORY_LEVEL_PAIRS = [4, 8, 12];
