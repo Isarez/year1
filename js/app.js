@@ -2659,6 +2659,9 @@ const GOAL_CHAR =
   '<path d="M-11 -19 l4 -3 M11 -19 l-4 -3" stroke="#c8542f" stroke-width="0" />'+
   '<circle cx="0" cy="-9.5" r="2" fill="#fff" opacity="0.85"/><circle cx="-2.6" cy="-11.6" r="1" fill="#fff" opacity="0.85"/><circle cx="2.6" cy="-11.6" r="1" fill="#fff" opacity="0.85"/><circle cx="-4.2" cy="-9.5" r="0.9" fill="#fff" opacity="0.85"/><circle cx="4.2" cy="-9.5" r="0.9" fill="#fff" opacity="0.85"/>'; // รอยเท้าแมวเหนือประตู
 function robotLevelsFor(cat){
+  if(cat.codeSet==='p3a') return ROBOT_LEVELS_P3A;
+  if(cat.codeSet==='p3b') return ROBOT_LEVELS_P3B;
+  if(cat.codeSet==='p3c') return ROBOT_LEVELS_P3C;
   if(cat.codeSet==='p2a') return ROBOT_LEVELS_P2A;
   if(cat.codeSet==='p2b') return ROBOT_LEVELS_P2B;
   if(cat.codeSet==='p2c') return ROBOT_LEVELS_P2C;
