@@ -451,12 +451,47 @@
       <button class="icon-btn" id="house-sound-toggle" aria-label="เปิด/ปิดเสียง">🔊</button>
       <button class="icon-btn" id="house-fullscreen-toggle" aria-label="เต็มหน้าจอ">⛶</button>
     </div>
-    <div class="ar-hint-chip house-hint" id="house-hint" hidden>👆 แตะพื้นเพื่อเดินเล่น ลองแตะบ้าน ต้นไม้ ดอกไม้ หรือสัตว์ตัวน้อยๆ ดูนะ!</div>
+    <!-- ป้ายบอกช่องที่ตัวละครยืนอยู่ (มุมขวาล่าง) — ไว้ดูพิกัดตอนทดสอบเกม -->
+    <div class="house-pos-chip" id="house-pos-chip" hidden>x– z–</div>
+    <div class="ar-hint-chip house-hint" id="house-hint" hidden>👆 แตะพื้นเพื่อเดินเล่น ลองไปคุยกับชาวบ้าน และดูกระดานภารกิจข้างน้ำพุกลางหมู่บ้านนะ!</div>
+    <!-- เข็มทิศ: เข็มชี้ไปทางบ้านของหนูเสมอ กดแล้วเดินกลับบ้านอัตโนมัติ (แผนที่ใหญ่ เด็กหลงทางได้) -->
+    <button class="house-compass" id="house-compass" aria-label="เข็มทิศ กดเพื่อเดินกลับบ้าน" data-tooltip="กลับบ้าน" hidden>
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" fill="#fffaf0" stroke="#e0b784" stroke-width="3"/>
+        <circle cx="32" cy="32" r="23.5" fill="none" stroke="#f3e2c8" stroke-width="2"/>
+        <g class="hc-labels" text-anchor="middle" dominant-baseline="central">
+          <text id="hc-n" x="32" y="12" fill="#ef6a58">N</text>
+          <text id="hc-e" x="52" y="32" fill="#a9825c">E</text>
+          <text id="hc-s" x="32" y="52" fill="#a9825c">S</text>
+          <text id="hc-w" x="12" y="32" fill="#a9825c">W</text>
+        </g>
+        <g id="hc-needle">
+          <path d="M32 24.5 L36.6 36 L32 33.4 L27.4 36 Z" fill="#ef6a58"/>
+          <path d="M32 46 L27.4 32 L32 34.6 L36.6 32 Z" fill="#e8ddcc" stroke="#c9b79c" stroke-width="1"/>
+          <g id="hc-home">
+            <path d="M28.1 19.3 L32 15.7 L35.9 19.3 Z" fill="#ef8354"/>
+            <rect x="29.4" y="19.1" width="5.2" height="3.6" rx=".8" fill="#fff3e0" stroke="#e0b784" stroke-width="1"/>
+          </g>
+        </g>
+        <circle cx="32" cy="32" r="3.6" fill="#a9825c"/>
+      </svg>
+    </button>
   </div>
   <div class="house-char-name" id="house-char-name" hidden></div>
   <div class="house-char-name house-pet-name" id="house-pet-name" hidden></div>
   <div class="house-pet-bubble" id="house-pet-bubble">❤️</div>
   <div class="house-char-bubble" id="house-char-bubble">✨</div>
+  <div class="house-npc-bubble" id="house-npc-bubble"></div>
+  <div class="house-creator house-quest" id="house-quest" hidden>
+    <div class="house-creator-panel">
+      <div class="house-creator-title">📋 ภารกิจประจำวัน</div>
+      <div class="house-creator-sub" id="hq-sub">ทำให้ครบทั้ง 3 อย่างวันนี้ แล้วกลับมารับดาวที่กระดานนะ</div>
+      <div class="hq-list" id="hq-list"></div>
+      <div class="hq-stars" id="hq-stars">⭐ ดาวสะสม 0 ดวง</div>
+      <button class="house-done-btn" id="hq-claim" hidden>รับดาวรางวัล ⭐</button>
+      <button class="house-pet-alt-btn hq-close-btn" id="hq-close">ปิดกระดาน</button>
+    </div>
+  </div>
   <div class="house-creator" id="house-creator" hidden>
     <div class="house-creator-panel">
       <div class="house-creator-title" id="house-creator-title"><svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg> สร้างตัวละครของหนู</div>

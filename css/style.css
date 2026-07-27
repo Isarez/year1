@@ -1826,6 +1826,32 @@
     margin:0; z-index:8; pointer-events:none; transition:opacity .6s ease;
   }
   .house-hint.fade-out{opacity:0;}
+  /* ป้ายพิกัดมุมขวาล่าง — บอกช่อง (x,z) ที่ตัวละครยืนอยู่ ไว้ใช้ดูตำแหน่งตอนทดสอบแผนที่ */
+  .house-pos-chip{
+    position:fixed; right:14px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:8;
+    padding:5px 12px; border-radius:999px; pointer-events:none;
+    background:rgba(255,255,255,.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    box-shadow:0 3px 10px rgba(70,40,10,.16);
+    font-size:.86rem; font-weight:800; color:var(--ink); letter-spacing:.3px; white-space:nowrap;
+  }
+  .house-pos-chip[hidden]{display:none;}
+  body.night-mode .house-pos-chip{background:rgba(35,42,74,.72); color:#f2f6ff;}
+  @media (max-width:480px){ .house-pos-chip{right:10px; font-size:.78rem; padding:4px 10px;} }
+  /* เข็มทิศมุมซ้ายล่าง — เข็มชี้ทางบ้าน (JS หมุน #hc-needle ทุกเฟรม) กดแล้วเดินกลับบ้าน */
+  .house-compass{
+    position:fixed; left:14px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:8;
+    width:62px; height:62px; padding:0; border:none; border-radius:50%;
+    background:rgba(255,255,255,.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    box-shadow:0 4px 14px rgba(70,40,10,.18); cursor:pointer; pointer-events:auto;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .house-compass[hidden]{display:none;}
+  .house-compass:active{transform:scale(.92);}
+  .house-compass svg{width:100%; height:100%; display:block;}
+.house-compass .hc-labels text{font-family:inherit; font-size:10px; font-weight:800;}
+  body.night-mode .house-compass{background:rgba(35,42,74,.72);}
+  @media (max-width:480px){ .house-compass{width:52px; height:52px; left:10px;} }
   /* แถบปุ่มควบคุม (ธีม/เพลง/เสียง/เต็มจอ) — คอลัมน์ลอยขวาใต้แถบบน ใช้ .icon-btn ชุดเดียวกับ header */
   .house-ctrl-wrap{
     position:fixed; right:14px; top:78px; z-index:8;
@@ -2041,6 +2067,37 @@
     opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
   }
   .house-char-bubble.on{opacity:1; transform:translate(-50%,-100%) scale(1);}
+
+  /* ---------- ชาวบ้าน (NPC) + กระดานภารกิจ (บ้านของหนู เฟส 8) ---------- */
+  /* ฟองคำพูดของ NPC — กว้างกว่าฟองของเด็กเพราะมีทั้งชื่อและประโยคเต็ม */
+  .house-npc-bubble{
+    position:fixed; z-index:6; transform:translate(-50%,-100%) scale(.6);
+    background:rgba(255,255,255,.96); border-radius:16px; padding:7px 12px;
+    max-width:min(260px,72vw); text-align:center; color:var(--ink);
+    box-shadow:0 4px 14px rgba(70,40,10,.2);
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .house-npc-bubble.on{opacity:1; transform:translate(-50%,-100%) scale(1);}
+  .house-npc-bubble b{display:block; font-size:13px; font-weight:800; color:#E07A3F; margin-bottom:2px;}
+  .house-npc-bubble span{display:block; font-size:14.5px; font-weight:700; line-height:1.35;}
+
+  .hq-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding:2px 0; min-height:0;}
+  .hq-row{
+    display:flex; align-items:center; gap:10px;
+    background:#F6EFE3; border-radius:16px; padding:10px 13px;
+    border:3px solid transparent; transition:background .2s ease, border-color .2s ease;
+  }
+  .hq-row.done{background:#E4F6E0; border-color:#8ED08A;}
+  .hq-ic{flex:0 0 auto; font-size:24px; line-height:1;}
+  .hq-txt{flex:1 1 auto; font-size:15px; font-weight:800; color:var(--ink); line-height:1.3;}
+  .hq-row.done .hq-txt{text-decoration:line-through; color:var(--ink-soft);}
+  .hq-prog{
+    flex:0 0 auto; font-size:14px; font-weight:800; color:#fff;
+    background:#F0A14B; border-radius:999px; padding:3px 10px;
+  }
+  .hq-row.done .hq-prog{background:#66BB6A;}
+  .hq-stars{text-align:center; font-size:15px; font-weight:800; color:#E07A3F;}
+  .hq-close-btn{align-self:center; margin-top:4px;}
 
   @media (max-width:480px){
     .house-edit-panel{max-height:42vh; max-height:42dvh;}
