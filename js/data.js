@@ -1851,6 +1851,7 @@ const CATS = [
   { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true },
   { id:'p3-mathsort', name:'แยกเลขคู่-เลขคี่', emoji:'🧮', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'evenodd', levels:10, grade:'p3', isNew:true },
   { id:'p3-thaisort', name:'แยกพยัญชนะ-สระ', emoji:'🔤', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'thaichar', levels:10, grade:'p3', isNew:true },
+  { id:'p3-scisort', name:'แยกสิ่งมีชีวิต-ไม่มีชีวิต', emoji:'🦠', color:'#2FA36B', light:'#D9F2E4', type:'skill', mode:'sort', sortSet:'living', levels:10, grade:'p3', isNew:true },
   {
     id:'p3-engclock', name:'English ป.3 · บอกเวลา (What time is it?)', emoji:'🕰️', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
     questions:[
@@ -2742,6 +2743,19 @@ const SORT_POOLS = {
       {t:'1',k:'odd'},{t:'3',k:'odd'},{t:'5',k:'odd'},{t:'7',k:'odd'},{t:'9',k:'odd'},{t:'11',k:'odd'},
       {t:'13',k:'odd'},{t:'15',k:'odd'},{t:'17',k:'odd'},{t:'19',k:'odd'},{t:'21',k:'odd'},{t:'25',k:'odd'},
       {t:'33',k:'odd'},{t:'45',k:'odd'},{t:'49',k:'odd'},{t:'51',k:'odd'}
+    ]
+  },
+  /* ป.3 — แยกสิ่งมีชีวิต/ไม่มีชีวิต (วิทยาศาสตร์) */
+  living: {
+    prompt:'สิ่งไหนมีชีวิต สิ่งไหนไม่มีชีวิต? ลากใส่ตะกร้าให้ถูก',
+    bins:[{k:'alive',l:'🌱 มีชีวิต'},{k:'nonlife',l:'🪨 ไม่มีชีวิต'}],
+    items:[
+      {e:'🐶',n:'หมา',k:'alive'},{e:'🌳',n:'ต้นไม้',k:'alive'},{e:'🐟',n:'ปลา',k:'alive'},{e:'🐝',n:'ผึ้ง',k:'alive'},
+      {e:'🌻',n:'ดอกไม้',k:'alive'},{e:'🦋',n:'ผีเสื้อ',k:'alive'},{e:'🐈',n:'แมว',k:'alive'},{e:'🌵',n:'กระบองเพชร',k:'alive'},
+      {e:'🐛',n:'หนอน',k:'alive'},{e:'🐤',n:'ลูกไก่',k:'alive'},{e:'🐸',n:'กบ',k:'alive'},{e:'🦎',n:'จิ้งจก',k:'alive'},
+      {e:'🪨',n:'ก้อนหิน',k:'nonlife'},{e:'🚗',n:'รถยนต์',k:'nonlife'},{e:'💧',n:'หยดน้ำ',k:'nonlife'},{e:'⛰️',n:'ภูเขา',k:'nonlife'},
+      {e:'🪑',n:'เก้าอี้',k:'nonlife'},{e:'📱',n:'มือถือ',k:'nonlife'},{e:'☁️',n:'เมฆ',k:'nonlife'},{e:'🧸',n:'ตุ๊กตา',k:'nonlife'},
+      {e:'⚽',n:'ลูกบอล',k:'nonlife'},{e:'🥄',n:'ช้อน',k:'nonlife'},{e:'🏠',n:'บ้าน',k:'nonlife'},{e:'✏️',n:'ดินสอ',k:'nonlife'}
     ]
   },
   /* ป.3 — แยกพยัญชนะ/สระ (ภาษาไทย) */
