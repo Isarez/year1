@@ -38,6 +38,14 @@ function pickEnglishVoice(){
   return en.find(v=>v.lang.toLowerCase()==='en-us' && !EN_NOVELTY_VOICE.test(v.name))
       || en.find(v=>!EN_NOVELTY_VOICE.test(v.name)) || en.find(v=>v.default) || en[0];
 }
+/* อุ่นเครื่อง speech ครั้งแรก (เสียงเงียบ) กันบั๊ก utterance แรกเมินค่า voice = กดฟังครั้งแรกเพี้ยน */
+var _teacherSpeechPrimed = false;
+function primeSpeechOnce(){
+  if(_teacherSpeechPrimed || !window.speechSynthesis) return;
+  _teacherSpeechPrimed = true;
+  try{ const p = new SpeechSynthesisUtterance(' '); p.volume = 0; speechSynthesis.speak(p); }catch(e){}
+}
+if(window.speechSynthesis){ try{ speechSynthesis.getVoices(); speechSynthesis.addEventListener('voiceschanged', ()=>{ try{ speechSynthesis.getVoices(); }catch(e){} }); }catch(e){} }
 /* เช็คว่ามีเสียงไทยไหม — ใช้แค่ตัดสินใจโชว์รูปใบ้เสริม ไม่บล็อกการพูดจริง (ตรวจ false negative ได้ง่าย) */
 function hasThaiVoiceSupport(){
   return new Promise(resolve=>{
@@ -64,6 +72,7 @@ function speakTeacherWord(word){
   u.rate = 0.85;
   /* สำคัญ: เรียก cancel()+speak() ตรงๆ ใน user gesture ห้ามหน่วง setTimeout ไม่งั้น iOS Safari (iPad) บล็อกเสียง = กดฟังแล้วเงียบ */
   try{ speechSynthesis.cancel(); }catch(e){}
+  primeSpeechOnce();
   speechSynthesis.speak(u);
 }
 

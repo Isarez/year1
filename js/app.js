@@ -4005,6 +4005,7 @@ function speakClockText(text){
     u.lang = 'th-TH'; u.rate = 0.85;
     const voice = pickThaiVoice(); if(voice) u.voice = voice;
     synth.cancel();
+    primeSpeechOnce();
     synth.speak(u);
   }catch(e){}
 }
@@ -4325,6 +4326,32 @@ function hasThaiVoiceSupport(){
   });
 }
 
+/* รอให้ list ของ voices โหลดเสร็จ (Chrome/Safari โหลดแบบ async ผ่าน event 'voiceschanged')
+   สำคัญ: ต้อง await ก่อนเล่นเกมฟังคำ ไม่งั้น "กดฟังครั้งแรก" ตอน voices ยังว่างจะเลือก voice ไม่ได้ = ตกไปใช้เสียง default (เพี้ยน) */
+function ensureVoicesLoaded(){
+  return new Promise(resolve=>{
+    if(!window.speechSynthesis){ resolve(); return; }
+    if(speechSynthesis.getVoices().length){ resolve(); return; }
+    let done = false;
+    const fin = ()=>{ if(done) return; done = true; resolve(); };
+    try{ speechSynthesis.addEventListener('voiceschanged', fin, {once:true}); }catch(e){}
+    setTimeout(fin, 1200);
+  });
+}
+/* วอร์มอัพ: เริ่มโหลด voices ตั้งแต่แอปเปิด (ก่อนเด็กจะเข้าเกมฟังคำ) ให้พร้อมตั้งแต่กดฟังครั้งแรก */
+(function warmUpVoices(){
+  if(!window.speechSynthesis) return;
+  try{ speechSynthesis.getVoices(); speechSynthesis.addEventListener('voiceschanged', ()=>{ try{ speechSynthesis.getVoices(); }catch(e){} }); }catch(e){}
+})();
+/* พูดเสียงเงียบ (volume 0) ครั้งแรกครั้งเดียว เพื่อ "อุ่นเครื่อง" speech engine — กันบั๊กคลาสสิกที่ utterance แรกสุด
+   ของทั้งหน้าเว็บมักเมินค่า u.voice แล้วใช้เสียง default (= กดฟังครั้งแรกเพี้ยน) ให้เรียกใน user gesture (หลัง cancel ก่อน speak จริง) */
+let _speechPrimed = false;
+function primeSpeechOnce(){
+  if(_speechPrimed || !window.speechSynthesis) return;
+  _speechPrimed = true;
+  try{ const p = new SpeechSynthesisUtterance(' '); p.volume = 0; speechSynthesis.speak(p); }catch(e){}
+}
+
 /* ไล่ความยากคำไทยตามด่าน: ด่าน 1-4 คำ 3 ตัวอักษร, 5-8 คำ 4 ตัวอักษร, 9-10 คำ 5 ตัวอักษร */
 function listenThaiWordLen(level){
   if(level<=4) return 3;
@@ -4354,8 +4381,9 @@ async function startListenGame(catId){
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
+  await ensureVoicesLoaded();   // รอ voices โหลดก่อน กันเสียงเพี้ยน/เลือก voice ไม่ได้ตอนกดฟังครั้งแรก (ทั้งไทย/อังกฤษ)
   if(cat.lang==='th'){
-    listenGame.noThaiVoice = !(await hasThaiVoiceSupport());
+    listenGame.noThaiVoice = !pickThaiVoice();   // voices โหลดแล้ว เช็คตรงๆ ได้เลย
     if(listenGame.noThaiVoice) showToast('🔇','เบราว์เซอร์นี้ไม่รองรับเสียงพูดภาษาไทย ระบบจะโชว์รูปคำใบ้แทนนะ');
   }
   renderListenLevel();
@@ -4381,6 +4409,7 @@ function speakListenWord(word){
      เพราะ iOS Safari (iPad — อุปกรณ์หลักของแอป) จะบล็อกเสียงถ้า speak() ไม่ได้อยู่ใน user gesture โดยตรง = กดฟังแล้วเงียบ
      (ของเดิมหน่วง 30ms เพื่อกันบั๊ก Chrome แต่ทำให้ iPad ไม่มีเสียง — ทดสอบแล้ว Chrome เรียกตรงๆ ก็ทำงานปกติ) */
   try{ speechSynthesis.cancel(); }catch(e){}   // ตัดเสียงเดิมที่ค้างก่อนพูดคำใหม่ กันเสียงซ้อนตอนกดรัวๆ
+  primeSpeechOnce();                            // อุ่นเครื่องครั้งแรก กันเสียงเพี้ยนตอนกดฟังครั้งแรก
   speechSynthesis.speak(u);
 }
 
