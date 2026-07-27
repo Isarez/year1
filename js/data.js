@@ -1419,6 +1419,7 @@ const CATS = [
 
   /* ---------- เกมฝึกทักษะ ป.2 (reuse engine เดิม แยก id/progress) ---------- */
   { id:'p2-memory', name:'จับคู่โดมิโน ป.2', emoji:'🃏', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], grade:'p2', isNew:true },
+  { id:'p2-animalsort', name:'แยกสัตว์ บก-น้ำ-ปีก', emoji:'🐾', color:'#4E9A51', light:'#DCEFD9', type:'skill', mode:'sort', sortSet:'landsea', levels:10, grade:'p2', isNew:true },
 
   /* ---------- coding ป.2 (พาแมวกลับบ้าน + บัตร "ทำซ้ำ N รอบ" loop — Phase 2.2 extend code engine) ---------- */
   { id:'p2-code1', name:'พาแมววนซ้ำ 1', emoji:'🤖', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p2a', codeLoop:true, levels:10, grade:'p2', isNew:true },
@@ -1793,6 +1794,8 @@ const CATS = [
   /* ---------- Phase 3.4: sort engine (ลากใส่ตะกร้า) — นักสืบแม่เหล็ก (วิทย์) + จัดหมวดหมู่คำอังกฤษ ---------- */
   { id:'p3-magnet', name:'นักสืบแม่เหล็ก', emoji:'🧲', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'sort', sortSet:'magnet', levels:10, grade:'p3', isNew:true },
   { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true },
+  { id:'p3-mathsort', name:'แยกเลขคู่-เลขคี่', emoji:'🧮', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'evenodd', levels:10, grade:'p3', isNew:true },
+  { id:'p3-thaisort', name:'แยกพยัญชนะ-สระ', emoji:'🔤', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'thaichar', levels:10, grade:'p3', isNew:true },
 
   /* ---------- Phase 3.4b: หมวดใหม่ "โลกหมุน" (world engine ใหม่ — วิทย์ กลางวัน/กลางคืน) ---------- */
   { id:'p3-world', name:'โลกหมุน กลางวัน-กลางคืน', emoji:'🌎', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'world', levels:10, grade:'p3', isNew:true },
@@ -2497,6 +2500,46 @@ const SORT_POOLS = {
       {t:'pen',k:'thing'},{t:'book',k:'thing'},{t:'ball',k:'thing'},{t:'cup',k:'thing'},
       {t:'bag',k:'thing'},{t:'chair',k:'thing'},{t:'box',k:'thing'},{t:'key',k:'thing'},
       {t:'desk',k:'thing'},{t:'doll',k:'thing'}
+    ]
+  },
+  /* ป.2 — แยกสัตว์ตามที่อยู่ (บก/น้ำ/ปีก) */
+  landsea: {
+    prompt:'สัตว์แต่ละตัวอยู่ที่ไหน? ลากใส่ตะกร้าให้ถูกนะ',
+    bins:[{k:'land',l:'🌳 สัตว์บก'},{k:'water',l:'🌊 สัตว์น้ำ'},{k:'air',l:'☁️ สัตว์ปีก'}],
+    items:[
+      {e:'🐶',n:'หมา',k:'land'},{e:'🐱',n:'แมว',k:'land'},{e:'🐘',n:'ช้าง',k:'land'},{e:'🦁',n:'สิงโต',k:'land'},
+      {e:'🐰',n:'กระต่าย',k:'land'},{e:'🐴',n:'ม้า',k:'land'},{e:'🐮',n:'วัว',k:'land'},{e:'🐷',n:'หมู',k:'land'},
+      {e:'🦒',n:'ยีราฟ',k:'land'},{e:'🐒',n:'ลิง',k:'land'},
+      {e:'🐟',n:'ปลา',k:'water'},{e:'🐠',n:'ปลาการ์ตูน',k:'water'},{e:'🐬',n:'โลมา',k:'water'},{e:'🐙',n:'ปลาหมึก',k:'water'},
+      {e:'🦀',n:'ปู',k:'water'},{e:'🦐',n:'กุ้ง',k:'water'},{e:'🐳',n:'วาฬ',k:'water'},{e:'🦈',n:'ฉลาม',k:'water'},
+      {e:'🐦',n:'นก',k:'air'},{e:'🦅',n:'อินทรี',k:'air'},{e:'🦆',n:'เป็ด',k:'air'},{e:'🦉',n:'นกฮูก',k:'air'},
+      {e:'🦜',n:'นกแก้ว',k:'air'},{e:'🕊️',n:'นกพิราบ',k:'air'},{e:'🦢',n:'หงส์',k:'air'},{e:'🐔',n:'ไก่',k:'air'}
+    ]
+  },
+  /* ป.3 — แยกเลขคู่/เลขคี่ */
+  evenodd: {
+    prompt:'ลากตัวเลขใส่ตะกร้าให้ถูก เลขคู่หรือเลขคี่?',
+    bins:[{k:'even',l:'2️⃣ เลขคู่'},{k:'odd',l:'1️⃣ เลขคี่'}],
+    items:[
+      {t:'2',k:'even'},{t:'4',k:'even'},{t:'6',k:'even'},{t:'8',k:'even'},{t:'10',k:'even'},{t:'12',k:'even'},
+      {t:'14',k:'even'},{t:'16',k:'even'},{t:'18',k:'even'},{t:'20',k:'even'},{t:'24',k:'even'},{t:'30',k:'even'},
+      {t:'36',k:'even'},{t:'42',k:'even'},{t:'48',k:'even'},{t:'50',k:'even'},
+      {t:'1',k:'odd'},{t:'3',k:'odd'},{t:'5',k:'odd'},{t:'7',k:'odd'},{t:'9',k:'odd'},{t:'11',k:'odd'},
+      {t:'13',k:'odd'},{t:'15',k:'odd'},{t:'17',k:'odd'},{t:'19',k:'odd'},{t:'21',k:'odd'},{t:'25',k:'odd'},
+      {t:'33',k:'odd'},{t:'45',k:'odd'},{t:'49',k:'odd'},{t:'51',k:'odd'}
+    ]
+  },
+  /* ป.3 — แยกพยัญชนะ/สระ (ภาษาไทย) */
+  thaichar: {
+    prompt:'ตัวอักษรนี้เป็นพยัญชนะหรือสระ? ลากใส่ตะกร้าให้ถูก',
+    bins:[{k:'cons',l:'พยัญชนะ (ก ข ค)'},{k:'vowel',l:'สระ (า เ แ)'}],
+    items:[
+      {t:'ก',k:'cons'},{t:'ข',k:'cons'},{t:'ค',k:'cons'},{t:'ง',k:'cons'},{t:'จ',k:'cons'},{t:'ช',k:'cons'},
+      {t:'ด',k:'cons'},{t:'ต',k:'cons'},{t:'ท',k:'cons'},{t:'น',k:'cons'},{t:'บ',k:'cons'},{t:'ป',k:'cons'},
+      {t:'พ',k:'cons'},{t:'ม',k:'cons'},{t:'ย',k:'cons'},{t:'ร',k:'cons'},{t:'ล',k:'cons'},{t:'ว',k:'cons'},
+      {t:'ส',k:'cons'},{t:'ห',k:'cons'},
+      {t:'า',k:'vowel'},{t:'เ',k:'vowel'},{t:'แ',k:'vowel'},{t:'โ',k:'vowel'},{t:'ใ',k:'vowel'},
+      {t:'ไ',k:'vowel'},{t:'ำ',k:'vowel'},{t:'ะ',k:'vowel'}
     ]
   }
 };
