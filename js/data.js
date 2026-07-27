@@ -1852,6 +1852,7 @@ const CATS = [
   { id:'p3-mathsort', name:'แยกเลขคู่-เลขคี่', emoji:'🧮', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'evenodd', levels:10, grade:'p3', isNew:true },
   { id:'p3-thaisort', name:'แยกพยัญชนะ-สระ', emoji:'🔤', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'thaichar', levels:10, grade:'p3', isNew:true },
   { id:'p3-scisort', name:'แยกสิ่งมีชีวิต-ไม่มีชีวิต', emoji:'🦠', color:'#2FA36B', light:'#D9F2E4', type:'skill', mode:'sort', sortSet:'living', levels:10, grade:'p3', isNew:true },
+  { id:'p3-coord', name:'ขุมทรัพย์พิกัด', emoji:'💎', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', levels:10, grade:'p3', isNew:true },
   {
     id:'p3-engclock', name:'English ป.3 · บอกเวลา (What time is it?)', emoji:'🕰️', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
     questions:[

@@ -2435,6 +2435,24 @@
   .world-rot-btn:active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(46,134,193,.35); }
   .world-check-btn{ padding:13px 34px; border-radius:18px; border:none; background:#3B9E5B; color:#fff; font-family:inherit; font-size:19px; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #2b7a44; transition:transform .12s, box-shadow .12s; }
   .world-check-btn:active{ transform:translateY(4px); box-shadow:0 1px 0 #2b7a44; }
+  /* ---- ขุมทรัพย์พิกัด (coord) ---- */
+  .coord-board{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; max-width:540px; margin:8px auto 30px; padding:0 12px; }
+  .coord-q{ font-size:19px; font-weight:800; color:var(--ink); text-align:center; background:#fff; border-radius:16px; padding:11px 20px; line-height:1.6; box-shadow:0 3px 10px rgba(0,0,0,.06); }
+  body.night-mode .coord-q{ color:#EAF0FF; background:#222B45; }
+  .coord-q b{ color:var(--cat-color,#C77D2E); font-size:23px; }
+  .coord-grid-wrap{ width:100%; overflow-x:auto; display:flex; justify-content:center; }
+  .coord-grid{ display:grid; gap:6px; width:100%; max-width:460px; background:#EED9B0; border:4px solid #D9BE85; border-radius:18px; padding:10px; }
+  body.night-mode .coord-grid{ background:#3a3320; border-color:#5a4d2f; }
+  .coord-head{ display:flex; align-items:center; justify-content:center; font-weight:900; color:var(--cat-color,#C77D2E); font-size:19px; }
+  body.night-mode .coord-head{ color:#E8C98A; }
+  .coord-corner{ font-size:17px; }
+  .coord-cell{ aspect-ratio:1/1; border-radius:12px; background:#F4DEAE; border:2px solid #E3C88C; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:30px; line-height:1; transition:transform .12s, background .2s; }
+  body.night-mode .coord-cell{ background:#4a3f27; border-color:#63552f; }
+  .coord-cell:hover{ transform:scale(1.05); background:#FBEAC4; }
+  .coord-cell.coord-found{ background:#B7E6C0 !important; border-color:#5bbd6f; animation:tlPop .5s ease; }
+  body.night-mode .coord-cell.coord-found{ background:#264a2e !important; }
+  .coord-cell.coord-miss{ background:#F3C0BB !important; border-color:#e07d72; animation:tlShake .4s ease; }
+  body.night-mode .coord-cell.coord-miss{ background:#4a2724 !important; }
   @media (max-width:480px){
     .money-bubble{ font-size:16px; } .money-cust-face{ font-size:42px; }
     .money-coin{ width:38px; height:38px; font-size:16px; }
