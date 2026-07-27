@@ -1464,7 +1464,13 @@ const CATS = [
       {q:'ปัด 4,780 ให้เป็นจำนวนเต็มหลักพันได้เท่าไร?', emoji:'🎯', choices:['5,000','4,000','4,800','4,700'], correct:0, explain:'4,780 ใกล้ 5,000 มากกว่า จึงปัดเป็น 5,000', tier:2},
       {q:'นับทีละ 10,000: 20,000, 30,000, 40,000, ▢', emoji:'💯', choices:['50,000','41,000','45,000','60,000'], correct:0, explain:'นับเพิ่มทีละ 10,000 ตัวต่อไปคือ 50,000', tier:2},
       {q:'เรียงจากมากไปน้อยข้อใดถูกต้อง?', emoji:'📉', choices:['66,000; 60,600; 6,600','6,600; 60,600; 66,000','60,600; 66,000; 6,600','66,000; 6,600; 60,600'], correct:0, explain:'66,000 มากสุด แล้ว 60,600 แล้ว 6,600', tier:2},
-      {q:'เลข 34,567 มีเลขในหลักหมื่นคือเลขใด?', emoji:'#️⃣', choices:['3','4','5','7'], correct:0, explain:'เลข 3 อยู่หลักหมื่น', tier:2}
+      {q:'เลข 34,567 มีเลขในหลักหมื่นคือเลขใด?', emoji:'#️⃣', choices:['3','4','5','7'], correct:0, explain:'เลข 3 อยู่หลักหมื่น', tier:2},
+      /* tier3 — เนื้อหาเร่ง ป.4: จำนวนเกินแสน (6-7 หลัก) */
+      {q:'เลข 250,000 อ่านว่าอย่างไร?', emoji:'💯', choices:['สองแสนห้าหมื่น','สองหมื่นห้าพัน','สองแสนห้าพัน','สองล้านห้าแสน'], correct:0, explain:'250,000 = สองแสนห้าหมื่น', tier:3},
+      {q:'"สามแสน" เขียนเป็นตัวเลขได้อย่างไร?', emoji:'🔢', choices:['300,000','30,000','3,000,000','3,000'], correct:0, explain:'สามแสน = 300,000', tier:3},
+      {q:'จำนวน 1,000,000 (หนึ่งล้าน) มีกี่หลัก?', emoji:'#️⃣', choices:['7 หลัก','6 หลัก','5 หลัก','8 หลัก'], correct:0, explain:'หนึ่งล้านมี 7 หลัก', tier:3},
+      {q:'เลข 456,789 มีเลขในหลักแสนคือเลขใด?', emoji:'📊', choices:['4','5','6','7'], correct:0, explain:'เลข 4 อยู่หลักแสน', tier:3},
+      {q:'จำนวนใดมากที่สุด?', emoji:'📈', choices:['520,000','98,000','452,000','99,999'], correct:0, explain:'520,000 มากที่สุด (ห้าแสนสองหมื่น)', tier:3}
     ]
   },
   {
@@ -1489,7 +1495,13 @@ const CATS = [
       {q:'ร้านมีนม 450 ขวด ขายไป 180 ขวด เติมอีก 200 ขวด เหลือกี่ขวด?', emoji:'🥛', choices:['470','430','370','530'], correct:0, explain:'450 - 180 + 200 = 470 ขวด', tier:2},
       {q:'4,200 - 2,750 = ?', emoji:'➖', choices:['1,450','1,550','1,350','2,450'], correct:0, explain:'4,200 ลบ 2,750 เท่ากับ 1,450', tier:2},
       {q:'รถบัสมีผู้โดยสาร 640 คน ลง 250 คน ขึ้น 130 คน เหลือกี่คน?', emoji:'🚌', choices:['520','470','390','630'], correct:0, explain:'640 - 250 + 130 = 520 คน', tier:2},
-      {q:'3,680 + 2,540 = ?', emoji:'➕', choices:['6,220','6,120','6,210','6,320'], correct:0, explain:'3,680 บวก 2,540 เท่ากับ 6,220', tier:2}
+      {q:'3,680 + 2,540 = ?', emoji:'➕', choices:['6,220','6,120','6,210','6,320'], correct:0, explain:'3,680 บวก 2,540 เท่ากับ 6,220', tier:2},
+      /* tier3 — เนื้อหาเร่ง ป.4: ทศนิยมเบื้องต้น (อ่าน/เปรียบเทียบ/บวก-ลบง่าย) */
+      {q:'ทศนิยม 0.5 อ่านว่าอย่างไร?', emoji:'🔢', choices:['ศูนย์จุดห้า','ห้าจุดศูนย์','ศูนย์จุดห้าสิบ','ห้าสิบ'], correct:0, explain:'0.5 อ่านว่า ศูนย์จุดห้า', tier:3},
+      {q:'ทศนิยม 0.7 กับ 0.5 ตัวใดมากกว่า?', emoji:'⚖️', choices:['0.7','0.5','เท่ากัน','เทียบไม่ได้'], correct:0, explain:'0.7 มากกว่า 0.5', tier:3},
+      {q:'เศษหนึ่งส่วนสอง (½) เขียนเป็นทศนิยมได้เท่าไร?', emoji:'🥧', choices:['0.5','0.2','1.2','5.0'], correct:0, explain:'½ = 0.5', tier:3},
+      {q:'0.3 + 0.4 = ?', emoji:'➕', choices:['0.7','0.34','0.12','7.0'], correct:0, explain:'0.3 บวก 0.4 เท่ากับ 0.7', tier:3},
+      {q:'1.5 - 0.5 = ?', emoji:'➖', choices:['1.0','2.0','0.5','1.5'], correct:0, explain:'1.5 ลบ 0.5 เท่ากับ 1.0', tier:3}
     ]
   },
   {
@@ -1514,7 +1526,13 @@ const CATS = [
       {q:'มีดินสอ 48 แท่ง แบ่งใส่ 6 กล่องเท่าๆ กัน กล่องละกี่แท่ง?', emoji:'✏️', choices:['8','7','9','6'], correct:0, explain:'48 ÷ 6 = 8 แท่ง', tier:2},
       {q:'13 × 3 = ?', emoji:'✖️', choices:['39','36','33','43'], correct:0, explain:'13 × 3 = 39', tier:2},
       {q:'30 ÷ 4 ได้ผลลัพธ์เท่าไร (มีเศษ)?', emoji:'➗', choices:['7 เศษ 2','6 เศษ 2','7 เศษ 3','8 เศษ 0'], correct:0, explain:'4 × 7 = 28 เหลือเศษ 2 จึงได้ 7 เศษ 2', tier:2},
-      {q:'12 × 4 = ?', emoji:'✖️', choices:['48','44','52','46'], correct:0, explain:'12 × 4 = 48', tier:2}
+      {q:'12 × 4 = ?', emoji:'✖️', choices:['48','44','52','46'], correct:0, explain:'12 × 4 = 48', tier:2},
+      /* tier3 — เนื้อหาเร่ง ป.4: เศษส่วน (เศษเกิน↔จำนวนคละ, เปรียบเทียบ) + คูณสองหลัก */
+      {q:'เศษเกิน 5/2 เท่ากับจำนวนคละใด?', emoji:'🥧', choices:['2½ (สองเศษหนึ่งส่วนสอง)','1½','5½','2¼'], correct:0, explain:'5 ÷ 2 = 2 เหลือเศษ 1 จึงเป็น 2½', tier:3},
+      {q:'จำนวนคละ 1½ เท่ากับเศษเกินใด?', emoji:'🍕', choices:['3/2','2/3','1/2','5/2'], correct:0, explain:'1½ = 1 + ½ = 2/2 + 1/2 = 3/2', tier:3},
+      {q:'เศษส่วน ½ กับ ¾ ตัวใดมากกว่า?', emoji:'⚖️', choices:['¾','½','เท่ากัน','เทียบไม่ได้'], correct:0, explain:'¾ (สามในสี่) มากกว่า ½ (สองในสี่)', tier:3},
+      {q:'¼ + ¼ = ? (ตัวส่วนเท่ากัน)', emoji:'➕', choices:['2/4 (= ½)','2/8','1/4','4/4'], correct:0, explain:'บวกตัวเศษ 1+1=2 ตัวส่วนคงเดิม ได้ 2/4 = ½', tier:3},
+      {q:'23 × 4 = ?', emoji:'✖️', choices:['92','86','94','82'], correct:0, explain:'23 × 4 = 92', tier:3}
     ]
   },
   {
@@ -1628,7 +1646,13 @@ const CATS = [
       {q:'"July" เป็นเดือนที่เท่าไรของปี?', emoji:'🗓️', choices:['เดือนที่ 7','เดือนที่ 6','เดือนที่ 8','เดือนที่ 9'], correct:0, explain:'July คือเดือนกรกฎาคม เดือนที่ 7', tier:2},
       {q:'"cloudy" แปลว่าอากาศแบบใด?', emoji:'☁️', choices:['มีเมฆมาก','ท้องฟ้าใส','ฝนตกหนัก','ลมแรง'], correct:0, explain:'cloudy แปลว่า มีเมฆมาก', tier:2},
       {q:'March, April, ___ , June', emoji:'🗓️', choices:['May','July','February','August'], correct:0, explain:'ลำดับเดือนคือ March, April, May, June', tier:2},
-      {q:'"rainy season" คือฤดูอะไรในไทย?', emoji:'🌧️', choices:['ฤดูฝน','ฤดูร้อน','ฤดูหนาว','ฤดูใบไม้ผลิ'], correct:0, explain:'rainy season = ฤดูฝน', tier:2}
+      {q:'"rainy season" คือฤดูอะไรในไทย?', emoji:'🌧️', choices:['ฤดูฝน','ฤดูร้อน','ฤดูหนาว','ฤดูใบไม้ผลิ'], correct:0, explain:'rainy season = ฤดูฝน', tier:2},
+      /* tier3 — เนื้อหาเร่ง ป.4: เดือน/ฤดูขั้นสูง (ลำดับ, spring/autumn) */
+      {q:'How many months are there in a year?', emoji:'🗓️', choices:['twelve','ten','seven','thirty'], correct:0, explain:'1 ปีมี 12 เดือน = twelve', tier:3},
+      {q:'What is the first month of the year?', emoji:'📅', choices:['January','December','March','June'], correct:0, explain:'เดือนแรกของปีคือ January (มกราคม)', tier:3},
+      {q:'What month comes before December?', emoji:'🗓️', choices:['November','October','January','August'], correct:0, explain:'ก่อน December คือ November (พฤศจิกายน)', tier:3},
+      {q:'"spring" คือฤดูอะไร?', emoji:'🌸', choices:['ฤดูใบไม้ผลิ','ฤดูหนาว','ฤดูร้อน','ฤดูใบไม้ร่วง'], correct:0, explain:'spring = ฤดูใบไม้ผลิ', tier:3},
+      {q:'"autumn" (fall) คือฤดูอะไร?', emoji:'🍂', choices:['ฤดูใบไม้ร่วง','ฤดูใบไม้ผลิ','ฤดูฝน','ฤดูร้อน'], correct:0, explain:'autumn/fall = ฤดูใบไม้ร่วง', tier:3}
     ]
   },
   {
@@ -1653,7 +1677,13 @@ const CATS = [
       {q:'My mom ___ rice. (cook)', emoji:'🍚', choices:['cooks','cook','cooking','cooked'], correct:0, explain:'ประธานเอกพจน์ mom ใช้ cooks', tier:2},
       {q:'There ___ three cats on the mat.', emoji:'🐱', choices:['are','is','am','be'], correct:0, explain:'three cats เป็นพหูพจน์ ใช้ are', tier:2},
       {q:'This is ___ umbrella. (สระ)', emoji:'☂️', choices:['an','a','the two','some'], correct:0, explain:'umbrella ขึ้นต้นด้วยเสียงสระ ใช้ an', tier:2},
-      {q:'พหูพจน์ของ "mouse" คือคำใด?', emoji:'🐭', choices:['mice','mouses','mouse','mices'], correct:0, explain:'พหูพจน์ของ mouse คือ mice', tier:2}
+      {q:'พหูพจน์ของ "mouse" คือคำใด?', emoji:'🐭', choices:['mice','mouses','mouse','mices'], correct:0, explain:'พหูพจน์ของ mouse คือ mice', tier:2},
+      /* tier3 — เนื้อหาเร่ง ป.4: present simple ผันตามประธาน (es/y→ies) + irregular plural */
+      {q:'He ___ TV every evening. (watch)', emoji:'📺', choices:['watches','watch','watching','watched'], correct:0, explain:'ประธาน He + กริยาลงท้าย ch เติม es = watches', tier:3},
+      {q:'She ___ English at school. (study)', emoji:'📚', choices:['studies','studys','study','studying'], correct:0, explain:'study ลงท้าย y เปลี่ยนเป็น ies = studies', tier:3},
+      {q:'My father ___ a big car. (have)', emoji:'🚗', choices:['has','have','haves','having'], correct:0, explain:'ประธานเอกพจน์ใช้ has', tier:3},
+      {q:'___ she like ice cream?', emoji:'🍦', choices:['Does','Do','Is','Are'], correct:0, explain:'ประธานเอกพจน์ she ใช้ Does ในคำถาม', tier:3},
+      {q:'พหูพจน์ของ "tooth" คือคำใด?', emoji:'🦷', choices:['teeth','tooths','tooth','teeths'], correct:0, explain:'พหูพจน์ของ tooth คือ teeth', tier:3}
     ]
   },
   {
@@ -1678,7 +1708,13 @@ const CATS = [
       {q:'A frog can jump. Can a frog jump?', emoji:'🐸', choices:['Yes, it can','No, it cannot','It can fly','It can read'], correct:0, explain:'กบกระโดดได้ ตอบ Yes, it can', tier:2},
       {q:'In the morning we say ___ .', emoji:'🌅', choices:['Good morning','Good night','Goodbye','Thank you'], correct:0, explain:'ตอนเช้าทักทายว่า Good morning', tier:2},
       {q:'"Finally" ใช้บอกลำดับใด?', emoji:'🏁', choices:['สุดท้าย','อันแรก','ตรงกลาง','ก่อนหน้า'], correct:0, explain:'Finally แปลว่า สุดท้าย / ในที่สุด', tier:2},
-      {q:'Sara has a dog. The dog is big. Is the dog big?', emoji:'🐕', choices:['Yes, it is','No, it is not','It is small','It is a cat'], correct:0, explain:'ประโยคบอกว่าหมาตัวใหญ่ ตอบ Yes, it is', tier:2}
+      {q:'Sara has a dog. The dog is big. Is the dog big?', emoji:'🐕', choices:['Yes, it is','No, it is not','It is small','It is a cat'], correct:0, explain:'ประโยคบอกว่าหมาตัวใหญ่ ตอบ Yes, it is', tier:2},
+      /* tier3 — เนื้อหาเร่ง ป.4: ลำดับขั้นตอน First/Then/Finally + อ่านจับใจความยาวขึ้น */
+      {q:'First, wake up. Then, brush your teeth. ___, eat breakfast.', emoji:'🍳', choices:['Finally','First','Then again','Never'], correct:0, explain:'ขั้นตอนสุดท้ายใช้ Finally', tier:3},
+      {q:'Ben goes to school from Monday to Friday. Does Ben go to school on Sunday?', emoji:'🏫', choices:['No, he does not','Yes, he does','Every day','On Sunday only'], correct:0, explain:'Ben ไปโรงเรียนจันทร์-ศุกร์ ไม่ไปวันอาทิตย์', tier:3},
+      {q:'A week has seven days. How many days are there in two weeks?', emoji:'📅', choices:['fourteen','seven','ten','twelve'], correct:0, explain:'7 × 2 = 14 = fourteen', tier:3},
+      {q:'Order the steps: First → Then → ___ ?', emoji:'🔢', choices:['Finally','Yesterday','Because','And'], correct:0, explain:'ลำดับคือ First → Then → Finally', tier:3},
+      {q:'Mom makes a cake. First she mixes eggs and flour. What does she mix?', emoji:'🎂', choices:['eggs and flour','rice and fish','water only','sugar and salt'], correct:0, explain:'ประโยคบอกว่าผสม eggs and flour (ไข่กับแป้ง)', tier:3}
     ]
   },
 
