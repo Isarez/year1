@@ -3997,17 +3997,15 @@ function clockTimeText(h, m){
   return h+' โมง '+m+' นาที';
 }
 
-/* อ่านโจทย์ด้วยเสียงพูดไทย — pattern เดียวกับ speakListenWord: ไม่บล็อกถ้าไม่เจอ voice ไทย, หน่วง 30ms หลัง cancel กันบั๊ก Chrome */
+/* อ่านโจทย์ด้วยเสียงพูดไทย — เรียก cancel()+speak() ตรงๆ ใน user gesture (ห้ามหน่วง setTimeout ไม่งั้น iOS Safari บล็อกเสียง — ดู speakListenWord) */
 function speakClockText(text){
   try{
     const synth = window.speechSynthesis; if(!synth) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'th-TH'; u.rate = 0.85;
+    const voice = pickThaiVoice(); if(voice) u.voice = voice;
     synth.cancel();
-    setTimeout(()=>{
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'th-TH'; u.rate = 0.85;
-      const voice = pickThaiVoice(); if(voice) u.voice = voice;
-      synth.speak(u);
-    }, 30);
+    synth.speak(u);
   }catch(e){}
 }
 
@@ -4298,6 +4296,21 @@ function pickThaiVoice(){
   return speechSynthesis.getVoices().find(v=>v.lang && v.lang.toLowerCase().startsWith('th')) || null;
 }
 
+/* เลือกเสียงพูดภาษาอังกฤษ "มาตรฐาน" — สำคัญ: ต้อง set u.voice ให้คำอังกฤษด้วย ไม่งั้นบางเครื่องเลือกเสียงเพี้ยน
+   เช่น macOS มีเสียงตลก/novelty (Albert, Bad News, Bells, Boing, Bubbles...) ที่อาจถูกเลือกเป็นตัวแรก = เสียงอังกฤษเพี้ยน
+   หรือบนเครื่อง locale ไทย ระบบอาจอ่านอังกฤษด้วยเสียงไทย — จึงเลือกเสียงคนจริงที่รู้จักก่อน แล้วเลี่ยง novelty */
+const EN_NOVELTY_VOICE = /Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Ralph|Trinoids|Whisper|Zarvox|Wobble|Superstar|Junior|Kathy|Fred|Grandma|Grandpa|Flo|Eddy|Reed|Rocko|Sandy|Shelley|Rishi/i;
+function pickEnglishVoice(){
+  if(!window.speechSynthesis) return null;
+  const en = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('en'));
+  if(!en.length) return null;
+  const preferred = ['Google US English','Google UK English Female','Samantha','Microsoft Zira','Microsoft','Daniel','Karen','Moira','Aaron','Allison','Ava','Serena'];
+  for(const name of preferred){ const v = en.find(x=>x.name.indexOf(name)>=0); if(v) return v; }
+  return en.find(v=>v.lang.toLowerCase()==='en-us' && !EN_NOVELTY_VOICE.test(v.name))
+      || en.find(v=>!EN_NOVELTY_VOICE.test(v.name))
+      || en.find(v=>v.default) || en[0];
+}
+
 /* เช็คว่าเบราว์เซอร์นี้มีเสียงพูดภาษาไทยติดตั้งไว้ไหม (บาง browser โหลด voice list แบบ async ผ่าน event 'voiceschanged')
    ใช้แค่ตัดสินใจว่าจะโชว์รูปคำใบ้เสริมไหม ไม่ได้ใช้ปิดกั้นการพยายามพูดจริง (กันกรณี detect พลาดแล้วเสียงไม่ออกทั้งที่มี voice) */
 function hasThaiVoiceSupport(){
@@ -4352,7 +4365,6 @@ async function startListenGame(catId){
 
 function speakListenWord(word){
   if(!window.speechSynthesis){ showToast('🔇','เบราว์เซอร์นี้ไม่รองรับการอ่านออกเสียง'); return; }
-  speechSynthesis.cancel(); // ตัดเสียงเดิมที่ค้างอยู่ก่อนพูดคำใหม่ กันเสียงซ้อนกันตอนกดรัวๆ
   const cat = listenGame ? catById(listenGame.catId) : null;
   const u = new SpeechSynthesisUtterance(word);
   if(cat && cat.lang==='th'){
@@ -4360,11 +4372,16 @@ function speakListenWord(word){
     if(voice) u.voice = voice; // set voice ตรงๆ แทนพึ่ง lang อย่างเดียว บาง browser เลือก voice ผิด/ไม่พูดถ้าไม่ set
     u.lang = 'th-TH';
   } else {
+    const voice = pickEnglishVoice();
+    if(voice) u.voice = voice; // set voice อังกฤษมาตรฐาน กันเครื่องเลือกเสียง novelty/เสียงไทยอ่านอังกฤษ = เพี้ยน
     u.lang = 'en-US';
   }
   u.rate = 0.85;
-  // Chrome มีบั๊กที่ speak() ทันทีหลัง cancel() บางทีเงียบเฉยๆ ต้องรอ event loop รอบถัดไปก่อนค่อยพูด
-  setTimeout(()=> speechSynthesis.speak(u), 30);
+  /* สำคัญ: ต้องเรียก cancel()+speak() "ตรงๆ" ในจังหวะที่ผู้ใช้กดปุ่ม (user gesture) ห้ามหน่วงด้วย setTimeout
+     เพราะ iOS Safari (iPad — อุปกรณ์หลักของแอป) จะบล็อกเสียงถ้า speak() ไม่ได้อยู่ใน user gesture โดยตรง = กดฟังแล้วเงียบ
+     (ของเดิมหน่วง 30ms เพื่อกันบั๊ก Chrome แต่ทำให้ iPad ไม่มีเสียง — ทดสอบแล้ว Chrome เรียกตรงๆ ก็ทำงานปกติ) */
+  try{ speechSynthesis.cancel(); }catch(e){}   // ตัดเสียงเดิมที่ค้างก่อนพูดคำใหม่ กันเสียงซ้อนตอนกดรัวๆ
+  speechSynthesis.speak(u);
 }
 
 function renderListenLevel(){

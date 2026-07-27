@@ -27,6 +27,17 @@ function pickThaiVoice(){
   if(!window.speechSynthesis) return null;
   return speechSynthesis.getVoices().find(v=>v.lang && v.lang.toLowerCase().startsWith('th')) || null;
 }
+/* เลือกเสียงอังกฤษมาตรฐาน กันเครื่องเลือกเสียง novelty/เสียงไทยอ่านอังกฤษ = เพี้ยน (port จาก app.js) */
+var EN_NOVELTY_VOICE = /Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Ralph|Trinoids|Whisper|Zarvox|Wobble|Superstar|Junior|Kathy|Fred|Grandma|Grandpa|Flo|Eddy|Reed|Rocko|Sandy|Shelley|Rishi/i;
+function pickEnglishVoice(){
+  if(!window.speechSynthesis) return null;
+  const en = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('en'));
+  if(!en.length) return null;
+  const preferred = ['Google US English','Google UK English Female','Samantha','Microsoft Zira','Microsoft','Daniel','Karen','Moira','Aaron','Allison','Ava','Serena'];
+  for(const name of preferred){ const v = en.find(x=>x.name.indexOf(name)>=0); if(v) return v; }
+  return en.find(v=>v.lang.toLowerCase()==='en-us' && !EN_NOVELTY_VOICE.test(v.name))
+      || en.find(v=>!EN_NOVELTY_VOICE.test(v.name)) || en.find(v=>v.default) || en[0];
+}
 /* เช็คว่ามีเสียงไทยไหม — ใช้แค่ตัดสินใจโชว์รูปใบ้เสริม ไม่บล็อกการพูดจริง (ตรวจ false negative ได้ง่าย) */
 function hasThaiVoiceSupport(){
   return new Promise(resolve=>{
@@ -40,18 +51,20 @@ function hasThaiVoiceSupport(){
 /* อ่านออกเสียงคำ — เดาภาษาจากตัวอักษรในคำ (ปุ่ม 🔊 ลองฟังในฟอร์ม builder ก็เรียกตัวนี้) */
 function speakTeacherWord(word){
   if(!window.speechSynthesis) return;
-  speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(word);
   if(isThaiWord(word)){
     const voice = pickThaiVoice();
     if(voice) u.voice = voice; // set voice ตรงๆ แทนพึ่ง lang อย่างเดียว บาง browser เลือก voice ผิด/ไม่พูดถ้าไม่ set
     u.lang = 'th-TH';
   } else {
+    const voice = pickEnglishVoice();
+    if(voice) u.voice = voice; // set voice อังกฤษมาตรฐาน กันเสียงเพี้ยน
     u.lang = 'en-US';
   }
   u.rate = 0.85;
-  // Chrome มีบั๊กที่ speak() ทันทีหลัง cancel() บางทีเงียบเฉยๆ ต้องรอ event รอบถัดไปก่อนค่อยพูด
-  setTimeout(()=> speechSynthesis.speak(u), 30);
+  /* สำคัญ: เรียก cancel()+speak() ตรงๆ ใน user gesture ห้ามหน่วง setTimeout ไม่งั้น iOS Safari (iPad) บล็อกเสียง = กดฟังแล้วเงียบ */
+  try{ speechSynthesis.cancel(); }catch(e){}
+  speechSynthesis.speak(u);
 }
 
 /* ---- game flow ---- */
