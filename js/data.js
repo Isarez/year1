@@ -1849,7 +1849,8 @@ const CATS = [
   { id:'p3-iq3', name:'เชาวน์ ป.3 · นกฮูกสั่ง', emoji:'🦉', color:'#17A65B', light:'#D6F3E4', type:'skill', mode:'ef', levels:10, grade:'p3', isNew:true },
   { id:'p3-code1', name:'พาหุ่นยนต์ ป.3 · 1', emoji:'👾', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p3a', codeLoop:true, levels:10, grade:'p3', isNew:true },
   { id:'p3-code2', name:'พาหุ่นยนต์ ป.3 · 2', emoji:'🛸', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p3b', codeLoop:true, levels:8, grade:'p3', isNew:true },
-  { id:'p3-code3', name:'พาหุ่นยนต์ ป.3 · 3', emoji:'🎛️', color:'#1F7E88', light:'#D6EDF0', type:'skill', mode:'code', codeSet:'p3c', codeLoop:true, levels:8, grade:'p3', isNew:true }
+  { id:'p3-code3', name:'พาหุ่นยนต์ ป.3 · 3', emoji:'🎛️', color:'#1F7E88', light:'#D6EDF0', type:'skill', mode:'code', codeSet:'p3c', codeLoop:true, levels:8, grade:'p3', isNew:true },
+  { id:'p3-code4', name:'ถ้าเจอกำแพงให้เลี้ยว', emoji:'🔀', color:'#1B6E77', light:'#D3EBEE', type:'skill', mode:'code', codeSet:'p3if', codeLoop:true, codeCond:true, levels:10, grade:'p3', isNew:true }
 ];
 
 /* ============================= ระดับชั้น (GRADES) ============================= */
@@ -1971,6 +1972,21 @@ const ROBOT_LEVELS_P3B = [
   { size:7, start:{r:3,c:0,dir:1}, goal:{r:3,c:6}, walls:[] },
   { size:7, start:{r:6,c:0,dir:1}, goal:{r:0,c:6}, walls:[] },
   { size:7, start:{r:0,c:0,dir:2}, goal:{r:6,c:6}, walls:[] }
+];
+/* ป.3 coding แบบเงื่อนไข (if-then) — ใช้บัตร "ถ้าเจอกำแพงให้เลี้ยว" เดินตามขอบ/กำแพงจนถึงบ้าน
+   เป้าหมายอยู่บนขอบเสมอ และเดินตามกำแพงตามเข็มนาฬิกา (เจอกำแพงหันขวา) ถึงได้ภายใน ~10 จังหวะ
+   (ทดสอบด้วยการจำลอง ifwall แล้ว — ดู applyCodeCommand ใน app.js) */
+const ROBOT_LEVELS_P3IF = [
+  { size:4, start:{r:3,c:3,dir:3}, goal:{r:3,c:0}, walls:[] },
+  { size:4, start:{r:3,c:0,dir:0}, goal:{r:0,c:3}, walls:[] },
+  { size:4, start:{r:0,c:0,dir:1}, goal:{r:3,c:3}, walls:[] },
+  { size:4, start:{r:0,c:3,dir:2}, goal:{r:3,c:0}, walls:[] },
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[] },
+  { size:5, start:{r:0,c:4,dir:2}, goal:{r:4,c:0}, walls:[] },
+  { size:5, start:{r:4,c:4,dir:3}, goal:{r:0,c:0}, walls:[] },
+  { size:5, start:{r:0,c:0,dir:1}, goal:{r:4,c:4}, walls:[] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:3}, walls:[] },
+  { size:6, start:{r:5,c:5,dir:3}, goal:{r:1,c:0}, walls:[] }
 ];
 const ROBOT_LEVELS_P3C = [
   { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[] },
@@ -2417,7 +2433,7 @@ const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'l
   'p3-eng2':'p3-eng1', 'p3-eng3':'p3-eng2',
   'p3-social2':'p3-social1', 'p3-iq2':'p3-iq1',
   'p3-sci2':'p3-sci1', 'p3-iq3':'p3-iq2',
-  'p3-code2':'p3-code1', 'p3-code3':'p3-code2' };
+  'p3-code2':'p3-code1', 'p3-code3':'p3-code2', 'p3-code4':'p3-code3' };
 
 /* ============ เกมเส้นเวลา (skill-timeline / p3-timeline) ============
    TIMELINE_SETS: ชุดเหตุการณ์เรียงตามลำดับเวลา index 0 = เก่า/ก่อนสุด → ท้าย = ใหม่/หลังสุด

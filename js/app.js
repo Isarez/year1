@@ -2580,12 +2580,13 @@ $('world-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 let codeGame = null;
 let codeTimer = null;
 const CODE_DIRS = [{dr:-1,dc:0},{dr:0,dc:1},{dr:1,dc:0},{dr:0,dc:-1}]; // 0=ขึ้น 1=ขวา 2=ลง 3=ซ้าย
-const CODE_CMD = { forward:{ lbl:'เดินหน้า' }, left:{ lbl:'หันซ้าย' }, right:{ lbl:'หันขวา' } };
+const CODE_CMD = { forward:{ lbl:'เดินหน้า' }, left:{ lbl:'หันซ้าย' }, right:{ lbl:'หันขวา' }, ifwall:{ lbl:'ถ้าเจอกำแพงให้เลี้ยว' } };
 /* ---- SVG ไอคอนปุ่มคำสั่ง (toon สวยงาม แทน emoji) ---- */
 const CMD_ICON = {
   forward:'<svg viewBox="0 0 32 32"><path d="M16 4 L27 16 H21 V27 H11 V16 H5 Z" fill="#3B9E5B" stroke="#276b3d" stroke-width="2.4" stroke-linejoin="round"/><path d="M16 8 L22 14 H18.5" fill="none" stroke="#c8f0d4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   left:'<svg viewBox="0 0 32 32"><path d="M20 27 Q10 27 10 15" fill="none" stroke="#E8934A" stroke-width="4.4" stroke-linecap="round"/><path d="M4 16 L10 8 L16 16 Z" fill="#E8934A" stroke="#bf6f28" stroke-width="2.2" stroke-linejoin="round"/></svg>',
-  right:'<svg viewBox="0 0 32 32"><path d="M12 27 Q22 27 22 15" fill="none" stroke="#E8934A" stroke-width="4.4" stroke-linecap="round"/><path d="M28 16 L22 8 L16 16 Z" fill="#E8934A" stroke="#bf6f28" stroke-width="2.2" stroke-linejoin="round"/></svg>'
+  right:'<svg viewBox="0 0 32 32"><path d="M12 27 Q22 27 22 15" fill="none" stroke="#E8934A" stroke-width="4.4" stroke-linecap="round"/><path d="M28 16 L22 8 L16 16 Z" fill="#E8934A" stroke="#bf6f28" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  ifwall:'<svg viewBox="0 0 32 32"><circle cx="10.5" cy="18" r="8" fill="#6cbf80" stroke="#3f8f57" stroke-width="2"/><circle cx="7.5" cy="15.5" r="2.4" fill="#a6e0ae"/><path d="M16 22 Q26 22 26 13" fill="none" stroke="#E8934A" stroke-width="3.4" stroke-linecap="round"/><path d="M30 14 L26 7.5 L22 14 Z" fill="#E8934A" stroke="#bf6f28" stroke-width="1.9" stroke-linejoin="round"/></svg>'
 };
 /* ---- ตัวละครหุ่นยนต์ voxel 3D (ประกอบจากบล็อกลูกบาศก์ isometric แบบเดียวกับพื้น — สไตล์ "บ้านของหนู") หัน 4 ทิศ + เดินได้ ---- */
 const ROBOT_VB = 52;
@@ -2662,6 +2663,7 @@ function robotLevelsFor(cat){
   if(cat.codeSet==='p3a') return ROBOT_LEVELS_P3A;
   if(cat.codeSet==='p3b') return ROBOT_LEVELS_P3B;
   if(cat.codeSet==='p3c') return ROBOT_LEVELS_P3C;
+  if(cat.codeSet==='p3if') return ROBOT_LEVELS_P3IF;
   if(cat.codeSet==='p2a') return ROBOT_LEVELS_P2A;
   if(cat.codeSet==='p2b') return ROBOT_LEVELS_P2B;
   if(cat.codeSet==='p2c') return ROBOT_LEVELS_P2C;
@@ -2675,8 +2677,9 @@ function startCodeGame(catId){
   clearTimeout(codeTimer); codeTimer = null;
   lastGameType = 'code'; lastCatId = catId;
   const cat = catById(catId);
-  codeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, set:robotLevelsFor(cat), program:[], running:false, robot:null, lv:null, loop:!!cat.codeLoop, repeat:1 };
+  codeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, set:robotLevelsFor(cat), program:[], running:false, robot:null, lv:null, loop:!!cat.codeLoop, cond:!!cat.codeCond, repeat:1, repeatMax:(cat.codeCond?10:6) };
   const repRow = $('code-repeat-row'); if(repRow) repRow.hidden = !cat.codeLoop;
+  codeView.querySelectorAll('.code-cmd-cond').forEach(b=>{ b.hidden = !cat.codeCond; });
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   codeView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2696,9 +2699,11 @@ function renderCodeLevel(){
   g.repeat = 1; updateRepeatLabel();
   $('code-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('code-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
-  $('code-hint').textContent = g.loop
-    ? 'เรียงบัตร แล้วตั้ง "🔁 ทำซ้ำ" ให้แมวเดินซ้ำหลายรอบ จนถึงบ้าน!'
-    : 'เรียงบัตรคำสั่งให้แมวเดินกลับบ้าน แล้วกด "เล่น"!';
+  $('code-hint').textContent = g.cond
+    ? 'ใส่บัตร "🌳 ถ้าเจอกำแพงให้เลี้ยว" แล้วตั้งทำซ้ำเยอะๆ แมวจะเดินเลี้ยวเองจนถึงบ้าน!'
+    : g.loop
+      ? 'เรียงบัตร แล้วตั้ง "🔁 ทำซ้ำ" ให้แมวเดินซ้ำหลายรอบ จนถึงบ้าน!'
+      : 'เรียงบัตรคำสั่งให้แมวเดินกลับบ้าน แล้วกด "เล่น"!';
   $('code-run-btn').disabled = false;
   setCodeControlsDisabled(false);
   drawIsoBoard();
@@ -2811,7 +2816,7 @@ function updateRepeatLabel(){ const el = $('code-repeat-n'); if(el) el.textConte
 function codeCycleRepeat(){
   const g = codeGame; if(!g || g.running) return;
   playClick();
-  g.repeat = ((g.repeat||1) % 6) + 1;  // วน 1→2→…→6→1 (เผื่อบันไดยาวของ code3 ที่ต้องซ้ำ 5 รอบ)
+  g.repeat = ((g.repeat||1) % (g.repeatMax||6)) + 1;  // วน 1→2→…→max→1 (max=10 สำหรับบัตรเงื่อนไขที่เดินตามกำแพงยาว)
   updateRepeatLabel();
 }
 
@@ -2837,6 +2842,8 @@ function codeRun(){
     i++;
     applyCodeCommand(cmd);
     codeMoveChar(true);
+    /* ถึงบ้านแล้วหยุดทันที (สำคัญกับบัตรเงื่อนไข+ทำซ้ำ ที่ตั้งรอบเผื่อไว้เยอะ) */
+    if(g.robot.r===g.lv.goal.r && g.robot.c===g.lv.goal.c){ codeTimer = setTimeout(codeCheckResult, 430); return; }
     codeTimer = setTimeout(step, 560);
   };
   codeTimer = setTimeout(step, 350);
@@ -2852,6 +2859,15 @@ function applyCodeCommand(cmd){
     const wallSet = new Set((lv.walls||[]).map(w=>w[0]+','+w[1]));
     if(nr>=0 && nc>=0 && nr<lv.size && nc<lv.size && !wallSet.has(nr+','+nc)){ g.robot.r = nr; g.robot.c = nc; }
     else { g.robotBump = true; playClick(); }
+  }
+  else if(cmd==='ifwall'){
+    /* บัตรเงื่อนไข (if-then-else): ถ้าข้างหน้ามีกำแพง/ขอบ → หันขวา, ไม่งั้น → เดินหน้า */
+    const d = CODE_DIRS[g.robot.dir];
+    const nr = g.robot.r + d.dr, nc = g.robot.c + d.dc;
+    const wallSet = new Set((lv.walls||[]).map(w=>w[0]+','+w[1]));
+    const blocked = !(nr>=0 && nc>=0 && nr<lv.size && nc<lv.size && !wallSet.has(nr+','+nc));
+    if(blocked){ g.robot.dir = (g.robot.dir+1)%4; }
+    else { g.robot.r = nr; g.robot.c = nc; }
   }
 }
 
