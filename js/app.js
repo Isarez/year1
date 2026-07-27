@@ -2330,12 +2330,12 @@ $('calendar-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
    วางครบทุกช่องระบบตรวจอัตโนมัติ ถูก = ผ่าน, ผิด = บัตรที่ผิดเด้งกลับถาด (นับ 1 พลาด) ให้แก้ต่อ
    ด่าน 1-3 = 3 บัตร, 4-7 = 4 บัตร, 8-10 = 5 บัตร (ต้นสายที่ ป.4-6 ใช้ต่อ) ---------------- */
 let timelineGame = null;
-function timelineSize(level){ return level<=3 ? 3 : (level<=7 ? 4 : 5); }
+function timelineSize(level, max){ const s = level<=3 ? 3 : (level<=7 ? 4 : 5); return Math.min(s, max||5); }
 function startTimelineGame(catId){
   stopARGame();
   lastGameType='timeline'; lastCatId=catId;
   const cat = catById(catId);
-  timelineGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false };
+  timelineGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), maxSize:(cat.timelineMax||5), locked:false };
   homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; sortView.hidden=true; worldView.hidden=true; timelineView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   timelineView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2354,7 +2354,7 @@ function pickTimelineSet(size, used){
 }
 function renderTimelineLevel(){
   const g = timelineGame;
-  const size = timelineSize(g.level);
+  const size = timelineSize(g.level, g.maxSize);
   const set = pickTimelineSet(size, g.used);
   g.set = set;
   g.order = set.items.map((it,i)=>({ e:it.e, l:it.l, ord:i }));

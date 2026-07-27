@@ -1420,6 +1420,7 @@ const CATS = [
   /* ---------- เกมฝึกทักษะ ป.2 (reuse engine เดิม แยก id/progress) ---------- */
   { id:'p2-memory', name:'จับคู่โดมิโน ป.2', emoji:'🃏', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], grade:'p2', isNew:true },
   { id:'p2-animalsort', name:'แยกสัตว์ บก-น้ำ-ปีก', emoji:'🐾', color:'#4E9A51', light:'#DCEFD9', type:'skill', mode:'sort', sortSet:'landsea', levels:10, grade:'p2', isNew:true },
+  { id:'p2-timeline', name:'เรียงลำดับเหตุการณ์', emoji:'🗓️', color:'#C98A3A', light:'#F7E9D2', type:'skill', mode:'timeline', timelineMax:4, levels:8, grade:'p2', isNew:true },
 
   /* ---------- coding ป.2 (พาแมวกลับบ้าน + บัตร "ทำซ้ำ N รอบ" loop — Phase 2.2 extend code engine) ---------- */
   { id:'p2-code1', name:'พาแมววนซ้ำ 1', emoji:'🤖', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p2a', codeLoop:true, levels:10, grade:'p2', isNew:true },
@@ -1796,6 +1797,30 @@ const CATS = [
   { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true },
   { id:'p3-mathsort', name:'แยกเลขคู่-เลขคี่', emoji:'🧮', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'evenodd', levels:10, grade:'p3', isNew:true },
   { id:'p3-thaisort', name:'แยกพยัญชนะ-สระ', emoji:'🔤', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'thaichar', levels:10, grade:'p3', isNew:true },
+  {
+    id:'p3-engclock', name:'English ป.3 · บอกเวลา (What time is it?)', emoji:'🕰️', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
+    questions:[
+      /* tier1 — o'clock (ดูรูปนาฬิกา เลือกประโยคอังกฤษ) */
+      {q:'What time is it? (ดูรูปนาฬิกา)', emoji:'🕒', choices:['It is three o\'clock.','It is two o\'clock.','It is four o\'clock.','It is eight o\'clock.'], correct:0, explain:'เข็มสั้นชี้ 3 เข็มยาวชี้ 12 = three o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕘', choices:['It is nine o\'clock.','It is six o\'clock.','It is ten o\'clock.','It is three o\'clock.'], correct:0, explain:'🕘 = nine o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕕', choices:['It is six o\'clock.','It is five o\'clock.','It is seven o\'clock.','It is twelve o\'clock.'], correct:0, explain:'🕕 = six o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕛', choices:['It is twelve o\'clock.','It is one o\'clock.','It is six o\'clock.','It is ten o\'clock.'], correct:0, explain:'🕛 = twelve o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕐', choices:['It is one o\'clock.','It is two o\'clock.','It is twelve o\'clock.','It is seven o\'clock.'], correct:0, explain:'🕐 = one o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕔', choices:['It is five o\'clock.','It is four o\'clock.','It is six o\'clock.','It is nine o\'clock.'], correct:0, explain:'🕔 = five o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕗', choices:['It is eight o\'clock.','It is seven o\'clock.','It is nine o\'clock.','It is three o\'clock.'], correct:0, explain:'🕗 = eight o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕚', choices:['It is eleven o\'clock.','It is ten o\'clock.','It is twelve o\'clock.','It is two o\'clock.'], correct:0, explain:'🕚 = eleven o\'clock', tier:1},
+      {q:'What time is it?', emoji:'🕓', choices:['It is four o\'clock.','It is three o\'clock.','It is five o\'clock.','It is eight o\'clock.'], correct:0, explain:'🕓 = four o\'clock', tier:1},
+      /* tier2 — half past + แปลไทย-อังกฤษ */
+      {q:'What time is it?', emoji:'🕝', choices:['It is half past two.','It is half past three.','It is two o\'clock.','It is half past one.'], correct:0, explain:'🕝 = สองโมงครึ่ง = half past two', tier:2},
+      {q:'What time is it?', emoji:'🕞', choices:['It is half past three.','It is half past four.','It is three o\'clock.','It is half past two.'], correct:0, explain:'🕞 = half past three', tier:2},
+      {q:'What time is it?', emoji:'🕧', choices:['It is half past twelve.','It is twelve o\'clock.','It is half past one.','It is half past six.'], correct:0, explain:'🕧 = half past twelve', tier:2},
+      {q:'What time is it?', emoji:'🕡', choices:['It is half past six.','It is six o\'clock.','It is half past five.','It is half past seven.'], correct:0, explain:'🕡 = half past six', tier:2},
+      {q:'"It is seven o\'clock." ตรงกับนาฬิกาเรือนใด?', emoji:'⏰', choices:['🕖','🕗','🕕','🕥'], correct:0, explain:'seven o\'clock = 🕖 (7:00)', tier:2},
+      {q:'"หกโมงครึ่ง" ภาษาอังกฤษพูดว่าอย่างไร?', emoji:'🕡', choices:['It is half past six.','It is six o\'clock.','It is half past seven.','It is sixty o\'clock.'], correct:0, explain:'หกโมงครึ่ง = half past six', tier:2},
+      {q:'What time is it?', emoji:'🕜', choices:['It is half past one.','It is one o\'clock.','It is half past two.','It is half past twelve.'], correct:0, explain:'🕜 = half past one', tier:2},
+      {q:'ประโยค "It is ten o\'clock." หมายถึงเวลาใด?', emoji:'🕙', choices:['สิบโมง','สี่โมง','สิบโมงครึ่ง','สิบสองโมง'], correct:0, explain:'ten o\'clock = สิบโมงตรง', tier:2}
+    ]
+  },
 
   /* ---------- Phase 3.4b: หมวดใหม่ "โลกหมุน" (world engine ใหม่ — วิทย์ กลางวัน/กลางคืน) ---------- */
   { id:'p3-world', name:'โลกหมุน กลางวัน-กลางคืน', emoji:'🌎', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'world', levels:10, grade:'p3', isNew:true },
