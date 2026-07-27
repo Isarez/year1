@@ -2101,60 +2101,63 @@ const ROBOT_LEVELS3 = [
 ];
 /* ---- ROBOT LEVELS ป.2 (มีบัตร "ทำซ้ำ N รอบ" — เส้นทางเป็นแพทเทิร์นซ้ำ แก้ด้วย loop ได้กระชับกว่า) ----
    ไม่มีกำแพง เพื่อให้แพทเทิร์นซ้ำเดินได้ต่อเนื่อง (เดินตรง = ทำซ้ำ [เดินหน้า], บันได = ทำซ้ำ [หน้า-เลี้ยว-หน้า-เลี้ยว]) */
+/* ป.2 coding (พาแมววนซ้ำ) — สิ่งกีดขวาง (พุ่มไม้) ที่ขอบ/กลางทาง ค่อยๆ เพิ่มจาก 0→4 อัน ให้เดินเลี้ยวหลบ
+   ทุกด่าน BFS ยืนยันมีทางถึงบ้าน (path 3-10 ช่อง) */
 const ROBOT_LEVELS_P2A = [
-  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:5, start:{r:4,c:0,dir:1}, goal:{r:4,c:4}, walls:[] },
-  { size:5, start:{r:0,c:0,dir:2}, goal:{r:4,c:0}, walls:[] },
-  { size:5, start:{r:4,c:4,dir:3}, goal:{r:4,c:0}, walls:[] },
-  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[] },
   { size:4, start:{r:3,c:0,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:4, start:{r:0,c:3,dir:2}, goal:{r:3,c:3}, walls:[] },
-  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[] },
-  { size:5, start:{r:4,c:4,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:5, start:{r:0,c:0,dir:1}, goal:{r:0,c:4}, walls:[] }
+  { size:4, start:{r:3,c:0,dir:0}, goal:{r:0,c:3}, walls:[] },
+  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[[2,2]] },
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:4,c:4}, walls:[[4,2]] },
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:0}, walls:[[2,0]] },
+  { size:5, start:{r:4,c:1,dir:0}, goal:{r:0,c:1}, walls:[[2,1]] },
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[[2,2]] },
+  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[[3,2],[1,2]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[3,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[[3,0],[3,1]] }
 ];
 const ROBOT_LEVELS_P2B = [
-  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[] },
-  { size:5, start:{r:4,c:4,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:5, start:{r:0,c:0,dir:2}, goal:{r:4,c:4}, walls:[] },
-  { size:5, start:{r:0,c:4,dir:2}, goal:{r:4,c:0}, walls:[] },
-  { size:5, start:{r:4,c:0,dir:1}, goal:{r:0,c:4}, walls:[] },
-  { size:4, start:{r:3,c:0,dir:0}, goal:{r:0,c:3}, walls:[] },
-  { size:5, start:{r:2,c:0,dir:0}, goal:{r:0,c:2}, walls:[] },
-  { size:5, start:{r:4,c:4,dir:3}, goal:{r:0,c:0}, walls:[] }
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[[2,2]] },
+  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[[3,2],[1,2]] },
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:4,c:4}, walls:[[3,2],[4,2]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[3,2],[3,3]] },
+  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:2}, walls:[[4,2],[2,2]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[[3,0],[3,1],[1,1]] },
+  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:0}, walls:[[5,2],[3,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[2,3],[3,4]] }
 ];
 const ROBOT_LEVELS_P2C = [
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[] },
-  { size:6, start:{r:5,c:5,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:6, start:{r:0,c:0,dir:2}, goal:{r:5,c:5}, walls:[] },
-  { size:6, start:{r:0,c:5,dir:2}, goal:{r:5,c:0}, walls:[] },
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:6, start:{r:5,c:0,dir:1}, goal:{r:5,c:5}, walls:[] },
-  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:2}, walls:[] },
-  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[] }
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[3,2],[3,3]] },
+  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:2}, walls:[[4,2],[2,2]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:5,c:5}, walls:[[5,2],[5,3],[4,4]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[[3,0],[3,1],[1,1]] },
+  { size:6, start:{r:0,c:0,dir:2}, goal:{r:5,c:5}, walls:[[2,2],[3,3],[4,1]] },
+  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:0}, walls:[[5,2],[3,2],[1,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[2,2],[2,4]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[3,3],[1,4],[2,0]] }
 ];
-/* ป.3 coding (พาหุ่นยนต์ ป.3 + ทำซ้ำ) — กริดใหญ่ขึ้น เลี้ยวหลายจังหวะ เปิดโล่ง (มีทางถึงเป้าเสมอ) */
+/* ป.3 coding (พาหุ่นยนต์ ป.3 + ทำซ้ำ) — กำแพงเยอะขึ้น (2→6 อัน) ต้องคิด route อ้อม บางด่านต้องเริ่มออกทางอื่นก่อน
+   ทุกด่าน BFS ยืนยันมีทางถึงบ้าน (path 6-12 ช่อง) */
 const ROBOT_LEVELS_P3A = [
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[] },
-  { size:6, start:{r:0,c:0,dir:2}, goal:{r:5,c:5}, walls:[] },
-  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:0}, walls:[] },
-  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:5}, walls:[] },
-  { size:6, start:{r:0,c:5,dir:2}, goal:{r:5,c:0}, walls:[] },
-  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[] },
-  { size:7, start:{r:6,c:6,dir:3}, goal:{r:0,c:0}, walls:[] },
-  { size:7, start:{r:0,c:0,dir:1}, goal:{r:6,c:6}, walls:[] },
-  { size:7, start:{r:6,c:3,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:7, start:{r:3,c:0,dir:1}, goal:{r:0,c:6}, walls:[] }
+  { size:5, start:{r:4,c:2,dir:0}, goal:{r:0,c:2}, walls:[[3,2],[1,2]] },
+  { size:5, start:{r:4,c:0,dir:0}, goal:{r:0,c:4}, walls:[[2,1],[2,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[3,2],[3,3]] },
+  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:2}, walls:[[4,2],[2,2],[3,3]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[[4,0],[4,1]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:5,c:5}, walls:[[5,2],[4,2],[3,3]] },
+  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:0}, walls:[[5,2],[3,2],[3,4]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[2,2],[3,4]] },
+  { size:6, start:{r:0,c:0,dir:2}, goal:{r:5,c:5}, walls:[[2,2],[2,3],[4,1]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[3,3],[1,2],[2,4]] }
 ];
 const ROBOT_LEVELS_P3B = [
-  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[] },
-  { size:6, start:{r:5,c:5,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[] },
-  { size:7, start:{r:0,c:6,dir:2}, goal:{r:6,c:0}, walls:[] },
-  { size:7, start:{r:6,c:3,dir:0}, goal:{r:0,c:3}, walls:[] },
-  { size:7, start:{r:3,c:0,dir:1}, goal:{r:3,c:6}, walls:[] },
-  { size:7, start:{r:6,c:0,dir:1}, goal:{r:0,c:6}, walls:[] },
-  { size:7, start:{r:0,c:0,dir:2}, goal:{r:6,c:6}, walls:[] }
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:5}, walls:[[4,1],[2,2],[3,4]] },
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[[4,0],[4,1],[2,1]] },
+  { size:6, start:{r:5,c:2,dir:0}, goal:{r:0,c:3}, walls:[[4,2],[3,3],[2,2],[1,3]] },
+  { size:6, start:{r:5,c:5,dir:3}, goal:{r:0,c:0}, walls:[[5,3],[3,2],[3,4],[1,1]] },
+  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[[4,2],[4,3],[2,4]] },
+  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:0}, walls:[[5,0],[5,1],[3,1],[3,2]] },
+  { size:7, start:{r:6,c:3,dir:0}, goal:{r:0,c:3}, walls:[[5,3],[4,2],[3,4],[2,3]] },
+  { size:7, start:{r:0,c:0,dir:2}, goal:{r:6,c:6}, walls:[[2,2],[3,3],[4,4],[1,4]] }
 ];
 /* ป.3 coding แบบเงื่อนไข (if-then) — ใช้บัตร "ถ้าเจอกำแพงให้เลี้ยว" เดินตามขอบ/กำแพงจนถึงบ้าน
    เป้าหมายอยู่บนขอบเสมอ และเดินตามกำแพงตามเข็มนาฬิกา (เจอกำแพงหันขวา) ถึงได้ภายใน ~10 จังหวะ
@@ -2171,15 +2174,16 @@ const ROBOT_LEVELS_P3IF = [
   { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:3}, walls:[] },
   { size:6, start:{r:5,c:5,dir:3}, goal:{r:1,c:0}, walls:[] }
 ];
+/* ป.3 ระดับยากสุด — กำแพง 4-6 อัน หลายด่านต้องเดินอ้อมไกล/เริ่มออกทางตรงข้ามก่อน (BFS ยืนยัน path 9-12 ช่อง) */
 const ROBOT_LEVELS_P3C = [
-  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[] },
-  { size:7, start:{r:6,c:6,dir:0}, goal:{r:0,c:0}, walls:[] },
-  { size:7, start:{r:0,c:0,dir:2}, goal:{r:6,c:6}, walls:[] },
-  { size:7, start:{r:0,c:6,dir:2}, goal:{r:6,c:0}, walls:[] },
-  { size:7, start:{r:6,c:3,dir:0}, goal:{r:0,c:6}, walls:[] },
-  { size:7, start:{r:3,c:6,dir:3}, goal:{r:0,c:0}, walls:[] },
-  { size:7, start:{r:6,c:0,dir:0}, goal:{r:3,c:6}, walls:[] },
-  { size:7, start:{r:6,c:6,dir:3}, goal:{r:0,c:3}, walls:[] }
+  { size:6, start:{r:5,c:0,dir:0}, goal:{r:0,c:0}, walls:[[4,0],[4,1],[2,1],[2,0]] },
+  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[[4,1],[4,2],[2,4],[2,5]] },
+  { size:7, start:{r:6,c:3,dir:0}, goal:{r:0,c:3}, walls:[[5,3],[4,2],[4,4],[2,3],[1,2]] },
+  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:0}, walls:[[5,0],[5,1],[3,1],[3,2],[1,0]] },
+  { size:7, start:{r:6,c:6,dir:3}, goal:{r:0,c:0}, walls:[[6,3],[4,4],[4,2],[2,3],[2,1]] },
+  { size:7, start:{r:0,c:0,dir:2}, goal:{r:6,c:6}, walls:[[2,1],[2,2],[4,4],[4,5],[3,3]] },
+  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[[5,1],[3,1],[3,2],[3,3],[1,4]] },
+  { size:7, start:{r:6,c:0,dir:0}, goal:{r:0,c:6}, walls:[[4,0],[4,1],[4,2],[2,4],[2,5],[2,6]] }
 ];
 
 /* ============================= SCIENCE PREDICT-CHECK (นักวิทย์ทายผล — Phase 1.4)
