@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ธรรมชาติ ป.3 · สิ่งแวดล้อมและการอนุรักษ์">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9dd37a"/><stop offset="1" stop-color="#6FBF3B"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d7edc8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M10 36h44c0 10-9 16-22 16S10 46 10 36z" fill="#C08A4A" stroke="#866134" stroke-width="3" stroke-linejoin="round"/><g stroke="#9a6e3b" stroke-width="2" stroke-linecap="round" opacity=".8"><path d="M14 41h36M18 46h28"/></g><ellipse cx="24" cy="32" rx="7" ry="9" fill="#fff" stroke="#4b8228" stroke-width="2.6"/><ellipse cx="38" cy="30" rx="7" ry="9" fill="url(#g)" stroke="#4b8228" stroke-width="2.6"/><circle cx="22" cy="29" r="1.8" fill="#b7df9d"/><circle cx="40" cy="28" r="1.8" fill="#fff" opacity=".7"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#538f2c" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#4e8629" text-anchor="middle">ป.3</text></g>
+</svg>

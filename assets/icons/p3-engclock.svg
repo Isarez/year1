@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English ป.3 · บอกเวลา (What time is it?)">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58b3af"/><stop offset="1" stop-color="#0A8F89"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bae0de"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="32" r="23" fill="url(#g)" stroke="#07615d" stroke-width="3"/><circle cx="32" cy="32" r="18" fill="#fff" stroke="#07615d" stroke-width="2"/><g stroke="#07615d" stroke-width="2.2" stroke-linecap="round"><path d="M32 16v3M48 32h-3M32 48v-3M16 32h3"/></g><path d="M32 32V22" stroke="#07615d" stroke-width="3.2" stroke-linecap="round"/><path d="M32 32l9 6" stroke="#07615d" stroke-width="3.2" stroke-linecap="round"/><circle cx="32" cy="32" r="2.6" fill="#07615d"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#086b67" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#076460" text-anchor="middle">ป.3</text></g>
+</svg>

@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วิทยาศาสตร์ ป.3 · สิ่งมีชีวิตและพืช">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72c09a"/><stop offset="1" stop-color="#2FA36B"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c5e5d6"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <g fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round"><path d="M20 8c0 12 24 16 24 28S20 44 20 56"/><path d="M44 8c0 12-24 16-24 28s24 8 24 20"/></g><g stroke="#206f49" stroke-width="2.6" stroke-linecap="round"><path d="M23 16h18M21 26h22M21 42h22M23 50h18"/></g><g fill="#FFC53D"><circle cx="23" cy="16" r="2.2"/><circle cx="41" cy="16" r="2.2"/><circle cx="21" cy="42" r="2.2"/><circle cx="43" cy="42" r="2.2"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#237a50" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#21724b" text-anchor="middle">ป.3</text></g>
+</svg>

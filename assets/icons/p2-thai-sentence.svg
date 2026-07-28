@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย ป.2 · ต่อประโยค">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5a8c4"/><stop offset="1" stop-color="#F17FA8"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#fbdbe7"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M14 12h32a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18a6 6 0 0 1 6-6z" fill="#fcdfe9" stroke="#a45672" stroke-width="3"/><rect x="8" y="10" width="12" height="44" rx="6" fill="url(#g)" stroke="#a45672" stroke-width="3"/><rect x="44" y="10" width="12" height="44" rx="6" fill="url(#g)" stroke="#a45672" stroke-width="3"/><g stroke="#f285ac" stroke-width="2.6" stroke-linecap="round" opacity=".8"><path d="M24 24h16M24 32h16M24 40h11"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#b55f7e" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#a95976" text-anchor="middle">ป.2</text></g>
+</svg>

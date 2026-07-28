@@ -688,6 +688,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
 
 /* ============================= HOME RENDER ============================= */
 function renderHome(){
+  unmountHandPlay(); // ออกจากเกมแล้วปิดกล้อง/ถอดปุ่มโหมดมือเสมอ
   resumeBgMusicAfterMusicGame(); // กลับมาหน้าหลัก = เล่นเพลงพื้นหลังต่อ (เผื่อออกจากเกมดนตรีทางอื่น)
   document.body.classList.remove('music-open');
   document.body.classList.remove('dots-open');
@@ -742,7 +743,8 @@ function renderHome(){
       '<div class="cat-sticker'+(unlocked?' unlocked':'')+'">'+(unlocked?(cat.icon?'<img src="'+cat.icon+'" class="cat-sticker-icon" alt="">':cat.emoji):'🔒')+'</div>'+
       '<div class="cat-emoji">'+(locked?'🔒':(cat.icon?'<img src="'+cat.icon+'" class="cat-icon-img" alt="'+cat.name+'">':cat.emoji))+'</div>'+
       '<div class="cat-name">'+cat.name+'</div>'+
-      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : cat.type==='skill' ? total+' ด่าน 🧠' : cat.type==='listen' ? total+' ด่าน 🎧' : cat.type==='write' ? total+' ด่าน ✍️' : total+' ข้อ')+'</div>'+
+      /* handPlay = เกมแตะที่เปิดกล้องเล่นด้วยมือได้ (ป.3) — เติม 🖐️ ต่อท้ายให้รู้ตั้งแต่หน้าเลือกหมวด */
+      '<div class="cat-meta">'+(cat.type==='ar' ? total+' ด่าน 🖐️' : cat.type==='skill' ? total+' ด่าน 🧠'+(cat.handPlay?'🖐️':'') : cat.type==='listen' ? total+' ด่าน 🎧' : cat.type==='write' ? total+' ด่าน ✍️' : total+' ข้อ')+'</div>'+
       (isLocked
         ? '<div class="cat-lock-msg">🔐 ผ่าน '+catById(reqId).name+' ก่อนนะ</div>'
         : isDeviceLocked
@@ -781,6 +783,7 @@ function renderHome(){
       else if(cat.type==='listen') startListenGame(cat.id);
       else if(cat.type==='write') startDotsGame(cat.id);
       else startQuiz(cat.id);
+      mountHandPlay(cat); // เกม ป.3 ที่ handPlay:true → ติดปุ่มกล้อง "เล่นด้วยมือ" ในแถบหัวเกม
     });
     /* เกมวิทยาศาสตร์ (predict-check ใช้กล้อง/มือ) จัดไว้ section "การโต้ตอบ (AR)" แม้ type เป็น skill */
     (cat.type==='skill'
@@ -1022,6 +1025,7 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='world'){ startWorldGame(lastCatId); }
   else if(lastGameType==='coord'){ startCoordGame(lastCatId); }
   else { startQuiz(state.catId); }
+  if(lastCatId) mountHandPlay(catById(lastCatId));
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
@@ -4722,7 +4726,9 @@ function buildLevel(catId){
   if(cat.mode==='match'){ buildMatchLevel(cat); return; }
   if(cat.mode==='count'){ buildCountLevel(cat); return; }
   const level = arGame.level;
-  const wordCount = level<=3 ? 3 : (level<=6 ? 4 : 5);
+  /* ความยาวประโยคไล่ตามด่าน — cat.sentenceLens ปรับได้ต่อระดับชั้น (ป.1-2 = 3/4/5 คำ, ป.3 = 4/5/6 คำ) */
+  const lens = cat.sentenceLens || [3,4,5];
+  const wordCount = level<=3 ? lens[0] : (level<=6 ? lens[1] : lens[2]);
   const pool = AR_SENTENCES[cat.lang][wordCount];
   if(!arGame.usedSentenceIdx[wordCount]) arGame.usedSentenceIdx[wordCount] = new Set();
   const sentence = pool[pickNoRepeatIdx(arGame.usedSentenceIdx[wordCount], pool.length)];
@@ -5647,6 +5653,158 @@ function toggleARCamera(){
   } else {
     initHandTracking().then(updateCameraToggleBtn);
   }
+}
+
+/* ============================= HAND PLAY (โหมดกล้องสำหรับ "เกมแบบแตะ" ของ ป.3)
+   เกมที่ตั้ง cat.handPlay:true จะมีปุ่มกล้องเพิ่มในแถบหัวเกม กดแล้วเล่นด้วยมือหน้ากล้องได้:
+   ปลายนิ้วชี้ = เคอร์เซอร์, "จีบนิ้ว" (โป้ง+ชี้) = แตะ 1 ครั้ง
+   - ไม่แตะ logic ของเกมเลย แค่ยิง .click() ใส่ปุ่ม/ช่องที่ปลายนิ้วชี้อยู่ (เกมกลุ่มนี้เป็นกลไกแตะล้วนทั้งหมด)
+   - ต่างจาก ar-view ตรงที่ "ไม่โชว์ภาพจากกล้อง" เป็นพื้นหลัง (จะบังกระดานเกม) วาดแค่มือการ์ตูนทับหน้าจอ
+   - default = ปิด (ไม่ขอสิทธิ์กล้องเอง) เด็กกดปุ่มเองถึงจะเปิด, ไม่แสดงบนมือถือ (จอเล็กเกินไป) ============================= */
+const HP_CLICK_SEL = 'button:not([disabled]), .sort-bin, .coord-cell, .memory-card, [data-hp-click]';
+let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = null, hpLandmarks = null,
+    hpRaf = null, hpSmooth = null, hpWasPinching = false, hpResizeHandler = null, hpHoverEl = null, hpClickAt = 0,
+    hpHintShown = false;
+
+/* view ที่กำลังเปิดอยู่ (section ใน <main> ที่ไม่ hidden และมีแถบหัวเกม) — ใช้หาที่ติดปุ่มกล้อง */
+function hpVisibleView(){
+  return Array.from(document.querySelectorAll('main > section'))
+    .find(s=>!s.hidden && s.querySelector('.quiz-top')) || null;
+}
+function hpEnsureBtn(){
+  if(hpBtn) return hpBtn;
+  hpBtn = document.createElement('button');
+  hpBtn.className = 'back-btn hp-toggle muted';
+  hpBtn.id = 'handplay-toggle';
+  hpBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph lens-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="14" fill="#3A4A5C"/><circle cx="16" cy="16" r="11" fill="#6FA8DC"/><circle cx="16" cy="16" r="7.5" fill="#2B4F73"/><circle cx="16" cy="16" r="3.6" fill="#16232F"/><path d="M16 5 L19 9 L13 9 Z" fill="#8FC1EA" opacity=".8"/><circle cx="12" cy="12" r="1.8" fill="#DDEFFF" opacity=".85"/></svg></span><span class="mute-stripe"></span></span>';
+  hpBtn.addEventListener('click', ()=>{ playClick(); toggleHandPlay(); });
+  return hpBtn;
+}
+function hpRefreshBtn(){
+  if(!hpBtn) return;
+  const label = hpActive ? 'ปิดโหมดมือ' : 'เล่นด้วยมือ (เปิดกล้อง)';
+  hpBtn.classList.toggle('muted', !hpActive);
+  hpBtn.setAttribute('aria-label', label);
+  hpBtn.dataset.tooltip = label;
+}
+/* เรียกทุกครั้งที่เข้าเกม — ติดปุ่มกล้องให้เฉพาะหมวดที่รองรับ (นอกนั้นถอดออก+ปิดกล้องให้เรียบร้อย) */
+function mountHandPlay(cat){
+  unmountHandPlay();
+  if(!cat || !cat.handPlay || isMobileViewport()) return;
+  const view = hpVisibleView();
+  if(!view) return;
+  const top = view.querySelector('.quiz-top');
+  if(!top) return;
+  top.appendChild(hpEnsureBtn());
+  hpRefreshBtn();
+  if(!hpHintShown){
+    hpHintShown = true;
+    setTimeout(()=>showToast('🖐️','เกมนี้เล่นด้วยมือหน้ากล้องได้นะ กดปุ่มกล้องมุมขวาบนเลย!'), 1200);
+  }
+}
+function unmountHandPlay(){
+  stopHandPlay();
+  if(hpBtn && hpBtn.parentNode) hpBtn.parentNode.removeChild(hpBtn);
+}
+function toggleHandPlay(){
+  if(hpActive){ stopHandPlay(); hpRefreshBtn(); showToast('📷','ปิดกล้องแล้ว แตะหน้าจอเล่นต่อได้เลย!'); }
+  else startHandPlay();
+}
+function hpSetHover(el){
+  if(hpHoverEl === el) return;
+  if(hpHoverEl && hpHoverEl.classList) hpHoverEl.classList.remove('hp-hover');
+  hpHoverEl = el;
+  if(hpHoverEl && hpHoverEl.classList) hpHoverEl.classList.add('hp-hover');
+}
+function updateHandCursor(pageX, pageY, pinching){
+  const cur = $('hp-cursor');
+  cur.style.left = pageX+'px';
+  cur.style.top = pageY+'px';
+  cur.classList.add('active');
+  cur.classList.remove('hover','grabbed');
+  const hovered = document.elementFromPoint(pageX, pageY);
+  const target = (hovered && hovered.closest) ? hovered.closest(HP_CLICK_SEL) : null;
+  hpSetHover(target);
+  if(target) cur.classList.add('hover');
+  if(pinching && !hpWasPinching && target && Date.now()-hpClickAt > 450){
+    hpClickAt = Date.now();
+    cur.classList.add('grabbed');
+    target.click();
+  }
+  hpWasPinching = pinching;
+}
+function hpDrawLoop(){
+  if(!hpActive) return;
+  /* ออกจากเกมทางไหนก็ตาม (จบเกมไปหน้าผล/กดย้อนกลับ) view ที่ปุ่มติดอยู่จะถูกซ่อน → ปิดกล้องเองอัตโนมัติ */
+  const host = hpBtn && hpBtn.closest('section');
+  if(!host || host.hidden){ unmountHandPlay(); return; }
+  const canvas = $('hp-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(hpLandmarks){
+    /* temporal smoothing จุดเดียวเหมือน arDrawLoop — มือที่วาดกับเคอร์เซอร์ตรงกันเสมอ */
+    const raw = hpLandmarks.map(p=>({x:(1-p.x)*canvas.width, y:p.y*canvas.height}));
+    if(!hpSmooth || hpSmooth.length !== raw.length) hpSmooth = raw;
+    else hpSmooth = hpSmooth.map((p,i)=>({x:p.x+(raw[i].x-p.x)*0.5, y:p.y+(raw[i].y-p.y)*0.5}));
+    const pts = hpSmooth;
+    drawCartoonHand(ctx, pts);
+    const ix = pts[8].x, iy = pts[8].y, tx = pts[4].x, ty = pts[4].y;
+    const pinching = Math.sqrt((ix-tx)*(ix-tx)+(iy-ty)*(iy-ty)) < Math.max(28, canvas.width*0.07);
+    const rect = canvas.getBoundingClientRect();
+    updateHandCursor(rect.left + ix*rect.width/canvas.width, rect.top + iy*rect.height/canvas.height, pinching);
+  } else {
+    hpSmooth = null;
+    hpSetHover(null);
+    $('hp-cursor').classList.remove('active');
+    hpWasPinching = false;
+  }
+  hpRaf = requestAnimationFrame(hpDrawLoop);
+}
+async function startHandPlay(){
+  if(isMobileViewport()) return;
+  try{
+    await loadMediaPipeScripts();
+    const layer = $('hp-layer');
+    layer.hidden = false;
+    const video = $('hp-video');
+    hpStream = await navigator.mediaDevices.getUserMedia({ video:{ width:480, height:360, facingMode:'user' }, audio:false });
+    video.srcObject = hpStream;
+    await video.play().catch(()=>{});
+    const canvas = $('hp-canvas');
+    hpResizeHandler = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    hpResizeHandler();
+    window.addEventListener('resize', hpResizeHandler);
+    hpHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    hpHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    hpHands.onResults(res=>{ hpLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
+    hpCamera = new Camera(video, { onFrame: async ()=>{ if(hpHands){ await hpHands.send({ image:video }); } }, width:480, height:360 });
+    await hpCamera.start();
+    hpActive = true;
+    hpRaf = requestAnimationFrame(hpDrawLoop);
+    showToast('✋','ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" เพื่อแตะได้เลย!');
+  }catch(err){
+    console.warn('hand play unavailable:', err);
+    stopHandPlay();
+    showToast('📷','เปิดกล้องไม่ได้ ไม่เป็นไรนะ แตะหน้าจอเล่นได้ตามปกติ!');
+  }
+  hpRefreshBtn();
+}
+function stopHandPlay(){
+  hpActive = false;
+  hpLandmarks = null;
+  hpSmooth = null;
+  hpWasPinching = false;
+  if(hpRaf){ cancelAnimationFrame(hpRaf); hpRaf = null; }
+  if(hpCamera){ try{ hpCamera.stop(); }catch(e){} hpCamera = null; }
+  if(hpStream){ hpStream.getTracks().forEach(t=>t.stop()); hpStream = null; }
+  if(hpResizeHandler){ window.removeEventListener('resize', hpResizeHandler); hpResizeHandler = null; }
+  hpHands = null;
+  hpSetHover(null);
+  const layer = $('hp-layer');
+  if(layer) layer.hidden = true;
+  const cur = $('hp-cursor');
+  if(cur) cur.classList.remove('active');
+  hpRefreshBtn();
 }
 
 function stopARGame(){

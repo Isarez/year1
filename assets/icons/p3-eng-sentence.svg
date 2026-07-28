@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English ป.3 · ต่อประโยคยาว">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58a5a1"/><stop offset="1" stop-color="#0A7A75"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#badad8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="7" y="14" width="38" height="38" rx="8" fill="#fff" stroke="#075350" stroke-width="3"/><g stroke="#2f8e8a" stroke-width="2.6" stroke-linecap="round"><path d="M13 26h24M13 34h24M13 42h15"/></g><path d="M48 6l10 10-22 22-12 3 3-12z" fill="url(#g)" stroke="#075350" stroke-width="2.8" stroke-linejoin="round"/><path d="M48 6l10 10-4 4-10-10z" fill="#78b6b3" stroke="#075350" stroke-width="2.4" stroke-linejoin="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#085c58" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#075552" text-anchor="middle">ป.3</text></g>
+</svg>

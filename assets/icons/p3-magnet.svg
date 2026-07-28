@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นักสืบแม่เหล็ก">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc5da"/><stop offset="1" stop-color="#3FA9C9"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9e7f0"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M16 44V26a16 16 0 0 1 32 0v18h-11V26a5 5 0 0 0-10 0v18z" fill="url(#g)" stroke="#2b7389" stroke-width="3" stroke-linejoin="round"/><rect x="15" y="43" width="12" height="9" rx="2.5" fill="#E85C4A" stroke="#2b7389" stroke-width="2.6"/><rect x="36" y="43" width="12" height="9" rx="2.5" fill="#4A6BE8" stroke="#2b7389" stroke-width="2.6"/><g stroke="#FFC53D" stroke-width="2.6" stroke-linecap="round" opacity=".9"><path d="M52 16l4-4M56 24h5M50 9l2-5"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#2f7f97" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#2c768d" text-anchor="middle">ป.3</text></g>
+</svg>

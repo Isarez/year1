@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ธรรมชาติ ป.2 · วัสดุ แสง และดิน">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#87bd72"/><stop offset="1" stop-color="#4F9E2F"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cee4c5"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="27" cy="26" r="16" fill="#d8ead1" stroke="#366b20" stroke-width="3"/><circle cx="27" cy="26" r="16" fill="url(#g)" opacity=".28"/><path d="M39 38l14 14" stroke="#366b20" stroke-width="6" stroke-linecap="round"/><path d="M39 38l14 14" stroke="#72b159" stroke-width="3" stroke-linecap="round"/><text x="27" y="32" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="16" font-weight="bold" fill="#366b20" text-anchor="middle">ดิน</text><path d="M18 18c2-3 5-4 8-4" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".8"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#3b7723" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#376f21" text-anchor="middle">ป.2</text></g>
+</svg>

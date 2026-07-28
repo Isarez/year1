@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย ป.3 · คำและสำนวน">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eb87ba"/><stop offset="1" stop-color="#E14E9A"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f7cde3"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="12" y="6" width="40" height="46" rx="7" fill="#fff" stroke="#993569" stroke-width="3"/><g stroke="#e460a4" stroke-width="2.4" stroke-linecap="round" opacity=".8"><path d="M19 20h16M19 28h20M19 36h14"/></g><path d="M36 6h12v26l-6-5-6 5z" fill="url(#g)" stroke="#993569" stroke-width="2.8" stroke-linejoin="round"/><text x="26" y="48" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="11" font-weight="bold" fill="#993569" text-anchor="middle">คำ</text>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#a93b74" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#9e376c" text-anchor="middle">ป.3</text></g>
+</svg>

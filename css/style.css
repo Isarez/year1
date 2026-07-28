@@ -1265,6 +1265,15 @@
   .ar-cursor.miss{border-color:#FF6161; background:rgba(255,97,97,.25);}
   .ar-cursor.grabbed{border-color:#33B76C; background:rgba(51,183,108,.25);}
 
+  /* ---------- โหมด "เล่นด้วยมือ" (hand play) ของเกมแบบแตะ ป.3 ----------
+     ต่างจาก ar-view: ไม่โชว์ภาพจากกล้อง (จะบังกระดานเกม) วาดแค่มือการ์ตูนบน canvas ทับหน้าจอ
+     ทั้งเลเยอร์ pointer-events:none เสมอ ให้แตะหน้าจอเล่นตามปกติได้พร้อมกัน */
+  .hp-layer{position:fixed; inset:0; pointer-events:none; z-index:900;}
+  .hp-layer[hidden]{display:none;}
+  #hp-video{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;}
+  #hp-canvas{position:absolute; inset:0; width:100%; height:100%;}
+  .hp-hover{outline:4px dashed #FFC53D; outline-offset:3px;}
+
   /* ---------- Memory matching game (จับคู่โดมิโน) ---------- */
   /* อยู่ในกล่องเดียวกับ .progress-track (.quiz-top-info) แทนที่จะลอยแยกกลางจอ ให้ความยาวเท่ากับแถบ progress เป๊ะเสมอ */
   .memory-hint-chip{

@@ -353,7 +353,7 @@ const CATS = [
       {q:'45 + 27 = ?', emoji:'➕', choices:['72','62','71','82'], correct:0, explain:'45 บวก 27 เท่ากับ 72', tier:2},
       {q:'แม่มีเงิน 50 บาท ซื้อขนม 20 บาท เหลือเงินกี่บาท?', emoji:'💰', choices:['30','20','25','40'], correct:0, explain:'50 - 20 = 30 บาท', tier:2},
       {q:'มีขนม 3 ถุง ถุงละ 4 ชิ้น รวมกี่ชิ้น?', emoji:'🍬', choices:['12','7','10','16'], correct:0, explain:'4 + 4 + 4 = 12 ชิ้น (3 กลุ่ม กลุ่มละ 4)', tier:2},
-      {q:'แบ่งลูกอม 12 เม็ด ให้เพื่อน 3 คน เท่าๆ กัน คนละกี่เม็ด?', emoji:'🍭', choices:['4','3','5','6'], correct:0, explain:'12 แบ่งเป็น 3 กลุ่มเท่าๆ กัน ได้กลุ่มละ 4 เม็ด', tier:2},
+      {q:'มีลูกอม 12 เม็ด กินไป 5 เม็ด แล้วแม่ให้อีก 4 เม็ด เหลือกี่เม็ด?', emoji:'🍬', choices:['11','10','12','9'], correct:0, explain:'12 - 5 = 7 แล้ว 7 + 4 = 11 เม็ด', tier:2},
       {q:'15 + 4 = ?', emoji:'➕', choices:['19','18','20','14'], correct:0, explain:'15 บวก 4 เท่ากับ 19', tier:1},
       {q:'25 - 5 = ?', emoji:'➖', choices:['20','15','30','22'], correct:0, explain:'25 ลบ 5 เท่ากับ 20', tier:1},
       {q:'7 + 8 = ?', emoji:'➕', choices:['15','14','16','13'], correct:0, explain:'7 บวก 8 เท่ากับ 15', tier:1},
@@ -361,10 +361,10 @@ const CATS = [
       {q:'34 + 29 = ?', emoji:'➕', choices:['63','62','64','53'], correct:0, explain:'34 บวก 29 เท่ากับ 63', tier:2},
       {q:'71 - 26 = ?', emoji:'➖', choices:['45','44','46','55'], correct:0, explain:'71 ลบ 26 เท่ากับ 45', tier:2},
       {q:'มีไก่ 12 ตัว ซื้อมาเพิ่ม 9 ตัว รวมมีกี่ตัว?', emoji:'🐔', choices:['21','20','22','19'], correct:0, explain:'12 + 9 = 21 ตัว', tier:2},
-      {q:'2 × 4 = ? (2 กลุ่ม กลุ่มละ 4)', emoji:'✖️', choices:['8','6','10','12'], correct:0, explain:'2 × 4 = 4 + 4 = 8', tier:2},
+      {q:'48 + 25 = ?', emoji:'➕', choices:['73','72','74','63'], correct:0, explain:'48 บวก 25 เท่ากับ 73', tier:2},
       {q:'6 + 2 = ?', emoji:'➕', choices:['8','7','9','5'], correct:0, explain:'6 บวก 2 เท่ากับ 8', tier:1},
       {q:'9 - 4 = ?', emoji:'➖', choices:['5','4','6','3'], correct:0, explain:'9 ลบ 4 เท่ากับ 5', tier:1},
-      {q:'3 × 2 = ? (3 กลุ่ม กลุ่มละ 2)', emoji:'✖️', choices:['6','5','4','8'], correct:0, explain:'3 × 2 = 6', tier:2},
+      {q:'65 - 28 = ?', emoji:'➖', choices:['37','36','38','47'], correct:0, explain:'65 ลบ 28 เท่ากับ 37', tier:2},
       {q:'มีดอกไม้ 7 ดอก เด็ดไป 2 ดอก เหลือกี่ดอก?', emoji:'🌷', choices:['5','4','6','3'], correct:0, explain:'7 - 2 = 5 ดอก', tier:2}
     ]
   },
@@ -377,30 +377,30 @@ const CATS = [
     id:'p1-math3', name:'คณิต ป.1 · โจทย์ท้าทาย', emoji:'✖️', icon:'assets/icons/p1-math3.svg', color:'#4A2FC0', light:'#E9E3FF', grade:'p1', poolPick:10, isNew:true,
     questions:[
       /* Level 3 (เร่ง ป.2) — แนวคิดการคูณ / นับกระโดดขั้นสูง / โจทย์ปัญหา 2 ขั้น */
-      {q:'2 × 3 = ? (2 กลุ่ม กลุ่มละ 3)', emoji:'✖️', choices:['6','5','8','4'], correct:0, explain:'2 × 3 = 3 + 3 = 6', tier:1},
-      {q:'5 × 2 = ?', emoji:'✖️', choices:['10','7','12','8'], correct:0, explain:'5 × 2 = 5 + 5 = 10', tier:1},
+      {q:'นับทีละ 2: 2, 4, 6, 8, ▢', emoji:'🔢', choices:['10','9','12','7'], correct:0, explain:'นับเพิ่มทีละ 2 ตัวต่อไปคือ 10', tier:1},
+      {q:'20 + 30 + 10 = ?', emoji:'➕', choices:['60','50','70','40'], correct:0, explain:'20 + 30 = 50 แล้ว 50 + 10 = 60', tier:1},
       {q:'นับทีละ 3: 3, 6, 9, ▢', emoji:'👣', choices:['12','10','11','15'], correct:0, explain:'นับเพิ่มทีละ 3 ตัวต่อไปคือ 12', tier:1},
       {q:'รถ 2 คัน คันละ 4 ล้อ รวมมีกี่ล้อ?', emoji:'🚗', choices:['8','6','10','4'], correct:0, explain:'4 + 4 = 8 ล้อ (2 กลุ่ม กลุ่มละ 4)', tier:1},
       {q:'100 - 50 = ?', emoji:'➖', choices:['50','40','60','150'], correct:0, explain:'100 ลบ 50 เท่ากับ 50', tier:1},
       {q:'ครึ่งหนึ่งของ 10 คือเท่าไร?', emoji:'✂️', choices:['5','2','10','15'], correct:0, explain:'10 แบ่งครึ่งได้ 5', tier:1},
-      {q:'4 × 3 = ?', emoji:'✖️', choices:['12','7','9','16'], correct:0, explain:'4 × 3 = 4 + 4 + 4 = 12', tier:2},
-      {q:'6 × 2 = ?', emoji:'✖️', choices:['12','8','10','14'], correct:0, explain:'6 × 2 = 6 + 6 = 12', tier:2},
-      {q:'นับทีละ 100: 100, 200, 300, ▢', emoji:'💯', choices:['400','310','350','500'], correct:0, explain:'นับเพิ่มทีละ 100 ตัวต่อไปคือ 400', tier:2},
+      {q:'35 + 27 = ?', emoji:'➕', choices:['62','61','63','52'], correct:0, explain:'35 บวก 27 เท่ากับ 62', tier:2},
+      {q:'84 - 39 = ?', emoji:'➖', choices:['45','44','46','55'], correct:0, explain:'84 ลบ 39 เท่ากับ 45', tier:2},
+      {q:'นับถอยหลังทีละ 10: 90, 80, 70, ▢', emoji:'🔟', choices:['60','65','50','75'], correct:0, explain:'ลดทีละ 10 ตัวต่อไปคือ 60', tier:2},
       {q:'มีเงิน 20 บาท ซื้อขนม 5 บาท แล้วแม่ให้อีก 10 บาท ตอนนี้มีกี่บาท?', emoji:'💰', choices:['25','15','30','20'], correct:0, explain:'20 - 5 = 15 แล้ว 15 + 10 = 25 บาท', tier:2},
       {q:'45 + 38 = ?', emoji:'➕', choices:['83','73','93','82'], correct:0, explain:'45 บวก 38 เท่ากับ 83', tier:2},
-      {q:'แบ่งเค้ก 15 ชิ้น ให้เพื่อน 5 คน เท่าๆ กัน คนละกี่ชิ้น?', emoji:'🍰', choices:['3','2','4','5'], correct:0, explain:'15 แบ่งเป็น 5 กลุ่มเท่าๆ กัน ได้กลุ่มละ 3 ชิ้น', tier:2},
-      {q:'3 × 2 = ?', emoji:'✖️', choices:['6','5','8','4'], correct:0, explain:'3 × 2 = 3 + 3 = 6', tier:1},
-      {q:'10 × 2 = ?', emoji:'✖️', choices:['20','12','22','10'], correct:0, explain:'10 × 2 = 10 + 10 = 20', tier:1},
+      {q:'มีเงิน 60 บาท ซื้อขนม 25 บาท เหลือกี่บาท?', emoji:'💰', choices:['35','45','25','40'], correct:0, explain:'60 - 25 = 35 บาท', tier:2},
+      {q:'นับทีละ 5: 25, 30, 35, ▢', emoji:'🖐️', choices:['40','45','38','50'], correct:0, explain:'นับเพิ่มทีละ 5 ตัวต่อไปคือ 40', tier:1},
+      {q:'50 + 50 = ?', emoji:'➕', choices:['100','90','110','80'], correct:0, explain:'50 บวก 50 เท่ากับ 100', tier:1},
       {q:'นับทีละ 4: 4, 8, 12, ▢', emoji:'👣', choices:['16','14','15','20'], correct:0, explain:'นับเพิ่มทีละ 4 ตัวต่อไปคือ 16', tier:1},
       {q:'ครึ่งหนึ่งของ 20 คือเท่าไร?', emoji:'✂️', choices:['10','5','20','15'], correct:0, explain:'20 แบ่งครึ่งได้ 10', tier:1},
-      {q:'5 × 3 = ?', emoji:'✖️', choices:['15','12','18','10'], correct:0, explain:'5 × 3 = 5 + 5 + 5 = 15', tier:2},
-      {q:'7 × 2 = ?', emoji:'✖️', choices:['14','12','16','9'], correct:0, explain:'7 × 2 = 7 + 7 = 14', tier:2},
+      {q:'46 + 38 = ?', emoji:'➕', choices:['84','83','85','74'], correct:0, explain:'46 บวก 38 เท่ากับ 84', tier:2},
+      {q:'92 - 47 = ?', emoji:'➖', choices:['45','44','46','55'], correct:0, explain:'92 ลบ 47 เท่ากับ 45', tier:2},
       {q:'63 + 28 = ?', emoji:'➕', choices:['91','81','90','92'], correct:0, explain:'63 บวก 28 เท่ากับ 91', tier:2},
-      {q:'มีขนม 20 ชิ้น แบ่งใส่ 4 จาน เท่าๆ กัน จานละกี่ชิ้น?', emoji:'🍪', choices:['5','4','6','8'], correct:0, explain:'20 แบ่งเป็น 4 กลุ่มเท่าๆ กัน ได้กลุ่มละ 5 ชิ้น', tier:2},
-      {q:'แบ่งขนม 6 ชิ้น ใส่ 2 จานเท่าๆ กัน จานละกี่ชิ้น?', emoji:'🍪', choices:['3','2','4','6'], correct:0, explain:'6 ÷ 2 = 3 ชิ้น', tier:1},
-      {q:'2 × 3 = ?', emoji:'✖️', choices:['6','5','8','4'], correct:0, explain:'2 × 3 = 6', tier:1},
-      {q:'มีรถ 2 คัน คันละ 4 ล้อ รวมมีกี่ล้อ?', emoji:'🚗', choices:['8','6','10','4'], correct:0, explain:'2 × 4 = 8 ล้อ', tier:2},
-      {q:'แบ่งลูกอม 8 เม็ด ให้ 2 คนเท่าๆ กัน คนละกี่เม็ด?', emoji:'🍬', choices:['4','3','5','2'], correct:0, explain:'8 ÷ 2 = 4 เม็ด', tier:2}
+      {q:'มีขนม 20 ชิ้น กินไป 6 ชิ้น แบ่งให้เพื่อน 4 ชิ้น เหลือกี่ชิ้น?', emoji:'🍪', choices:['10','12','9','14'], correct:0, explain:'20 - 6 = 14 แล้ว 14 - 4 = 10 ชิ้น', tier:2},
+      {q:'มีนก 12 ตัว บินไป 5 ตัว แล้วบินมาอีก 3 ตัว มีนกกี่ตัว?', emoji:'🐦', choices:['10','9','11','8'], correct:0, explain:'12 - 5 = 7 แล้ว 7 + 3 = 10 ตัว', tier:1},
+      {q:'15 + 15 = ?', emoji:'➕', choices:['30','25','35','20'], correct:0, explain:'15 บวก 15 เท่ากับ 30', tier:1},
+      {q:'73 - 41 = ?', emoji:'➖', choices:['32','31','33','42'], correct:0, explain:'73 ลบ 41 เท่ากับ 32', tier:2},
+      {q:'มีลูกอม 8 เม็ด เพื่อนให้อีก 9 เม็ด รวมกี่เม็ด?', emoji:'🍬', choices:['17','16','18','15'], correct:0, explain:'8 + 9 = 17 เม็ด', tier:2}
     ]
   },
   /* ---------- ภาษาไทย ป.1 : หลายเกมหลาย mechanic (วิเคราะห์โจทย์→เลือก mechanic ที่เหมาะ) ----------
@@ -470,26 +470,26 @@ const CATS = [
     id:'p1-thai3', name:'ภาษาไทย ป.1 · อ่านจับใจความ', emoji:'📘', icon:'assets/icons/p1-thai3.svg', color:'#D63D8C', light:'#FCE0EF', grade:'p1', poolPick:10, isNew:true,
     questions:[
       /* Level 3 (เร่ง ป.2) — ควบกล้ำ / อักษรนำ / คล้องจอง / จับใจความ / คำตรงข้าม-เหมือน */
-      {q:'คำใดเป็นคำควบกล้ำ?', emoji:'🐟', choices:['ปลา','ตลาด','มะม่วง','นาฬิกา'], correct:0, explain:'"ปลา" มีอักษรควบ ปล', tier:1},
-      {q:'คำใดมีอักษรนำ?', emoji:'🐶', choices:['หมา','มา','ตา','นา'], correct:0, explain:'"หมา" มี ห นำ ม', tier:1},
+      {q:'คำใดคล้องจองกับคำว่า "บ้าน"?', emoji:'🏠', choices:['ท่าน','บิน','นก','ปู'], correct:0, explain:'"ท่าน" คล้องจองกับ "บ้าน" (เสียง -าน เหมือนกัน)', tier:1},
+      {q:'อ่าน: "แม่ซื้อผลไม้ที่ตลาด" — แม่ซื้ออะไร?', emoji:'🍎', choices:['ผลไม้','ขนม','เสื้อ','ดินสอ'], correct:0, explain:'ข้อความบอกว่าแม่ซื้อ "ผลไม้"', tier:1},
       {q:'คำใดคล้องจองกับคำว่า "ปลา"?', emoji:'🐟', choices:['มา','ปู','ดี','นก'], correct:0, explain:'"มา" คล้องจองกับ "ปลา"', tier:1},
       {q:'คำใดมีความหมายตรงข้ามกับ "สูง"?', emoji:'📏', choices:['เตี้ย','ใหญ่','ยาว','กว้าง'], correct:0, explain:'ตรงข้ามกับ "สูง" คือ "เตี้ย"', tier:1},
       {q:'อ่าน: "แมวนอนอยู่บนเก้าอี้" — แมวทำอะไร?', emoji:'🐈', choices:['นอน','วิ่ง','กิน','เล่น'], correct:0, explain:'ข้อความบอกว่าแมว "นอน"', tier:1},
       {q:'คำใดมีความหมายตรงข้ามกับ "ร้อน"?', emoji:'❄️', choices:['เย็น','ใหญ่','เร็ว','ดี'], correct:0, explain:'ตรงข้ามกับ "ร้อน" คือ "เย็น"', tier:1},
       {q:'คำใดคล้องจองกับคำว่า "ดาว"?', emoji:'⭐', choices:['หาว','ดี','ปู','มด'], correct:0, explain:'"หาว" คล้องจองกับ "ดาว"', tier:1},
-      {q:'คำใดเป็นคำควบกล้ำ (มีอักษรควบ)?', emoji:'🥁', choices:['กลอง','กอง','ของ','กบ'], correct:0, explain:'"กลอง" มีอักษรควบ กล (คำอื่นไม่ควบ)', tier:2},
-      {q:'คำใดมีอักษรนำ?', emoji:'🌾', choices:['หญ้า','ย่า','นา','ตา'], correct:0, explain:'"หญ้า" มี ห นำ ญ', tier:2},
+      {q:'อ่าน: "นกน้อยบินกลับรังตอนเย็น" — นกบินกลับที่ใด?', emoji:'🪺', choices:['รัง','บ้าน','โรงเรียน','ถ้ำ'], correct:0, explain:'ข้อความบอกว่านกบินกลับ "รัง"', tier:2},
+      {q:'คำใดมีความหมายตรงข้ามกับ "หนัก"?', emoji:'⚖️', choices:['เบา','ใหญ่','ยาว','สูง'], correct:0, explain:'ตรงข้ามกับ "หนัก" คือ "เบา"', tier:2},
       {q:'คำใดคล้องจองกับคำว่า "นก"?', emoji:'🐦', choices:['ยก','นม','นา','โน'], correct:0, explain:'"ยก" คล้องจองกับ "นก" (เสียง -ก เหมือนกัน)', tier:2},
       {q:'คำใดมีความหมายตรงข้ามกับ "กว้าง"?', emoji:'📐', choices:['แคบ','ยาว','สูง','ใหญ่'], correct:0, explain:'ตรงข้ามกับ "กว้าง" คือ "แคบ"', tier:2},
       {q:'อ่าน: "น้องกินข้าวแล้วไปโรงเรียน" — น้องไปที่ไหน?', emoji:'🎒', choices:['โรงเรียน','ตลาด','บ้าน','สวน'], correct:0, explain:'ข้อความบอกว่าน้องไป "โรงเรียน"', tier:2},
       {q:'คำใดมีความหมายเหมือนกับ "ดีใจ"?', emoji:'😊', choices:['ยินดี','เสียใจ','โกรธ','กลัว'], correct:0, explain:'"ยินดี" มีความหมายเหมือน "ดีใจ"', tier:2},
       {q:'คำใดมีความหมายตรงข้ามกับ "เปิด"?', emoji:'🚪', choices:['ปิด','วาง','ถือ','ดึง'], correct:0, explain:'ตรงข้ามกับ "เปิด" คือ "ปิด"', tier:2},
-      {q:'คำใดเป็นคำควบกล้ำ?', emoji:'🦌', choices:['กวาง','กาง','ของ','กบ'], correct:0, explain:'"กวาง" มีอักษรควบ กว', tier:1},
-      {q:'คำใดมีอักษรนำ?', emoji:'🐭', choices:['หนู','นู','ตู','มู'], correct:0, explain:'"หนู" มี ห นำ น', tier:1},
+      {q:'คำใดคล้องจองกับคำว่า "ไก่"?', emoji:'🐔', choices:['ไข่','ไป','กา','นก'], correct:0, explain:'"ไข่" คล้องจองกับ "ไก่"', tier:1},
+      {q:'คำว่า "ลม" มีตัวสะกดคือตัวใด?', emoji:'💨', choices:['ม','ล','น','ง'], correct:0, explain:'"ลม" สะกดด้วย ม (มาตราแม่กม)', tier:1},
       {q:'คำใดคล้องจองกับคำว่า "มา"?', emoji:'👁️', choices:['ตา','มี','มู','โม'], correct:0, explain:'"ตา" คล้องจองกับ "มา" (เสียงสระ อา เหมือนกัน)', tier:1},
       {q:'คำใดมีความหมายตรงข้ามกับ "ดี"?', emoji:'👎', choices:['เลว','ใหญ่','ยาว','เร็ว'], correct:0, explain:'ตรงข้ามกับ "ดี" คือ "เลว"', tier:1},
-      {q:'คำใดเป็นคำควบกล้ำ?', emoji:'🪁', choices:['ปลาย','ปาย','พาย','ป่าย'], correct:0, explain:'"ปลาย" มีอักษรควบ ปล', tier:2},
-      {q:'คำใดมีอักษรนำ?', emoji:'🐻', choices:['หมี','มี','ตี','ดี'], correct:0, explain:'"หมี" มี ห นำ ม', tier:2},
+      {q:'คำใดมีความหมายเหมือนกับ "สวย"?', emoji:'🌸', choices:['งาม','เก่า','ช้า','เล็ก'], correct:0, explain:'"งาม" มีความหมายเหมือน "สวย"', tier:2},
+      {q:'อ่าน: "พี่ให้ขนมน้องหนึ่งชิ้น" — ใครเป็นคนให้ขนม?', emoji:'🍪', choices:['พี่','น้อง','แม่','ครู'], correct:0, explain:'ข้อความบอกว่า "พี่" เป็นคนให้ขนม', tier:2},
       {q:'อ่าน: "ฝนตกหนักจนน้ำท่วมถนน" — อะไรท่วม?', emoji:'🌊', choices:['ถนน','บ้าน','ต้นไม้','รถ'], correct:0, explain:'ข้อความบอกว่าน้ำท่วม "ถนน"', tier:2},
       {q:'คำใดมีความหมายเหมือนกับ "เร็ว"?', emoji:'⚡', choices:['ไว','ช้า','ดี','ใหญ่'], correct:0, explain:'"ไว" มีความหมายเหมือน "เร็ว"', tier:2},
       {q:'คำใดมีความหมายเหมือนกับ "ใหญ่"?', emoji:'🐘', choices:['โต','เล็ก','สั้น','บาง'], correct:0, explain:'โต มีความหมายเหมือน ใหญ่', tier:1},
@@ -526,7 +526,7 @@ const CATS = [
       {q:'"Bird" แปลว่าอะไร?', emoji:'🐦', choices:['นก','ปลา','แมว','หมา'], correct:0, explain:'Bird = นก', tier:2},
       {q:'"E" is for ____ ?', emoji:'🥚', choices:['Egg','Cat','Ball','Dog'], correct:0, explain:'E is for Egg 🥚', tier:2},
       {q:'"cat" แปลว่าอะไร?', emoji:'🐱', choices:['แมว','หมา','นก','ปลา'], correct:0, explain:'cat = แมว', tier:1},
-      {q:'"A" is for ____ ?', emoji:'🍎', choices:['Apple','Ball','Cat','Dog'], correct:0, explain:'A is for Apple', tier:1},
+      {q:'"F" is for ____ ?', emoji:'🐟', choices:['Fish','Apple','Ball','Cat'], correct:0, explain:'F is for Fish 🐟', tier:1},
       {q:'"sun" แปลว่าอะไร?', emoji:'☀️', choices:['ดวงอาทิตย์','ดวงจันทร์','ดาว','เมฆ'], correct:0, explain:'sun = ดวงอาทิตย์', tier:1},
       {q:'"B" is for ____ ?', emoji:'⚽', choices:['Ball','Apple','Egg','Fish'], correct:0, explain:'B is for Ball', tier:2},
       {q:'"red" แปลว่าสีอะไร?', emoji:'🔴', choices:['สีแดง','สีฟ้า','สีเขียว','สีเหลือง'], correct:0, explain:'red = สีแดง', tier:2},
@@ -583,7 +583,7 @@ const CATS = [
       {q:'What is the opposite of "fast"?', emoji:'🐢', choices:['slow','tall','new','hot'], correct:0, explain:'ตรงข้ามกับ fast (เร็ว) คือ slow (ช้า)', tier:2},
       {q:'"____ you like apples?" เติมคำใด?', emoji:'🍎', choices:['Do','Does','Is','Are'], correct:0, explain:'Do you like apples? (ใช้ Do กับ you)', tier:2},
       {q:'เลข 15 ภาษาอังกฤษคือคำใด?', emoji:'🔢', choices:['Fifteen','Fifty','Five','Fourteen'], correct:0, explain:'15 = Fifteen', tier:2},
-      {q:'"There ____ two cats." เติมคำใด?', emoji:'🐈', choices:['are','is','am','be'], correct:0, explain:'There are two cats (พหูพจน์ใช้ are)', tier:2},
+      {q:'How many pencils? ✏️✏️✏️', emoji:'✏️', choices:['Three','Two','Four','Five'], correct:0, explain:'มีดินสอ 3 แท่ง = Three', tier:2},
       {q:'"You ____ my friend." เติมคำใด?', emoji:'🧒', choices:['are','am','is','be'], correct:0, explain:'You are my friend (You ใช้ are)', tier:1},
       {q:'"It ____ a dog." เติมคำใด?', emoji:'🐶', choices:['is','am','are','be'], correct:0, explain:'It is a dog (It ใช้ is)', tier:1},
       {q:'What is the opposite of "open"?', emoji:'🚪', choices:['close','run','sit','eat'], correct:0, explain:'ตรงข้ามกับ open (เปิด) คือ close (ปิด)', tier:1},
@@ -591,7 +591,7 @@ const CATS = [
       {q:'"They ____ playing." เติมคำใด?', emoji:'🧑‍🤝‍🧑', choices:['are','is','am','be'], correct:0, explain:'They are playing (They ใช้ are)', tier:2},
       {q:'What is the opposite of "happy"?', emoji:'😢', choices:['sad','fast','big','new'], correct:0, explain:'ตรงข้ามกับ happy (มีความสุข) คือ sad (เศร้า)', tier:2},
       {q:'Read: "Ann has two pens." How many pens?', emoji:'🖊️', choices:['Two','One','Three','Four'], correct:0, explain:'ประโยคบอกว่า two pens = 2 ด้าม', tier:2},
-      {q:'"____ he your brother?" เติมคำใด?', emoji:'👦', choices:['Is','Are','Am','Do'], correct:0, explain:'Is he your brother? (he ใช้ Is)', tier:2},
+      {q:'"Please" ใช้พูดตอนไหน?', emoji:'🙏', choices:['ตอนขอร้องอย่างสุภาพ','ตอนโกรธ','ตอนวิ่งเล่น','ตอนนอน'], correct:0, explain:'Please เป็นคำสุภาพใช้ตอนขอร้อง เช่น Sit down, please.', tier:2},
       {q:'"Hello!" แปลว่าอะไร?', emoji:'👋', choices:['สวัสดี','ลาก่อน','ขอบคุณ','ขอโทษ'], correct:0, explain:'Hello = สวัสดี', tier:1},
       {q:'"What is your name?" ถามเรื่องอะไร?', emoji:'🧒', choices:['ชื่อ','อายุ','สี','อาหาร'], correct:0, explain:'ถามชื่อ', tier:1},
       {q:'"____ are you?" (ถามสบายดีไหม)', emoji:'😊', choices:['How','What','Who','Where'], correct:0, explain:'How are you? = สบายดีไหม', tier:2},
@@ -842,17 +842,17 @@ const CATS = [
       {q:'ปรบมือตามจังหวะ ตบ-ตบ-ตบ ช้าเท่ากันทุกครั้ง เรียกจังหวะแบบนี้ว่าอะไร?', emoji:'👏', choices:['จังหวะสม่ำเสมอ','ไม่มีจังหวะ','จังหวะมั่ว','เสียงสูง'], correct:0, explain:'เคาะเท่ากันทุกครั้ง = "จังหวะสม่ำเสมอ"', tier:1},
       {q:'โน้ตดนตรีไทยตัวสุดท้ายใน "ด ร ม ฟ ซ ล ท" คือตัวใด?', emoji:'🎼', choices:['ท','ด','ซ','ล'], correct:0, explain:'ตัวสุดท้ายคือ "ท" (ที)', tier:1},
       {q:'เพลงที่เล่นเร็วๆ สนุกๆ ทำให้อยากทำอะไร?', emoji:'💃', choices:['เต้น/ขยับตัว','นอนหลับ','ร้องไห้','อยู่นิ่งๆ'], correct:0, explain:'เพลงเร็วสนุกทำให้อยาก "เต้น/ขยับตัว"', tier:1},
-      {q:'โน้ตสากล "C" ตรงกับโน้ตไทยตัวใด?', emoji:'🎵', choices:['โด (ด)','มี (ม)','ซอล (ซ)','ลา (ล)'], correct:0, explain:'C = โด (ด)', tier:2},
-      {q:'โน้ตสากล "D" ตรงกับโน้ตไทยตัวใด?', emoji:'🎵', choices:['เร (ร)','โด (ด)','มี (ม)','ฟา (ฟ)'], correct:0, explain:'D = เร (ร)', tier:2},
+      {q:'เสียงกลองใหญ่กับเสียงกระดิ่งเล็ก เสียงใดต่ำกว่า?', emoji:'🥁', choices:['เสียงกลองใหญ่','เสียงกระดิ่งเล็ก','เท่ากัน','ไม่มีเสียง'], correct:0, explain:'กลองใหญ่ให้เสียงต่ำ (ทุ้ม) กว่ากระดิ่งเล็ก', tier:2},
+      {q:'เสียงยาวกับเสียงสั้น ต่างกันเรื่องใด?', emoji:'⏱️', choices:['ระยะเวลาของเสียง','สีของเสียง','กลิ่นของเสียง','รูปร่างของเสียง'], correct:0, explain:'เสียงยาว-สั้นต่างกันที่ระยะเวลาที่เสียงดังอยู่', tier:2},
       {q:'โน้ตไทยตัวที่ 3 ใน "ด ร ม ฟ ซ ล ท" คือตัวใด?', emoji:'🎼', choices:['ม','ร','ฟ','ซ'], correct:0, explain:'ตัวที่ 3 คือ "ม" (มี)', tier:2},
       {q:'เคาะจังหวะ เร็ว-เร็ว-ช้า สลับกันไป เรียกจังหวะแบบนี้ว่าอะไร?', emoji:'🥁', choices:['จังหวะไม่สม่ำเสมอ','จังหวะเท่ากัน','ไม่มีจังหวะ','เสียงเบา'], correct:0, explain:'เคาะเร็ว-ช้าสลับ = "จังหวะไม่สม่ำเสมอ"', tier:2},
-      {q:'"ทำนอง" ที่ร้องซ้ำๆ จำง่ายในเพลง เรียกว่าส่วนใด?', emoji:'🎤', choices:['ท่อนฮุก','ท่ามือ','เสียงต่ำ','จังหวะช้า'], correct:0, explain:'ทำนองที่ร้องซ้ำจำง่าย = "ท่อนฮุก"', tier:2},
-      {q:'โน้ตสากล "E" ตรงกับโน้ตไทยตัวใด?', emoji:'🎵', choices:['มี (ม)','เร (ร)','ฟา (ฟ)','ซอล (ซ)'], correct:0, explain:'E = มี (ม)', tier:2},
+      {q:'ปรบมือตามเพลงช้ากับเพลงเร็ว ต่างกันเรื่องใด?', emoji:'👏', choices:['ความเร็วของจังหวะ','สีของเสียง','กลิ่น','ขนาดของเสียง'], correct:0, explain:'เพลงช้า-เร็วต่างกันที่ความเร็วของจังหวะ', tier:2},
+      {q:'เสียงฝนตกกับเสียงกลอง เสียงใดเป็นเสียงจากธรรมชาติ?', emoji:'🌧️', choices:['เสียงฝนตก','เสียงกลอง','ทั้งสองอย่าง','ไม่มีเลย'], correct:0, explain:'เสียงฝนเป็นเสียงจากธรรมชาติ ส่วนกลองเป็นเสียงจากเครื่องดนตรี', tier:2},
       {q:'โน้ตไทยตัวที่ 2 ใน "ด ร ม ฟ ซ ล ท" คือตัวใด?', emoji:'🎼', choices:['ร','ด','ม','ฟ'], correct:0, explain:'ตัวที่ 2 คือ "ร" (เร)', tier:1},
       {q:'เพลงกล่อมเด็กควรมีจังหวะแบบใด?', emoji:'👶', choices:['ช้านุ่มนวล','เร็วแรง','ดังมาก','กระโดดโลดเต้น'], correct:0, explain:'เพลงกล่อมเด็กควร "ช้านุ่มนวล" ให้หลับสบาย', tier:1},
       {q:'โน้ตสากลหลักมีกี่ตัว (C D E F G A B)?', emoji:'🎹', choices:['7 ตัว','5 ตัว','8 ตัว','6 ตัว'], correct:0, explain:'โน้ตสากลหลักมี 7 ตัว: C D E F G A B', tier:1},
-      {q:'โน้ตสากล "F" ตรงกับโน้ตไทยตัวใด?', emoji:'🎵', choices:['ฟา (ฟ)','มี (ม)','ซอล (ซ)','เร (ร)'], correct:0, explain:'F = ฟา (ฟ)', tier:2},
-      {q:'โน้ตสากล "G" ตรงกับโน้ตไทยตัวใด?', emoji:'🎵', choices:['ซอล (ซ)','ฟา (ฟ)','ลา (ล)','มี (ม)'], correct:0, explain:'G = ซอล (ซ)', tier:2},
+      {q:'ร้องเพลงพร้อมเพื่อนในห้องเรียน ควรร้องเสียงแบบใด?', emoji:'🎶', choices:['ดังพอดี ไม่ตะโกน','ดังที่สุดเท่าที่ทำได้','เบาจนไม่ได้ยิน','ไม่ต้องร้อง'], correct:0, explain:'ควรร้องดังพอดีและพร้อมเพรียงกับเพื่อน', tier:2},
+      {q:'เคาะไม้ 1 ครั้งต่อ 1 จังหวะ เท่ากันตลอดเพลง เรียกว่าอะไร?', emoji:'🥢', choices:['จังหวะสม่ำเสมอ','ไม่มีจังหวะ','จังหวะสลับไปมา','เสียงสูง'], correct:0, explain:'เคาะเท่ากันตลอด = จังหวะสม่ำเสมอ', tier:2},
       {q:'โน้ตไทยตัวที่ 5 ใน "ด ร ม ฟ ซ ล ท" คือตัวใด?', emoji:'🎼', choices:['ซ','ฟ','ล','ม'], correct:0, explain:'ตัวที่ 5 คือ "ซ" (ซอล)', tier:2},
       {q:'โน้ตตัวแรกคือตัวใด?', emoji:'🎵', choices:['โด','เร','มี','ฟา'], correct:0, explain:'โน้ตตัวแรกคือ โด', tier:1},
       {q:'เรียงต่อ: ด ร ม ▢', emoji:'🎶', choices:['ฟ','ซ','ล','ท'], correct:0, explain:'ลำดับคือ ด ร ม ฟ', tier:1},
@@ -1005,7 +1005,7 @@ const CATS = [
      Phase 2.1 (คณิต): จำนวนไม่เกิน 1000 / บวก-ลบมีทด / คูณ-หาร (เนื้อหาใหม่ ป.2) + calculation engine (ar-math mathOps ×÷) */
   /* ---------- คณิต ป.2 ---------- */
   {
-    id:'p2-math1', name:'คณิต ป.2 · จำนวนไม่เกิน 1000', emoji:'🔢', color:'#7C5CFC', light:'#E9E3FF', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-math1', name:'คณิต ป.2 · จำนวนไม่เกิน 1000', emoji:'🔢', icon:'assets/icons/p2-math1.svg', color:'#7C5CFC', light:'#E9E3FF', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — หลัก/นับกระโดด/คู่-คี่/เปรียบเทียบ (ง่าย) */
       {q:'เลข 253 มีเลขในหลักร้อยคือเลขใด?', emoji:'🔢', choices:['2','5','3','253'], correct:0, explain:'เลข 2 อยู่หลักร้อย', tier:1},
@@ -1036,7 +1036,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-math2', name:'คณิต ป.2 · บวก ลบ ไม่เกิน 1000', emoji:'➕', color:'#5E3FE0', light:'#E9E3FF', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-math2', name:'คณิต ป.2 · บวก ลบ ไม่เกิน 1000', emoji:'➕', icon:'assets/icons/p2-math2.svg', color:'#5E3FE0', light:'#E9E3FF', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — บวก-ลบหลักร้อยแบบไม่ทด + โจทย์ปัญหาง่าย */
       {q:'120 + 30 = ?', emoji:'➕', choices:['150','140','160','123'], correct:0, explain:'120 บวก 30 เท่ากับ 150', tier:1},
@@ -1067,7 +1067,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-math3', name:'คณิต ป.2 · คูณ หาร', emoji:'✖️', color:'#4A2FC0', light:'#E9E3FF', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-math3', name:'คณิต ป.2 · คูณ หาร', emoji:'✖️', icon:'assets/icons/p2-math3.svg', color:'#4A2FC0', light:'#E9E3FF', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — คูณกลุ่มเท่าๆ กัน (สูตรคูณ 2-5) + หารแบ่งเท่าๆ กัน */
       {q:'2 × 3 = ? (2 กลุ่ม กลุ่มละ 3)', emoji:'✖️', choices:['6','5','8','4'], correct:0, explain:'2 × 3 = 3 + 3 = 6', tier:1},
@@ -1099,13 +1099,13 @@ const CATS = [
   },
   {
     /* calculation engine: ar-math + mathOps ×÷ (เนื้อหาใหม่ ป.2 เป็นต้นสายที่ ป.3-6 ใช้ต่อ) */
-    id:'p2-math-ar', name:'คูณ-หารมหัศจรรย์', emoji:'✳️', color:'#5E3FE0', light:'#E9E3FF',
+    id:'p2-math-ar', name:'คูณ-หารมหัศจรรย์', emoji:'✳️', icon:'assets/icons/p2-math-ar.svg', color:'#5E3FE0', light:'#E9E3FF',
     type:'ar', mode:'math', levels:10, mathTiers:[[2,5],[2,9],[2,12]], mathOps:['×','÷'], mathChoices:4, grade:'p2', isNew:true
   },
 
   /* ---------- ภาษาไทย ป.2 (อักษร 3 หมู่ / คำควบกล้ำ-อักษรนำ-การันต์ / อ่านจับใจความ) ---------- */
   {
-    id:'p2-thai1', name:'ภาษาไทย ป.2 · อักษร 3 หมู่-มาตราตัวสะกด', emoji:'📖', color:'#EF5DA8', light:'#FCE0EF', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-thai1', name:'ภาษาไทย ป.2 · อักษร 3 หมู่-มาตราตัวสะกด', emoji:'📖', icon:'assets/icons/p2-thai1.svg', color:'#EF5DA8', light:'#FCE0EF', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — อักษรสูง/กลาง/ต่ำ, มาตราตัวสะกด, วรรณยุกต์ (ง่าย) */
       {q:'ข้อใดเป็นอักษรสูง?', emoji:'📚', choices:['ข','ก','ด','บ'], correct:0, explain:'ข เป็นอักษรสูง (ก ด บ เป็นอักษรกลาง)', tier:1},
@@ -1136,13 +1136,13 @@ const CATS = [
     ]
   },
   {
-    id:'p2-thai2', name:'ภาษาไทย ป.2 · คำควบกล้ำ-คำตรงข้าม', emoji:'📝', color:'#E14E9A', light:'#FCE0EF', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-thai2', name:'ภาษาไทย ป.2 · คำควบกล้ำ-คำตรงข้าม', emoji:'📝', icon:'assets/icons/p2-thai2.svg', color:'#E14E9A', light:'#FCE0EF', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — คำควบกล้ำ, คำตรงข้าม, คำคล้องจอง, การันต์ (ง่าย) */
       {q:'คำใดเป็นคำควบกล้ำ?', emoji:'🥁', choices:['กลอง','กอง','ของ','คอง'], correct:0, explain:'"กลอง" มีอักษรควบ กล', tier:1},
       {q:'คำตรงข้ามกับ "ใหญ่" คือคำใด?', emoji:'🔍', choices:['เล็ก','ยาว','หนา','กว้าง'], correct:0, explain:'ใหญ่ ตรงข้ามกับ เล็ก', tier:1},
       {q:'คำตรงข้ามกับ "สูง" คือคำใด?', emoji:'📏', choices:['เตี้ย','ผอม','เบา','ช้า'], correct:0, explain:'สูง ตรงข้ามกับ เตี้ย', tier:1},
-      {q:'คำใดมีตัวการันต์?', emoji:'🌙', choices:['จันทร์','จัน','จาน','จน'], correct:0, explain:'"จันทร์" มี ทร์ เป็นตัวการันต์', tier:1},
+      {q:'คำใดมีตัวการันต์?', emoji:'🌙', choices:['จันทร์','จัน','จาน','จน'], correct:0, explain:'"จันทร์" มี ร์ (ตัว ร ที่มีทัณฑฆาต ์ กำกับ) เป็นตัวการันต์ จึงไม่ออกเสียง', tier:1},
       {q:'คำใดคล้องจองกับ "ตา"?', emoji:'👁️', choices:['นา','นก','มือ','ปู'], correct:0, explain:'"นา" คล้องจองกับ "ตา" (เสียงสระ อา)', tier:1},
       {q:'คำตรงข้ามกับ "ร้อน" คือคำใด?', emoji:'🌡️', choices:['เย็น','อุ่น','แห้ง','เปียก'], correct:0, explain:'ร้อน ตรงข้ามกับ เย็น', tier:1},
       {q:'คำใดเป็นคำควบกล้ำ?', emoji:'🍶', choices:['ขวด','ขด','คด','ขอด'], correct:0, explain:'"ขวด" มีอักษรควบ ขว', tier:1},
@@ -1166,7 +1166,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-thai3', name:'ภาษาไทย ป.2 · อ่านจับใจความ', emoji:'📘', color:'#D63D8C', light:'#FCE0EF', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-thai3', name:'ภาษาไทย ป.2 · อ่านจับใจความ', emoji:'📘', icon:'assets/icons/p2-thai3.svg', color:'#D63D8C', light:'#FCE0EF', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — จับใจความประโยคเดียว, มารยาท, คำพูดเหมาะสม (ง่าย) */
       {q:'อ่าน: "แมวของฉันชอบนอนกลางแดด" ข้อความนี้พูดถึงสัตว์อะไร?', emoji:'🐱', choices:['แมว','หมา','นก','ปลา'], correct:0, explain:'ข้อความพูดถึงแมว', tier:1},
@@ -1197,21 +1197,21 @@ const CATS = [
   },
   {
     /* ฟังสะกดคำไทย ป.2 — reuse listen engine (คลัง LISTEN_WORDS_TH ร่วมกับระดับอื่น) */
-    id:'p2-listen-th', name:'ฟังสะกดคำไทย ป.2', emoji:'🎙️', color:'#F2765E', light:'#FDE1DA',
+    id:'p2-listen-th', name:'ฟังสะกดคำไทย ป.2', emoji:'🎙️', icon:'assets/icons/p2-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
     type:'listen', mode:'nohint', lang:'th', levels:10, grade:'p2', isNew:true
   },
   {
-    id:'p2-thai-match', name:'ภาษาไทย ป.2 · โยงเส้นคำ-รูป', emoji:'🧷', color:'#8E7CC3', light:'#EAE4F7',
+    id:'p2-thai-match', name:'ภาษาไทย ป.2 · โยงเส้นคำ-รูป', emoji:'🧷', icon:'assets/icons/p2-thai-match.svg', color:'#8E7CC3', light:'#EAE4F7',
     type:'ar', mode:'match', lang:'th', levels:10, grade:'p2', isNew:true
   },
   {
-    id:'p2-thai-sentence', name:'ภาษาไทย ป.2 · ต่อประโยค', emoji:'📜', color:'#F17FA8', light:'#FDE1EC',
+    id:'p2-thai-sentence', name:'ภาษาไทย ป.2 · ต่อประโยค', emoji:'📜', icon:'assets/icons/p2-thai-sentence.svg', color:'#F17FA8', light:'#FDE1EC',
     type:'ar', lang:'th', levels:10, grade:'p2', isNew:true
   },
 
   /* ---------- English ป.2 (ประโยคเดี่ยว / จำนวน 1-30 / How many-Where is / please) ---------- */
   {
-    id:'p2-eng1', name:'English ป.2 · คำศัพท์-ประโยคเดี่ยว', emoji:'🔤', color:'#0FB5AE', light:'#D5F5F2', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-eng1', name:'English ป.2 · คำศัพท์-ประโยคเดี่ยว', emoji:'🔤', icon:'assets/icons/p2-eng1.svg', color:'#0FB5AE', light:'#D5F5F2', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — คำศัพท์ + This is / It is (ง่าย) */
       {q:'"cat" แปลว่าอะไร?', emoji:'🐱', choices:['แมว','หมา','นก','ปลา'], correct:0, explain:'cat = แมว', tier:1},
@@ -1242,7 +1242,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-eng2', name:'English ป.2 · จำนวน-ตำแหน่ง', emoji:'🔡', color:'#0A8F89', light:'#D5F5F2', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-eng2', name:'English ป.2 · จำนวน-ตำแหน่ง', emoji:'🔡', icon:'assets/icons/p2-eng2.svg', color:'#0A8F89', light:'#D5F5F2', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — จำนวน 1-30, in/on/under, Yes/No (ง่าย) */
       {q:'"ten" คือเลขอะไร?', emoji:'🔟', choices:['10','2','7','12'], correct:0, explain:'ten = 10', tier:1},
@@ -1273,7 +1273,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-eng3', name:'English ป.2 · คำสั่ง-คำขอร้อง', emoji:'🔠', color:'#0A7A75', light:'#D5F5F2', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-eng3', name:'English ป.2 · คำสั่ง-คำขอร้อง', emoji:'🔠', icon:'assets/icons/p2-eng3.svg', color:'#0A7A75', light:'#D5F5F2', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — please, ทักทาย, เทศกาล, คำตรงข้าม (ง่าย) */
       {q:'"Please sit down." แปลว่าอะไร?', emoji:'🪑', choices:['กรุณานั่งลง','กรุณายืนขึ้น','เปิดหนังสือ','ปิดประตู'], correct:0, explain:'Please sit down = กรุณานั่งลง', tier:1},
@@ -1305,17 +1305,17 @@ const CATS = [
   },
   {
     /* ฟังคำอังกฤษ ป.2 — reuse listen engine (คลัง LISTEN_WORDS default en) */
-    id:'p2-listen-en', name:'ฟังคำอังกฤษ ป.2', emoji:'📣', color:'#6C5CE7', light:'#E6E1FB',
+    id:'p2-listen-en', name:'ฟังคำอังกฤษ ป.2', emoji:'📣', icon:'assets/icons/p2-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
     type:'listen', mode:'nohint', levels:10, grade:'p2', isNew:true
   },
   {
-    id:'p2-eng-sentence', name:'English ป.2 · ต่อประโยค', emoji:'🅰️', color:'#5B6EE8', light:'#E1E6FD',
+    id:'p2-eng-sentence', name:'English ป.2 · ต่อประโยค', emoji:'🅰️', icon:'assets/icons/p2-eng-sentence.svg', color:'#5B6EE8', light:'#E1E6FD',
     type:'ar', lang:'en', levels:10, grade:'p2', isNew:true
   },
 
   /* ---------- คุณธรรม / สังคมศึกษา ป.2 ---------- */
   {
-    id:'p2-manners', name:'สังคม ป.2 · มารยาทและหน้าที่', emoji:'😇', color:'#F6A609', light:'#FEEFC9', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-manners', name:'สังคม ป.2 · มารยาทและหน้าที่', emoji:'😇', icon:'assets/icons/p2-manners.svg', color:'#F6A609', light:'#FEEFC9', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — มารยาทไทย / กฎกติกา / คุณธรรมพื้นฐาน (ง่าย) */
       {q:'เมื่อรับของจากผู้ใหญ่ ควรทำอย่างไร?', emoji:'🙏', choices:['รับด้วยสองมือและไหว้ขอบคุณ','คว้าไปเลย','ไม่รับ','โยนทิ้ง'], correct:0, explain:'ควรรับด้วยสองมือและกล่าวขอบคุณ', tier:1},
@@ -1345,7 +1345,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-social', name:'สังคม ป.2 · ชุมชนและเงินทอง', emoji:'🏘️', color:'#E5893B', light:'#FBEAD5', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-social', name:'สังคม ป.2 · ชุมชนและเงินทอง', emoji:'🏘️', icon:'assets/icons/p2-social.svg', color:'#E5893B', light:'#FBEAD5', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — เวลา / อาชีพ-บริการ / ธรรมชาติ vs มนุษย์สร้าง (ง่าย) */
       {q:'วันถัดจาก "วันนี้" เรียกว่าอะไร?', emoji:'📅', choices:['พรุ่งนี้','เมื่อวาน','เดือนหน้า','ปีที่แล้ว'], correct:0, explain:'วันถัดไปคือพรุ่งนี้ (อนาคต)', tier:1},
@@ -1362,7 +1362,7 @@ const CATS = [
       {q:'การเอาของมาแลกกันโดยไม่ใช้เงิน เรียกว่าอะไร?', emoji:'🔄', choices:['การแลกเปลี่ยนสินค้า','การออม','การซื้อด้วยเงิน','การกู้ยืม'], correct:0, explain:'การแลกของกับของโดยตรงคือการแลกเปลี่ยนสินค้า', tier:2},
       {q:'ประเพณีลอยกระทงใช้สิ่งใดลอยน้ำ?', emoji:'🪷', choices:['กระทง','ว่าว','เทียนพรรษา','พลุ'], correct:0, explain:'ลอยกระทงคือการลอยกระทงในน้ำ', tier:2},
       {q:'ดินสอทำมาจากทรัพยากรใด?', emoji:'✏️', choices:['ไม้','เหล็ก','แก้ว','พลาสติกล้วน'], correct:0, explain:'ดินสอส่วนใหญ่ทำจากไม้', tier:2},
-      {q:'ดวงจันทร์เปลี่ยนรูปร่างจากเสี้ยวเป็นวงกลมเรียกช่วงนี้ว่าอะไร?', emoji:'🌔', choices:['ข้างขึ้น','ข้างแรม','กลางวัน','ฤดูฝน'], correct:0, explain:'ช่วงที่ดวงจันทร์สว่างขึ้นเรื่อยๆ คือข้างขึ้น', tier:2},
+      {q:'ธนาคารในชุมชนมีหน้าที่อะไร?', emoji:'🏦', choices:['รับฝากเงินและให้บริการทางการเงิน','รักษาคนป่วย','สอนหนังสือ','ขายอาหารสด'], correct:0, explain:'ธนาคารรับฝากเงินและให้บริการทางการเงิน เช่น การออม', tier:2},
       {q:'ทรัพยากรใดใช้แล้วไม่หมดไป?', emoji:'💧', choices:['น้ำและอากาศ','น้ำมัน','ถ่านหิน','แร่ทองคำ'], correct:0, explain:'น้ำและอากาศเป็นทรัพยากรที่ใช้แล้วไม่หมดไป (หมุนเวียนได้)', tier:2},
       {q:'ถ้ามีรายได้ 20 บาท ควรทำอย่างไรจึงเหมาะสม?', emoji:'💵', choices:['ใช้บางส่วนและเก็บออมบ้าง','ใช้หมดทันที','ยืมเพื่อนเพิ่ม','ทิ้งไป'], correct:0, explain:'ควรใช้จ่ายพอดีและแบ่งเก็บออม', tier:2},
       {q:'พื้นที่กว้างมีน้ำเค็มเป็นบริเวณกว้างเรียกว่าอะไร?', emoji:'🌊', choices:['ทะเล','แม่น้ำ','ภูเขา','ทะเลทราย'], correct:0, explain:'ทะเลเป็นแหล่งน้ำเค็มขนาดใหญ่', tier:2},
@@ -1377,7 +1377,7 @@ const CATS = [
 
   /* ---------- เชาวน์ปัญญา ป.2 ---------- */
   {
-    id:'p2-iq1', name:'เชาวน์ ป.2 · ตรรกะและแบบรูป', emoji:'🧠', color:'#2FB673', light:'#D6F3E4', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-iq1', name:'เชาวน์ ป.2 · ตรรกะและแบบรูป', emoji:'🧠', icon:'assets/icons/p2-iq1.svg', color:'#2FB673', light:'#D6F3E4', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — แบบรูป / ไม่เข้าพวก / เปรียบเทียบ (ง่าย) */
       {q:'แบบรูป: 🔴🔵🔴🔵🔴 ▢ ต่อไปคือ?', emoji:'🔁', choices:['🔵','🔴','🟢','🟡'], correct:0, explain:'สลับ แดง-ฟ้า ตัวต่อไปคือฟ้า', tier:1},
@@ -1407,7 +1407,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-iq2', name:'เชาวน์ ป.2 · ความจำและมิติ', emoji:'🤔', color:'#1F9C60', light:'#D6F3E4', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-iq2', name:'เชาวน์ ป.2 · ความจำและมิติ', emoji:'🤔', icon:'assets/icons/p2-iq2.svg', color:'#1F9C60', light:'#D6F3E4', grade:'p2', poolPick:10, isNew:true,
     questions:[
       /* tier1 — กฎ / จับคู่ / ทิศทาง (ง่าย) */
       {q:'คำว่า "แมว" มีตัวอักษรกี่ตัว?', emoji:'🔤', choices:['3','2','4','5'], correct:0, explain:'แ-ม-ว รวม 3 ตัว', tier:1},
@@ -1438,13 +1438,13 @@ const CATS = [
   },
   {
     /* reuse EF engine (นกฮูกสั่ง) — แยก id/progress จาก ป.1 */
-    id:'p2-iq3', name:'เชาวน์ ป.2 · นกฮูกสั่ง', emoji:'🦉', color:'#17A65B', light:'#D6F3E4',
+    id:'p2-iq3', name:'เชาวน์ ป.2 · นกฮูกสั่ง', emoji:'🦉', icon:'assets/icons/p2-iq3.svg', color:'#17A65B', light:'#D6F3E4',
     type:'skill', mode:'ef', levels:10, grade:'p2', isNew:true
   },
 
   /* ---------- ดนตรี ป.2 (quiz) ---------- */
   {
-    id:'p2-music1', name:'ดนตรี ป.2 · เครื่องดนตรีและเสียง', emoji:'🎵', color:'#4C8DF0', light:'#DEEAFC', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-music1', name:'ดนตรี ป.2 · เครื่องดนตรีและเสียง', emoji:'🎵', icon:'assets/icons/p2-music1.svg', color:'#4C8DF0', light:'#DEEAFC', grade:'p2', poolPick:10, isNew:true,
     questions:[
       {q:'เครื่องดนตรีใดเล่นโดยการ "ตี"?', emoji:'🥁', choices:['กลอง','ขลุ่ย','ไวโอลิน','กีตาร์'], correct:0, explain:'กลองเล่นด้วยการตี', tier:1},
       {q:'เสียง "โครม!" ดังมาจากสิ่งใด?', emoji:'⛈️', choices:['ฟ้าร้อง','นกร้อง','น้ำหยด','ลมพัดเบา'], correct:0, explain:'ฟ้าร้องมีเสียงดังโครม', tier:1},
@@ -1473,7 +1473,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-music2', name:'ดนตรี ป.2 · จังหวะและโน้ต', emoji:'🎶', color:'#2F6BC4', light:'#DEEAFC', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-music2', name:'ดนตรี ป.2 · จังหวะและโน้ต', emoji:'🎶', icon:'assets/icons/p2-music2.svg', color:'#2F6BC4', light:'#DEEAFC', grade:'p2', poolPick:10, isNew:true,
     questions:[
       {q:'ปรบมือ "ตบ-ตบ-ตบ" มีกี่ครั้ง?', emoji:'👏', choices:['3','2','4','1'], correct:0, explain:'นับได้ 3 ครั้ง', tier:1},
       {q:'โน้ตตัวถัดจาก "โด เร มี" คือตัวใด?', emoji:'🎵', choices:['ฟา','ซอล','ลา','โด'], correct:0, explain:'ลำดับคือ โด เร มี ฟา', tier:1},
@@ -1504,7 +1504,7 @@ const CATS = [
 
   /* ---------- ศิลปะ ป.2 (quiz) ---------- */
   {
-    id:'p2-art1', name:'ศิลปะ ป.2 · สีสัน', emoji:'🎨', color:'#FF7A45', light:'#FFE4D6', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-art1', name:'ศิลปะ ป.2 · สีสัน', emoji:'🎨', icon:'assets/icons/p2-art1.svg', color:'#FF7A45', light:'#FFE4D6', grade:'p2', poolPick:10, isNew:true,
     questions:[
       {q:'สีแดงผสมสีเหลืองได้สีอะไร?', emoji:'🟠', choices:['สีส้ม','สีเขียว','สีม่วง','สีน้ำตาล'], correct:0, explain:'แดง + เหลือง = ส้ม', tier:1},
       {q:'สีฟ้าผสมสีเหลืองได้สีอะไร?', emoji:'🟢', choices:['สีเขียว','สีส้ม','สีม่วง','สีชมพู'], correct:0, explain:'ฟ้า + เหลือง = เขียว', tier:1},
@@ -1525,7 +1525,7 @@ const CATS = [
       {q:'สีม่วงเกิดจากการผสมสีคู่ใด?', emoji:'🟣', choices:['แดง + น้ำเงิน','เหลือง + ฟ้า','ขาว + ดำ','ส้ม + เขียว'], correct:0, explain:'ม่วง = แดง + น้ำเงิน', tier:2},
       {q:'สีของหญ้าและใบไม้คือสีอะไร?', emoji:'🌿', choices:['สีเขียว','สีน้ำตาล','สีฟ้า','สีม่วง'], correct:0, explain:'หญ้าและใบไม้มีสีเขียว', tier:2},
       {q:'แม่สีมีกี่สี?', emoji:'🎨', choices:['3 สี','2 สี','5 สี','7 สี'], correct:0, explain:'แม่สีมี 3 สี แดง เหลือง น้ำเงิน', tier:1},
-      {q:'สีแดงผสมสีเหลืองได้สีอะไร?', emoji:'🟠', choices:['สีส้ม','สีเขียว','สีม่วง','สีน้ำตาล'], correct:0, explain:'แดง + เหลือง = ส้ม', tier:1},
+      {q:'สีเหลืองผสมสีขาวได้สีอะไร?', emoji:'🎨', choices:['สีเหลืองอ่อน','สีเขียว','สีน้ำตาล','สีดำ'], correct:0, explain:'ผสมสีขาวจะทำให้สีอ่อนลง เหลือง + ขาว = เหลืองอ่อน', tier:1},
       {q:'ท้องฟ้ากลางวันเป็นสีอะไร?', emoji:'🌤️', choices:['สีฟ้า','สีแดง','สีดำ','สีเขียว'], correct:0, explain:'ท้องฟ้ากลางวันสีฟ้า', tier:1},
       {q:'สีน้ำเงินผสมสีเหลืองได้สีอะไร?', emoji:'🟢', choices:['สีเขียว','สีส้ม','สีม่วง','สีชมพู'], correct:0, explain:'น้ำเงิน + เหลือง = เขียว', tier:2},
       {q:'สีใดให้ความรู้สึกร้อน?', emoji:'🔥', choices:['สีแดง','สีฟ้า','สีเขียว','สีขาว'], correct:0, explain:'สีแดงเป็นสีโทนร้อน', tier:2},
@@ -1533,7 +1533,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-art2', name:'ศิลปะ ป.2 · เส้นและรูปทรง', emoji:'🖼️', color:'#D9542F', light:'#FFE4D6', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-art2', name:'ศิลปะ ป.2 · เส้นและรูปทรง', emoji:'🖼️', icon:'assets/icons/p2-art2.svg', color:'#D9542F', light:'#FFE4D6', grade:'p2', poolPick:10, isNew:true,
     questions:[
       {q:'รูปที่มี 3 ด้านคือรูปอะไร?', emoji:'🔺', choices:['สามเหลี่ยม','สี่เหลี่ยม','วงกลม','ห้าเหลี่ยม'], correct:0, explain:'รูป 3 ด้านคือสามเหลี่ยม', tier:1},
       {q:'รูปที่มี 4 ด้านเท่ากันทุกด้านคือรูปอะไร?', emoji:'🟦', choices:['สี่เหลี่ยมจัตุรัส','สามเหลี่ยม','วงกลม','วงรี'], correct:0, explain:'4 ด้านเท่ากันคือสี่เหลี่ยมจัตุรัส', tier:1},
@@ -1553,7 +1553,7 @@ const CATS = [
       {q:'ดาวห้าแฉกมีกี่มุมแหลม?', emoji:'⭐', choices:['5','6','4','3'], correct:0, explain:'ดาวห้าแฉกมี 5 มุมแหลม', tier:2},
       {q:'รูปวงรีต่างจากวงกลมอย่างไร?', emoji:'🥚', choices:['รียาวไม่กลมสนิท','มีมุม','มี 4 ด้าน','เป็นเส้นตรง'], correct:0, explain:'วงรีมีลักษณะรียาว ไม่กลมสนิทเท่าวงกลม', tier:2},
       {q:'ทรงกระป๋องน้ำอัดลมเรียกว่าทรงอะไร?', emoji:'🥫', choices:['ทรงกระบอก','ทรงกลม','ลูกบาศก์','ทรงกรวย'], correct:0, explain:'กระป๋องเป็นทรงกระบอก', tier:2},
-      {q:'รูปที่มี 3 ด้านคือรูปอะไร?', emoji:'🔺', choices:['สามเหลี่ยม','สี่เหลี่ยม','วงกลม','ห้าเหลี่ยม'], correct:0, explain:'3 ด้านคือสามเหลี่ยม', tier:1},
+      {q:'รูปหกเหลี่ยมมีกี่ด้าน?', emoji:'🔷', choices:['6 ด้าน','5 ด้าน','4 ด้าน','3 ด้าน'], correct:0, explain:'หกเหลี่ยมมี 6 ด้าน', tier:1},
       {q:'รูปกลมไม่มีมุมคือรูปอะไร?', emoji:'⭕', choices:['วงกลม','สี่เหลี่ยม','สามเหลี่ยม','ดาว'], correct:0, explain:'รูปกลมไม่มีมุมคือวงกลม', tier:1},
       {q:'เส้นที่ลากจากซ้ายไปขวาเรียกว่าเส้นอะไร?', emoji:'➖', choices:['เส้นนอน','เส้นตั้ง','เส้นโค้ง','เส้นหยัก'], correct:0, explain:'เส้นซ้าย-ขวาคือเส้นนอน', tier:1},
       {q:'รูปที่มี 4 ด้านเท่ากันคือรูปอะไร?', emoji:'⬜', choices:['สี่เหลี่ยมจัตุรัส','สามเหลี่ยม','วงกลม','วงรี'], correct:0, explain:'4 ด้านเท่ากันคือสี่เหลี่ยมจัตุรัส', tier:2},
@@ -1564,7 +1564,7 @@ const CATS = [
 
   /* ---------- ธรรมชาติ / วิทยาศาสตร์ ป.2 (quiz) ---------- */
   {
-    id:'p2-nature1', name:'ธรรมชาติ ป.2 · สิ่งมีชีวิตและพืช', emoji:'🌱', color:'#6FBF3B', light:'#E6F6D8', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-nature1', name:'ธรรมชาติ ป.2 · สิ่งมีชีวิตและพืช', emoji:'🌱', icon:'assets/icons/p2-nature1.svg', color:'#6FBF3B', light:'#E6F6D8', grade:'p2', poolPick:10, isNew:true,
     questions:[
       {q:'สิ่งใดเป็นสิ่งมีชีวิต?', emoji:'🌳', choices:['ต้นไม้','ก้อนหิน','รถยนต์','โต๊ะ'], correct:0, explain:'ต้นไม้เป็นสิ่งมีชีวิต', tier:1},
       {q:'พืชต้องการสิ่งใดเพื่อเจริญเติบโต?', emoji:'🌞', choices:['น้ำและแสงแดด','ขนม','ของเล่น','โทรทัศน์'], correct:0, explain:'พืชต้องการน้ำและแสงแดด', tier:1},
@@ -1593,7 +1593,7 @@ const CATS = [
     ]
   },
   {
-    id:'p2-nature2', name:'ธรรมชาติ ป.2 · วัสดุ แสง และดิน', emoji:'🔬', color:'#4F9E2F', light:'#E6F6D8', grade:'p2', poolPick:10, isNew:true,
+    id:'p2-nature2', name:'ธรรมชาติ ป.2 · วัสดุ แสง และดิน', emoji:'🔬', icon:'assets/icons/p2-nature2.svg', color:'#4F9E2F', light:'#E6F6D8', grade:'p2', poolPick:10, isNew:true,
     questions:[
       {q:'วัสดุใดดูดซับน้ำได้ดี?', emoji:'🧻', choices:['ผ้า','พลาสติก','แก้ว','เหล็ก'], correct:0, explain:'ผ้าดูดซับน้ำได้ดี', tier:1},
       {q:'เราใช้สิ่งใดกันฝนเพราะไม่ดูดน้ำ?', emoji:'☂️', choices:['ร่มพลาสติก','ผ้าเช็ดตัว','กระดาษทิชชู่','ฟองน้ำ'], correct:0, explain:'ร่มพลาสติกไม่ดูดน้ำจึงกันฝนได้', tier:1},
@@ -1623,24 +1623,24 @@ const CATS = [
   },
 
   /* ---------- เกมฝึกทักษะ ป.2 (reuse engine เดิม แยก id/progress) ---------- */
-  { id:'p2-memory', name:'จับคู่โดมิโน ป.2', emoji:'🃏', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], grade:'p2', isNew:true },
-  { id:'p2-animalsort', name:'แยกสัตว์ บก-น้ำ-ปีก', emoji:'🐾', color:'#4E9A51', light:'#DCEFD9', type:'skill', mode:'sort', sortSet:'landsea', levels:10, grade:'p2', isNew:true },
-  { id:'p2-timeline', name:'เรียงลำดับเหตุการณ์', emoji:'🗓️', color:'#C98A3A', light:'#F7E9D2', type:'skill', mode:'timeline', timelineMax:4, levels:8, grade:'p2', isNew:true },
+  { id:'p2-memory', name:'จับคู่โดมิโน ป.2', emoji:'🃏', icon:'assets/icons/p2-memory.svg', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], grade:'p2', isNew:true },
+  { id:'p2-animalsort', name:'แยกสัตว์ บก-น้ำ-ปีก', emoji:'🐾', icon:'assets/icons/p2-animalsort.svg', color:'#4E9A51', light:'#DCEFD9', type:'skill', mode:'sort', sortSet:'landsea', levels:10, grade:'p2', isNew:true },
+  { id:'p2-timeline', name:'เรียงลำดับเหตุการณ์', emoji:'🗓️', icon:'assets/icons/p2-timeline.svg', color:'#C98A3A', light:'#F7E9D2', type:'skill', mode:'timeline', timelineMax:4, levels:8, grade:'p2', isNew:true },
 
   /* ---------- coding ป.2 (พาแมวกลับบ้าน + บัตร "ทำซ้ำ N รอบ" loop — Phase 2.2 extend code engine) ---------- */
-  { id:'p2-code1', name:'พาแมววนซ้ำ 1', emoji:'🤖', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p2a', codeLoop:true, levels:10, grade:'p2', isNew:true },
-  { id:'p2-code2', name:'พาแมววนซ้ำ 2', emoji:'🔁', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p2b', codeLoop:true, levels:8, grade:'p2', isNew:true },
-  { id:'p2-code3', name:'พาแมววนซ้ำ 3', emoji:'🎮', color:'#1F7E88', light:'#D6EDF0', type:'skill', mode:'code', codeSet:'p2c', codeLoop:true, levels:8, grade:'p2', isNew:true },
+  { id:'p2-code1', name:'พาแมววนซ้ำ 1', emoji:'🤖', icon:'assets/icons/p2-code1.svg', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p2a', codeLoop:true, levels:10, grade:'p2', isNew:true },
+  { id:'p2-code2', name:'พาแมววนซ้ำ 2', emoji:'🔁', icon:'assets/icons/p2-code2.svg', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p2b', codeLoop:true, levels:8, grade:'p2', isNew:true },
+  { id:'p2-code3', name:'พาแมววนซ้ำ 3', emoji:'🎮', icon:'assets/icons/p2-code3.svg', color:'#1F7E88', light:'#D6EDF0', type:'skill', mode:'code', codeSet:'p2c', codeLoop:true, levels:8, grade:'p2', isNew:true },
 
   /* ---------- นักวิทย์ทายผล ป.2 (reuse predict-check engine — Phase 2.3) ---------- */
-  { id:'p2-sci1', name:'นักวิทย์ ป.2 · มีชีวิตไหม', emoji:'🧫', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'science', sciSet:'p2living', levels:10, grade:'p2', isNew:true },
-  { id:'p2-sci2', name:'นักวิทย์ ป.2 · วัสดุดูดซับน้ำ', emoji:'🌡️', color:'#7C6FD6', light:'#E6E2FA', type:'skill', mode:'science', sciSet:'p2absorb', levels:10, grade:'p2', isNew:true },
+  { id:'p2-sci1', name:'นักวิทย์ ป.2 · มีชีวิตไหม', emoji:'🧫', icon:'assets/icons/p2-sci1.svg', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'science', sciSet:'p2living', levels:10, grade:'p2', isNew:true },
+  { id:'p2-sci2', name:'นักวิทย์ ป.2 · วัสดุดูดซับน้ำ', emoji:'🌡️', icon:'assets/icons/p2-sci2.svg', color:'#7C6FD6', light:'#E6E2FA', type:'skill', mode:'science', sciSet:'p2absorb', levels:10, grade:'p2', isNew:true },
 
   /* ---------- engine ใหม่ ป.2 (IDEA + Phase 2.2): ร้านค้า/เศษส่วน/ตาชั่ง/ปฏิทิน — view แยกของตัวเอง ---------- */
-  { id:'p2-money', name:'ร้านค้านกฮูก', emoji:'🪙', color:'#E5A93B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, grade:'p2', isNew:true },
-  { id:'p2-fraction', name:'พิซซ่าเศษส่วน', emoji:'🍕', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, grade:'p2', isNew:true },
-  { id:'p2-balance', name:'ตาชั่งวิเศษ', emoji:'⚖️', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', levels:10, grade:'p2', isNew:true },
-  { id:'p2-calendar', name:'ปฏิทินวิเศษ', emoji:'📅', color:'#E67E9C', light:'#FBE1EA', type:'skill', mode:'calendar', levels:10, grade:'p2', isNew:true },
+  { id:'p2-money', name:'ร้านค้านกฮูก', emoji:'🪙', icon:'assets/icons/p2-money.svg', color:'#E5A93B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, grade:'p2', isNew:true },
+  { id:'p2-fraction', name:'พิซซ่าเศษส่วน', emoji:'🍕', icon:'assets/icons/p2-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, grade:'p2', isNew:true },
+  { id:'p2-balance', name:'ตาชั่งวิเศษ', emoji:'⚖️', icon:'assets/icons/p2-balance.svg', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', levels:10, grade:'p2', isNew:true },
+  { id:'p2-calendar', name:'ปฏิทินวิเศษ', emoji:'📅', icon:'assets/icons/p2-calendar.svg', color:'#E67E9C', light:'#FBE1EA', type:'skill', mode:'calendar', levels:10, grade:'p2', isNew:true },
 
   /* ===================== ระดับชั้น ป.3 (grade:'p3') ===================== */
   /* หมวดใหม่ของระดับ ป.3 — reuse engine เดิม แยก id/progress จาก ป.1-2 (ไม่ใส่ field icon → การ์ด fallback ใช้ cat.emoji)
@@ -1648,7 +1648,7 @@ const CATS = [
      + calculation engine (ar-math ×÷ ตัวเลขใหญ่ขึ้น) + หมวดใหม่ "เศษส่วนแสนสนุก" (reuse fraction engine — แนวคิดใหม่แกนของ ป.3) */
   /* ---------- คณิต ป.3 ---------- */
   {
-    id:'p3-math1', name:'คณิต ป.3 · จำนวนไม่เกิน 100,000', emoji:'#️⃣', color:'#7C5CFC', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-math1', name:'คณิต ป.3 · จำนวนไม่เกิน 100,000', emoji:'#️⃣', icon:'assets/icons/p3-math1.svg', color:'#7C5CFC', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — หลักหมื่น-พัน/อ่าน-เขียน/นับกระโดด/เปรียบเทียบ (ง่าย) */
       {q:'เลข 45,120 มีเลขในหลักหมื่นคือเลขใด?', emoji:'#️⃣', choices:['4','5','1','45'], correct:0, explain:'เลข 4 อยู่หลักหมื่น', tier:1},
@@ -1679,7 +1679,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-math2', name:'คณิต ป.3 · บวก ลบ ระคน', emoji:'🧾', color:'#5E3FE0', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-math2', name:'คณิต ป.3 · บวก ลบ ระคน', emoji:'🧾', icon:'assets/icons/p3-math2.svg', color:'#5E3FE0', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — บวก-ลบหลักพันแบบง่าย + โจทย์ปัญหา 1 ขั้น */
       {q:'1,250 + 300 = ?', emoji:'➕', choices:['1,550','1,250','1,520','1,850'], correct:0, explain:'1,250 บวก 300 เท่ากับ 1,550', tier:1},
@@ -1710,7 +1710,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-math3', name:'คณิต ป.3 · คูณ หาร', emoji:'🟰', color:'#4A2FC0', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-math3', name:'คณิต ป.3 · คูณ หาร', emoji:'🟰', icon:'assets/icons/p3-math3.svg', color:'#4A2FC0', light:'#E9E3FF', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — สูตรคูณแม่ 2-6 + หารแบ่งเท่าๆ กัน + โจทย์ปัญหาง่าย */
       {q:'6 × 3 = ?', emoji:'✖️', choices:['18','15','21','12'], correct:0, explain:'6 × 3 = 18', tier:1},
@@ -1742,20 +1742,20 @@ const CATS = [
   },
   {
     /* calculation engine: ar-math + mathOps ×÷ ตัวเลขใหญ่ขึ้นกว่า ป.2 (ต่อยอด calculation chain) */
-    id:'p3-math-ar', name:'คิดเลขเร็ว ป.3', emoji:'🔣', color:'#5E3FE0', light:'#E9E3FF',
+    id:'p3-math-ar', name:'คิดเลขเร็ว ป.3', emoji:'🔣', icon:'assets/icons/p3-math-ar.svg', color:'#5E3FE0', light:'#E9E3FF',
     type:'ar', mode:'math', levels:10, mathTiers:[[2,9],[3,12],[6,12]], mathOps:['×','÷'], mathChoices:4, grade:'p3', isNew:true
   },
   {
     /* หมวดใหม่ "เศษส่วนแสนสนุก" — reuse fraction engine (แบ่งพิซซ่า/เค้ก) เนื้อหาแกนใหม่ของ ป.3 */
-    id:'p3-fraction', name:'เศษส่วนแสนสนุก', emoji:'🥧', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, grade:'p3', isNew:true
+    id:'p3-fraction', name:'เศษส่วนแสนสนุก', emoji:'🥧', icon:'assets/icons/p3-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, handPlay:true, grade:'p3', isNew:true
   },
 
   /* ---------- Phase 3.2: ร้านค้า (reuse money engine) + วิชาภาษา/สังคม/เชาวน์ (reuse quiz engine) ---------- */
-  { id:'p3-money', name:'ร้านค้าจำลอง ป.3', emoji:'💴', color:'#D98E2B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, grade:'p3', isNew:true },
+  { id:'p3-money', name:'ร้านค้าจำลอง ป.3', emoji:'💴', icon:'assets/icons/p3-money.svg', color:'#D98E2B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, handPlay:true, grade:'p3', isNew:true },
 
   /* ---------- ภาษาไทย ป.3 (ชนิดของคำ-มาตราตัวสะกด / คำและสำนวน / อ่านจับใจความเชิงเหตุผล) ---------- */
   {
-    id:'p3-thai1', name:'ภาษาไทย ป.3 · ชนิดของคำ-มาตราตัวสะกด', emoji:'📔', color:'#EF5DA8', light:'#FCE0EF', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-thai1', name:'ภาษาไทย ป.3 · ชนิดของคำ-มาตราตัวสะกด', emoji:'📔', icon:'assets/icons/p3-thai1.svg', color:'#EF5DA8', light:'#FCE0EF', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — ชนิดของคำพื้นฐาน + มาตราตัวสะกด (ง่าย) */
       {q:'คำว่า "แมว" เป็นคำชนิดใด?', emoji:'🐱', choices:['คำนาม','คำกริยา','คำสรรพนาม','คำวิเศษณ์'], correct:0, explain:'แมว เป็นชื่อสัตว์ จึงเป็นคำนาม', tier:1},
@@ -1786,7 +1786,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-thai2', name:'ภาษาไทย ป.3 · คำและสำนวน', emoji:'🔖', color:'#E14E9A', light:'#FCE0EF', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-thai2', name:'ภาษาไทย ป.3 · คำและสำนวน', emoji:'🔖', icon:'assets/icons/p3-thai2.svg', color:'#E14E9A', light:'#FCE0EF', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — คำควบกล้ำ/อักษรนำ/คำคล้องจอง (ง่าย) */
       {q:'คำใดเป็นคำควบกล้ำ?', emoji:'🔖', choices:['ปลา','ปา','ตา','นา'], correct:0, explain:'ปลา มี ป ควบกับ ล จึงเป็นคำควบกล้ำ', tier:1},
@@ -1809,14 +1809,14 @@ const CATS = [
       {q:'สำนวน "ไก่งามเพราะขน คนงามเพราะแต่ง" หมายถึงอะไร?', emoji:'🐔', choices:['การแต่งตัวช่วยให้ดูดีขึ้น','ไก่มีขนสวย','คนสวยทุกคน','เลี้ยงไก่'], correct:0, explain:'หมายถึง การแต่งกายช่วยเสริมให้ดูงามขึ้น', tier:2},
       /* tier3 — เนื้อหาเร่ง ป.4: สุภาษิต/คำพังเพยยากขึ้น + ราชาศัพท์เบื้องต้น */
       {q:'สุภาษิต "น้ำน้อยย่อมแพ้ไฟ" สอนเรื่องอะไร?', emoji:'🔥', choices:['ฝ่ายที่มีกำลังน้อยย่อมสู้ฝ่ายมากไม่ได้','ดับไฟด้วยน้ำ','น้ำมีน้อย','อย่าจุดไฟ'], correct:0, explain:'ฝ่ายที่อ่อนแอ/น้อยกว่าย่อมสู้ฝ่ายที่แข็งแรงกว่าไม่ได้', tier:3},
-      {q:'คำราชาศัพท์ของ "กิน" สำหรับพระมหากษัตริย์คือคำใด?', emoji:'🍽️', choices:['เสวย','ทาน','รับประทาน','ฉัน'], correct:0, explain:'ราชาศัพท์ของการกินสำหรับพระมหากษัตริย์คือ "เสวย"', tier:3},
+      {q:'สำนวน "ชักใบให้เรือเสีย" หมายถึงอะไร?', emoji:'⛵', choices:['พูดหรือทำให้เรื่องออกนอกทาง','แล่นเรือเก่ง','ซ่อมเรือ','เย็บใบเรือ'], correct:0, explain:'หมายถึง พูดแทรกหรือทำให้เรื่องที่กำลังคุยกันเขวออกนอกทาง', tier:3},
       {q:'คำพังเพย "ตำน้ำพริกละลายแม่น้ำ" หมายถึงอะไร?', emoji:'🌊', choices:['ลงทุนลงแรงไปโดยเปล่าประโยชน์','ทำอาหารอร่อย','ว่ายน้ำเก่ง','ตำน้ำพริก'], correct:0, explain:'ใช้จ่ายหรือลงแรงมากแต่ไม่ได้ผล', tier:3},
-      {q:'คำราชาศัพท์ "พระหัตถ์" หมายถึงอวัยวะใด?', emoji:'✋', choices:['มือ','เท้า','ตา','ผม'], correct:0, explain:'พระหัตถ์ = มือ (พระบาท=เท้า, พระเนตร=ตา, พระเกศา=ผม)', tier:3},
+      {q:'คำพังเพย "น้ำท่วมปาก" หมายถึงอะไร?', emoji:'🤐', choices:['รู้เรื่องแต่พูดไม่ได้เพราะลำบากใจ','ดื่มน้ำมากเกินไป','น้ำท่วมบ้าน','พูดมากเกินไป'], correct:0, explain:'หมายถึง รู้เรื่องแต่พูดออกไปไม่ได้เพราะเกรงใจหรือลำบากใจ', tier:3},
       {q:'สำนวน "ขี่ช้างจับตั๊กแตน" หมายถึงอะไร?', emoji:'🐘', choices:['ลงทุนมากเพื่อผลเล็กน้อย','จับแมลง','เลี้ยงช้าง','ทำงานใหญ่'], correct:0, explain:'ลงทุน/ลงแรงมากเกินไปเพื่อสิ่งเล็กน้อย', tier:3}
     ]
   },
   {
-    id:'p3-thai3', name:'ภาษาไทย ป.3 · อ่านจับใจความ', emoji:'🗨️', color:'#D63D8C', light:'#FCE0EF', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-thai3', name:'ภาษาไทย ป.3 · อ่านจับใจความ', emoji:'🗨️', icon:'assets/icons/p3-thai3.svg', color:'#D63D8C', light:'#FCE0EF', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — อ่านเรื่องสั้นแล้วตอบ (ง่าย) */
       {q:'"น้องแมวชอบนอนกลางแดด" น้องแมวชอบนอนที่ไหน?', emoji:'🐱', choices:['กลางแดด','ในตู้เย็น','บนต้นไม้','ใต้ดิน'], correct:0, explain:'เรื่องบอกว่าน้องแมวชอบนอนกลางแดด', tier:1},
@@ -1846,9 +1846,15 @@ const CATS = [
     ]
   },
 
+  {
+    /* AR ป.3 — ต่อประโยคไทยยาว 4-6 คำ (sentenceLens ทำให้ยากกว่า ป.1-2 ที่ใช้ 3-4-5 คำ) */
+    id:'p3-thai-sentence', name:'ภาษาไทย ป.3 · ต่อประโยคยาว', emoji:'📃', icon:'assets/icons/p3-thai-sentence.svg', color:'#D63D8C', light:'#FCE0EF',
+    type:'ar', lang:'th', sentenceLens:[4,5,6], levels:10, grade:'p3', isNew:true
+  },
+
   /* ---------- English ป.3 (คำศัพท์เดือน-อากาศ / ไวยากรณ์ประโยค / อ่านเรื่องสั้น) ---------- */
   {
-    id:'p3-eng1', name:'English ป.3 · Months & Weather', emoji:'🗺️', color:'#0FB5AE', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-eng1', name:'English ป.3 · Months & Weather', emoji:'🗺️', icon:'assets/icons/p3-eng1.svg', color:'#0FB5AE', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — คำศัพท์เดือน/วัน/อากาศ (ง่าย) */
       {q:'"มกราคม" ภาษาอังกฤษคือคำใด?', emoji:'🗓️', choices:['January','June','July','March'], correct:0, explain:'มกราคม = January', tier:1},
@@ -1879,7 +1885,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-eng2', name:'English ป.3 · Grammar & Sentences', emoji:'🅱️', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-eng2', name:'English ป.3 · Grammar & Sentences', emoji:'🅱️', icon:'assets/icons/p3-eng2.svg', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — this/that, a/an, plural, be (ง่าย) */
       {q:'___ is a cat. (ชี้ของที่อยู่ใกล้)', emoji:'🐱', choices:['This','Those','Them','Are'], correct:0, explain:'ของใกล้ตัว 1 สิ่ง ใช้ This', tier:1},
@@ -1910,7 +1916,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-eng3', name:'English ป.3 · Reading', emoji:'🎏', color:'#0A7A75', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-eng3', name:'English ป.3 · Reading', emoji:'🎏', icon:'assets/icons/p3-eng3.svg', color:'#0A7A75', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — อ่านประโยคสั้นแล้วตอบ + First/Then (ง่าย) */
       {q:'Tom has a red ball. What color is the ball?', emoji:'🔴', choices:['red','blue','green','yellow'], correct:0, explain:'ประโยคบอกว่า a red ball สีแดง', tier:1},
@@ -1941,9 +1947,20 @@ const CATS = [
     ]
   },
 
+  {
+    /* AR ป.3 — English sentence builder 4-6 words */
+    id:'p3-eng-sentence', name:'English ป.3 · ต่อประโยคยาว', emoji:'🖊️', icon:'assets/icons/p3-eng-sentence.svg', color:'#0A7A75', light:'#D5F5F2',
+    type:'ar', lang:'en', sentenceLens:[4,5,6], levels:10, grade:'p3', isNew:true
+  },
+  {
+    /* AR ป.3 — โยงเส้นคำอังกฤษกับรูป (ป.1/ป.2 เป็นภาษาไทย ป.3 ต่อยอดเป็นอังกฤษ) */
+    id:'p3-eng-match', name:'English ป.3 · โยงเส้นคำ-รูป', emoji:'🗂️', icon:'assets/icons/p3-eng-match.svg', color:'#0A8F89', light:'#D5F5F2',
+    type:'ar', mode:'match', lang:'en', levels:10, grade:'p3', isNew:true
+  },
+
   /* ---------- สังคมศึกษา ป.3 (หน้าที่พลเมือง-ชุมชน / สิทธิ-หน้าที่-การอยู่ร่วมกัน) ---------- */
   {
-    id:'p3-social1', name:'สังคม ป.3 · ชุมชนและหน้าที่', emoji:'🏙️', color:'#F6A609', light:'#FEEFC9', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-social1', name:'สังคม ป.3 · ชุมชนและหน้าที่', emoji:'🏙️', icon:'assets/icons/p3-social1.svg', color:'#F6A609', light:'#FEEFC9', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — บทบาทในชุมชน/ความปลอดภัย/มารยาท (ง่าย) */
       {q:'สมาชิกในชุมชนควรปฏิบัติต่อกันอย่างไร?', emoji:'🤝', choices:['ช่วยเหลือกัน','แข่งกัน','ไม่สนใจกัน','ทะเลาะกัน'], correct:0, explain:'อยู่ร่วมกันควรช่วยเหลือกัน', tier:1},
@@ -1974,7 +1991,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-social2', name:'สังคม ป.3 · สิทธิ หน้าที่ และการอยู่ร่วมกัน', emoji:'🗳️', color:'#E5893B', light:'#FBEAD5', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-social2', name:'สังคม ป.3 · สิทธิ หน้าที่ และการอยู่ร่วมกัน', emoji:'🗳️', icon:'assets/icons/p3-social2.svg', color:'#E5893B', light:'#FBEAD5', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — กฎ/สิทธิ/หน้าที่/การอยู่ร่วมกัน (ง่าย) */
       {q:'กฎของห้องเรียนมีไว้เพื่ออะไร?', emoji:'📋', choices:['ให้อยู่ร่วมกันอย่างเป็นสุข','ทำให้เด็กกลัว','ลงโทษเด็ก','ไม่มีประโยชน์'], correct:0, explain:'กฎมีไว้เพื่อให้อยู่ร่วมกันอย่างเป็นสุข', tier:1},
@@ -2007,7 +2024,7 @@ const CATS = [
 
   /* ---------- เชาวน์ปัญญา ป.3 (ตรรกะ-แบบรูป / ความจำ-มิติสัมพันธ์) ---------- */
   {
-    id:'p3-iq1', name:'เชาวน์ ป.3 · ตรรกะและแบบรูป', emoji:'💫', color:'#2FB673', light:'#D6F3E4', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-iq1', name:'เชาวน์ ป.3 · ตรรกะและแบบรูป', emoji:'💫', icon:'assets/icons/p3-iq1.svg', color:'#2FB673', light:'#D6F3E4', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — อนุกรมง่าย/แบบรูป/ไม่เข้าพวก (ง่าย) */
       {q:'เติมเลขต่อไป: 2, 4, 6, 8, ▢', emoji:'🔢', choices:['10','9','12','7'], correct:0, explain:'เพิ่มทีละ 2 ตัวต่อไปคือ 10', tier:1},
@@ -2038,7 +2055,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-iq2', name:'เชาวน์ ป.3 · ความจำและการจับคู่', emoji:'🔆', color:'#1F9C60', light:'#D6F3E4', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-iq2', name:'เชาวน์ ป.3 · ความจำและการจับคู่', emoji:'🔆', icon:'assets/icons/p3-iq2.svg', color:'#1F9C60', light:'#D6F3E4', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — จับคู่ความสัมพันธ์/คำตรงข้าม/คิดเลขในชีวิต (ง่าย) */
       {q:'มือ คู่กับ ถุงมือ แล้ว เท้า คู่กับอะไร?', emoji:'🦶', choices:['รองเท้า','หมวก','แว่นตา','เสื้อ'], correct:0, explain:'เท้าใส่คู่กับรองเท้า เหมือนมือกับถุงมือ', tier:1},
@@ -2070,20 +2087,20 @@ const CATS = [
   },
 
   /* ---------- เกมฝึกทักษะ ป.3 (reuse engine เดิม แยก id/progress) ---------- */
-  { id:'p3-memory', name:'จับคู่โดมิโน ป.3', emoji:'🀄', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], grade:'p3', isNew:true },
+  { id:'p3-memory', name:'จับคู่โดมิโน ป.3', emoji:'🀄', icon:'assets/icons/p3-memory.svg', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[8,12,16], handPlay:true, grade:'p3', isNew:true },
 
   /* ---------- Phase 3.3: หมวดใหม่ "เส้นเวลามหัศจรรย์" (timeline engine ใหม่ — ต้นสายที่ ป.4-6 ใช้ต่อ) ---------- */
-  { id:'p3-timeline', name:'เส้นเวลามหัศจรรย์', emoji:'🏛️', color:'#B07A2E', light:'#F5E7CE', type:'skill', mode:'timeline', levels:10, grade:'p3', isNew:true },
+  { id:'p3-timeline', name:'เส้นเวลามหัศจรรย์', emoji:'🏛️', icon:'assets/icons/p3-timeline.svg', color:'#B07A2E', light:'#F5E7CE', type:'skill', mode:'timeline', levels:10, handPlay:true, grade:'p3', isNew:true },
 
   /* ---------- Phase 3.4: sort engine (ลากใส่ตะกร้า) — นักสืบแม่เหล็ก (วิทย์) + จัดหมวดหมู่คำอังกฤษ ---------- */
-  { id:'p3-magnet', name:'นักสืบแม่เหล็ก', emoji:'🧲', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'sort', sortSet:'magnet', levels:10, grade:'p3', isNew:true },
-  { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, grade:'p3', isNew:true },
-  { id:'p3-mathsort', name:'แยกเลขคู่-เลขคี่', emoji:'🧮', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'evenodd', levels:10, grade:'p3', isNew:true },
-  { id:'p3-thaisort', name:'แยกพยัญชนะ-สระ', emoji:'🔤', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'thaichar', levels:10, grade:'p3', isNew:true },
-  { id:'p3-scisort', name:'แยกสิ่งมีชีวิต-ไม่มีชีวิต', emoji:'🦠', color:'#2FA36B', light:'#D9F2E4', type:'skill', mode:'sort', sortSet:'living', levels:10, grade:'p3', isNew:true },
-  { id:'p3-coord', name:'ขุมทรัพย์พิกัด', emoji:'💎', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', levels:10, grade:'p3', isNew:true },
+  { id:'p3-magnet', name:'นักสืบแม่เหล็ก', emoji:'🧲', icon:'assets/icons/p3-magnet.svg', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'sort', sortSet:'magnet', levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-engsort', name:'English ป.3 · จัดหมวดหมู่คำ', emoji:'🏷️', icon:'assets/icons/p3-engsort.svg', color:'#0A7A75', light:'#D5F5F2', type:'skill', mode:'sort', sortSet:'engword', levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-mathsort', name:'แยกเลขคู่-เลขคี่', emoji:'🧮', icon:'assets/icons/p3-mathsort.svg', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'evenodd', levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-thaisort', name:'แยกพยัญชนะ-สระ', emoji:'🔤', icon:'assets/icons/p3-thaisort.svg', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'thaichar', levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-scisort', name:'แยกสิ่งมีชีวิต-ไม่มีชีวิต', emoji:'🦠', icon:'assets/icons/p3-scisort.svg', color:'#2FA36B', light:'#D9F2E4', type:'skill', mode:'sort', sortSet:'living', levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-coord', name:'ขุมทรัพย์พิกัด', emoji:'💎', icon:'assets/icons/p3-coord.svg', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', levels:10, handPlay:true, grade:'p3', isNew:true },
   {
-    id:'p3-engclock', name:'English ป.3 · บอกเวลา (What time is it?)', emoji:'🕰️', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-engclock', name:'English ป.3 · บอกเวลา (What time is it?)', emoji:'🕰️', icon:'assets/icons/p3-engclock.svg', color:'#0A8F89', light:'#D5F5F2', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — o'clock (ดูรูปนาฬิกา เลือกประโยคอังกฤษ) */
       {q:'What time is it? (ดูรูปนาฬิกา)', emoji:'🕒', choices:['It is three o\'clock.','It is two o\'clock.','It is four o\'clock.','It is eight o\'clock.'], correct:0, explain:'เข็มสั้นชี้ 3 เข็มยาวชี้ 12 = three o\'clock', tier:1},
@@ -2114,11 +2131,11 @@ const CATS = [
   },
 
   /* ---------- Phase 3.4b: หมวดใหม่ "โลกหมุน" (world engine ใหม่ — วิทย์ กลางวัน/กลางคืน) ---------- */
-  { id:'p3-world', name:'โลกหมุน กลางวัน-กลางคืน', emoji:'🌎', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'world', levels:10, grade:'p3', isNew:true },
+  { id:'p3-world', name:'โลกหมุน กลางวัน-กลางคืน', emoji:'🌎', icon:'assets/icons/p3-world.svg', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'world', levels:10, handPlay:true, grade:'p3', isNew:true },
 
   /* ---------- Phase 3.5: วิทยาศาสตร์ ป.3 (quiz) — แรง/แสง/พลังงาน + สิ่งมีชีวิต/พืช ---------- */
   {
-    id:'p3-sci1', name:'วิทยาศาสตร์ ป.3 · แรง แสง พลังงาน', emoji:'⚗️', color:'#3FA9C9', light:'#D9F0F8', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-sci1', name:'วิทยาศาสตร์ ป.3 · แรง แสง พลังงาน', emoji:'⚗️', icon:'assets/icons/p3-sci1.svg', color:'#3FA9C9', light:'#D9F0F8', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — แรง/แม่เหล็ก/แสง เบื้องต้น (ง่าย) */
       {q:'แรงที่ทำให้ของตกลงสู่พื้นคือแรงอะไร?', emoji:'🍎', choices:['แรงโน้มถ่วง','แรงลม','แรงแม่เหล็ก','แรงคน'], correct:0, explain:'ของตกลงพื้นเพราะแรงโน้มถ่วงของโลก', tier:1},
@@ -2147,7 +2164,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-sci2', name:'วิทยาศาสตร์ ป.3 · สิ่งมีชีวิตและพืช', emoji:'🧬', color:'#2FA36B', light:'#D9F2E4', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-sci2', name:'วิทยาศาสตร์ ป.3 · สิ่งมีชีวิตและพืช', emoji:'🧬', icon:'assets/icons/p3-sci2.svg', color:'#2FA36B', light:'#D9F2E4', grade:'p3', poolPick:10, isNew:true,
     questions:[
       /* tier1 — ส่วนของพืช/ความต้องการของสิ่งมีชีวิต (ง่าย) */
       {q:'ส่วนของพืชที่ดูดน้ำและแร่ธาตุจากดินคือส่วนใด?', emoji:'🌱', choices:['ราก','ใบ','ดอก','ผล'], correct:0, explain:'รากดูดน้ำและแร่ธาตุจากดิน', tier:1},
@@ -2171,21 +2188,21 @@ const CATS = [
       {q:'สัตว์มีกระดูกสันหลังแบ่งเป็นกี่กลุ่มใหญ่?', emoji:'🦴', choices:['5 กลุ่ม','2 กลุ่ม','10 กลุ่ม','3 กลุ่ม'], correct:0, explain:'ปลา/สะเทินน้ำสะเทินบก/เลื้อยคลาน/นก/เลี้ยงลูกด้วยนม รวม 5 กลุ่ม', tier:3},
       {q:'ปลาวาฬจัดอยู่ในสัตว์กลุ่มใด?', emoji:'🐳', choices:['สัตว์เลี้ยงลูกด้วยนม','ปลา','สัตว์เลื้อยคลาน','ปลาหมึก'], correct:0, explain:'วาฬหายใจด้วยปอดและเลี้ยงลูกด้วยนม แม้อยู่ในน้ำ', tier:3},
       {q:'เต่าจัดอยู่ในสัตว์กลุ่มใด?', emoji:'🐢', choices:['สัตว์เลื้อยคลาน','ปลา','สัตว์เลี้ยงลูกด้วยนม','สัตว์ปีก'], correct:0, explain:'เต่าเป็นสัตว์เลื้อยคลาน (มีเกล็ด วางไข่)', tier:3},
-      {q:'วัตถุที่แสงผ่านได้บางส่วน (มัวๆ) เรียกว่าอะไร?', emoji:'🌫️', choices:['โปร่งแสง','โปร่งใส','ทึบแสง','สะท้อนแสง'], correct:0, explain:'แสงผ่านได้บางส่วน เช่น กระดาษไข เรียกว่าโปร่งแสง', tier:3},
+      {q:'"แครอท" ที่เรากิน เป็นส่วนใดของพืช?', emoji:'🥕', choices:['ราก','ใบ','ดอก','ผล'], correct:0, explain:'แครอทคือรากที่สะสมอาหารของพืช', tier:3},
       {q:'พืชที่ไม่มีดอกและสืบพันธุ์ด้วยสปอร์คือพืชชนิดใด?', emoji:'🌿', choices:['เฟิร์น','กุหลาบ','มะม่วง','ทานตะวัน'], correct:0, explain:'เฟิร์นเป็นพืชไม่มีดอก สืบพันธุ์ด้วยสปอร์', tier:3}
     ]
   },
 
   /* ---------- Phase 3.5: เกมฝึกทักษะต่อยอด ป.3 (reuse engine เดิม) ---------- */
-  { id:'p3-iq3', name:'เชาวน์ ป.3 · นกฮูกสั่ง', emoji:'🦉', color:'#17A65B', light:'#D6F3E4', type:'skill', mode:'ef', levels:10, grade:'p3', isNew:true },
-  { id:'p3-code1', name:'พาหุ่นยนต์ ป.3 · 1', emoji:'👾', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p3a', codeLoop:true, levels:10, grade:'p3', isNew:true },
-  { id:'p3-code2', name:'พาหุ่นยนต์ ป.3 · 2', emoji:'🛸', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p3b', codeLoop:true, levels:8, grade:'p3', isNew:true },
-  { id:'p3-code3', name:'พาหุ่นยนต์ ป.3 · 3', emoji:'🎛️', color:'#1F7E88', light:'#D6EDF0', type:'skill', mode:'code', codeSet:'p3c', codeLoop:true, levels:8, grade:'p3', isNew:true },
-  { id:'p3-code4', name:'ถ้าเจอกำแพงให้เลี้ยว', emoji:'🔀', color:'#1B6E77', light:'#D3EBEE', type:'skill', mode:'code', codeSet:'p3if', codeLoop:true, codeCond:true, levels:10, grade:'p3', isNew:true },
+  { id:'p3-iq3', name:'เชาวน์ ป.3 · นกฮูกสั่ง', emoji:'🦉', icon:'assets/icons/p3-iq3.svg', color:'#17A65B', light:'#D6F3E4', type:'skill', mode:'ef', levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-code1', name:'พาหุ่นยนต์ ป.3 · 1', emoji:'👾', icon:'assets/icons/p3-code1.svg', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p3a', codeLoop:true, levels:10, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-code2', name:'พาหุ่นยนต์ ป.3 · 2', emoji:'🛸', icon:'assets/icons/p3-code2.svg', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p3b', codeLoop:true, levels:8, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-code3', name:'พาหุ่นยนต์ ป.3 · 3', emoji:'🎛️', icon:'assets/icons/p3-code3.svg', color:'#1F7E88', light:'#D6EDF0', type:'skill', mode:'code', codeSet:'p3c', codeLoop:true, levels:8, handPlay:true, grade:'p3', isNew:true },
+  { id:'p3-code4', name:'ถ้าเจอกำแพงให้เลี้ยว', emoji:'🔀', icon:'assets/icons/p3-code4.svg', color:'#1B6E77', light:'#D3EBEE', type:'skill', mode:'code', codeSet:'p3if', codeLoop:true, codeCond:true, levels:10, handPlay:true, grade:'p3', isNew:true },
 
   /* ---------- ดนตรี ป.3 (quiz) ---------- */
   {
-    id:'p3-music1', name:'ดนตรี ป.3 · เครื่องดนตรีและการบรรเลง', emoji:'📯', color:'#4C8DF0', light:'#DEEAFC', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-music1', name:'ดนตรี ป.3 · เครื่องดนตรีและการบรรเลง', emoji:'📯', icon:'assets/icons/p3-music1.svg', color:'#4C8DF0', light:'#DEEAFC', grade:'p3', poolPick:10, isNew:true,
     questions:[
       {q:'เครื่องดนตรีชนิดใดใช้วิธี "เป่า" ให้เกิดเสียง?', emoji:'🎺', choices:['ทรัมเป็ต','กลอง','กีตาร์','ระนาด'], correct:0, explain:'ทรัมเป็ตเป็นเครื่องเป่า', tier:1},
       {q:'เครื่องดนตรีชนิดใดใช้วิธี "ตี"?', emoji:'🥁', choices:['กลอง','ขลุ่ย','ไวโอลิน','ทรัมเป็ต'], correct:0, explain:'กลองเป็นเครื่องตี', tier:1},
@@ -2212,7 +2229,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-music2', name:'ดนตรี ป.3 · โน้ตและจังหวะ', emoji:'🪘', color:'#2F6BC4', light:'#DEEAFC', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-music2', name:'ดนตรี ป.3 · โน้ตและจังหวะ', emoji:'🪘', icon:'assets/icons/p3-music2.svg', color:'#2F6BC4', light:'#DEEAFC', grade:'p3', poolPick:10, isNew:true,
     questions:[
       {q:'โน้ตดนตรีไทยตัวแรกคือตัวใด?', emoji:'🎵', choices:['โด','ที','ซอล','ฟา'], correct:0, explain:'ลำดับโน้ตเริ่มที่ โด เร มี...', tier:1},
       {q:'โน้ตสากลตัว C ตรงกับโน้ตไทยตัวใด?', emoji:'🎼', choices:['โด','เร','มี','ฟา'], correct:0, explain:'C = โด', tier:1},
@@ -2241,7 +2258,7 @@ const CATS = [
 
   /* ---------- ศิลปะ ป.3 (quiz) ---------- */
   {
-    id:'p3-art1', name:'ศิลปะ ป.3 · องค์ประกอบและสี', emoji:'🩰', color:'#FF7A45', light:'#FFE4D6', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-art1', name:'ศิลปะ ป.3 · องค์ประกอบและสี', emoji:'🩰', icon:'assets/icons/p3-art1.svg', color:'#FF7A45', light:'#FFE4D6', grade:'p3', poolPick:10, isNew:true,
     questions:[
       {q:'แม่สีมีกี่สี?', emoji:'🎨', choices:['3 สี','2 สี','5 สี','7 สี'], correct:0, explain:'แม่สีมี 3 สี คือ แดง เหลือง น้ำเงิน', tier:1},
       {q:'สีแดงผสมกับสีเหลืองได้สีอะไร?', emoji:'🟠', choices:['สีส้ม','สีเขียว','สีม่วง','สีน้ำตาล'], correct:0, explain:'แดง + เหลือง = ส้ม', tier:1},
@@ -2268,7 +2285,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-art2', name:'ศิลปะ ป.3 · เส้น รูปทรง และงานสร้างสรรค์', emoji:'🧵', color:'#D9542F', light:'#FFE4D6', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-art2', name:'ศิลปะ ป.3 · เส้น รูปทรง และงานสร้างสรรค์', emoji:'🧵', icon:'assets/icons/p3-art2.svg', color:'#D9542F', light:'#FFE4D6', grade:'p3', poolPick:10, isNew:true,
     questions:[
       {q:'เส้นที่ลากจากซ้ายไปขวาเรียกว่าเส้นอะไร?', emoji:'➖', choices:['เส้นนอน','เส้นตั้ง','เส้นโค้ง','เส้นหยัก'], correct:0, explain:'เส้นแนวซ้าย-ขวาคือเส้นนอน', tier:1},
       {q:'เส้นที่ลากจากบนลงล่างเรียกว่าเส้นอะไร?', emoji:'📏', choices:['เส้นตั้ง','เส้นนอน','เส้นเฉียง','เส้นวน'], correct:0, explain:'เส้นแนวบน-ล่างคือเส้นตั้ง', tier:1},
@@ -2297,7 +2314,7 @@ const CATS = [
 
   /* ---------- ธรรมชาติ ป.3 (quiz) — สิ่งแวดล้อม/โลกและท้องฟ้า ---------- */
   {
-    id:'p3-nature1', name:'ธรรมชาติ ป.3 · สิ่งแวดล้อมและการอนุรักษ์', emoji:'🪺', color:'#6FBF3B', light:'#E6F6D8', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-nature1', name:'ธรรมชาติ ป.3 · สิ่งแวดล้อมและการอนุรักษ์', emoji:'🪺', icon:'assets/icons/p3-nature1.svg', color:'#6FBF3B', light:'#E6F6D8', grade:'p3', poolPick:10, isNew:true,
     questions:[
       {q:'การทิ้งขยะลงแม่น้ำทำให้เกิดอะไร?', emoji:'🌊', choices:['น้ำเน่าเสีย','น้ำสะอาดขึ้น','ปลาเยอะขึ้น','ไม่เป็นไร'], correct:0, explain:'ขยะในแม่น้ำทำให้น้ำเน่าเสีย', tier:1},
       {q:'การปลูกต้นไม้ช่วยเรื่องใด?', emoji:'🌳', choices:['ให้อากาศบริสุทธิ์','ทำให้ร้อนขึ้น','ทำให้สกปรก','ไม่มีประโยชน์'], correct:0, explain:'ต้นไม้ช่วยให้อากาศบริสุทธิ์', tier:1},
@@ -2323,7 +2340,7 @@ const CATS = [
     ]
   },
   {
-    id:'p3-nature2', name:'ธรรมชาติ ป.3 · ดิน หิน น้ำ และท้องฟ้า', emoji:'🌴', color:'#4F9E2F', light:'#E6F6D8', grade:'p3', poolPick:10, isNew:true,
+    id:'p3-nature2', name:'ธรรมชาติ ป.3 · ดิน หิน น้ำ และท้องฟ้า', emoji:'🌴', icon:'assets/icons/p3-nature2.svg', color:'#4F9E2F', light:'#E6F6D8', grade:'p3', poolPick:10, isNew:true,
     questions:[
       {q:'น้ำเมื่อได้รับความร้อนมากๆ จะกลายเป็นอะไร?', emoji:'♨️', choices:['ไอน้ำ','น้ำแข็ง','ก้อนหิน','ดิน'], correct:0, explain:'น้ำร้อนจัดกลายเป็นไอน้ำ', tier:1},
       {q:'น้ำเมื่อเย็นจัดจะกลายเป็นอะไร?', emoji:'🧊', choices:['น้ำแข็ง','ไอน้ำ','ทราย','ดิน'], correct:0, explain:'น้ำเย็นจัดกลายเป็นน้ำแข็ง', tier:1},
@@ -2765,6 +2782,25 @@ const AR_SENTENCES = {
       [{w:'เด็ก',e:'🧒'},{w:'วาด',e:'🎨'},{w:'รูป',e:'🖼️'},{w:'บน',e:'⬆️'},{w:'กระดาษ',e:'📄'}],
       [{w:'ปู',e:'🦀'},{w:'เดิน',e:'🚶'},{w:'อยู่',e:'📍'},{w:'บน',e:'⬆️'},{w:'หาดทราย',e:'🏖️'}],
       [{w:'ครู',e:'👩‍🏫'},{w:'ชม',e:'👏'},{w:'เด็ก',e:'🧒'},{w:'ที่',e:'➕'},{w:'ตั้งใจ',e:'🌟'}]
+    ],
+    /* 6 คำ — ใช้กับระดับ ป.3 ขึ้นไป (cat.sentenceLens) ประโยคยาวขึ้น มีคำขยาย/คำบุพบทมากขึ้น */
+    6:[
+      [{w:'แมว',e:'🐱'},{w:'ขน',e:'🧶'},{w:'นุ่ม',e:'☁️'},{w:'นอน',e:'😴'},{w:'ใต้',e:'⬇️'},{w:'โต๊ะ',e:'🪑'}],
+      [{w:'เด็ก',e:'🧒'},{w:'ช่วย',e:'🤝'},{w:'กัน',e:'➕'},{w:'ปลูก',e:'🌱'},{w:'ต้นไม้',e:'🌳'},{w:'ในสวน',e:'🏡'}],
+      [{w:'คุณครู',e:'👩‍🏫'},{w:'พา',e:'🚶'},{w:'นักเรียน',e:'🎒'},{w:'ไป',e:'➡️'},{w:'เที่ยว',e:'🎉'},{w:'สวนสัตว์',e:'🦁'}],
+      [{w:'ฉัน',e:'🧒'},{w:'ช่วย',e:'🤝'},{w:'แม่',e:'👩'},{w:'ล้าง',e:'🧼'},{w:'จาน',e:'🍽️'},{w:'ทุกวัน',e:'📅'}],
+      [{w:'นก',e:'🐦'},{w:'ตัวเล็ก',e:'🐣'},{w:'สร้าง',e:'🔨'},{w:'รัง',e:'🪺'},{w:'บน',e:'⬆️'},{w:'ต้นไม้',e:'🌳'}],
+      [{w:'พ่อ',e:'👨'},{w:'ขับ',e:'🚗'},{w:'รถ',e:'🚙'},{w:'พา',e:'🤝'},{w:'เรา',e:'👨‍👩‍👧'},{w:'ไปทะเล',e:'🌊'}],
+      [{w:'ผีเสื้อ',e:'🦋'},{w:'สีสวย',e:'🌈'},{w:'บิน',e:'💨'},{w:'อยู่',e:'📍'},{w:'เหนือ',e:'⬆️'},{w:'ดอกไม้',e:'🌷'}],
+      [{w:'น้อง',e:'🧒'},{w:'อ่าน',e:'📖'},{w:'หนังสือ',e:'📚'},{w:'นิทาน',e:'🐉'},{w:'ก่อน',e:'⏱️'},{w:'นอน',e:'😴'}],
+      [{w:'ชาวนา',e:'👨‍🌾'},{w:'ปลูก',e:'🌱'},{w:'ข้าว',e:'🌾'},{w:'อยู่',e:'📍'},{w:'ใน',e:'📍'},{w:'ทุ่งนา',e:'🏞️'}],
+      [{w:'เรา',e:'👨‍👩‍👧'},{w:'ควร',e:'👍'},{w:'ทิ้ง',e:'🫳'},{w:'ขยะ',e:'🗑️'},{w:'ลง',e:'⬇️'},{w:'ถัง',e:'🪣'}],
+      [{w:'ปลาวาฬ',e:'🐋'},{w:'ตัวใหญ่',e:'🫧'},{w:'ว่าย',e:'🏊'},{w:'อยู่',e:'📍'},{w:'ใน',e:'📍'},{w:'ทะเลลึก',e:'🌊'}],
+      [{w:'หมา',e:'🐶'},{w:'วิ่ง',e:'🏃'},{w:'ไล่',e:'💨'},{w:'ลูกบอล',e:'⚽'},{w:'ใน',e:'📍'},{w:'สนาม',e:'🏟️'}],
+      [{w:'ยาย',e:'👵'},{w:'ทำ',e:'👩‍🍳'},{w:'ขนม',e:'🍡'},{w:'อร่อย',e:'😋'},{w:'ให้',e:'🤲'},{w:'หลาน',e:'🧒'}],
+      [{w:'พระอาทิตย์',e:'🌞'},{w:'ขึ้น',e:'⬆️'},{w:'ตอน',e:'⏱️'},{w:'เช้า',e:'🌅'},{w:'ทุก',e:'🔁'},{w:'วัน',e:'📅'}],
+      [{w:'เด็กๆ',e:'🧒'},{w:'เล่น',e:'🪁'},{w:'ว่าว',e:'🪁'},{w:'กัน',e:'➕'},{w:'ที่',e:'📍'},{w:'ทุ่งนา',e:'🌾'}],
+      [{w:'ฝน',e:'🌧️'},{w:'ตก',e:'💧'},{w:'หนัก',e:'❗'},{w:'ทำให้',e:'➡️'},{w:'ถนน',e:'🛣️'},{w:'เปียก',e:'💦'}]
     ]
   },
   en:{
@@ -2833,6 +2869,25 @@ const AR_SENTENCES = {
       [{w:'I',e:'🧒'},{w:'draw',e:'🎨'},{w:'a',e:'➕'},{w:'nice',e:'✨'},{w:'picture',e:'🖼️'}],
       [{w:'The',e:'➕'},{w:'crab',e:'🦀'},{w:'walks',e:'🚶'},{w:'on',e:'⬆️'},{w:'beach',e:'🏖️'}],
       [{w:'The',e:'➕'},{w:'teacher',e:'👩‍🏫'},{w:'praises',e:'👏'},{w:'good',e:'🌟'},{w:'kids',e:'🧒'}]
+    ],
+    /* 6 words — used by ป.3 and up (cat.sentenceLens) */
+    6:[
+      [{w:'The',e:'➕'},{w:'soft',e:'☁️'},{w:'cat',e:'🐱'},{w:'sleeps',e:'😴'},{w:'under',e:'⬇️'},{w:'table',e:'🪑'}],
+      [{w:'We',e:'👨‍👩‍👧'},{w:'plant',e:'🌱'},{w:'small',e:'🐣'},{w:'trees',e:'🌳'},{w:'in',e:'📍'},{w:'garden',e:'🏡'}],
+      [{w:'My',e:'➕'},{w:'mother',e:'👩'},{w:'cooks',e:'👩‍🍳'},{w:'dinner',e:'🍲'},{w:'every',e:'🔁'},{w:'evening',e:'🌆'}],
+      [{w:'Little',e:'🐣'},{w:'birds',e:'🐦'},{w:'build',e:'🔨'},{w:'nests',e:'🪺'},{w:'on',e:'⬆️'},{w:'trees',e:'🌳'}],
+      [{w:'The',e:'➕'},{w:'teacher',e:'👩‍🏫'},{w:'reads',e:'📖'},{w:'us',e:'🧒'},{w:'a',e:'➕'},{w:'story',e:'📚'}],
+      [{w:'I',e:'🧒'},{w:'brush',e:'🪥'},{w:'my',e:'➕'},{w:'teeth',e:'🦷'},{w:'before',e:'⏱️'},{w:'bed',e:'🛏️'}],
+      [{w:'Dad',e:'👨'},{w:'drives',e:'🚗'},{w:'us',e:'👨‍👩‍👧'},{w:'to',e:'➡️'},{w:'the',e:'➕'},{w:'beach',e:'🏖️'}],
+      [{w:'Butterflies',e:'🦋'},{w:'fly',e:'💨'},{w:'over',e:'⬆️'},{w:'the',e:'➕'},{w:'pretty',e:'✨'},{w:'flowers',e:'🌷'}],
+      [{w:'Farmers',e:'👨‍🌾'},{w:'grow',e:'🌱'},{w:'rice',e:'🌾'},{w:'in',e:'📍'},{w:'big',e:'❗'},{w:'fields',e:'🏞️'}],
+      [{w:'We',e:'👨‍👩‍👧'},{w:'must',e:'👍'},{w:'put',e:'🫳'},{w:'rubbish',e:'🗑️'},{w:'in',e:'📍'},{w:'bins',e:'🪣'}],
+      [{w:'A',e:'➕'},{w:'big',e:'🫧'},{w:'whale',e:'🐋'},{w:'swims',e:'🏊'},{w:'in',e:'📍'},{w:'ocean',e:'🌊'}],
+      [{w:'The',e:'➕'},{w:'happy',e:'😄'},{w:'dog',e:'🐶'},{w:'runs',e:'🏃'},{w:'after',e:'💨'},{w:'ball',e:'⚽'}],
+      [{w:'Grandma',e:'👵'},{w:'makes',e:'👩‍🍳'},{w:'sweet',e:'🍯'},{w:'cakes',e:'🍰'},{w:'for',e:'🤲'},{w:'us',e:'🧒'}],
+      [{w:'The',e:'➕'},{w:'sun',e:'🌞'},{w:'rises',e:'⬆️'},{w:'early',e:'🌅'},{w:'every',e:'🔁'},{w:'morning',e:'📅'}],
+      [{w:'Children',e:'🧒'},{w:'fly',e:'🪁'},{w:'kites',e:'🪁'},{w:'in',e:'📍'},{w:'the',e:'➕'},{w:'field',e:'🌾'}],
+      [{w:'Heavy',e:'❗'},{w:'rain',e:'🌧️'},{w:'makes',e:'➡️'},{w:'the',e:'➕'},{w:'road',e:'🛣️'},{w:'wet',e:'💦'}]
     ]
   }
 };

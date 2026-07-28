@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ศิลปะ ป.3 · เส้น รูปทรง และงานสร้างสรรค์">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e58b72"/><stop offset="1" stop-color="#D9542F"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f4cfc5"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="30" cy="33" r="19" fill="url(#g)" stroke="#943920" stroke-width="3"/><g fill="none" stroke="#943920" stroke-width="2.2" opacity=".65"><path d="M14 26c8 10 18 16 30 18M18 18c6 12 16 20 28 22M12 36c8 6 16 11 24 14M25 14c4 12 12 22 22 26"/></g><path d="M46 22c6-4 10-2 12 2s-2 8-6 6" fill="none" stroke="#df6e4e" stroke-width="3.4" stroke-linecap="round"/><circle cx="24" cy="26" r="3" fill="#fff" opacity=".3"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#a33f23" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#983b21" text-anchor="middle">ป.3</text></g>
+</svg>
