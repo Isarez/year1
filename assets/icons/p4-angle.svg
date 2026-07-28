@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="มุมมหัศจรรย์">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b290e3"/><stop offset="1" stop-color="#8E5CD6"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfd1f4"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M18 46 L18 46 A28 28 0 0 1 40 20" fill="none" stroke="#FFC53D" stroke-width="4"/><path d="M16 46h34" stroke="#B9AC98" stroke-width="6" stroke-linecap="round"/><path d="M16 46 L46 14" stroke="url(#g)" stroke-width="7" stroke-linecap="round"/><circle cx="16" cy="46" r="5" fill="#613f92"/><circle cx="46" cy="14" r="6" fill="#fff" stroke="#613f92" stroke-width="3"/><text x="34" y="40" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#613f92" text-anchor="middle">45°</text>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#6b45a1" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#634096" text-anchor="middle">ป.4</text></g>
+</svg>

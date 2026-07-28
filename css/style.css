@@ -1265,6 +1265,68 @@
   .ar-cursor.miss{border-color:#FF6161; background:rgba(255,97,97,.25);}
   .ar-cursor.grabbed{border-color:#33B76C; background:rgba(51,183,108,.25);}
 
+  /* ---------- เกม ป.4: แผนภูมิแท่ง / พื้นที่ตารางหน่วย / มุม ---------- */
+  .chart-board, .area-board, .angle-board{
+    display:flex; flex-direction:column; align-items:center; gap:14px; padding:10px 16px 40px;
+  }
+  .chart-title, .area-q, .angle-q, .chart-q{
+    background:rgba(255,255,255,.9); padding:10px 20px; border-radius:18px;
+    font-size:18px; font-weight:800; color:var(--ink); text-align:center; box-shadow:var(--shadow-btn); max-width:640px;
+  }
+  .chart-plot{
+    display:flex; align-items:flex-end; justify-content:center; gap:14px;
+    background:var(--white); border-radius:var(--radius-xl); box-shadow:var(--shadow-card);
+    padding:16px 18px 10px; min-height:220px; width:min(94vw,560px); box-sizing:border-box;
+    background-image:repeating-linear-gradient(to top, rgba(0,0,0,.06) 0 1px, transparent 1px 20px);
+  }
+  .chart-bar-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; flex:1 1 0; min-width:0;}
+  .chart-bar{
+    width:100%; max-width:52px; border-radius:10px 10px 4px 4px; background:var(--cat-color);
+    box-shadow:inset 0 -6px 0 rgba(0,0,0,.12); transition:height .5s cubic-bezier(.34,1.4,.5,1);
+  }
+  .chart-bar-val{font-size:15px; font-weight:800; color:var(--ink);}
+  .chart-bar-label{font-size:22px; line-height:1;}
+  .chart-bar-name{font-size:12px; color:var(--ink-soft); text-align:center;}
+  .chart-choices{display:flex; flex-wrap:wrap; gap:12px; justify-content:center;}
+  .chart-choice{
+    min-width:96px; padding:14px 22px; border-radius:18px; border:3px solid var(--cat-color);
+    background:var(--white); font-size:20px; font-weight:800; color:var(--ink); cursor:pointer;
+    box-shadow:var(--shadow-btn); transition:transform .15s ease, background .2s ease;
+  }
+  .chart-choice:hover{transform:translateY(-3px);}
+  .chart-choice.correct{background:var(--correct); color:#fff; border-color:var(--correct);}
+  .chart-choice.wrong{background:var(--wrong); color:#fff; border-color:var(--wrong); animation:shakeX .4s ease;}
+
+  .area-grid-wrap{background:var(--white); border-radius:var(--radius-xl); box-shadow:var(--shadow-card); padding:12px;}
+  .area-grid{display:grid; gap:3px;}
+  .area-cell{
+    width:44px; height:44px; border-radius:8px; border:2px solid #E3D9C8; background:#FFFDF7;
+    cursor:pointer; padding:0; transition:background .15s ease, transform .12s ease;
+  }
+  .area-cell:hover{transform:scale(1.06);}
+  .area-cell.on{background:var(--cat-color); border-color:var(--cat-color);}
+  .area-cell.good{background:var(--correct); border-color:var(--correct);}
+  .area-cell.bad{background:var(--wrong); border-color:var(--wrong); animation:shakeX .4s ease;}
+  .area-tally{font-size:17px; font-weight:800; color:var(--ink); background:rgba(255,255,255,.85); padding:6px 16px; border-radius:999px;}
+  .area-controls{display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center;}
+
+  .angle-stage{background:var(--white); border-radius:var(--radius-xl); box-shadow:var(--shadow-card); padding:10px;}
+  .angle-svg{width:min(86vw,340px); height:auto; touch-action:none;}
+  .angle-arm{stroke-linecap:round;}
+  .angle-arm-fixed{stroke:#B9AC98; stroke-width:7;}
+  .angle-arm-move{stroke:var(--cat-color); stroke-width:8;}
+  .angle-vertex{fill:#7A6A55;}
+  .angle-handle{fill:#fff; stroke:var(--cat-color); stroke-width:4; cursor:grab;}
+  .angle-handle:active{cursor:grabbing;}
+  .angle-arc{fill:rgba(255,197,61,.35); stroke:#E8A020; stroke-width:2;}
+  .angle-guide{stroke:#E6DCCB; stroke-width:2; stroke-dasharray:4 5;}
+  .angle-readout{font-size:26px; font-weight:900; color:var(--cat-color); background:rgba(255,255,255,.9); padding:6px 22px; border-radius:999px; box-shadow:var(--shadow-btn);}
+  @media (max-width:480px){
+    .area-cell{width:34px; height:34px;}
+    .chart-plot{min-height:180px;}
+    .chart-title, .area-q, .angle-q, .chart-q{font-size:16px;}
+  }
+
   /* ---------- โหมด "เล่นด้วยมือ" (hand play) ของเกมแบบแตะ ป.3 ----------
      ต่างจาก ar-view: ไม่โชว์ภาพจากกล้อง (จะบังกระดานเกม) วาดแค่มือการ์ตูนบน canvas ทับหน้าจอ
      ทั้งเลเยอร์ pointer-events:none เสมอ ให้แตะหน้าจอเล่นตามปกติได้พร้อมกัน */

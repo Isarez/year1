@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เส้นเวลาประวัติศาสตร์ไทย">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a571"/><stop offset="1" stop-color="#B07A2E"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9dac4"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="14" y="8" width="36" height="6" rx="3" fill="url(#g)" stroke="#78531f" stroke-width="2.6"/><rect x="14" y="50" width="36" height="6" rx="3" fill="url(#g)" stroke="#78531f" stroke-width="2.6"/><path d="M20 14h24l-12 18zM20 50h24L32 32z" fill="#e1ccb0" stroke="#78531f" stroke-width="2.8" stroke-linejoin="round"/><path d="M23 46h18l-9-11z" fill="url(#g)"/><circle cx="32" cy="26" r="2.2" fill="url(#g)"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#845c23" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#7b5520" text-anchor="middle">ป.4</text></g>
+</svg>

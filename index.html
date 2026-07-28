@@ -563,6 +563,75 @@
     </div>
   </section>
 
+  <!-- CHART VIEW (อ่านแผนภูมิแท่ง — ป.4 ค 3.1) -->
+  <section id="chart-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="chart-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="chart-cat-label">อ่านแผนภูมิแท่ง</div>
+        <div class="progress-track"><div class="progress-fill" id="chart-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="chart-hint"></div>
+      </div>
+      <div class="q-counter" id="chart-level-counter">1/10</div>
+    </div>
+    <div class="chart-board">
+      <div class="chart-title" id="chart-title"></div>
+      <div class="chart-plot" id="chart-plot"></div>
+      <div class="chart-q" id="chart-q"></div>
+      <div class="chart-choices" id="chart-choices"></div>
+    </div>
+  </section>
+
+  <!-- AREA VIEW (พื้นที่ตารางหน่วย — ป.4 ค 2.1) -->
+  <section id="area-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="area-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="area-cat-label">พื้นที่ตารางหน่วย</div>
+        <div class="progress-track"><div class="progress-fill" id="area-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="area-hint"></div>
+      </div>
+      <div class="q-counter" id="area-level-counter">1/10</div>
+    </div>
+    <div class="area-board">
+      <div class="area-q" id="area-q"></div>
+      <div class="area-grid-wrap"><div class="area-grid" id="area-grid"></div></div>
+      <div class="area-tally" id="area-tally"></div>
+      <div class="area-controls">
+        <button class="world-rot-btn" id="area-clear">ล้างสี ↺</button>
+        <button class="world-check-btn" id="area-check">ตรวจคำตอบ ✓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANGLE VIEW (มุมมหัศจรรย์ — ลากแขนมุมให้ได้องศาตามโจทย์) -->
+  <section id="angle-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="angle-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="angle-cat-label">มุมมหัศจรรย์</div>
+        <div class="progress-track"><div class="progress-fill" id="angle-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="angle-hint"></div>
+      </div>
+      <div class="q-counter" id="angle-level-counter">1/10</div>
+    </div>
+    <div class="angle-board">
+      <div class="angle-q" id="angle-q"></div>
+      <div class="angle-stage">
+        <svg class="angle-svg" id="angle-svg" viewBox="0 0 200 200">
+          <g id="angle-guides"></g>
+          <path class="angle-arc" id="angle-arc" d=""/>
+          <line class="angle-arm angle-arm-fixed" x1="100" y1="150" x2="185" y2="150"/>
+          <line class="angle-arm angle-arm-move" id="angle-arm-move" x1="100" y1="150" x2="185" y2="150"/>
+          <circle class="angle-vertex" cx="100" cy="150" r="6"/>
+          <circle class="angle-handle" id="angle-handle" cx="185" cy="150" r="11"/>
+        </svg>
+      </div>
+      <div class="angle-readout" id="angle-readout">0°</div>
+      <button class="world-check-btn" id="angle-check">ตรวจคำตอบ ✓</button>
+    </div>
+  </section>
+
   <!-- CLOCK VIEW (เกมนาฬิกาวิเศษ 1/2/3 — ลากหมุนเข็มนาฬิกา) -->
   <section id="clock-view" hidden>
     <div class="quiz-top">

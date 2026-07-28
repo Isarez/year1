@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ ป.4 · มิติสัมพันธ์และการวิเคราะห์">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67bc93"/><stop offset="1" stop-color="#1F9C60"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c0e3d2"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M10 12h16a5 5 0 0 1 10 0h16v16a5 5 0 0 0 0 10v16H36a5 5 0 0 0-10 0H10V38a5 5 0 0 1 0-10z" fill="url(#g)" stroke="#156a41" stroke-width="3" stroke-linejoin="round"/><path d="M34 30h12v12a5 5 0 0 0-10 0H34z" fill="#84c9a8" stroke="#156a41" stroke-width="2.6" stroke-linejoin="round"/><circle cx="22" cy="24" r="4" fill="#fff" opacity=".5"/><circle cx="26" cy="20" r="2" fill="#fff" opacity=".35"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#177548" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#166d43" text-anchor="middle">ป.4</text></g>
+</svg>

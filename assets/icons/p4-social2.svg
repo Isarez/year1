@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สังคม ป.4 · ประวัติศาสตร์ พลเมือง และเศรษฐกิจ">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#edaf7a"/><stop offset="1" stop-color="#E5893B"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f8dec8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 4 L36 14h-8z" fill="#FFC53D" stroke="#9c5d28" stroke-width="2"/><path d="M26 14h12l4 14H22z" fill="url(#g)" stroke="#9c5d28" stroke-width="2.8" stroke-linejoin="round"/><path d="M20 28h24l6 24H14z" fill="#eeb280" stroke="#9c5d28" stroke-width="3" stroke-linejoin="round"/><g stroke="#9c5d28" stroke-width="2" opacity=".6"><path d="M18 40h28M22 34h20"/></g><rect x="10" y="52" width="44" height="6" rx="3" fill="url(#g)" stroke="#9c5d28" stroke-width="2.6"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#ac672c" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#a06029" text-anchor="middle">ป.4</text></g>
+</svg>

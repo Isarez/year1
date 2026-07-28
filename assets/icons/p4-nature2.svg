@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ธรรมชาติ ป.4 · ระบบสุริยะและท้องฟ้า">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#87bd72"/><stop offset="1" stop-color="#4F9E2F"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cee4c5"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="30" cy="30" r="17" fill="url(#g)" stroke="#366b20" stroke-width="3"/><path d="M15 26c6 3 18 3 28-2" fill="none" stroke="#fff" stroke-width="2.6" opacity=".45"/><ellipse cx="30" cy="32" rx="28" ry="8" fill="none" stroke="#FFC53D" stroke-width="4" transform="rotate(-18 30 32)"/><circle cx="52" cy="12" r="2.6" fill="#FFE9A8"/><circle cx="12" cy="50" r="2" fill="#FFE9A8"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#3b7723" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#376f21" text-anchor="middle">ป.4</text></g>
+</svg>

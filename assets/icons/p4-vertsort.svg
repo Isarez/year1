@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="แยกสัตว์มี-ไม่มีกระดูกสันหลัง">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72c09a"/><stop offset="1" stop-color="#2FA36B"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c5e5d6"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M20 26a7 7 0 1 1 6 10l14 -8a7 7 0 1 1 6 10 7 7 0 1 1 -6 10l-14 8a7 7 0 1 1 -6-10 7 7 0 1 1 0-20z" fill="url(#g)" stroke="#206f49" stroke-width="3" stroke-linejoin="round"/><circle cx="24" cy="30" r="2.4" fill="#fff" opacity=".55"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#237a50" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#21724b" text-anchor="middle">ป.4</text></g>
+</svg>

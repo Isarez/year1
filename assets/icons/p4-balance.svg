@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ตาชั่งมวลและน้ำหนัก">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6b1ff"/><stop offset="1" stop-color="#7C8CFF"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dadfff"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 12v32" stroke="#545fad" stroke-width="3.4" stroke-linecap="round"/><path d="M12 20h40" stroke="#545fad" stroke-width="3.4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="url(#g)" stroke="#545fad" stroke-width="2.4"/><path d="M4 22h16l-8 12z" fill="url(#g)" stroke="#545fad" stroke-width="2.6" stroke-linejoin="round"/><path d="M44 22h16l-8 12z" fill="url(#g)" stroke="#545fad" stroke-width="2.6" stroke-linejoin="round"/><path d="M22 48h20l-2 5H24z" fill="url(#g)" stroke="#545fad" stroke-width="2.6" stroke-linejoin="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#5d69bf" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#5762b3" text-anchor="middle">ป.4</text></g>
+</svg>
