@@ -569,6 +569,16 @@ const CATS = [
     type:'listen', mode:'nohint', wordLens:[3,4,4], levels:10, grade:'p1', isNew:true
   },
   {
+    /* ฟังประโยคเติมคำ ป.1 — ประโยค 4-5 คำ 1 ช่องว่าง */
+    id:'p1-cloze1', name:'ฟังประโยคเติมคำ ป.1 · 1', emoji:'🔈', icon:'assets/icons/p1-cloze1.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thB', clozeBlanks:[1,1,1], clozeDecoys:[2,3,3], levels:10, grade:'p1', isNew:true
+  },
+  {
+    /* ฟังประโยคเติมคำ ป.1 — ด่านท้าย 2 ช่องว่าง */
+    id:'p1-cloze2', name:'ฟังประโยคเติมคำ ป.1 · 2', emoji:'🎙', icon:'assets/icons/p1-cloze2.svg', color:'#E0603F', light:'#FBDBD2',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thB', clozeBlanks:[1,2,2], clozeDecoys:[3,3,4], levels:10, grade:'p1', isNew:true
+  },
+  {
     id:'p1-eng3', name:'English ป.1 · อ่านและประโยค', emoji:'🆎', icon:'assets/icons/p1-eng3.svg', color:'#0A7A75', light:'#D5F5F2', grade:'p1', poolPick:10, isNew:true,
     questions:[
       /* Level 3 (เร่ง ป.2) — ประโยค is/am/are / จับใจความ / opposite / นับ 1-30 */
@@ -1307,6 +1317,16 @@ const CATS = [
     /* ฟังคำอังกฤษ ป.2 — reuse listen engine (คลัง LISTEN_WORDS default en) */
     id:'p2-listen-en', name:'ฟังคำอังกฤษ ป.2', emoji:'📣', icon:'assets/icons/p2-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
     type:'listen', mode:'nohint', wordLens:[3,4,5], levels:10, grade:'p2', isNew:true
+  },
+  {
+    /* ฟังประโยคเติมคำ ป.2 — ประโยคไทย 5-6 คำ */
+    id:'p2-cloze1', name:'ฟังประโยคเติมคำ ป.2 · ไทย', emoji:'📨', icon:'assets/icons/p2-cloze1.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thC', clozeBlanks:[1,1,2], clozeDecoys:[3,3,4], levels:10, grade:'p2', isNew:true
+  },
+  {
+    /* ฟังประโยคเติมคำ ป.2 — ประโยคอังกฤษสั้น */
+    id:'p2-cloze2', name:'ฟังประโยคเติมคำ ป.2 · English', emoji:'📩', icon:'assets/icons/p2-cloze2.svg', color:'#5B6EE8', light:'#E1E6FD',
+    type:'listen', mode:'cloze', lang:'en', clozeSet:'enA', clozeBlanks:[1,1,2], clozeDecoys:[2,3,3], levels:10, grade:'p2', isNew:true
   },
   {
     id:'p2-eng-sentence', name:'English ป.2 · ต่อประโยค', emoji:'🅰️', icon:'assets/icons/p2-eng-sentence.svg', color:'#5B6EE8', light:'#E1E6FD',
@@ -2204,6 +2224,16 @@ const CATS = [
     id:'p3-listen-th', name:'ฟังสะกดคำไทย ป.3', emoji:'📢', icon:'assets/icons/p3-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
     type:'listen', mode:'nohint', lang:'th', wordLens:[4,5,6], levels:10, grade:'p3', isNew:true
   },
+  {
+    /* ฟังประโยคเติมคำ ป.3 — ประโยคไทยมีเหตุ-ผล 6-7 คำ */
+    id:'p3-cloze1', name:'ฟังประโยคเติมคำ ป.3 · ไทย', emoji:'🗞', icon:'assets/icons/p3-cloze1.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thD', clozeBlanks:[1,2,2], clozeDecoys:[3,4,4], levels:10, grade:'p3', isNew:true
+  },
+  {
+    /* ฟังประโยคเติมคำ ป.3 — ประโยคอังกฤษ 5-6 คำ */
+    id:'p3-cloze2', name:'ฟังประโยคเติมคำ ป.3 · English', emoji:'📧', icon:'assets/icons/p3-cloze2.svg', color:'#5B6EE8', light:'#E1E6FD',
+    type:'listen', mode:'cloze', lang:'en', clozeSet:'enB', clozeBlanks:[1,1,2], clozeDecoys:[3,3,4], levels:10, grade:'p3', isNew:true
+  },
   { id:'p3-iq3', name:'เชาวน์ ป.3 · นกฮูกสั่ง', emoji:'🦉', icon:'assets/icons/p3-iq3.svg', color:'#17A65B', light:'#D6F3E4', type:'skill', mode:'ef', levels:10, handPlay:true, grade:'p3', isNew:true },
   { id:'p3-code1', name:'พาหุ่นยนต์ ป.3 · 1', emoji:'👾', icon:'assets/icons/p3-code1.svg', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p3a', codeLoop:true, levels:10, handPlay:true, grade:'p3', isNew:true },
   { id:'p3-code2', name:'พาหุ่นยนต์ ป.3 · 2', emoji:'🛸', icon:'assets/icons/p3-code2.svg', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p3b', codeLoop:true, levels:8, handPlay:true, grade:'p3', isNew:true },
@@ -2972,6 +3002,16 @@ const CATS = [
     id:'p4-listen-th', name:'ฟังสะกดคำไทย ป.4', emoji:'🔉', icon:'assets/icons/p4-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
     type:'listen', mode:'nohint', lang:'th', wordLens:[5,6,7], levels:10, grade:'p4', isNew:true
   },
+  {
+    /* ฟังประโยคเติมคำ ป.4 — ประโยคไทยยาว 7-8 คำ 2 ช่องว่างตั้งแต่ด่านกลาง */
+    id:'p4-cloze1', name:'ฟังประโยคเติมคำ ป.4 · ไทย', emoji:'🔔', icon:'assets/icons/p4-cloze1.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thE', clozeBlanks:[1,2,2], clozeDecoys:[4,4,5], levels:10, grade:'p4', isNew:true
+  },
+  {
+    /* ฟังประโยคเติมคำ ป.4 — ประโยคอังกฤษยาว มี tense/คำเชื่อม */
+    id:'p4-cloze2', name:'ฟังประโยคเติมคำ ป.4 · English', emoji:'✉️', icon:'assets/icons/p4-cloze2.svg', color:'#5B6EE8', light:'#E1E6FD',
+    type:'listen', mode:'cloze', lang:'en', clozeSet:'enC', clozeBlanks:[1,2,2], clozeDecoys:[3,4,5], levels:10, grade:'p4', isNew:true
+  },
 
   /* ---------- เกมฝึกทักษะ ป.4 (reuse engine เดิม — เปิดโหมดเล่นด้วยมือหน้ากล้องทุกเกมที่เป็นกลไกแตะ) ---------- */
   { id:'p4-fraction', name:'เศษส่วน-ทศนิยม ป.4', emoji:'🍰', icon:'assets/icons/p4-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, handPlay:true, grade:'p4', isNew:true },
@@ -2990,6 +3030,15 @@ const CATS = [
   { id:'p4-chart', name:'อ่านแผนภูมิแท่ง', emoji:'📊', icon:'assets/icons/p4-chart.svg', color:'#2F8FD6', light:'#D7ECFA', type:'skill', mode:'chart', levels:10, handPlay:true, grade:'p4', isNew:true },
   { id:'p4-area', name:'พื้นที่ตารางหน่วย', emoji:'🔶', icon:'assets/icons/p4-area.svg', color:'#E0904C', light:'#FBE7D4', type:'skill', mode:'area', levels:10, handPlay:true, grade:'p4', isNew:true },
   { id:'p4-angle', name:'มุมมหัศจรรย์', emoji:'🈷️', icon:'assets/icons/p4-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', levels:10, grade:'p4', isNew:true },
+  /* ---------- เกมฟังประโยคเติมคำ (cloze) — ชั้นละ 2 เกม ไล่ระดับ ---------- */
+  {
+    id:'cloze-th1', name:'ฟังประโยคเติมคำ 1', emoji:'🔕', icon:'assets/icons/cloze-th1.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thA', clozeBlanks:[1,1,1], clozeDecoys:[2,2,3], levels:10, isNew:true
+  },
+  {
+    id:'cloze-th2', name:'ฟังประโยคเติมคำ 2', emoji:'💬', icon:'assets/icons/cloze-th2.svg', color:'#E0603F', light:'#FBDBD2',
+    type:'listen', mode:'cloze', lang:'th', clozeSet:'thA', clozeBlanks:[1,1,2], clozeDecoys:[3,3,4], levels:10, isNew:true
+  },
 ];
 
 /* ============================= ระดับชั้น (GRADES) ============================= */
@@ -3284,6 +3333,146 @@ const LISTEN_WORDS = {
     'dolphin','rainbow','blanket','kitchen','picture','leopard','thunder','holiday','journey','machine',
     'monster','pyramid','subject','crystal','ostrich','panther','organic','uniform','brownie','antique'
   ]
+};
+
+
+/* ============================= CLOZE SENTENCES (เกม "ฟังประโยค เติมคำในช่องว่าง") =============================
+   เครื่องอ่านออกเสียง "ทั้งประโยค" แต่บนจอเว้นช่องว่าง 1-2 ช่อง ให้เด็กเลือกการ์ดคำมาเติม
+   โครงสร้าง: t = โทเคนของประโยค (แยกคำ), b = index ของคำที่เว้นเป็นช่องว่างได้, e = emoji ประกอบ
+   ตัวหลอกสุ่มจากคำที่เว้นได้ของประโยคอื่นในชุดเดียวกัน (ชนิดคำใกล้เคียงกัน จึงเป็นตัวหลอกที่ดี)
+   ชุดไล่ระดับ: thA (เตรียม ป.1) → thB (ป.1) → thC (ป.2) → thD (ป.3) → thE (ป.4)
+                enA (ป.2) → enB (ป.3) → enC (ป.4) */
+const CLOZE_SETS = {
+  /* ---- ไทย ระดับเตรียม ป.1: ประโยค 3-4 คำ คำใกล้ตัว ---- */
+  thA: { lang:'th', items:[
+    { t:['แมว','กิน','ปลา'], b:[0,2], e:'🐱' },
+    { t:['หมา','วิ่ง','เร็ว'], b:[0,1], e:'🐶' },
+    { t:['นก','บิน','บน','ฟ้า'], b:[0,1], e:'🐦' },
+    { t:['ปลา','ว่าย','ใน','น้ำ'], b:[0,3], e:'🐟' },
+    { t:['น้อง','ดื่ม','นม'], b:[1,2], e:'🥛' },
+    { t:['แม่','ทำ','อาหาร'], b:[0,2], e:'👩‍🍳' },
+    { t:['เด็ก','เล่น','ลูกบอล'], b:[1,2], e:'⚽' },
+    { t:['ช้าง','ตัว','ใหญ่'], b:[0,2], e:'🐘' },
+    { t:['ดวงอาทิตย์','ส่อง','แสง'], b:[0,2], e:'☀️' },
+    { t:['ฝน','ตก','หนัก'], b:[0,1], e:'🌧️' },
+    { t:['พี่','อ่าน','หนังสือ'], b:[1,2], e:'📖' },
+    { t:['ลิง','ปีน','ต้นไม้'], b:[0,2], e:'🐒' },
+    { t:['ไก่','ออก','ไข่'], b:[0,2], e:'🥚' },
+    { t:['หนู','กลัว','แมว'], b:[0,2], e:'🐭' }
+  ]},
+  /* ---- ไทย ป.1: 4-5 คำ เพิ่มคำขยาย ---- */
+  thB: { lang:'th', items:[
+    { t:['แมว','สีขาว','นอน','บน','เตียง'], b:[0,2,4], e:'🐱' },
+    { t:['น้อง','กิน','ข้าว','กับ','ไข่'], b:[1,2,4], e:'🍚' },
+    { t:['พ่อ','ขับ','รถ','ไป','ทำงาน'], b:[1,2,4], e:'🚗' },
+    { t:['ผีเสื้อ','บิน','อยู่','บน','ดอกไม้'], b:[0,1,4], e:'🦋' },
+    { t:['เด็ก','ล้าง','มือ','ก่อน','กินข้าว'], b:[1,2,4], e:'🧼' },
+    { t:['คุณครู','สอน','หนังสือ','ใน','ห้องเรียน'], b:[1,2,4], e:'👩‍🏫' },
+    { t:['ต้นไม้','ให้','ร่มเงา','และ','อากาศ'], b:[2,4], e:'🌳' },
+    { t:['กบ','กระโดด','ลง','ใน','บ่อ'], b:[0,1,4], e:'🐸' },
+    { t:['ยาย','ปลูก','ผัก','ใน','สวน'], b:[1,2,4], e:'🥬' },
+    { t:['นกฮูก','ตื่น','ตอน','กลางคืน'], b:[0,1,3], e:'🦉' },
+    { t:['เรือ','แล่น','อยู่','ใน','ทะเล'], b:[0,1,4], e:'⛵' },
+    { t:['หมี','ชอบ','กิน','น้ำผึ้ง'], b:[0,2,3], e:'🐻' },
+    { t:['น้อง','แปรงฟัน','ก่อน','เข้านอน'], b:[1,3], e:'🪥' },
+    { t:['ดาว','ส่องแสง','บน','ท้องฟ้า'], b:[0,1,3], e:'⭐' }
+  ]},
+  /* ---- ไทย ป.2: 5-6 คำ มีคำเชื่อม/คำบุพบท ---- */
+  thC: { lang:'th', items:[
+    { t:['เด็ก','ช่วยกัน','เก็บ','ขยะ','ที่','สนาม'], b:[1,2,3,5], e:'🗑️' },
+    { t:['แม่','ซื้อ','ผลไม้','จาก','ตลาด','สด'], b:[1,2,4], e:'🍎' },
+    { t:['ชาวนา','ปลูก','ข้าว','ใน','ทุ่งนา','กว้าง'], b:[0,2,4], e:'🌾' },
+    { t:['พี่','อ่าน','หนังสือ','นิทาน','ก่อน','นอน'], b:[1,3,5], e:'📚' },
+    { t:['ผึ้ง','บิน','ไป','เก็บ','น้ำหวาน','จากดอกไม้'], b:[0,3,4], e:'🐝' },
+    { t:['น้อง','ใส่','เสื้อกันฝน','เพราะ','ฝน','ตก'], b:[2,4,5], e:'🌂' },
+    { t:['ครอบครัว','ไป','เที่ยว','ทะเล','ใน','วันหยุด'], b:[2,3,5], e:'🏖️' },
+    { t:['เรา','ควร','ปิด','ไฟ','เมื่อ','ไม่ใช้'], b:[2,3,5], e:'💡' },
+    { t:['นก','สร้าง','รัง','อยู่','บน','ต้นไม้'], b:[1,2,5], e:'🪺' },
+    { t:['คุณหมอ','รักษา','คนป่วย','ที่','โรงพยาบาล'], b:[0,1,4], e:'🏥' },
+    { t:['เด็กๆ','เล่น','ว่าว','กัน','ที่','ทุ่งหญ้า'], b:[1,2,5], e:'🪁' },
+    { t:['พ่อ','ซ่อม','จักรยาน','ให้','น้อง','เมื่อวาน'], b:[1,2,4], e:'🚲' },
+    { t:['ลูกหมา','วิ่ง','ตาม','ลูกบอล','ใน','สนามหญ้า'], b:[1,3,5], e:'🐕' },
+    { t:['แม่ค้า','ขาย','ขนมไทย','อยู่','หน้า','โรงเรียน'], b:[1,2,5], e:'🍡' }
+  ]},
+  /* ---- ไทย ป.3: 6-7 คำ มีเหตุ-ผล/คำขยายซ้อน ---- */
+  thD: { lang:'th', items:[
+    { t:['เพราะ','ฝน','ตก','หนัก','ถนน','จึง','ลื่น'], b:[1,3,4,6], e:'🌧️' },
+    { t:['นักเรียน','ตั้งใจ','เรียน','เพื่อ','สอบ','ให้','ผ่าน'], b:[1,2,4,6], e:'📝' },
+    { t:['ต้นไม้','ช่วย','ให้','อากาศ','บริสุทธิ์','และ','ร่มเย็น'], b:[1,3,4,6], e:'🌳' },
+    { t:['ชาวประมง','ออก','เรือ','ไป','จับ','ปลา','ตอนเช้า'], b:[2,4,5,6], e:'🎣' },
+    { t:['เราควร','แยก','ขยะ','ก่อน','ทิ้ง','ลง','ถัง'], b:[1,2,4,6], e:'♻️' },
+    { t:['ผีเสื้อ','เกิด','มาจาก','หนอน','ที่','กลายเป็น','ดักแด้'], b:[1,3,5,6], e:'🦋' },
+    { t:['คุณครู','พา','นักเรียน','ไป','ทัศนศึกษา','ที่','สวนสัตว์'], b:[2,4,6], e:'🦁' },
+    { t:['พระอาทิตย์','ขึ้น','ทาง','ทิศ','ตะวันออก','ทุก','เช้า'], b:[1,4,6], e:'🌅' },
+    { t:['เด็กดี','ควร','ช่วย','พ่อแม่','ทำงาน','บ้าน','เสมอ'], b:[2,3,5,6], e:'🧹' },
+    { t:['น้ำ','ระเหย','ขึ้น','ไป','รวมกัน','เป็น','เมฆ'], b:[1,4,6], e:'☁️' },
+    { t:['หมอ','บอก','ให้','ดื่ม','น้ำ','วันละ','แปดแก้ว'], b:[3,4,6], e:'💧' },
+    { t:['ลูกเสือ','เดิน','ทาง','ไกล','ด้วย','ความ','อดทน'], b:[1,3,6], e:'⛺' },
+    { t:['ผึ้ง','ช่วย','ผสม','เกสร','ให้','ดอกไม้','ติดผล'], b:[2,3,5,6], e:'🐝' },
+    { t:['เรา','ควร','ประหยัด','น้ำ','เพื่อ','ให้','พอใช้'], b:[2,3,6], e:'🚰' }
+  ]},
+  /* ---- ไทย ป.4: 7-8 คำ มีสำนวน/คำเชื่อมซับซ้อน ---- */
+  thE: { lang:'th', items:[
+    { t:['แม้','จะ','เหนื่อย','แต่','เขา','ก็','ไม่','ยอมแพ้'], b:[2,4,7], e:'💪' },
+    { t:['ชาวนา','ตื่น','แต่เช้า','เพื่อ','ไป','เกี่ยว','ข้าว','ในนา'], b:[1,5,6,7], e:'🌾' },
+    { t:['การ','ออม','เงิน','ช่วย','ให้','มี','ใช้','ยามจำเป็น'], b:[1,2,6,7], e:'🏦' },
+    { t:['ป่าไม้','เป็น','แหล่ง','ต้นน้ำ','และ','ที่อยู่','ของ','สัตว์ป่า'], b:[3,5,7], e:'🌲' },
+    { t:['นักวิทยาศาสตร์','ใช้','กล้อง','จุลทรรศน์','ส่อง','ดู','สิ่งมีชีวิต','เล็กๆ'], b:[2,3,6,7], e:'🔬' },
+    { t:['เพราะ','ตัด','ไม้','ทำลาย','ป่า','จึง','เกิด','น้ำท่วม'], b:[1,4,6,7], e:'🌊' },
+    { t:['ดวงจันทร์','โคจร','รอบ','โลก','ครบ','หนึ่ง','รอบ','ในหนึ่งเดือน'], b:[1,3,5,7], e:'🌙' },
+    { t:['ความ','พยายาม','อยู่','ที่ไหน','ความ','สำเร็จ','อยู่','ที่นั่น'], b:[1,3,5,7], e:'🏆' },
+    { t:['พลังงาน','แสงอาทิตย์','เป็น','พลังงาน','สะอาด','ที่','ใช้','ไม่หมด'], b:[1,4,6,7], e:'☀️' },
+    { t:['เรา','ควร','เคารพ','ความ','แตกต่าง','ของ','แต่ละ','วัฒนธรรม'], b:[2,4,7], e:'🤝' },
+    { t:['แผนภูมิ','แท่ง','ช่วย','ให้','เปรียบเทียบ','จำนวน','ได้','ง่ายขึ้น'], b:[1,4,5,7], e:'📊' },
+    { t:['สุโขทัย','เป็น','ราชธานี','แห่งแรก','ของ','ไทย','ใน','ประวัติศาสตร์'], b:[2,3,5,7], e:'🏯' },
+    { t:['การ','อ่าน','หนังสือ','ทุกวัน','ช่วย','เพิ่ม','ความรู้','ให้เรา'], b:[1,3,6,7], e:'📚' },
+    { t:['น้ำแข็ง','ละลาย','กลาย','เป็น','น้ำ','เมื่อ','ได้รับ','ความร้อน'], b:[1,4,6,7], e:'🧊' }
+  ]},
+  /* ---- English ป.2: ประโยคสั้น 3-4 คำ ---- */
+  enA: { lang:'en', items:[
+    { t:['The','cat','is','big'], b:[1,3], e:'🐱' },
+    { t:['I','like','red','apples'], b:[2,3], e:'🍎' },
+    { t:['The','dog','can','run'], b:[1,3], e:'🐶' },
+    { t:['She','has','a','book'], b:[1,3], e:'📕' },
+    { t:['We','go','to','school'], b:[1,3], e:'🏫' },
+    { t:['The','sun','is','hot'], b:[1,3], e:'☀️' },
+    { t:['Birds','can','fly','high'], b:[0,2], e:'🐦' },
+    { t:['My','mother','cooks','rice'], b:[1,3], e:'🍚' },
+    { t:['The','fish','swims','fast'], b:[1,2], e:'🐟' },
+    { t:['I','drink','cold','milk'], b:[1,3], e:'🥛' },
+    { t:['He','plays','with','friends'], b:[1,3], e:'⚽' },
+    { t:['The','flower','is','pretty'], b:[1,3], e:'🌸' }
+  ]},
+  /* ---- English ป.3: 4-5 คำ มี preposition/adjective ---- */
+  enB: { lang:'en', items:[
+    { t:['The','cat','sleeps','under','the','table'], b:[2,3,5], e:'🐱' },
+    { t:['We','plant','trees','in','the','garden'], b:[1,2,5], e:'🌱' },
+    { t:['My','father','drives','a','blue','car'], b:[2,4,5], e:'🚗' },
+    { t:['The','boy','reads','a','story','book'], b:[2,4,5], e:'📖' },
+    { t:['Birds','build','nests','on','tall','trees'], b:[1,2,5], e:'🪺' },
+    { t:['She','goes','to','school','every','day'], b:[1,3,5], e:'🎒' },
+    { t:['The','baby','is','sleeping','in','bed'], b:[3,5], e:'👶' },
+    { t:['I','wash','my','hands','before','lunch'], b:[1,3,5], e:'🧼' },
+    { t:['Farmers','grow','rice','in','big','fields'], b:[1,2,5], e:'🌾' },
+    { t:['The','rain','makes','the','road','wet'], b:[2,4,5], e:'🌧️' },
+    { t:['My','sister','likes','sweet','cakes','today'], b:[2,3,4], e:'🍰' },
+    { t:['We','must','turn','off','the','lights'], b:[2,3,5], e:'💡' }
+  ]},
+  /* ---- English ป.4: 5-7 คำ มี tense/คำเชื่อม ---- */
+  enC: { lang:'en', items:[
+    { t:['The','teacher','takes','students','to','the','museum'], b:[1,2,6], e:'🏛️' },
+    { t:['Children','should','put','rubbish','in','the','bin'], b:[2,3,6], e:'🗑️' },
+    { t:['A','big','whale','swims','in','deep','water'], b:[2,3,5], e:'🐋' },
+    { t:['My','brother','is','taller','than','me','now'], b:[3,4], e:'📏' },
+    { t:['We','use','solar','energy','because','it','is','clean'], b:[2,3,7], e:'☀️' },
+    { t:['The','moon','goes','around','the','earth','every','month'], b:[2,3,7], e:'🌙' },
+    { t:['Butterflies','come','from','caterpillars','after','some','weeks'], b:[2,3,6], e:'🦋' },
+    { t:['Doctors','help','sick','people','at','the','hospital'], b:[1,2,6], e:'🏥' },
+    { t:['She','studies','English','every','evening','at','home'], b:[1,2,4], e:'📚' },
+    { t:['Plants','need','water','and','sunlight','to','grow','well'], b:[2,4,6], e:'🌱' },
+    { t:['The','farmer','sells','fresh','fruit','at','the','market'], b:[2,3,7], e:'🍎' },
+    { t:['We','can','save','water','by','closing','the','tap'], b:[2,3,5], e:'🚰' }
+  ]}
 };
 
 /* ============================= LISTEN WORDS TH (เกมฟังคำไทย 1/2) ============================= */
@@ -3701,7 +3890,9 @@ const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'l
   'p4-eng2':'p4-eng1', 'p4-eng3':'p4-eng2',
   'p4-social2':'p4-social1', 'p4-sci2':'p4-sci1', 'p4-iq2':'p4-iq1',
   'p4-music2':'p4-music1', 'p4-art2':'p4-art1', 'p4-nature2':'p4-nature1',
-  'p4-listen-th':'p4-listen-en', 'p4-area':'p4-chart', 'p4-angle':'p4-anglesort' };
+  'p4-listen-th':'p4-listen-en', 'p4-area':'p4-chart', 'p4-angle':'p4-anglesort',
+  /* ---- เกมฟังประโยคเติมคำ: เกม 2 ของแต่ละชั้นปลดล็อกหลังผ่านเกม 1 ---- */
+  'cloze-th2':'cloze-th1', 'p1-cloze2':'p1-cloze1', 'p2-cloze2':'p2-cloze1', 'p3-cloze2':'p3-cloze1', 'p4-cloze2':'p4-cloze1' };
 
 /* ============ เกมเส้นเวลา (skill-timeline / p3-timeline) ============
    TIMELINE_SETS: ชุดเหตุการณ์เรียงตามลำดับเวลา index 0 = เก่า/ก่อนสุด → ท้าย = ใหม่/หลังสุด

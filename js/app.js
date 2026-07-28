@@ -640,7 +640,8 @@ const $ = id => document.getElementById(id);
 const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('result-view'), arView = $('ar-view'), memoryView = $('memory-view'), listenView = $('listen-view'), shadowView = $('shadow-view'), mixView = $('mix-view'), musicView = $('music-view'), dotsView = $('dots-view'), clockView = $('clock-view'), efView = $('ef-view'), codeView = $('code-view'), sciView = $('science-view');
 /* ป.2 engine ใหม่ (IDEA + Phase 2.2): ร้านค้า(เงิน) / เศษส่วน / ตาชั่ง / ปฏิทิน */
 const moneyView = $('money-view'), fractionView = $('fraction-view'), balanceView = $('balance-view'), calendarView = $('calendar-view'), timelineView = $('timeline-view'), sortView = $('sort-view'), worldView = $('world-view'), coordView = $('coord-view');
-const chartView = $('chart-view'), areaView = $('area-view'), angleView = $('angle-view'); // เกม ป.4 (แผนภูมิแท่ง / พื้นที่ / มุม)
+const chartView = $('chart-view'), areaView = $('area-view'), angleView = $('angle-view');
+const clozeView = $('cloze-view'); // เกมฟังประโยคเติมคำ // เกม ป.4 (แผนภูมิแท่ง / พื้นที่ / มุม)
 const mascot = $('mascot');
 let lastGameType = 'quiz', lastCatId = null;
 let memoryGame = null;
@@ -683,7 +684,7 @@ $('switch-child-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
   document.body.classList.remove('dots-open');
-  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   renderChildSelect();
 });
 
@@ -784,6 +785,7 @@ function renderHome(){
       else if(cat.type==='skill' && cat.mode==='area') startAreaGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='angle') startAngleGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
+      else if(cat.type==='listen' && cat.mode==='cloze') startClozeGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
       else if(cat.type==='write') startDotsGame(cat.id);
       else startQuiz(cat.id);
@@ -842,7 +844,7 @@ function startQuiz(catId){
   lastGameType = 'quiz'; lastCatId = catId;
   const cat = catById(catId);
   state = { catId:catId, qIndex:0, score:0, wrong:[], answered:false, questions: pickQuizQuestions(cat).map(shuffleChoices) };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = false; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   quizView.querySelectorAll('.progress-fill, .next-btn').forEach(el=>{ el.style.setProperty('--cat-color', cat.color); });
   setCatLabel('quiz-cat-label', cat);
@@ -1031,13 +1033,14 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='chart'){ startChartGame(lastCatId); }
   else if(lastGameType==='area'){ startAreaGame(lastCatId); }
   else if(lastGameType==='angle'){ startAngleGame(lastCatId); }
+  else if(lastGameType==='cloze'){ startClozeGame(lastCatId); }
   else { startQuiz(state.catId); }
   if(lastCatId) mountHandPlay(catById(lastCatId));
 });
 $('home-btn').addEventListener('click', ()=>{
   playClick();
   stopARGame();
-  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; homeView.hidden = false;
+  resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
   showOwlMsg('home');
@@ -1060,7 +1063,7 @@ function startMemoryGame(catId){
   lastGameType = 'memory'; lastCatId = catId;
   const cat = catById(catId);
   memoryGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, matchedCount:0, totalPairs:0, openNumber:null, openDot:null, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = false; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   memoryView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('memory-cat-label', cat);
@@ -1314,7 +1317,7 @@ function startShadowGame(catId){
     usedCombos:new Set(),
     answer:null, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = false; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   shadowView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('shadow-cat-label', cat);
@@ -1550,7 +1553,7 @@ function startEfGame(catId){
   const cat = catById(catId);
   const keys = shuffleArray(Object.keys(EF_CATEGORIES).slice());
   efGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, ruleA:keys[0], ruleB:keys[1], curRule:keys[0], answered:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = false; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   efView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('ef-cat-label', cat);
@@ -1631,7 +1634,7 @@ function finishEfGame(){
   const cat = catById(efGame.catId);
   const mistakes = efGame.mistakes;
   const totalLevels = efGame.totalLevels;
-  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; resultView.hidden = false;
+  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -1657,7 +1660,7 @@ $('ef-tap-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ 
 $('ef-skip-btn').addEventListener('click', ()=>{ if(efGame && !efGame.answered){ playClick(); efAnswer(false); } });
 $('ef-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(efTimer); efTimer=null;
-  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; homeView.hidden = false;
+  efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1690,7 +1693,7 @@ function startScienceGame(catId){
   const pool = (SCIENCE_POOLS[cat.sciSet] || SCIENCE_FLOAT).slice();
   const items = shuffleArray(pool).slice(0, cat.levels);
   sciGame = { catId, level:1, mistakes:0, totalLevels:items.length, items, answered:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; sciView.hidden = false;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; sciView.hidden = false;
   document.body.classList.add('sci-open');
   document.body.classList.remove('sci-nocam');
   document.documentElement.style.setProperty('--cat-color', cat.color);
@@ -1925,7 +1928,7 @@ function finishScienceGame(){
   const cat = catById(sciGame.catId);
   const mistakes = sciGame.mistakes;
   const totalLevels = sciGame.totalLevels;
-  sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; resultView.hidden = false;
+  sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -1951,7 +1954,7 @@ $('sci-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(sciTimer); sciTimer=null;
   sciStopCamera();
   document.body.classList.remove('sci-open','sci-nocam');
-  sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; homeView.hidden = false;
+  sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -1961,13 +1964,13 @@ $('sci-back').addEventListener('click', ()=>{
 function p2rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 function p2pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function p2GoHome(){
-  moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; homeView.hidden=false;
+  moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; homeView.hidden=false;
   renderHome(); window.scrollTo({top:0, behavior:'smooth'});
 }
 /* result/ดาว ร่วมกัน (pattern เดียวกับ finishScienceGame) */
 function finishP2Game(catId, mistakes, totalLevels, doneWord){
   const cat = catById(catId);
-  moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; resultView.hidden=false;
+  moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; resultView.hidden=false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -2003,7 +2006,7 @@ function startMoneyGame(catId){
   lastGameType='money'; lastCatId=catId;
   const cat = catById(catId);
   moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, tray:[], locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; moneyView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; moneyView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   moneyView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('money-cat-label', cat);
@@ -2081,7 +2084,7 @@ function startFractionGame(catId){
   lastGameType='fraction'; lastCatId=catId;
   const cat = catById(catId);
   fractionGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; fractionView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; fractionView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   fractionView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('fraction-cat-label', cat);
@@ -2156,7 +2159,7 @@ function startBalanceGame(catId){
   lastGameType='balance'; lastCatId=catId;
   const cat = catById(catId);
   balanceGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; balanceView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; balanceView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   balanceView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('balance-cat-label', cat);
@@ -2349,7 +2352,7 @@ function startTimelineGame(catId){
   lastGameType='timeline'; lastCatId=catId;
   const cat = catById(catId);
   timelineGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), maxSize:(cat.timelineMax||5), locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; timelineView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; timelineView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   timelineView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('timeline-cat-label', cat);
@@ -2448,7 +2451,7 @@ function startSortGame(catId){
   lastGameType='sort'; lastCatId=catId;
   const cat = catById(catId);
   sortGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, pool:SORT_POOLS[cat.sortSet], sel:null, locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; sortView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; sortView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   sortView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('sort-cat-label', cat);
@@ -2530,7 +2533,7 @@ function startWorldGame(catId){
   lastGameType='world'; lastCatId=catId;
   const cat = catById(catId);
   worldGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, angle:0, target:'day', locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; worldView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; worldView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   worldView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('world-cat-label', cat);
@@ -2599,7 +2602,7 @@ function startCoordGame(catId){
   lastGameType='coord'; lastCatId=catId;
   const cat = catById(catId);
   coordGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; coordView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; coordView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   coordView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('coord-cat-label', cat);
@@ -2649,6 +2652,159 @@ function coordTap(r,c,el){
 $('coord-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 
 
+
+/* ============================= เกม "ฟังประโยค เติมคำในช่องว่าง" (cloze) =============================
+   เครื่องอ่านออกเสียง "ทั้งประโยครวมคำที่หายไป" แต่บนจอเว้นช่องว่าง 1-2 ช่อง ให้เด็กเลือกการ์ดคำมาเติม
+   - คลังประโยคอยู่ที่ CLOZE_SETS ใน data.js เลือกชุดด้วย cat.clozeSet (ไล่ระดับตามชั้น: thA→thE, enA→enC)
+   - จำนวนช่องว่างต่อด่านมาจาก cat.clozeBlanks = [ด่าน 1-4, 5-8, 9-10] (เช่น [1,1,2])
+   - ตัวหลอกมาจากคำที่เว้นได้ของประโยคอื่นในชุดเดียวกัน (ชนิดคำใกล้เคียง จึงหลอกได้จริง) จำนวนตาม cat.clozeDecoys
+   - เติมครบทุกช่องแล้วตรวจอัตโนมัติ ถูก = ไปด่านต่อไป, ผิด = ช่องที่ผิดสั่นแดงแล้วคืนการ์ด (นับ 1 พลาด)
+   ดาว/ผลลัพธ์ใช้ finishP2Game ร่วมกับเกมทักษะอื่น (เกณฑ์ mistakes 0→3, ≤4→2, else→1) */
+let clozeGame = null;
+
+function clozeBlankCount(cat, level){
+  const b = cat.clozeBlanks || [1,1,2];
+  return level<=4 ? b[0] : (level<=8 ? b[1] : b[2]);
+}
+function clozeDecoyCount(cat, level){
+  const d = cat.clozeDecoys || [2,3,3];
+  return level<=4 ? d[0] : (level<=8 ? d[1] : d[2]);
+}
+/* ประโยคเต็มสำหรับอ่านออกเสียง — ภาษาไทยต่อคำติดกัน (ไม่มีเว้นวรรค) เสียงจึงเป็นธรรมชาติกว่า */
+function clozeFullText(tokens, lang){ return lang==='th' ? tokens.join('') : tokens.join(' '); }
+
+function speakClozeSentence(){
+  if(!clozeGame) return;
+  if(!window.speechSynthesis){ showToast('🔇','เบราว์เซอร์นี้ไม่รองรับการอ่านออกเสียง'); return; }
+  const cat = catById(clozeGame.catId);
+  const u = new SpeechSynthesisUtterance(clozeFullText(clozeGame.tokens, cat.lang));
+  if(cat.lang==='th'){ const v = pickThaiVoice(); if(v) u.voice = v; u.lang = 'th-TH'; }
+  else { const v = pickEnglishVoice(); if(v) u.voice = v; u.lang = 'en-US'; }
+  u.rate = 0.85;
+  /* เรียก cancel()+speak() ตรงๆ ใน user gesture เสมอ (กติกาเดียวกับ speakListenWord — iPad จะเงียบถ้าหน่วง) */
+  try{ speechSynthesis.cancel(); }catch(e){}
+  primeSpeechOnce();
+  speechSynthesis.speak(u);
+}
+
+async function startClozeGame(catId){
+  stopARGame();
+  lastGameType = 'cloze'; lastCatId = catId;
+  const cat = catById(catId);
+  clozeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false, usedIdx:new Set() };
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; clozeView.hidden=false;
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  clozeView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('cloze-cat-label', cat);
+  renderClozeLevel();
+  await ensureVoicesLoaded();   // รอ voices โหลดก่อน กันเสียงเพี้ยน/ไม่ออกตอนฟังครั้งแรก (กติกาเดียวกับเกมฟังคำ)
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+
+function renderClozeLevel(){
+  const g = clozeGame, cat = catById(g.catId);
+  const set = CLOZE_SETS[cat.clozeSet] || CLOZE_SETS.thA;
+  const idx = pickNoRepeatIdx(g.usedIdx, set.items.length);
+  const item = set.items[idx];
+  const nBlank = Math.min(clozeBlankCount(cat, g.level), item.b.length);
+
+  g.tokens = item.t.slice();
+  g.blanks = shuffleArray(item.b.slice()).slice(0, nBlank).sort((a,b)=>a-b);
+  g.answers = g.blanks.map(i=>g.tokens[i]);
+  g.filled = {};      /* ตำแหน่งช่อง -> คำที่เลือก */
+  g.locked = false;
+
+  /* ตัวหลอก: คำที่เว้นได้ของประโยคอื่นในชุดเดียวกัน (ไม่ซ้ำกับคำเฉลย) */
+  const bank = [];
+  set.items.forEach((it,i)=>{ if(i!==idx) it.b.forEach(bi=>bank.push(it.t[bi])); });
+  const decoyPool = [...new Set(bank)].filter(w=>!g.answers.includes(w));
+  const decoys = shuffleArray(decoyPool).slice(0, clozeDecoyCount(cat, g.level));
+
+  $('cloze-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('cloze-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('cloze-emoji').textContent = item.e || '🎧';
+  $('cloze-hint').textContent = nBlank>1 ? '🎧 ฟังประโยคแล้วเติมให้ครบทั้ง '+nBlank+' ช่องนะ!' : '🎧 กดฟังประโยค แล้วเลือกคำมาเติมในช่องว่าง';
+
+  /* ประโยคบนจอ: คำปกติ + ช่องว่าง */
+  const sent = $('cloze-sentence'); sent.innerHTML='';
+  g.tokens.forEach((tok, i)=>{
+    if(g.blanks.includes(i)){
+      const b=document.createElement('button');
+      b.className='cloze-blank'; b.dataset.pos=i; b.textContent='___';
+      b.addEventListener('click', ()=>clozeUndo(i));
+      sent.appendChild(b);
+    } else {
+      const w=document.createElement('span'); w.className='cloze-word'; w.textContent=tok; sent.appendChild(w);
+    }
+  });
+
+  const box = $('cloze-cards'); box.innerHTML='';
+  g.cardEls = {};
+  shuffleArray([...g.answers, ...decoys]).forEach(word=>{
+    const c=document.createElement('button'); c.className='cloze-card'; c.textContent=word;
+    c.addEventListener('click', ()=>clozePick(word, c));
+    box.appendChild(c);
+    g.cardEls[word] = c;
+  });
+
+  /* อ่านประโยคให้ฟังอัตโนมัติ 1 ครั้งเมื่อขึ้นด่านใหม่ (กดปุ่มฟังซ้ำได้เสมอ) */
+  setTimeout(()=>{ if(clozeGame && !clozeGame.locked) speakClozeSentence(); }, 350);
+}
+
+function clozeFirstEmpty(){
+  return clozeGame.blanks.find(p=>clozeGame.filled[p]===undefined);
+}
+function clozePick(word, cardEl){
+  const g = clozeGame; if(!g || g.locked) return;
+  const pos = clozeFirstEmpty();
+  if(pos===undefined) return;
+  playClick();
+  g.filled[pos] = word;
+  cardEl.classList.add('used');
+  const slot = $('cloze-sentence').querySelector('.cloze-blank[data-pos="'+pos+'"]');
+  if(slot){ slot.textContent = word; slot.classList.add('filled'); }
+  if(g.blanks.every(p=>g.filled[p]!==undefined)) setTimeout(checkCloze, 250);
+}
+function clozeUndo(pos){
+  const g = clozeGame; if(!g || g.locked) return;
+  const word = g.filled[pos];
+  if(word===undefined) return;
+  playClick();
+  delete g.filled[pos];
+  if(g.cardEls[word]) g.cardEls[word].classList.remove('used');
+  const slot = $('cloze-sentence').querySelector('.cloze-blank[data-pos="'+pos+'"]');
+  if(slot){ slot.textContent='___'; slot.classList.remove('filled'); }
+}
+function checkCloze(){
+  const g = clozeGame; if(!g || g.locked) return;
+  const wrong = g.blanks.filter((p,i)=>g.filled[p]!==g.answers[i]);
+  if(wrong.length===0){
+    g.locked = true;
+    g.blanks.forEach(p=>{ const s=$('cloze-sentence').querySelector('.cloze-blank[data-pos="'+p+'"]'); if(s) s.classList.add('correct'); });
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('cloze-hint').textContent = 'เติมถูกทุกช่องเลย! 🎉';
+    $('cloze-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'เติมประโยค'); else { g.level++; renderClozeLevel(); } }, 1400);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    $('cloze-hint').textContent = 'ยังไม่ถูกนะ ลองกดฟังประโยคอีกครั้งแล้วเปลี่ยนคำดู';
+    wrong.forEach(p=>{
+      const s=$('cloze-sentence').querySelector('.cloze-blank[data-pos="'+p+'"]');
+      if(s) s.classList.add('wrong');
+    });
+    setTimeout(()=>{
+      wrong.forEach(p=>{
+        const s=$('cloze-sentence').querySelector('.cloze-blank[data-pos="'+p+'"]');
+        if(s) s.classList.remove('wrong');
+        clozeUndo(p);      /* คืนเฉพาะช่องที่ผิด ช่องที่ถูกค้างไว้ให้ */
+      });
+    }, 700);
+  }
+}
+$('cloze-speak-btn').addEventListener('click', ()=>{ playClick(); speakClozeSentence(); });
+$('cloze-back').addEventListener('click', ()=>{ playClick(); try{ speechSynthesis.cancel(); }catch(e){} p2GoHome(); });
+
 /* ============================= เกม ป.4 — engine ใหม่ 3 แบบ =============================
    1) chart  : อ่านแผนภูมิแท่ง (ค 3.1 ป.4) — ดูกราฟแล้วตอบคำถาม 4 ตัวเลือก
    2) area   : พื้นที่ตารางหน่วย (ค 2.1 ป.4) — แตะระบายช่องให้ได้พื้นที่/รูปตามโจทย์ แล้วกดตรวจ
@@ -2671,7 +2827,7 @@ function startChartGame(catId){
   lastGameType='chart'; lastCatId=catId;
   const cat = catById(catId);
   chartGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; areaView.hidden=true; angleView.hidden=true; chartView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; areaView.hidden=true; angleView.hidden=true; clozeView.hidden=true; chartView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   chartView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('chart-cat-label', cat);
@@ -2764,7 +2920,7 @@ function startAreaGame(catId){
   lastGameType='area'; lastCatId=catId;
   const cat = catById(catId);
   areaGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false, on:new Set() };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; angleView.hidden=true; areaView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; angleView.hidden=true; clozeView.hidden=true; areaView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   areaView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('area-cat-label', cat);
@@ -2863,7 +3019,7 @@ function startAngleGame(catId){
   lastGameType='angle'; lastCatId=catId;
   const cat = catById(catId);
   angleGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, deg:0, locked:false };
-  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; angleView.hidden=false;
+  homeView.hidden=true; resultView.hidden=true; quizView.hidden=true; arView.hidden=true; memoryView.hidden=true; listenView.hidden=true; shadowView.hidden=true; mixView.hidden=true; musicView.hidden=true; dotsView.hidden=true; clockView.hidden=true; efView.hidden=true; codeView.hidden=true; sciView.hidden=true; moneyView.hidden=true; fractionView.hidden=true; balanceView.hidden=true; calendarView.hidden=true; timelineView.hidden=true; sortView.hidden=true; worldView.hidden=true; coordView.hidden=true; chartView.hidden=true; areaView.hidden=true; clozeView.hidden=true; angleView.hidden=false;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   angleView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('angle-cat-label', cat);
@@ -3046,7 +3202,7 @@ function startCodeGame(catId){
   codeGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, set:robotLevelsFor(cat), program:[], running:false, robot:null, lv:null, loop:!!cat.codeLoop, cond:!!cat.codeCond, repeat:1, repeatMax:(cat.codeCond?10:6) };
   const repRow = $('code-repeat-row'); if(repRow) repRow.hidden = !cat.codeLoop;
   codeView.querySelectorAll('.code-cmd-cond').forEach(b=>{ b.hidden = !cat.codeCond; });
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = false; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   codeView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('code-cat-label', cat);
@@ -3276,7 +3432,7 @@ function finishCodeGame(){
   const cat = catById(codeGame.catId);
   const mistakes = codeGame.mistakes;
   const totalLevels = codeGame.totalLevels;
-  codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; resultView.hidden = false;
+  codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -3311,7 +3467,7 @@ $('code-clear-btn').addEventListener('click', ()=>{
 });
 $('code-back').addEventListener('click', ()=>{
   playClick(); clearTimeout(codeTimer); codeTimer=null;
-  codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; homeView.hidden = false;
+  codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -3336,7 +3492,7 @@ function startDotsGame(catId){
     queue: shuffleArray(DOTS_SHAPES[cat.dotsPool].slice()).slice(0, cat.levels),
     shape:null, connected:0, els:[], dragging:false, locked:false
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = false; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.body.classList.add('dots-open'); // จอแคบ: ย่อนกฮูกลงมุม กันบังจุดแถวล่างของกระดาน (ดู CSS body.dots-open)
   document.documentElement.style.setProperty('--cat-color', cat.color);
   dotsView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -3527,7 +3683,7 @@ function finishDotsGame(){
   const totalLevels = dotsGame.totalLevels;
   dotsGame = null;
   document.body.classList.remove('dots-open');
-  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; resultView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; resultView.hidden = false;
 
   /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
@@ -3568,7 +3724,7 @@ function finishDotsGame(){
 $('dots-back').addEventListener('click', ()=>{
   playClick();
   dotsGame = null;
-  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; homeView.hidden = false;
+  dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -3628,7 +3784,7 @@ function startMixGame(catId){
   }
   mixGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, advanced, queue,
               entry:null, jars:[], pours:[], prefill:null, needed:[], mixedCount:0, locked:false };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = false; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   mixView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('mix-cat-label', cat);
@@ -4072,7 +4228,7 @@ function startMusicGame(catId){
   if(cat.musicMode===2) musicGame.song = MUSIC_LEVEL2_SONGS[Math.floor(Math.random()*MUSIC_LEVEL2_SONGS.length)];
   pauseBgMusicForMusicGame();
   document.body.classList.add('music-open'); // ซ่อนปุ่มมุมล่าง (ติดตั้ง/เปียโน) ไม่ให้ทับคีย์
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = false; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   musicView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('music-cat-label', cat);
@@ -4527,7 +4683,7 @@ function startClockGame(catId){
   lastGameType = 'clock'; lastCatId = catId;
   const cat = catById(catId);
   clockGame = { catId, mode:cat.clockMode, level:1, totalLevels:cat.levels, mistakes:0, h:12, m:0, target:null, startTime:null, offsetH:0, snap:5, used:new Set(), locked:false, drag:null, angles:{hour:0, minute:0} };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = false; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   clockView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('clock-cat-label', cat);
@@ -4543,7 +4699,7 @@ function finishClockGame(){
   const cat = catById(clockGame.catId);
   const mistakes = clockGame.mistakes, totalLevels = clockGame.totalLevels;
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; resultView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; resultView.hidden = false;
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
   const wasUnlocked = prev && prev.unlocked;
@@ -4583,7 +4739,7 @@ $('clock-nudge-plus').addEventListener('click', ()=>clockNudgeMinute(1));
 $('clock-back').addEventListener('click', ()=>{
   playClick();
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
-  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; homeView.hidden = false;
+  clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true; homeView.hidden = false;
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
@@ -4679,7 +4835,7 @@ async function startListenGame(catId){
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
     usedWordIdx: {}   /* แยก Set ตามความยาวคำ (สร้างเมื่อใช้จริง) กันคำซ้ำภายในรอบเดียว */
   };
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
   listenView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('listen-cat-label', cat);
@@ -6143,7 +6299,7 @@ function startARGame(catId){
   document.body.classList.add('ar-open');
   if(isMobileViewport()) document.body.classList.add('ar-mobile-nocam');
   $('ar-camera-toggle').hidden = isMobileViewport(); // มือถือไม่ใช้กล้องเลย ปุ่มนี้จึงไม่มีประโยชน์ ซ่อนไว้
-  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
+  homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = false; memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true; clozeView.hidden = true;
   const cat = catById(catId);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   arView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));

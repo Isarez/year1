@@ -137,7 +137,7 @@
       <div class="cat-grid" id="cat-grid-skill"></div>
     </div>
     <div class="cat-section">
-      <div class="cat-section-title"><img src="assets/icons/section-listen.svg" class="cst-icon" alt=""> เกมฟังคำศัพท์</div>
+      <div class="cat-section-title"><img src="assets/icons/section-listen.svg" class="cst-icon" alt=""> เกมฟังคำและประโยค</div>
       <p class="cat-section-note">🔄 โจทย์สุ่มหลากหลาย เล่นซ้ำได้เรื่อยๆ ไม่มีเบื่อ!</p>
       <div class="cat-grid" id="cat-grid-listen"></div>
     </div>
@@ -683,6 +683,25 @@
       <div class="listen-symbol" id="listen-symbol" hidden></div>
       <div class="listen-slots" id="listen-slots"></div>
       <div class="listen-cards" id="listen-cards"></div>
+    </div>
+  </section>
+
+  <!-- CLOZE VIEW (ฟังประโยค เติมคำในช่องว่าง) -->
+  <section id="cloze-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="cloze-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="cloze-cat-label">ฟังประโยคเติมคำ</div>
+        <div class="progress-track"><div class="progress-fill" id="cloze-progress-fill" style="width:0%"></div></div>
+        <div class="memory-hint-chip" id="cloze-hint">🎧 กดฟังประโยค แล้วเลือกคำมาเติมในช่องว่างนะ!</div>
+      </div>
+      <div class="q-counter" id="cloze-level-counter">1/10</div>
+    </div>
+    <div class="cloze-board">
+      <button class="listen-speak-btn" id="cloze-speak-btn">🔊 ฟังประโยค</button>
+      <div class="cloze-emoji" id="cloze-emoji"></div>
+      <div class="cloze-sentence" id="cloze-sentence"></div>
+      <div class="cloze-cards" id="cloze-cards"></div>
     </div>
   </section>
 
