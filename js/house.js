@@ -87,7 +87,7 @@ const TREES = sList([[3,11],[1,12],[3,17],[12,2],[9,15],[12,5],[13,12],[14,2],[6
                [14,9],[2,15],[10,13],[15,6],[5,19],[13,17],[11,18],[15,16]]);
 const FLOWERS = sList([[8,5],[10,9],[2,10],[15,4],[6,16],[11,3],[12,16],[4,7],[1,18],[14,19],[18,14],[18,7],
                  [29,16],[38,16],[29,21],[38,21],[21,17],[27,7],[43,8],[52,18],[52,23],[22,25],
-                 [33,28],[44,29],[22,36],[37,34],[19,38],[47,39]]).concat([
+                 [34,28],[44,29],[22,36],[37,34],[19,38],[47,39]]).concat([
                  /* ดอกไม้แถบชุมชนที่ 2 + สวนท้ายชุมชน (พิกัดใหม่ ไม่ต้องเลื่อน) */
                  [10,56],[13,55],[21,57],[5,55],[18,57],[8,42],[15,42],[3,39]].map(p=>[p[0], p[1]+EPAD2]));
 
@@ -139,7 +139,8 @@ const VILLAGE_ROADS = [
    ต่อกับทางเดินดินหน้าบ้าน (HOME_TRAIL) ตรงหัวสะพานใต้ → เด็กเดินจากบ้านมาถึงได้เลย
    พิกัดชุดนี้เป็นพิกัดใหม่ (ไม่ต้อง sRect เลื่อน เพราะเป็นพื้นที่ที่เพิ่งเปิดตอนขยายแผนที่) */
 const VILLAGE2_ROADS = [
-  {x0:1,  x1:27, z0:47, z1:48},   /* ถนนใหญ่ของชุมชน วิ่งจากขอบแผนที่ทิศเหนือมาจบริมคลองใหญ่ */
+  {x0:1,  x1:21, z0:47, z1:48},   /* ถนนใหญ่ของชุมชน วิ่งจากขอบแผนที่ทิศเหนือมาจบที่ถนนแยกริมคลอง
+                                     (เดิมยาวถึง x27 = ถนนหลังโรงเรียน เอาออกแล้ว เขตโรงเรียนจะได้เป็นผืนเดียว) */
   {x0:6,  x1:7,  z0:44, z1:54},   /* ถนนแยกฝั่งตะวันตกเฉียงเหนือ (จบที่ถนนล่าง ไม่ยื่นเข้าสวน) */
   {x0:20, x1:21, z0:44, z1:54},   /* ถนนแยกฝั่งริมคลอง (ต่อจากทางเดินดินหน้าสะพานใต้) */
   {x0:1,  x1:27, z0:53, z1:54},   /* ถนนล่าง (หน้าโรงเรียน) */
@@ -156,9 +157,13 @@ const VILLAGE_LOTS = [
   {id:'shop-ice',     kind:'shop', shopKind:'ice',    name:'ร้านไอศกรีม',  icon:'🍦', wall:0xfff6c9, roof:0xffc857, x0:20, x1:23, z0:12, z1:14},
   {id:'shop-flower',  kind:'shop', shopKind:'flower', name:'ร้านดอกไม้',   icon:'💐', wall:0xf0e4ff, roof:0xb388ff, x0:46, x1:49, z0:12, z1:14},
   {id:'home-1',       kind:'home', style:'gable',     name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xfff2dc, roof:0xe36f5c, x0:20, x1:23, z0:20, z1:22},
-  {id:'home-2',       kind:'home', style:'hip',       name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xdff1fb, roof:0x7f9fd6, x0:20, x1:23, z0:30, z1:32},
-  {id:'home-3',       kind:'home', style:'two',       name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xffe6f0, roof:0xe8759b, x0:29, x1:32, z0:30, z1:32},
-  {id:'home-4',       kind:'home', style:'dormer',    name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xe4f7dd, roof:0x5aa06a, x0:36, x1:39, z0:30, z1:32},
+  /* บ้านหลังใหญ่ของท่านเทศมนตรี (เดิม home-2 บ้านฟ้าหลังเล็ก) — ล็อตกว้างขึ้นเป็น 5×4 ให้สมฐานะ */
+  {id:'mayor-house',  kind:'mayor', name:'บ้านท่านเทศมนตรี', icon:'🏛️', desc:'บ้านหลังใหญ่ที่สุดในชุมชน มีเสาสูงกับหอนาฬิกาด้วย',
+   wall:0xfff6ea, roof:0x6f86c9, x0:19, x1:23, z0:29, z1:32},
+  /* โรงแรมของชุมชน (เดิม home-3 บ้านหลังคาชมพู) — ตึก 3 ชั้น ล็อต 5×4 */
+  {id:'hotel',        kind:'hotel', name:'โรงแรมของชุมชน', icon:'🏨', desc:'โรงแรมสำหรับแขกที่มาเที่ยวชุมชนเรา มีสระว่ายน้ำอยู่ข้างๆ ด้วย',
+   wall:0xfff2dc, roof:0xe8759b, x0:28, x1:32, z0:29, z1:32},
+  /* (home-4 บ้านหลังคาเขียวเดิม เอาออกแล้ว พื้นที่ตรงนั้นกลายเป็นสระว่ายน้ำของโรงแรม — ดู POOL) */
   {id:'home-5',       kind:'home', style:'hip',       name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xfff6c9, roof:0xe0a53c, x0:46, x1:49, z0:20, z1:22},
   {id:'home-6',       kind:'home', style:'two',       name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xf0e4ff, roof:0x9a72d8, x0:46, x1:49, z0:30, z1:32},
 ].map(sRect).concat([
@@ -174,13 +179,16 @@ const VILLAGE_LOTS = [
   {id:'w-shop-veg',  kind:'shop', shopKind:'veg',     name:'ร้านผัก',       icon:'🥕', wall:0xe4f7dd, roof:0x6fbf73, x0:1,  x1:4,  z0:50, z1:52},
   {id:'w-home-4',    kind:'home', style:'two',        name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xf0e4ff, roof:0x9a72d8, x0:9,  x1:12, z0:50, z1:52},
   {id:'w-home-5',    kind:'home', style:'hip',        name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xfff2dc, roof:0xe36f5c, x0:15, x1:18, z0:50, z1:52},
-  {id:'school',      kind:'school', name:'โรงเรียน',   icon:'🏫', wall:0xfff2dc, roof:0xef5f5f, x0:23, x1:26, z0:49, z1:52},
+  {id:'school',      kind:'school', name:'โรงเรียน',   icon:'🏫', wall:0xfff2dc, roof:0xef5f5f, x0:23, x1:26, z0:45, z1:48},   /* ตัวอาคารอยู่แถว z55-58 (หน้าโรงเรียนเป็นลาน z59-62) */
 ].map(s2Rect)).concat([
   /* เฟส 7 (แถบใหม่ทิศตะวันออก z 0-9 + ริมบ่อน้ำ) — พิกัดใหม่ เขียนตรงๆ ไม่ต้องเลื่อน */
   /* กระท่อมริมบ่อ: ย้ายไปชิดขอบแผนที่ด้านบน (ทิศเหนือสุด x0-3) ริมชายบ่อฝั่งตะวันตก
      ท่าไม้+คนตกปลายังอยู่ชายบ่อฝั่งตะวันออก (x9-11) ตามเดิม — คนละมุมบ่อ หลังคาจึงไม่บังกัน */
   {id:'pond-hut',     kind:'hut',  name:'กระท่อมริมบ่อ', icon:'🎣', wall:0xcf9f68, roof:0x8d6e63, x0:0, x1:3, z0:24, z1:26},
   {id:'farm-cowshed', kind:'barn', name:'โรงเลี้ยงวัว',  icon:'🐮', wall:0xf6e3cc, roof:0xc4573f, x0:13, x1:16, z0:1,  z1:3},
+  /* กระท่อมช่างไม้: ป่าทิศเหนือ เหนือบ้านเด็กขึ้นไป (x4-7 / z29-31) — ตัวกระท่อมเป็นซุงซ้อนชั้น มีเพิงช่างไม้เปิดโล่งด้านหน้า
+     รอบๆ เป็นลานโล่งกลางป่า มีตอไม้/กองซุง/ไม้แปรรูป (CARPENTER_PROPS) ให้ดูเหมือนที่ทำงานของช่างไม้จริง */
+  {id:'carpenter-hut', kind:'carpenter', name:'กระท่อมช่างไม้', icon:'🪚', wall:0xe8c79a, roof:0x7fb98c, x0:1, x1:4, z0:40, z1:42},
   /* บ้านชาวประมง: บ้านไม้ทิศตะวันออกเฉียงใต้ หลังร้านหนังสือ (หลังคาฟ้า) ริมถนนที่ลงไปชายหาด
      ด้านหลังบ้าน (ฝั่งทะเล) มีราวตากปลา FISH_RACKS */
   {id:'fisher-home',  kind:'hut',  name:'บ้านชาวประมง', icon:'🐟', wall:0xdcb888, roof:0x7d5a46, x0:49, x1:52, z0:23, z1:25},
@@ -339,7 +347,7 @@ const BENCH_SPOTS = [
   [39,31,3],[39,44,3],[39,51,3],                 /* ริมถนนใหญ่ชุมชนแรก (ฝั่งเหนือ) */
   [55,26,3],[55,39,3],[55,54,3],                 /* ริมถนนใหญ่ชุมชนแรก (ฝั่งใต้) */
   [41,44,1],[50,44,3],                           /* ริมลานน้ำพุกลางชุมชน */
-  [24,56,0],[27,56,0],                           /* ชุมชนที่ 2 ฝั่งตะวันตกเฉียงเหนือ */
+  /* (เดิมมีม้านั่ง 24,56 / 27,56 ตรงนี้ — อยู่ในเขตโรงเรียน x22-27 z54-62 เอาออกแล้ว) */
   [4,65,2],[12,65,2],[22,65,2],                  /* สวนท้ายชุมชนที่ 2 */
   [36,21,3],[36,24,3],[36,27,3],                 /* ลานกิจกรรม: แถวหน้าเวที (หันเข้าเวที = -x) */
   [38,21,3],[38,24,3],[38,27,3],                 /* ลานกิจกรรม: แถวหลัง */
@@ -349,9 +357,92 @@ const BENCH_SPOTS = [
 /* รถเข็นขายของ: [x, z, rot, ชนิด] — fruit ผลไม้, ice ไอศกรีม, noodle ก๋วยเตี๋ยว, balloon ลูกโป่ง */
 const CART_SPOTS = [
   [39,29,3,'fruit'], [39,38,3,'noodle'], [55,33,3,'ice'],
-  [22,56,0,'noodle'], [18,47,1,'balloon'],
+  [18,47,1,'balloon'],                                       /* (รถเข็น 22,56 เอาออก อยู่ในเขตโรงเรียน) */
   [34,27,0,'fruit'], [40,25,3,'ice'], [32,20,2,'balloon'],   /* ในลานกิจกรรม (เลี่ยงแนวถนน x37-38) */
 ];
+
+/* ---------- เขตโรงเรียน (ชุมชนที่ 2) ----------
+   ล้อมรั้วรอบ box x22-27 / z54-62 (ตัวอาคารอยู่แถว z55-58 หน้าโรงเรียน z59-62 เป็นลานปูหิน)
+   เว้น "ประตูโรงเรียน" 2 ช่องหน้าอาคาร (ตรงกับถนนล่าง z63) ให้เด็กเดินเข้าไปได้ มีซุ้มประตูคร่อมไว้
+   เสาธงอยู่กลางลานหน้าอาคาร (บล็อกช่องตัวเอง) ครูเดินไปมาอยู่ในรั้วนี้ */
+const SCHOOL_BOX  = {x0:22, x1:27, z0:54, z1:62};
+const SCHOOL_LOT  = {x0:23, x1:26, z0:55, z1:58};   /* ช่องที่ตัวอาคารทับ (ตรงกับล็อต id:'school') */
+const SCHOOL_GATE = [[25,62],[26,62]];              /* ประตูรั้ว (เดินผ่านได้) */
+const SCHOOL_FLAG = {x:24, z:61};                   /* เสาธงกลางลานหน้าโรงเรียน */
+function inSchoolYard(x, z){                        /* ในรั้วโรงเรียนแต่ไม่ใช่ตัวอาคาร = ลาน */
+  return inBox(SCHOOL_BOX, x, z) && !inBox(SCHOOL_LOT, x, z);
+}
+function isSchoolFenceTile(x, z){
+  if(!inBox(SCHOOL_BOX, x, z)) return false;
+  const edge = (x===SCHOOL_BOX.x0 || x===SCHOOL_BOX.x1 || z===SCHOOL_BOX.z0 || z===SCHOOL_BOX.z1);
+  return edge && !SCHOOL_GATE.some(gt => gt[0]===x && gt[1]===z);
+}
+
+/* ---------- ลานช่างไม้ (ป่าทิศเหนือ เหนือบ้านเด็ก) ----------
+   ของในลานรอบกระท่อมช่างไม้: [x, z, ชนิด] บล็อกช่องตัวเองเหมือนม้านั่ง/รถเข็น (เด็กเดินอ้อมได้)
+   เว้นช่องหน้าประตู (6,32) กับกลางลานไว้ ให้เดินเข้าไปคุยกับลุงช่างไม้ได้สบาย
+   ลานไม้ (CARPENTER_YARD) เป็นพื้นตกแต่งเฉยๆ ไม่บล็อกทางเดิน */
+const CARPENTER_PROPS = [
+  [5,40,'sawhorse'], [5,42,'planks'],  [5,45,'stump'],
+  [0,44,'chop'],     [6,44,'logs'],    [0,46,'logs'],
+];
+const CARPENTER_YARD = {x0:1, x1:4, z0:43, z1:44};   /* พื้นไม้หน้ากระท่อม (ตกแต่ง ไม่บล็อก) */
+/* กรอบเดินเล่นของลุงช่างไม้กับป้ามะลิ = ล็อตกระท่อม (x1-4 / z40-42) ขยายออกทุกทิศ 7 ช่อง
+   (ตัดที่ขอบแผนที่ x0) — สองคนนี้เดินวนอยู่แถวบ้านตัวเอง ไม่เดินไปไกลทั่วเมืองเหมือน npc-walk */
+const CARPENTER_ROAM = {x0:0, x1:11, z0:33, z1:49};
+
+/* ---------- แปลงดอกไม้หน้าลานกิจกรรม ----------
+   ทุ่งหญ้าโล่งหน้าลาน (นอกขอบลานฝั่ง x41 ขึ้นไป) — จัดเป็นกระบะดอกไม้ 2×2 ช่อง 4 แปลง เรียงเป็นตาราง
+   เว้นช่องเดินคั่นระหว่างแปลงทุกด้าน (x45 / z23-24) เดินลอดเข้าออกลานได้สบาย
+   บล็อกทางเดินเหมือนม้านั่ง/รถเข็น (เด็กเดินอ้อมได้ ไม่เหยียบดอกไม้) */
+const FLOWER_BEDS = [
+  {x0:43, x1:44, z0:21, z1:22}, {x0:46, x1:47, z0:21, z1:22},
+  {x0:43, x1:44, z0:25, z1:26}, {x0:46, x1:47, z0:25, z1:26},
+];
+/* ---------- ทุ่งดอกไม้ใหญ่ (ทิศตะวันตกเฉียงใต้ หน้าบ้านหลังคาชมพู home-3 / เขียว home-4) ----------
+   ที่ว่างระหว่างปลายทางเดิน 2 เส้น (ถนน x37-38 กับ x53-54) หน้าบ้าน 2 หลังนั้นพอดี
+   ดอกไม้ในทุ่งเป็น **ของตกแต่งบนพื้น ไม่บล็อกทางเดิน** (เด็กเดินลุยทุ่งได้ เหมือนดอกไม้ป่าทั่วแผนที่)
+   แถว z = FLOWER_FIELD_PATH เป็นทางเดินดินกลางทุ่ง เชื่อมทางเดิน 2 ฝั่งเข้าหากัน มีซุ้มดอกไม้คร่อมหัวท้าย
+   ช่องไหนมีต้นไม้/พุ่มอยู่แล้วจะข้ามไปเอง (เช็ค outGrid ตอนสร้างฉาก) ทุ่งจึงแทรกไปตามที่ว่างจริง */
+const FLOWER_FIELD = {x0:39, x1:52, z0:59, z1:63};
+const FLOWER_FIELD_PATH = 61;
+/* สีดอกไล่เป็นแถบตามแถว z (แถบชมพู / เหลือง / ม่วง / ส้ม) ให้ดูเป็นทุ่งดอกไม้ที่จัดไว้ ไม่ใช่ดอกป่ากระจัดกระจาย */
+const FIELD_ROW_COLORS = [[0xff8fb3,0xffc1d6], [0xffd54f,0xffe9a8], [0xb388ff,0xd9c4ff], [0xff8a65,0xffc2ab]];
+/* ---------- ทุ่งดอกไม้ผืนใหญ่ริมขอบแผนที่ทิศใต้ (x30-67 / z62-67) ----------
+   ผืนนี้กินพื้นที่ว่างท้ายชุมชนทั้งแถบ ดอกไม้เบาบางกว่าทุ่งหน้าโรงแรมนิดหน่อย (ผืนใหญ่มาก ต้องคุมจำนวนชิ้น)
+   ถนน 2 เส้นที่มาจบที่ z63 ต่อเป็น "ทางเดินดิน" ลงไปจนสุดขอบแผนที่ ให้เดินทะลุทุ่งได้ไม่ตัน */
+const FLOWER_MEADOW = {x0:30, x1:67, z0:62, z1:67};
+const MEADOW_TRAILS = [{x0:37, x1:38, z0:64, z1:67}, {x0:53, x1:54, z0:64, z1:67}];
+function inMeadowTrail(x, z){
+  return MEADOW_TRAILS.some(t => x>=t.x0 && x<=t.x1 && z>=t.z0 && z<=t.z1);
+}
+
+/* ---------- สระว่ายน้ำของโรงแรม (พื้นที่บ้านหลังคาเขียวเดิม) ----------
+   POOL = ผิวน้ำ (บล็อกทางเดิน) / POOL_DECK = ลานกระเบื้องรอบสระ (เดินได้ แค่เปลี่ยนพื้น)
+   ของบนลาน (เตียงอาบแดด/ร่ม/ห่วงยาง/ต้นไม้กระถาง) บล็อกช่องตัวเองเหมือนของฉากอื่น */
+const POOL = {x0:48, x1:51, z0:56, z1:58};
+const POOL_DECK = {x0:47, x1:52, z0:55, z1:59};
+const POOL_PROPS = [
+  [47,55,'palm'], [52,55,'umbrella'], [47,59,'chair'], [49,59,'chair'], [51,59,'chair'], [52,59,'ring'],
+];
+function inPool(x, z){ return x>=POOL.x0 && x<=POOL.x1 && z>=POOL.z0 && z<=POOL.z1; }
+function inPoolDeck(x, z){ return x>=POOL_DECK.x0 && x<=POOL_DECK.x1 && z>=POOL_DECK.z0 && z<=POOL_DECK.z1; }
+
+/* ---------- สวนดอกไม้รอบน้ำพุกลางลาน ----------
+   ลานเดิมเป็นพื้นหินโล่งทั้งผืน เปลี่ยนเป็น "สวน 4 แปลง" คั่นด้วยทางเดินรูปกากบาท
+   → เดินเข้าไปหาน้ำพุได้ 4 ทิศ (เหนือ/ใต้/ออก/ตก) ส่วนแปลงดอกไม้บล็อกทางเดินเหมือนแปลงดอกไม้อื่นในแอป
+   เว้นขอบลาน 1 ช่องรอบนอกไว้เป็นหิน (กระดานภารกิจ/ม้านั่ง/เสาไฟ ริมลานจะได้ไม่ทับแปลง) */
+const FOUNTAIN_GARDEN = [
+  {x0:43, x1:44, z0:41, z1:42}, {x0:47, x1:48, z0:41, z1:42},
+  {x0:43, x1:44, z0:45, z1:47}, {x0:47, x1:48, z0:45, z1:47},
+];
+function inFountainGarden(x, z){
+  return FOUNTAIN_GARDEN.some(b => x>=b.x0 && x<=b.x1 && z>=b.z0 && z<=b.z1);
+}
+
+function inFlowerBed(x, z){
+  return FLOWER_BEDS.some(b => x>=b.x0 && x<=b.x1 && z>=b.z0 && z<=b.z1);
+}
 
 /* ---------- ชาวบ้าน (NPC) + กระดานภารกิจ (เฟส 8) ----------
    job: 'vendor' = พ่อค้า/แม่ค้า — **ยืนประจำอยู่หน้าร้านเสมอ เด็กไม่ต้องเข้าไปในร้าน**
@@ -360,6 +451,7 @@ const CART_SPOTS = [
      - `lot` + `side` → คิดช่องจาก "ข้างประตูร้าน" ให้อัตโนมัติ (side -1 = ฝั่งทิศเหนือ, +1 = ทิศใต้)
      - `x`,`z` ตรงๆ → ใช้กับร้านที่ช่องหน้าประตูเป็นถนนพอดี (ชุมชนที่ 2) จะได้ไม่ไปยืนขวางถนน
    `roam` = เดินไปมาในกรอบที่กำหนด (คนกลุ่มนี้ **ไม่บล็อกช่อง** เพราะขยับตลอด)
+            `roam:{town:true}` = ไม่จำกัดกรอบ เดินไปได้ทั่วเมือง (สุ่มปลายทางจากช่องถนน/ลานทั้งแผนที่ แล้วหาทางเดินจริงไป)
             คนที่ไม่มี roam ยืนประจำที่และบล็อกช่องตัวเอง (เด็กเดินทะลุตัวคนไม่ได้)
    `look` = หน้าตา/ชุด (ดู buildVillager) — geometry ของทุกคนถูก merge เหลือคนละ 1 draw call
    `lines` = บทพูดตอนเด็กเดินมาคุย (สุ่มไล่ทีละบรรทัด)
@@ -421,7 +513,8 @@ const NPC_DEFS = [
    look:{girl:true, skin:0, shirt:0xffd54f, pants:0xf28cae, hair:2, hairC:0, hat:null, prop:'ball', kid:true},
    lines:['มาวิ่งเล่นด้วยกันไหม!', 'เราชอบมาเล่นที่ลานน้ำพุที่สุดเลย'],
    quest:'มาแข่งเกมกับเราไหม'},
-  {id:'npc-teacher', name:'ครูอ้อย',    icon:'🏫', job:'teacher', x:22, z:62, rot:0,
+  {id:'npc-teacher', name:'ครูอ้อย',    icon:'🏫', job:'teacher', x:24, z:60, rot:0,
+   roam:{x0:22, x1:27, z0:54, z1:62},                      /* เดินไปมาอยู่ในรั้วโรงเรียนเท่านั้น */
    look:{girl:true, skin:1, shirt:0xef5f5f, pants:0xf7f3ee, hair:3, hairC:0, hat:null, prop:'book', glasses:true},
    lines:['สวัสดีจ้ะ วันนี้มาเที่ยวโรงเรียนเหรอ', 'ตั้งใจเรียนนะ เดี๋ยวเก่งขึ้นเยอะเลย'],
    quest:'มาทำแบบฝึกหัดกับครูไหมจ๊ะ'},
@@ -437,10 +530,18 @@ const NPC_DEFS = [
    look:{skin:3, shirt:0x5aa9e6, pants:0x4a6fa5, hair:4, hairC:1, hat:'straw', prop:'fish'},
    lines:['วันนี้ได้ปลามาเยอะเลย ตากไว้ข้างหลังนั่นแหละ', 'เรือลุงจอดอยู่กลางทะเลโน่น เห็นไหม'],
    quest:'ช่วยลุงนับปลาบนราวตากหน่อยได้ไหม'},
-  {id:'npc-hut',     name:'ป้าริมบ่อ',   icon:'🎣', job:'villager', x:1, z:37, rot:0,
+  /* ลุงช่างไม้ + ป้ามะลิ (แฟนของลุง) อยู่กระท่อมช่างไม้ในป่าทิศเหนือ เดินเล่นรอบๆ บ้านตัวเอง
+     กรอบ CARPENTER_ROAM = ห่างจากตัวกระท่อมได้ไกลสุด 7 ช่องทุกทิศ (ไม่เดินหลุดเข้าไปในเขตบ้านเด็ก) */
+  {id:'npc-carpenter', name:'ลุงช่างไม้', icon:'🪚', job:'carpenter', lot:'carpenter-hut', side:1,
+   roam:CARPENTER_ROAM,
+   look:{skin:2, shirt:0xef8354, pants:0x8d6e63, hair:0, hairC:1, hat:'cap', prop:'saw'},
+   lines:['ลุงกำลังเลื่อยไม้ทำเก้าอี้ตัวใหม่อยู่เลย', 'ไม้ในป่านี้หอมมากนะ เอามาทำของเล่นก็สวย'],
+   quest:'มาช่วยลุงเรียงไม้ให้เป็นกองหน่อยได้ไหม'},
+  {id:'npc-hut',     name:'ป้ามะลิ',    icon:'🪑', job:'villager', lot:'carpenter-hut', side:-1,
+   roam:CARPENTER_ROAM,
    look:{girl:true, skin:1, shirt:0x6fbf73, pants:0x8d6e63, hair:1, hairC:2, hat:null, prop:'bucket'},
-   lines:['บ่อน้ำนี้มีปลาเยอะมากเลยจ้ะ', 'ลุงตกปลานั่งอยู่ปลายท่าโน่น ไปทักทายได้นะ'],
-   quest:'มาช่วยป้าให้อาหารเป็ดไหมจ๊ะ'},
+   lines:['ป้าเป็นแฟนของลุงช่างไม้จ้ะ อยู่กระท่อมไม้หลังนั้นเอง', 'ลุงเลื่อยไม้เสร็จ ป้าก็ทาสีให้สวยๆ ต่อจ้ะ'],
+   quest:'มาช่วยป้าเลือกสีทาเก้าอี้ไหมจ๊ะ'},
   {id:'npc-beach',   name:'พี่ชายหาด',  icon:'🏖️', job:'villager', x:44, z:16, rot:0,
    look:{skin:2, shirt:0x7fc4e8, pants:0xffd54f, hair:0, hairC:0, hat:'cap', prop:'ball'},
    lines:['ทะเลวันนี้ใสมากเลย!', 'นั่งเก้าอี้ผ้าใบใต้ร่มก็สบายนะ ลองดูสิ'],
@@ -451,19 +552,19 @@ const NPC_DEFS = [
    quest:'มาเล่นโน้ตดนตรีตามพี่ไหม'},
   /* --- ชาวบ้านที่เดินไปมา (ไม่บล็อกช่อง) ให้หมู่บ้านดูคึกคัก --- */
   {id:'npc-walk1', name:'พี่นักวิ่ง', icon:'🏃', job:'villager', x:48, z:35, rot:0,
-   roam:{x0:44, x1:52, z0:35, z1:36},
+   roam:{town:true},                                      /* เดินได้ทั่วเมือง */
    look:{skin:1, shirt:0xffd54f, pants:0xe36f5c, hair:0, hairC:0, hat:null, prop:null},
    lines:['วิ่งออกกำลังกายทุกเช้าเลย!', 'ถนนเส้นนี้ไปถึงชายหาดได้นะ']},
   {id:'npc-walk2', name:'น้องบีม',   icon:'🧒', job:'kid', x:44, z:47, rot:0,
-   roam:{x0:42, x1:49, z0:45, z1:48},
+   roam:{town:true},                                      /* เดินได้ทั่วเมือง */
    look:{skin:0, shirt:0x6fbf73, pants:0x5aa9e6, hair:0, hairC:1, hat:null, prop:'balloon', kid:true},
    lines:['ลูกโป่งของเราสวยไหม!', 'เดี๋ยวเราจะไปเล่นที่ลานน้ำพุ ไปด้วยกันไหม']},
   {id:'npc-walk3', name:'ลุงเดินเล่น', icon:'🚶', job:'villager', x:37, z:26, rot:0,
-   roam:{x0:34, x1:40, z0:19, z1:28},
+   roam:{town:true},                                      /* เดินได้ทั่วเมือง */
    look:{skin:3, shirt:0x7f9fd6, pants:0x6d4c41, hair:4, hairC:1, hat:'straw', prop:null},
    lines:['ลานนี้ลมเย็นสบายจริงๆ', 'เดินเล่นตอนเย็นดีต่อสุขภาพนะ']},
   {id:'npc-walk4', name:'พี่ส่งของ', icon:'📦', job:'villager', x:16, z:57, rot:0,
-   roam:{x0:10, x1:24, z0:57, z1:58},
+   roam:{town:true},                                      /* เดินได้ทั่วเมือง */
    look:{skin:2, shirt:0xef8354, pants:0x4a6fa5, hair:0, hairC:0, hat:'cap', prop:'box'},
    lines:['พี่กำลังไปส่งของที่ร้านนมพอดี', 'หมู่บ้านนี้คนใจดีทุกคนเลยนะ']},
   /* --- คนเดินทางไกล: เดินตามเส้นทางจริงจากที่หนึ่งไปอีกที่หนึ่งทั่วเมือง (route = จุดแวะเรียงลำดับ วนซ้ำ)
@@ -473,7 +574,7 @@ const NPC_DEFS = [
    look:{skin:1, shirt:0x5aa9e6, pants:0x4a6fa5, hair:0, hairC:0, hat:'cap', prop:'box'},
    lines:['พี่เดินส่งจดหมายรอบหมู่บ้านทุกวันเลย', 'ถ้าอยากส่งจดหมายหาใคร บอกพี่ได้นะ']},
   {id:'npc-student', name:'น้องปอ', icon:'🎒', job:'kid',
-   route:[[21,60],[21,57],[7,57],[7,62]],
+   route:[[25,63],[21,60],[21,57],[7,57],[7,62]],   /* แวะหน้าประตูโรงเรียนก่อนวนกลับเข้าหมู่บ้าน */
    look:{skin:0, shirt:0xf7f3ee, pants:0x4a6fa5, hair:1, hairC:0, hat:null, prop:'book', kid:true},
    lines:['เรากำลังเดินไปโรงเรียนพอดีเลย', 'วันนี้ครูจะสอนอ่านคำใหม่ด้วยนะ']},
   {id:'npc-shopper', name:'ป้าจ่ายตลาด', icon:'🧺', job:'villager',
@@ -540,12 +641,17 @@ const NPC_TILES = NPCS.filter(n => !n.roam && !n.route).map(n => [n.x, n.z]);
    ถึงคนกลุ่ม roam จะไม่บล็อกช่อง แต่ก็ไม่ควรมีต้นไม้งอกกลางร้าน/กลางฟาร์มที่เขาเดินอยู่ */
 const NPC_STAND = NPCS.filter(n => !n.route).map(n => [n.x, n.z]);
 /* กระดานภารกิจประจำวัน — ตั้งข้างน้ำพุกลางหมู่บ้าน (บล็อกช่องตัวเอง) */
-const QUEST_BOARD = {x:47, z:42, rot:0};
+const QUEST_BOARD = {x:48, z:40, rot:0, w:2};   /* กระดานกว้าง ~2 ช่อง จองช่อง x48-49 (ตัวกระดานวางกึ่งกลางระหว่างสองช่อง) */
 
+function isQuestBoardTile(x, z){
+  return z===QUEST_BOARD.z && x>=QUEST_BOARD.x && x<QUEST_BOARD.x + (QUEST_BOARD.w||1);
+}
 function isSceneryPropTile(x, z){
   const hit = a => a.some(p => p[0]===x && p[1]===z);
   return hit(BENCH_SPOTS) || hit(CART_SPOTS) || hit(FARM_PROPS) || hit(BANNER_POLES) || hit(FISH_RACKS)
-      || hit(NPC_STAND) || (x===QUEST_BOARD.x && z===QUEST_BOARD.z)
+      || hit(NPC_STAND) || isQuestBoardTile(x, z) || inFlowerBed(x, z) || hit(CARPENTER_PROPS)
+      || inFountainGarden(x, z) || inPool(x, z) || hit(POOL_PROPS)
+      || (x===SCHOOL_FLAG.x && z===SCHOOL_FLAG.z) || isSchoolFenceTile(x, z)
       || (x>=STAGE.x0 && x<=STAGE.x1 && z>=STAGE.z0 && z<=STAGE.z1);
 }
 
@@ -982,6 +1088,11 @@ function isVillageRoadTile(x, z){
   return VILLAGE_ROADS.some(r => inBox(r, x, z));
 }
 /* ใกล้ถนน/ลานกี่ช่อง — ของสูง (ต้นไม้/มะพร้าว) ต้องเว้นระยะ ไม่ให้พุ่มใบยื่นคลุมถนนหรือบังอาคาร */
+function nearRoadTile(x, z, m){
+  for(let dz=-m; dz<=m; dz++) for(let dx=-m; dx<=m; dx++)
+    if(isVillageRoadTile(x+dx, z+dz)) return true;
+  return false;
+}
 function nearRoadOrPlaza(x, z, m){
   for(let dz=-m; dz<=m; dz++) for(let dx=-m; dx<=m; dx++)
     if(isVillageRoadTile(x+dx, z+dz) || isPlazaTile(x+dx, z+dz)) return true;
@@ -989,6 +1100,7 @@ function nearRoadOrPlaza(x, z, m){
 }
 function isPlazaTile(x, z){
   if(inBox(PLAZA2, x, z)) return true;                     /* ลานกิจกรรมริมทางไปชายหาด */
+  if(inSchoolYard(x, z)) return true;                      /* ลานหน้าโรงเรียน (พื้นในรั้ว รอบตัวอาคาร) */
   return inBox(PLAZA, x, z) && !inBox(FOUNTAIN, x, z);
 }
 /* ---------- ใบไม้ "ล้ำ" ทับถนนบนจอ (เรื่องมุมกล้อง ไม่ใช่เรื่องช่องกริด) ----------
@@ -1016,7 +1128,8 @@ function lotAt(x, z, margin){
    tall = ของสูงพุ่มกว้าง (ต้นไม้/สน) ต้องเว้นระยะรอบด้านจากถนน/ลาน 3 ช่อง จากอาคาร 4 ช่อง (ช่องว่างระหว่างอาคารคือทางเดินลัดของเด็ก)
    และเพิ่มอีกชั้นคือฝั่งที่ใบไม้ล้ำทับบนจอ (canopyOverPath) เพราะเว้นระยะรอบด้านอย่างเดียวไม่พอ:
    ต้นไม้ที่ห่างถนน 3-4 ช่องแต่ยืนอยู่ฝั่ง (+x,+z) ใบยังคลุมถนนบนจอ เห็นเหมือนต้นไม้ขวางทางอยู่ดี */
-function wildPlantable(x, z, tall){
+function wildPlantable(x, z, tall, plazaPad){
+  const pp = (plazaPad == null) ? 2 : plazaPad;   /* ระยะเว้นจากลานกลางชุมชน (ผ่อนเหลือ 0 ได้เฉพาะต้นไม้ประดับ "ริมขอบลาน") */
   if(x<0 || z<0 || x>=OUT_W || z>=OUT_D) return false;
   if(inHomeZone(x, z)) return false;
   if(RIVER_X.includes(x)) return false;
@@ -1026,14 +1139,15 @@ function wildPlantable(x, z, tall){
   if(z===HOME_EDGE_Z) return false;                             /* แถวรอยต่อขอบบริเวณบ้าน เว้นเป็นหญ้าโล่ง */
   if(z===HOME_EDGE_Z+1 && HOME_EXIT_X.includes(x)) return false; /* หน้าทางเดินดินออกจากบ้าน เว้นทางเดิน */
   if(isVillageRoadTile(x, z)) return false;
-  if(inBox(PLAZA, x, z, 2) || inBox(PLAZA2, x, z, 2)) return false;  /* ลานกลางชุมชน/ลานกิจกรรม + ขอบลาน 2 ช่อง */
+  if(inBox(PLAZA, x, z, pp) || inBox(PLAZA2, x, z, pp)) return false;  /* ลานกลางชุมชน/ลานกิจกรรม + ขอบลาน (ปกติ 2 ช่อง) */
   if(penAt(x, z)) return false;                                 /* คอกสัตว์ในฟาร์ม (รวมรั้ว) */
   if(isSceneryPropTile(x, z)) return false;                     /* ม้านั่ง/รถเข็น/ของในฟาร์ม/เวที */
   if(lotAt(x, z, 1)) return false;                              /* ล็อตอาคาร + ขอบล็อต 1 ช่อง (ให้เดินรอบได้) */
+  if(inPoolDeck(x, z)) return false;                            /* ลานรอบสระว่ายน้ำ ปล่อยโล่งให้เดินเล่นได้ */
   if(isBridgeZ(z) && (x<=VILLAGE_X0+1 || x>=RIVER_X[0]-2)) return false;   /* หัว-ท้ายสะพานทั้งสองฝั่ง */
   if(tall && (nearRoadOrPlaza(x, z, 3) || lotAt(x, z, 4))) return false;   /* ของสูงเว้นระยะถนน/ลาน 3 ช่อง, อาคาร 4 ช่อง (ช่องว่างระหว่างอาคารคือทางที่เด็กเดินลัด ต้นไม้ตรงนั้นดูเป็นของขวางทางเสมอ) */
   if(tall && canopyOverPath(x, z)) return false;                /* ใบไม้ล้ำไปทับถนน/ลาน/อาคารบนจอ (มุมกล้อง) */
-  if(nearRoadOrPlaza(x, z, 1)) return false;   /* แม้แต่พุ่มเตี้ย/เห็ด ก็ไม่ให้ชิดขอบถนน-ขอบลาน (มองมุมกล้องแล้วเห็นเป็นของขวางทาง) */
+  if(nearRoadTile(x, z, 1)) return false;      /* แม้แต่พุ่มเตี้ย/เห็ด ก็ไม่ให้ชิดขอบถนน (มองมุมกล้องแล้วเห็นเป็นของขวางทาง — ขอบลานคุมด้วย pp ด้านบนแล้ว) */
   if(tall && inLotFrontStrip(x, z)) return false;               /* ทางเข้าหน้าประตูบ้าน/ร้าน เว้นโล่ง */
   if(FLOWERS.some(f => f[0]===x && f[1]===z)) return false;      /* ช่องที่จองไว้ปลูกดอกไม้ (ไม่งั้นดอกไม้โดนต้นไม้ทับหายไป) */
   return true;
@@ -1065,12 +1179,59 @@ function nearWildWater(x, z, m){
 /* ของฉากตายตัวที่ถือว่า "สูง/พุ่มกว้าง" → ใช้กติกาเว้นระยะจากถนนกับอาคาร (ดู wildPlantable) */
 const WILD_TALL = ['tree', 'tree-round', 'pine'];
 let wildLayoutCache = null;
+/* ช่องที่สั่งถอนต้นไม้ออกถาวร (ผู้ใช้ชี้เองว่าต้นนี้เกะกะ/ไม่สวย) — กันทั้งตอนปลูกและตอนเก็บกวาดคอขวด */
+const WILD_BAN = new Set(['11,19', '3,31', '4,31', '5,31', '7,29', '6,32', '3,35', '4,35', '5,39', '5,40', '8,49', '9,49']);
+/* ---------- ต้นไม้ในชุมชน ----------
+   กติกาป่า (wildPlantable แบบ tall) เว้นถนน 3 ช่อง + อาคาร 4 ช่อง → ในชุมชนแทบไม่เหลือช่องเลย ชุมชนจึงโล่งไม่มีต้นไม้
+   ชุดกติกานี้ผ่อนให้เหลือ ถนน/ลาน 2 ช่อง + อาคาร 2 ช่อง + ใบไม้ล้ำบนจอสั้นลงเหลือ 2 ช่อง
+   แต่ยังคงข้อห้ามสำคัญไว้ครบ: ไม่ทับถนน/ลาน/ล็อต/ของฉาก/ดอกไม้ และไม่ยืนหน้าประตูร้าน (inLotFrontStrip) */
+const VILLAGE_TREE_AREAS = [
+  {x0:VILLAGE_X0, x1:sx(54), z0:sz(2),  z1:sz(38)},    /* ชุมชนข้ามสะพาน */
+  {x0:0, x1:VILLAGE_X0-1, z0:s2z(42), z1:OUT_D-1},     /* ชุมชนที่ 2 ทิศตะวันตก */
+];
+const VILLAGE_CANOPY_LEAN = 2;
+function villageCanopyOverPath(x, z){
+  for(let dz=0; dz<=VILLAGE_CANOPY_LEAN; dz++) for(let dx=0; dx<=VILLAGE_CANOPY_LEAN; dx++){
+    if(!dx && !dz) continue;
+    const px = x-dx, pz = z-dz;
+    if(isVillageRoadTile(px, pz) || isPlazaTile(px, pz) || lotAt(px, pz, 0)) return true;
+  }
+  return false;
+}
+function softPlantable(x, z, plazaPad){
+  if(WILD_BAN.has(x+','+z)) return false;
+  if(!wildPlantable(x, z, false, plazaPad)) return false;  /* ข้อห้ามพื้นฐานทั้งหมด: ห่างถนน ≥2 ช่อง, ห่างอาคาร ≥2 ช่อง, ไม่ทับน้ำ/ของฉาก/ดอกไม้ */
+  if(inLotFrontStrip(x, z)) return false;
+  if(villageCanopyOverPath(x, z)) return false;
+  return true;
+}
+function villagePlantable(x, z){          /* ต้นไม้แทรกตามซอกในชุมชน (เว้นขอบลาน 2 ช่องเหมือนเดิม) */
+  return VILLAGE_TREE_AREAS.some(a => inBox(a, x, z)) && softPlantable(x, z, 2);
+}
+/* ต้นไม้ประดับ "ตามแนวขอบ" — ริมลานน้ำพุ / ริมแม่น้ำ / หลังบ้าน: ผ่อน 2 ข้อจากกติกาชุมชน
+   (1) เว้นระยะขอบลานเหลือ 0 (แตะขอบลานได้ แต่ห้ามยืนบนลาน) (2) ใบไม้ล้ำคลุมหลังคาบ้าน/ขอบลานบนจอได้
+   — แต่ยังห้ามใบล้ำทับ "ถนน" เด็ดขาด และห้ามยืนหน้าประตูร้าน/ชิดถนน/ทับของฉากเหมือนเดิม */
+function edgeCanopyOverRoad(x, z){
+  for(let dz=0; dz<=VILLAGE_CANOPY_LEAN; dz++) for(let dx=0; dx<=VILLAGE_CANOPY_LEAN; dx++){
+    if(!dx && !dz) continue;
+    if(isVillageRoadTile(x-dx, z-dz)) return true;
+  }
+  return false;
+}
+function villageEdgePlantable(x, z){
+  if(WILD_BAN.has(x+','+z)) return false;
+  if(!wildPlantable(x, z, false, 0)) return false;
+  if(inLotFrontStrip(x, z)) return false;
+  if(edgeCanopyOverRoad(x, z)) return false;
+  return true;
+}
 function wildLayout(){
   if(wildLayoutCache) return wildLayoutCache;
   const list = [], taken = new Set();
-  const put = (id, x, z) => {
+  const put = (id, x, z, gate) => {
     const k = x+','+z;
-    if(taken.has(k) || !wildPlantable(x, z, WILD_TALL.includes(id))) return false;
+    if(taken.has(k) || WILD_BAN.has(k)) return false;
+    if(!(gate ? gate(x, z) : wildPlantable(x, z, WILD_TALL.includes(id)))) return false;
     taken.add(k);
     list.push({id, x, z, rot:(x*7+z*13)%4, col:(x+z)%4});
     return true;
@@ -1107,12 +1268,58 @@ function wildLayout(){
     if(workGrid[z][x] !== 0 || !pinchFillSafe(workGrid, x, z)) continue;   /* ปลูกแล้วต้องยังเดินอ้อมได้ */
     if(put(EXTRA_KINDS[(rnd()*EXTRA_KINDS.length)|0], x, z)) workGrid[z][x] = 3;
   }
+  /* ---- ต้นไม้ในชุมชน: ตามซอกระหว่างบ้าน/มุมลาน/ริมทางที่ยังว่าง ----
+     เว้นระยะกันเองอย่างน้อย 3 ช่อง จะได้ดูเป็นต้นไม้ประดับหมู่บ้าน ไม่ใช่ป่ารกกลางเมือง */
+  const VILLAGE_KINDS = ['tree-round', 'tree-round', 'tree', 'pine'];
+  const farFrom = (x, z, r) => {
+    for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++) if(taken.has((x+dx)+','+(z+dz))) return false;
+    return true;
+  };
+  for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
+    if(rnd() > .92) continue;
+    if(!farFrom(x, z, 1)) continue;
+    if(workGrid[z][x] !== 0 || !pinchFillSafe(workGrid, x, z)) continue;
+    if(put(VILLAGE_KINDS[(rnd()*VILLAGE_KINDS.length)|0], x, z, villagePlantable)) workGrid[z][x] = 3;
+  }
+  /* ---- ต้นไม้ประดับตามแนวขอบ: รอบลานน้ำพุ / ริมแม่น้ำ / หลังบ้าน ----
+     ปลูกวงนอก 2 ชั้นรอบลาน เพราะ relieveWildPinch จะเก็บกวาดต้นที่ทำทางเดินเหลือช่องเดียวออกอีกที
+     ตั้งโอกาสสูงหน่อยได้ ไม่ต้องกลัวรก */
+  const EDGE_KINDS = ['tree-round', 'tree-round', 'tree', 'pine'];
+  const plantEdge = (x, z, sp) => {
+    if(x<0 || z<0 || x>=OUT_W || z>=OUT_D) return false;
+    if(!farFrom(x, z, sp)) return false;
+    if(workGrid[z][x] !== 0 || !pinchFillSafe(workGrid, x, z)) return false;
+    if(!put(EDGE_KINDS[(rnd()*EDGE_KINDS.length)|0], x, z, villageEdgePlantable)) return false;
+    workGrid[z][x] = 3;
+    return true;
+  };
+  /* 1) วงรอบลานน้ำพุ/ลานกิจกรรม (2 ชั้น) */
+  [PLAZA, PLAZA2].forEach(pz => {
+    for(let ring=1; ring<=2; ring++){
+      for(let z=pz.z0-ring; z<=pz.z1+ring; z++) for(let x=pz.x0-ring; x<=pz.x1+ring; x++){
+        if(x>pz.x0-ring && x<pz.x1+ring && z>pz.z0-ring && z<pz.z1+ring) continue;   /* เอาเฉพาะช่องวงนอกสุดของชั้นนั้น */
+        if(rnd() > .8) continue;
+        plantEdge(x, z, 1);
+      }
+    }
+  });
+  /* 2) ริมแม่น้ำสองฝั่ง */
+  const bankXs = [RIVER_X[0]-1, RIVER_X[0]-2, RIVER_X[RIVER_X.length-1]+1, RIVER_X[RIVER_X.length-1]+2];
+  for(let z=0; z<OUT_D; z++) bankXs.forEach(x => { if(rnd() <= .7) plantEdge(x, z, 1); });
+  /* 3) หลังบ้าน/ข้างบ้านในชุมชน (แนวห่างล็อต 2-3 ช่อง) */
+  VILLAGE_LOTS.forEach(l => {
+    for(let d=2; d<=3; d++){
+      for(let x=l.x0-d; x<=l.x1+d; x++){ if(rnd() <= .7) plantEdge(x, l.z0-d, 1); if(rnd() <= .55) plantEdge(x, l.z1+d, 1); }
+      for(let z=l.z0-d; z<=l.z1+d; z++){ if(rnd() <= .65) plantEdge(l.x0-d, z, 1); if(rnd() <= .65) plantEdge(l.x1+d, z, 1); }
+    }
+  });
   /* หมายเหตุ: เคยโรยพุ่ม/เห็ดสุ่มไว้ริมถนนให้ทางไม่โล่งเกินไป แต่พอกติกาใหม่ห้ามของฉากชิดถนนทุกชนิด
      พุ่มพวกนี้ไปกองรวมกันเป็นแถวตรงแนวเดียว ดูไม่เป็นธรรมชาติ จึงเอาออก
      ริมถนนใช้ดอกไม้ (FLOWERS) ตกแต่งแทน — เตี้ยมาก ไม่บังอะไรเลย */
   /* กันพลาดอีกชั้น: ตัดของสูงทุกชิ้นที่ยังละเมิดกติกาออก (เผื่อ relieveWildPinch/โค้ดใหม่ในอนาคตย้ายของ) */
   wildLayoutCache = relieveWildPinch(list)
-    .filter(r => !WILD_TALL.includes(r.id) || wildPlantable(r.x, r.z, true));
+    .filter(r => !WILD_BAN.has(r.x+','+r.z))
+    .filter(r => !WILD_TALL.includes(r.id) || wildPlantable(r.x, r.z, true) || villageEdgePlantable(r.x, r.z));
   return wildLayoutCache;
 }
 /* ปลูกทับช่องคอขวดได้ไหม: ต้องไม่ตัดขาดทางเดิน — เช็คว่าช่องเดินได้รอบๆ ยังเชื่อมถึงกัน
@@ -1196,6 +1403,7 @@ function toonVertexMat(){
   return toonVCMat;
 }
 function mergeMatKey(mat){
+  if(mat.userData && mat.userData.noMerge) return 'm|' + mat.uuid;   /* วัสดุที่ต้องคุมเองทีหลัง (เช่น โคมเสาไฟ) ห้ามรวมกับก้อน vertex color */
   if(mat.map) return 'tex|' + mat.uuid;                       /* ป้ายอิโมจิ: ใช้ atlas ร่วมกันอยู่แล้ว */
   /* เฉพาะ toon โทนปกติ (ไม่ใช่ softMat ที่ไล่โทนคนละแบบ) → รวมทุกสีด้วย vertex color */
   if(mat.isMeshToonMaterial && !mat.transparent && mat.gradientMap === gradientMap) return 'vc';
@@ -1236,7 +1444,7 @@ function buildMergedMesh(p){
   geo.setIndex(p.n > 65535 ? new THREE.Uint32BufferAttribute(p.idx, 1) : new THREE.Uint16BufferAttribute(p.idx, 1));
   geo.computeBoundingSphere();
   const m = new THREE.Mesh(geo, p.mat);
-  m.castShadow = hShadows && !p.mat.map;      /* ป้ายร้าน (texture โปร่ง) ไม่ต้องทิ้งเงา */
+  m.castShadow = hShadows && !p.mat.map && !p.mat.transparent;   /* ป้ายร้าน (texture โปร่ง) / แสงไฟโปร่งใส ไม่ต้องทิ้งเงา */
   m.receiveShadow = hShadows;
   return m;
 }
@@ -1272,8 +1480,9 @@ function mergeDecorGroup(g){
 
 /* ---------- ป้ายร้านค้า: รวมอิโมจิทุกร้านไว้ใน texture แผ่นเดียว (atlas) ----------
    ป้ายทุกอันจึงใช้วัสดุเดียวกัน → รวม geometry ได้ ไม่กิน draw call เพิ่มร้านละอัน */
-const SIGN_ICONS = [], SIGN_COLS = 4, SIGN_CELL = 128;
+const SIGN_ICONS = [], SIGN_COLS = 5, SIGN_CELL = 128;
 VILLAGE_LOTS.forEach(l=>{ if(l.kind!=='home' && SIGN_ICONS.indexOf(l.icon)<0) SIGN_ICONS.push(l.icon); });
+SIGN_ICONS.push('🌷');                     /* ป้ายทุ่งดอกไม้ (ไม่ได้ผูกกับล็อตไหน แต่ใช้ป้าย atlas เดียวกัน) */
 let signMat = null;
 function signAtlasMat(){
   if(signMat) return signMat;
@@ -1513,6 +1722,9 @@ function buildSchoolBuilding(lot){
 }
 function buildLotBuilding(lot){
   if(lot.kind==='school') return buildSchoolBuilding(lot);
+  if(lot.kind==='carpenter') return buildCarpenterHut(lot);
+  if(lot.kind==='hotel') return buildHotel(lot);
+  if(lot.kind==='mayor') return buildMayorHouse(lot);
   const g = new THREE.Group();
   const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
   const style = lot.style || 'gable';
@@ -1586,6 +1798,265 @@ function buildLotBuilding(lot){
   return g;
 }
 
+
+/* ---------- โรงแรมของชุมชน ----------
+   ตึก 3 ชั้นทรงจั่ว (สันหลังคาทอดตามแกน z เหมือนอาคารอื่น หน้าจั่วจึงหันออกหน้า +z)
+   ชั้นล่าง = ล็อบบี้กระจกใหญ่ + กันสาดทางเข้า + พรมแดง, ชั้น 2-3 = ห้องพักมีระเบียงเรียงเป็นแถว
+   หลังคามีธง 3 ผืนกับป้ายโรงแรม ให้ดูเป็นตึกที่สูงเด่นที่สุดในแถวนั้น */
+function buildHotel(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const bw = w-.5, bd = d-.35, fh = 1.06, bh = fh*3;      /* 3 ชั้น ชั้นละ fh */
+  const body = box(bw, bh, bd, lot.wall); body.position.y = bh/2; body.castShadow = hShadows; g.add(body);
+  const base = box(bw+.12, .34, bd+.12, 0xf0e2cd, .05); base.position.y = .17; g.add(base);
+  [1,2].forEach(f=>{                                     /* คิ้วคั่นชั้น */
+    const bd2 = box(bw+.08, .12, bd+.08, 0xf7c6d8, .04); bd2.position.y = fh*f; g.add(bd2);
+  });
+  addRoofGable(g, bw, bd, bh, lot.roof, lot.wall, .9);
+  const fz = bd/2;
+  /* --- ชั้นล่าง: ประตูกระจก 2 บาน + กระจกล็อบบี้ 2 ฝั่ง --- */
+  const dr = box(1.02, .96, .12, 0xbfe6f5, .04); dr.position.set(0, .48, fz+.03); g.add(dr);
+  const drf = box(1.14, 1.06, .07, 0xc98d4e, .04); drf.position.set(0, .53, fz+.01); g.add(drf);
+  const drs = box(.07, .96, .05, 0xfff6e8, .02); drs.position.set(0, .48, fz+.1); g.add(drs);
+  [-1,1].forEach(sd=>{
+    const gl = box(1.0, .72, .1, 0xbfe6f5, .04); gl.position.set(sd*1.55, .56, fz+.02); g.add(gl);
+    const gf = box(1.12, .84, .05, 0xfff6e8, .03); gf.position.set(sd*1.55, .56, fz); g.add(gf);
+    const aw = box(1.18, .1, .46, lot.roof, .04); aw.position.set(sd*1.55, 1.02, fz+.2); aw.rotation.x = -.2; g.add(aw);
+  });
+  /* กันสาดทางเข้า + เสา 2 ต้น + พรมแดง */
+  const cv = box(1.9, .16, .96, lot.roof, .05); cv.position.set(0, 1.3, fz+.5); g.add(cv);
+  const cvt = box(1.74, .07, .82, 0xfff6e8, .03); cvt.position.set(0, 1.4, fz+.5); g.add(cvt);
+  [-1,1].forEach(sd=>{
+    const ps = cyl(.09, .1, 1.28, 0xfff6e8, 10); ps.position.set(sd*.78, .64, fz+.88); g.add(ps);
+    const pb = cyl(.15, .17, .12, 0xe8dcc8, 10); pb.position.set(sd*.78, .06, fz+.88); g.add(pb);
+  });
+  const rug = box(.94, .06, 1.5, 0xd6465c, .03); rug.position.set(0, .03, fz+.72); g.add(rug);
+  const rugE = box(1.06, .04, 1.62, 0xf0c14b, .02); rugE.position.set(0, .015, fz+.72); g.add(rugE);
+  /* กระถางต้นไม้ 2 ข้างทางเข้า */
+  [-1,1].forEach(sd=>{
+    const pot = cyl(.19, .15, .3, 0xdc8f5a, 10); pot.position.set(sd*1.06, .15, fz+.62); g.add(pot);
+    const bush = sphere(.26, 0x6fbf73, 8); bush.scale.set(1,1.2,1); bush.position.set(sd*1.06, .5, fz+.62); g.add(bush);
+    const fl = sphere(.07, 0xff8fb3, 6); fl.position.set(sd*1.06+.14, .64, fz+.7); g.add(fl);
+  });
+  /* --- ชั้น 2-3: ห้องพักเรียงแถว หน้าต่างบานสูง + ระเบียงลูกกรง --- */
+  [1,2].forEach(f=>{
+    const y = fh*f + .12;
+    [-1.5, 0, 1.5].forEach(px=>{
+      const wd = box(.62, .68, .1, 0xbfe6f5, .04); wd.position.set(px, y+.44, fz+.02); g.add(wd);
+      const wf = box(.74, .8, .05, 0xfff6e8, .03); wf.position.set(px, y+.44, fz); g.add(wf);
+      const sl = box(.8, .07, .34, 0xf3e0c8, .03); sl.position.set(px, y+.06, fz+.15); g.add(sl);
+      const rl = box(.8, .05, .05, 0xfff6e8, .02); rl.position.set(px, y+.36, fz+.3); g.add(rl);
+      for(let k=0;k<4;k++){ const br = box(.045,.3,.045,0xfff6e8,.02); br.position.set(px-.3+k*.2, y+.21, fz+.3); g.add(br); }
+    });
+    [-1,1].forEach(sd=>{                                 /* หน้าต่างด้านข้างตึก */
+      const sw = box(.1, .6, .5, 0xbfe6f5, .04); sw.position.set(sd*(bw/2+.01), y+.42, -.5); g.add(sw);
+      const sw2 = box(.1, .6, .5, 0xbfe6f5, .04); sw2.position.set(sd*(bw/2+.01), y+.42, .7); g.add(sw2);
+    });
+  });
+  /* --- หลังคา: ธง 3 ผืน + ป้ายโรงแรมบนหน้าจั่ว --- */
+  [-1.3, 0, 1.3].forEach((px,i)=>{
+    const pole = cyl(.045,.045,.9, 0xf7f3ee, 6); pole.position.set(px, bh+1.28, 0); g.add(pole);
+    const flag = box(.42,.26,.04, [0xff8fb3,0xffd54f,0x7fc4e8][i], .02); flag.position.set(px+.23, bh+1.62, 0); g.add(flag);
+  });
+  const sfr = box(1.12, .84, .08, 0xfff6e8, .05); sfr.position.set(0, bh+.62, fz+.06); g.add(sfr);
+  const sfb = box(.94, .68, .06, lot.roof, .04); sfb.position.set(0, bh+.62, fz+.11); g.add(sfb);
+  const sg = signPlane(lot.icon, .62); sg.position.set(0, bh+.62, fz+.16); g.add(sg);
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
+  return g;
+}
+
+/* ---------- บ้านท่านเทศมนตรี ----------
+   คฤหาสน์ 2 ชั้น หลังคาปั้นหยา + มุขเสาสูง 4 ต้นพร้อมหน้าจั่วสามเหลี่ยม + บันไดหน้าบ้าน
+   บนหลังคามีหอนาฬิกาเล็กๆ กับธงประจำชุมชน ให้ดูเป็นบ้านที่ใหญ่และเป็นทางการที่สุดในชุมชน */
+function buildMayorHouse(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const bw = w-.5, bd = d-.35, bh = 2.5;
+  const body = box(bw, bh, bd, lot.wall); body.position.y = bh/2; body.castShadow = hShadows; g.add(body);
+  const plinth = box(bw+.16, .3, bd+.16, 0xe6dbc8, .05); plinth.position.y = .15; g.add(plinth);
+  const belt = box(bw+.08, .13, bd+.08, 0xe6dbc8, .04); belt.position.y = 1.3; g.add(belt);
+  const cor = box(bw+.14, .16, bd+.14, 0xfffaf0, .05); cor.position.y = bh - .04; g.add(cor);
+  addRoofHip(g, bw - 1.1, bd - 1.1, bh, lot.roof);   /* ย่อชายคาไม่ให้คลุมมุขเสาหน้าบ้าน */
+  const fz = bd/2;
+  /* --- มุขเสา: เสากลม 4 ต้น + คานบน + หน้าจั่วสามเหลี่ยม --- */
+  const PX = [-1.62, -.56, .56, 1.62], ph = 2.16, pz = fz + .82;
+  PX.forEach(px=>{
+    const col = cyl(.15, .17, ph, 0xfffaf0, 12); col.position.set(px, ph/2 + .12, pz); col.castShadow = hShadows; g.add(col);
+    const cap = box(.42,.13,.42, 0xfffaf0, .03); cap.position.set(px, ph + .16, pz); g.add(cap);
+    const bas = box(.44,.14,.44, 0xfffaf0, .03); bas.position.set(px, .1, pz); g.add(bas);
+  });
+  const arch = box(3.94, .3, .58, 0xfffaf0, .05); arch.position.set(0, ph + .38, pz); g.add(arch);
+  const ped = cone(1.5, .78, 0xfffaf0, 4); ped.rotation.y = Math.PI/4; ped.scale.set(1.42,1,.42);
+  ped.position.set(0, ph + .9, pz); g.add(ped);
+  const pedR = cone(1.56, .5, lot.roof, 4); pedR.rotation.y = Math.PI/4; pedR.scale.set(1.42,1,.5);
+  pedR.position.set(0, ph + 1.08, pz); g.add(pedR);
+  const emb = sphere(.19, 0xf0c14b, 10); emb.scale.z = .3; emb.position.set(0, ph + .74, pz + .3); g.add(emb);
+  /* --- บันไดหน้าบ้าน 3 ขั้น --- */
+  for(let k=0;k<3;k++){
+    const st = box(3.0 + k*.34, .13, .34, 0xe6dbc8, .03);
+    st.position.set(0, .34 - k*.12, fz + .92 + k*.3); g.add(st);
+  }
+  /* --- ประตูใหญ่ 2 บาน + ไฟข้างประตู --- */
+  const door = box(1.0, 1.32, .12, 0x8d5a34, .05); door.position.set(0, .78, fz+.03); g.add(door);
+  const dfr = box(1.18, 1.48, .07, 0xfffaf0, .04); dfr.position.set(0, .82, fz+.01); g.add(dfr);
+  const dsp = box(.06, 1.32, .05, 0xfffaf0, .02); dsp.position.set(0, .78, fz+.1); g.add(dsp);
+  [-1,1].forEach(sd=>{
+    const kn = sphere(.06, 0xf0c14b, 8); kn.position.set(sd*.16, .8, fz+.11); g.add(kn);
+    const lp = box(.16,.26,.16, 0xfff59d, .04); lp.position.set(sd*.86, 1.42, fz+.08); g.add(lp);
+    const lpc = box(.2,.07,.2, 0x6f86c9, .03); lpc.position.set(sd*.86, 1.59, fz+.08); g.add(lpc);
+  });
+  /* --- ระเบียงชั้นบนเหนือประตู --- */
+  const bal = box(2.1, .1, .5, 0xfffaf0, .04); bal.position.set(0, 1.58, fz+.22); g.add(bal);
+  const balR = box(2.1, .06, .06, 0xfffaf0, .03); balR.position.set(0, 1.94, fz+.44); g.add(balR);
+  for(let k=0;k<8;k++){ const br = cyl(.035,.045,.32,0xfffaf0,6); br.position.set(-.92+k*.264, 1.74, fz+.44); g.add(br); }
+  const bdo = box(.56, .78, .1, 0xbfe6f5, .04); bdo.position.set(0, 1.94, fz+.02); g.add(bdo);
+  const bdf = box(.68, .9, .05, 0xfffaf0, .03); bdf.position.set(0, 1.94, fz); g.add(bdf);
+  /* --- หน้าต่างโค้งสูงชั้นล่าง/ชั้นบน --- */
+  [[-1.62,.84],[1.62,.84],[-1.62,1.84],[1.62,1.84]].forEach(([px,py])=>{
+    const wd = box(.56, .74, .1, 0xbfe6f5, .04); wd.position.set(px, py, fz+.02); g.add(wd);
+    const wf = box(.68, .86, .05, 0xfffaf0, .03); wf.position.set(px, py, fz); g.add(wf);
+    const top = cyl(.34, .34, .05, 0xfffaf0, 12); top.rotation.x = Math.PI/2; top.scale.y = .55;
+    top.position.set(px, py+.46, fz); g.add(top);
+  });
+  [-1,1].forEach(sd=>{                                  /* หน้าต่างด้านข้าง */
+    [[-.6,.84],[.7,.84],[-.6,1.86],[.7,1.86]].forEach(([pz2,py])=>{
+      const sw = box(.1, .66, .48, 0xbfe6f5, .04); sw.position.set(sd*(bw/2+.01), py, pz2); g.add(sw);
+    });
+  });
+  /* --- หอนาฬิกาบนหลังคา + ธง --- */
+  const tw = box(.86, .96, .86, 0xfffaf0, .06); tw.position.set(0, bh + 1.1, -.1); g.add(tw);
+  const twB = box(1.0, .12, 1.0, 0xfffaf0, .04); twB.position.set(0, bh + .62, -.1); g.add(twB);
+  const clockF = cyl(.3, .3, .07, 0xfffaf0, 16); clockF.rotation.x = Math.PI/2; clockF.position.set(0, bh + 1.16, .36); g.add(clockF);
+  const clockR = torus(.31, .04, 0xf0c14b, 14); clockR.position.set(0, bh + 1.16, .36); g.add(clockR);
+  const hH = box(.05,.15,.03, 0x4a4a4a, .01); hH.position.set(0, bh + 1.23, .4); g.add(hH);
+  const hM = box(.19,.045,.03, 0x4a4a4a, .01); hM.position.set(.08, bh + 1.16, .4); g.add(hM);
+  const twR = cone(.78, .74, lot.roof, 4); twR.rotation.y = Math.PI/4; twR.position.set(0, bh + 1.94, -.1); g.add(twR);
+  const fpole = cyl(.04,.04,.7, 0xf7f3ee, 6); fpole.position.set(0, bh + 2.62, -.1); g.add(fpole);
+  const flag = box(.44,.28,.04, 0x6f86c9, .02); flag.position.set(.24, bh + 2.86, -.1); g.add(flag);
+  const finial = sphere(.09, 0xf0c14b, 8); finial.position.set(0, bh + 2.98, -.1); g.add(finial);
+  /* --- ป้ายบ้านเทศมนตรีข้างประตู --- */
+  const spost = cyl(.07, .08, 1.0, 0xfffaf0, 8); spost.position.set(2.16, .5, fz + .34); g.add(spost);
+  const sfr = box(.62, .58, .08, lot.roof, .05); sfr.position.set(2.16, 1.2, fz + .34); g.add(sfr);
+  const sfb = box(.48, .44, .06, 0xfffaf0, .03); sfb.position.set(2.16, 1.2, fz + .39); g.add(sfb);
+  const sg = signPlane(lot.icon, .34); sg.position.set(2.16, 1.2, fz + .43); g.add(sg);
+  /* --- พุ่มไม้ตัดแต่งขนาบบันได --- */
+  [-1,1].forEach(sd=>{
+    const pot = cyl(.24, .2, .34, 0xe6dbc8, 10); pot.position.set(sd*2.24, .17, fz+.9); g.add(pot);
+    const c1 = cone(.28, .58, 0x5aa06a, 10); c1.position.set(sd*2.24, .63, fz+.9); g.add(c1);
+    const c2 = cone(.2, .42, 0x6fbf73, 10); c2.position.set(sd*2.24, 1.06, fz+.9); g.add(c2);
+  });
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
+  return g;
+}
+
+
+/* ---------- สระว่ายน้ำของโรงแรม ----------
+   ลานกระเบื้องรอบสระ (เดินได้) + ผิวน้ำจมลงไปจากลาน + ขอบสระ + บันไดลงสระ + สไลเดอร์
+   ผิวน้ำใช้สีฟ้าอ่อนโทนเดียวกับน้ำพุ/บ่อน้ำในแผนที่ ให้เป็นชุดเดียวกันทั้งแอป */
+function buildPoolDeckFloor(w, d){
+  const g = new THREE.Group();
+  const floor = box(w, .12, d, 0xf3ead9, .05); floor.position.y = .06; g.add(floor);
+  for(let i=0; i<w; i++) for(let k=0; k<d; k++){        /* กระเบื้องสลับสีให้เห็นเป็นลานปูกระเบื้อง */
+    if((i + k) % 2) continue;
+    const t = box(.9, .04, .9, 0xfffaf0, .04); t.position.set(-w/2 + .5 + i, .13, -d/2 + .5 + k); g.add(t);
+  }
+  return g;
+}
+function buildPoolWater(w, d){
+  const g = new THREE.Group();
+  const lip = box(w + .5, .3, d + .5, 0xfffaf0, .08); lip.position.y = .15; g.add(lip);
+  const inner = box(w, .26, d, 0x9fd8ee, .06); inner.position.y = .18; g.add(inner);
+  const water = box(w - .18, .1, d - .18, 0x5ec4e8, .05); water.position.y = .26; g.add(water);
+  const shine = box(w - 1.6, .04, d * .16, 0x9fdcf3, .04); shine.position.set(-.2, .32, -d*.2); g.add(shine);
+  const shine2 = box(w - 2.4, .04, d * .12, 0xc4ecfa, .03); shine2.position.set(.5, .32, d*.16); g.add(shine2);
+  /* บันไดลงสระ (ราวโค้ง 2 อัน) ที่ขอบด้าน +z */
+  [-.55, .55].forEach(px=>{
+    const rail = torus(.19, .035, 0xe0e6ea, 12); rail.rotation.y = Math.PI/2;
+    rail.position.set(px, .42, d/2 - .06); g.add(rail);
+  });
+  /* สไลเดอร์เด็กที่ปลายสระ (-z) */
+  const tower = cyl(.14, .16, 1.0, 0xf7f3ee, 10); tower.position.set(w/2 - .7, .5, -d/2 - .5); g.add(tower);
+  const slide = box(.52, .1, 1.5, 0xffd54f, .06);
+  slide.rotation.x = .62; slide.position.set(w/2 - .7, .62, -d/2 + .16); g.add(slide);
+  [-1,1].forEach(sd=>{
+    const sr = box(.07, .2, 1.5, 0xff8a65, .03); sr.rotation.x = .62;
+    sr.position.set(w/2 - .7 + sd*.28, .72, -d/2 + .16); g.add(sr);
+  });
+  const step = box(.44, .08, .3, 0xffd54f, .03); step.position.set(w/2 - .7, 1.0, -d/2 - .72); g.add(step);
+  return g;
+}
+function buildPoolProp(kind){
+  const g = new THREE.Group();
+  if(kind === 'chair'){                                  /* เตียงอาบแดด */
+    const frame = box(.76,.14,1.16, 0xfffaf0, .06); frame.position.y = .34; g.add(frame);
+    [-1,1].forEach(sd=>[-1,1].forEach(sz=>{ const lg = box(.1,.28,.1,0xe0e6ea,.03); lg.position.set(sd*.3,.14,sz*.46); g.add(lg); }));
+    const seat = box(.68,.24,.74, 0x7fc4e8, .1); seat.position.set(0,.53,.2); g.add(seat);
+    const back1 = box(.68,.34,.24, 0x7fc4e8, .1); back1.position.set(0,.58,-.28); g.add(back1);
+    const back2 = box(.68,.44,.22, 0x66b8e0, .1); back2.position.set(0,.68,-.48); g.add(back2);
+    const pil = box(.42,.18,.16, 0xfffaf0, .07); pil.position.set(0,.94,-.5); g.add(pil);
+    const tw = box(.52,.08,.44, 0xff8fb3, .04); tw.position.set(0,.67,.26); g.add(tw);
+  } else if(kind === 'umbrella'){
+    const pole = cyl(.05,.05,1.4, 0xfffaf0, 8); pole.position.y = .7; g.add(pole);
+    const cap = cone(.66, .38, 0xff8a65, 12); cap.position.y = 1.5; g.add(cap);
+    const cap2 = cone(.7, .16, 0xfffaf0, 12); cap2.position.y = 1.34; g.add(cap2);
+    const tip = sphere(.07, 0xffd54f, 8); tip.position.y = 1.72; g.add(tip);
+    const base = cyl(.24,.28,.14, 0xe0e6ea, 12); base.position.y = .07; g.add(base);
+    const tbl = cyl(.3,.28,.06, 0xfffaf0, 12); tbl.position.y = .58; g.add(tbl);
+  } else if(kind === 'ring'){                            /* ห่วงชูชีพวางพิงเสา */
+    const post = cyl(.06,.06,.9, 0xfffaf0, 8); post.position.y = .45; g.add(post);
+    const ring = torus(.3, .1, 0xff5252, 14); ring.position.set(0,.72,.06); g.add(ring);
+    [0,1,2,3].forEach(k=>{ const st = box(.16,.11,.05,0xfffaf0,.02);
+      st.rotation.z = k*Math.PI/4; st.position.set(Math.cos(k*Math.PI/2)*.3, .72+Math.sin(k*Math.PI/2)*.3, .07); g.add(st); });
+  } else {                                               /* palm: ต้นไม้กระถางริมสระ */
+    const pot = cyl(.28,.22,.42, 0xdc8f5a, 12); pot.position.y = .21; g.add(pot);
+    const rim = cyl(.31,.29,.1, 0xe8a86b, 12); rim.position.y = .4; g.add(rim);
+    const tr = cyl(.09,.12,.9, 0xa9784f, 8); tr.position.y = .85; g.add(tr);
+    for(let k=0;k<6;k++){
+      const lf = box(.9,.08,.28, 0x6fbf73, .06);
+      lf.rotation.y = k*Math.PI/3; lf.rotation.z = -.34;
+      lf.position.set(Math.cos(k*Math.PI/3)*.42, 1.34, Math.sin(k*Math.PI/3)*.42); g.add(lf);
+    }
+    const co = sphere(.1, 0x8d6e63, 8); co.position.set(.1, 1.24, .1); g.add(co);
+  }
+  return g;
+}
+
+/* ---------- แปลงดอกไม้รอบน้ำพุ ----------
+   ขอบหินอ่อนโทนเดียวกับพื้นลาน + ดินนูน + ดอกไม้แน่นๆ ให้ลานกลางชุมชนกลายเป็นสวนหย่อม
+   สีดอกต่อแปลงต่างกัน (แปลงละโทน) มองจากมุมกล้องแล้วเห็นเป็น 4 แปลงชัดเจน */
+const PLAZA_BED_COLORS = [[0xff8fb3,0xffc1d6], [0xffd54f,0xffe9a8], [0xb388ff,0xd9c4ff], [0xff8a65,0xffc2ab]];
+function buildPlazaBed(b, seed){
+  const g = new THREE.Group();
+  const w = b.x1-b.x0+1, d = b.z1-b.z0+1;
+  const rnd = fieldRnd(b.x0*13 + seed, b.z0*7 + seed);
+  const kerb = box(w, .26, d, 0xf0e7d6, .06); kerb.position.y = .13; g.add(kerb);
+  const kerbT = box(w-.16, .06, d-.16, 0xfffaf0, .03); kerbT.position.y = .27; g.add(kerbT);
+  const soil = box(w-.36, .16, d-.36, 0x8d6244, .05); soil.position.y = .3; g.add(soil);
+  [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([sx,sz])=>{     /* หัวเสามุมแปลง */
+    const kn = cyl(.13,.15,.34, 0xfffaf0, 10); kn.position.set(sx*(w/2-.16), .3, sz*(d/2-.16)); g.add(kn);
+    const kt = sphere(.11, 0xf0c14b, 8); kt.position.set(sx*(w/2-.16), .5, sz*(d/2-.16)); g.add(kt);
+  });
+  const col = PLAZA_BED_COLORS[seed % PLAZA_BED_COLORS.length];
+  const n = Math.round(w*d*6.4);
+  for(let k=0;k<n;k++){
+    const fx = (rnd()-.5)*(w-.7), fz = (rnd()-.5)*(d-.7);
+    const h = .2 + rnd()*.2, top = .38 + h;
+    const stem = cyl(.022,.026,h, 0x66bb6a, 5); stem.position.set(fx, .38+h/2, fz); g.add(stem);
+    const c = col[k % col.length];
+    for(let pt2=0; pt2<5; pt2++){
+      const pt = sphere(.07, c, 4); pt.scale.set(1,.5,1);
+      pt.position.set(fx + Math.cos(pt2*Math.PI*2/5)*.08, top, fz + Math.sin(pt2*Math.PI*2/5)*.08); g.add(pt);
+    }
+    const core = sphere(.042, 0xfff176, 4); core.position.set(fx, top+.03, fz); g.add(core);
+    if(k % 3 === 0){                                     /* พุ่มใบเขียวแทรก ไม่ให้เห็นดินโล่งเป็นหย่อม */
+      const lf = sphere(.13, 0x6fbf73, 4); lf.scale.y = .55;
+      lf.position.set(fx + (rnd()-.5)*.5, .42, fz + (rnd()-.5)*.5); g.add(lf);
+    }
+  }
+  g.position.set(outWX((b.x0+b.x1)/2), 0, outWZ((b.z0+b.z1)/2));
+  return g;
+}
+
 /* น้ำพุกลางลานชุมชน (จุดนัดพบ — เฟสถัดไปให้ NPC เดินมารวมกันตรงนี้ได้) */
 function buildFountain(){
   const g = new THREE.Group();
@@ -1602,6 +2073,136 @@ function buildFountain(){
 function flowerTiles(){
   return FLOWERS.filter(([x,z]) => x>=0 && z>=0 && x<OUT_W && z<OUT_D &&
     outGrid[z][x]===0 && !isVillageRoadTile(x,z) && !isPlazaTile(x,z) && !lotAt(x,z,1));
+}
+
+/* ---------- แปลงดอกไม้หน้าลานกิจกรรม ----------
+   กระบะไม้เตี้ยๆ + ดินนูน + ดอกไม้กลีบมนหลากสี (ทรงเดียวกับดอกไม้เล็กในทุ่ง แต่จัดเป็นแปลงให้ดูเป็นสวน)
+   สุ่มตำแหน่ง/สีดอกด้วยเลขสุ่มของตัวเอง (ไม่ใช้ rnd ของ wildLayout) แปลงเดิมจะได้หน้าตาเหมือนเดิมทุกครั้ง */
+const BED_PETAL_COLORS = [0xff8fb3, 0xffd54f, 0xb388ff, 0xff8a65, 0x9be7ff, 0xfff0f5];
+function buildFlowerBed(b, seed){
+  const g = new THREE.Group();
+  const w = b.x1 - b.x0 + 1, d = b.z1 - b.z0 + 1;
+  let st = seed*7919 + 13;
+  const rnd = () => (st = (st*1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const frame = box(w-.12, .26, d-.12, 0xe0b487, .07); frame.position.y = .13; g.add(frame);   /* กระบะไม้ */
+  const soil  = box(w-.5, .3, d-.5, 0x8d6e63, .06);   soil.position.y = .15;  g.add(soil);     /* ดินนูนขึ้นมาเล็กน้อย */
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{                                          /* ลูกกลมมุมกระบะ */
+    const knob = sphere(.085, 0xfff3d6, 8);
+    knob.position.set(sx*(w/2-.14), .28, sz*(d/2-.14));
+    g.add(knob);
+  });
+  const n = Math.round(w*d*3);
+  for(let k=0; k<n; k++){
+    const fx = (rnd()-.5)*(w-.78), fz = (rnd()-.5)*(d-.78);
+    const h = .24 + rnd()*.16, top = .3 + h;
+    const stem = cyl(.028,.032,h, 0x66bb6a, 5); stem.position.set(fx, .3+h/2, fz); g.add(stem);
+    const leaf = sphere(.075, 0x81c784, 6); leaf.scale.set(1,.34,.6);
+    leaf.position.set(fx + (k%2 ? .085 : -.085), .3+h*.45, fz); g.add(leaf);
+    const c = BED_PETAL_COLORS[(seed*2 + k) % BED_PETAL_COLORS.length];
+    for(let p=0; p<5; p++){
+      const pt = sphere(.075, c, 6); pt.scale.set(1,.5,1);
+      pt.position.set(fx + Math.cos(p*Math.PI*2/5)*.085, top, fz + Math.sin(p*Math.PI*2/5)*.085);
+      g.add(pt);
+    }
+    const core = sphere(.05, 0xfff176, 6); core.position.set(fx, top+.035, fz); g.add(core);
+  }
+  for(let k=0; k<Math.round(w*d); k++){                                                        /* พุ่มหญ้าเตี้ยแทรกช่องว่าง */
+    const tuft = sphere(.16, 0x8fd06c, 7); tuft.scale.set(1,.5,1);
+    tuft.position.set((rnd()-.5)*(w-.7), .32, (rnd()-.5)*(d-.7)); g.add(tuft);
+  }
+  g.position.set(outWX((b.x0+b.x1)/2), 0, outWZ((b.z0+b.z1)/2));
+  return g;
+}
+
+
+/* ---------- ทุ่งดอกไม้ใหญ่: ดอกไม้ต่อช่อง / ทางเดินกลางทุ่ง / ซุ้มดอกไม้ / ป้ายทุ่ง ----------
+   สุ่มด้วยเลขจากพิกัดช่อง (x,z) ทุ่งจึงหน้าตาเหมือนเดิมทุกครั้งที่เข้าเกม */
+function fieldRnd(x, z){
+  let st = ((x*73856093) ^ (z*19349663)) & 0x7fffffff;
+  return () => (st = (st*1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+}
+function buildFieldFlowers(x, z, opt){
+  const g = new THREE.Group();
+  const o = opt || {};
+  const rnd = fieldRnd(x, z);
+  const row = FIELD_ROW_COLORS[((o.band == null ? z - FLOWER_FIELD.z0 : o.band) + 8) % FIELD_ROW_COLORS.length];
+  const n = (o.base == null ? 6 : o.base) + ((x + z) % 3);   /* 6-8 ดอกต่อช่อง แน่นพอให้เห็นเป็นทุ่ง แต่ไม่หนักเครื่อง */
+  for(let k=0; k<n; k++){
+    const fx = (rnd()-.5)*.82, fz = (rnd()-.5)*.82;
+    const h = .24 + rnd()*.18, top = h + .02;
+    const stem = cyl(.022,.026,h, 0x66bb6a, 5); stem.position.set(fx, h/2, fz); g.add(stem);
+    const leaf = sphere(.062, 0x81c784, 4); leaf.scale.set(1,.35,.6);
+    leaf.position.set(fx + (k%2 ? .075 : -.075), h*.45, fz); g.add(leaf);
+    const c = row[k % row.length];
+    for(let p=0; p<5; p++){
+      const pt = sphere(.072, c, 4); pt.scale.set(1,.5,1);
+      pt.position.set(fx + Math.cos(p*Math.PI*2/5)*.082, top, fz + Math.sin(p*Math.PI*2/5)*.082); g.add(pt);
+    }
+    const core = sphere(.044, 0xfff176, 4); core.position.set(fx, top+.03, fz); g.add(core);
+  }
+  const tuft = sphere(.17, 0x8fd06c, 5); tuft.scale.set(1,.45,1);
+  tuft.position.set((rnd()-.5)*.7, .04, (rnd()-.5)*.7); g.add(tuft);
+  if(((x*3 + z) % 7) === 0){                        /* ผีเสื้อบินอยู่เหนือทุ่งเป็นระยะ */
+    const bx = (rnd()-.5)*.5, by = .78 + rnd()*.3, bz = (rnd()-.5)*.5;
+    const bd = cyl(.026,.026,.16, 0x6d4c41, 5); bd.rotation.z = Math.PI/2; bd.position.set(bx, by, bz); g.add(bd);
+    [-1,1].forEach(sgn=>{
+      const wg = sphere(.13, sgn>0 ? 0xffd54f : 0xffb3c9, 4); wg.scale.set(.85,.22,1);
+      wg.rotation.x = sgn*.55; wg.position.set(bx, by+.05, bz + sgn*.11); g.add(wg);
+    });
+  }
+  return g;
+}
+function buildFieldPath(x, z){                      /* ทางเดินดินกลางทุ่ง + ก้อนหินเล็กๆ ข้างทาง */
+  const g = new THREE.Group();
+  const rnd = fieldRnd(x, z);
+  const road = box(1.02,.07,.84, 0xe8d3a9,.06); road.position.y = .035; g.add(road);
+  for(let k=0; k<3; k++){
+    const st = cyl(.13,.15,.06, 0xf5ead2, 7);
+    st.position.set((rnd()-.5)*.8, .075, (rnd()-.5)*.6); g.add(st);
+  }
+  [-1,1].forEach(sgn=>{                             /* หญ้าริมทาง */
+    const tf = sphere(.15, 0x8fd06c, 7); tf.scale.set(1,.42,1);
+    tf.position.set((rnd()-.5)*.7, .04, sgn*.46); g.add(tf);
+  });
+  return g;
+}
+function buildFlowerArch(){                         /* ซุ้มดอกไม้คร่อมทางเดินหัว-ท้ายทุ่ง */
+  const g = new THREE.Group();
+  [-1,1].forEach(sgn=>{
+    const post = cyl(.085,.095,1.72, 0xfff6e8, 8); post.position.set(0,.86,sgn*.5); g.add(post);
+    const base = cyl(.15,.17,.13, 0xe0b487, 8); base.position.set(0,.065,sgn*.5); g.add(base);
+    for(let k=0; k<3; k++){                         /* เถาเลื้อยพันเสา */
+      const lf = sphere(.1, 0x8fd06c, 6); lf.scale.set(.85,.55,.85);
+      lf.position.set((k%2 ? .09 : -.09), .55+k*.38, sgn*.5); g.add(lf);
+    }
+  });
+  const beam = box(.17,.16,1.26, 0xfff6e8,.06); beam.position.y = 1.76; g.add(beam);
+  const beam2 = box(.11,.11,1.02, 0xfff6e8,.05); beam2.position.y = 1.58; g.add(beam2);
+  [-1,1].forEach(sgn=>{                             /* ค้ำมุมซุ้ม */
+    const br = box(.1,.1,.34, 0xfff6e8,.04); br.rotation.x = sgn*.78; br.position.set(0,1.62,sgn*.44); g.add(br);
+  });
+  for(let k=0; k<13; k++){                          /* ดอกไม้เลื้อยบนคานซุ้ม */
+    const zz = -.58 + (k/12)*1.16;
+    const lf = sphere(.11, 0x8fd06c, 6); lf.scale.set(.9,.6,.9);
+    lf.position.set(k%2 ? .07 : -.07, 1.8, zz); g.add(lf);
+    if(k % 2 === 0){
+      const c = [0xff8fb3,0xfff0f5,0xffd54f][k%3], ax = (k%4<2) ? .12 : -.12;
+      for(let p=0; p<5; p++){
+        const pt = sphere(.045, c, 6); pt.scale.set(1,.6,1);
+        pt.position.set(ax, 1.9 + Math.cos(p*Math.PI*2/5)*.055, zz + Math.sin(p*Math.PI*2/5)*.055); g.add(pt);
+      }
+      const cr = sphere(.028, 0xfff176, 6); cr.position.set(ax + (ax>0?.03:-.03), 1.9, zz); g.add(cr);
+    }
+  }
+  return g;
+}
+function buildFieldSign(){                          /* ป้ายไม้ 🌷 บอกว่านี่คือทุ่งดอกไม้ */
+  const g = new THREE.Group();
+  const post = cyl(.07,.07,1.02, 0xc98d4e, 8); post.position.y = .51; g.add(post);
+  const fr = box(.88,.6,.06, 0xe8759b,.04); fr.position.set(0,1.14,0); g.add(fr);
+  const bd = box(.74,.46,.06, 0xfff6e8,.04); bd.position.set(0,1.14,.04); g.add(bd);
+  const ic = signPlane('🌷', .38); ic.position.set(0,1.14,.09); g.add(ic);
+  return g;
 }
 
 /* ---------- ฉากใหม่: แปลงผักในฟาร์ม / หุ่นไล่กา / มะพร้าว-ร่มชายหาด / ใบบัวในบ่อ ---------- */
@@ -1859,6 +2460,186 @@ function buildPenFencePiece(alongX, alongZ){
   [.34,.66].forEach(y=>{
     if(alongX){ const r = box(1.02,.1,.08,0xc98d4e,.03); r.position.set(.5,y,0); g.add(r); }
     if(alongZ){ const r = box(.08,.1,1.02,0xc98d4e,.03); r.position.set(0,y,.5); g.add(r); }
+  });
+  return g;
+}
+/* รั้วโรงเรียน: เสาปูนขาว + ราวไม้ระแนงฟ้าพาสเทล (คนละโทนกับรั้วคอกสัตว์ ให้ดูเป็นรั้วโรงเรียน) */
+function buildSchoolFencePiece(alongX, alongZ){
+  const g = new THREE.Group();
+  const post = box(.16,1.0,.16, 0xfdfbf5,.05); post.position.y = .5; g.add(post);
+  const cap  = cone(.13,.2, 0x7fc4e8, 8);      cap.position.y = 1.06; g.add(cap);
+  [.42,.76].forEach(y=>{
+    if(alongX){ const r = box(1.02,.09,.07, 0x9ad4f0,.03); r.position.set(.5,y,0); g.add(r); }
+    if(alongZ){ const r = box(.07,.09,1.02, 0x9ad4f0,.03); r.position.set(0,y,.5); g.add(r); }
+  });
+  /* ระแนงเล็กๆ คั่นระหว่างราว ให้เห็นเป็นรั้วโปร่ง */
+  [.25,.75].forEach(f=>{
+    if(alongX){ const s2 = box(.07,.5,.06, 0xfdfbf5,.02); s2.position.set(f,.58,0); g.add(s2); }
+    if(alongZ){ const s2 = box(.06,.5,.07, 0xfdfbf5,.02); s2.position.set(0,.58,f); g.add(s2); }
+  });
+  return g;
+}
+/* ซุ้มประตูโรงเรียน: เสา 2 ต้นคร่อมช่องประตู + คานโค้ง + ธงเล็กบนยอด (ไม่บล็อกช่อง เด็กเดินลอดได้) */
+function buildSchoolGate(){
+  const g = new THREE.Group();
+  [-1,1].forEach(sd=>{
+    const pl = box(.3,2.0,.3, 0xfdfbf5,.07); pl.position.set(sd*1.5,1.0,0); g.add(pl);
+    const kb = sphere(.17, 0x7fc4e8, 10);    kb.position.set(sd*1.5,2.12,0); g.add(kb);
+  });
+  const beam = box(3.3,.24,.26, 0xef8fa5,.08); beam.position.y = 2.0; g.add(beam);
+  const arch = box(2.4,.18,.2, 0xffd54f,.07);  arch.position.y = 2.24; g.add(arch);
+  for(let i=0;i<5;i++){                                  /* ธงราวเล็กๆ ห้อยใต้คาน */
+    const fl = box(.22,.26,.03, [0xef5f5f,0xffd54f,0x7fc4e8,0x9be7a8,0xb388ff][i],.02);
+    fl.position.set((i-2)*.55, 1.74, .13); g.add(fl);
+  }
+  return g;
+}
+/* เสาธงหน้าโรงเรียน: ฐานปูนกลม + เสาขาว + ธงชาติไทย 5 แถบ */
+function buildFlagPole(){
+  const g = new THREE.Group();
+  const base = cyl(.42,.5,.18, 0xe6e0d2, 12); base.position.y = .09; g.add(base);
+  const step = cyl(.3,.36,.14, 0xf6f2e8, 12); step.position.y = .25; g.add(step);
+  const pole = cyl(.06,.075,3.2, 0xfdfbf5, 8); pole.position.y = 1.9; g.add(pole);
+  const knob = sphere(.11, 0xffd54f, 10); knob.position.y = 3.56; g.add(knob);
+  /* ธงชาติไทย: แดง-ขาว-น้ำเงิน-ขาว-แดง (แถบน้ำเงินกลางหนาเป็น 2 เท่า) วางเรียงลงมาจากยอดเสา */
+  const STRIPES = [[0xef5f5f,.1],[0xfdfbf5,.1],[0x3f5aa6,.2],[0xfdfbf5,.1],[0xef5f5f,.1]];
+  let fy = 3.35;
+  STRIPES.forEach(([c,h])=>{
+    const st = box(.9, h, .04, c, .01);
+    st.position.set(.52, fy - h/2, 0);
+    g.add(st); fy -= h;
+  });
+  return g;
+}
+/* ---------- กระท่อมช่างไม้ (ป่าทิศเหนือ) ----------
+   ตัวกระท่อมเป็นซุงซ้อนชั้น หลังคาจั่วเขียวพาสเทล + ปล่องไฟมีควัน
+   ครึ่งซ้ายของด้านหน้าเป็น "เพิงช่างไม้" เปิดโล่ง มีกันสาด โต๊ะช่าง เลื่อย ค้อน และป้ายรูปห้อยอยู่
+   ครึ่งขวาเป็นประตูบ้าน มีหน้าต่างกลมบนหน้าจั่ว (สไตล์เดียวกับอาคารอื่นในแผนที่ แค่เป็นไม้ทั้งหลัง) */
+function buildCarpenterHut(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const bw = w-.5, bd = d-.35, bh = 1.55, RISE = 1.15;
+  const body = box(bw, bh, bd, lot.wall, .06); body.position.y = bh/2; g.add(body);
+  [.32,.74,1.16].forEach(y=>{                              /* แนวซุงซ้อนชั้น */
+    const lg = box(bw+.06,.13,bd+.06, 0xd2a56f,.05); lg.position.y = y; g.add(lg);
+  });
+  [-1,1].forEach(sx=>[-1,1].forEach(sz=>{                  /* เสาซุงมุมกระท่อม */
+    const cp = cyl(.15,.15,bh, 0xb4763a, 8); cp.position.set(sx*bw/2, bh/2, sz*bd/2); g.add(cp);
+  }));
+  addRoofGable(g, bw, bd, bh, lot.roof, 0xd8b98a, RISE);
+  const ridge = cyl(.11,.11,bd+.5, 0x8f6231, 8);           /* ซุงสันหลังคา */
+  ridge.rotation.x = Math.PI/2; ridge.position.y = bh + RISE; g.add(ridge);
+  addChimney(g, bw, bd, bh, RISE);
+  [[.0,2.9,.16],[.12,3.18,.13],[-.08,3.42,.1]].forEach(([ox,y,r])=>{   /* ควันลอยจากปล่องไฟ */
+    const sm = sphere(r, 0xf4f1ea, 8); sm.position.set(bw*.28+ox, y, -bd*.18); g.add(sm);
+  });
+  const fz = bd/2;                                         /* ระนาบหน้ากระท่อม */
+  /* ป้ายรูปเลื่อยบนหน้าจั่ว (ตำแหน่งเดียวกับป้ายร้านอื่นๆ — มุมกล้อง iso มองเห็นชัดสุด) */
+  const sgFr = box(1.02,.88,.09, 0xb4763a,.04); sgFr.position.set(0, bh+.56, fz+.08); g.add(sgFr);
+  const sgFc = box(.84,.7,.06, 0xf3e2c0,.03); sgFc.position.set(0, bh+.56, fz+.14); g.add(sgFc);
+  const sgn = signPlane(lot.icon, .6); sgn.position.set(0, bh+.56, fz+.2); g.add(sgn);
+  /* หน้าต่างกลมบนผนังหน้า (ระหว่างเพิงช่างไม้กับประตู) */
+  const win = cyl(.19,.19,.06, 0xaadcf5, 12); win.rotation.x = Math.PI/2; win.position.set(.34, .95, fz+.02); g.add(win);
+  const wfr = torus(.21,.05, 0xd2a56f, 14); wfr.position.set(.34, .95, fz+.03); g.add(wfr);
+  /* ประตูไม้ครึ่งขวา: แผ่นไม้ + ไม้ตีทแยงกากบาท */
+  const DX = bw*.28;
+  const door = box(.68,1.02,.1, 0x9c6238,.02); door.position.set(DX,.51,fz+.02); g.add(door);
+  [-1,1].forEach(s=>{
+    const br = box(.78,.09,.04, 0xd2a56f,.02); br.rotation.z = s*.95; br.position.set(DX,.51,fz+.08); g.add(br);
+  });
+  const knob = sphere(.055, 0xffd54f, 8); knob.position.set(DX+.22,.5,fz+.09); g.add(knob);
+  const step = box(.86,.1,.34, 0xd8b98a,.03); step.position.set(DX,.05,fz+.2); g.add(step);
+  /* เพิงช่างไม้ครึ่งซ้าย: กันสาด + เสาซุง 2 ต้น */
+  const AX = -bw*.26;
+  const awn = box(1.9,.13,.66, lot.roof,.05); awn.rotation.x = .12; awn.position.set(AX,1.46,fz+.33); g.add(awn);
+  const awnEdge = box(1.94,.09,.1, 0xd8b98a,.03); awnEdge.position.set(AX,1.42,fz+.65); g.add(awnEdge);
+  [-1,1].forEach(s=>{
+    const ps = cyl(.09,.09,1.44, 0xb4763a, 8); ps.position.set(AX+s*.82,.72,fz+.58); g.add(ps);
+  });
+  /* โต๊ะช่างใต้กันสาด: หน้าโต๊ะ + ขา + ไม้ที่กำลังเลื่อย + เลื่อย + ค้อน */
+  const tbl = box(1.55,.13,.6, 0xd9a86c,.03); tbl.position.set(AX,.66,fz+.4); g.add(tbl);
+  [-1,1].forEach(sx=>[-1,1].forEach(sz=>{
+    const lgg = box(.11,.6,.11, 0x9c6238,.02); lgg.position.set(AX+sx*.64,.3,fz+.4+sz*.2); g.add(lgg);
+  }));
+  const plank = box(1.1,.09,.32, 0xe8c79a,.02); plank.rotation.y = .12; plank.position.set(AX-.05,.77,fz+.4); g.add(plank);
+  const blade = box(.46,.17,.03, 0xc9d3d9,.01); blade.rotation.z = .38; blade.position.set(AX+.3,.98,fz+.4); g.add(blade);
+  const bhand = box(.13,.2,.07, 0x8f6231,.03); bhand.rotation.z = .38; bhand.position.set(AX+.54,1.07,fz+.4); g.add(bhand);
+  const hstk = cyl(.032,.032,.3, 0xc98d4e, 6); hstk.rotation.z = Math.PI/2; hstk.position.set(AX-.5,.76,fz+.55); g.add(hstk);
+  const hhead = box(.17,.11,.11, 0x8fa3ad,.03); hhead.position.set(AX-.68,.76,fz+.55); g.add(hhead);
+  /* ราวแขวนเครื่องมือใต้ชายกันสาด (ตะไบ/สิ่ว/ไม้ฉาก ห้อยเป็นแถว) */
+  const rail = cyl(.03,.03,1.5, 0x8f6231, 6); rail.rotation.z = Math.PI/2; rail.position.set(AX,1.3,fz+.58); g.add(rail);
+  [[-.5,.3,0xb9c7d2],[-.12,.26,0xc98d4e],[.28,.34,0x8fa3ad]].forEach(([ox,hh,c])=>{
+    const tl = box(.09,hh,.05, c,.02); tl.position.set(AX+ox,1.3-hh/2,fz+.58); g.add(tl);
+    const hk = torus(.05,.014, 0xb9c7d2, 8); hk.rotation.y = Math.PI/2; hk.position.set(AX+ox,1.3,fz+.58); g.add(hk);
+  });
+  /* ไม้แปรรูปพิงข้างกระท่อม (ฝั่ง +x) */
+  [0,1,2].forEach(i=>{
+    const pk = box(.14,1.5,.34, i%2 ? 0xe8c79a : 0xd8b98a,.02);
+    pk.rotation.z = -.13; pk.position.set(bw/2+.2+i*.12,.72, -bd*.14+i*.13); g.add(pk);
+  });
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
+  return g;
+}
+/* ตอไม้ (ใช้ทั้งชนิด stump และ chop) */
+function carpenterStump(g){
+  const st = cyl(.36,.4,.5, 0x9c6238, 12); st.position.y = .25; g.add(st);
+  const top = cyl(.34,.34,.05, 0xe8c79a, 12); top.position.y = .52; g.add(top);
+  const ring = torus(.19,.022, 0xd2a56f, 14); ring.rotation.x = Math.PI/2; ring.position.y = .545; g.add(ring);
+}
+/* ของในลานช่างไม้: กองซุง / กองไม้แปรรูป / ม้าเลื่อยไม้ / ตอไม้ / ตอไม้ปักขวาน */
+function buildCarpenterProp(kind){
+  const g = new THREE.Group();
+  if(kind === 'logs'){
+    const log = (y, z)=>{
+      const lg = cyl(.2,.2,.92, 0xb4763a, 10); lg.rotation.z = Math.PI/2; lg.position.set(0,y,z); g.add(lg);
+      [-1,1].forEach(s=>{                                  /* หน้าตัดซุงสีอ่อน เห็นวงปี */
+        const cap = cyl(.2,.2,.04, 0xe8c79a, 10); cap.rotation.z = Math.PI/2; cap.position.set(s*.47,y,z); g.add(cap);
+        const rg = torus(.1,.018, 0xd2a56f, 12); rg.rotation.y = Math.PI/2; rg.position.set(s*.5,y,z); g.add(rg);
+      });
+    };
+    log(.2,-.23); log(.2,.23); log(.56,0);
+  } else if(kind === 'planks'){
+    for(let i=0;i<6;i++){
+      const pk = box(1.0,.08,.44, i%2 ? 0xe8c79a : 0xd8b98a,.02);
+      pk.rotation.y = (i%2 ? .05 : -.04); pk.position.set(0,.06+i*.1,0); g.add(pk);
+    }
+    const rope = box(.07,.62,.48, 0x8d6e63,.02); rope.position.set(.18,.34,0); g.add(rope);
+  } else if(kind === 'sawhorse'){
+    const beam = box(1.05,.13,.15, 0xc98d4e,.03); beam.position.y = .62; g.add(beam);
+    [-1,1].forEach(sx=>[-1,1].forEach(sz=>{
+      const lg = box(.09,.7,.09, 0xa9784f,.02);
+      lg.rotation.z = sx*.24; lg.rotation.x = -sz*.22; lg.position.set(sx*.36,.33,sz*.2); g.add(lg);
+    }));
+    const plank = box(1.25,.09,.4, 0xe8c79a,.02); plank.rotation.y = .1; plank.position.y = .73; g.add(plank);
+    const blade = box(.44,.17,.03, 0xc9d3d9,.01); blade.rotation.z = .4; blade.position.set(.16,.94,0); g.add(blade);
+    const hd = box(.13,.2,.07, 0x8f6231,.03); hd.rotation.z = .4; hd.position.set(.4,1.04,0); g.add(hd);
+    const dust = cyl(.3,.34,.07, 0xefd9a8, 10); dust.position.set(-.1,.035,.34); g.add(dust);
+  } else if(kind === 'stump'){
+    carpenterStump(g);
+    [[-.42,.06,.3],[.4,.05,-.28],[.1,.05,.46]].forEach(([x,y,z],i)=>{   /* เศษไม้รอบตอ */
+      const ch = box(.2,.06,.1, i%2 ? 0xe8c79a : 0xd2a56f,.02); ch.rotation.y = i*.9; ch.position.set(x,y,z); g.add(ch);
+    });
+  } else if(kind === 'chop'){
+    carpenterStump(g);
+    const hnd = cyl(.035,.035,.72, 0xc98d4e, 6); hnd.rotation.z = .5; hnd.position.set(.2,.82,0); g.add(hnd);
+    const head = box(.2,.22,.08, 0x8fa3ad,.03); head.rotation.z = .5; head.position.set(.36,1.13,0); g.add(head);
+    const edge = cone(.11,.16, 0xdfe6ea, 4); edge.rotation.z = -1.07; edge.position.set(.47,1.18,0); g.add(edge);
+    [[-.45,.35],[-.34,-.36]].forEach(([x,z],i)=>{                        /* ท่อนไม้ผ่าครึ่งวางข้างตอ */
+      const hf = cyl(.14,.14,.6, 0xb4763a, 10); hf.rotation.z = Math.PI/2; hf.rotation.y = i*.6; hf.position.set(x,.14,z); g.add(hf);
+    });
+  }
+  return g;
+}
+/* ลานไม้หน้ากระท่อมช่างไม้ (พื้นตกแต่ง ไม่บล็อกทางเดิน) — แผ่นไม้เรียงตามแนว z + คานขอบ */
+function buildWoodYard(w, d){
+  const g = new THREE.Group();
+  const n = Math.round(w*2);                               /* แผ่นละครึ่งช่อง */
+  for(let i=0;i<n;i++){
+    const pk = box(w/n-.05, .07, d-.12, i%2 ? 0xd9b384 : 0xd0a475,.02);
+    pk.position.set(-w/2 + w/n*(i+.5), .035, 0); g.add(pk);
+  }
+  [-1,1].forEach(s=>{
+    const bm = box(w, .09, .12, 0xb4763a,.03); bm.position.set(0,.045,s*(d/2-.06)); g.add(bm);
   });
   return g;
 }
@@ -2169,6 +2950,10 @@ function buildVillager(lk, animated){
   } else if(P === 'box'){
     const bx = box(.3,.28,.26,0xc98d4e,.04); bx.position.set(.3,.72,.2); hold.add(bx);
     const tp = box(.32,.04,.28,0xe8b46a,.02); tp.position.set(.3,.87,.2); hold.add(tp);
+  } else if(P === 'saw'){                                  /* เลื่อยของช่างไม้: ใบเหล็ก + ฟันเลื่อย + ด้ามไม้ */
+    const bl = box(.34,.14,.03,0xc9d3d9,.01); bl.rotation.z = .18; bl.position.set(.44,.72,.12); hold.add(bl);
+    for(let i=0;i<5;i++){ const th = cone(.022,.05,0xb4c2cb,4); th.rotation.x = Math.PI; th.position.set(.32+i*.07,.635+i*.013,.12); hold.add(th); }
+    const hd = box(.11,.16,.06,0xa9784f,.03); hd.position.set(.25,.7,.12); hold.add(hd);
   } else if(P === 'bowl'){
     const bw = cyl(.16,.09,.14,0xfbf7f0,10); bw.position.set(.36,.66,.12); hold.add(bw);
     const nd = sphere(.12,0xe8b46a,8); nd.scale.y = .5; nd.position.set(.36,.73,.12); hold.add(nd);
@@ -2188,17 +2973,98 @@ function buildVillager(lk, animated){
 }
 
 /* ---------- เสาไฟริมทางเดิน ----------
-   โคมใช้ MeshBasicMaterial ดวงเดียวร่วมกันทุกต้น (ไม่รับแสงฉาก) → กลางคืนแค่เปลี่ยนสีวัสดุ
-   ก็เห็นเป็นไฟติดทั้งเมืองโดยไม่ต้องใส่ PointLight ทีละต้น (เสาไฟมีหลายสิบต้น จะหนักเครื่องเด็ก) */
+   ให้ "ติด/ดับ" และหน้าตาแสงเหมือนเสาไฟตกแต่งบ้าน (decor `lamp-post`) ทุกอย่าง:
+   โคมเป็นแก้วเหลืองพาสเทลสีเดียวกัน กลางคืนเรืองแสง (emissive) กลางวันดับ
+   และค่อยๆ fade เข้า-ออกด้วยจังหวะเดียวกับไฟ decor (updateStreetLamps ใช้ค่าเดียวกับ updateLamps)
+   ต่างกันแค่ไม่ใส่ PointLight ทีละต้น เพราะเสาไฟฉากมีหลายสิบต้น จะหนักเครื่องเด็ก
+   → ใช้วงแสงนวลบนพื้นแทนแสงจริงที่ตกกระทบ
+   วัสดุ 2 ชิ้นนี้ใช้ร่วมกันทุกต้นและกันไม่ให้ถูก merge รวม (userData.noMerge) → ปรับทีเดียวติด/ดับทั้งเมือง */
+const STREET_BULB = 0xfff59d;              /* สีโคมชุดเดียวกับเสาไฟตกแต่งบ้าน */
+const STREET_LIGHT_N = 6;                  /* ดวงไฟจริงมีแค่ 6 ดวง สร้างตอนเข้าฉากครั้งเดียว แล้ววนย้ายไปเสาที่ใกล้เด็กที่สุด
+                                              (เสาไฟมี 31 ต้น ถ้าใส่ PointLight ต้นละดวงจะหนักเครื่องเกินไป) */
 let streetGlowMat = null;
+let streetLampOn = false, streetLampCur = 0;   /* เป้าหมาย (ติด/ดับ) กับความสว่างจริงตอนนี้ 0..1 */
+let streetLampPos = [], streetLampLights = [], streetLightT = 0;
 function streetGlowMaterial(){
-  if(!streetGlowMat) streetGlowMat = new THREE.MeshBasicMaterial({color: 0xf0e3bd});
+  if(!streetGlowMat){
+    streetGlowMat = new THREE.MeshToonMaterial({color: STREET_BULB, emissive: new THREE.Color(0x000000)});
+    streetGlowMat.userData.noMerge = true;
+  }
   return streetGlowMat;
 }
-function refreshStreetLamps(){
-  if(!streetGlowMat) return;
-  const night = (typeof isNightMode === 'function') && isNightMode();
-  streetGlowMat.color.setHex(night ? 0xfff3bf : 0xf0e3bd);
+function applyStreetLampGlow(){
+  if(streetGlowMat) streetGlowMat.emissive.setHex(STREET_BULB).multiplyScalar(streetLampCur);
+}
+function refreshStreetLamps(snap){   /* กลางคืนสั่งติด กลางวันสั่งดับ (เรียกจาก refreshLamps ที่เดียวกับไฟ decor) */
+  streetLampOn = (typeof isNightMode === 'function') && isNightMode();
+  if(snap){ streetLampCur = streetLampOn ? 1 : 0; applyStreetLampGlow(); }
+}
+/* ไฟจริงของเสาไฟ: จองดวงไฟไว้ตอนเข้าฉากแค่ 6 ดวง (ไม่ผูกกับเสาต้นใดต้นหนึ่ง) แล้วย้ายไปเสาที่ใกล้เด็กที่สุดเป็นระยะ
+   หมายเหตุ: ต้องคง visible=true ตลอด แล้วคุมด้วย intensity อย่างเดียว เพราะจำนวนไฟที่ "มองเห็น" เปลี่ยนเมื่อไร
+   three.js จะคอมไพล์ shader ของวัสดุทั้งฉากใหม่ทันที (เดินผ่านเสาแล้วเฟรมกระตุก) */
+function initStreetLights(parent){
+  streetLampLights.forEach(li => { if(li.parent) li.parent.remove(li); });
+  streetLampLights = [];
+  for(let i=0; i<STREET_LIGHT_N; i++){
+    const li = new THREE.PointLight(0xfff2b0, 0, 5.5, 1.6);   /* ค่าเดียวกับเสาไฟ decor เป๊ะ (color/dist/decay ตาม lamp-post ใน house-furniture.js) */
+    li.castShadow = false;                 /* เงาจากไฟเสาหนักเกินไป ใช้แค่แสงนวลพอ */
+    li.position.set(0, -50, 0);            /* ยังไม่มีเสาที่ใกล้ → ซุกไว้ใต้พื้นแล้วหรี่เป็น 0 */
+    li.userData.k = 0; li.userData.post = null; li.userData.want = null;   /* ตัวหรี่ของดวงนี้ / เสาที่อยู่ตอนนี้ / เสาที่จะย้ายไป */
+    parent.add(li);
+    streetLampLights.push(li);
+  }
+  streetLightT = 0;
+}
+/* ย้ายดวงไฟไปเสาต้นใหม่แบบ "ค่อยๆ เฟด" (จังหวะเดียวกับสลับกลางวัน-กลางคืน):
+   ดวงไฟแต่ละดวงมีตัวหรี่ของตัวเอง (userData.k 0..1) — จะย้ายตำแหน่งได้ก็ต่อเมื่อหรี่ลงจนมืดสนิทแล้วเท่านั้น
+   แล้วค่อยสว่างขึ้นที่เสาต้นใหม่ (เมื่อก่อนกระโดดไปติดเต็มดวงทันที เดินผ่านเสาแล้วเห็นไฟกระพริบ)
+   การจับคู่เสาก็ยึดของเดิมไว้ก่อน (ดวงไหนยังอยู่ในกลุ่มเสาที่ใกล้ที่สุด ให้อยู่เสาเดิมต่อ) จะได้ไม่สลับเสากันไปมาโดยไม่จำเป็น */
+function updateStreetLights(dt){
+  if(!streetLampLights.length) return;
+  const lit = streetLampCur > .01;
+  streetLightT -= dt;
+  if(lit && streetLightT <= 0 && charGroup){
+    streetLightT = .4;                     /* เลือกเสาใหม่ทุก 0.4 วิ พอแล้ว (เด็กเดินไม่เร็วขนาดนั้น) */
+    const cx = charGroup.position.x, cz = charGroup.position.z;
+    const near = streetLampPos
+      .map(p => ({p, d:(p.x-cx)*(p.x-cx) + (p.z-cz)*(p.z-cz)}))
+      .filter(o => o.d < 324)              /* ในระยะ 18 ช่อง */
+      .sort((a, b) => a.d - b.d)
+      .slice(0, STREET_LIGHT_N);
+    const taken = near.map(() => false);
+    streetLampLights.forEach(li => {       /* รอบแรก: ใครยังได้เสาเดิม ให้อยู่ต่อ */
+      const cur = li.userData.post;
+      const i = cur ? near.findIndex((o, k) => !taken[k] && o.p === cur) : -1;
+      li.userData.want = i >= 0 ? (taken[i] = true, cur) : null;
+    });
+    streetLampLights.forEach(li => {       /* รอบสอง: ที่เหลือรับเสาใหม่ */
+      if(li.userData.want) return;
+      const i = near.findIndex((o, k) => !taken[k]);
+      if(i >= 0){ taken[i] = true; li.userData.want = near[i].p; }
+    });
+  }
+  const rate = Math.min(1, dt*1.8);        /* อัตราเฟดเดียวกับ updateStreetLamps/updateLamps */
+  streetLampLights.forEach(li => {
+    const u = li.userData;
+    const tgt = (lit && u.post && u.post === u.want) ? 1 : 0;
+    u.k = (u.k || 0) + (tgt - (u.k || 0)) * rate;
+    if(Math.abs(tgt - u.k) < .01) u.k = tgt;
+    if(u.k <= .01 && u.post !== u.want){   /* มืดสนิทแล้วค่อยย้ายไปเสาต้นใหม่ (ย้ายตอนสว่างอยู่จะเห็นไฟกระโดด) */
+      u.post = u.want;
+      if(u.post) li.position.set(u.post.x, 1.94, u.post.z);
+    }
+    li.intensity = 1.2 * streetLampCur * u.k;   /* ความแรงเท่าเสาไฟ decor (intensity 1.2 × ตัวหรี่กลางคืน = 1) */
+  });
+}
+function updateStreetLamps(dt){      /* ค่อยๆ สว่างขึ้น/หรี่ลง อัตราเดียวกับไฟ decor ใน updateLamps */
+  const tgt = streetLampOn ? 1 : 0;
+  if(Math.abs(tgt - streetLampCur) >= .002){
+    streetLampCur += (tgt - streetLampCur) * Math.min(1, dt*1.8);
+    applyStreetLampGlow();
+  } else if(streetLampCur !== tgt){
+    streetLampCur = tgt; applyStreetLampGlow();
+  }
+  updateStreetLights(dt);
 }
 function buildStreetLamp(){
   const g = new THREE.Group();
@@ -2358,6 +3224,29 @@ function buildStaticScenery(){
     fp.position.set(outWX(x), 0, outWZ(z));
     mergeCollect(fp, parts, chunkKeyOf(x, z));
   }
+  /* เขตโรงเรียน: รั้วรอบ box + ซุ้มประตู + เสาธงกลางลานหน้าโรงเรียน */
+  for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
+    if(!isSchoolFenceTile(x, z)) continue;
+    const sf = buildSchoolFencePiece(isSchoolFenceTile(x+1, z), isSchoolFenceTile(x, z+1));
+    sf.position.set(outWX(x), 0, outWZ(z));
+    mergeCollect(sf, parts, chunkKeyOf(x, z));
+  }
+  const sgate = buildSchoolGate();                         /* คร่อมช่องประตูทั้งสอง (วางกึ่งกลางระหว่างช่อง) */
+  sgate.position.set(outWX((SCHOOL_GATE[0][0] + SCHOOL_GATE[1][0])/2), 0, outWZ(SCHOOL_GATE[0][1]));
+  mergeCollect(sgate, parts, chunkKeyOf(SCHOOL_GATE[0][0], SCHOOL_GATE[0][1]));
+  const spole = buildFlagPole();
+  spole.position.set(outWX(SCHOOL_FLAG.x), 0, outWZ(SCHOOL_FLAG.z));
+  mergeCollect(spole, parts, chunkKeyOf(SCHOOL_FLAG.x, SCHOOL_FLAG.z));
+  /* ลานช่างไม้: พื้นไม้หน้ากระท่อม + ของในลาน (กองซุง/ไม้แปรรูป/ม้าเลื่อย/ตอไม้) */
+  const cy = buildWoodYard(CARPENTER_YARD.x1 - CARPENTER_YARD.x0 + 1, CARPENTER_YARD.z1 - CARPENTER_YARD.z0 + 1);
+  cy.position.set(outWX((CARPENTER_YARD.x0 + CARPENTER_YARD.x1)/2), 0, outWZ((CARPENTER_YARD.z0 + CARPENTER_YARD.z1)/2));
+  mergeCollect(cy, parts, chunkKeyOf(CARPENTER_YARD.x0, CARPENTER_YARD.z0));
+  CARPENTER_PROPS.forEach(([x,z,kind])=>{
+    const cp = buildCarpenterProp(kind);
+    cp.position.set(outWX(x), 0, outWZ(z));
+    cp.rotation.y = ((x*7 + z*5) % 4) * Math.PI/2 * .25 + .18;   /* หันเอียงคนละนิดให้ดูวางเอง ไม่เรียงเป๊ะ */
+    mergeCollect(cp, parts, chunkKeyOf(x, z));
+  });
   spawnPenAnimals();          /* สัตว์ในคอกเดินไปมาได้ → แยกกลุ่มของตัวเอง ไม่รวมเข้าฉากตายตัว */
   spawnNpcs();                /* ชาวบ้าน + กระดานภารกิจ → แยกกลุ่ม (แตะคุยได้/บางคนเดินไปมา) */
   FARM_PROPS.forEach(([x,z,kind])=>{
@@ -2390,9 +3279,11 @@ function buildStaticScenery(){
     mergeCollect(bp, parts, chunkKeyOf(x, z));
   });
   /* ม้านั่งในชุมชน/ลานกิจกรรม + รถเข็นขายของแทรกตามทาง */
+  streetLampPos = [];
   lampSpots().forEach(([x,z])=>{                       /* เสาไฟริมทางเดิน (กลางคืนโคมสว่างขึ้นเอง) */
     const lp = buildStreetLamp();
     lp.position.set(outWX(x), 0, outWZ(z));
+    streetLampPos.push({x: lp.position.x, z: lp.position.z});   /* จำตำแหน่งไว้ให้ดวงไฟจริงย้ายไปหา */
     mergeCollect(lp, parts, chunkKeyOf(x, z));
   });
   BENCH_SPOTS.forEach(([x,z,rot])=>{
@@ -2408,6 +3299,71 @@ function buildStaticScenery(){
     ct.rotation.y = (rot||0) * Math.PI/2;
     mergeCollect(ct, parts, chunkKeyOf(x, z));
   });
+  FLOWER_BEDS.forEach((b,i)=>{                       /* แปลงดอกไม้หน้าลานกิจกรรม */
+    mergeCollect(buildFlowerBed(b, i), parts, chunkKeyOf(b.x0, b.z0));
+  });
+  /* ---------- สระว่ายน้ำของโรงแรม ---------- */
+  const pdW = POOL_DECK.x1 - POOL_DECK.x0 + 1, pdD = POOL_DECK.z1 - POOL_DECK.z0 + 1;
+  const pdk = buildPoolDeckFloor(pdW, pdD);
+  pdk.position.set(outWX((POOL_DECK.x0+POOL_DECK.x1)/2), 0, outWZ((POOL_DECK.z0+POOL_DECK.z1)/2));
+  mergeCollect(pdk, parts, chunkKeyOf(POOL_DECK.x0, POOL_DECK.z0));
+  const pw = buildPoolWater(POOL.x1-POOL.x0+1, POOL.z1-POOL.z0+1);
+  pw.position.set(outWX((POOL.x0+POOL.x1)/2), 0, outWZ((POOL.z0+POOL.z1)/2));
+  mergeCollect(pw, parts, chunkKeyOf(POOL.x0, POOL.z0));
+  POOL_PROPS.forEach(([x,z,kind])=>{
+    const pp = buildPoolProp(kind);
+    pp.position.set(outWX(x), 0, outWZ(z));
+    if(kind === 'chair') pp.rotation.y = Math.PI;      /* เตียงหันหน้าเข้าหาสระ */
+    mergeCollect(pp, parts, chunkKeyOf(x, z));
+  });
+  /* ---------- สวนดอกไม้ 4 แปลงรอบน้ำพุ (ทางเดินรูปกากบาทเข้าหาน้ำพุ 4 ทิศ) ---------- */
+  FOUNTAIN_GARDEN.forEach((b,i)=>{
+    mergeCollect(buildPlazaBed(b, i), parts, chunkKeyOf(b.x0, b.z0));
+  });
+  /* ---------- ทุ่งดอกไม้: ผืนหน้าโรงแรม + ผืนใหญ่ริมขอบแผนที่ทิศใต้ + ดอกไม้ริมทางทั่วชุมชน ----------
+     ทุกช่องเป็นของตกแต่งบนพื้น ไม่บล็อกทางเดิน และข้ามช่องที่มีของอื่นอยู่แล้วเสมอ */
+  const fieldDone = new Set();
+  const fieldOpen = (x, z) => {
+    if(x<0 || z<0 || x>=OUT_W || z>=OUT_D) return false;
+    if(fieldDone.has(x + ',' + z)) return false;
+    if(outGrid[z][x]!==0 || isVillageRoadTile(x,z) || isPlazaTile(x,z) || lotAt(x,z,1)) return false;
+    if(inPoolDeck(x,z) || isSandTile(x,z) || inHomeZone(x,z)) return false;
+    return !VILLAGE_LOTS.some(l=>{ const d = lotDoorTile(l); return d.x===x && d.z===z; });   /* เว้นช่องหน้าประตูบ้าน */
+  };
+  const putField = (x, z, g2, isFlower) => {
+    g2.position.set(outWX(x), 0, outWZ(z));
+    mergeCollect(g2, parts, chunkKeyOf(x, z));
+    fieldDone.add(x + ',' + z);
+    if(isFlower) flowerSet.add(x + ',' + z);          /* แตะทุ่งแล้วเด็กเก็บดอกไม้ได้ (อนุภาคกลีบดอก) */
+  };
+  for(let z=FLOWER_FIELD.z0; z<=FLOWER_FIELD.z1; z++) for(let x=FLOWER_FIELD.x0; x<=FLOWER_FIELD.x1; x++){
+    if(!fieldOpen(x, z)) continue;
+    const isPath = (z === FLOWER_FIELD_PATH);
+    putField(x, z, isPath ? buildFieldPath(x, z) : buildFieldFlowers(x, z), !isPath);
+  }
+  for(let z=FLOWER_MEADOW.z0; z<=FLOWER_MEADOW.z1; z++) for(let x=FLOWER_MEADOW.x0; x<=FLOWER_MEADOW.x1; x++){
+    if(!fieldOpen(x, z)) continue;
+    if(inMeadowTrail(x, z)){ putField(x, z, buildFieldPath(x, z), false); continue; }
+    /* เว้นช่องเป็นหย่อมๆ ให้เห็นหญ้าโล่งแทรก ดูเป็นทุ่งธรรมชาติ ไม่ใช่พรมดอกไม้ทึบทั้งผืน */
+    if(((x*5 + z*11) % 5) === 0) continue;
+    putField(x, z, buildFieldFlowers(x, z, {base:3, band: (x + z*2) >> 1}), true);
+  }
+  /* ดอกไม้ริมถนน/ริมลาน/ริมอาคารทั่วชุมชน — กระจุกเล็กๆ ช่องเว้นช่อง ไม่ให้รกจนบังทาง */
+  for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
+    if(!fieldOpen(x, z)) continue;
+    const edge = nearRoadOrPlaza(x, z, 1) || !!lotAt(x, z, 2);
+    if(!edge) continue;
+    if(((x*7 + z*13) % 5) > 1) continue;               /* ~40% ของช่องริมทาง */
+    putField(x, z, buildFieldFlowers(x, z, {base:1, band: x + z}), true);
+  }
+  [FLOWER_FIELD.x0, FLOWER_FIELD.x1].forEach(x=>{    /* ซุ้มดอกไม้หัว-ท้ายทางเดินกลางทุ่ง */
+    const ar = buildFlowerArch();
+    ar.position.set(outWX(x), 0, outWZ(FLOWER_FIELD_PATH));
+    mergeCollect(ar, parts, chunkKeyOf(x, FLOWER_FIELD_PATH));
+  });
+  const fsg = buildFieldSign();
+  fsg.position.set(outWX(FLOWER_FIELD.x0 + 1) + .15, 0, outWZ(FLOWER_FIELD_PATH - 1) + .2);
+  mergeCollect(fsg, parts, chunkKeyOf(FLOWER_FIELD.x0, FLOWER_FIELD.z0));
   flowerTiles().forEach(([x,z],i)=>{
     const fl = new THREE.Group();
     const stem = new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.18,6), toonMat(0x4caf50));
@@ -2418,7 +3374,8 @@ function buildStaticScenery(){
     flowerSet.add(x + ',' + z);
   });
   flushMergedParts(parts, worldGroup);
-  refreshStreetLamps();          /* ตั้งสีโคมเสาไฟให้ตรงธีมกลางวัน/คืนตั้งแต่เข้าฉากครั้งแรก */
+  initStreetLights(worldGroup);                        /* จองดวงไฟจริงตอนเข้าฉากครั้งเดียว */
+  refreshStreetLamps(true);      /* เข้าฉากครั้งแรก: ตั้งไฟเสาให้ตรงธีมทันที ไม่ต้อง fade */
 }
 
 /* noWild=true → กริดฐานที่ยังไม่รวมของฉากป่า ใช้ตอน relieveWildPinch คำนวณคอขวด (กัน recursion) */
@@ -2459,14 +3416,17 @@ function buildOutGrid(noWild){
   /* เฟส 7: รั้ว/ของในคอก + เวที/เสาธง/ม้านั่ง/รถเข็น บล็อกทางเดิน
      (สัตว์ในคอกเดินไปมาได้ จึงไม่บล็อกช่อง / ท่าไม้กับคนตกปลาอยู่บนผืนน้ำที่บล็อกอยู่แล้ว) */
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++)
-    if(grid[z][x]===0 && (isPenFenceTile(x, z) || inBox(STAGE, x, z))) grid[z][x] = 3;
-  FARM_PROPS.concat(BANNER_POLES, BENCH_SPOTS, CART_SPOTS)
+    if(grid[z][x]===0 && (isPenFenceTile(x, z) || isSchoolFenceTile(x, z) || inBox(STAGE, x, z) || inFlowerBed(x, z)
+       || inFountainGarden(x, z) || inPool(x, z))) grid[z][x] = 3;
+  if(grid[SCHOOL_FLAG.z] && grid[SCHOOL_FLAG.z][SCHOOL_FLAG.x]===0) grid[SCHOOL_FLAG.z][SCHOOL_FLAG.x] = 3;   /* เสาธงหน้าโรงเรียน */
+  FARM_PROPS.concat(BANNER_POLES, BENCH_SPOTS, CART_SPOTS, CARPENTER_PROPS, POOL_PROPS)
     .forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   if(!noWild) lampSpots().forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });   /* เสาไฟบล็อกช่องตัวเอง */
   /* เฟส 8: ชาวบ้านที่ยืนประจำที่ + กระดานภารกิจ บล็อกช่องของตัวเอง
      (ชาวบ้านที่เดินไปมามี roam จึงไม่บล็อก — ดู NPC_TILES) */
   NPC_TILES.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
-  if(grid[QUEST_BOARD.z] && grid[QUEST_BOARD.z][QUEST_BOARD.x]===0) grid[QUEST_BOARD.z][QUEST_BOARD.x] = 3;
+  for(let i=0; i<(QUEST_BOARD.w||1); i++)                                   /* กระดานภารกิจกว้าง 2 ช่อง บล็อกทั้งสองช่อง */
+    if(grid[QUEST_BOARD.z] && grid[QUEST_BOARD.z][QUEST_BOARD.x+i]===0) grid[QUEST_BOARD.z][QUEST_BOARD.x+i] = 3;
   /* ปิดช่องหญ้าที่ถูกต้นไม้ล้อมจนเดินเข้าไม่ได้ (เกิดเองได้จากการสุ่มป่า)
      ถ้าปล่อยไว้ เด็กแตะช่องนั้นแล้วตัวละครจะยืนนิ่งเพราะหาทางไม่เจอ
      ปิดเป็น 3 แทน → ระบบจะเลือกช่องข้างเคียงที่เดินถึงให้อัตโนมัติ */
@@ -3003,6 +3963,7 @@ function setZoom(z){ hZoom = Math.min(1.8, Math.max(.85, z)); applyCamera(); }
 function tapStaticScene(pt){
   const gx = Math.round(pt.x + (OUT_W-1)/2), gz = Math.round(pt.z + (OUT_D-1)/2);
   if(gx<0 || gz<0 || gx>=OUT_W || gz>=OUT_D) return;
+  if(shakeTreeLeaves(gx, gz)) return;               /* แตะโดนต้นไม้/พุ่ม → ใบไม้ร่วง (ไม่ต้องเดินไป) */
   const seat = seatNear(pt);                        /* ม้านั่ง/เก้าอี้ผ้าใบ → เดินไปนั่งจริง */
   if(seat){ sitOnSeat(seat); return; }
   const lot = lotAt(gx, gz, 1);
@@ -3290,6 +4251,20 @@ function spawnParticle(x, y, z, color, parent){
   par.add(m);
   particles.push({m, parent:par, vx:(Math.random()-.5)*1.1, vy:.6+Math.random()*.7, vz:(Math.random()-.5)*1.1, life:1.1, max:1.1});
 }
+/* ใบไม้ร่วง: แผ่นบางๆ ร่วงลงช้าๆ ส่ายซ้าย-ขวา หมุนตัวไปด้วย (คนละแบบกับอนุภาคฟุ้งที่พุ่งขึ้นแล้วตก) */
+let leafGeo = null;
+function spawnLeaf(x, y, z, color){
+  if(!leafGeo){ leafGeo = new THREE.SphereGeometry(.09, 6, 5); leafGeo.scale(1, .32, .6); }
+  const m = new THREE.Mesh(leafGeo, toonMat(color));
+  m.position.set(x, y, z);
+  m.rotation.set(Math.random()*3.14, Math.random()*3.14, Math.random()*3.14);
+  m.userData.hLeaf = true;                 /* ป้ายไว้ให้เทสนับใบไม้ได้ (แตะโดนใบไม้ = ไม่มี tag ไหนตรง เดินตามปกติ) */
+  worldGroup.add(m);
+  particles.push({m, parent:worldGroup, leaf:true, t:0,
+    vx:(Math.random()-.5)*.5, vy:-(.5+Math.random()*.35), vz:(Math.random()-.5)*.5,
+    sway:1.5+Math.random()*1.8, phase:Math.random()*6.28, spin:(Math.random()-.5)*3.4,
+    life:2.4+Math.random()*.9, max:2.4});
+}
 /* ฉากตายตัวถูกรวม geometry เป็นก้อนแล้ว → ขยับตัวมันไม่ได้ ใช้ "อนุภาคฟุ้ง" แทนการเขย่า */
 function rustleWild(a){
   const p = a.pos;
@@ -3306,6 +4281,33 @@ function rustleWild(a){
   }
   if(typeof playClick==='function') playClick();
 }
+/* ---------- แตะต้นไม้: ใบไม้ร่วงเล่นๆ ----------
+   ของฉากป่าถูก merge เป็นก้อนเดียวแล้ว หาว่าแตะโดนต้นไหนจาก "ช่อง" ที่ ray ตกลงเอา
+   (wildLayout มี cache ตายตัวตลอดเกม จึงทำตารางช่อง→ของ ครั้งเดียวพอ) */
+let treeTileMap = null;
+function treeTiles(){
+  if(treeTileMap) return treeTileMap;
+  treeTileMap = new Map();
+  wildLayout().forEach(r => treeTileMap.set(r.x + ',' + r.z, r));
+  return treeTileMap;
+}
+function shakeTreeLeaves(gx, gz){
+  const rec = treeTiles().get(gx + ',' + gz);
+  if(!rec) return false;
+  const item = FURN.byId[rec.id];
+  const p = tileWorld({x:gx, z:gz});
+  const tall = WILD_TALL.includes(rec.id);
+  const pal = (item && item.colors) || [0x66c878];
+  const base = pal[(rec.col||0) % pal.length];
+  for(let i=0; i<(tall ? 9 : 5); i++){
+    spawnLeaf(p.x + (Math.random()-.5)*(tall ? 1.5 : .8),
+              (tall ? 1.7 + Math.random()*1.1 : .55 + Math.random()*.4),
+              p.z + (Math.random()-.5)*(tall ? 1.5 : .8),
+              i%3 ? base : 0xffc46b);          /* ใบเขียวสลับใบเหลือง ให้ดูเป็นใบไม้ร่วงจริง */
+  }
+  if(typeof playClick==='function') playClick();
+  return true;
+}
 /* ไปยืนหน้าอาคารในชุมชน — เฟสถัดไปตรงนี้จะเป็นจุดคุยกับ NPC/รับเควสต์ */
 let lotToastAt = 0;
 function greetLot(a){
@@ -3320,7 +4322,7 @@ function greetLot(a){
     const npc = NPCS.find(n => n.lot === l.id);
     showToast(l.kind==='home' ? '🏠' : (l.kind==='school' ? '🏫' : l.icon),
               npc ? (l.name + ' — ' + npc.name + 'ยืนรออยู่หน้าร้านนะ ไปทักทายกันเลย!')
-                  : (l.name + ' — เร็วๆ นี้จะมีเพื่อนมาอยู่นะ'));
+                  : (l.name + ' — ' + (l.desc || 'เร็วๆ นี้จะมีเพื่อนมาอยู่นะ')));
   }
 }
 
@@ -3556,6 +4558,17 @@ function updateFx(now, dt){
     const p = particles[i];
     p.life -= dt;
     if(p.life <= 0){ (p.parent || worldGroup).remove(p.m); particles.splice(i,1); continue; }
+    if(p.leaf){
+      p.t += dt;
+      p.m.position.x += (p.vx + Math.sin(p.phase + p.t*p.sway)*.6)*dt;
+      p.m.position.z += (p.vz + Math.cos(p.phase + p.t*p.sway*.8)*.4)*dt;
+      p.m.position.y += p.vy*dt;
+      p.m.rotation.z += p.spin*dt; p.m.rotation.x += p.spin*.6*dt;
+      if(p.m.position.y <= .06){ p.m.position.y = .06; p.vy = 0; p.spin *= .6; }  /* ถึงพื้นแล้วนอนนิ่ง รอจางหาย */
+      const s = Math.min(1, p.life/.7);
+      p.m.scale.set(s, s, s);
+      continue;
+    }
     p.vy -= 3*dt;
     p.m.position.x += p.vx*dt; p.m.position.y += p.vy*dt; p.m.position.z += p.vz*dt;
     if(p.m.position.y < .05) p.m.position.y = .05;
@@ -3869,9 +4882,14 @@ function spawnNpcs(){
     if(d.route){ n.route = d.route; n.rIdx = 1 % d.route.length; n.path = null; n.wait = Math.random()*4; }
     if(d.roam){                                                /* ช่องที่เดินได้ในกรอบเดินเล่น */
       n.tiles = [];
-      for(let z=d.roam.z0; z<=d.roam.z1; z++) for(let x=d.roam.x0; x<=d.roam.x1; x++)
+      /* town:true = ไม่มีกรอบ เดินได้ทั่วเมือง → ปลายทางเลือกเฉพาะช่องถนน/ลาน (เครือข่ายเดียวเชื่อมถึงกันทั้งแผนที่
+         ถ้าสุ่มทุกช่องที่เดินได้ จะได้ปลายทางกลางป่า/ริมทะเลที่เดินไปแล้วดูเหมือนหลงทาง) */
+      const z0 = d.roam.town ? 0 : d.roam.z0, z1 = d.roam.town ? OUT_D-1 : d.roam.z1;
+      const x0 = d.roam.town ? 0 : d.roam.x0, x1 = d.roam.town ? OUT_W-1 : d.roam.x1;
+      for(let z=z0; z<=z1; z++) for(let x=x0; x<=x1; x++)
         if(isWalk(outGrid, OUT_W, OUT_D, x, z)
-           && !(d.roam.nearShop && isVillageRoadTile(x, z)))   /* แม่ค้าเดินอยู่หน้าร้าน ไม่ลงไปกลางถนน */
+           && !(d.roam.nearShop && isVillageRoadTile(x, z))    /* แม่ค้าเดินอยู่หน้าร้าน ไม่ลงไปกลางถนน */
+           && !(d.roam.town && !isVillageRoadTile(x, z) && !isPlazaTile(x, z)))
           n.tiles.push({x, z});
     }
     npcs.push(n);
@@ -3879,7 +4897,7 @@ function spawnNpcs(){
   /* กระดานภารกิจข้างน้ำพุ */
   questBoardObj = buildQuestBoard();
   mergeDecorGroup(questBoardObj);
-  questBoardObj.position.set(outWX(QUEST_BOARD.x), 0, outWZ(QUEST_BOARD.z));
+  questBoardObj.position.set(outWX(QUEST_BOARD.x + ((QUEST_BOARD.w||1)-1)/2), 0, outWZ(QUEST_BOARD.z));
   questBoardObj.rotation.y = (QUEST_BOARD.rot || 0) * Math.PI/2;
   questBoardObj.userData.hBoard = true;
   worldGroup.add(questBoardObj);
@@ -5313,7 +6331,7 @@ function refreshLamps(){   /* เรียกจาก updateLights — สล�
   const night = (typeof isNightMode==='function') && isNightMode();
   if(night === _lampsNight) return;
   _lampsNight = night;
-  refreshStreetLamps();                 /* เสาไฟริมทางของฉาก (merge แล้ว) — สลับสีโคมทั้งชุดทีเดียว */
+  refreshStreetLamps();                 /* เสาไฟริมทางของฉาก (merge แล้ว) — สั่งติด/ดับทั้งชุดทีเดียว */
   ['in','out'].forEach(sc=>{ (decorGroups[sc]||[]).forEach(g=>{
     const lamp = g.userData.lamp; if(!lamp || lamp.alwaysOn) return;
     lamp.on = night;   /* โคม/เสาไฟ: เปิดกลางคืน ปิดกลางวันอัตโนมัติ (fade เอง) */
@@ -5449,6 +6467,7 @@ function frame(t){
   updateCompass();
   updatePosChip();
   updateLamps(t, dt);
+  updateStreetLamps(dt);
   renderer.render(scene, camera);
 }
 
