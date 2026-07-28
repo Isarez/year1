@@ -278,19 +278,19 @@ const CATS = [
   },
   {
     id:'listen1', name:'ฟังคำศัพท์ 1', emoji:'🎧', icon:'assets/icons/listen-1.svg', color:'#6C5CE7', light:'#E6E1FB',
-    type:'listen', mode:'hint', levels:10
+    type:'listen', mode:'hint', wordLens:[3,3,4], levels:10
   },
   {
     id:'listen2', name:'ฟังคำศัพท์ 2', emoji:'👂', icon:'assets/icons/listen-2.svg', color:'#5B6EE8', light:'#E1E6FD',
-    type:'listen', mode:'nohint', levels:10
+    type:'listen', mode:'nohint', wordLens:[3,4,4], levels:10
   },
   {
     id:'listen-th1', name:'ฟังคำไทย 1', emoji:'🗣️', icon:'assets/icons/listen-th1.svg', color:'#F2765E', light:'#FDE1DA',
-    type:'listen', mode:'hint', lang:'th', levels:10
+    type:'listen', mode:'hint', lang:'th', wordLens:[3,4,5], levels:10
   },
   {
     id:'listen-th2', name:'ฟังคำไทย 2', emoji:'🔊', icon:'assets/icons/listen-th2.svg', color:'#2FAE86', light:'#D8F3EA',
-    type:'listen', mode:'nohint', lang:'th', levels:10
+    type:'listen', mode:'nohint', lang:'th', wordLens:[4,4,5], levels:10
   },
   {
     id:'write-dots1', name:'ลากเส้นต่อจุด 1', emoji:'✏️', icon:'assets/icons/dots-1.svg', color:'#F08A24', light:'#FDEBD5',
@@ -500,7 +500,7 @@ const CATS = [
     /* mechanic-move: โจทย์ "อ่าน/สะกดคำ" (เช่น กา สะกดอย่างไร) เหมาะกับเกมฟัง — ฟังเสียงคำแล้วเรียงตัวอักษรสะกด
        reuse engine เกมฟังคำไทยเดิม (LISTEN_WORDS_TH คำ 3-5 ตัวอักษรไล่ตามด่าน), mode:'nohint' = ไม่เฉลยตัวอักษร (ท้าทายระดับ ป.1) */
     id:'p1-listen-th', name:'ฟังสะกดคำไทย ป.1', emoji:'🎙️', icon:'assets/icons/p1-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
-    type:'listen', mode:'nohint', lang:'th', levels:10, grade:'p1', isNew:true
+    type:'listen', mode:'nohint', lang:'th', wordLens:[4,4,5], levels:10, grade:'p1', isNew:true
   },
   /* ---------- English ป.1 : 2 level + เกมฟังคำอังกฤษ (listen) ---------- */
   {
@@ -566,7 +566,7 @@ const CATS = [
   {
     /* mechanic-move: ฝึกฟัง-สะกดคำอังกฤษ (listen, mode nohint) — reuse engine เกมฟังคำศัพท์อังกฤษเดิม */
     id:'p1-listen-en', name:'ฟังคำอังกฤษ ป.1', emoji:'📣', icon:'assets/icons/p1-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
-    type:'listen', mode:'nohint', levels:10, grade:'p1', isNew:true
+    type:'listen', mode:'nohint', wordLens:[3,4,4], levels:10, grade:'p1', isNew:true
   },
   {
     id:'p1-eng3', name:'English ป.1 · อ่านและประโยค', emoji:'🆎', icon:'assets/icons/p1-eng3.svg', color:'#0A7A75', light:'#D5F5F2', grade:'p1', poolPick:10, isNew:true,
@@ -1198,7 +1198,7 @@ const CATS = [
   {
     /* ฟังสะกดคำไทย ป.2 — reuse listen engine (คลัง LISTEN_WORDS_TH ร่วมกับระดับอื่น) */
     id:'p2-listen-th', name:'ฟังสะกดคำไทย ป.2', emoji:'🎙️', icon:'assets/icons/p2-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
-    type:'listen', mode:'nohint', lang:'th', levels:10, grade:'p2', isNew:true
+    type:'listen', mode:'nohint', lang:'th', wordLens:[4,5,5], levels:10, grade:'p2', isNew:true
   },
   {
     id:'p2-thai-match', name:'ภาษาไทย ป.2 · โยงเส้นคำ-รูป', emoji:'🧷', icon:'assets/icons/p2-thai-match.svg', color:'#8E7CC3', light:'#EAE4F7',
@@ -1306,7 +1306,7 @@ const CATS = [
   {
     /* ฟังคำอังกฤษ ป.2 — reuse listen engine (คลัง LISTEN_WORDS default en) */
     id:'p2-listen-en', name:'ฟังคำอังกฤษ ป.2', emoji:'📣', icon:'assets/icons/p2-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
-    type:'listen', mode:'nohint', levels:10, grade:'p2', isNew:true
+    type:'listen', mode:'nohint', wordLens:[3,4,5], levels:10, grade:'p2', isNew:true
   },
   {
     id:'p2-eng-sentence', name:'English ป.2 · ต่อประโยค', emoji:'🅰️', icon:'assets/icons/p2-eng-sentence.svg', color:'#5B6EE8', light:'#E1E6FD',
@@ -2194,6 +2194,16 @@ const CATS = [
   },
 
   /* ---------- Phase 3.5: เกมฝึกทักษะต่อยอด ป.3 (reuse engine เดิม) ---------- */
+  {
+    /* ฟังคำอังกฤษ ป.3 — คำ 4-5 ตัวอักษร (ต่อจาก ป.2 ที่จบที่ 5 และก่อน ป.4 ที่ไปถึง 7) */
+    id:'p3-listen-en', name:'ฟังคำอังกฤษ ป.3', emoji:'📻', icon:'assets/icons/p3-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
+    type:'listen', mode:'nohint', wordLens:[4,5,5], levels:10, grade:'p3', isNew:true
+  },
+  {
+    /* ฟังสะกดคำไทย ป.3 — คำ 4-6 ตัวอักษร */
+    id:'p3-listen-th', name:'ฟังสะกดคำไทย ป.3', emoji:'📢', icon:'assets/icons/p3-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'nohint', lang:'th', wordLens:[4,5,6], levels:10, grade:'p3', isNew:true
+  },
   { id:'p3-iq3', name:'เชาวน์ ป.3 · นกฮูกสั่ง', emoji:'🦉', icon:'assets/icons/p3-iq3.svg', color:'#17A65B', light:'#D6F3E4', type:'skill', mode:'ef', levels:10, handPlay:true, grade:'p3', isNew:true },
   { id:'p3-code1', name:'พาหุ่นยนต์ ป.3 · 1', emoji:'👾', icon:'assets/icons/p3-code1.svg', color:'#2BB3A3', light:'#D6F5F1', type:'skill', mode:'code', codeSet:'p3a', codeLoop:true, levels:10, handPlay:true, grade:'p3', isNew:true },
   { id:'p3-code2', name:'พาหุ่นยนต์ ป.3 · 2', emoji:'🛸', icon:'assets/icons/p3-code2.svg', color:'#2596A0', light:'#D6F1F5', type:'skill', mode:'code', codeSet:'p3b', codeLoop:true, levels:8, handPlay:true, grade:'p3', isNew:true },
@@ -2950,17 +2960,17 @@ const CATS = [
   },
   {
     id:'p4-eng-match', name:'English ป.4 · โยงเส้นคำศัพท์', emoji:'🗃️', icon:'assets/icons/p4-eng-match.svg', color:'#0A8F89', light:'#D5F5F2',
-    type:'ar', mode:'match', lang:'en', levels:10, grade:'p4', isNew:true
+    type:'ar', mode:'match', lang:'en', matchSet:'enAdv', levels:10, grade:'p4', isNew:true
   },
 
   /* ---------- เกมฟังคำศัพท์ ป.4 (ใช้ listen engine เดิม ไม่มีตัวช่วยเฉลย) ---------- */
   {
-    id:'p4-listen-en', name:'ฟังคำอังกฤษ ป.4', emoji:'📻', icon:'assets/icons/p4-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
-    type:'listen', mode:'nohint', levels:10, grade:'p4', isNew:true
+    id:'p4-listen-en', name:'ฟังคำอังกฤษ ป.4', emoji:'🎚️', icon:'assets/icons/p4-listen-en.svg', color:'#6C5CE7', light:'#E6E1FB',
+    type:'listen', mode:'nohint', wordLens:[5,6,7], levels:10, grade:'p4', isNew:true
   },
   {
-    id:'p4-listen-th', name:'ฟังสะกดคำไทย ป.4', emoji:'📢', icon:'assets/icons/p4-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
-    type:'listen', mode:'nohint', lang:'th', levels:10, grade:'p4', isNew:true
+    id:'p4-listen-th', name:'ฟังสะกดคำไทย ป.4', emoji:'🔉', icon:'assets/icons/p4-listen-th.svg', color:'#F2765E', light:'#FDE1DA',
+    type:'listen', mode:'nohint', lang:'th', wordLens:[5,6,7], levels:10, grade:'p4', isNew:true
   },
 
   /* ---------- เกมฝึกทักษะ ป.4 (reuse engine เดิม — เปิดโหมดเล่นด้วยมือหน้ากล้องทุกเกมที่เป็นกลไกแตะ) ---------- */
@@ -3241,14 +3251,40 @@ const SCIENCE_POOLS = { sci1: SCIENCE_FLOAT, sci2: SCIENCE_MIX, p2living: SCIENC
 
 /* ============================= LISTEN WORDS (เกมฟังคำศัพท์ 1/2) ============================= */
 /* คำศัพท์ภาษาอังกฤษ 3 ตัวอักษร ทุกคำมีตัวอักษรไม่ซ้ำกันเอง (ง่ายต่อการสุ่มการ์ดตัวหลอกไม่ให้ปนกับตัวอักษรของคำตอบ) */
-const LISTEN_WORDS = [
-  'cat','dog','sun','pen','cup','hat','bag','box','bed','bus',
-  'car','fan','jar','key','log','map','net','owl','pig','top',
-  'van','web','ant','arm','bat','cow','fox','gum','hen','kit',
-  'lip','red','wet','zip','mud','nut','oil','pot','rat','sit',
-  'ten','wig','yes','leg','ear','ice','sky','sea','toe','cap',
-  'jet','bun','mop','saw','tub'
-];
+/* คลังคำอังกฤษของเกมฟังคำศัพท์ — แบ่งบัคเก็ตตามจำนวนตัวอักษร (3-7) เพื่อไล่ความยากตามระดับชั้น
+   ผ่าน cat.wordLens (เช่น ป.4 ใช้ [5,6,7]) — ดู listenWordLen() ใน app.js
+   *** กติกาคลังคำ: ตัวอักษรในคำเดียวกันห้ามซ้ำกันเอง *** เพราะ engine ใช้ตัวอักษรเป็น key ของการ์ด (listenGame.cardEls) */
+const LISTEN_WORDS = {
+  3: [
+    'cat','dog','sun','pen','cup','hat','bag','box','bed','bus',
+    'car','fan','jar','key','log','map','net','owl','pig','top',
+    'van','web','ant','arm','bat','cow','fox','gum','hen','kit',
+    'lip','red','wet','zip','mud','nut','oil','pot','rat','sit',
+    'ten','wig','yes','leg','ear','ice','sky','sea','toe','cap',
+    'jet','bun','mop','saw','tub'
+  ],
+  4: [
+    'bird','fish','star','boat','milk','cake','lion','frog','duck','bear',
+    'hand','lamp','ring','sand','snow','rain','wind','gold','farm','corn',
+    'salt','soup','desk','sock','road','mask','wolf','coin','ship','wing',
+    'nest','cold','warm','fire','lake','gift','drum','harp','pear','rice'
+  ],
+  5: [
+    'plant','water','bread','tiger','horse','bench','cloud','grape','light','night',
+    'stone','chair','table','mouse','snake','whale','beach','train','brush','stamp',
+    'sword','plane','shirt','dance','fruit','north','world','month','sugar','tulip',
+    'bland','crown','field','glove','heart','juice','knife','maple','pilot','shelf'
+  ],
+  6: [
+    'garden','orange','monkey','pencil','jacket','silver','basket','flower','dragon','forest',
+    'market','planet','rocket','castle','guitar','hunter','island','jungle','muscle','number',
+    'parent','branch','spider','winter','yogurt','bridge','candle','donkey','shrimp','fabric'
+  ],
+  7: [
+    'dolphin','rainbow','blanket','kitchen','picture','leopard','thunder','holiday','journey','machine',
+    'monster','pyramid','subject','crystal','ostrich','panther','organic','uniform','brownie','antique'
+  ]
+};
 
 /* ============================= LISTEN WORDS TH (เกมฟังคำไทย 1/2) ============================= */
 /* คำศัพท์ไทย 3-5 ตัวอักษร แต่ละคำตัวอักษรไม่ซ้ำกันเอง แบ่งบัคเก็ตตามความยาวเหมือน AR_SENTENCES[lang][wordCount] เพื่อไล่ความยากตามด่าน (ดู listenThaiWordLen ใน app.js) แต่ละคำมี e = emoji สำรองไว้โชว์แทนเสียงถ้าเบราว์เซอร์ไม่รองรับเสียงพูดภาษาไทย */
@@ -3269,7 +3305,19 @@ const LISTEN_WORDS_TH = {
   ],
   5: [
     {w:'สิงโต', e:'🦁'}, {w:'ยีราฟ', e:'🦒'}, {w:'นกยูง', e:'🦚'}, {w:'กล้วย', e:'🍌'}, {w:'องุ่น', e:'🍇'},
-    {w:'แตงโม', e:'🍉'}, {w:'มะนาว', e:'🍋'}, {w:'ดินสอ', e:'✏️'}, {w:'เสื้อ', e:'👕'}, {w:'ใบไม้', e:'🍃'}
+    {w:'แตงโม', e:'🍉'}, {w:'มะนาว', e:'🍋'}, {w:'ดินสอ', e:'✏️'}, {w:'เสื้อ', e:'👕'}, {w:'ใบไม้', e:'🍃'},
+    {w:'ยางลบ', e:'🧽'}, {w:'หัวใจ', e:'💛'}, {w:'ลูกอม', e:'🍬'}, {w:'เตียง', e:'🛏️'}, {w:'โคมไฟ', e:'🏮'},
+    {w:'พัดลม', e:'🌀'}
+  ],
+  /* 6 ตัวอักษร — ใช้กับ ป.3 ขึ้นไป */
+  6: [
+    {w:'ดอกไม้', e:'🌸'}, {w:'ปลาทอง', e:'🐠'}, {w:'ขนมปัง', e:'🍞'}, {w:'กระดาษ', e:'📄'}, {w:'ผ้าห่ม', e:'🛌'},
+    {w:'ตะกร้า', e:'🧺'}, {w:'เสือดำ', e:'🐆'}, {w:'ไข่มุก', e:'🦪'}, {w:'เตารีด', e:'🧷'}, {w:'น้ำตาล', e:'🍯'}
+  ],
+  /* 7 ตัวอักษร — ใช้กับ ป.4 (คำยาวและมีสระผสม) */
+  7: [
+    {w:'จักรยาน', e:'🚲'}, {w:'ผีเสื้อ', e:'🦋'}, {w:'กระต่าย', e:'🐰'}, {w:'ทุเรียน', e:'🥭'}, {w:'สับปะรด', e:'🍍'},
+    {w:'กระเป๋า', e:'🎒'}, {w:'ลูกโป่ง', e:'🎈'}, {w:'มะพร้าว', e:'🥥'}, {w:'น้ำแข็ง', e:'🧊'}, {w:'แปรงฟัน', e:'🪥'}
   ]
 };
 
@@ -3325,6 +3373,17 @@ const AR_MATCH_ITEMS = {
     {e:'🌊',w:'Wave'}, {e:'🍞',w:'Bread'}, {e:'🥛',w:'Milk'}, {e:'🧦',w:'Sock'},
     {e:'👕',w:'Shirt'}, {e:'🎂',w:'Cake'}, {e:'🚪',w:'Door'}, {e:'🪟',w:'Window'},
     {e:'🛏️',w:'Bed'}
+  ],
+  /* คำศัพท์ยากขึ้นสำหรับ ป.4 (คำยาว 6-10 ตัวอักษร) — เลือกใช้ผ่าน cat.matchSet:'enAdv' */
+  enAdv:[
+    {e:'🦋',w:'Butterfly'}, {e:'☂️',w:'Umbrella'}, {e:'⛰️',w:'Mountain'}, {e:'🏥',w:'Hospital'},
+    {e:'💻',w:'Computer'}, {e:'🦕',w:'Dinosaur'}, {e:'🍍',w:'Pineapple'}, {e:'🐊',w:'Crocodile'},
+    {e:'🌋',w:'Volcano'}, {e:'🔬',w:'Microscope'}, {e:'🎺',w:'Trumpet'}, {e:'🧲',w:'Magnet'},
+    {e:'🪐',w:'Planet'}, {e:'🌉',w:'Bridge'}, {e:'🚁',w:'Helicopter'}, {e:'🦒',w:'Giraffe'},
+    {e:'🧑‍🚀',w:'Astronaut'}, {e:'📚',w:'Library'}, {e:'🥥',w:'Coconut'}, {e:'🐧',w:'Penguin'},
+    {e:'⚓',w:'Anchor'}, {e:'🏰',w:'Castle'}, {e:'🌪️',w:'Tornado'}, {e:'🧊',w:'Iceberg'},
+    {e:'🪃',w:'Boomerang'}, {e:'🐙',w:'Octopus'}, {e:'🎻',w:'Violin'}, {e:'🗺️',w:'Continent'},
+    {e:'🧭',w:'Compass'}, {e:'🏛️',w:'Museum'}
   ]
 };
 

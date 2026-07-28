@@ -4655,21 +4655,20 @@ function primeSpeechOnce(){
   try{ const p = new SpeechSynthesisUtterance(' '); p.volume = 0; speechSynthesis.speak(p); }catch(e){}
 }
 
-/* ไล่ความยากคำไทยตามด่าน: ด่าน 1-4 คำ 3 ตัวอักษร, 5-8 คำ 4 ตัวอักษร, 9-10 คำ 5 ตัวอักษร */
-function listenThaiWordLen(level){
-  if(level<=4) return 3;
-  if(level<=8) return 4;
-  return 5;
+/* ไล่ความยากตามด่าน + ตามระดับชั้น — cat.wordLens = [ช่วงด่านต้น, กลาง, ท้าย]
+   ค่า default คงพฤติกรรมเดิม (ไทย 3/4/5 ตัวอักษร, อังกฤษ 3 ตัวอักษรทุกด่าน)
+   ระดับชั้นสูงขึ้นตั้งค่ายาวขึ้นได้ เช่น ป.4 ไทย [5,6,7] / อังกฤษ [5,6,7] (ดู cat.wordLens ใน data.js) */
+function listenWordLen(cat, level){
+  const lens = cat.wordLens || (cat.lang==='th' ? [3,4,5] : [3,3,3]);
+  return level<=4 ? lens[0] : (level<=8 ? lens[1] : lens[2]);
 }
 
 /* จำนวนตัวอักษรที่เฉลยให้ (เฉพาะ mode 'hint' คือ ฟังคำไทย 1) ลดลงทุกครึ่งของแต่ละช่วงความยาวคำ */
-function listenThaiHintCount(cat, level){
+function listenThaiHintCount(cat, level, wordLen){
   if(cat.mode!=='hint') return 0;
-  if(level<=2) return 2;
-  if(level<=4) return 1;
-  if(level<=6) return 2;
-  if(level<=8) return 1;
-  return level<=9 ? 2 : 1;
+  const base = (level%4)<=2 ? 2 : 1;                  /* สลับ 2-1 ตัวเหมือนเดิมภายในแต่ละช่วงความยาวคำ */
+  const extra = Math.max(0, Math.floor(((wordLen||3)-3)/2)); /* คำยิ่งยาว เฉลยเพิ่มให้ 1 ตัวทุก 2 ตัวอักษรที่เพิ่มขึ้น */
+  return Math.min(base+extra, (wordLen||3)-2);        /* เหลือให้เด็กหาอย่างน้อย 2 ตัวเสมอ */
 }
 
 async function startListenGame(catId){
@@ -4678,7 +4677,7 @@ async function startListenGame(catId){
   const cat = catById(catId);
   listenGame = {
     catId, level:1, mistakes:0, totalLevels:cat.levels, noThaiVoice:false,
-    usedWordIdx: cat.lang==='th' ? {3:new Set(), 4:new Set(), 5:new Set()} : new Set()
+    usedWordIdx: {}   /* แยก Set ตามความยาวคำ (สร้างเมื่อใช้จริง) กันคำซ้ำภายในรอบเดียว */
   };
   homeView.hidden = true; resultView.hidden = true; quizView.hidden = true; arView.hidden = true; memoryView.hidden = true; listenView.hidden = false; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true; dotsView.hidden = true; clockView.hidden = true; efView.hidden = true; codeView.hidden = true; sciView.hidden = true; moneyView.hidden = true; fractionView.hidden = true; balanceView.hidden = true; calendarView.hidden = true; timelineView.hidden = true; sortView.hidden = true; worldView.hidden = true; coordView.hidden = true; chartView.hidden = true; areaView.hidden = true; angleView.hidden = true;
   document.documentElement.style.setProperty('--cat-color', cat.color);
@@ -4724,13 +4723,16 @@ function renderListenLevel(){
 
 function prepareListenLevelEn(cat){
   const level = listenGame.level;
-  const idx = pickNoRepeatIdx(listenGame.usedWordIdx, LISTEN_WORDS.length);
-  const word = LISTEN_WORDS[idx];
+  const wordLen = listenWordLen(cat, level);
+  const pool = LISTEN_WORDS[wordLen] || LISTEN_WORDS[3];
+  if(!listenGame.usedWordIdx[wordLen]) listenGame.usedWordIdx[wordLen] = new Set();
+  const idx = pickNoRepeatIdx(listenGame.usedWordIdx[wordLen], pool.length);
+  const word = pool[idx];
   const letters = word.split('');
 
   /* เฉลยตัวอักษร: เฉพาะ mode 'hint' (ฟังคำศัพท์ 1) เท่านั้น — เลือกตำแหน่งเฉลยแบบสุ่ม ไม่ตายตัวว่าต้องเป็นตัวแรก/ท้าย */
   let hintCount = 0;
-  if(cat.mode==='hint') hintCount = level<=5 ? 2 : 1;
+  if(cat.mode==='hint') hintCount = listenThaiHintCount({mode:'hint'}, level, wordLen);
   const positions = shuffleArray(letters.map((_,i)=>i));
   const hintPositions = positions.slice(0, hintCount);
   const findPositions = positions.slice(hintCount);
@@ -4739,7 +4741,9 @@ function prepareListenLevelEn(cat){
      (ไม่เฉลยเลย ต้องหาครบ 3 ตัวอยู่แล้ว ถ้าการ์ดเยอะเกินไปจะยากเกินไปสำหรับเด็ก 5 ขวบ) */
   const neededLetters = findPositions.map(p=>letters[p]);
   let decoyCount = level<=3 ? 2 : (level<=6 ? 3 : 4);
-  if(cat.mode==='nohint') decoyCount = Math.min(decoyCount, 5-neededLetters.length);
+  /* จำกัดจำนวนการ์ดรวมไม่ให้ล้นจอ: คำยิ่งยาวยิ่งเหลือที่ให้ตัวหลอกน้อยลง (เพดานรวม 9 ใบ) */
+  const capEn = Math.min(9, neededLetters.length + (wordLen<=3 ? 2 : (wordLen<=5 ? 3 : 2)));
+  decoyCount = Math.max(0, Math.min(decoyCount, capEn - neededLetters.length));
   const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c=>!letters.includes(c));
   shuffleArray(alphabet);
   const decoys = alphabet.slice(0, decoyCount);
@@ -4750,22 +4754,24 @@ function prepareListenLevelEn(cat){
 
 function prepareListenLevelTh(cat){
   const level = listenGame.level;
-  const wordLen = listenThaiWordLen(level);
-  const pool = LISTEN_WORDS_TH[wordLen];
+  const wordLen = listenWordLen(cat, level);
+  const pool = LISTEN_WORDS_TH[wordLen] || LISTEN_WORDS_TH[3];
+  if(!listenGame.usedWordIdx[wordLen]) listenGame.usedWordIdx[wordLen] = new Set();
   const idx = pickNoRepeatIdx(listenGame.usedWordIdx[wordLen], pool.length);
   const entry = pool[idx];
   const word = entry.w;
   const letters = word.split('');
 
-  const hintCount = listenThaiHintCount(cat, level);
+  const hintCount = listenThaiHintCount(cat, level, wordLen);
   const positions = shuffleArray(letters.map((_,i)=>i));
   const hintPositions = positions.slice(0, hintCount);
   const findPositions = positions.slice(hintCount);
   const neededLetters = findPositions.map(p=>letters[p]);
 
   let decoyCount = wordLen<=3 ? 2 : (wordLen<=4 ? 3 : 4);
-  if(cat.mode==='nohint'){
-    const cap = wordLen<=3 ? 5 : (wordLen<=4 ? 6 : 7);
+  {
+    /* เพดานการ์ดรวม 9 ใบเสมอ (จอเด็กวางได้พอดี) — คำยาวขึ้นจึงลดตัวหลอกลงอัตโนมัติ */
+    const cap = Math.min(9, letters.length + (wordLen<=3 ? 2 : (wordLen<=5 ? 3 : 2)));
     decoyCount = Math.max(0, Math.min(decoyCount, cap-letters.length));
   }
   const decoyPool = THAI_DECOY_CHARS.filter(c=>!letters.includes(c));
@@ -5165,7 +5171,7 @@ function buildMatchLevel(cat){
   $('ar-match-wrap').hidden = false;
   const level = arGame.level;
   const n = level<=3 ? 3 : (level<=6 ? 4 : 5);
-  const pool = AR_MATCH_ITEMS[cat.lang || 'th'];
+  const pool = AR_MATCH_ITEMS[cat.matchSet || cat.lang || 'th'];  /* cat.matchSet = คลังคำศัพท์ยากของชั้นสูง (เช่น 'enAdv' ของ ป.4) */
   /* เลือกคู่ที่ยังไม่เคยออกในรอบนี้ก่อน กันด่านซ้ำ ถ้าเหลือไม่พอสำหรับด่านนี้ค่อยเคลียร์แล้วเริ่มใหม่ */
   let availableIdx = pool.map((_,i)=>i).filter(i=>!arGame.usedMatchKeys.has(i));
   if(availableIdx.length < n){ arGame.usedMatchKeys.clear(); availableIdx = pool.map((_,i)=>i); }
