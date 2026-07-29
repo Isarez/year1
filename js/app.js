@@ -2713,6 +2713,7 @@ function renderClozeLevel(){
   g.blanks = shuffleArray(item.b.slice()).slice(0, nBlank).sort((a,b)=>a-b);
   g.answers = g.blanks.map(i=>g.tokens[i]);
   g.filled = {};      /* ตำแหน่งช่อง -> คำที่เลือก */
+  g.filledCard = {};  /* ตำแหน่งช่อง -> การ์ดที่ใช้เติม (เก็บ element ตรงๆ กันคำซ้ำ) */
   g.locked = false;
 
   /* ตัวหลอก: คำที่เว้นได้ของประโยคอื่นในชุดเดียวกัน (ไม่ซ้ำกับคำเฉลย) */
@@ -2757,10 +2758,12 @@ function clozeFirstEmpty(){
 }
 function clozePick(word, cardEl){
   const g = clozeGame; if(!g || g.locked) return;
+  if(cardEl.classList.contains('used')) return;   /* การ์ดที่ถูกใช้แล้วกดซ้ำไม่ได้ (กันกดรัว/กดผ่านสคริปต์) */
   const pos = clozeFirstEmpty();
   if(pos===undefined) return;
   playClick();
   g.filled[pos] = word;
+  g.filledCard[pos] = cardEl;   /* จำ element ตรงๆ ไม่ map ด้วยคำ — คำในการ์ดซ้ำกันได้โดยไม่พัง */
   cardEl.classList.add('used');
   const slot = $('cloze-sentence').querySelector('.cloze-blank[data-pos="'+pos+'"]');
   if(slot){ slot.textContent = word; slot.classList.add('filled'); }
@@ -2772,7 +2775,9 @@ function clozeUndo(pos){
   if(word===undefined) return;
   playClick();
   delete g.filled[pos];
-  if(g.cardEls[word]) g.cardEls[word].classList.remove('used');
+  const el = g.filledCard[pos] || g.cardEls[word];
+  if(el) el.classList.remove('used');
+  delete g.filledCard[pos];
   const slot = $('cloze-sentence').querySelector('.cloze-blank[data-pos="'+pos+'"]');
   if(slot){ slot.textContent='___'; slot.classList.remove('filled'); }
 }
