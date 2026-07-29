@@ -537,6 +537,30 @@
   <div class="house-fade" id="house-fade"></div>
 </section>
 
+<!-- หน้าจอโหลดตอนเข้า "บ้านของหนู" — ครั้งแรกต้องสร้างโมเดลทั้งเมือง (ถนน/บ้าน/ต้นไม้/ของตกแต่ง) ใช้เวลาสักครู่
+     อยู่นอก #house-view เพราะต้องขึ้นคลุมจอตั้งแต่ยังไม่เปิด view -->
+<div class="house-loading" id="house-loading" hidden>
+  <div class="hl-sky" aria-hidden="true">
+    <span class="hl-cloud hl-cloud1"></span><span class="hl-cloud hl-cloud2"></span><span class="hl-cloud hl-cloud3"></span>
+  </div>
+  <div class="hl-box" role="status" aria-live="polite">
+    <div class="hl-badge">
+      <span class="hl-ring" aria-hidden="true"></span>
+      <span class="hl-spark hl-spark1" aria-hidden="true">✨</span>
+      <span class="hl-spark hl-spark2" aria-hidden="true">⭐</span>
+      <span class="hl-spark hl-spark3" aria-hidden="true">💫</span>
+      <img class="hl-house" src="assets/icons/my-house.svg" alt="">
+      <span class="hl-ground" aria-hidden="true"></span>
+    </div>
+    <div class="hl-card">
+      <div class="hl-title">บ้านของหนู</div>
+      <div class="hl-text" id="house-loading-text">กำลังปลุกเมืองให้ตื่น…</div>
+      <div class="hl-bar"><span class="hl-bar-fill" id="house-loading-bar"></span></div>
+      <div class="hl-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</div>
+
 <div class="owl-widget" id="owl-widget">
   <div class="owl-speech" id="owl-speech"></div>
   <button class="mascot" id="mascot" aria-label="นกฮูกสนุกคิด"><img src="assets/owl_full.svg" alt="นกฮูก" width="64" height="68"></button>

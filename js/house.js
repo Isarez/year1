@@ -765,6 +765,7 @@ function roomOf(x, z){
 
 /* ---------- state ---------- */
 let hInit = false;
+let hCore = false;                      /* สร้าง renderer/กล้อง/แสงเสร็จแล้ว (ขั้นแรกของ initThree) */
 let renderer, camera, raycaster, groundPlane;
 let scene, worldGroup, interiorGroup, creatorGroup, charGroup = null;
 let hemiLight, dirLight;
@@ -4075,8 +4076,10 @@ function updateLightLerp(dt){
   dirLight.color.lerpColors(from.dc, to.dc, e);
   if(k>=1) lightLerp = null;
 }
-function initThree(){
-  if(hInit) return true;
+/* ขั้นแรกของการเปิดฉาก: renderer + กล้อง + แสง (ยังไม่สร้างโมเดลเมือง)
+   แยกเป็นก้อนๆ เพื่อให้ startHouseGame แทรกหน้าจอโหลดคั่นระหว่างแต่ละก้อนได้ */
+function initThreeCore(){
+  if(hCore) return true;
   const canvas = $('house-canvas');
   try{
     renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias: !isMobileViewport()});
@@ -4109,9 +4112,13 @@ function initThree(){
   }
   scene.add(dirLight);
 
-  buildWorld();
-  buildInterior();
+  hCore = true;
+  return true;
+}
 
+/* ส่วนท้ายของ initThree — เรียกหลังสร้างฉาก (buildWorld/buildInterior) เสร็จแล้วเท่านั้น */
+function initThreeFinish(){
+  if(hInit) return;
   /* พื้นที่กลมสำหรับโหมดสร้างตัวละคร */
   creatorGroup = new THREE.Group();
   const plat = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.45,.22,24), toonMat(0x7cc25a));
@@ -4124,7 +4131,7 @@ function initThree(){
     .observe(document.body, {attributes:true, attributeFilter:['class']});
 
   window.addEventListener('resize', ()=>{ if(!houseOpen) return; renderer.setSize(window.innerWidth, window.innerHeight); applyCamera(); if(editMode) positionToolbar(); });
-  bindCanvasInput(canvas);
+  bindCanvasInput($('house-canvas'));
   hInit = true;
   return true;
 }
@@ -6717,14 +6724,75 @@ function frame(t){
   renderer.render(scene, camera);
 }
 
+/* ---------- หน้าจอโหลด ----------
+   เข้าเกมครั้งแรกต้องสร้างโมเดลทั้งเมือง (ถนน/บ้าน/ต้นไม้/ของตกแต่งหลายพันชิ้น) ซึ่งเป็นงานหนักแบบ sync
+   ระหว่างนั้นเบราว์เซอร์วาดอะไรไม่ได้เลย จอจะค้าง จึงโชว์หน้าจอโหลดคั่นก่อน แล้วแบ่งงานเป็นก้อนๆ
+   ยอมคืนเฟรมให้เบราว์เซอร์วาดระหว่างก้อน หลอดจะได้ขยับจริงและการ์ตูนไม่ค้าง */
+let houseLoadHideT = null;
+function setHouseLoading(pct, msg){
+  const bar = $('house-loading-bar'), tx = $('house-loading-text');
+  if(bar) bar.style.width = Math.round(pct*100) + '%';
+  if(msg && tx) tx.textContent = msg;
+}
+function showHouseLoading(){
+  const el = $('house-loading');
+  if(!el) return;
+  clearTimeout(houseLoadHideT);
+  el.classList.remove('done');
+  el.hidden = false;
+  setHouseLoading(.06, 'กำลังปลุกเมืองให้ตื่น…');
+}
+function hideHouseLoading(){
+  const el = $('house-loading');
+  if(!el) return;
+  el.classList.add('done');                       /* เฟดออก แล้วค่อยซ่อนจริงตอนเฟดจบ */
+  houseLoadHideT = setTimeout(()=>{ el.hidden = true; el.classList.remove('done'); }, 420);
+}
+/* รอให้เบราว์เซอร์ "วาดจริง" 1 เฟรมก่อนทำงานหนักก้อนถัดไป — rAF ชั้นเดียวยังวาดไม่ทัน ต้อง 2 ชั้น */
+function afterPaint(fn){ requestAnimationFrame(()=>requestAnimationFrame(fn)); }
+
 /* ---------- เข้า/ออก view ---------- */
+let houseLoading = false;
+function houseLoadFail(msg, err){
+  if(err) console.error(err);
+  houseLoading = false;
+  hideHouseLoading();
+  if(typeof showToast==='function') showToast('😢', msg);
+}
 function startHouseGame(){
   if(typeof playClick==='function') playClick();
   if(!activeChild){ if(typeof showToast==='function') showToast('🙈','เลือกโปรไฟล์ก่อนนะ'); return; }
-  if(!initThree()){
-    if(typeof showToast==='function') showToast('😢','อุปกรณ์นี้เปิดบ้าน 3D ไม่ได้');
-    return;
-  }
+  if(houseLoading) return;                        /* กดรัวระหว่างโหลดแล้วสร้างฉากซ้อนกันไม่ได้ */
+  if(hInit){ enterHouseGame(); return; }          /* เคยเข้ามาแล้ว ฉากอยู่ในหน่วยความจำ เข้าได้เลย */
+  houseLoading = true;
+  showHouseLoading();
+  /* งานหนักแบ่งเป็น 4 ก้อน คั่นด้วย afterPaint ทุกก้อน เพื่อให้หน้าจอโหลดขยับได้จริงระหว่างสร้างฉาก */
+  const steps = [
+    ()=>{
+      if(!initThreeCore()){ houseLoadFail('อุปกรณ์นี้เปิดบ้าน 3D ไม่ได้'); return false; }
+      setHouseLoading(.22, 'กำลังสร้างถนนกับบ้านทั้งเมือง…');
+    },
+    ()=>{ buildWorld();    setHouseLoading(.66, 'จัดของในบ้านให้เรียบร้อย…'); },
+    ()=>{ buildInterior(); setHouseLoading(.88, 'ตามหาตัวละครของหนู…'); },
+    ()=>{
+      initThreeFinish();
+      houseLoading = false;
+      enterHouseGame();
+      setHouseLoading(1, 'พร้อมแล้ว ไปเที่ยวกันเลย!');
+      afterPaint(hideHouseLoading);               /* เปิดม่านหลังเกมวาดเฟรมแรกเสร็จ ไม่เห็นจอว่างคั่น */
+    },
+  ];
+  const run = i => {
+    if(i >= steps.length) return;
+    try{
+      if(steps[i]() === false) return;            /* ก้อนไหนพังก็หยุด พร้อมปิดหน้าจอโหลดไปแล้ว */
+    }catch(err){ houseLoadFail('เปิดบ้านไม่สำเร็จ ลองใหม่อีกครั้งนะ', err); return; }
+    afterPaint(()=>run(i + 1));
+  };
+  afterPaint(()=>run(0));
+}
+
+function enterHouseGame(){
   /* ซ่อน view อื่นทั้งหมด (pattern เดียวกับ startQuiz/startARGame) */
   homeView.hidden = true; quizView.hidden = true; resultView.hidden = true; arView.hidden = true;
   memoryView.hidden = true; listenView.hidden = true; shadowView.hidden = true; mixView.hidden = true; musicView.hidden = true;
