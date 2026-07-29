@@ -705,6 +705,87 @@
     </div>
   </section>
 
+  <!-- CIRCUIT VIEW (ต่อวงจรไฟฟ้า — หมุนชิ้นทีละ 90° ให้ไฟครบวงจร) -->
+  <section id="circuit-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="circuit-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="circuit-cat-label">ต่อวงจรไฟฟ้า</div>
+        <div class="progress-track"><div class="progress-fill" id="circuit-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="circuit-hint"></div>
+      </div>
+      <div class="q-counter" id="circuit-level-counter">1/10</div>
+    </div>
+    <div class="circuit-board">
+      <div class="circuit-grid-wrap"><div class="circuit-grid" id="circuit-grid"></div></div>
+      <div class="area-controls">
+        <button class="world-check-btn" id="circuit-check">เปิดไฟ! 💡</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TANGRAM VIEW (แท็งแกรม — หมุนชิ้นทีละ 45° แล้ววางลงเงา) -->
+  <section id="tangram-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="tangram-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="tangram-cat-label">แท็งแกรมวิเศษ</div>
+        <div class="progress-track"><div class="progress-fill" id="tangram-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="tangram-hint"></div>
+      </div>
+      <div class="q-counter" id="tangram-level-counter">1/10</div>
+    </div>
+    <div class="tangram-board">
+      <div class="tangram-title" id="tangram-title"></div>
+      <div class="tangram-stage" id="tangram-stage"></div>
+      <div class="tangram-tray" id="tangram-tray"></div>
+      <div class="area-controls">
+        <button class="world-rot-btn" id="tangram-rot">หมุนชิ้นนี้ 45° ↻</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MIRROR VIEW (กระจกวิเศษ — ระบายให้สมมาตรกับอีกฝั่ง) -->
+  <section id="mirror-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="mirror-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="mirror-cat-label">กระจกวิเศษ</div>
+        <div class="progress-track"><div class="progress-fill" id="mirror-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="mirror-hint"></div>
+      </div>
+      <div class="q-counter" id="mirror-level-counter">1/10</div>
+    </div>
+    <div class="mirror-board">
+      <div class="mirror-title" id="mirror-title"></div>
+      <div class="mirror-grid-wrap"><div class="mirror-grid" id="mirror-grid"></div></div>
+      <div class="mirror-palette" id="mirror-palette"></div>
+      <div class="area-controls">
+        <button class="world-check-btn" id="mirror-check">ตรวจคำตอบ ✓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ORDER VIEW (เรียงลำดับวิเศษ — แตะสลับตำแหน่งการ์ดให้เรียงถูก) -->
+  <section id="order-view" hidden>
+    <div class="quiz-top">
+      <button class="back-btn" id="order-back" aria-label="กลับหน้าหลัก">←</button>
+      <div class="quiz-top-info">
+        <div class="cat-label" id="order-cat-label">เรียงลำดับวิเศษ</div>
+        <div class="progress-track"><div class="progress-fill" id="order-progress-fill" style="width:0%"></div></div>
+        <div class="code-hint" id="order-hint"></div>
+      </div>
+      <div class="q-counter" id="order-level-counter">1/10</div>
+    </div>
+    <div class="order-board">
+      <div class="order-title" id="order-title"></div>
+      <div class="order-row" id="order-row"></div>
+      <div class="area-controls">
+        <button class="world-check-btn" id="order-check">ตรวจคำตอบ ✓</button>
+      </div>
+    </div>
+  </section>
+
   <!-- RESULT VIEW -->
   <section id="result-view" hidden>
     <div class="result-card">

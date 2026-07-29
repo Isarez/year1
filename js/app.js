@@ -641,7 +641,8 @@ const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('resu
 /* ป.2 engine ใหม่ (IDEA + Phase 2.2): ร้านค้า(เงิน) / เศษส่วน / ตาชั่ง / ปฏิทิน */
 const moneyView = $('money-view'), fractionView = $('fraction-view'), balanceView = $('balance-view'), calendarView = $('calendar-view'), timelineView = $('timeline-view'), sortView = $('sort-view'), worldView = $('world-view'), coordView = $('coord-view');
 const chartView = $('chart-view'), areaView = $('area-view'), angleView = $('angle-view');
-const clozeView = $('cloze-view'); // เกมฟังประโยคเติมคำ // เกม ป.4 (แผนภูมิแท่ง / พื้นที่ / มุม)
+const clozeView = $('cloze-view');
+const circuitView = $('circuit-view'), tangramView = $('tangram-view'), mirrorView = $('mirror-view'), orderView = $('order-view'); // เกมฟังประโยคเติมคำ // เกม ป.4 (แผนภูมิแท่ง / พื้นที่ / มุม)
 
 /* ---- ตัวช่วยสลับหน้าจอเกม ----
    showOnlyView(v) = โชว์ view เดียว ซ่อนที่เหลือทั้งหมด (showOnlyView(null) = ซ่อนทุก view)
@@ -650,7 +651,8 @@ const clozeView = $('cloze-view'); // เกมฟังประโยคเต
 const ALL_VIEWS = [
   homeView, quizView, resultView, arView, memoryView, listenView, shadowView, mixView, musicView,
   dotsView, clockView, efView, codeView, sciView, moneyView, fractionView, balanceView, calendarView,
-  timelineView, sortView, worldView, coordView, chartView, areaView, angleView, clozeView
+  timelineView, sortView, worldView, coordView, chartView, areaView, angleView, clozeView,
+  circuitView, tangramView, mirrorView, orderView
 ];
 function showOnlyView(view){ ALL_VIEWS.forEach(v => { v.hidden = (v !== view); }); }
 const mascot = $('mascot');
@@ -795,6 +797,10 @@ function renderHome(){
       else if(cat.type==='skill' && cat.mode==='chart') startChartGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='area') startAreaGame(cat.id);
       else if(cat.type==='skill' && cat.mode==='angle') startAngleGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='circuit') startCircuitGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='tangram') startTangramGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='mirror') startMirrorGame(cat.id);
+      else if(cat.type==='skill' && cat.mode==='order') startOrderGame(cat.id);
       else if(cat.type==='skill') startMemoryGame(cat.id);
       else if(cat.type==='listen' && cat.mode==='cloze') startClozeGame(cat.id);
       else if(cat.type==='listen') startListenGame(cat.id);
@@ -1045,6 +1051,10 @@ $('retry-btn').addEventListener('click', ()=>{
   else if(lastGameType==='area'){ startAreaGame(lastCatId); }
   else if(lastGameType==='angle'){ startAngleGame(lastCatId); }
   else if(lastGameType==='cloze'){ startClozeGame(lastCatId); }
+  else if(lastGameType==='circuit'){ startCircuitGame(lastCatId); }
+  else if(lastGameType==='tangram'){ startTangramGame(lastCatId); }
+  else if(lastGameType==='mirror'){ startMirrorGame(lastCatId); }
+  else if(lastGameType==='order'){ startOrderGame(lastCatId); }
   else { startQuiz(state.catId); }
   if(lastCatId) mountHandPlay(catById(lastCatId));
 });
@@ -6978,3 +6988,449 @@ for(let i=0;i<22;i++){
 /* ============================= INIT ============================= */
 loadChildren();
 renderChildSelect();
+
+/* ================================================================================================
+   เกมใหม่ของ ป.5-6 (นำ mechanic จาก IDEA.md มาทำจริง) — 4 engine ที่มี "การหมุน/สลับตำแหน่ง"
+   1) circuit  ต่อวงจรไฟฟ้า  — แตะชิ้นท่อไฟหมุนทีละ 90° ให้กระแสไหลจากถ่านถึงหลอดไฟ (ว 2.3 ป.6)
+   2) tangram  แท็งแกรมวิเศษ — แตะเลือกชิ้น หมุนทีละ 45° แล้วแตะเงาที่ต้องการวาง (ค 2.2)
+   3) mirror   กระจกวิเศษ    — ระบายฝั่งขวาให้สมมาตรกับฝั่งซ้าย (การสะท้อน/ความสมมาตร)
+   4) order    เรียงลำดับวิเศษ — แตะสลับตำแหน่งการ์ดให้เรียงถูกตามโจทย์
+   ทุกเกมจบด้วย finishP2Game (ดาวเกณฑ์ mistakes เดิม 0→3, ≤4→2, else→1) เหมือนเกมทักษะอื่น
+   ================================================================================================ */
+
+/* ---------------- 1) ต่อวงจรไฟฟ้า (circuit) ----------------
+   ชิ้นในตารางเก็บเป็น "หน้ากากทิศที่เปิด" 4 บิต: 1=บน 2=ขวา 4=ล่าง 8=ซ้าย
+   หมุน 90° ตามเข็ม = เลื่อนบิตไปทางซ้าย 1 (บน→ขวา→ล่าง→ซ้าย→บน)
+   ด่านเก็บเป็น "เส้นทาง" (path) ของช่อง แล้วคำนวณชนิดชิ้นจากเพื่อนบ้านให้อัตโนมัติ
+   จึงไม่มีทางสร้างด่านที่แก้ไม่ได้ — ผู้เล่นแค่หมุนให้ตรงกับคำตอบ */
+let circuitGame = null;
+const CIRCUIT_DIRS = [[-1,0,1],[0,1,2],[1,0,4],[0,-1,8]]; /* dr, dc, bit */
+function circuitRot(mask, times){ let m = mask; for(let i=0;i<((times%4)+4)%4;i++) m = ((m<<1)|(m>>3)) & 15; return m; }
+function circuitMaskTo(from, to){ /* บิตของทิศจาก from ไป to */
+  const dr = to[0]-from[0], dc = to[1]-from[1];
+  const d = CIRCUIT_DIRS.find(x=>x[0]===dr && x[1]===dc);
+  return d ? d[2] : 0;
+}
+function startCircuitGame(catId){
+  stopARGame();
+  lastGameType='circuit'; lastCatId=catId;
+  const cat = catById(catId);
+  circuitGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false };
+  showOnlyView(circuitView);
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  circuitView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('circuit-cat-label', cat);
+  renderCircuitLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function pickCircuitLevel(used){
+  let avail = CIRCUIT_LEVELS.map((l,i)=>i).filter(i=>!used.has(i));
+  if(!avail.length){ used.clear(); avail = CIRCUIT_LEVELS.map((l,i)=>i); }
+  const pick = avail[Math.floor(Math.random()*avail.length)];
+  used.add(pick);
+  return CIRCUIT_LEVELS[pick];
+}
+function renderCircuitLevel(){
+  const g = circuitGame;
+  const lv = pickCircuitLevel(g.used);
+  const size = lv.size, path = lv.path;
+  const cells = {};
+  path.forEach((p, i)=>{
+    let mask = 0;
+    if(i>0) mask |= circuitMaskTo(p, path[i-1]);
+    if(i<path.length-1) mask |= circuitMaskTo(p, path[i+1]);
+    const node = i===0 ? 'battery' : (i===path.length-1 ? 'bulb' : null);
+    cells[p[0]+','+p[1]] = { r:p[0], c:p[1], sol:mask, node:node, rot:0, fixed:!!node };
+  });
+  (lv.decoys||[]).forEach(d=>{
+    const key = d[0]+','+d[1];
+    if(cells[key]) return;
+    cells[key] = { r:d[0], c:d[1], sol:(d[2]||10), node:null, rot:0, fixed:false };
+  });
+  /* สุ่มมุมเริ่มต้นของชิ้นที่หมุนได้ (กันไม่ให้ถูกตั้งแต่แรก) */
+  const rotatable = Object.values(cells).filter(c=>!c.fixed);
+  do { rotatable.forEach(c=>{ c.rot = Math.floor(Math.random()*4); });
+  } while(rotatable.length && rotatable.every(c=>c.rot===0));
+  g.size = size; g.cells = cells; g.locked = false;
+  $('circuit-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('circuit-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('circuit-hint').textContent = 'แตะชิ้นสายไฟเพื่อหมุน ให้ไฟวิ่งจากถ่านไปถึงหลอดไฟ';
+  renderCircuitGrid();
+}
+function circuitPieceSvg(mask, live){
+  const col = live ? '#F5A623' : 'var(--cat-color,#2E86C1)';
+  let d = '';
+  if(mask & 1) d += 'M50 50 L50 2 ';
+  if(mask & 2) d += 'M50 50 L98 50 ';
+  if(mask & 4) d += 'M50 50 L50 98 ';
+  if(mask & 8) d += 'M50 50 L2 50 ';
+  return '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="'+d+'" stroke="'+col+'" stroke-width="14" stroke-linecap="round" fill="none"/>'+
+         '<circle cx="50" cy="50" r="9" fill="'+col+'"/></svg>';
+}
+function circuitLiveSet(){
+  /* BFS จากถ่านไฟฉาย ผ่านช่องที่ "เปิดหากัน" ทั้งสองฝั่ง */
+  const g = circuitGame, live = new Set();
+  const start = Object.values(g.cells).find(c=>c.node==='battery');
+  if(!start) return live;
+  const key = c => c.r+','+c.c;
+  const q = [start]; live.add(key(start));
+  while(q.length){
+    const cur = q.shift();
+    const curMask = circuitRot(cur.sol, cur.rot);
+    CIRCUIT_DIRS.forEach(([dr,dc,bit])=>{
+      if(!(curMask & bit)) return;
+      const nb = g.cells[(cur.r+dr)+','+(cur.c+dc)];
+      if(!nb || live.has(key(nb))) return;
+      const back = circuitMaskTo([nb.r,nb.c], [cur.r,cur.c]);
+      if(!(circuitRot(nb.sol, nb.rot) & back)) return;
+      live.add(key(nb)); q.push(nb);
+    });
+  }
+  return live;
+}
+function renderCircuitGrid(){
+  const g = circuitGame, grid = $('circuit-grid');
+  const live = circuitLiveSet();
+  const cc = g.size >= 5 ? 50 : 58;
+  grid.style.gridTemplateColumns = 'repeat('+g.size+', '+cc+'px)';
+  grid.style.setProperty('--cc', cc+'px');
+  grid.innerHTML = '';
+  for(let r=0;r<g.size;r++) for(let c=0;c<g.size;c++){
+    const cell = g.cells[r+','+c];
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.className = 'circuit-cell'+(cell&&cell.fixed?' circuit-fixed':'')+(cell&&live.has(r+','+c)?' circuit-live':'');
+    btn.style.setProperty('--cc', cc+'px');
+    if(!cell){ btn.disabled = true; btn.style.visibility='hidden'; }
+    else if(cell.node){
+      btn.innerHTML = '<span class="circuit-node">'+(cell.node==='battery'?'🔋':(live.has(r+','+c)?'💡':'🔅'))+'</span>';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = circuitPieceSvg(circuitRot(cell.sol, cell.rot), live.has(r+','+c));
+      btn.addEventListener('click', ()=>{ if(g.locked) return; playClick(); cell.rot=(cell.rot+1)%4; renderCircuitGrid(); });
+    }
+    grid.appendChild(btn);
+  }
+}
+function checkCircuit(){
+  const g = circuitGame;
+  if(g.locked) return;
+  const live = circuitLiveSet();
+  const bulb = Object.values(g.cells).find(c=>c.node==='bulb');
+  const ok = bulb && live.has(bulb.r+','+bulb.c);
+  if(ok){
+    g.locked = true;
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('circuit-hint').textContent = 'ไฟติดแล้ว! วงจรครบรอบพอดี 💡';
+    $('circuit-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    renderCircuitGrid();
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'ต่อวงจรไฟฟ้า'); else { g.level++; renderCircuitLevel(); } }, 1400);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    $('circuit-hint').textContent = 'สายไฟยังขาดอยู่ ลองหมุนชิ้นที่ยังไม่ต่อกันดูนะ';
+    renderCircuitGrid();
+  }
+}
+$('circuit-check').addEventListener('click', ()=>{ playClick(); checkCircuit(); });
+$('circuit-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ---------------- 2) แท็งแกรมวิเศษ (tangram) ----------------
+   เงาโครงร่างวางไว้บนเวที แต่ละเงาต้องการชิ้นชนิดใดชนิดหนึ่งที่หมุนมาให้ตรงมุม
+   ผู้เล่น: แตะชิ้นในถาดเพื่อเลือก → กดปุ่มหมุน 45° → แตะเงาที่ต้องการวาง
+   (ปรับจาก IDEA.md ที่เขียนว่า "ลากไปวาง" เป็น "แตะวาง" ให้เข้ากับ mechanic แตะของเกมอื่นในแอป) */
+let tangramGame = null;
+const TG_SHAPES = {
+  tri:  '<polygon points="4,92 92,92 4,4"/>',
+  tri2: '<polygon points="4,4 92,4 92,92"/>',
+  sq:   '<rect x="8" y="8" width="80" height="80" rx="6"/>',
+  par:  '<polygon points="10,70 60,70 86,26 36,26"/>'
+};
+function tangramSvg(type, colorFill, colorStroke, rot){
+  return '<svg class="tg-shape" viewBox="0 0 96 96" aria-hidden="true" style="transform:rotate('+rot+'deg)">'+
+         '<g fill="'+colorFill+'" stroke="'+colorStroke+'" stroke-width="5" stroke-linejoin="round">'+TG_SHAPES[type]+'</g></svg>';
+}
+function startTangramGame(catId){
+  stopARGame();
+  lastGameType='tangram'; lastCatId=catId;
+  const cat = catById(catId);
+  tangramGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), sel:null, locked:false, color:cat.color };
+  showOnlyView(tangramView);
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  tangramView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('tangram-cat-label', cat);
+  renderTangramLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function renderTangramLevel(){
+  const g = tangramGame;
+  let avail = TANGRAM_FIGURES.map((f,i)=>i).filter(i=>!g.used.has(i));
+  if(!avail.length){ g.used.clear(); avail = TANGRAM_FIGURES.map((f,i)=>i); }
+  const idx = avail[Math.floor(Math.random()*avail.length)];
+  g.used.add(idx);
+  const fig = TANGRAM_FIGURES[idx];
+  g.fig = fig;
+  g.slots = fig.slots.map((s,i)=>({ i, x:s[0], y:s[1], w:s[2], type:s[3], rot:s[4], filled:false }));
+  /* ชิ้นในถาด = ชิ้นที่ต้องใช้ทั้งหมด สุ่มมุมเริ่มต้นไม่ให้ตรงคำตอบตั้งแต่แรก */
+  g.pieces = g.slots.map((s,i)=>{
+    let r; do { r = Math.floor(Math.random()*8)*45; } while(r===s.rot);
+    return { i, type:s.type, rot:r, used:false };
+  });
+  g.pieces = shuffleArray(g.pieces);
+  g.sel = null; g.locked = false;
+  $('tangram-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('tangram-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('tangram-title').textContent = 'ต่อให้เป็นรูป "'+fig.name+'" '+fig.emoji;
+  $('tangram-hint').textContent = 'แตะเลือกชิ้น กดปุ่มหมุนให้ตรงมุม แล้วแตะเงาที่จะวาง';
+  renderTangramBoard();
+}
+function renderTangramBoard(){
+  const g = tangramGame;
+  const stage = $('tangram-stage'); stage.innerHTML = '';
+  const light = mixHexColor(g.color, '#ffffff', 0.55), dark = mixHexColor(g.color, '#000000', 0.3);
+  g.slots.forEach(s=>{
+    const b = document.createElement('button');
+    b.type='button';
+    b.className = 'tangram-slot '+(s.filled?'tg-filled':'tg-empty');
+    b.style.left = s.x+'px'; b.style.top = s.y+'px'; b.style.width = s.w+'px'; b.style.height = s.w+'px';
+    b.innerHTML = tangramSvg(s.type, s.filled?g.color:'#9AA6B8', s.filled?dark:'#7c8797', s.rot);
+    b.addEventListener('click', ()=>{
+      if(g.locked || s.filled || g.sel===null) return;
+      const p = g.pieces[g.sel];
+      playClick();
+      if(p.type===s.type && ((p.rot%360)+360)%360 === s.rot){
+        p.used = true; s.filled = true; g.sel = null;
+        playCorrect();
+        renderTangramBoard();
+        if(g.slots.every(x=>x.filled)) tangramWin();
+      } else {
+        g.mistakes++; playWrong(); showOwlMsg('wrong');
+        $('tangram-hint').textContent = 'ยังไม่พอดีนะ ลองหมุนชิ้นให้ตรงมุมของเงาดูอีกที';
+        b.classList.add('oc-bad'); setTimeout(()=>b.classList.remove('oc-bad'), 340);
+      }
+    });
+    stage.appendChild(b);
+  });
+  const tray = $('tangram-tray'); tray.innerHTML = '';
+  g.pieces.forEach((p, i)=>{
+    if(p.used) return;
+    const b = document.createElement('button');
+    b.type='button';
+    b.className = 'tangram-piece'+(g.sel===i?' tg-sel':'');
+    b.innerHTML = tangramSvg(p.type, light, dark, p.rot);
+    b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.sel = (g.sel===i? null : i); renderTangramBoard(); });
+    tray.appendChild(b);
+  });
+}
+function tangramWin(){
+  const g = tangramGame;
+  g.locked = true;
+  mascotHappy(); showOwlMsg('correct');
+  $('tangram-hint').textContent = 'ต่อครบเป็นรูป'+g.fig.name+'แล้ว! 🎉';
+  $('tangram-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+  setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'แท็งแกรม'); else { g.level++; renderTangramLevel(); } }, 1400);
+}
+$('tangram-rot').addEventListener('click', ()=>{
+  const g = tangramGame;
+  if(!g || g.locked || g.sel===null) return;
+  playClick();
+  g.pieces[g.sel].rot = (g.pieces[g.sel].rot + 45) % 360;
+  renderTangramBoard();
+});
+$('tangram-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ---------------- 3) กระจกวิเศษ (mirror) ----------------
+   ฝั่งซ้ายระบายไว้แล้ว ผู้เล่นเลือกสีแล้วแตะช่องฝั่งขวาให้สะท้อนตรงกัน
+   แตะผิดสี/ผิดช่อง = ช่องสั่น + นับ mistake (ไม่เฉลยว่าช่องไหนถูก) */
+let mirrorGame = null;
+function startMirrorGame(catId){
+  stopARGame();
+  lastGameType='mirror'; lastCatId=catId;
+  const cat = catById(catId);
+  mirrorGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false };
+  showOnlyView(mirrorView);
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  mirrorView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('mirror-cat-label', cat);
+  renderMirrorLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function renderMirrorLevel(){
+  const g = mirrorGame;
+  let avail = MIRROR_PICS.map((p,i)=>i).filter(i=>!g.used.has(i));
+  if(!avail.length){ g.used.clear(); avail = MIRROR_PICS.map((p,i)=>i); }
+  const idx = avail[Math.floor(Math.random()*avail.length)];
+  g.used.add(idx);
+  const pic = MIRROR_PICS[idx];
+  g.pic = pic;
+  g.half = pic.rows[0].length;              /* จำนวนคอลัมน์ของครึ่งซ้าย */
+  g.right = pic.rows.map(row=>row.map(()=>0)); /* 0 = ยังไม่ระบาย */
+  g.sel = 1;                                 /* สีที่เลือกอยู่ (index ใน pic.colors, เริ่มที่สีแรก) */
+  g.locked = false;
+  $('mirror-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('mirror-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('mirror-title').textContent = 'ระบายฝั่งขวาให้เหมือนส่องกระจก — '+pic.name+' '+pic.emoji;
+  $('mirror-hint').textContent = 'เลือกสีด้านล่าง แล้วแตะช่องฝั่งขวาให้สมมาตรกับฝั่งซ้าย';
+  renderMirrorBoard();
+}
+function renderMirrorBoard(){
+  const g = mirrorGame, pic = g.pic;
+  const rows = pic.rows.length, half = g.half;
+  const cell = rows > 8 ? 24 : 30;
+  const grid = $('mirror-grid');
+  grid.style.gridTemplateColumns = 'repeat('+half+', '+cell+'px) 8px repeat('+half+', '+cell+'px)';
+  grid.style.setProperty('--mc', cell+'px');
+  grid.innerHTML = '';
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<half;c++){
+      const v = pic.rows[r][c];
+      const b = document.createElement('button');
+      b.type='button'; b.className='mirror-cell mr-left'; b.disabled = true;
+      b.style.width = cell+'px'; b.style.height = cell+'px';
+      if(v) b.style.background = pic.colors[v-1];
+      grid.appendChild(b);
+    }
+    const axis = document.createElement('div');
+    axis.className = 'mirror-cell mr-axis'; axis.style.height = cell+'px';
+    grid.appendChild(axis);
+    for(let c=0;c<half;c++){
+      const srcC = half-1-c;                 /* สะท้อนซ้าย-ขวา */
+      const want = pic.rows[r][srcC];
+      const b = document.createElement('button');
+      b.type='button'; b.className='mirror-cell';
+      b.style.width = cell+'px'; b.style.height = cell+'px';
+      const cur = g.right[r][c];
+      if(cur) b.style.background = pic.colors[cur-1];
+      b.addEventListener('click', ()=>{
+        if(g.locked) return;
+        playClick();
+        if(g.sel === want && want !== 0){
+          g.right[r][c] = g.sel; renderMirrorBoard();
+          if(mirrorDone()) mirrorWin();
+        } else {
+          g.mistakes++; playWrong();
+          b.classList.add('mr-bad'); setTimeout(()=>b.classList.remove('mr-bad'), 340);
+          $('mirror-hint').textContent = 'ช่องนี้ยังไม่ตรงกับกระจกนะ ลองดูฝั่งซ้ายอีกที';
+        }
+      });
+      grid.appendChild(b);
+    }
+  }
+  const pal = $('mirror-palette'); pal.innerHTML = '';
+  pic.colors.forEach((col, i)=>{
+    const b = document.createElement('button');
+    b.type='button'; b.className='mirror-swatch'+(g.sel===i+1?' mr-sel':'');
+    b.style.background = col;
+    b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.sel = i+1; renderMirrorBoard(); });
+    pal.appendChild(b);
+  });
+}
+function mirrorDone(){
+  const g = mirrorGame, pic = g.pic, half = g.half;
+  for(let r=0;r<pic.rows.length;r++) for(let c=0;c<half;c++){
+    const want = pic.rows[r][half-1-c];
+    if(want !== 0 && g.right[r][c] !== want) return false;
+  }
+  return true;
+}
+function mirrorWin(){
+  const g = mirrorGame;
+  g.locked = true;
+  playCorrect(); mascotHappy(); showOwlMsg('correct');
+  $('mirror-hint').textContent = 'สมมาตรพอดีเป๊ะ! สวยมากเลย 🎉';
+  $('mirror-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+  setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'กระจกวิเศษ'); else { g.level++; renderMirrorLevel(); } }, 1400);
+}
+$('mirror-check').addEventListener('click', ()=>{
+  playClick();
+  if(!mirrorGame || mirrorGame.locked) return;
+  if(mirrorDone()) mirrorWin();
+  else $('mirror-hint').textContent = 'ยังระบายไม่ครบทุกช่องนะ ลองดูอีกที';
+});
+$('mirror-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ---------------- 4) เรียงลำดับวิเศษ (order) ----------------
+   การ์ด 3-5 ใบวางสลับกันอยู่ ผู้เล่นแตะการ์ด 2 ใบเพื่อสลับตำแหน่งกัน แล้วกดตรวจคำตอบ
+   ตอบผิด = การ์ดที่ผิดตำแหน่งสั่นแดง (ไม่เฉลยว่าตำแหน่งถูกคืออะไร) */
+let orderGame = null;
+function startOrderGame(catId){
+  stopARGame();
+  lastGameType='order'; lastCatId=catId;
+  const cat = catById(catId);
+  orderGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), sel:null, locked:false, tag:(cat.orderTag||null) };
+  showOnlyView(orderView);
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  orderView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel('order-cat-label', cat);
+  renderOrderLevel();
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
+function orderSize(level){ return level<=3 ? 3 : (level<=7 ? 4 : 5); }
+function renderOrderLevel(){
+  const g = orderGame;
+  const size = orderSize(g.level);
+  const pool = ORDER_SETS.filter(s=>s.items.length===size && (s.tag||null)===(g.tag||null));
+  let avail = pool.map((s,i)=>i).filter(i=>!g.used.has(size+'-'+i));
+  if(!avail.length){ pool.forEach((s,i)=>g.used.delete(size+'-'+i)); avail = pool.map((s,i)=>i); }
+  const idx = avail[Math.floor(Math.random()*avail.length)];
+  g.used.add(size+'-'+idx);
+  const set = pool[idx];
+  g.set = set;
+  g.cards = shuffleArray(set.items.map((it,i)=>({ e:it.e, l:it.l, ord:i })));
+  if(g.cards.every((c,i)=>c.ord===i)){ const t=g.cards[0]; g.cards[0]=g.cards[size-1]; g.cards[size-1]=t; }
+  g.sel = null; g.locked = false;
+  $('order-level-counter').textContent = g.level+'/'+g.totalLevels;
+  $('order-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  $('order-title').textContent = set.prompt;
+  $('order-hint').textContent = 'แตะการ์ด 2 ใบเพื่อสลับที่กัน แล้วกดตรวจคำตอบ';
+  renderOrderRow();
+}
+function renderOrderRow(){
+  const g = orderGame, row = $('order-row');
+  row.innerHTML = '';
+  g.cards.forEach((card, i)=>{
+    const b = document.createElement('button');
+    b.type='button';
+    b.className = 'order-card'+(g.sel===i?' oc-sel':'')+(card._bad?' oc-bad':'');
+    b.innerHTML = '<span class="oc-e">'+card.e+'</span><span class="oc-l">'+card.l+'</span><span class="order-num">'+(i+1)+'</span>';
+    b.addEventListener('click', ()=>{
+      if(g.locked) return;
+      playClick();
+      if(g.sel===null){ g.sel = i; }
+      else if(g.sel===i){ g.sel = null; }
+      else { const t=g.cards[g.sel]; g.cards[g.sel]=g.cards[i]; g.cards[i]=t; g.sel=null; }
+      renderOrderRow();
+    });
+    row.appendChild(b);
+  });
+}
+function checkOrder(){
+  const g = orderGame;
+  if(g.locked) return;
+  const wrong = g.cards.filter((c,i)=>c.ord!==i);
+  if(wrong.length===0){
+    g.locked = true;
+    playCorrect(); mascotHappy(); showOwlMsg('correct');
+    $('order-hint').textContent = 'เรียงถูกทั้งหมดเลย! 🎉';
+    $('order-progress-fill').style.width = (g.level/g.totalLevels*100)+'%';
+    setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'เรียงลำดับ'); else { g.level++; renderOrderLevel(); } }, 1400);
+  } else {
+    g.mistakes++; playWrong(); showOwlMsg('wrong');
+    wrong.forEach(c=>c._bad = true); renderOrderRow();
+    $('order-hint').textContent = 'ยังมีบางใบผิดตำแหน่งนะ ลองสลับดูอีกที';
+    setTimeout(()=>{ g.cards.forEach(c=>c._bad=false); renderOrderRow(); }, 700);
+  }
+}
+$('order-check').addEventListener('click', ()=>{ playClick(); checkOrder(); });
+$('order-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
+
+/* ตัวช่วยผสมสี (ใช้กับแท็งแกรมเพื่อไล่เฉดจากสีประจำหมวด) */
+function mixHexColor(hex, other, t){
+  const p = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+  const a = p(hex), b = p(other);
+  const v = a.map((x,i)=>Math.round(x + (b[i]-x)*t));
+  return '#'+v.map(x=>x.toString(16).padStart(2,'0')).join('');
+}

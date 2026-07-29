@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="กระจกวิเศษ ป.5">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d984cc"/><stop offset="1" stop-color="#C94FB6"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="8" y="10" width="22" height="40" rx="4" fill="url(#g)" stroke="#833376" stroke-width="2.6"/><rect x="34" y="10" width="22" height="40" rx="4" fill="#e7b0de" stroke="#833376" stroke-width="2.6"/><path d="M32 6v52" stroke="#833376" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round"/><path d="M14 22h10v10H14z" fill="#fff" opacity=".85"/><path d="M40 22h10v10H40z" fill="url(#g)" opacity=".55"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#833376" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#833376" text-anchor="middle">ป.5</text></g>
+</svg>
