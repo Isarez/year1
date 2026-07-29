@@ -1566,6 +1566,11 @@ let efGame = null;
 let efTimer = null;
 const EF_ROUND_MS = 4500;   // เวลาต่อด่าน
 const EF_SWITCH_AT = 6;     // ด่านที่กติกาเปลี่ยน (cognitive flexibility)
+/* ป.5-6: เวลาสั้นลง เปลี่ยนกติกาเร็วขึ้น และ ป.6 มีกติกาปฏิเสธ ("แตะทุกอย่างที่ไม่ใช่ ...")
+   ซึ่งต้องยับยั้งความเคยชินมากกว่าเดิม (inhibitory control ระดับสูงขึ้น) */
+function efRoundMs(hard){ return hard==='p6' ? 2600 : (hard==='p5' ? 3300 : EF_ROUND_MS); }
+function efSwitchAt(hard){ return hard==='p6' ? 4 : (hard==='p5' ? 5 : EF_SWITCH_AT); }
+function efNegateFrom(hard){ return hard==='p6' ? 7 : (hard==='p5' ? 9 : 99); }
 
 function startEfGame(catId){
   stopARGame();
@@ -1573,7 +1578,7 @@ function startEfGame(catId){
   lastGameType = 'ef'; lastCatId = catId;
   const cat = catById(catId);
   const keys = shuffleArray(Object.keys(EF_CATEGORIES).slice());
-  efGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, ruleA:keys[0], ruleB:keys[1], curRule:keys[0], answered:false };
+  efGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), ruleA:keys[0], ruleB:keys[1], curRule:keys[0], negate:false, answered:false };
   showOnlyView(efView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   efView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -1587,19 +1592,25 @@ function renderEfRound(first){
   const g = efGame;
   clearTimeout(efTimer);
   g.answered = false;
-  const ruleKey = g.level < EF_SWITCH_AT ? g.ruleA : g.ruleB;
-  const switched = !first && g.level === EF_SWITCH_AT;
+  const switchAt = efSwitchAt(g.hard);
+  const ruleKey = g.level < switchAt ? g.ruleA : g.ruleB;
+  const switched = !first && g.level === switchAt;
   g.curRule = ruleKey;
   const ruleCat = EF_CATEGORIES[ruleKey];
-  /* ~55% เป็นของที่ตรงกติกา (ต้องแตะ), ที่เหลือเป็นของหมวดอื่น (ห้ามแตะ) */
+  g.negate = g.level >= efNegateFrom(g.hard);
+  /* ~55% เป็นรอบที่ "ต้องแตะ" ที่เหลือคือรอบที่ต้องยับยั้งไม่แตะ */
   const shouldTap = Math.random() < 0.55;
-  let fromKey = ruleKey;
-  if(!shouldTap){ const others = Object.keys(EF_CATEGORIES).filter(k=>k!==ruleKey); fromKey = others[Math.floor(Math.random()*others.length)]; }
+  const others = Object.keys(EF_CATEGORIES).filter(k=>k!==ruleKey);
+  /* กติกาปกติ: แตะเมื่อของตรงหมวด | กติกาปฏิเสธ: แตะเมื่อของ "ไม่ใช่" หมวดนั้น */
+  const fromRule = g.negate ? !shouldTap : shouldTap;
+  const fromKey = fromRule ? ruleKey : others[Math.floor(Math.random()*others.length)];
   const pool = EF_CATEGORIES[fromKey].items;
   g.item = pool[Math.floor(Math.random()*pool.length)];
   g.shouldTap = shouldTap;
 
-  $('ef-rule').innerHTML = '🦉 นกฮูกสั่ง: แตะเฉพาะ <b>'+ruleCat.name+' '+ruleCat.items[0]+'</b>';
+  $('ef-rule').innerHTML = g.negate
+    ? '🦉 นกฮูกสั่ง: แตะทุกอย่างที่ <b>ไม่ใช่'+ruleCat.name+' '+ruleCat.items[0]+'</b>'
+    : '🦉 นกฮูกสั่ง: แตะเฉพาะ <b>'+ruleCat.name+' '+ruleCat.items[0]+'</b>';
   const itemEl = $('ef-item');
   itemEl.textContent = g.item;
   itemEl.classList.remove('ef-correct','ef-wrong');
@@ -1609,12 +1620,14 @@ function renderEfRound(first){
   $('ef-tap-btn').disabled = false; $('ef-skip-btn').disabled = false;
 
   if(switched){ showToast('🔄','เปลี่ยนกติกาแล้ว! ตอนนี้แตะเฉพาะ '+ruleCat.name+' '+ruleCat.items[0]); flashEfRule(); }
+  if(g.negate && g.level === efNegateFrom(g.hard) && !first){ showToast('🙃','กติกาพลิก! ตอนนี้ต้องแตะทุกอย่างที่ไม่ใช่'+ruleCat.name); flashEfRule(); }
 
   /* ตัวจับเวลา: แถบหดจาก 100% → 0% ตาม EF_ROUND_MS, หมดเวลา = นับเป็น "ไม่แตะ" */
   const bar = $('ef-timer-fill');
   bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth;
-  bar.style.transition = 'width '+EF_ROUND_MS+'ms linear'; bar.style.width = '0%';
-  efTimer = setTimeout(()=>{ if(!g.answered) efAnswer(null); }, EF_ROUND_MS);
+  const roundMs = efRoundMs(g.hard);
+  bar.style.transition = 'width '+roundMs+'ms linear'; bar.style.width = '0%';
+  efTimer = setTimeout(()=>{ if(!g.answered) efAnswer(null); }, roundMs);
 }
 
 function flashEfRule(){
@@ -2660,7 +2673,7 @@ function startWorldGame(catId){
   stopARGame();
   lastGameType='world'; lastCatId=catId;
   const cat = catById(catId);
-  worldGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, angle:0, target:'day', locked:false };
+  worldGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), angle:0, target:'day', zone:null, locked:false };
   showOnlyView(worldView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   worldView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2669,8 +2682,36 @@ function startWorldGame(catId){
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
 }
+/* ป.5-6: ไม่ใช่แค่กลางวัน/กลางคืน แต่ต้องหมุนให้ตรง "ช่วงเวลา" ทั้ง 4 ช่วง
+   ดวงอาทิตย์อยู่ทางซ้าย → มุม 180° = เที่ยงวัน, 0° = เที่ยงคืน, 90° = เย็น (กำลังหมุนออกจากแดด), 270° = เช้า */
+const WORLD_ZONES = [
+  { k:'noon',     deg:180, name:'เที่ยงวัน ☀️',  hint:'ให้บ้านหันเข้าหาดวงอาทิตย์เต็มที่' },
+  { k:'sunset',   deg:90,  name:'ตอนเย็น 🌇',   hint:'ให้บ้านอยู่ขอบพอดี กำลังจะหมุนพ้นแสงอาทิตย์' },
+  { k:'midnight', deg:0,   name:'เที่ยงคืน 🌙', hint:'ให้บ้านอยู่ฝั่งตรงข้ามดวงอาทิตย์พอดี' },
+  { k:'sunrise',  deg:270, name:'ตอนเช้ามืด 🌅', hint:'ให้บ้านอยู่ขอบพอดี กำลังจะหมุนเข้าหาแสงอาทิตย์' }
+];
+function worldZoneOf(angle){
+  const a = ((angle % 360) + 360) % 360;
+  let best = WORLD_ZONES[0], bd = 999;
+  WORLD_ZONES.forEach(z=>{ let d = Math.abs(a - z.deg); if(d>180) d = 360-d; if(d < bd){ bd = d; best = z; } });
+  return best.k;
+}
 function renderWorldLevel(){
   const g = worldGame;
+  if(g.hard){
+    /* ป.5 ยอมคลาดเคลื่อนได้ 1 ช่อง (30°) ป.6 ต้องตรงช่วงเวลาพอดีขึ้น */
+    const z = p2pick(WORLD_ZONES);
+    g.zone = z.k; g.target = (z.k==='noon') ? 'day' : (z.k==='midnight' ? 'night' : 'edge');
+    let a = Math.floor(Math.random()*12)*30;
+    while(worldZoneOf(a) === z.k) a = (a + 90) % 360;
+    g.angle = a; g.locked = false;
+    $('world-level-counter').textContent = g.level+'/'+g.totalLevels;
+    $('world-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+    $('world-target').innerHTML = 'หมุนโลกให้บ้านของเราเป็นตอน <b>'+z.name+'</b>';
+    $('world-hint').textContent = z.hint;
+    positionWorldMarker();
+    return;
+  }
   g.target = Math.random()<0.5 ? 'day' : 'night';
   /* สุ่มมุมเริ่มเป็นทวีคูณ 30 ที่ "ยังไม่ตรง" กับเป้า เพื่อให้ต้องหมุนจริง */
   let a = Math.floor(Math.random()*12)*30;
@@ -2699,7 +2740,7 @@ function rotateWorld(delta){
 function checkWorld(){
   const g = worldGame; if(g.locked) return;
   const day = worldIsDay(g.angle);
-  const correct = (g.target==='day') === day;
+  const correct = g.hard ? (worldZoneOf(g.angle) === g.zone) : ((g.target==='day') === day);
   if(correct){
     g.locked = true; playCorrect(); mascotHappy(); showOwlMsg('correct');
     $('world-hint').textContent = 'ถูกต้อง! เก่งมากเลย 🎉';
@@ -2958,12 +2999,22 @@ const CHART_SETS = [
   { title:'หนังสือที่ยืมแต่ละวัน (เล่ม)', unit:'เล่ม', items:[{e:'📕',n:'จันทร์'},{e:'📗',n:'อังคาร'},{e:'📘',n:'พุธ'},{e:'📙',n:'พฤหัส'},{e:'📓',n:'ศุกร์'}] },
   { title:'ต้นไม้ที่ปลูกแต่ละห้อง (ต้น)', unit:'ต้น', items:[{e:'🌳',n:'ป.4/1'},{e:'🌴',n:'ป.4/2'},{e:'🌲',n:'ป.4/3'},{e:'🌵',n:'ป.4/4'},{e:'🪴',n:'ป.4/5'}] }
 ];
-function chartBarCount(level){ return level<=3 ? 3 : (level<=7 ? 4 : 5); }
+function chartBarCount(level, hard){
+  if(hard==='p6') return level<=3 ? 5 : (level<=7 ? 6 : 7);
+  if(hard==='p5') return level<=3 ? 4 : (level<=7 ? 5 : 6);
+  return level<=3 ? 3 : (level<=7 ? 4 : 5);
+}
+/* ค่าของแท่ง: เด็กเล็กใช้ 1-10, ป.5 ใช้เลขสองหลัก, ป.6 ใช้พหุคูณของ 5 เพื่อให้คิดเฉลี่ย/เท่าตัวได้ลงตัว */
+function chartValuePool(hard){
+  if(hard==='p6') return [10,15,20,25,30,35,40,45,50,60];
+  if(hard==='p5') return [4,6,8,10,12,14,16,18,20,24];
+  return [1,2,3,4,5,6,7,8,9,10];
+}
 function startChartGame(catId){
   stopARGame();
   lastGameType='chart'; lastCatId=catId;
   const cat = catById(catId);
-  chartGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  chartGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
   showOnlyView(chartView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   chartView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2973,11 +3024,11 @@ function startChartGame(catId){
   setTimeout(()=>showOwlMsg('start'), 600);
 }
 function renderChartLevel(){
-  const g = chartGame, n = chartBarCount(g.level);
+  const g = chartGame, n = chartBarCount(g.level, g.hard);
   const set = p2pick(CHART_SETS);
   const items = shuffleArray(set.items.slice()).slice(0, n);
   /* ค่าของแต่ละแท่งไม่ซ้ำกัน เพื่อให้ "มากที่สุด/น้อยที่สุด" มีคำตอบเดียวเสมอ */
-  const pool = shuffleArray([1,2,3,4,5,6,7,8,9,10]).slice(0, n);
+  const pool = shuffleArray(chartValuePool(g.hard).slice()).slice(0, n);
   g.data = items.map((it,i)=>({ ...it, v:pool[i] }));
   g.unit = set.unit;
   g.locked = false;
@@ -2998,20 +3049,36 @@ function renderChartLevel(){
 function buildChartQuestion(){
   const g = chartGame, d = g.data;
   const sorted = d.slice().sort((a,b)=>b.v-a.v);
-  const kinds = g.level<=3 ? ['max','min','value'] : (g.level<=7 ? ['max','min','value','total'] : ['diff','total','more','value']);
-  const kind = p2pick(kinds);
+  let kinds;
+  if(g.hard==='p6') kinds = g.level<=3 ? ['diff','total','more','rank'] : (g.level<=7 ? ['total','avg','rank','sumtop'] : ['avg','twice','sumtop','diff']);
+  else if(g.hard==='p5') kinds = g.level<=3 ? ['max','min','value','diff'] : (g.level<=7 ? ['diff','total','more','rank'] : ['total','rank','sumtop','diff']);
+  else kinds = g.level<=3 ? ['max','min','value'] : (g.level<=7 ? ['max','min','value','total'] : ['diff','total','more','value']);
+  let kind = p2pick(kinds);
+  const sum = d.reduce((a,x)=>a+x.v,0);
+  /* กันโจทย์ที่คำตอบไม่ลงตัว: ค่าเฉลี่ยต้องหารลงตัว, "กี่เท่า" ต้องหารลงตัวและมากกว่า 1 เท่า */
+  if(kind==='avg' && sum % d.length !== 0) kind = 'total';
+  if(kind==='twice' && !(sorted[0].v % sorted[sorted.length-1].v === 0 && sorted[0].v !== sorted[sorted.length-1].v)) kind = 'diff';
   let q, ans;
   if(kind==='max'){ q='อะไรมีจำนวนมากที่สุด?'; ans=sorted[0].n; }
   else if(kind==='min'){ q='อะไรมีจำนวนน้อยที่สุด?'; ans=sorted[sorted.length-1].n; }
   else if(kind==='value'){ const pick=p2pick(d); q=pick.n+' '+pick.e+' มีเท่าไร?'; ans=pick.v+' '+g.unit; }
   else if(kind==='total'){ q='ทั้งหมดรวมกันได้เท่าไร?'; ans=d.reduce((a,x)=>a+x.v,0)+' '+g.unit; }
   else if(kind==='diff'){ q=sorted[0].n+' มากกว่า '+sorted[sorted.length-1].n+' อยู่เท่าไร?'; ans=(sorted[0].v-sorted[sorted.length-1].v)+' '+g.unit; }
+  else if(kind==='avg'){ q='ทั้งหมดเฉลี่ยแล้วได้เท่าไรต่อหนึ่งอย่าง?'; ans=(sum/d.length)+' '+g.unit; }
+  else if(kind==='twice'){ const hi=sorted[0], lo=sorted[sorted.length-1]; q=hi.n+' เป็นกี่เท่าของ '+lo.n+'?'; ans=(hi.v/lo.v)+' เท่า'; }
+  else if(kind==='rank'){ const nth = Math.min(2, sorted.length-1); q='อะไรมีจำนวนมากเป็นอันดับที่ '+(nth+1)+'?'; ans=sorted[nth].n; }
+  else if(kind==='sumtop'){ q='สองอันดับที่มากที่สุดรวมกันได้เท่าไร?'; ans=(sorted[0].v+sorted[1].v)+' '+g.unit; }
   else { const a=d[0], b=d[1]; q=a.n+' กับ '+b.n+' รวมกันได้เท่าไร?'; ans=(a.v+b.v)+' '+g.unit; }
   /* ตัวเลือกลวง: ชื่อรายการอื่น (สำหรับคำถามแบบชื่อ) หรือจำนวนใกล้เคียง (สำหรับคำถามแบบตัวเลข) */
   let choices;
-  if(kind==='max' || kind==='min'){
+  if(kind==='max' || kind==='min' || kind==='rank'){
     choices = shuffleArray(d.map(x=>x.n)).slice(0,4);
     if(!choices.includes(ans)){ choices[0]=ans; }
+  } else if(kind==='twice'){
+    const num = parseInt(ans,10);
+    const set = new Set([num]); let guard=0;
+    while(set.size<4 && guard++<40){ const v = num + p2rand(1,3)*(Math.random()<0.5?-1:1); if(v>1) set.add(v); }
+    choices = shuffleArray([...set]).map(v=>v+' เท่า');
   } else {
     const num = parseInt(ans,10);
     const set = new Set([num]);
