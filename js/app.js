@@ -2017,7 +2017,19 @@ function finishP2Game(catId, mistakes, totalLevels, doneWord){
 let moneyGame = null;
 const MONEY_ITEMS = [ {e:'🍎',n:'แอปเปิล'},{e:'🍌',n:'กล้วย'},{e:'🍞',n:'ขนมปัง'},{e:'🍭',n:'อมยิ้ม'},{e:'🥤',n:'น้ำ'},{e:'🍪',n:'คุกกี้'},{e:'🧃',n:'น้ำกล่อง'},{e:'✏️',n:'ดินสอ'},{e:'📒',n:'สมุด'},{e:'🎈',n:'ลูกโป่ง'},{e:'🍩',n:'โดนัท'},{e:'🧸',n:'ตุ๊กตา'} ];
 const MONEY_CUSTOMERS = ['🐰','🐻','🐱','🐶','🐼','🦊','🐨','🐯'];
-function moneyLevelConfig(level){
+function moneyLevelConfig(level, hard){
+  if(hard==='p6'){
+    /* ป.6: ราคาหลักร้อย ทอนจากแบงก์ใหญ่ และมีโจทย์ส่วนลดร้อยละ/ภาษี */
+    if(level<=3) return { coins:[1,5,10,20,50], mode:'pay', priceMin:40, priceMax:150, step:5, discount:[10,20] };
+    if(level<=7) return { coins:[1,5,10,20,50,100], mode:'change', bills:[200,500], priceMin:60, priceMax:250, step:5, discount:[10,20,25] };
+    return { coins:[1,5,10,20,50,100], mode:'change', bills:[500], priceMin:150, priceMax:400, step:10, discount:[20,25,50] };
+  }
+  if(hard==='p5'){
+    /* ป.5: ราคาหลักสิบ-ร้อย เริ่มมีส่วนลดร้อยละอย่างง่าย */
+    if(level<=3) return { coins:[1,5,10,20], mode:'pay', priceMin:20, priceMax:80, step:5 };
+    if(level<=7) return { coins:[1,5,10,20,50], mode:'change', bills:[100,200], priceMin:30, priceMax:120, step:5, discount:[10,50] };
+    return { coins:[1,5,10,20,50,100], mode:'change', bills:[200,500], priceMin:60, priceMax:200, step:10, discount:[10,20,25] };
+  }
   if(level<=3) return { coins:[1,2,5], mode:'pay', priceMin:2, priceMax:10 };
   if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:11, priceMax:30 };
   return { coins:[1,2,5,10], mode:'change', bills:[20,50], priceMin:11, priceMax:45 };
@@ -2026,7 +2038,7 @@ function startMoneyGame(catId){
   stopARGame();
   lastGameType='money'; lastCatId=catId;
   const cat = catById(catId);
-  moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, tray:[], locked:false };
+  moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), tray:[], locked:false };
   showOnlyView(moneyView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   moneyView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2036,9 +2048,17 @@ function startMoneyGame(catId){
   setTimeout(()=>showOwlMsg('start'), 600);
 }
 function renderMoneyLevel(){
-  const g = moneyGame; const cfg = moneyLevelConfig(g.level);
+  const g = moneyGame; const cfg = moneyLevelConfig(g.level, g.hard);
   const item = p2pick(MONEY_ITEMS), cust = p2pick(MONEY_CUSTOMERS);
   let price = p2rand(cfg.priceMin, cfg.priceMax), given=0, target;
+  if(cfg.step) price = Math.max(cfg.step, Math.round(price/cfg.step)*cfg.step);
+  /* ป.5-6: บางด่านมีส่วนลดร้อยละ ต้องคิดราคาหลังลดก่อนจ่าย/ทอน */
+  let disc = 0;
+  if(cfg.discount && Math.random() < 0.6){
+    const ok = cfg.discount.filter(d=>(price*d)%100===0);
+    if(ok.length){ disc = p2pick(ok); price = price - price*disc/100; }
+  }
+  g.disc = disc; g.full = disc ? Math.round(price*100/(100-disc)) : price;
   if(cfg.mode==='change'){
     const bills = cfg.bills.filter(b=>b>price);
     given = bills.length ? p2pick(bills) : (Math.floor(price/10)*10+20);
@@ -2047,9 +2067,12 @@ function renderMoneyLevel(){
   g.cfg=cfg; g.item=item; g.price=price; g.target=target; g.given=given; g.mode=cfg.mode; g.tray=[]; g.locked=false;
   $('money-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('money-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+  const priceLine = g.disc
+    ? 'ราคาป้าย <s>'+g.full+' บาท</s> <b>ลด '+g.disc+'%</b> เหลือ <b>'+price+' บาท</b>'
+    : 'ราคา <b>'+price+' บาท</b>';
   const bubble = cfg.mode==='change'
-    ? '<div class="money-bubble">อยากได้ '+item.e+' ราคา <b>'+price+' บาท</b><br><span class="money-give">หนูจ่ายด้วยเหรียญ '+given+' บาท ช่วยทอนหน่อย</span></div>'
-    : '<div class="money-bubble">อยากได้ '+item.e+'<br>ราคา <b>'+price+' บาท</b></div>';
+    ? '<div class="money-bubble">อยากได้ '+item.e+' '+priceLine+'<br><span class="money-give">หนูจ่ายด้วยเงิน '+given+' บาท ช่วยทอนหน่อย</span></div>'
+    : '<div class="money-bubble">อยากได้ '+item.e+'<br>'+priceLine+'</div>';
   $('money-customer').innerHTML = '<div class="money-cust-face">'+cust+'</div>'+bubble;
   $('money-hint').textContent = cfg.mode==='change' ? 'หยิบเหรียญ "ทอน" ให้พอดี แล้วกดจ่ายเงิน!' : 'หยิบเหรียญใส่ถาดให้ครบราคา แล้วกดจ่ายเงิน!';
   renderMoneyCoins(); renderMoneyTray();
@@ -2095,16 +2118,40 @@ $('money-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 /* ---------------- 2) พิซซ่าเศษส่วน ---------------- */
 let fractionGame = null;
 const FRACTION_FOODS = [ {name:'พิซซ่า', crust:'#E8A33A', fill:'#FFD98A', topping:'#E1503A'}, {name:'เค้ก', crust:'#C97BB0', fill:'#FBE0F0', topping:'#E1503A'}, {name:'แตงโม', crust:'#3B9E5B', fill:'#FF6F7D', topping:'#2B2B2B'} ];
-function fractionLevelConfig(level){
+function fractionLevelConfig(level, hard){
+  if(hard==='p6') return { sliceOpts: level<=3 ? [8,10] : (level<=7 ? [10,12] : [12,16]) };
+  if(hard==='p5') return { sliceOpts: level<=3 ? [6,8] : (level<=7 ? [8,10] : [10,12]) };
   if(level<=3) return { sliceOpts:[2,4] };
   if(level<=7) return { sliceOpts:[4,6] };
   return { sliceOpts:[6,8] };
+}
+/* โจทย์ของ ป.5 = เศษส่วนตัวส่วนต่างกัน (a/b ของทั้งหมด) / ป.6 = ร้อยละและอัตราส่วน
+   ทุกโจทย์ถูกเลือกให้ "จำนวนชิ้นคำตอบ" เป็นจำนวนเต็มเสมอ */
+const FRACTION_HARD_P5 = [ [1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[1,6],[5,6],[3,8],[5,8],[1,2] ];
+const FRACTION_HARD_P6 = [ 10,20,25,50,75 ];
+const FRACTION_RATIOS  = [ [1,2],[1,3],[2,3],[1,4],[3,4],[2,5] ];
+function fractionHardQuestion(slices, hard){
+  if(hard==='p6'){
+    const pick = Math.random();
+    if(pick < 0.5){
+      const ok = FRACTION_HARD_P6.filter(p=>(slices*p)%100===0);
+      if(ok.length){ const p = p2pick(ok); return { target: slices*p/100, q:'แตะให้ได้ '+p+'% ของทั้งหมด ('+slices+' ชิ้น)' }; }
+    } else {
+      const ok = FRACTION_RATIOS.filter(r=>slices%(r[0]+r[1])===0);
+      if(ok.length){ const r = p2pick(ok); const unit = slices/(r[0]+r[1]);
+        return { target: unit*r[0], q:'แบ่งเป็นอัตราส่วน '+r[0]+' : '+r[1]+' — แตะส่วนแรกให้ถูกจำนวน' }; }
+    }
+  }
+  const ok = FRACTION_HARD_P5.filter(f=>(slices*f[0])%f[1]===0 && slices*f[0]/f[1] < slices);
+  if(!ok.length) return null;
+  const f = p2pick(ok);
+  return { target: slices*f[0]/f[1], q:'แตะให้ได้ '+f[0]+'/'+f[1]+' ของทั้งหมด ('+slices+' ชิ้น)' };
 }
 function startFractionGame(catId){
   stopARGame();
   lastGameType='fraction'; lastCatId=catId;
   const cat = catById(catId);
-  fractionGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  fractionGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
   showOnlyView(fractionView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   fractionView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2114,9 +2161,21 @@ function startFractionGame(catId){
   setTimeout(()=>showOwlMsg('start'), 600);
 }
 function renderFractionLevel(){
-  const g = fractionGame, cfg = fractionLevelConfig(g.level);
+  const g = fractionGame, cfg = fractionLevelConfig(g.level, g.hard);
   const slices = p2pick(cfg.sliceOpts);
   const food = p2pick(FRACTION_FOODS);
+  if(g.hard){
+    const hq = fractionHardQuestion(slices, g.hard);
+    if(hq){
+      g.slices=slices; g.food=food; g.target=hq.target; g.selected=new Set(); g.locked=false;
+      $('fraction-level-counter').textContent = g.level+'/'+g.totalLevels;
+      $('fraction-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
+      $('fraction-q').textContent = hq.q;
+      $('fraction-hint').textContent = 'แตะชิ้นที่ต้องการ (แตะซ้ำเพื่อยกเลิก) แล้วกดตรวจคำตอบ';
+      drawFractionFood();
+      return;
+    }
+  }
   const kinds = ['count'];
   if(slices%2===0) kinds.push('half');
   if(slices%4===0) kinds.push('quarter');
@@ -2179,7 +2238,7 @@ function startBalanceGame(catId){
   stopARGame();
   lastGameType='balance'; lastCatId=catId;
   const cat = catById(catId);
-  balanceGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  balanceGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
   showOnlyView(balanceView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   balanceView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2188,7 +2247,52 @@ function startBalanceGame(catId){
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
 }
-function balanceMakeQuestion(level){
+function balanceMakeQuestion(level, hard){
+  if(hard==='p6'){
+    /* ป.6: สมการสองขั้นตอน / อัตราส่วน / เปรียบเทียบเศษส่วนกับทศนิยม */
+    const kind = level<=3 ? 'mul2' : (level<=7 ? 'two' : 'mix');
+    if(kind==='mul2'){
+      const m = p2rand(3,9), x = p2rand(3,12), c = m*x;
+      const set = new Set([x]); let gd=0;
+      while(set.size<4 && gd++<40){ const d = x + p2rand(-3,3); if(d>0) set.add(d); }
+      const ch = shuffleArray(Array.from(set));
+      return { type:'eq', a:m, c, miss:x, q:'เติมเลขให้ตาชั่งสมดุล: '+m+' × ❓ = '+c, choices: ch.map(String), ans: ch.indexOf(x) };
+    }
+    if(kind==='two'){
+      const m = p2rand(2,6), b = p2rand(2,15), x = p2rand(2,12), c = m*x + b;
+      const set = new Set([x]); let gd=0;
+      while(set.size<4 && gd++<40){ const d = x + p2rand(-3,3); if(d>0) set.add(d); }
+      const ch = shuffleArray(Array.from(set));
+      return { type:'eq', a:m, c, miss:x, q:'เติมเลขให้สมดุล: '+m+' × ❓ + '+b+' = '+c, choices: ch.map(String), ans: ch.indexOf(x) };
+    }
+    const pairs = [['3/4','0.7'],['1/2','0.5'],['2/5','0.45'],['5/8','0.6'],['3/5','0.55'],['7/10','0.75']];
+    const pr = p2pick(pairs);
+    const val = { '3/4':0.75, '1/2':0.5, '2/5':0.4, '5/8':0.625, '3/5':0.6, '7/10':0.7 }[pr[0]];
+    const rv = parseFloat(pr[1]);
+    return { type:'nums', left:pr[0], right:pr[1], q:'ค่าไหน "มากกว่า" กัน?', choices:['⬅️ ซ้าย','ขวา ➡️','เท่ากัน ⚖️'], ans: val>rv?0:(rv>val?1:2) };
+  }
+  if(hard==='p5'){
+    /* ป.5: คูณ-หารในสมการ และเปรียบเทียบเศษส่วนตัวส่วนต่างกัน */
+    const kind = level<=3 ? 'mul' : (level<=7 ? 'div' : 'frac');
+    if(kind==='mul'){
+      const m = p2rand(2,9), x = p2rand(2,9), c = m*x;
+      const set = new Set([x]); let gd=0;
+      while(set.size<4 && gd++<40){ const d = x + p2rand(-2,2); if(d>0) set.add(d); }
+      const ch = shuffleArray(Array.from(set));
+      return { type:'eq', a:m, c, miss:x, q:'เติมเลขให้ตาชั่งสมดุล: '+m+' × ❓ = '+c, choices: ch.map(String), ans: ch.indexOf(x) };
+    }
+    if(kind==='div'){
+      const x = p2rand(2,9), d = p2rand(2,6), a = x*d;
+      const set = new Set([x]); let gd=0;
+      while(set.size<4 && gd++<40){ const q2 = x + p2rand(-2,2); if(q2>0) set.add(q2); }
+      const ch = shuffleArray(Array.from(set));
+      return { type:'eq', a, c:d, miss:x, q:'เติมเลขให้ตาชั่งสมดุล: '+a+' ÷ ❓ = '+d, choices: ch.map(String), ans: ch.indexOf(x) };
+    }
+    const fr = [['1/2','1/3'],['2/3','3/4'],['3/5','1/2'],['5/6','4/5'],['1/4','2/5'],['3/8','1/2']];
+    const pr = p2pick(fr);
+    const v = t => { const p = t.split('/'); return parseInt(p[0])/parseInt(p[1]); };
+    return { type:'nums', left:pr[0], right:pr[1], q:'เศษส่วนไหน "มากกว่า" กัน?', choices:['⬅️ ซ้าย','ขวา ➡️','เท่ากัน ⚖️'], ans: v(pr[0])>v(pr[1])?0:(v(pr[1])>v(pr[0])?1:2) };
+  }
   if(level<=4){
     let a=p2rand(1,6), b=p2rand(1,6); if(a===b) b = b<6?b+1:b-1;
     const item = p2pick(['🍎','🍊','🍋','🍓','🫐','🍒']);
@@ -2206,7 +2310,7 @@ function balanceMakeQuestion(level){
 }
 function balancePanHtml(content){ return '<div class="bal-pan-content">'+content+'</div>'; }
 function renderBalanceLevel(){
-  const g = balanceGame; const Q = balanceMakeQuestion(g.level);
+  const g = balanceGame; const Q = balanceMakeQuestion(g.level, g.hard);
   g.q = Q; g.locked=false;
   $('balance-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('balance-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
@@ -2620,12 +2724,16 @@ $('world-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
    ด่าน 1-3 = 3×3, 4-6 = 4×4, 7-10 = 5×5 — พื้นฐานการอ่านตาราง/กราฟ ---------------- */
 let coordGame = null;
 const COORD_COLS = ['A','B','C','D','E','F'];
-function coordSize(level){ return level<=3 ? 3 : (level<=6 ? 4 : 5); }
+function coordSize(level, hard){
+  if(hard==='p6') return level<=3 ? 6 : (level<=6 ? 7 : 8);
+  if(hard==='p5') return level<=3 ? 5 : (level<=6 ? 6 : 7);
+  return level<=3 ? 3 : (level<=6 ? 4 : 5);
+}
 function startCoordGame(catId){
   stopARGame();
   lastGameType='coord'; lastCatId=catId;
   const cat = catById(catId);
-  coordGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
+  coordGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
   showOnlyView(coordView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   coordView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2635,7 +2743,7 @@ function startCoordGame(catId){
   setTimeout(()=>showOwlMsg('start'), 600);
 }
 function renderCoordLevel(){
-  const g = coordGame, n = coordSize(g.level);
+  const g = coordGame, n = coordSize(g.level, g.hard);
   g.size = n; g.target = { r:p2rand(0,n-1), c:p2rand(0,n-1) }; g.locked = false;
   $('coord-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('coord-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
@@ -2948,7 +3056,7 @@ function startAreaGame(catId){
   stopARGame();
   lastGameType='area'; lastCatId=catId;
   const cat = catById(catId);
-  areaGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false, on:new Set() };
+  areaGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false, on:new Set() };
   showOnlyView(areaView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   areaView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2959,16 +3067,18 @@ function startAreaGame(catId){
 }
 function renderAreaLevel(){
   const g = areaGame;
-  const n = g.level<=4 ? 5 : 6;                       /* ขนาดกริด */
+  /* ป.5-6 ใช้กริดใหญ่ขึ้นและเข้าโหมดสี่เหลี่ยมผืนผ้าเร็วกว่า (ป.6 เป็นสี่เหลี่ยมตั้งแต่ด่านแรก) */
+  const n = g.hard==='p6' ? (g.level<=4 ? 7 : 8) : (g.hard==='p5' ? (g.level<=4 ? 6 : 7) : (g.level<=4 ? 5 : 6));
+  const freeUntil = g.hard==='p6' ? 0 : (g.hard==='p5' ? 2 : 4);
   g.size = n; g.on.clear(); g.locked=false;
-  /* ด่าน 1-4 = ระบายให้ได้พื้นที่ตามจำนวน (รูปอิสระ), ด่าน 5+ = ต้องเป็นสี่เหลี่ยมผืนผ้าตามกว้าง×ยาว */
-  if(g.level<=4){
-    g.mode='count'; g.target = p2rand(4, Math.min(12, n*n-4));
+  /* ด่านต้น = ระบายให้ได้พื้นที่ตามจำนวน (รูปอิสระ), ด่านหลัง = ต้องเป็นสี่เหลี่ยมผืนผ้าตามกว้าง×ยาว */
+  if(g.level<=freeUntil){
+    g.mode='count'; g.target = p2rand(g.hard?8:4, Math.min(g.hard?24:12, n*n-4));
     $('area-q').innerHTML = '🎨 ระบายสีให้ได้พื้นที่ <b>'+g.target+' ตารางหน่วย</b>';
     $('area-hint').textContent = 'แตะช่องเพื่อระบายสี แตะซ้ำเพื่อลบ แล้วกดตรวจคำตอบ';
   } else {
     g.mode='rect';
-    g.w = p2rand(2, n-1); g.h = p2rand(2, n-1);
+    g.w = p2rand(g.hard?3:2, n-1); g.h = p2rand(g.hard?3:2, n-1);
     g.target = g.w*g.h;
     $('area-q').innerHTML = '🟧 ระบายเป็นสี่เหลี่ยมผืนผ้า <b>กว้าง '+g.w+' ยาว '+g.h+'</b> ช่อง (พื้นที่ '+g.target+' ตารางหน่วย)';
     $('area-hint').textContent = 'ระบายให้ต่อกันเป็นสี่เหลี่ยมผืนผ้าตามขนาดที่โจทย์บอก';
@@ -3042,12 +3152,15 @@ $('area-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
    ลากจุดจับที่ปลายแขนมุม (snap ทีละ 5°) ให้ได้องศาตามโจทย์ แล้วกดตรวจ — ยอมรับคลาดเคลื่อน ±2° */
 let angleGame = null;
 const ANGLE_TARGETS = [[30,45,60,90],[30,45,60,90,120,135],[15,25,40,75,105,150,165]];
+/* ป.5-6: มุมละเอียดขึ้นทีละ 5 องศา และมีมุมป้าน/มุมกลับให้ประมาณค่าแม่นขึ้น */
+const ANGLE_TARGETS_P5 = [[35,50,65,80],[25,55,70,95,110,130],[15,40,85,105,125,145,160]];
+const ANGLE_TARGETS_P6 = [[35,55,75,95],[25,65,85,115,140,155],[20,50,70,100,130,170,175]];
 function angleName(deg){ return deg<90 ? 'มุมแหลม' : (deg===90 ? 'มุมฉาก' : (deg<180 ? 'มุมป้าน' : 'มุมตรง')); }
 function startAngleGame(catId){
   stopARGame();
   lastGameType='angle'; lastCatId=catId;
   const cat = catById(catId);
-  angleGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, deg:0, locked:false };
+  angleGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), deg:0, locked:false };
   showOnlyView(angleView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   angleView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -3069,7 +3182,8 @@ function buildAngleGuides(){
 function renderAngleLevel(){
   const g = angleGame;
   const band = g.level<=3 ? 0 : (g.level<=7 ? 1 : 2);
-  g.target = p2pick(ANGLE_TARGETS[band]);
+  const bank = g.hard==='p6' ? ANGLE_TARGETS_P6 : (g.hard==='p5' ? ANGLE_TARGETS_P5 : ANGLE_TARGETS);
+  g.target = p2pick(bank[band]);
   g.deg = 0; g.locked = false;
   $('angle-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('angle-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';

@@ -3779,12 +3779,12 @@ const CATS = [
   },
 
   /* ---------- เกมฝึกทักษะ ป.5 (reuse engine เดิม + คลังข้อมูลใหม่ของ ป.5) ---------- */
-  { id:'p5-fraction', name:'เศษส่วน-ทศนิยม ป.5', emoji:'🥮', icon:'assets/icons/p5-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, handPlay:true, grade:'p5', isNew:true },
-  { id:'p5-money', name:'ธนาคารของหนู ป.5', emoji:'🏧', icon:'assets/icons/p5-money.svg', color:'#D98E2B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, handPlay:true, grade:'p5', isNew:true },
-  { id:'p5-balance', name:'ตาชั่งแรงและมวล ป.5', emoji:'⚓', icon:'assets/icons/p5-balance.svg', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', levels:10, handPlay:true, grade:'p5', isNew:true },
+  { id:'p5-fraction', name:'เศษส่วน-ทศนิยม ป.5', emoji:'🥮', icon:'assets/icons/p5-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', hard:'p5', levels:10, handPlay:true, grade:'p5', isNew:true },
+  { id:'p5-money', name:'ธนาคารของหนู ป.5', emoji:'🏧', icon:'assets/icons/p5-money.svg', color:'#D98E2B', light:'#FBEBCB', type:'skill', mode:'money', hard:'p5', levels:10, handPlay:true, grade:'p5', isNew:true },
+  { id:'p5-balance', name:'ตาชั่งแรงและมวล ป.5', emoji:'⚓', icon:'assets/icons/p5-balance.svg', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', hard:'p5', levels:10, handPlay:true, grade:'p5', isNew:true },
   { id:'p5-memory', name:'จับคู่โดมิโน ป.5', emoji:'🎫', icon:'assets/icons/p5-memory.svg', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[12,14,16], handPlay:true, grade:'p5', isNew:true },
   { id:'p5-timeline', name:'เส้นเวลาอยุธยา-ธนบุรี', emoji:'🏰', icon:'assets/icons/p5-timeline.svg', color:'#B07A2E', light:'#F5E7CE', type:'skill', mode:'timeline', timelineTag:'p5', levels:10, handPlay:true, grade:'p5', isNew:true },
-  { id:'p5-coord', name:'พิกัดภูมิศาสตร์ ป.5', emoji:'🗾', icon:'assets/icons/p5-coord.svg', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', levels:10, handPlay:true, grade:'p5', isNew:true },
+  { id:'p5-coord', name:'พิกัดภูมิศาสตร์ ป.5', emoji:'🗾', icon:'assets/icons/p5-coord.svg', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', hard:'p5', levels:10, handPlay:true, grade:'p5', isNew:true },
   { id:'p5-world', name:'โลกและวัฏจักรน้ำ ป.5', emoji:'🌍', icon:'assets/icons/p5-world.svg', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'world', levels:10, handPlay:true, grade:'p5', isNew:true },
   { id:'p5-ef', name:'เชาวน์ ป.5 · นกฮูกสั่ง', emoji:'🦩', icon:'assets/icons/p5-ef.svg', color:'#17A65B', light:'#D6F3E4', type:'skill', mode:'ef', levels:10, handPlay:true, grade:'p5', isNew:true },
   { id:'p5-sci', name:'สารนี้ละลายน้ำไหม?', emoji:'🫙', icon:'assets/icons/p5-sci.svg', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'science', sciSet:'p5soluble', levels:10, handPlay:true, grade:'p5', isNew:true },
@@ -3793,8 +3793,8 @@ const CATS = [
   { id:'p5-quadsort', name:'จำแนกรูปสี่เหลี่ยม', emoji:'🔲', icon:'assets/icons/p5-quadsort.svg', color:'#6A4FE0', light:'#E7E2FC', type:'skill', mode:'sort', sortSet:'quadrilateral', levels:10, handPlay:true, grade:'p5', isNew:true },
   { id:'p5-wordsort', name:'แยกบุพบท สันธาน อุทาน', emoji:'📋', icon:'assets/icons/p5-wordsort.svg', color:'#E14E9A', light:'#FCE0EF', type:'skill', mode:'sort', sortSet:'wordtype5', levels:10, handPlay:true, grade:'p5', isNew:true },
   { id:'p5-chart', name:'อ่านแผนภูมิและกราฟ ป.5', emoji:'📈', icon:'assets/icons/p5-chart.svg', color:'#2F8FD6', light:'#D7ECFA', type:'skill', mode:'chart', levels:10, handPlay:true, grade:'p5', isNew:true },
-  { id:'p5-area', name:'พื้นที่และปริมาตร ป.5', emoji:'🟧', icon:'assets/icons/p5-area.svg', color:'#E0904C', light:'#FBE7D4', type:'skill', mode:'area', levels:10, handPlay:true, grade:'p5', isNew:true },
-  { id:'p5-angle', name:'มุมและเส้นขนาน ป.5', emoji:'🔺', icon:'assets/icons/p5-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', levels:10, grade:'p5', isNew:true },
+  { id:'p5-area', name:'พื้นที่และปริมาตร ป.5', emoji:'🟧', icon:'assets/icons/p5-area.svg', color:'#E0904C', light:'#FBE7D4', type:'skill', mode:'area', hard:'p5', levels:10, handPlay:true, grade:'p5', isNew:true },
+  { id:'p5-angle', name:'มุมและเส้นขนาน ป.5', emoji:'🔺', icon:'assets/icons/p5-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', hard:'p5', levels:10, grade:'p5', isNew:true },
 
 
   /* ===================== ระดับชั้น ป.6 (grade:'p6') ===================== */
@@ -4544,15 +4544,15 @@ const CATS = [
   },
 
   /* ---------- เกมฝึกทักษะ ป.6 (reuse engine เดิม + คลังใหม่ของ ป.6) ---------- */
-  { id:'p6-fraction', name:'เศษส่วน-อัตราส่วน ป.6', emoji:'🥥', icon:'assets/icons/p6-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, handPlay:true, grade:'p6', isNew:true },
-  { id:'p6-money', name:'ร้านค้าและส่วนลด ป.6', emoji:'🫘', icon:'assets/icons/p6-money.svg', color:'#D98E2B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, handPlay:true, grade:'p6', isNew:true },
-  { id:'p6-balance', name:'ตาชั่งสมดุล ป.6', emoji:'🔧', icon:'assets/icons/p6-balance.svg', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', levels:10, handPlay:true, grade:'p6', isNew:true },
+  { id:'p6-fraction', name:'เศษส่วน-อัตราส่วน ป.6', emoji:'🥥', icon:'assets/icons/p6-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', hard:'p6', levels:10, handPlay:true, grade:'p6', isNew:true },
+  { id:'p6-money', name:'ร้านค้าและส่วนลด ป.6', emoji:'🫘', icon:'assets/icons/p6-money.svg', color:'#D98E2B', light:'#FBEBCB', type:'skill', mode:'money', hard:'p6', levels:10, handPlay:true, grade:'p6', isNew:true },
+  { id:'p6-balance', name:'ตาชั่งสมดุล ป.6', emoji:'🔧', icon:'assets/icons/p6-balance.svg', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', hard:'p6', levels:10, handPlay:true, grade:'p6', isNew:true },
   { id:'p6-memory', name:'จับคู่โดมิโน ป.6', emoji:'🧅', icon:'assets/icons/p6-memory.svg', color:'#E0764C', light:'#FBE3D4', type:'skill', mode:'memory', levels:3, memoryPairs:[12,14,16], handPlay:true, grade:'p6', isNew:true },
   { id:'p6-timeline', name:'เส้นเวลารัตนโกสินทร์', emoji:'🕌', icon:'assets/icons/p6-timeline.svg', color:'#B07A2E', light:'#F5E7CE', type:'skill', mode:'timeline', timelineTag:'p6', levels:10, handPlay:true, grade:'p6', isNew:true },
-  { id:'p6-coord', name:'พิกัดแผนที่ประเทศไทย', emoji:'🚁', icon:'assets/icons/p6-coord.svg', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', levels:10, handPlay:true, grade:'p6', isNew:true },
+  { id:'p6-coord', name:'พิกัดแผนที่ประเทศไทย', emoji:'🚁', icon:'assets/icons/p6-coord.svg', color:'#C77D2E', light:'#F6E7CF', type:'skill', mode:'coord', hard:'p6', levels:10, handPlay:true, grade:'p6', isNew:true },
   { id:'p6-chart', name:'อ่านแผนภูมิและสถิติ ป.6', emoji:'🪛', icon:'assets/icons/p6-chart.svg', color:'#2F8FD6', light:'#D7ECFA', type:'skill', mode:'chart', levels:10, handPlay:true, grade:'p6', isNew:true },
-  { id:'p6-area', name:'พื้นที่และปริมาตร ป.6', emoji:'🧱', icon:'assets/icons/p6-area.svg', color:'#E0904C', light:'#FBE7D4', type:'skill', mode:'area', levels:10, handPlay:true, grade:'p6', isNew:true },
-  { id:'p6-angle', name:'มุมภายในรูปหลายเหลี่ยม', emoji:'🛴', icon:'assets/icons/p6-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', levels:10, grade:'p6', isNew:true },
+  { id:'p6-area', name:'พื้นที่และปริมาตร ป.6', emoji:'🧱', icon:'assets/icons/p6-area.svg', color:'#E0904C', light:'#FBE7D4', type:'skill', mode:'area', hard:'p6', levels:10, handPlay:true, grade:'p6', isNew:true },
+  { id:'p6-angle', name:'มุมภายในรูปหลายเหลี่ยม', emoji:'🛴', icon:'assets/icons/p6-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', hard:'p6', levels:10, grade:'p6', isNew:true },
   { id:'p6-code', name:'เขียนโปรแกรมมีเงื่อนไข ป.6', emoji:'🛠️', icon:'assets/icons/p6-code.svg', color:'#1B6E77', light:'#D3EBEE', type:'skill', mode:'code', codeSet:'p6a', codeLoop:true, codeCond:true, levels:10, handPlay:true, grade:'p6', isNew:true },
   { id:'p6-sci', name:'แม่เหล็กแยกสารได้ไหม?', emoji:'🧴', icon:'assets/icons/p6-sci.svg', color:'#3FA9C9', light:'#D9F0F8', type:'skill', mode:'science', sciSet:'p6magnet', levels:10, handPlay:true, grade:'p6', isNew:true },
   { id:'p6-foodsort', name:'แยกสารอาหารให้พลังงาน', emoji:'🫒', icon:'assets/icons/p6-foodsort.svg', color:'#2FA36B', light:'#D9F2E4', type:'skill', mode:'sort', sortSet:'nutrient', levels:10, handPlay:true, grade:'p6', isNew:true },
@@ -5774,6 +5774,32 @@ const CAT_REQUIRES = { thai2:'thai', iq2:'iq1', iq3:'iq2', iq4:'iq3', listen2:'l
   'p4-social2':'p4-social1', 'p4-sci2':'p4-sci1', 'p4-iq2':'p4-iq1',
   'p4-music2':'p4-music1', 'p4-art2':'p4-art1', 'p4-nature2':'p4-nature1',
   'p4-listen-th':'p4-listen-en', 'p4-area':'p4-chart', 'p4-angle':'p4-anglesort',
+  /* ---- ป.5: ล็อกลำดับ level ต่อวิชา + เกมฝึกทักษะไล่จากง่ายไปยาก ---- */
+  'p5-math2':'p5-math1', 'p5-math3':'p5-math2', 'p5-math4':'p5-math3',
+  'p5-thai2':'p5-thai1', 'p5-thai3':'p5-thai2', 'p5-thai4':'p5-thai3',
+  'p5-eng2':'p5-eng1', 'p5-eng3':'p5-eng2',
+  'p5-social2':'p5-social1', 'p5-social3':'p5-social2', 'p5-social4':'p5-social3',
+  'p5-sci2':'p5-sci1', 'p5-sci3':'p5-sci2', 'p5-sci4':'p5-sci3',
+  'p5-iq2':'p5-iq1',
+  'p5-thai-sentence':'p5-math-ar', 'p5-eng-sentence':'p5-thai-sentence', 'p5-eng-match':'p5-eng-sentence',
+  'p5-listen-th':'p5-listen-en', 'p5-cloze1':'p5-listen-th', 'p5-cloze2':'p5-cloze1',
+  'p5-order':'p5-memory', 'p5-mirror':'p5-order', 'p5-sci':'p5-mirror', 'p5-revsort':'p5-sci', 'p5-quadsort':'p5-revsort',
+  'p5-wordsort':'p5-quadsort', 'p5-timeline':'p5-wordsort', 'p5-world':'p5-timeline', 'p5-ef':'p5-world', 'p5-coord':'p5-ef',
+  'p5-chart':'p5-coord', 'p5-fraction':'p5-chart', 'p5-money':'p5-fraction', 'p5-balance':'p5-money', 'p5-area':'p5-balance',
+  'p5-angle':'p5-area', 'p5-code':'p5-angle',
+  /* ---- ป.6: ล็อกลำดับ level ต่อวิชา + เกมฝึกทักษะไล่จากง่ายไปยาก ---- */
+  'p6-math2':'p6-math1', 'p6-math3':'p6-math2', 'p6-math4':'p6-math3', 'p6-math5':'p6-math4',
+  'p6-thai2':'p6-thai1', 'p6-thai3':'p6-thai2', 'p6-thai4':'p6-thai3',
+  'p6-eng2':'p6-eng1', 'p6-eng3':'p6-eng2',
+  'p6-social2':'p6-social1', 'p6-social3':'p6-social2', 'p6-social4':'p6-social3',
+  'p6-sci2':'p6-sci1', 'p6-sci3':'p6-sci2', 'p6-sci4':'p6-sci3', 'p6-sci5':'p6-sci4',
+  'p6-iq2':'p6-iq1',
+  'p6-thai-sentence':'p6-math-ar', 'p6-eng-sentence':'p6-thai-sentence', 'p6-eng-match':'p6-eng-sentence',
+  'p6-listen-th':'p6-listen-en', 'p6-cloze1':'p6-listen-th', 'p6-cloze2':'p6-cloze1',
+  'p6-order':'p6-memory', 'p6-mirror':'p6-order', 'p6-sci':'p6-mirror', 'p6-foodsort':'p6-sci', 'p6-trisort':'p6-foodsort',
+  'p6-timeline':'p6-trisort', 'p6-world':'p6-timeline', 'p6-ef':'p6-world', 'p6-coord':'p6-ef', 'p6-chart':'p6-coord',
+  'p6-fraction':'p6-chart', 'p6-money':'p6-fraction', 'p6-balance':'p6-money', 'p6-area':'p6-balance', 'p6-angle':'p6-area',
+  'p6-tangram':'p6-angle', 'p6-circuit':'p6-tangram', 'p6-code':'p6-circuit',
   /* ---- เกมฟังประโยคเติมคำ: เกม 2 ของแต่ละชั้นปลดล็อกหลังผ่านเกม 1 ---- */
   'cloze-th2':'cloze-th1', 'p1-cloze2':'p1-cloze1', 'p2-cloze2':'p2-cloze1', 'p3-cloze2':'p3-cloze1', 'p4-cloze2':'p4-cloze1' };
 
