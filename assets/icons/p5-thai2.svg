@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย ป.5 · คำราชาศัพท์และภาษาถิ่น">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ea83b8"/><stop offset="1" stop-color="#E14E9A"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M14 44h36l4-22-11 8-11-14-11 14-11-8z" fill="url(#g)" stroke="#923364" stroke-width="2.8" stroke-linejoin="round"/><rect x="14" y="44" width="36" height="7" rx="3" fill="#f2afd2" stroke="#923364" stroke-width="2.6"/><circle cx="32" cy="14" r="3" fill="#fff" stroke="#923364" stroke-width="2"/><circle cx="18" cy="22" r="2.4" fill="#fff"/><circle cx="46" cy="22" r="2.4" fill="#fff"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#923364" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#923364" text-anchor="middle">ป.5</text></g>
+</svg>

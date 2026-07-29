@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วิทยาศาสตร์ ป.5 · แรงลัพธ์ แรงเสียดทาน และเสียง">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6daad4"/><stop offset="1" stop-color="#2E86C1"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M6 30h20" stroke="url(#g)" stroke-width="5" stroke-linecap="round"/><path d="M26 30l-8-6v12z" fill="url(#g)" stroke="#1e577d" stroke-width="2"/><path d="M58 30H42" stroke="#a1c9e3" stroke-width="5" stroke-linecap="round"/><path d="M42 30l7-5v10z" fill="#a1c9e3" stroke="#1e577d" stroke-width="2"/><rect x="26" y="20" width="14" height="20" rx="4" fill="url(#g)" stroke="#1e577d" stroke-width="2.8"/><path d="M20 46c4 4 20 4 24 0" fill="none" stroke="#1e577d" stroke-width="2.4" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#1e577d" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#1e577d" text-anchor="middle">ป.5</text></g>
+</svg>

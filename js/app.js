@@ -2362,7 +2362,7 @@ function startTimelineGame(catId){
   stopARGame();
   lastGameType='timeline'; lastCatId=catId;
   const cat = catById(catId);
-  timelineGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), maxSize:(cat.timelineMax||5), locked:false };
+  timelineGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), maxSize:(cat.timelineMax||5), tag:(cat.timelineTag||null), locked:false };
   showOnlyView(timelineView);
   document.documentElement.style.setProperty('--cat-color', cat.color);
   timelineView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
@@ -2371,8 +2371,11 @@ function startTimelineGame(catId){
   window.scrollTo({top:0, behavior:'smooth'});
   setTimeout(()=>showOwlMsg('start'), 600);
 }
-function pickTimelineSet(size, used){
-  const idxs = TIMELINE_SETS.map((s,i)=>i).filter(i=>TIMELINE_SETS[i].items.length===size);
+/* tag: หมวดที่ระบุ cat.timelineTag จะสุ่มเฉพาะชุดที่ติด tag เดียวกัน (เช่น 'p5' = ชุดประวัติศาสตร์/วิทย์ ป.5)
+   ส่วนหมวดที่ไม่ระบุ tag จะสุ่มเฉพาะชุดพื้นฐานที่ไม่มี tag เหมือนเดิม */
+function pickTimelineSet(size, used, tag){
+  const want = tag || null;
+  const idxs = TIMELINE_SETS.map((s,i)=>i).filter(i=>TIMELINE_SETS[i].items.length===size && (TIMELINE_SETS[i].tag||null)===want);
   let avail = idxs.filter(i=>!used.has(i));
   if(avail.length===0){ idxs.forEach(i=>used.delete(i)); avail = idxs.slice(); }
   const pick = avail[Math.floor(Math.random()*avail.length)];
@@ -2382,7 +2385,7 @@ function pickTimelineSet(size, used){
 function renderTimelineLevel(){
   const g = timelineGame;
   const size = timelineSize(g.level, g.maxSize);
-  const set = pickTimelineSet(size, g.used);
+  const set = pickTimelineSet(size, g.used, g.tag);
   g.set = set;
   g.order = set.items.map((it,i)=>({ e:it.e, l:it.l, ord:i }));
   g.slots = new Array(size).fill(null);
@@ -3202,6 +3205,7 @@ function robotLevelsFor(cat){
   if(cat.codeSet==='p3b') return ROBOT_LEVELS_P3B;
   if(cat.codeSet==='p3c') return ROBOT_LEVELS_P3C;
   if(cat.codeSet==='p3if') return ROBOT_LEVELS_P3IF;
+  if(cat.codeSet==='p5a') return ROBOT_LEVELS_P5A;
   if(cat.codeSet==='p2a') return ROBOT_LEVELS_P2A;
   if(cat.codeSet==='p2b') return ROBOT_LEVELS_P2B;
   if(cat.codeSet==='p2c') return ROBOT_LEVELS_P2C;

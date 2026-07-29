@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English ป.5 · Reading Comprehension">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#54a29e"/><stop offset="1" stop-color="#0A7A75"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="10" y="12" width="44" height="38" rx="6" fill="#91c3c1" stroke="#064f4c" stroke-width="2.8"/><path d="M32 12v38" stroke="#064f4c" stroke-width="2.6"/><path d="M16 22h11M16 30h11M37 22h11M37 30h11" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="42" r="7.5" fill="url(#g)" stroke="#064f4c" stroke-width="2.4"/><text x="44" y="46" font-family="Arial" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle">?</text>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#064f4c" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#064f4c" text-anchor="middle">ป.5</text></g>
+</svg>

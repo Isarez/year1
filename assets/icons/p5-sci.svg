@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สารนี้ละลายน้ำไหม?">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#79c3d9"/><stop offset="1" stop-color="#3FA9C9"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M24 8h16v12l10 22a6 6 0 0 1-5 9H19a6 6 0 0 1-5-9l10-22z" fill="#a9d8e7" stroke="#296e83" stroke-width="2.8" stroke-linejoin="round"/><path d="M18 34h28l4 8a6 6 0 0 1-5 9H19a6 6 0 0 1-5-9z" fill="url(#g)" stroke="#296e83" stroke-width="2.4"/><circle cx="26" cy="42" r="2.2" fill="#fff"/><circle cx="35" cy="46" r="2.2" fill="#fff"/><circle cx="42" cy="40" r="2.2" fill="#fff"/><path d="M22 8h20" stroke="#296e83" stroke-width="2.8" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#296e83" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#296e83" text-anchor="middle">ป.5</text></g>
+</svg>
