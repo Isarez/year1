@@ -681,6 +681,7 @@ const LAMP_SPOTS = LAMP_FIXED.concat([
   [55,61],[55,51],[65,51],[45,54],[36,54],[36,63],[30,51],[36,48],[36,40],[30,34],
   [36,32],[46,34],[55,34],[65,34],[52,27],[41,28],[41,19],[31,17],[27,10],[18,25],
   [18,16],[18,8],[21,46],[19,54],[19,62],[27,65],[13,65],[5,62],[1,65],[5,56],[13,56],
+  [55,43],[18,1],
 ]);
 const LAMP_SET = new Set(LAMP_SPOTS.map(p => p[0] + ',' + p[1]));
 function isLampTile(x, z){ return LAMP_SET.has(x + ',' + z); }
@@ -3216,7 +3217,7 @@ function updateStreetLights(dt){
   const lit = streetLampCur > .01;
   streetLightT -= dt;
   if(lit && streetLightT <= 0 && charGroup){
-    streetLightT = .4;                     /* เลือกเสาใหม่ทุก 0.4 วิ พอแล้ว (เด็กเดินไม่เร็วขนาดนั้น) */
+    streetLightT = .18;                    /* เช็คเสาที่ใกล้ที่สุดบ่อยๆ เสาที่เพิ่งเข้าเฟรมจะได้ติดไฟไว */
     const cx = charGroup.position.x, cz = charGroup.position.z;
     const near = streetLampPos
       .map(p => ({p, d:(p.x-cx)*(p.x-cx) + (p.z-cz)*(p.z-cz)}))
@@ -3235,11 +3236,16 @@ function updateStreetLights(dt){
       if(i >= 0){ taken[i] = true; li.userData.want = near[i].p; }
     });
   }
-  const rate = Math.min(1, dt*1.8);        /* อัตราเฟดเดียวกับ updateStreetLamps/updateLamps */
+  /* เฟดขึ้นเร็ว (เข้าเฟรมแล้วต้องสว่างทันตา) เฟดลงเร็วกว่าอีกนิด จะได้ปล่อยดวงไฟไปเสาต้นใหม่ได้ไว */
+  const rIn = Math.min(1, dt*6), rOut = Math.min(1, dt*9);
+  const ccx = charGroup ? charGroup.position.x : 0, ccz = charGroup ? charGroup.position.z : 0;
   streetLampLights.forEach(li => {
     const u = li.userData;
     const tgt = (lit && u.post && u.post === u.want) ? 1 : 0;
-    u.k = (u.k || 0) + (tgt - (u.k || 0)) * rate;
+    /* เสาเดิมอยู่ไกลจนหลุดเฟรมไปแล้ว → ดับทันทีไม่ต้องรอเฟด (ไม่มีใครเห็นอยู่แล้ว)
+       ดวงไฟจะได้ย้ายไปติดเสาต้นที่เพิ่งเข้าเฟรมได้เลย ไม่ต้องรอเฟดดับ+เฟดติดต่อกันจนสว่างช้า */
+    if(u.post && u.post !== u.want && ((u.post.x-ccx)*(u.post.x-ccx) + (u.post.z-ccz)*(u.post.z-ccz)) > 400) u.k = 0;
+    u.k = (u.k || 0) + (tgt - (u.k || 0)) * (tgt > (u.k || 0) ? rIn : rOut);
     if(Math.abs(tgt - u.k) < .01) u.k = tgt;
     if(u.k <= .01 && u.post !== u.want){   /* มืดสนิทแล้วค่อยย้ายไปเสาต้นใหม่ (ย้ายตอนสว่างอยู่จะเห็นไฟกระโดด) */
       u.post = u.want;
