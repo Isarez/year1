@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สังคม ป.6 · ผู้ผลิต ผู้บริโภค และระบบเศรษฐกิจ">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e09f6b"/><stop offset="1" stop-color="#D2762B"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="8" y="26" width="14" height="24" rx="3" fill="#ebc1a0" stroke="#884d1c" stroke-width="2.6"/><rect x="25" y="16" width="14" height="34" rx="3" fill="url(#g)" stroke="#884d1c" stroke-width="2.6"/><rect x="42" y="30" width="14" height="20" rx="3" fill="#ebc1a0" stroke="#884d1c" stroke-width="2.6"/><path d="M12 20l8-6 8 6" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#884d1c" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#884d1c" text-anchor="middle">ป.6</text></g>
+</svg>

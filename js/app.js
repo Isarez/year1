@@ -3206,6 +3206,7 @@ function robotLevelsFor(cat){
   if(cat.codeSet==='p3c') return ROBOT_LEVELS_P3C;
   if(cat.codeSet==='p3if') return ROBOT_LEVELS_P3IF;
   if(cat.codeSet==='p5a') return ROBOT_LEVELS_P5A;
+  if(cat.codeSet==='p6a') return ROBOT_LEVELS_P6A;
   if(cat.codeSet==='p2a') return ROBOT_LEVELS_P2A;
   if(cat.codeSet==='p2b') return ROBOT_LEVELS_P2B;
   if(cat.codeSet==='p2c') return ROBOT_LEVELS_P2C;

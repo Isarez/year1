@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วิทยาศาสตร์ ป.6 · การแยกสารและแรงไฟฟ้า">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#79c3d9"/><stop offset="1" stop-color="#3FA9C9"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M12 26a10 10 0 0 1 0-8h14v8z" fill="#a9d8e7" stroke="#296e83" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 12h12v12l12 22a6 6 0 0 1-5 9H19a6 6 0 0 1-5-9l12-22z" fill="url(#g)" stroke="#296e83" stroke-width="2.8" stroke-linejoin="round"/><circle cx="27" cy="42" r="2.4" fill="#fff"/><circle cx="37" cy="46" r="2.4" fill="#fff"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#296e83" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#296e83" text-anchor="middle">ป.6</text></g>
+</svg>

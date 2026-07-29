@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="คณิต ป.6 · ห.ร.ม. และ ค.ร.น.">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#806dd3"/><stop offset="1" stop-color="#4A2FC0"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 8 12 22v18l20 12 20-12V22z" fill="url(#g)" stroke="#301f7d" stroke-width="2.8" stroke-linejoin="round"/><text x="32" y="34" font-family="'Sarabun',Arial,sans-serif" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">ห.ร.ม.</text><circle cx="20" cy="46" r="3" fill="#aea1e3" stroke="#301f7d" stroke-width="1.8"/><circle cx="44" cy="46" r="3" fill="#aea1e3" stroke="#301f7d" stroke-width="1.8"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#301f7d" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#301f7d" text-anchor="middle">ป.6</text></g>
+</svg>

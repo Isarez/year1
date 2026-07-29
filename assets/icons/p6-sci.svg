@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="แม่เหล็กแยกสารได้ไหม?">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#79c3d9"/><stop offset="1" stop-color="#3FA9C9"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M14 18h10v12H14z" fill="#a9d8e7" stroke="#296e83" stroke-width="2.6"/><path d="M24 24h16" stroke="#296e83" stroke-width="3" stroke-linecap="round"/><path d="M40 14h12v20H40z" fill="url(#g)" stroke="#296e83" stroke-width="2.6"/><circle cx="22" cy="42" r="4" fill="url(#g)" stroke="#296e83" stroke-width="2.2"/><circle cx="34" cy="46" r="4" fill="#a9d8e7" stroke="#296e83" stroke-width="2.2"/><circle cx="46" cy="42" r="4" fill="url(#g)" stroke="#296e83" stroke-width="2.2"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#296e83" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#296e83" text-anchor="middle">ป.6</text></g>
+</svg>

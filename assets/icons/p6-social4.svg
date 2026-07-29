@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สังคม ป.6 · กฎหมาย พลเมือง และประชาธิปไตย">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ce9262"/><stop offset="1" stop-color="#B9631F"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 8 52 16v14c0 12-8 20-20 24-12-4-20-12-20-24V16z" fill="url(#g)" stroke="#784014" stroke-width="2.8" stroke-linejoin="round"/><path d="M22 30h20M32 20v20" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#784014" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#784014" text-anchor="middle">ป.6</text></g>
+</svg>

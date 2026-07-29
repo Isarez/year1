@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="คณิต ป.6 · ร้อยละและโจทย์หลายขั้นตอน">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7566bc"/><stop offset="1" stop-color="#3A24A0"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="10" y="16" width="44" height="30" rx="7" fill="#a69cd4" stroke="#261768" stroke-width="2.8"/><circle cx="23" cy="26" r="4.5" fill="none" stroke="url(#g)" stroke-width="3"/><circle cx="42" cy="37" r="4.5" fill="none" stroke="url(#g)" stroke-width="3"/><path d="M19 40 46 22" stroke="url(#g)" stroke-width="3.4" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#261768" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#261768" text-anchor="middle">ป.6</text></g>
+</svg>

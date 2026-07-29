@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วิทยาศาสตร์ ป.6 · หิน ลมมรสุม และภัยธรรมชาติ">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b09a76"/><stop offset="1" stop-color="#8E6E3C"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M6 46 20 22l9 12 7-9 22 21z" fill="url(#g)" stroke="#5c4827" stroke-width="2.8" stroke-linejoin="round"/><path d="M20 22l5 8H15z" fill="#fff" opacity=".9"/><path d="M46 12c4 3 4 7 0 10" fill="none" stroke="#ccbea7" stroke-width="3" stroke-linecap="round"/><path d="M52 10c6 4 6 12 0 16" fill="none" stroke="#ccbea7" stroke-width="3" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#5c4827" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#5c4827" text-anchor="middle">ป.6</text></g>
+</svg>

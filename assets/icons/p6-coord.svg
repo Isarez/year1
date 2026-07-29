@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="พิกัดแผนที่ประเทศไทย">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8a46d"/><stop offset="1" stop-color="#C77D2E"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="8" y="10" width="48" height="40" rx="5" fill="#e6c4a1" stroke="#81511e" stroke-width="2.8"/><path d="M24 10v40M40 10v40M8 24h48M8 37h48" stroke="#81511e" stroke-width="1.8" opacity=".6"/><path d="M46 20a6 6 0 1 0-12 0c0 5 6 11 6 11s6-6 6-11z" fill="url(#g)" stroke="#81511e" stroke-width="2.4" stroke-linejoin="round"/><circle cx="40" cy="20" r="2.4" fill="#fff"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#81511e" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#81511e" text-anchor="middle">ป.6</text></g>
+</svg>

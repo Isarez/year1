@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ศิลปะ ป.6 · องค์ประกอบศิลป์และงานสร้างสรรค์">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffa27d"/><stop offset="1" stop-color="#FF7A45"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="30" r="19" fill="#ffc3ab" stroke="#a64f2d" stroke-width="2.8"/><path d="M32 11a19 19 0 0 1 0 38z" fill="url(#g)"/><circle cx="22" cy="24" r="3.2" fill="url(#g)"/><circle cx="22" cy="36" r="3.2" fill="url(#g)"/><circle cx="42" cy="24" r="3.2" fill="#fff"/><circle cx="42" cy="36" r="3.2" fill="#fff"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#a64f2d" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#a64f2d" text-anchor="middle">ป.6</text></g>
+</svg>

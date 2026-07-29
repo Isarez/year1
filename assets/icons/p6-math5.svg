@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="คณิต ป.6 · ปริมาตร พื้นที่ และวงกลม">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b5fa6"/><stop offset="1" stop-color="#2C1A80"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="24" cy="28" r="15" fill="url(#g)" stroke="#1d1153" stroke-width="2.8"/><path d="M24 28h15" stroke="#fff" stroke-width="2.6" stroke-dasharray="3 2"/><text x="31" y="25" font-family="'Sarabun',Arial,sans-serif" font-size="8" font-weight="bold" fill="#fff" text-anchor="middle">r</text><path d="M40 20 56 26v18l-16-6z" fill="#a098c6" stroke="#1d1153" stroke-width="2.4" stroke-linejoin="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#1d1153" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#1d1153" text-anchor="middle">ป.6</text></g>
+</svg>
