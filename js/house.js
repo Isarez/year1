@@ -3607,14 +3607,22 @@ function buildWorld(){
   const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(RIVER_X.length, .14, OUT_D), waterMat);
   waterMesh.position.set(outWX((RIVER_X[0]+RIVER_X[RIVER_X.length-1])/2), -.25, 0);
   worldGroup.add(waterMesh);
-  /* วงคลื่นในแม่น้ำ — แม่น้ำ/บ่อไม่ขยับผิวน้ำแล้ว (ยกทั้งผืนแล้วเห็นรอยต่อกับตลิ่ง) ใช้วงคลื่นแทน */
-  for(let i=0; i<4; i++){
-    const rv = new THREE.Mesh(new THREE.RingGeometry(.35, .46, 22),
-      new THREE.MeshBasicMaterial({color:0xdff5ff, transparent:true, opacity:.3, depthWrite:false}));
-    rv.rotation.x = -Math.PI/2;
-    rv.position.set(outWX(RIVER_X[0]) + (i%2 ? .4 : -.1), -.16, outWZ(8 + i*15));
-    worldGroup.add(rv);
-    fxTag(rv, 'ripple', {ph:i/4}); registerFx(rv);
+  /* วงคลื่นในแม่น้ำ — แม่น้ำ/บ่อไม่ขยับผิวน้ำแล้ว (ยกทั้งผืนแล้วเห็นรอยต่อกับตลิ่ง) ใช้วงคลื่นแทน
+     แม่น้ำยาวตลอดแผนที่ (68 ช่อง) จึงวางถี่ทุก ~5 ช่องตลอดเส้น เว้นช่วงที่มีสะพานคร่อมอยู่
+     สลับซ้าย-ขวาของร่องน้ำและเหลื่อมจังหวะกัน ทั้งสายจะได้กระเพื่อมไม่พร้อมกัน */
+  {
+    const onBridge = z => BRIDGES.some(bz => z >= bz[0]-1 && z <= bz[bz.length-1]+1);
+    let n = 0;
+    for(let z=3; z<OUT_D-2; z+=5){
+      if(onBridge(z)) continue;
+      const rv = new THREE.Mesh(new THREE.RingGeometry(.34, .45, 22),
+        new THREE.MeshBasicMaterial({color:0xdff5ff, transparent:true, opacity:.3, depthWrite:false}));
+      rv.rotation.x = -Math.PI/2;
+      rv.position.set(outWX(RIVER_X[0]) + (n%2 ? .55 : .05), -.16, outWZ(z) + (n%3===0 ? .4 : 0));
+      worldGroup.add(rv);
+      fxTag(rv, 'ripple', {ph:(n*.29) % 1}); registerFx(rv);
+      n++;
+    }
   }
   /* บ่อน้ำใหญ่ทิศเหนือ: วงรีแผ่นเดียว (ทำใหญ่กว่าขอบช่องน้ำเล็กน้อย ให้บล็อกหญ้าริมบ่อบังขอบเนียนๆ) */
   const pondGeo = new THREE.CylinderGeometry(1, 1, .14, 40);
@@ -3639,12 +3647,13 @@ function buildWorld(){
   /* วงคลื่นในคลองส่งน้ำ (เหมือนแม่น้ำกับบ่อ — ผิวน้ำไม่ขยับ ใช้วงคลื่นแทน)
      คลองยาวราว 19 ช่อง วางให้ทั่วทั้งเส้นเกือบทุก 2 ช่อง สลับซ้าย-ขวาของร่องน้ำ
      เหลื่อมจังหวะกันทุกวง คลองทั้งเส้นจะได้มีคลื่นกระเพื่อมตลอดเวลา */
-  const canalN = Math.max(4, Math.floor((CANAL_X1 - CANAL_X0) / 2));
+  const canalN = 7;                        /* คลองสั้นกว่าแม่น้ำมาก 7 วงกำลังพอดี ไม่แน่นจนดูรก */
+  const canalStep = (CANAL_X1 - CANAL_X0 - 2) / (canalN - 1);
   for(let i=0; i<canalN; i++){
     const rc = new THREE.Mesh(new THREE.RingGeometry(.3, .41, 22),
       new THREE.MeshBasicMaterial({color:0xdff5ff, transparent:true, opacity:.3, depthWrite:false}));
     rc.rotation.x = -Math.PI/2;
-    rc.position.set(outWX(CANAL_X0 + 1 + i*2 + (i%3===0 ? .4 : 0)), -.16,
+    rc.position.set(outWX(CANAL_X0 + 1 + i*canalStep + (i%3===0 ? .35 : 0)), -.16,
                     outWZ(CANAL_Z[0] + (i%2 ? .85 : .15)));
     worldGroup.add(rc);
     fxTag(rc, 'ripple', {ph:(i*.37) % 1}); registerFx(rc);
