@@ -1104,9 +1104,30 @@
   </div>
 </div>
 
-<script src="js/data.js?v=1.20.0"></script>
+<!-- ข้อมูลหมวด: แยกไฟล์ตามระดับชั้น แล้วต่อกันเป็น CATS ใน data-cats.js
+     (data-cats.js ต้องอยู่หลัง data-cats-*.js ทุกไฟล์) -->
+<script src="js/data-cats-prep.js?v=1.20.0"></script>
+<script src="js/data-cats-p1.js?v=1.20.0"></script>
+<script src="js/data-cats-p2.js?v=1.20.0"></script>
+<script src="js/data-cats-p3.js?v=1.20.0"></script>
+<script src="js/data-cats-p4.js?v=1.20.0"></script>
+<script src="js/data-cats-p5.js?v=1.20.0"></script>
+<script src="js/data-cats-p6.js?v=1.20.0"></script>
+<script src="js/data-cats.js?v=1.20.0"></script>
+<script src="js/data-pools.js?v=1.20.0"></script>
 <script src="js/owl-messages.js?v=1.20.0"></script>
-<script src="js/app.js?v=1.20.0"></script>
+<!-- ชุดไฟล์ของแอป: app-core ต้องมาก่อนไฟล์เกมทุกไฟล์ และ app-ui ต้องอยู่ท้ายสุด
+     (บรรทัด INIT อยู่ท้าย app-ui และเรียกใช้ฟังก์ชันจากทุกไฟล์) -->
+<script src="js/app-core.js?v=1.20.0"></script>
+<script src="js/game-quiz.js?v=1.20.0"></script>
+<script src="js/games-think.js?v=1.20.0"></script>
+<script src="js/games-math.js?v=1.20.0"></script>
+<script src="js/games-code.js?v=1.20.0"></script>
+<script src="js/games-write.js?v=1.20.0"></script>
+<script src="js/games-art.js?v=1.20.0"></script>
+<script src="js/games-listen.js?v=1.20.0"></script>
+<script src="js/games-ar.js?v=1.20.0"></script>
+<script src="js/app-ui.js?v=1.20.0"></script>
 <!-- โหมด "บ้านของหนู" (three.min.js 594 KB + house.js 140 KB) โหลดแบบ lazy จาก app.js
      เฉพาะตอนกดเข้าบ้าน หรือตอนเด็กคนนี้มีบ้านอยู่แล้ว (ต้องโชว์เพื่อนซี้หน้าหลัก)
      ทำให้เด็กที่ไม่เคยเข้าบ้านไม่ต้องโหลด/แปลไฟล์ 734 KB ทุกครั้งที่เปิดแอป -->
