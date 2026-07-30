@@ -1669,6 +1669,179 @@ function buildFountain(){
 function fountainCX(){ return outWX((FOUNTAIN.x0+FOUNTAIN.x1)/2); }
 function fountainCZ(){ return outWZ((FOUNTAIN.z0+FOUNTAIN.z1)/2); }
 
+/* ============================================================
+   ผีเสื้อตอมดอกไม้ (บินได้จริง) + ของตกแต่งไหวตามลม
+   ของในทุ่งดอกไม้ถูก merge เป็นก้อนเดียวเพื่อลด draw call → ขยับไม่ได้
+   ผีเสื้อจึงแยกออกมาเป็น "ฝูงเล็กๆ ที่วนใช้ซ้ำ" ลอยอยู่เฉพาะรอบตัวเด็ก
+   (ไกลออกไปไม่ต้องมี เพราะมองไม่เห็นอยู่แล้ว) จำนวนคงที่ ไม่สร้าง/ทิ้งทุกเฟรม
+   ============================================================ */
+const BUTTERFLY_MAX = 8;
+const BUTTERFLY_PALETTE = [                     /* [ปีกบน, ปีกล่าง] โทนพาสเทลให้เข้ากับธีมเด็ก */
+  [0xffb3c9, 0xfff0f5], [0xffd54f, 0xffecb3], [0x9ad7ff, 0xe3f6ff],
+  [0xc9a7ff, 0xf0e6ff], [0xff9e7a, 0xffe0d1], [0xa5e8b0, 0xe8f8ea],
+];
+let butterflies = [];
+let bflySpots = null;        /* อาเรย์ช่องดอกไม้ (สแนปช็อตจาก flowerSet ครั้งเดียว) */
+let bflyRetargetT = 0;
+
+function buildButterfly(pal){
+  const g = new THREE.Group();
+  /* ลำตัว+หัว+หนวด สีเดียวกันหมด → merge เหลือ mesh เดียว (ผีเสื้อ 1 ตัวใช้แค่ 5 draw call) */
+  const bodyG = new THREE.Group();
+  const body = cyl(.022, .032, .22, 0x5d4037, 6);
+  body.rotation.x = Math.PI/2; body.position.y = .02; bodyG.add(body);
+  const head = sphere(.045, 0x5d4037, 6); head.position.set(0, .035, .12); bodyG.add(head);
+  [-1, 1].forEach(sd=>{
+    const a2 = cyl(.008, .008, .13, 0x5d4037, 4);
+    a2.position.set(.03*sd, .11, .17); a2.rotation.set(-.5, 0, -.35*sd); bodyG.add(a2);
+    const tip = sphere(.02, 0x5d4037, 5); tip.position.set(.058*sd, .17, .21); bodyG.add(tip);
+  });
+  mergeDecorGroup(bodyG); g.add(bodyG);
+
+  const wings = [-1, 1].map(sd=>{
+    const wg = new THREE.Group();
+    const fore = sphere(.16, pal[0], 6);           /* ปีกคู่หน้า ใหญ่กว่า เอียงไปข้างหน้า */
+    fore.scale.set(1.1, .085, .8); fore.position.set(.16*sd, .03, .06); wg.add(fore);
+    const hind = sphere(.105, pal[1], 6);          /* ปีกคู่หลัง สีอ่อนกว่า */
+    hind.scale.set(1, .085, .82); hind.position.set(.115*sd, .012, -.1); wg.add(hind);
+    const dot = sphere(.038, pal[1], 5);           /* จุดบนปีก (สีเดียวกับปีกหลัง → merge รวมได้) */
+    dot.scale.set(1, .3, 1); dot.position.set(.2*sd, .06, .08); wg.add(dot);
+    mergeDecorGroup(wg);
+    const piv = new THREE.Group(); piv.add(wg); piv.userData.side = sd; g.add(piv);
+    return piv;
+  });
+  g.userData.wings = wings;
+  g.scale.setScalar(1.35);
+  return g;
+}
+
+/* ช่องดอกไม้ทั้งหมด (flowerSet ถูกเติมตอนสร้างทุ่ง) — ใช้เป็นจุดให้ผีเสื้อไปตอม */
+function butterflySpots(){
+  if(!bflySpots) bflySpots = Array.from(flowerSet).map(k=>{ const p = k.split(','); return {x:+p[0], z:+p[1]}; });
+  return bflySpots;
+}
+/* สุ่มดอกไม้ที่อยู่ในระยะรอบตัวเด็ก (สุ่มไม่กี่ครั้ง ไม่ไล่ทั้งอาเรย์ทุกครั้ง) */
+function pickFlowerNear(cx, cz, rad){
+  const arr = butterflySpots();
+  if(!arr.length) return null;
+  for(let i=0; i<24; i++){
+    const s = arr[(Math.random()*arr.length)|0];
+    const wx = outWX(s.x), wz = outWZ(s.z);
+    if(Math.hypot(wx-cx, wz-cz) < rad) return {x:wx, z:wz};
+  }
+  return null;
+}
+function initButterflies(){
+  butterflies = [];
+  for(let i=0; i<BUTTERFLY_MAX; i++){
+    const g = buildButterfly(BUTTERFLY_PALETTE[i % BUTTERFLY_PALETTE.length]);
+    g.visible = false;
+    worldGroup.add(g);
+    butterflies.push({g, home:null, next:null, blend:1, ph:Math.random()*6.28, rest:0,
+                      sp:.85 + Math.random()*.5, hold:Math.random()*4, px:0, pz:0});
+  }
+}
+function updateButterflies(dt, t){
+  if(hScene !== 'out' || !butterflies.length || !charGroup) return;
+  const cx = charGroup.position.x, cz = charGroup.position.z, s = t*.001;
+
+  /* ทุก ~1.2 วิ: หาบ้านใหม่ให้ตัวที่ยังไม่มี/ที่เด็กเดินหนีไปไกลแล้ว */
+  bflyRetargetT -= dt;
+  const scan = bflyRetargetT <= 0;
+  if(scan) bflyRetargetT = 1.2;
+
+  for(let i=0; i<butterflies.length; i++){
+    const b = butterflies[i], g = b.g;
+    if(scan && (!b.home || Math.hypot(b.home.x-cx, b.home.z-cz) > 17)){
+      const spot = pickFlowerNear(cx, cz, 13);
+      if(!spot){ if(g.visible) g.visible = false; b.home = null; continue; }
+      b.home = spot; b.next = null; b.blend = 1;
+      g.position.set(spot.x, .8, spot.z);
+      b.px = spot.x; b.pz = spot.z;
+      g.visible = true;
+    }
+    if(!b.home) continue;
+
+    /* อยู่ตอมดอกเดิมสักพักแล้วค่อยย้ายไปดอกข้างๆ (ค่อยๆ ลอยไป ไม่วาร์ป) */
+    b.hold -= dt;
+    if(b.rest > 0) b.rest -= dt;
+    if(b.hold <= 0 && !b.next){
+      const spot = pickFlowerNear(cx, cz, 12);
+      if(spot){ b.next = spot; b.blend = 0; b.rest = 0; }
+      b.hold = 3.5 + Math.random()*4;
+      if(Math.random() < .45) b.rest = 2 + Math.random()*2.5;   /* บางครั้งลงเกาะดอกไม้นิ่งๆ ก่อนบินต่อ */
+    }
+    let hx = b.home.x, hz = b.home.z;
+    if(b.next){
+      b.blend = Math.min(1, b.blend + dt*.42);            /* ~2.4 วิ ต่อการย้าย 1 ครั้ง */
+      const k = b.blend*b.blend*(3-2*b.blend);            /* ease in-out ให้ออกตัว/ลงจอดนุ่ม */
+      hx += (b.next.x - hx)*k; hz += (b.next.z - hz)*k;
+      if(b.blend >= 1){ b.home = b.next; b.next = null; }
+    }
+    /* วนรอบดอกไม้เป็นวงรีเล็กๆ + ย่อ-ยกตัวตามจังหวะกระพือปีก */
+    const w = s*b.sp, resting = b.rest > 0 && !b.next;
+    const orb = resting ? .06 : .5;                    /* ตอนเกาะดอก แทบไม่ขยับ */
+    g.position.x = hx + Math.sin(w*1.05 + b.ph)*orb;
+    g.position.z = hz + Math.cos(w*.78 + b.ph*1.4)*orb*.9;
+    const yTgt = resting ? .34 : (.72 + Math.sin(w*2.3 + b.ph)*.14 + (b.next ? .12 : 0));
+    g.position.y += (yTgt - g.position.y) * Math.min(1, dt*3.2);   /* ร่อนลง/บินขึ้นนุ่มๆ */
+
+    /* หันหัวไปทางที่บิน (คำนวณจากตำแหน่งเฟรมก่อน) */
+    const dx = g.position.x - b.px, dz = g.position.z - b.pz;
+    if(dx*dx + dz*dz > 1e-6){
+      let want = Math.atan2(dx, dz), cur = g.rotation.y;
+      while(want - cur > Math.PI) want -= Math.PI*2;
+      while(want - cur < -Math.PI) want += Math.PI*2;
+      g.rotation.y = cur + (want-cur)*Math.min(1, dt*7);
+    }
+    b.px = g.position.x; b.pz = g.position.z;
+    /* กระพือปีก: เร็วตอนย้ายดอก ช้าลงตอนตอมอยู่กับที่ */
+    /* ตอนเกาะดอก: กางปีกเข้า-ออกช้าๆ (ไม่กระพือรัว) เหมือนผีเสื้อจริงตอนพัก */
+    const flap = Math.sin(s*(resting ? 1.6 : (b.next ? 21 : 15)) + b.ph);
+    const amp = resting ? .55 : (b.next ? 1.1 : .8);
+    g.userData.wings[0].rotation.z =  flap*amp;
+    g.userData.wings[1].rotation.z = -flap*amp;
+    g.rotation.z = flap*.06;                              /* ตัวโคลงตามแรงปีกนิดๆ */
+  }
+}
+
+/* ---------- ของตกแต่งไหวตามลม ----------
+   ต้นไม้/พุ่มที่เด็กปลูกเอง และลูกโป่ง เป็น group เดี่ยว (ไม่ได้ merge รวมฉาก) จึงขยับได้
+   ไล่รายชื่อใหม่ทุก ~1 วิ เอาเฉพาะชิ้นที่อยู่ใกล้ตัวเด็ก แล้วค่อยขยับทีละเฟรม */
+let windList = [], windScanT = 0;
+function updateDecorWind(t, dt){
+  if(hScene !== 'out' || !charGroup) return;
+  windScanT -= dt;
+  if(windScanT <= 0){
+    windScanT = 1;
+    windList = [];
+    const cx = charGroup.position.x, cz = charGroup.position.z;
+    for(let i=0; i<decorGroups.out.length; i++){
+      const g = decorGroups.out[i], d = g.userData.deco;
+      if(!d || (!d.item.leafy && d.item.id !== 'balloon')) continue;
+      if(Math.hypot(g.position.x-cx, g.position.z-cz) > 20) continue;
+      if(g.userData.windPh == null){
+        g.userData.windPh = (g.position.x*1.7 + g.position.z*2.3) % 6.28;   /* เฟสคงที่ต่อชิ้น ไม่ไหวพร้อมกันทั้งสวน */
+        g.userData.windBaseY = g.position.y;
+        g.userData.windBalloon = d.item.id === 'balloon';
+      }
+      windList.push(g);
+    }
+  }
+  const s = t*.001;
+  for(let i=0; i<windList.length; i++){
+    const g = windList[i], ph = g.userData.windPh;
+    if(g.userData.windBalloon){                       /* ลูกโป่ง: ลอยขึ้นลง + เอียงตามลม */
+      g.position.y = g.userData.windBaseY + .09 + Math.sin(s*1.25 + ph)*.09;
+      g.rotation.z = Math.sin(s*.9 + ph)*.1;
+      g.rotation.x = Math.cos(s*.75 + ph)*.07;
+    }else{                                            /* ต้นไม้/พุ่ม: เอนไหวเบาๆ */
+      g.rotation.z = Math.sin(s*.8 + ph)*.028;
+      g.rotation.x = Math.sin(s*.62 + ph*1.3)*.02;
+    }
+  }
+}
+
 /* ---------- น้ำของน้ำพุ (ส่วนที่ขยับ) ----------
    แยกออกจากก้อน merge เพราะ geometry ที่รวมแล้วขยับทีละชิ้นไม่ได้
    ทุกชิ้นเป็น object เล็กๆ ที่ "วนใช้ซ้ำ" ไม่ได้สร้าง/ทิ้งทุกเฟรม (กัน GC บนแท็บเล็ต)
@@ -1811,14 +1984,8 @@ function buildFieldFlowers(x, z, opt){
   }
   const tuft = sphere(.17, 0x8fd06c, 5); tuft.scale.set(1,.45,1);
   tuft.position.set((rnd()-.5)*.7, .04, (rnd()-.5)*.7); g.add(tuft);
-  if(((x*3 + z) % 7) === 0){                        /* ผีเสื้อบินอยู่เหนือทุ่งเป็นระยะ */
-    const bx = (rnd()-.5)*.5, by = .78 + rnd()*.3, bz = (rnd()-.5)*.5;
-    const bd = cyl(.026,.026,.16, 0x6d4c41, 5); bd.rotation.z = Math.PI/2; bd.position.set(bx, by, bz); g.add(bd);
-    [-1,1].forEach(sgn=>{
-      const wg = sphere(.13, sgn>0 ? 0xffd54f : 0xffb3c9, 4); wg.scale.set(.85,.22,1);
-      wg.rotation.x = sgn*.55; wg.position.set(bx, by+.05, bz + sgn*.11); g.add(wg);
-    });
-  }
+  /* ผีเสื้อไม่ได้อยู่ในก้อนนี้แล้ว — ย้ายไปเป็นตัวที่บินได้จริง (ดู BUTTERFLIES ท้ายไฟล์)
+     ของที่ merge แล้วขยับไม่ได้ ผีเสื้อเดิมจึงเป็นแค่ปีกแข็งค้างกลางอากาศ */
   return g;
 }
 function buildFieldPath(x, z){                      /* ทางเดินดินกลางทุ่ง + ก้อนหินเล็กๆ ข้างทาง */
@@ -3355,6 +3522,8 @@ function buildWorld(){
 
   fountainFx = buildFountainFx();      /* น้ำของน้ำพุ (ขยับได้ จึงไม่รวมกับก้อน merge) */
   worldGroup.add(fountainFx);
+  bflySpots = null;                   /* ทุ่งดอกไม้เพิ่งสร้างเสร็จ → สแนปช็อตช่องดอกไม้ใหม่ */
+  initButterflies();                  /* ฝูงผีเสื้อที่บินตอมดอกไม้รอบตัวเด็ก */
 
   collectEdgeTiles();
   scene.add(worldGroup);
@@ -6277,6 +6446,9 @@ function frame(t){
     updatePenAnimals(dt, t);
     updateNpcs(dt, t);
     updateFountainFx(t, dt);
+    updateButterflies(dt, t);
+    updateDecorWind(t, dt);
+
 
     checkQuestZone(dt);
     updateFx(t, dt);
