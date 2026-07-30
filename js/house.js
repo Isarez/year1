@@ -35,7 +35,7 @@ const {
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
-  FIELD_ROW_COLORS, FLOWER_MEADOW, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
+  FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
   NPC_STAND, QUEST_BOARD, LAMP_FIXED, LAMP_SPOTS, LAMP_SET, HEDGE_LINES,
   HEDGE_SET, HEDGE_TILES, isBridgeZ, isFenceTile, inHomeZone, clampHomeTile,
@@ -1222,7 +1222,9 @@ function buildSchoolBuilding(lot){
   const bell = sphere(.17,0xe6b422,10); bell.scale.set(1,.9,1); bell.position.set(0, bh+.7, .41); g.add(bell);
   /* เสาธงข้างอาคาร */
   const pole = cyl(.05,.05,2.4,0xdfe6ea,8); pole.position.set(-bw/2-.5, 1.2, dz-.2); g.add(pole);
-  const flag = box(.52,.34,.04,0x5aa9e6,.02); flag.position.set(-bw/2-.78, 2.2, dz-.2); fxTag(flag,'flag'); g.add(flag);
+  const flagP = new THREE.Group(); flagP.position.set(-bw/2-.5, 2.2, dz-.2);   /* จุดหมุนอยู่ที่เสา */
+  const flag = box(.5,.34,.04,0x5aa9e6,.02); flag.position.x = -.33;            /* เว้นให้พ้นตัวเสา ไม่ทะลุ */
+  flagP.add(flag); fxTag(flagP,'flag'); g.add(flagP);
   const knob = sphere(.07,0xffd54f,8); knob.position.set(-bw/2-.5, 2.44, dz-.2); g.add(knob);
   /* ป้ายโรงเรียนเหนือประตู */
   const sg = signPlane(lot.icon, .66); sg.position.set(0, 2.05, dz+.06); g.add(sg);
@@ -1344,7 +1346,9 @@ function buildPoliceStation(lot){
   });
   /* เสาธงข้างอาคาร */
   const pole = cyl(.045,.045,2.2,0xdfe6ea,8); pole.position.set(-bw/2-.42,1.1,dz-.3); g.add(pole);
-  const flag = box(.46,.3,.04,0x5aa9e6,.02); flag.position.set(-bw/2-.66,2.02,dz-.3); fxTag(flag,'flag'); g.add(flag);
+  const flagP = new THREE.Group(); flagP.position.set(-bw/2-.42, 2.02, dz-.3);
+  const flag = box(.44,.3,.04,0x5aa9e6,.02); flag.position.x = -.3;
+  flagP.add(flag); fxTag(flagP,'flag'); g.add(flagP);
   const knb = sphere(.06,0xffd54f,8); knb.position.set(-bw/2-.42,2.24,dz-.3); g.add(knb);
   /* กรวยจราจร 2 อันหน้าสถานี */
   [-1,1].forEach(s=>{
@@ -1497,7 +1501,9 @@ function buildHotel(lot){
   /* --- หลังคา: ธง 3 ผืน + ป้ายโรงแรมบนหน้าจั่ว --- */
   [-1.3, 0, 1.3].forEach((px,i)=>{
     const pole = cyl(.045,.045,.9, 0xf7f3ee, 6); pole.position.set(px, bh+1.28, 0); g.add(pole);
-    const flag = box(.42,.26,.04, [0xff8fb3,0xffd54f,0x7fc4e8][i], .02); flag.position.set(px+.23, bh+1.62, 0); fxTag(flag,'flag',{ph:i*2.1}); g.add(flag);
+    const flagP = new THREE.Group(); flagP.position.set(px, bh+1.62, 0);
+    const flag = box(.4,.26,.04, [0xff8fb3,0xffd54f,0x7fc4e8][i], .02); flag.position.x = .28;
+    flagP.add(flag); fxTag(flagP,'flag',{ph:i*2.1}); g.add(flagP);
   });
   const sfr = box(1.12, .84, .08, 0xfff6e8, .05); sfr.position.set(0, bh+.62, fz+.06); g.add(sfr);
   const sfb = box(.94, .68, .06, lot.roof, .04); sfb.position.set(0, bh+.62, fz+.11); g.add(sfb);
@@ -1573,7 +1579,9 @@ function buildMayorHouse(lot){
   const hM = box(.19,.045,.03, 0x4a4a4a, .01); hM.position.set(.08, bh + 1.16, .4); fxTag(hM,'clockM'); g.add(hM);
   const twR = cone(.78, .74, lot.roof, 4); twR.rotation.y = Math.PI/4; twR.position.set(0, bh + 1.94, -.1); g.add(twR);
   const fpole = cyl(.04,.04,.7, 0xf7f3ee, 6); fpole.position.set(0, bh + 2.62, -.1); g.add(fpole);
-  const flag = box(.44,.28,.04, 0x6f86c9, .02); flag.position.set(.24, bh + 2.86, -.1); fxTag(flag,'flag'); g.add(flag);
+  const flagP = new THREE.Group(); flagP.position.set(0, bh + 2.86, -.1);
+  const flag = box(.42,.28,.04, 0x6f86c9, .02); flag.position.x = .27;
+  flagP.add(flag); fxTag(flagP,'flag'); g.add(flagP);
   const finial = sphere(.09, 0xf0c14b, 8); finial.position.set(0, bh + 2.98, -.1); g.add(finial);
   /* --- ป้ายบ้านเทศมนตรีข้างประตู --- */
   const spost = cyl(.07, .08, 1.0, 0xfffaf0, 8); spost.position.set(2.16, .5, fz + .34); g.add(spost);
@@ -1730,7 +1738,12 @@ function butterflyZones(){
   /* ทุ่งรอบลานน้ำพุแบ่งเป็น 4 มุม มุมละ 1 ตัว — ผีเสื้อจะได้กระจายรอบลาน
      ไม่ไปกระจุกอยู่มุมเดียวกันหมด (ทุ่งใหญ่ 2 ผืนไม่ต้องแบ่ง พื้นที่กว้างพออยู่แล้ว) */
   const py = PLAZA_YARD, mx = (py.x0 + py.x1) >> 1, mz = (py.z0 + py.z1) >> 1;
+  const fw = FLOWER_WEST, w3 = Math.round((fw.z1 - fw.z0)/3);
   return [ {box:FLOWER_FIELD, max:BUTTERFLY_MAX}, {box:FLOWER_MEADOW, max:BUTTERFLY_MAX},
+           /* ทุ่งขอบตะวันตกเป็นแถบยาว — แบ่ง 3 ท่อน ท่อนละ 1 ตัว จะได้กระจายตลอดแนว ไม่กระจุกท่อนเดียว */
+           {box:{x0:fw.x0, x1:fw.x1, z0:fw.z0,        z1:fw.z0+w3   }, max:1},
+           {box:{x0:fw.x0, x1:fw.x1, z0:fw.z0+w3+1,   z1:fw.z0+w3*2}, max:1},
+           {box:{x0:fw.x0, x1:fw.x1, z0:fw.z0+w3*2+1, z1:fw.z1     }, max:1},
            {box:{x0:py.x0, x1:mx,     z0:py.z0, z1:mz    }, max:1},
            {box:{x0:mx+1,   x1:py.x1, z0:py.z0, z1:mz    }, max:1},
            {box:{x0:py.x0,  x1:mx,    z0:mz+1,  z1:py.z1 }, max:1},
@@ -2564,8 +2577,8 @@ function buildFlagPole(){
   const cloth = new THREE.Group();
   let fy = 3.35;
   STRIPES.forEach(([c,h])=>{
-    const st = box(.9, h, .04, c, .01);
-    st.position.set(.52, fy - h/2, 0);
+    const st = box(.86, h, .04, c, .01);
+    st.position.set(.58, fy - h/2, 0);   /* เว้นจากเสา (รัศมี .075) ให้พ้น ไม่ทะลุตอนสะบัด */
     cloth.add(st); fy -= h;
   });
   fxTag(cloth, 'flag'); g.add(cloth);
@@ -2786,31 +2799,22 @@ function buildFishRack(twoBars){
 }
 /* NPC นั่งตกปลาที่ปลายท่า (นั่งห้อยขา + คันเบ็ด + สายเอ็น + ทุ่นลอยน้ำ) */
 function buildFisherNpc(){
+  /* ใช้โมเดลเดียวกับชาวบ้านคนอื่นทั้งตัว (เดิมปั้นเองเลยสัดส่วน/หน้าตาไม่เหมือนใคร)
+     ยืนอยู่บนไม้กระดานท่า ถือคันเบ็ดยื่นออกไปทางบ่อ */
   const g = new THREE.Group();
-  g.scale.setScalar(1.28);              /* เดิมตัวเล็กกว่าชาวบ้านคนอื่นชัดเจน — ขยายให้สัดส่วนเท่ากัน */
-  const hip = box(.34,.22,.3,0x5aa9e6,.08); hip.position.set(0,.42,0); g.add(hip);
-  const torso = box(.38,.44,.32,0xffd54f,.1); torso.position.set(-.02,.72,0); g.add(torso);
-  [-1,1].forEach(s=>{                                    /* ขาห้อยลงน้ำ */
-    const th = box(.14,.13,.34,0x4a6fa5,.05); th.position.set(.16,.44,s*.1); g.add(th);
-    const sh = cyl(.06,.06,.34,0xf6c9a8,8); sh.position.set(.3,.24,s*.1); g.add(sh);
-    const ft = box(.14,.09,.2,0x6d4c41,.03); ft.position.set(.32,.06,s*.1); g.add(ft);
-  });
-  const head = sphere(.19,0xf6e3cc,12); head.position.set(-.02,1.08,0); g.add(head);
-  [-1,1].forEach(s=>{ const e = sphere(.03,0x4a3b32,6); e.position.set(.14,1.1,s*.07); g.add(e); });
-  const sm = box(.1,.03,.03,0x8d5b4c,.01); sm.position.set(.17,1.0,0); g.add(sm);
-  const brim = cyl(.32,.32,.05,0xd8a24a,14); brim.position.set(-.02,1.22,0); g.add(brim);
-  const crown = cyl(.1,.2,.2,0xd8a24a,12); crown.position.set(-.02,1.32,0); g.add(crown);
-  const armL = cyl(.055,.055,.4,0xf6c9a8,8); armL.rotation.z = -.6; armL.position.set(.16,.78,.2); g.add(armL);
-  const armR = cyl(.055,.055,.34,0xf6c9a8,8); armR.rotation.z = .4; armR.position.set(-.14,.76,-.18); g.add(armR);
-  const rod = cyl(.028,.035,2.2,0xc98d4e,6);             /* คันเบ็ดชี้ออกไปทางบ่อ (+x) */
-  rod.rotation.z = -.95; rod.position.set(.78,1.26,.2); g.add(rod);
-  const reel = cyl(.09,.09,.07,0x8fa3ad,10); reel.rotation.x = Math.PI/2; reel.position.set(.24,.94,.2); g.add(reel);
-  const line = cyl(.012,.012,1.15,0xfffaf0,4);           /* สายเอ็นห้อยลงน้ำ */
-  line.position.set(1.66,.62,.2); g.add(line);
-  const float = sphere(.1,0xe4574a,10); float.position.set(1.66,.02,.2); g.add(float);
-  const ring = torus(.16,.02,0xfffaf0,12); ring.rotation.x = Math.PI/2; ring.position.set(1.66,-.04,.2); g.add(ring);
-  const bucket = cyl(.16,.14,.3,0x7fc4e8,12); bucket.position.set(-.5,.15,.3); g.add(bucket);
-  const fish = sphere(.1,0x9fd0e8,8); fish.scale.set(1.4,.8,.5); fish.position.set(-.5,.34,.3); g.add(fish);
+  const v = buildVillager({skin:2, shirt:0xffd54f, pants:0x4a6fa5, hair:1, hairC:1, hat:'straw'}, true);
+  const rig = v.userData.hRig;
+  if(rig){                                   /* ยกแขนสองข้างขึ้นจับคันเบ็ด */
+    rig.arms[0].rotation.x = -1.15; rig.arms[0].rotation.z = .18;
+    rig.arms[1].rotation.x = -.75;  rig.arms[1].rotation.z = -.12;
+  }
+  v.userData.hRig = null;                    /* ไม่ใช่ NPC เดินได้ ไม่ต้องเก็บ rig ไว้ */
+  g.add(v);
+  const rod = cyl(.028,.038,2.2,0xc98d4e,6); /* คันเบ็ดชี้ออกไปทางบ่อ (+x) */
+  rod.rotation.z = -.95; rod.position.set(.72,1.16,.16); g.add(rod);
+  const reel = cyl(.085,.085,.07,0x8fa3ad,10); reel.rotation.x = Math.PI/2; reel.position.set(.2,.86,.16); g.add(reel);
+  const line = cyl(.008,.008,1.15,0xfdfbf5,4); line.position.set(1.62,.72,.16); g.add(line);
+  const bob = sphere(.075,0xef5f5f,8); bob.position.set(1.62,.16,.16); g.add(bob);
   return g;
 }
 /* ลานกิจกรรม: เวทีเล็ก + เสาธงราว (ให้เด็กใช้เป็นที่รวมตัว/จัดงานในเฟสถัดไป) */
@@ -3338,7 +3342,7 @@ function buildStaticScenery(){
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
   mergeCollectFx(pier, parts, chunkKeyOf(POND_PIER.x, POND_PIER.z));
   const fisher = buildFisherNpc();
-  fisher.position.set(outWX(FISHER_TILE.x), .16, outWZ(FISHER_TILE.z));
+  fisher.position.set(outWX(FISHER_TILE.x), .17, outWZ(FISHER_TILE.z));   /* ยืนบนไม้กระดานท่า (ผิวท่าอยู่ที่ .21) */
   fisher.rotation.y = (FISHER_TILE.rot||0) * Math.PI/2;
   mergeCollectFx(fisher, parts, chunkKeyOf(FISHER_TILE.x, FISHER_TILE.z));
   POND_DUCKS.forEach(([x,z],i)=>{
@@ -3440,6 +3444,12 @@ function buildStaticScenery(){
     /* เว้นช่องเป็นหย่อมๆ ให้เห็นหญ้าโล่งแทรก ดูเป็นทุ่งธรรมชาติ ไม่ใช่พรมดอกไม้ทึบทั้งผืน */
     if(((x*5 + z*11) % 5) === 0) continue;
     putField(x, z, buildFieldFlowers(x, z, {base:3, band: (x + z*2) >> 1}), true);
+  }
+  /* ทุ่งดอกไม้ตีขอบแผนที่ฝั่งตะวันตก (ขอบบนสุด → ก่อนถึงชุมชน/โรงเรียนทางใต้) */
+  for(let z=FLOWER_WEST.z0; z<=FLOWER_WEST.z1; z++) for(let x=FLOWER_WEST.x0; x<=FLOWER_WEST.x1; x++){
+    if(!fieldOpen(x, z)) continue;
+    if(((x*7 + z*3) % 6) === 0) continue;               /* เว้นหย่อมโล่งบ้าง ไม่ให้เป็นพรมทึบยาวทั้งขอบ */
+    putField(x, z, buildFieldFlowers(x, z, {base:3, band: (x*2 + z) & 3}), true);
   }
   /* ทุ่งดอกไม้รอบลานน้ำพุ: ทุกช่องที่เหลือในกรอบ (ข้ามลานหิน/ทางเดินซุ้ม/ของฉากอัตโนมัติอยู่แล้ว) */
   for(let z=PLAZA_YARD.z0; z<=PLAZA_YARD.z1; z++) for(let x=PLAZA_YARD.x0; x<=PLAZA_YARD.x1; x++){
@@ -3585,7 +3595,8 @@ function buildWorld(){
   Object.values(inst).forEach(im=>{ if(!im.count) return;
     im.instanceMatrix.needsUpdate = true; im.receiveShadow = hShadows; worldGroup.add(im); });
   /* น้ำเป็นผืนเดียวยาวตลอดคลอง (เดิมเป็นบล็อกต่อช่อง เห็นรอยต่อเป็นตารางไม่เหมือนน้ำ) */
-  const waterMat = new THREE.MeshToonMaterial({color:0x6cc6e8, gradientMap, transparent:true, opacity:.9});
+  /* ทึบแสง — เดิมโปร่ง .9 พอผืนน้ำ 2 ผืนซ้อนกันตรงรอยต่อ (คลองส่งน้ำ×แม่น้ำ×บ่อ) สีจะเข้มกว่าที่อื่นเป็นแถบ */
+  const waterMat = new THREE.MeshToonMaterial({color:0x6cc6e8, gradientMap});
   const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(RIVER_X.length, .14, OUT_D), waterMat);
   waterMesh.position.set(outWX((RIVER_X[0]+RIVER_X[RIVER_X.length-1])/2), -.25, 0);
   worldGroup.add(waterMesh);
@@ -4911,9 +4922,22 @@ function critterTileV(t){ return new THREE.Vector3(outWX(t.x), 0, outWZ(t.z)); }
 
 /* น้ำในคลอง: world x ∈ [2.0,4.0] (gx 11-12), แบ่งเหนือ/ใต้สะพาน (สัตว์น้ำไม่ลอดใต้สะพาน) */
 const WATER_Y = -.13;
+/* จุดสุ่มในน้ำ — เลี่ยงใบบัวในบ่อ (เดิมเป็ด/ปลาไปลอยทับใบบัวจนดูซ้อนกัน) */
+function awayFromPads(x, z){
+  for(let i=0; i<POND_PADS.length; i++){
+    const p = POND_PADS[i];
+    if(Math.hypot(x - (outWX(p[0])+.2), z - (outWZ(p[1])-.15)) < .95) return false;
+  }
+  return true;
+}
 function randWaterPoint(region){
-  return new THREE.Vector3(region.xmin + Math.random()*(region.xmax-region.xmin), WATER_Y,
-                           region.zmin + Math.random()*(region.zmax-region.zmin));
+  let x = 0, z = 0;
+  for(let i=0; i<8; i++){
+    x = region.xmin + Math.random()*(region.xmax-region.xmin);
+    z = region.zmin + Math.random()*(region.zmax-region.zmin);
+    if(awayFromPads(x, z)) break;
+  }
+  return new THREE.Vector3(x, WATER_Y, z);
 }
 const CRITTER_DOMAIN = {rabbit:'land', squirrel:'land', chicken:'land', cat:'land', bird:'air', duck:'water', fish:'water'};
 /* ---- แหล่งน้ำที่สัตว์น้ำว่ายได้ 3 แบบ: คลองหลัก / บ่อน้ำใหญ่ทิศเหนือ / ทะเลมุมตะวันออกเฉียงใต้ ---- */
@@ -5385,7 +5409,9 @@ function updateCritters(dt, t){
           /* นกขยับที่ด้วยการ "บินข้าม" เสมอ ไม่เดินไถลพื้น (บั๊กเดิม: ใช้ path เดินแบบสัตว์บก) */
           const land = randomGrassTile();
           c.tile = land;
-          critterLine(c, c.group.position.clone(), critterTileV(land), 3, .9);
+          /* โค้งให้สูงพอข้ามหลังคาบ้าน (บ้าน/ร้านสูงราว 3-4 หน่วย) — เดิมโค้งแค่ .9 เลยบินทะลุตัวอาคาร */
+          const far = c.group.position.distanceTo(critterTileV(land));
+          critterLine(c, c.group.position.clone(), critterTileV(land), 3, Math.min(4.2, 1.6 + far*.42));
         }else if(c.domain==='water'){
           critterLine(c, c.group.position.clone(), randWaterPoint(c.water), c.speed);
         }else{

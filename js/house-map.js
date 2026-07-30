@@ -427,6 +427,9 @@ const FIELD_ROW_COLORS = [[0xff8fb3,0xffc1d6], [0xffd54f,0xffe9a8], [0xb388ff,0x
 /* ---------- ทุ่งดอกไม้ผืนใหญ่ริมขอบแผนที่ทิศใต้ (x30-67 / z62-67) ----------
    ผืนนี้กินพื้นที่ว่างท้ายชุมชนทั้งแถบ ดอกไม้เบาบางกว่าทุ่งหน้าโรงแรมนิดหน่อย (ผืนใหญ่มาก ต้องคุมจำนวนชิ้น)
    ถนน 2 เส้นที่มาจบที่ z63 ต่อเป็น "ทางเดินดิน" ลงไปจนสุดขอบแผนที่ ให้เดินทะลุทุ่งได้ไม่ตัน */
+/* ทุ่งดอกไม้ตีขอบแผนที่ฝั่งตะวันตก — จากขอบบนสุดลงมาจนถึงแถบชุมชน/โรงเรียนทางใต้
+   (ช่องที่เป็นน้ำ/ของฉาก/ทางเดิน จะถูกข้ามเองด้วย fieldOpen ตอนสร้างทุ่ง) */
+const FLOWER_WEST = {x0:0, x1:3, z0:0, z1:53};
 const FLOWER_MEADOW = {x0:30, x1:67, z0:62, z1:67};
 const MEADOW_TRAILS = [{x0:37, x1:38, z0:64, z1:67}, {x0:53, x1:54, z0:64, z1:67}];
 function inMeadowTrail(x, z){
@@ -732,7 +735,7 @@ return {
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
-  FIELD_ROW_COLORS, FLOWER_MEADOW, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
+  FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
   NPC_STAND, QUEST_BOARD, LAMP_FIXED, LAMP_SPOTS, LAMP_SET, HEDGE_LINES,
   HEDGE_SET, HEDGE_TILES, isBridgeZ, isFenceTile, inHomeZone, clampHomeTile,
