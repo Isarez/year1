@@ -3636,14 +3636,18 @@ function buildWorld(){
   /* ต่ำกว่าผืนอื่นนิดเดียว กันผิวน้ำซ้อนกันแล้วกะพริบ (z-fighting) ตรงรอยต่อบ่อ/คลองหลัก */
   canal.position.set(outWX((CANAL_X0 + CANAL_X1)/2), -.254, outWZ((CANAL_Z[0] + CANAL_Z[CANAL_Z.length-1])/2));
   worldGroup.add(canal);
-  /* วงคลื่นในคลองส่งน้ำ (เหมือนแม่น้ำกับบ่อ — ผิวน้ำไม่ขยับ ใช้วงคลื่นแทน) */
-  for(let i=0; i<3; i++){
-    const rc = new THREE.Mesh(new THREE.RingGeometry(.32, .43, 22),
+  /* วงคลื่นในคลองส่งน้ำ (เหมือนแม่น้ำกับบ่อ — ผิวน้ำไม่ขยับ ใช้วงคลื่นแทน)
+     คลองยาวราว 19 ช่อง วางให้ทั่วทั้งเส้นเกือบทุก 2 ช่อง สลับซ้าย-ขวาของร่องน้ำ
+     เหลื่อมจังหวะกันทุกวง คลองทั้งเส้นจะได้มีคลื่นกระเพื่อมตลอดเวลา */
+  const canalN = Math.max(4, Math.floor((CANAL_X1 - CANAL_X0) / 2));
+  for(let i=0; i<canalN; i++){
+    const rc = new THREE.Mesh(new THREE.RingGeometry(.3, .41, 22),
       new THREE.MeshBasicMaterial({color:0xdff5ff, transparent:true, opacity:.3, depthWrite:false}));
     rc.rotation.x = -Math.PI/2;
-    rc.position.set(outWX(CANAL_X0 + 3 + i*6), -.16, outWZ(CANAL_Z[0] + (i%2 ? .8 : .2)));
+    rc.position.set(outWX(CANAL_X0 + 1 + i*2 + (i%3===0 ? .4 : 0)), -.16,
+                    outWZ(CANAL_Z[0] + (i%2 ? .85 : .15)));
     worldGroup.add(rc);
-    fxTag(rc, 'ripple', {ph:i/3}); registerFx(rc);
+    fxTag(rc, 'ripple', {ph:(i*.37) % 1}); registerFx(rc);
   }
   /* ทะเลมุมตะวันออกเฉียงใต้: ผืนสี่เหลี่ยมใหญ่ใต้ระดับหญ้า — ชายฝั่งจริงเกิดจากบล็อกทราย/หญ้าที่บังไว้ */
   /* กว้าง/ลึกพอดีขอบแผนที่เป๊ะ (ล้นออกไปจะเห็นผืนน้ำลอยพ้นขอบเกาะ) */
