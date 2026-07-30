@@ -79,7 +79,6 @@ function unlockedTopIndex(child){
   while(top < GRADES.length-1 && gradeStarPct(GRADES[top].id) > 0.8) top++;
   return top;
 }
-function isGradeUnlocked(child, idx){ return idx <= unlockedTopIndex(child); }
 
 /* ระดับชั้นที่ควรเลือกให้เด็ก = ชั้นที่มีเนื้อหา (available) สูงสุดที่ปลดล็อกแล้ว
    (จำชั้นที่เด็กเลือกล่าสุดถ้ายังปลดล็อก+มีเนื้อหา ไม่งั้นใช้ชั้นตามอายุ) */
@@ -702,6 +701,27 @@ $('switch-child-btn').addEventListener('click', ()=>{
   showOnlyView(null);
   renderChildSelect();
 });
+
+/* ---------- สแคฟโฟลด์กลางของการ "เริ่มเกม" ----------
+   เดิมทุก engine เขียน 6 บรรทัดเดียวกันซ้ำ (stopARGame / lastGameType / showOnlyView /
+   --cat-color / progress-fill / setCatLabel) รวมกว่า 25 ที่ ทำให้เวลาเพิ่มฟีเจอร์ที่ต้องแตะทุก engine
+   (เช่น cat.hard หรือ view ใหม่) มักหลงลืมบางจุด — รวบมาไว้ที่เดียว
+   คืนค่า cat เพื่อให้ engine ใช้ต่อได้ทันที */
+function beginSkillGame(catId, type, view, labelId){
+  stopARGame();
+  lastGameType = type; lastCatId = catId;
+  const cat = catById(catId);
+  showOnlyView(view);
+  document.documentElement.style.setProperty('--cat-color', cat.color);
+  view.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
+  setCatLabel(labelId, cat);
+  return cat;
+}
+/* ปิดท้ายการเริ่มเกม: เลื่อนจอขึ้นแล้วให้นกฮูกทักทาย */
+function endSkillGameStart(){
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(()=>showOwlMsg('start'), 600);
+}
 
 /* ============================= HOME RENDER ============================= */
 function renderHome(){
@@ -2052,17 +2072,10 @@ function moneyLevelConfig(level, hard){
   return { coins:[1,2,5,10], mode:'change', bills:[20,50], priceMin:11, priceMax:45 };
 }
 function startMoneyGame(catId){
-  stopARGame();
-  lastGameType='money'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'money', moneyView, 'money-cat-label');
   moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), tray:[], locked:false };
-  showOnlyView(moneyView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  moneyView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('money-cat-label', cat);
   renderMoneyLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderMoneyLevel(){
   const g = moneyGame; const cfg = moneyLevelConfig(g.level, g.hard);
@@ -2165,17 +2178,10 @@ function fractionHardQuestion(slices, hard){
   return { target: slices*f[0]/f[1], q:'แตะให้ได้ '+f[0]+'/'+f[1]+' ของทั้งหมด ('+slices+' ชิ้น)' };
 }
 function startFractionGame(catId){
-  stopARGame();
-  lastGameType='fraction'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'fraction', fractionView, 'fraction-cat-label');
   fractionGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
-  showOnlyView(fractionView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  fractionView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('fraction-cat-label', cat);
   renderFractionLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderFractionLevel(){
   const g = fractionGame, cfg = fractionLevelConfig(g.level, g.hard);
@@ -2252,17 +2258,10 @@ $('fraction-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 /* ---------------- 3) ตาชั่งวิเศษ ---------------- */
 let balanceGame = null;
 function startBalanceGame(catId){
-  stopARGame();
-  lastGameType='balance'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'balance', balanceView, 'balance-cat-label');
   balanceGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
-  showOnlyView(balanceView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  balanceView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('balance-cat-label', cat);
   renderBalanceLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function balanceMakeQuestion(level, hard){
   if(hard==='p6'){
@@ -2386,17 +2385,10 @@ const TH_DOW = ['อาทิตย์','จันทร์','อังคาร
 const TH_DOW_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 function startCalendarGame(catId){
-  stopARGame();
-  lastGameType='calendar'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'calendar', calendarView, 'calendar-cat-label');
   calendarGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, locked:false };
-  showOnlyView(calendarView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  calendarView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('calendar-cat-label', cat);
   renderCalendarLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderCalendarLevel(){
   const g = calendarGame, level = g.level;
@@ -2490,17 +2482,10 @@ $('calendar-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 let timelineGame = null;
 function timelineSize(level, max){ const s = level<=3 ? 3 : (level<=7 ? 4 : 5); return Math.min(s, max||5); }
 function startTimelineGame(catId){
-  stopARGame();
-  lastGameType='timeline'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'timeline', timelineView, 'timeline-cat-label');
   timelineGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), maxSize:(cat.timelineMax||5), tag:(cat.timelineTag||null), locked:false };
-  showOnlyView(timelineView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  timelineView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('timeline-cat-label', cat);
   renderTimelineLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 /* tag: หมวดที่ระบุ cat.timelineTag จะสุ่มเฉพาะชุดที่ติด tag เดียวกัน (เช่น 'p5' = ชุดประวัติศาสตร์/วิทย์ ป.5)
    ส่วนหมวดที่ไม่ระบุ tag จะสุ่มเฉพาะชุดพื้นฐานที่ไม่มี tag เหมือนเดิม */
@@ -2592,17 +2577,10 @@ $('timeline-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 let sortGame = null;
 function sortItemCount(level){ return level<=3 ? 4 : (level<=7 ? 5 : 6); }
 function startSortGame(catId){
-  stopARGame();
-  lastGameType='sort'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'sort', sortView, 'sort-cat-label');
   sortGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, pool:SORT_POOLS[cat.sortSet], sel:null, locked:false };
-  showOnlyView(sortView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  sortView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('sort-cat-label', cat);
   renderSortLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderSortLevel(){
   const g = sortGame, pool = g.pool, n = sortItemCount(g.level), bins = pool.bins;
@@ -2674,17 +2652,10 @@ $('sort-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 let worldGame = null;
 function worldIsDay(a){ return Math.cos(a*Math.PI/180) < 0; } /* ซ้าย(ตะวันตก, หันเข้าดวงอาทิตย์) = กลางวัน */
 function startWorldGame(catId){
-  stopARGame();
-  lastGameType='world'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'world', worldView, 'world-cat-label');
   worldGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), angle:0, target:'day', zone:null, locked:false };
-  showOnlyView(worldView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  worldView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('world-cat-label', cat);
   renderWorldLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 /* ป.5-6: ไม่ใช่แค่กลางวัน/กลางคืน แต่ต้องหมุนให้ตรง "ช่วงเวลา" ทั้ง 4 ช่วง
    ดวงอาทิตย์อยู่ทางซ้าย → มุม 180° = เที่ยงวัน, 0° = เที่ยงคืน, 90° = เย็น (กำลังหมุนออกจากแดด), 270° = เช้า */
@@ -2775,17 +2746,10 @@ function coordSize(level, hard){
   return level<=3 ? 3 : (level<=6 ? 4 : 5);
 }
 function startCoordGame(catId){
-  stopARGame();
-  lastGameType='coord'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'coord', coordView, 'coord-cat-label');
   coordGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
-  showOnlyView(coordView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  coordView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('coord-cat-label', cat);
   renderCoordLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderCoordLevel(){
   const g = coordGame, n = coordSize(g.level, g.hard);
@@ -3015,17 +2979,10 @@ function chartValuePool(hard){
   return [1,2,3,4,5,6,7,8,9,10];
 }
 function startChartGame(catId){
-  stopARGame();
-  lastGameType='chart'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'chart', chartView, 'chart-cat-label');
   chartGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false };
-  showOnlyView(chartView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  chartView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('chart-cat-label', cat);
   renderChartLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderChartLevel(){
   const g = chartGame, n = chartBarCount(g.level, g.hard);
@@ -3124,17 +3081,10 @@ $('chart-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
 /* ---------------- 2) พื้นที่ตารางหน่วย ---------------- */
 let areaGame = null;
 function startAreaGame(catId){
-  stopARGame();
-  lastGameType='area'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'area', areaView, 'area-cat-label');
   areaGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), locked:false, on:new Set() };
-  showOnlyView(areaView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  areaView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('area-cat-label', cat);
   renderAreaLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderAreaLevel(){
   const g = areaGame;
@@ -3327,13 +3277,6 @@ const CMD_ICON = {
 /* ---- ตัวละครหุ่นยนต์ voxel 3D (ประกอบจากบล็อกลูกบาศก์ isometric แบบเดียวกับพื้น — สไตล์ "บ้านของหนู") หัน 4 ทิศ + เดินได้ ---- */
 const ROBOT_VB = 52;
 /* บล็อกลูกบาศก์ isometric: top(x, y-hh)..., ด้านข้างลง H — 3 เฉด cel-shading + เส้นขอบหนา */
-function isoBox(x, y, hw, H, cT, cL, cR, out, sw){
-  const hh = hw/2; sw = sw || 2;
-  const L = '<polygon points="'+(x-hw)+','+y+' '+x+','+(y+hh)+' '+x+','+(y+hh+H)+' '+(x-hw)+','+(y+H)+'" fill="'+cL+'" stroke="'+out+'" stroke-width="'+sw+'" stroke-linejoin="round"/>';
-  const R = '<polygon points="'+(x+hw)+','+y+' '+x+','+(y+hh)+' '+x+','+(y+hh+H)+' '+(x+hw)+','+(y+H)+'" fill="'+cR+'" stroke="'+out+'" stroke-width="'+sw+'" stroke-linejoin="round"/>';
-  const T = '<polygon points="'+x+','+(y-hh)+' '+(x+hw)+','+y+' '+x+','+(y+hh)+' '+(x-hw)+','+y+'" fill="'+cT+'" stroke="'+out+'" stroke-width="'+sw+'" stroke-linejoin="round"/>';
-  return L + R + T;
-}
 /* ตัวละครแมวส้ม (voxel/toon มน) — mode: front(หันหน้า/ลง) / side(มองข้างไปขวา) / back(หันหลัง/ขึ้น) */
 function buildRobot(mode){
   const F='#f4a860', FL='#ffe6c4', OUT='#b06d2e', INNER='#ffb3c1', NOSE='#ff8fa3', EYE='#3a4a40', ST='#e0913f';
@@ -4989,17 +4932,6 @@ function pickEnglishVoice(){
 
 /* เช็คว่าเบราว์เซอร์นี้มีเสียงพูดภาษาไทยติดตั้งไว้ไหม (บาง browser โหลด voice list แบบ async ผ่าน event 'voiceschanged')
    ใช้แค่ตัดสินใจว่าจะโชว์รูปคำใบ้เสริมไหม ไม่ได้ใช้ปิดกั้นการพยายามพูดจริง (กันกรณี detect พลาดแล้วเสียงไม่ออกทั้งที่มี voice) */
-function hasThaiVoiceSupport(){
-  return new Promise(resolve=>{
-    if(!window.speechSynthesis){ resolve(false); return; }
-    const check = ()=> speechSynthesis.getVoices().some(v=>v.lang && v.lang.toLowerCase().startsWith('th'));
-    if(speechSynthesis.getVoices().length){ resolve(check()); return; }
-    let done = false;
-    const finish = ()=>{ if(done) return; done = true; resolve(check()); };
-    speechSynthesis.addEventListener('voiceschanged', finish, {once:true});
-    setTimeout(finish, 1000);
-  });
-}
 
 /* รอให้ list ของ voices โหลดเสร็จ (Chrome/Safari โหลดแบบ async ผ่าน event 'voiceschanged')
    สำคัญ: ต้อง await ก่อนเล่นเกมฟังคำ ไม่งั้น "กดฟังครั้งแรก" ตอน voices ยังว่างจะเลือก voice ไม่ได้ = ตกไปใช้เสียง default (เพี้ยน) */
@@ -7253,17 +7185,10 @@ function circuitMaskTo(from, to){ /* บิตของทิศจาก from �
   return d ? d[2] : 0;
 }
 function startCircuitGame(catId){
-  stopARGame();
-  lastGameType='circuit'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'circuit', circuitView, 'circuit-cat-label');
   circuitGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false };
-  showOnlyView(circuitView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  circuitView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('circuit-cat-label', cat);
   renderCircuitLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function pickCircuitLevel(used){
   let avail = CIRCUIT_LEVELS.map((l,i)=>i).filter(i=>!used.has(i));
@@ -7392,17 +7317,10 @@ function tangramSvg(type, colorFill, colorStroke, rot){
          '<g fill="'+colorFill+'" stroke="'+colorStroke+'" stroke-width="5" stroke-linejoin="round">'+TG_SHAPES[type]+'</g></svg>';
 }
 function startTangramGame(catId){
-  stopARGame();
-  lastGameType='tangram'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'tangram', tangramView, 'tangram-cat-label');
   tangramGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), sel:null, locked:false, color:cat.color };
-  showOnlyView(tangramView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  tangramView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('tangram-cat-label', cat);
   renderTangramLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderTangramLevel(){
   const g = tangramGame;
@@ -7486,17 +7404,10 @@ $('tangram-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
    แตะผิดสี/ผิดช่อง = ช่องสั่น + นับ mistake (ไม่เฉลยว่าช่องไหนถูก) */
 let mirrorGame = null;
 function startMirrorGame(catId){
-  stopARGame();
-  lastGameType='mirror'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'mirror', mirrorView, 'mirror-cat-label');
   mirrorGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false };
-  showOnlyView(mirrorView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  mirrorView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('mirror-cat-label', cat);
   renderMirrorLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function renderMirrorLevel(){
   const g = mirrorGame;
@@ -7597,17 +7508,10 @@ $('mirror-back').addEventListener('click', ()=>{ playClick(); p2GoHome(); });
    ตอบผิด = การ์ดที่ผิดตำแหน่งสั่นแดง (ไม่เฉลยว่าตำแหน่งถูกคืออะไร) */
 let orderGame = null;
 function startOrderGame(catId){
-  stopARGame();
-  lastGameType='order'; lastCatId=catId;
-  const cat = catById(catId);
+  const cat = beginSkillGame(catId, 'order', orderView, 'order-cat-label');
   orderGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), sel:null, locked:false, tag:(cat.orderTag||null) };
-  showOnlyView(orderView);
-  document.documentElement.style.setProperty('--cat-color', cat.color);
-  orderView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
-  setCatLabel('order-cat-label', cat);
   renderOrderLevel();
-  window.scrollTo({top:0, behavior:'smooth'});
-  setTimeout(()=>showOwlMsg('start'), 600);
+  endSkillGameStart();
 }
 function orderSize(level){ return level<=3 ? 3 : (level<=7 ? 4 : 5); }
 function renderOrderLevel(){
