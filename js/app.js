@@ -642,7 +642,8 @@ const homeView = $('home-view'), quizView = $('quiz-view'), resultView = $('resu
 const moneyView = $('money-view'), fractionView = $('fraction-view'), balanceView = $('balance-view'), calendarView = $('calendar-view'), timelineView = $('timeline-view'), sortView = $('sort-view'), worldView = $('world-view'), coordView = $('coord-view');
 const chartView = $('chart-view'), areaView = $('area-view'), angleView = $('angle-view');
 const clozeView = $('cloze-view');
-const circuitView = $('circuit-view'), tangramView = $('tangram-view'), mirrorView = $('mirror-view'), orderView = $('order-view'); // เกมฟังประโยคเติมคำ // เกม ป.4 (แผนภูมิแท่ง / พื้นที่ / มุม)
+const circuitView = $('circuit-view'), tangramView = $('tangram-view'), mirrorView = $('mirror-view'), orderView = $('order-view');
+const houseView = $('house-view');   /* บ้านของหนู (3D) — js/house.js ใช้ตัวแปรนี้ */ // เกมฟังประโยคเติมคำ // เกม ป.4 (แผนภูมิแท่ง / พื้นที่ / มุม)
 
 /* ---- ตัวช่วยสลับหน้าจอเกม ----
    showOnlyView(v) = โชว์ view เดียว ซ่อนที่เหลือทั้งหมด (showOnlyView(null) = ซ่อนทุก view)
@@ -652,7 +653,7 @@ const ALL_VIEWS = [
   homeView, quizView, resultView, arView, memoryView, listenView, shadowView, mixView, musicView,
   dotsView, clockView, efView, codeView, sciView, moneyView, fractionView, balanceView, calendarView,
   timelineView, sortView, worldView, coordView, chartView, areaView, angleView, clozeView,
-  circuitView, tangramView, mirrorView, orderView
+  circuitView, tangramView, mirrorView, orderView, houseView
 ];
 function showOnlyView(view){ ALL_VIEWS.forEach(v => { v.hidden = (v !== view); }); }
 const mascot = $('mascot');
@@ -819,6 +820,7 @@ function renderHome(){
     if(sec) sec.hidden = g.children.length===0;
   });
   updateTally();
+  if(window.houseBuddyRefresh) window.houseBuddyRefresh(); // เพื่อนซี้หน้าหลัก (js/house.js โหลดทีหลัง — ครั้งแรกสุด house.js เรียกเองตอนโหลดเสร็จ)
 }
 
 /* ============================= QUIZ FLOW ============================= */
@@ -6612,7 +6614,7 @@ if(musicOn){
 }
 
 /* ============================= FULLSCREEN TOGGLE ============================= */
-const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle'), $('sci-fullscreen-toggle')];
+const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle'), $('sci-fullscreen-toggle'), $('house-fullscreen-toggle')];
 function refreshFsBtn(){
   const label = document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ';
   fsBtns.forEach(btn=>{
@@ -6745,7 +6747,11 @@ function exportChildData(){
   const payload = {v:1, child:{id:activeChild.id, name:activeChild.name, emoji:activeChild.emoji||'🧒', age:activeChild.age, birthDate:activeChild.birthDate}, progress:prog};
   const body = JSON.stringify(payload);
   const sig = owkHash(body);
-  const full = JSON.stringify({v:payload.v, child:payload.child, progress:payload.progress, sig});
+  /* house = ข้อมูล "บ้านของหนู" (ตัวละคร/ของแต่งบ้าน) แนบไปนอก sig เดิม เพื่อให้ไฟล์ export ใหม่
+     ยังนำเข้าในแอปเวอร์ชันเก่าได้ (เวอร์ชันเก่า verify sig จาก {v,child,progress} แล้วมองข้าม field เกิน) */
+  let house = null;
+  try{ house = JSON.parse(localStorage.getItem('p1quiz_house_'+activeChild.id) || 'null'); }catch(e){}
+  const full = JSON.stringify(house ? {v:payload.v, child:payload.child, progress:payload.progress, house, sig} : {v:payload.v, child:payload.child, progress:payload.progress, sig});
   const bytes = new TextEncoder().encode(full);
   const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
   const b64 = btoa(binary);
@@ -6764,8 +6770,8 @@ function exportChildData(){
 
 let pendingImport = null;
 
-function showImportConflictModal(importedChild, progress, conflictChild){
-  pendingImport = {child: importedChild, progress, conflictChildId: conflictChild.id};
+function showImportConflictModal(importedChild, progress, conflictChild, house){
+  pendingImport = {child: importedChild, progress, house: house||null, conflictChildId: conflictChild.id};
   $('import-conflict-title').textContent = 'มีเด็กชื่อ "'+conflictChild.name+'" อยู่แล้ว';
   $('import-rename-form').hidden = true;
   $('import-rename-input').value = importedChild.name;
@@ -6784,7 +6790,7 @@ function importChildData(file){
       const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
       const jsonStr = new TextDecoder().decode(bytes);
       const obj = JSON.parse(jsonStr);
-      const {v, child, progress, sig} = obj;
+      const {v, child, progress, house, sig} = obj;
       if(!sig || !child || !child.id || !child.name){
         showToast('❌','ไฟล์ไม่ถูกต้อง ไม่สามารถนำเข้าได้'); return;
       }
@@ -6794,12 +6800,13 @@ function importChildData(file){
       }
       const conflictChild = children.find(c => c.id === child.id || c.name.toLowerCase() === child.name.toLowerCase());
       if(conflictChild){
-        showImportConflictModal(child, progress||{}, conflictChild);
+        showImportConflictModal(child, progress||{}, conflictChild, house);
         return;
       }
       children.push({id:child.id, name:child.name, emoji:child.emoji||'🧒', age:child.age, birthDate:child.birthDate});
       saveChildren();
       if(progress) try{ localStorage.setItem('p1quiz_progress_'+child.id, JSON.stringify(progress)); }catch(er){}
+      if(house) try{ localStorage.setItem('p1quiz_house_'+child.id, JSON.stringify(house)); }catch(er){}
       renderChildSelect();
       showToast('📥','นำเข้าข้อมูลของ '+child.name+' เรียบร้อย! 🎉');
     }catch(err){
@@ -6829,10 +6836,11 @@ $('import-conflict-cancel-btn').addEventListener('click', ()=>{ playClick(); hid
 $('import-replace-btn').addEventListener('click', ()=>{
   if(!pendingImport) return;
   playClick();
-  const {child, progress, conflictChildId} = pendingImport;
+  const {child, progress, house, conflictChildId} = pendingImport;
   const existing = children.find(c => c.id === conflictChildId);
   if(existing){ existing.emoji = child.emoji || existing.emoji; saveChildren(); }
   try{ localStorage.setItem('p1quiz_progress_'+conflictChildId, JSON.stringify(progress||{})); }catch(e){}
+  if(house) try{ localStorage.setItem('p1quiz_house_'+conflictChildId, JSON.stringify(house)); }catch(e){}
   hideImportConflictModal();
   renderChildSelect();
   showToast('✅','อัปเดตข้อมูลของ '+(existing ? existing.name : child.name)+' แล้ว!');
@@ -6856,11 +6864,12 @@ $('import-rename-confirm-btn').addEventListener('click', ()=>{
     showToast('⚠️','ชื่อ "'+newName+'" มีอยู่แล้ว ลองเปลี่ยนชื่อใหม่ดูสิ'); return;
   }
   playClick();
-  const {child, progress} = pendingImport;
+  const {child, progress, house} = pendingImport;
   const newId = 'child_'+Date.now();
   children.push({id:newId, name:newName, emoji:child.emoji||'🧒', age:child.age, birthDate:child.birthDate});
   saveChildren();
   if(progress) try{ localStorage.setItem('p1quiz_progress_'+newId, JSON.stringify(progress)); }catch(e){}
+  if(house) try{ localStorage.setItem('p1quiz_house_'+newId, JSON.stringify(house)); }catch(e){}
   hideImportConflictModal();
   renderChildSelect();
   showToast('📥','นำเข้าข้อมูลเป็น "'+newName+'" เรียบร้อย! 🎉');
@@ -6901,6 +6910,7 @@ $('delete-child-btn').addEventListener('click', ()=>{
     'ลบเด็กออก 🗑️',
     ()=>{
       localStorage.removeItem(progressKey());
+      try{ localStorage.removeItem('p1quiz_house_'+activeChild.id); }catch(e){}
       children = children.filter(c=>c.id!==activeChild.id);
       saveChildren();
       try{ localStorage.removeItem('p1quiz_active_child'); }catch(e){}
