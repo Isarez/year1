@@ -2199,9 +2199,12 @@ function buildFieldPath(x, z){                      /* ทางเดินด�
   const g = new THREE.Group();
   const rnd = fieldRnd(x, z);
   const road = box(1.02,.07,.84, 0xd0b483,.06); road.position.y = .035; g.add(road);
-  for(let k=0; k<3; k++){
-    const st = cyl(.13,.15,.06, 0xe7d6b4, 7);
-    st.position.set((rnd()-.5)*.8, .075, (rnd()-.5)*.6); g.add(st);
+  /* แผ่นหินปูวางตามแนวทาง (ชุดเดียวกับถนนในเมือง) แทนก้อนกรวดกลมแบบเดิม */
+  for(let k=0; k<2; k++){
+    const st = box(.4,.05,.26, 0xc19a62, .05);
+    st.position.set((rnd()-.5)*.5, .075, (rnd()-.5)*.4);
+    if(rnd() < .35) st.rotation.y = Math.PI/2;
+    g.add(st);
   }
   [-1,1].forEach(sgn=>{                             /* หญ้าริมทาง */
     const tf = sphere(.15, 0x8fd06c, 7); tf.scale.set(1,.42,1);
@@ -3733,12 +3736,19 @@ function buildWorld(){
   /* ทางเดินทั้งเมืองใช้หน้าตาเดียวกับทางเดินดินในทุ่งดอกไม้: โรยก้อนหินเล็กบนทาง + หญ้าเป็นกอตรงริมทาง
      ทั้งหมดเป็นของตกแต่งนิ่งๆ (instanced เฉยๆ ไม่ใช่ decor ที่กดได้) คลิกทางเดินจึงไม่เกิด effect อะไร
      ตำแหน่งสุ่มจาก fieldRnd(x,z) จึงคงที่ทุกครั้งที่เข้าเกม ไม่กระโดดไปมา */
+  /* ลายพื้นถนน: "แผ่นหินปู" สี่เหลี่ยมมนวางตามแนวแกน (สลับแนวยาว-แนวขวาง) แทนก้อนหินกลมแบบเดิม
+     — ก้อนกลมดูเป็นกรวดหล่นบนถนน ไม่เข้ากับพื้นลายตารางกับขอบทางที่เป็นเส้นตรงของเมือง
+     แผ่นปูใช้โทนเดียวกับถนนแต่เข้มลงนิดเดียว จึงเห็นเป็นลายพื้น ไม่ใช่ของวางเกะกะ */
   if(roadTiles.length){
-    const stones = [], tufts = [];
+    const slabX = [], slabZ = [], tufts = [];
     const isRoad = (x,z)=> x>=0 && z>=0 && x<OUT_W && z<OUT_D && isVillageRoadTile(x,z);
     roadTiles.forEach(([x,z])=>{
       const rnd = fieldRnd(x, z);
-      for(let k=0; k<2; k++) stones.push([outWX(x) + (rnd()-.5)*.72, .04, outWZ(z) + (rnd()-.5)*.72]);
+      const n = rnd() < .5 ? 1 : 2;                               /* ช่องละ 1-2 แผ่น ไม่ต้องเต็มทุกช่อง */
+      for(let k=0; k<n; k++){
+        const p = [outWX(x) + (rnd()-.5)*.46, .035, outWZ(z) + (rnd()-.5)*.46];
+        (rnd() < .5 ? slabX : slabZ).push(p);
+      }
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dz])=>{           /* ด้านที่ติดกับพื้นหญ้า = ริมทาง */
         if(isRoad(x+dx, z+dz)) return;
         if(rnd() > .55) return;                                  /* ไม่ต้องมีทุกช่อง จะดูรกเกินไป */
@@ -3751,7 +3761,8 @@ function buildWorld(){
       list.forEach((p,i)=>{ m4.makeTranslation(p[0], p[1], p[2]); if(sy) m4.scale(sy); im.setMatrixAt(i, m4); });
       im.instanceMatrix.needsUpdate = true; worldGroup.add(im);
     };
-    addInst(new THREE.CylinderGeometry(.13,.15,.06,7), toonMat(0xe7d6b4), stones);
+    addInst(roundedBoxGeo(.42,.05,.26,.05), toonMat(0xc19a62), slabX);
+    addInst(roundedBoxGeo(.26,.05,.42,.05), toonMat(0xc19a62), slabZ);
     addInst(new THREE.SphereGeometry(.15,7,5), toonMat(0x8fd06c), tufts, new THREE.Vector3(1,.42,1));
   }
 
