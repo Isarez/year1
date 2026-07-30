@@ -1675,7 +1675,7 @@ function fountainCZ(){ return outWZ((FOUNTAIN.z0+FOUNTAIN.z1)/2); }
    ผีเสื้อจึงแยกออกมาเป็น "ฝูงเล็กๆ ที่วนใช้ซ้ำ" ลอยอยู่เฉพาะรอบตัวเด็ก
    (ไกลออกไปไม่ต้องมี เพราะมองไม่เห็นอยู่แล้ว) จำนวนคงที่ ไม่สร้าง/ทิ้งทุกเฟรม
    ============================================================ */
-const BUTTERFLY_MAX = 8;
+const BUTTERFLY_MAX = 5;
 const BUTTERFLY_PALETTE = [                     /* [ปีกบน, ปีกล่าง] โทนพาสเทลให้เข้ากับธีมเด็ก */
   [0xffb3c9, 0xfff0f5], [0xffd54f, 0xffecb3], [0x9ad7ff, 0xe3f6ff],
   [0xc9a7ff, 0xf0e6ff], [0xff9e7a, 0xffe0d1], [0xa5e8b0, 0xe8f8ea],
@@ -1711,13 +1711,17 @@ function buildButterfly(pal){
     return piv;
   });
   g.userData.wings = wings;
-  g.scale.setScalar(1.35);
+  g.scale.setScalar(.8);      /* ตัวเล็กๆ พอให้รู้ว่าเป็นผีเสื้อ ไม่ใหญ่จนแย่งสายตาไปจากตัวละคร */
   return g;
 }
 
-/* ช่องดอกไม้ทั้งหมด (flowerSet ถูกเติมตอนสร้างทุ่ง) — ใช้เป็นจุดให้ผีเสื้อไปตอม */
+/* จุดให้ผีเสื้อไปตอม — เอาเฉพาะ "ทุ่งดอกไม้" 2 ผืนใหญ่เท่านั้น
+   (flowerSet รวมดอกไม้ริมถนน/รอบลานทั่วเมืองด้วย ถ้าเอาหมดผีเสื้อจะบินพล่านทั้งแผนที่) */
+function inField(x, z, b){ return x>=b.x0 && x<=b.x1 && z>=b.z0 && z<=b.z1; }
 function butterflySpots(){
-  if(!bflySpots) bflySpots = Array.from(flowerSet).map(k=>{ const p = k.split(','); return {x:+p[0], z:+p[1]}; });
+  if(!bflySpots) bflySpots = Array.from(flowerSet)
+    .map(k=>{ const p = k.split(','); return {x:+p[0], z:+p[1]}; })
+    .filter(s2 => inField(s2.x, s2.z, FLOWER_FIELD) || inField(s2.x, s2.z, FLOWER_MEADOW));
   return bflySpots;
 }
 /* สุ่มดอกไม้ที่อยู่ในระยะรอบตัวเด็ก (สุ่มไม่กี่ครั้ง ไม่ไล่ทั้งอาเรย์ทุกครั้ง) */
@@ -6448,6 +6452,7 @@ function frame(t){
     updateFountainFx(t, dt);
     updateButterflies(dt, t);
     updateDecorWind(t, dt);
+
 
 
     checkQuestZone(dt);
