@@ -1986,6 +1986,15 @@ function updateSceneryFx(t, dt){
         o.rotation.z = f.brz + Math.sin(s*1.15 + ph)*.07;
         o.rotation.y = f.bry + Math.sin(s*.6 + ph)*.09;
         break;
+      case 'ducky': {                                /* เป็ดว่ายวนในบ่อ */
+        const a2 = s*f.sp + f.ph;
+        o.position.x = f.cx + Math.cos(a2)*f.rx;
+        o.position.z = f.cz + Math.sin(a2)*f.rz;
+        o.position.y = f.by + Math.sin(s*1.7 + f.ph)*.035;          /* ลอยขึ้นลงตามคลื่น */
+        o.rotation.y = Math.atan2(-Math.sin(a2)*f.rx*f.sp, Math.cos(a2)*f.rz*f.sp);   /* หันหัวตามทางว่าย */
+        o.rotation.z = Math.sin(s*1.3 + f.ph)*.05;
+        break;
+      }
       case 'water':                                  /* ผิวน้ำ: ยกตัวขึ้นลงช้าๆ เหมือนคลื่นใหญ่ */
         o.position.y = f.by + Math.sin(s*.55 + ph)*.014;
         break;
@@ -3345,16 +3354,17 @@ function buildStaticScenery(){
   pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
   mergeCollectFx(pier, parts, chunkKeyOf(POND_PIER.x, POND_PIER.z));
-  const fisher = buildFisherNpc();
-  fisher.position.set(outWX(FISHER_TILE.x), .21, outWZ(FISHER_TILE.z));   /* นั่งบนไม้กระดานท่า */
-  /* หันหน้าเข้าหากลางบ่อน้ำจริงๆ (คำนวณจากพิกัดบ่อ ไม่ fix ทิศไว้ตายตัว) */
-  fisher.rotation.y = Math.atan2(outWX(POND.cx) - outWX(FISHER_TILE.x), outWZ(POND.cz) - outWZ(FISHER_TILE.z));
-  mergeCollectFx(fisher, parts, chunkKeyOf(FISHER_TILE.x, FISHER_TILE.z));
+  /* ลุงตกปลาย้ายไปเป็น NPC เต็มตัวแล้ว (ดู npc-fisher ใน NPC_DEFS) จึงไม่สร้างเป็นฉากตายตัวที่นี่ */
+  /* เป็ดในบ่อ: เดิมเป็นของฉากตายตัวยืนแข็งอยู่ 2 จุด → ให้ว่ายวนอยู่ในบ่อตลอดเวลา (ไม่หายไปไหน)
+     วนเป็นวงรีตามรูปบ่อ คนละรัศมี/คนละจังหวะ แล้วหันหัวไปตามทางที่ว่าย */
   POND_DUCKS.forEach(([x,z],i)=>{
     const dk = buildFarmAnimal('duck');
-    dk.position.set(outWX(x)+.15, 0, outWZ(z)-.1);
-    dk.rotation.y = i ? 2.2 : -.7;
-    mergeCollectFx(dk, parts, chunkKeyOf(x, z));
+    dk.position.set(outWX(x)+.15, WATER_Y + .1, outWZ(z)-.1);
+    addFxProp(dk, 'ducky', {
+      cx: outWX(POND.cx), cz: outWZ(POND.cz),
+      rx: POND.rx * (i ? .42 : .62), rz: POND.rz * (i ? .38 : .55),
+      sp: i ? .17 : -.13, ph: i * 2.4,
+    });
   });
   /* ลานกิจกรรมก่อนถึงทะเล: เวที + เสาธงราว */
   mergeCollectFx(buildStagePlatform(), parts, chunkKeyOf(STAGE.x0, STAGE.z0));
@@ -5191,13 +5201,13 @@ function spawnNpcs(){
        คนที่ยืนประจำที่รวมทุกชิ้นเป็น mesh เดียว = 1 draw call เหมือนเดิม */
     const animated = !!(d.roam || d.route);
     /* มาสคอตนกฮูกใช้โมเดลของตัวเอง (ไม่ใช่คน) แต่ระบบเดิน/คุยใช้ของชาวบ้านทั้งหมด */
-    const g = d.mascot ? buildOwlMascot() : buildVillager(d.look || {}, animated);
+    const g = d.mascot ? buildOwlMascot() : d.fisher ? buildFisherNpc() : buildVillager(d.look || {}, animated);
     if(!animated) mergeDecorGroup(g);
-    g.position.set(outWX(d.x), 0, outWZ(d.z));
-    g.rotation.y = (d.rot || 0) * Math.PI/2;
+    g.position.set(outWX(d.x), d.y || 0, outWZ(d.z));      /* y = คนที่ยืนอยู่บนของ เช่น ลุงตกปลาบนท่าไม้ */
+    g.rotation.y = d.faceRad != null ? d.faceRad : (d.rot || 0) * Math.PI/2;
     g.userData.hNpc = d;
     worldGroup.add(g);
-    const n = { g, def: d, home: {x:g.position.x, z:g.position.z}, baseRot: g.rotation.y,
+    const n = { g, def: d, home: {x:g.position.x, z:g.position.z}, baseRot: g.rotation.y, baseY: d.y || 0,
                 ph: Math.random()*6.28, faceT: 0, to: null, wait: 1 + Math.random()*5,
                 rig: g.userData.hRig || null, sw: Math.random()*6.28,
                 px: g.position.x, pz: g.position.z, stuck: 0,
@@ -5401,11 +5411,11 @@ function updateNpcs(dt, t){
       while(want - cur > Math.PI) want -= Math.PI*2;
       while(want - cur < -Math.PI) want += Math.PI*2;
       g.rotation.y += (want-cur) * Math.min(1, dt*6);
-      if(!n.owl) g.position.y = Math.abs(Math.sin(t*.008)) * .06;  /* กระโดดเบาๆ ตอนทักทาย (นกฮูกเด้งเองแล้ว) */
+      if(!n.owl) g.position.y = n.baseY + Math.abs(Math.sin(t*.008)) * .06;  /* กระโดดเบาๆ ตอนทักทาย (นกฮูกเด้งเองแล้ว) */
       if(n.faceT <= 0 && !n.tiles) n.faceT = 0;
     } else {
       /* คนมีข้อต่อแล้ว ตัวเด้งน้อยหน่อย (ขาแกว่งช่วยให้ดูเดินอยู่แล้ว) */
-      if(!n.owl) g.position.y = moving ? Math.abs(Math.sin(n.rig ? n.sw : t*.009)) * (n.rig ? .04 : .05) : 0;
+      if(!n.owl) g.position.y = n.baseY + (moving ? Math.abs(Math.sin(n.rig ? n.sw : t*.009)) * (n.rig ? .04 : .05) : 0);
     }
   }
   separateNpcs(dt);                                            /* ดันคนที่ซ้อนกันให้แยกออก */
