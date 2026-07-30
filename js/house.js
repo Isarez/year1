@@ -1715,23 +1715,42 @@ function buildButterfly(pal){
   return g;
 }
 
-/* จุดให้ผีเสื้อไปตอม — เอาเฉพาะ "ทุ่งดอกไม้" 2 ผืนใหญ่เท่านั้น
-   (flowerSet รวมดอกไม้ริมถนน/รอบลานทั่วเมืองด้วย ถ้าเอาหมดผีเสื้อจะบินพล่านทั้งแผนที่) */
+/* จุดให้ผีเสื้อไปตอม — เอาเฉพาะ "ทุ่งดอกไม้" เท่านั้น (flowerSet รวมดอกไม้ริมถนน/รอบอาคาร
+   ทั่วเมืองด้วย ถ้าเอาหมดผีเสื้อจะบินพล่านทั้งแผนที่) แต่ละทุ่งมีเพดานจำนวนของตัวเอง:
+   ทุ่งใหญ่ 2 ผืนได้เต็มฝูง ส่วนทุ่งรอบลานน้ำพุเป็นสวนกลางเมือง เอาแค่ 3 ตัวพอไม่ให้รก */
 function inField(x, z, b){ return x>=b.x0 && x<=b.x1 && z>=b.z0 && z<=b.z1; }
+function butterflyZones(){
+  return [ {box:FLOWER_FIELD, max:BUTTERFLY_MAX}, {box:FLOWER_MEADOW, max:BUTTERFLY_MAX},
+           {box:PLAZA_YARD,   max:3} ];
+}
 function butterflySpots(){
-  if(!bflySpots) bflySpots = Array.from(flowerSet)
-    .map(k=>{ const p = k.split(','); return {x:+p[0], z:+p[1]}; })
-    .filter(s2 => inField(s2.x, s2.z, FLOWER_FIELD) || inField(s2.x, s2.z, FLOWER_MEADOW));
+  if(!bflySpots){
+    const zones = butterflyZones();
+    bflySpots = [];
+    flowerSet.forEach(k=>{
+      const p = k.split(','), x = +p[0], z = +p[1];
+      const zi = zones.findIndex(zn => inField(x, z, zn.box));
+      if(zi >= 0) bflySpots.push({x, z, zi});
+    });
+  }
   return bflySpots;
 }
-/* สุ่มดอกไม้ที่อยู่ในระยะรอบตัวเด็ก (สุ่มไม่กี่ครั้ง ไม่ไล่ทั้งอาเรย์ทุกครั้ง) */
+/* สุ่มดอกไม้ที่อยู่ในระยะรอบตัวเด็ก (สุ่มไม่กี่ครั้ง ไม่ไล่ทั้งอาเรย์ทุกครั้ง)
+   ข้ามทุ่งที่ผีเสื้อเต็มเพดานแล้ว */
 function pickFlowerNear(cx, cz, rad){
   const arr = butterflySpots();
   if(!arr.length) return null;
+  const zones = butterflyZones();
+  const used = zones.map(()=>0);
+  for(let i=0; i<butterflies.length; i++){
+    const h = butterflies[i].home;
+    if(h && used[h.zi] != null) used[h.zi]++;
+  }
   for(let i=0; i<24; i++){
     const s = arr[(Math.random()*arr.length)|0];
+    if(used[s.zi] >= zones[s.zi].max) continue;
     const wx = outWX(s.x), wz = outWZ(s.z);
-    if(Math.hypot(wx-cx, wz-cz) < rad) return {x:wx, z:wz};
+    if(Math.hypot(wx-cx, wz-cz) < rad) return {x:wx, z:wz, zi:s.zi};
   }
   return null;
 }
