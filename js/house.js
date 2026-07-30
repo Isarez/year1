@@ -1659,13 +1659,83 @@ function buildPoolProp(kind){
 /* น้ำพุกลางลานชุมชน (จุดนัดพบ — เฟสถัดไปให้ NPC เดินมารวมกันตรงนี้ได้) */
 function buildFountain(){
   const g = new THREE.Group();
+  /* เฉพาะส่วนหิน — ถูก merge รวมกับฉากตายตัว (ส่วนน้ำที่ขยับได้อยู่ใน buildFountainFx) */
   const basin = cyl(1.15, 1.3, .44, 0xe8dcc8, 20); basin.position.y = .22; g.add(basin);
-  const water = cyl(1.02, 1.02, .12, 0x6cc6e8, 20); water.position.y = .46; g.add(water);
   const col = cyl(.16, .2, .8, 0xe8dcc8, 12); col.position.y = .85; g.add(col);
   const top = cyl(.52, .1, .16, 0xdcd0bb, 16); top.position.y = 1.3; g.add(top);
-  const drop = sphere(.16, 0x9adcf2, 10); drop.position.y = 1.52; g.add(drop);
-  g.position.set(outWX((FOUNTAIN.x0+FOUNTAIN.x1)/2), 0, outWZ((FOUNTAIN.z0+FOUNTAIN.z1)/2));
+  g.position.set(fountainCX(), 0, fountainCZ());
   return g;
+}
+function fountainCX(){ return outWX((FOUNTAIN.x0+FOUNTAIN.x1)/2); }
+function fountainCZ(){ return outWZ((FOUNTAIN.z0+FOUNTAIN.z1)/2); }
+
+/* ---------- น้ำของน้ำพุ (ส่วนที่ขยับ) ----------
+   แยกออกจากก้อน merge เพราะ geometry ที่รวมแล้วขยับทีละชิ้นไม่ได้
+   ทุกชิ้นเป็น object เล็กๆ ที่ "วนใช้ซ้ำ" ไม่ได้สร้าง/ทิ้งทุกเฟรม (กัน GC บนแท็บเล็ต)
+   และทั้งกลุ่มถูกซ่อนเมื่อเด็กเดินออกไปไกล จึงไม่กิน draw call ตอนไม่ได้มอง */
+const FOUNTAIN_JETS = 14;
+function buildFountainFx(){
+  const g = new THREE.Group();
+  const u = { jets: [], ripples: [] };
+
+  const water = cyl(1.02, 1.02, .12, 0x6cc6e8, 20); water.position.y = .46; g.add(water);
+  u.water = water;
+
+  /* ระลอกคลื่นบนผิวน้ำ: วงแหวนบางๆ ขยายออกแล้วจางหาย */
+  u.ripples = [0, 1, 2].map(i=>{
+    const m = new THREE.Mesh(new THREE.RingGeometry(.3, .38, 26),
+      new THREE.MeshBasicMaterial({color: 0xdff5ff, transparent: true, opacity: .5, depthWrite: false}));
+    m.rotation.x = -Math.PI/2; m.position.y = .53; m.userData.ph = i/3; g.add(m);
+    return m;
+  });
+
+  /* สายน้ำที่พุ่งขึ้นจากยอดเสาแล้วโค้งตกลงอ่าง — ลูกกลมเล็กกระจายเป็นวง */
+  for(let i=0; i<FOUNTAIN_JETS; i++){
+    const d = sphere(.075, 0x9adcf2, 7);
+    d.userData.a = (i/FOUNTAIN_JETS) * Math.PI*2;     /* ทิศที่พุ่งออก */
+    d.userData.ph = i/FOUNTAIN_JETS;                  /* เหลื่อมจังหวะกัน ไม่ตกพร้อมกันเป็นพรืด */
+    g.add(d); u.jets.push(d);
+  }
+  /* ลำน้ำที่พุ่งขึ้นจากยอดเสา — ทำให้เห็นเป็น "น้ำพุ" ตั้งแต่แวบแรก ไม่ใช่แค่ลูกกลมลอยๆ */
+  const jet = cyl(.055, .1, .58, 0x9adcf2, 10); jet.position.y = 1.78; g.add(jet); u.jet = jet;
+  /* หยดน้ำใหญ่บนยอด (เต้นขึ้นลงเบาๆ) */
+  const top = sphere(.16, 0x9adcf2, 10); top.position.y = 1.52; g.add(top); u.top = top;
+
+  g.position.set(fountainCX(), 0, fountainCZ());
+  g.userData.fx = u;
+  return g;
+}
+
+/* t = มิลลิวินาทีจาก frame() */
+function updateFountainFx(t, dt){
+  if(!fountainFx) return;
+  /* ไกลเกินไปก็ไม่ต้องวาด — ประหยัดทั้ง draw call และงานคำนวณ */
+  const near = charGroup
+    ? Math.hypot(charGroup.position.x - fountainFx.position.x, charGroup.position.z - fountainFx.position.z) < 22
+    : true;
+  if(fountainFx.visible !== near) fountainFx.visible = near;
+  if(!near) return;
+
+  const u = fountainFx.userData.fx, s = t * .001;
+  u.water.position.y = .46 + Math.sin(s*1.5)*.012;             /* ผิวน้ำกระเพื่อมเบาๆ */
+  u.top.position.y = 1.52 + Math.sin(s*2.2)*.05;
+  const ts = 1 + Math.sin(s*2.2)*.08; u.top.scale.set(ts, 1/ts, ts);   /* หยดน้ำยืด-หดเหมือนน้ำจริง */
+  const js = 1 + Math.sin(s*3.1)*.12; u.jet.scale.set(1/js, js, 1/js);  /* ลำน้ำเต้นขึ้นลงตามแรงดัน */
+  u.jet.position.y = 1.78 + Math.sin(s*3.1)*.05;
+
+  for(let i=0; i<u.jets.length; i++){
+    /* พุ่งขึ้นจากยอดเสาแล้วโค้งตกลงอ่างเป็นวิถีโพรเจกไทล์ (y = 1.6 + 2k - 3.05k² → สูงสุด ~1.93 ตกที่ผิวน้ำ .55)
+       ต้องเริ่มเหนือถ้วยบนสุด ไม่งั้นสายน้ำจะวิ่งอยู่ใต้ถ้วยแล้วโดนบัง มองไม่เห็น */
+    const d = u.jets[i], k = (s*.5 + d.userData.ph) % 1;
+    const r = .04 + k*.86;
+    d.position.set(Math.cos(d.userData.a)*r, 1.6 + 2.3*k - 3.4*k*k, Math.sin(d.userData.a)*r);
+    const sc = 1 - k*.35; d.scale.setScalar(sc);
+  }
+  for(let i=0; i<u.ripples.length; i++){
+    const m = u.ripples[i], k = (s*.5 + m.userData.ph) % 1;
+    const sc = .55 + k*1.5; m.scale.set(sc, sc, 1);
+    m.material.opacity = (1-k) * .45;
+  }
 }
 
 /* ดอกไม้เล็กๆ (ไม่บล็อกทางเดิน) — วางเฉพาะช่องเดินได้ที่ไม่ใช่ถนน/ลาน/ล็อต */
@@ -3283,6 +3353,9 @@ function buildWorld(){
      แตะเล่นได้ผ่าน tapStaticScene (คำนวณช่องจากจุดที่ ray ชน) แต่ย้าย/ลบไม่ได้ */
   buildStaticScenery();
 
+  fountainFx = buildFountainFx();      /* น้ำของน้ำพุ (ขยับได้ จึงไม่รวมกับก้อน merge) */
+  worldGroup.add(fountainFx);
+
   collectEdgeTiles();
   scene.add(worldGroup);
 }
@@ -4582,6 +4655,7 @@ function reachableTileSet(sx0, sz0){
 }
 
 let npcs = [], questBoardObj = null, questMarkObj = null;
+let fountainFx = null;      /* กลุ่มน้ำของน้ำพุกลางเมือง (สร้างใน buildWorld) */
 function spawnNpcs(){
   npcs = [];
   NPCS.forEach(d=>{
@@ -6191,6 +6265,7 @@ function frame(t){
     updateCritters(dt, t);
     updatePenAnimals(dt, t);
     updateNpcs(dt, t);
+    updateFountainFx(t, dt);
     checkQuestZone(dt);
     updateFx(t, dt);
     updatePet(dt);
