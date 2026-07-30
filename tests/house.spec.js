@@ -100,3 +100,27 @@ test('เข้าบ้าน 3D แล้วฉากเดินต่อไ�
   expect(errors).toEqual([]);
   expect(await page.evaluate(() => document.getElementById('house-loading').hidden)).toBe(true);  // ม่านต้องปิดเองแล้ว
 });
+
+test('มาสคอตนกฮูก: มีอยู่ในแผนที่ เดินได้ทั่วทั้งแผนที่ และไม่ชนกับ NPC อื่น', async ({ page }) => {
+  await page.goto('/');
+  await page.addScriptTag({ url: '/js/house-map.js' });
+  const m = await page.evaluate(() => {
+    const M = window.HOUSE_MAP({ inBox: () => false });
+    const owl = M.NPCS.find(n => n.mascot);
+    const ids = M.NPCS.map(n => n.id);
+    return {
+      found: !!owl,
+      id: owl && owl.id, icon: owl && owl.icon, roam: owl && owl.roam,
+      hasLook: !!(owl && owl.look && owl.look.skin != null),
+      dupIds: ids.filter((x, i) => ids.indexOf(x) !== i),
+      /* คนที่เดิน (roam/route) ต้องไม่จองช่องในกริด ไม่งั้นจะบล็อกทางเดินของตัวเอง */
+      inTiles: owl ? M.NPC_TILES.some(t => t[0] === owl.x && t[1] === owl.z) : true,
+    };
+  });
+  expect(m.found).toBe(true);
+  expect(m.id).toBe('owl-mascot');
+  expect(m.icon).toBe('🦉');
+  expect(m.roam).toEqual({ map: true });   // map:true = เดินได้ทุกช่องที่เดินได้จริง ไม่จำกัดถนน
+  expect(m.dupIds).toEqual([]);
+  expect(m.inTiles).toBe(false);
+});

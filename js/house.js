@@ -486,6 +486,89 @@ function buildCharacter(cfg){
   return g;
 }
 
+
+/* ============================================================
+   มาสคอตนกฮูกของแอป (หน้าตาตามโลโก้ Owlkids) — เดินเล่นไปทั่วแผนที่
+   ใช้ระบบเดียวกับชาวบ้าน (findPath/roam/แตะคุย) แต่เป็นนก จึงไม่มีขา
+   ท่าเดินเป็นการกระโดดหย็องๆ + ขยับปีก แทนการแกว่งขา
+   สีเอามาจาก assets/favicon.svg ตรงๆ ให้ตรงกับโลโก้ที่เด็กเห็นในแอป
+   ============================================================ */
+const OWL_BODY = 0xb66131, OWL_FACE = 0xe69752, OWL_BEAK = 0xfed737, OWL_PUPIL = 0x451700;
+function buildOwlMascot(){
+  const g = new THREE.Group();
+  const piv = new THREE.Group();          /* ทั้งตัวเด้งขึ้นลงที่ pivot นี้ ไม่ยุ่งกับตำแหน่งบนแผนที่ */
+  piv.scale.setScalar(1.28);              /* ตัวโตกว่าสัตว์เลี้ยง ให้เห็นชัดว่าเป็นมาสคอตของแอป */
+  g.add(piv);
+  const u = { wings:[], tufts:[], eyes:[] };
+
+  const body = sphere(.32, OWL_BODY, 16);      /* ตัวกับหัวเป็นก้อนเดียวเหมือนในโลโก้ */
+  body.scale.set(1.02, 1.12, .9); body.position.y = .46; piv.add(body);
+  /* แผงหน้าสีอ่อน — ต้องล้ำออกมาหน้าลำตัวเล็กน้อย ไม่งั้นจมหายไปในตัว มองไม่เห็นว่าเป็นหน้า */
+  const face = sphere(.3, OWL_FACE, 16);
+  face.scale.set(1.02, .88, .46); face.position.set(0, .55, .19); piv.add(face);
+
+  [-1, 1].forEach(sd=>{                        /* พู่หูสองข้างบนหัว (โผล่พ้นหัวชัดๆ) */
+    const tuft = cone(.1, .24, OWL_BODY, 4);
+    tuft.position.set(.19*sd, .88, -.03); tuft.rotation.z = -.38*sd; piv.add(tuft);
+    u.tufts.push(tuft);
+  });
+  [-1, 1].forEach(sd=>{                        /* ตากลมโตสองวง: ขาว + ดำ + ประกาย (จุดเด่นของโลโก้) */
+    const w = cyl(.125, .125, .05, 0xffffff, 18);
+    w.rotation.x = Math.PI/2; w.position.set(.13*sd, .6, .32); piv.add(w);
+    const p = cyl(.062, .062, .035, OWL_PUPIL, 14);
+    p.rotation.x = Math.PI/2; p.position.set(.13*sd, .6, .35); piv.add(p);
+    const gl = sphere(.023, 0xffffff, 8);
+    gl.position.set(.13*sd + .04, .64, .368); piv.add(gl);
+    u.eyes.push(w);
+  });
+  const beak = cone(.07, .15, OWL_BEAK, 3);    /* ปากสามเหลี่ยมเหลืองชี้ลง อยู่หน้าแผงหน้า */
+  beak.position.set(0, .45, .34); beak.rotation.x = Math.PI - .3; piv.add(beak);
+
+  u.wings = [-1, 1].map(sd=>{                  /* ปีกหมุนที่ไหล่ กางพ้นลำตัวให้เห็นตอนกระพือ */
+    const wp = new THREE.Group();
+    wp.position.set(.29*sd, .52, .02); wp.userData.side = sd;
+    const w = box(.09, .34, .24, OWL_FACE, .06);
+    w.position.set(.05*sd, -.08, 0); wp.add(w);
+    piv.add(wp); return wp;
+  });
+  [-1, 1].forEach(sd=>{                        /* เท้าเหลืองเล็กๆ */
+    const f = box(.11, .06, .17, OWL_BEAK, .03);
+    f.position.set(.11*sd, .035, .08); piv.add(f);
+  });
+  const tail = box(.2, .08, .18, OWL_BODY, .05);
+  tail.position.set(0, .2, -.3); tail.rotation.x = -.35; piv.add(tail);
+
+  u.piv = piv;
+  g.userData.owl = u;
+  return g;
+}
+
+/* ท่าของมาสคอต — t เป็นมิลลิวินาทีเหมือนที่ updateNpcs ใช้ */
+function updateOwlMascot(n, dt, t, moving){
+  const u = n.owl, k = Math.min(1, dt*9);
+  if(moving){
+    n.sw += dt * 7.4;
+    const hop = Math.abs(Math.sin(n.sw));
+    u.piv.position.y = hop * .13;                          /* กระโดดหย็องๆ ไปข้างหน้า */
+    u.piv.rotation.x = -.06 - Math.sin(n.sw*2) * .05;      /* ก้มตัวตอนลงพื้น */
+    u.wings.forEach(w=>{ w.rotation.z = (-.25 - hop*.55) * w.userData.side; });
+  }else{
+    u.piv.position.y += (Math.sin(t*.0026) * .015 - u.piv.position.y) * k;   /* หายใจเบาๆ */
+    u.piv.rotation.x += (0 - u.piv.rotation.x) * k;
+    const flap = n.faceT > 0 ? (-.5 - Math.abs(Math.sin(t*.012)) * .8) : -.1;
+    u.wings.forEach(w=>{ w.rotation.z += (flap * w.userData.side - w.rotation.z) * k; });
+  }
+  u.tufts.forEach((tf, i)=>{ tf.rotation.z = (-.34 + Math.sin(t*.004 + i) * .07) * (i ? 1 : -1); });
+  /* กะพริบตา: หรี่วงตาขาวลงแวบเดียวเป็นระยะ */
+  n.blinkT -= dt;
+  if(n.blinkT <= 0){ n.blinkT = 2.4 + Math.random()*3.4; n.blinkK = .16; }
+  if(n.blinkK > 0){
+    n.blinkK -= dt;
+    const f = n.blinkK > .08 ? .18 : 1;
+    u.eyes.forEach(e=>{ e.scale.y = f; });
+  }else u.eyes.forEach(e=>{ e.scale.y = 1; });
+}
+
 /* ---------- ฉากนอกบ้าน ---------- */
 function outWX(gx){ return gx - (OUT_W-1)/2; }
 function outWZ(gz){ return gz - (OUT_D-1)/2; }
@@ -3967,7 +4050,10 @@ function talkToNpc(n){
   for(let i=0; i<5; i++)
     spawnParticle(n.g.position.x+(Math.random()-.5)*.9, 1.7+Math.random()*.5,
                   n.g.position.z+.4, i%2 ? 0xfff1a8 : 0xffd54f);
-  const say = (d.lines || ['สวัสดีจ้ะ!']).concat(d.quest ? [d.quest] : []);
+  /* มาสคอตนกฮูกพูดคำให้กำลังใจจากคลังเดียวกับนกฮูกหน้าหลัก (js/owl-messages.js) */
+  const say = (d.mascot && typeof OWL_MSGS !== 'undefined' && OWL_MSGS.cheer)
+    ? OWL_MSGS.cheer
+    : (d.lines || ['สวัสดีจ้ะ!']).concat(d.quest ? [d.quest] : []);
   n.li = (n.li == null ? 0 : (n.li + 1) % say.length);
   const el = $('house-npc-bubble');
   if(el){
@@ -4476,6 +4562,25 @@ function updatePenAnimals(dt, t){
 /* ---------- ชาวบ้าน (NPC) + กระดานภารกิจ ----------
    ทุกคน mergeDecorGroup → คนละ 1 draw call (ใส่ได้ ~24 คนโดยเฟรมเรตไม่ตก)
    ตัวกลุ่มติด userData.hNpc ไว้ (ลูกไม่ติด) เพื่อให้ handleTap ไล่ ancestor เจอ */
+/* ช่องทั้งหมดที่ "เดินถึงได้จริง" จากจุดเริ่ม (flood fill 4 ทิศบนกริดนอกบ้าน)
+   มาสคอตเดินได้ทุกช่องของแผนที่ก็จริง แต่ถ้าสุ่มปลายทางเป็นช่องในรั้วโรงเรียน/ในคอกสัตว์
+   ที่เดินเข้าไม่ได้ มันจะหาเส้นทางไม่เจอแล้วยืนรอเป็นพักๆ — กรองออกตั้งแต่แรกทีเดียว */
+function reachableTileSet(sx0, sz0){
+  const seen = new Set(), q = [[sx0, sz0]];
+  seen.add(sx0 + ',' + sz0);
+  for(let i=0; i<q.length; i++){
+    const [x, z] = q[i];
+    for(const [dx, dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx = x+dx, nz = z+dz, k = nx + ',' + nz;
+      if(seen.has(k)) continue;
+      if(nx<0 || nz<0 || nx>=OUT_W || nz>=OUT_D) continue;
+      if(!isWalk(outGrid, OUT_W, OUT_D, nx, nz)) continue;
+      seen.add(k); q.push([nx, nz]);
+    }
+  }
+  return seen;
+}
+
 let npcs = [], questBoardObj = null, questMarkObj = null;
 function spawnNpcs(){
   npcs = [];
@@ -4483,7 +4588,8 @@ function spawnNpcs(){
     /* คนที่เดินได้ (roam/route) สร้างแบบมีข้อต่อแขนขา (merge ทีละกลุ่ม ~5 draw call)
        คนที่ยืนประจำที่รวมทุกชิ้นเป็น mesh เดียว = 1 draw call เหมือนเดิม */
     const animated = !!(d.roam || d.route);
-    const g = buildVillager(d.look || {}, animated);
+    /* มาสคอตนกฮูกใช้โมเดลของตัวเอง (ไม่ใช่คน) แต่ระบบเดิน/คุยใช้ของชาวบ้านทั้งหมด */
+    const g = d.mascot ? buildOwlMascot() : buildVillager(d.look || {}, animated);
     if(!animated) mergeDecorGroup(g);
     g.position.set(outWX(d.x), 0, outWZ(d.z));
     g.rotation.y = (d.rot || 0) * Math.PI/2;
@@ -4493,19 +4599,28 @@ function spawnNpcs(){
                 ph: Math.random()*6.28, faceT: 0, to: null, wait: 1 + Math.random()*5,
                 rig: g.userData.hRig || null, sw: Math.random()*6.28,
                 px: g.position.x, pz: g.position.z, stuck: 0,
-                speed: d.look && d.look.kid ? .95 : .78 };
+                speed: d.mascot ? .82 : (d.look && d.look.kid ? .95 : .78) };
+    if(d.mascot){ n.owl = g.userData.owl; n.blinkT = 1 + Math.random()*3; n.blinkK = 0; }
     if(d.route){ n.route = d.route; n.rIdx = 1 % d.route.length; n.path = null; n.wait = Math.random()*4; }
     if(d.roam){                                                /* ช่องที่เดินได้ในกรอบเดินเล่น */
       n.tiles = [];
       /* town:true = ไม่มีกรอบ เดินได้ทั่วเมือง → ปลายทางเลือกเฉพาะช่องถนน/ลาน (เครือข่ายเดียวเชื่อมถึงกันทั้งแผนที่
          ถ้าสุ่มทุกช่องที่เดินได้ จะได้ปลายทางกลางป่า/ริมทะเลที่เดินไปแล้วดูเหมือนหลงทาง) */
-      const z0 = d.roam.town ? 0 : d.roam.z0, z1 = d.roam.town ? OUT_D-1 : d.roam.z1;
-      const x0 = d.roam.town ? 0 : d.roam.x0, x1 = d.roam.town ? OUT_W-1 : d.roam.x1;
+      /* map:true = เดินได้ทุกช่องที่เดินได้จริงทั้งแผนที่ (มาสคอตนกฮูก — เข้าป่า ริมทะเล ฟาร์ม ได้หมด)
+         ต่างจาก town:true ที่จำกัดเฉพาะถนน/ลาน เพราะชาวบ้านเดินกลางป่าแล้วดูเหมือนหลงทาง */
+      const full = d.roam.town || d.roam.map;
+      const z0 = full ? 0 : d.roam.z0, z1 = full ? OUT_D-1 : d.roam.z1;
+      const x0 = full ? 0 : d.roam.x0, x1 = full ? OUT_W-1 : d.roam.x1;
       for(let z=z0; z<=z1; z++) for(let x=x0; x<=x1; x++)
         if(isWalk(outGrid, OUT_W, OUT_D, x, z)
            && !(d.roam.nearShop && isVillageRoadTile(x, z))    /* แม่ค้าเดินอยู่หน้าร้าน ไม่ลงไปกลางถนน */
            && !(d.roam.town && !isVillageRoadTile(x, z) && !isPlazaTile(x, z)))
           n.tiles.push({x, z});
+      /* มาสคอต: เก็บเฉพาะช่องที่เดินถึงได้จากจุดที่ยืนอยู่ */
+      if(d.roam.map){
+        const ok = reachableTileSet(d.x, d.z);
+        n.tiles = n.tiles.filter(tl => ok.has(tl.x + ',' + tl.z));
+      }
     }
     npcs.push(n);
   });
@@ -4676,6 +4791,7 @@ function updateNpcs(dt, t){
         rg.arms[1].rotation.x += (-idle - rg.arms[1].rotation.x) * k;
       }
     }
+    if(n.owl) updateOwlMascot(n, dt, t, moving);                /* มาสคอตนกฮูก: กระโดด+ขยับปีกแทนแกว่งขา */
     if(n.faceT > 0){                                           /* กำลังคุยกับเด็ก → หันหน้ามาหา */
       n.faceT -= dt;
       const dx = charGroup.position.x - g.position.x, dz = charGroup.position.z - g.position.z;
@@ -4683,11 +4799,11 @@ function updateNpcs(dt, t){
       while(want - cur > Math.PI) want -= Math.PI*2;
       while(want - cur < -Math.PI) want += Math.PI*2;
       g.rotation.y += (want-cur) * Math.min(1, dt*6);
-      g.position.y = Math.abs(Math.sin(t*.008)) * .06;         /* กระโดดเบาๆ ตอนทักทาย */
+      if(!n.owl) g.position.y = Math.abs(Math.sin(t*.008)) * .06;  /* กระโดดเบาๆ ตอนทักทาย (นกฮูกเด้งเองแล้ว) */
       if(n.faceT <= 0 && !n.tiles) n.faceT = 0;
     } else {
       /* คนมีข้อต่อแล้ว ตัวเด้งน้อยหน่อย (ขาแกว่งช่วยให้ดูเดินอยู่แล้ว) */
-      g.position.y = moving ? Math.abs(Math.sin(n.rig ? n.sw : t*.009)) * (n.rig ? .04 : .05) : 0;
+      if(!n.owl) g.position.y = moving ? Math.abs(Math.sin(n.rig ? n.sw : t*.009)) * (n.rig ? .04 : .05) : 0;
     }
   }
   separateNpcs(dt);                                            /* ดันคนที่ซ้อนกันให้แยกออก */
