@@ -22,22 +22,8 @@ const LISTEN_EN_DECOYS = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 function isThaiWord(w){ return /[฀-๿]/.test(w); }
 
-/* หา voice ภาษาไทยที่ติดตั้งไว้ (บาง browser เลือก voice ผิดถ้าไม่ set ให้ชัดเจน) — port จาก app.js */
-function pickThaiVoice(){
-  if(!window.speechSynthesis) return null;
-  return speechSynthesis.getVoices().find(v=>v.lang && v.lang.toLowerCase().startsWith('th')) || null;
-}
 /* เลือกเสียงอังกฤษมาตรฐาน กันเครื่องเลือกเสียง novelty/เสียงไทยอ่านอังกฤษ = เพี้ยน (port จาก app.js) */
 var EN_NOVELTY_VOICE = /Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Ralph|Trinoids|Whisper|Zarvox|Wobble|Superstar|Junior|Kathy|Fred|Grandma|Grandpa|Flo|Eddy|Reed|Rocko|Sandy|Shelley|Rishi/i;
-function pickEnglishVoice(){
-  if(!window.speechSynthesis) return null;
-  const en = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('en'));
-  if(!en.length) return null;
-  const preferred = ['Google US English','Google UK English Female','Samantha','Microsoft Zira','Microsoft','Daniel','Karen','Moira','Aaron','Allison','Ava','Serena'];
-  for(const name of preferred){ const v = en.find(x=>x.name.indexOf(name)>=0); if(v) return v; }
-  return en.find(v=>v.lang.toLowerCase()==='en-us' && !EN_NOVELTY_VOICE.test(v.name))
-      || en.find(v=>!EN_NOVELTY_VOICE.test(v.name)) || en.find(v=>v.default) || en[0];
-}
 /* อุ่นเครื่อง speech ครั้งแรก (เสียงเงียบ) กันบั๊ก utterance แรกเมินค่า voice = กดฟังครั้งแรกเพี้ยน */
 var _teacherSpeechPrimed = false;
 function primeSpeechOnce(){

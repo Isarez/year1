@@ -7,7 +7,6 @@
 
 /* ============================= SOUND TOGGLE ============================= */
 const soundBtn = $('sound-toggle');
-function refreshSoundBtn(){ soundBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_SPEAKER+'</span><span class="mute-stripe"></span></span>'; soundBtn.classList.toggle('muted', !soundOn); soundBtn.dataset.tooltip = soundOn ? 'ปิดเสียง' : 'เปิดเสียง'; }
 refreshSoundBtn();
 soundBtn.addEventListener('click', ()=>{
   soundOn = !soundOn;
@@ -52,16 +51,6 @@ refreshFsBtn();
 
 /* ============================= TOAST ============================= */
 let _toastTimer = null;
-function showToast(emoji, msg){
-  $('toast-emoji').textContent = emoji;
-  $('toast-msg').textContent = msg;
-  const t = $('toast');
-  t.classList.remove('visible');
-  void t.offsetWidth;
-  t.classList.add('visible');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(()=>t.classList.remove('visible'), 2600);
-}
 
 /* ============================= STICKER BOOK ============================= */
 function renderStickerBook(stampCatId){
@@ -461,18 +450,11 @@ $('changelog-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('chan
 
 /* ============================= DAY / NIGHT THEME ============================= */
 const bgDecorEl = $('bg-decor');
-function isNightMode(){ return document.body.classList.contains('night-mode'); }
 function refreshThemeBtn(){
   const night = isNightMode();
   themeBtn.innerHTML = night ? SVG_SUN : SVG_MOON;
   themeBtn.dataset.tooltip = night ? 'โหมดกลางวัน' : 'โหมดกลางคืน';
   themeBtn.setAttribute('aria-label', night ? 'สลับเป็นโหมดกลางวัน' : 'สลับเป็นโหมดกลางคืน');
-}
-function setTheme(night, persist){
-  document.body.classList.toggle('night-mode', night);
-  if(persist){ try{ localStorage.setItem('p1quiz_theme', night?'night':'day'); }catch(e){} }
-  refreshThemeBtn();
-  bgDecorEl.querySelectorAll('.bg-floater, .bg-cloud').forEach(e=>e.remove());
 }
 const themeBtn = $('theme-toggle');
 let nightMode = false;

@@ -169,25 +169,11 @@ let listenGame = null; // {catId, level, mistakes, totalLevels, word, letters, h
 
 /* หา voice ภาษาไทยที่ติดตั้งไว้ในเบราว์เซอร์ (ถ้ามี) เพื่อ set ให้ utterance ใช้ตรงๆ แทนการพึ่ง lang อย่างเดียว
    (บาง browser เลือก voice ผิดถ้าไม่ได้ set .voice ให้ชัดเจน) */
-function pickThaiVoice(){
-  if(!window.speechSynthesis) return null;
-  return speechSynthesis.getVoices().find(v=>v.lang && v.lang.toLowerCase().startsWith('th')) || null;
-}
 
 /* เลือกเสียงพูดภาษาอังกฤษ "มาตรฐาน" — สำคัญ: ต้อง set u.voice ให้คำอังกฤษด้วย ไม่งั้นบางเครื่องเลือกเสียงเพี้ยน
    เช่น macOS มีเสียงตลก/novelty (Albert, Bad News, Bells, Boing, Bubbles...) ที่อาจถูกเลือกเป็นตัวแรก = เสียงอังกฤษเพี้ยน
    หรือบนเครื่อง locale ไทย ระบบอาจอ่านอังกฤษด้วยเสียงไทย — จึงเลือกเสียงคนจริงที่รู้จักก่อน แล้วเลี่ยง novelty */
 const EN_NOVELTY_VOICE = /Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Ralph|Trinoids|Whisper|Zarvox|Wobble|Superstar|Junior|Kathy|Fred|Grandma|Grandpa|Flo|Eddy|Reed|Rocko|Sandy|Shelley|Rishi/i;
-function pickEnglishVoice(){
-  if(!window.speechSynthesis) return null;
-  const en = speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('en'));
-  if(!en.length) return null;
-  const preferred = ['Google US English','Google UK English Female','Samantha','Microsoft Zira','Microsoft','Daniel','Karen','Moira','Aaron','Allison','Ava','Serena'];
-  for(const name of preferred){ const v = en.find(x=>x.name.indexOf(name)>=0); if(v) return v; }
-  return en.find(v=>v.lang.toLowerCase()==='en-us' && !EN_NOVELTY_VOICE.test(v.name))
-      || en.find(v=>!EN_NOVELTY_VOICE.test(v.name))
-      || en.find(v=>v.default) || en[0];
-}
 
 /* เช็คว่าเบราว์เซอร์นี้มีเสียงพูดภาษาไทยติดตั้งไว้ไหม (บาง browser โหลด voice list แบบ async ผ่าน event 'voiceschanged')
    ใช้แค่ตัดสินใจว่าจะโชว์รูปคำใบ้เสริมไหม ไม่ได้ใช้ปิดกั้นการพยายามพูดจริง (กันกรณี detect พลาดแล้วเสียงไม่ออกทั้งที่มี voice) */

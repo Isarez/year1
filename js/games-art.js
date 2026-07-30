@@ -331,9 +331,6 @@ let musicGame = null; // {catId, mode, level, totalLevels, mistakes, target:[whi
 let musicNotation = (localStorage.getItem('p1quiz_music_notation')==='en') ? 'en' : 'th';
 let musicPausedBg = false; // จำว่าเกมนี้เป็นคนสั่งพักเพลงพื้นหลังไว้ (จะได้เล่นต่อตอนออก)
 
-function musicKeyLabel(k){ return musicNotation==='en' ? k.en : k.th; }
-/* เทียบชื่อโน้ตแบบไม่สนใจ octave (ด ที่ index 0/7/14 ถือว่าเหมือนกัน) */
-function sameNote(a, b){ return MUSIC_WHITE_KEYS[a].th === MUSIC_WHITE_KEYS[b].th; }
 /* สุ่มโจทย์ Level 1/3: ด่าน 1-3 = 1 โน้ต, 4-7 = 2 โน้ต, 8-10 = 3 โน้ต จากคีย์ ด..ด (index 0-7) ไม่ให้ตัวติดกันซ้ำ */
 function randMusicTarget(level){
   const count = level<=3 ? 1 : (level<=7 ? 2 : 3);
@@ -347,27 +344,7 @@ function randMusicTarget(level){
 /* พักเพลงพื้นหลังตอนอยู่ในเกมดนตรี / เล่นต่อตอนออก (ไม่แตะค่า setting musicOn ของผู้ใช้) */
 function pauseBgMusicForMusicGame(){ if(musicOn && !musicPausedBg){ stopMusic(); musicPausedBg = true; } }
 function resumeBgMusicAfterMusicGame(){ stopMusicSequence(); /* ออกจากเปียโน/เกมดนตรีทุกทาง = หยุดเพลงตัวอย่างที่ค้าง */ if(musicPausedBg){ musicPausedBg = false; if(musicOn) startMusic(); } }
-function pianoWhiteEl(i){ return $('music-piano').querySelector('.music-white[data-white="'+i+'"]'); }
-function flashKey(key){ if(!key) return; key.classList.add('pressed'); setTimeout(()=>key.classList.remove('pressed'), 200); }
 
-/* เสียงโน้ตเปียโนแบบนุ่มใส (Web Audio: sine หลัก + โอเวอร์โทนเบา, envelope นุ่ม) */
-function playPianoNote(freq, dur){
-  ensureAudio();
-  if(!audioCtx) return;
-  if(audioCtx.state==='suspended') audioCtx.resume();
-  const t0 = audioCtx.currentTime; dur = dur || 0.9;
-  const master = audioCtx.createGain();
-  master.gain.setValueAtTime(0.0001, t0);
-  master.gain.exponentialRampToValueAtTime(0.2, t0+0.012);
-  master.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-  master.connect(audioCtx.destination);
-  [[1,1],[2,0.16]].forEach(([mult,g])=>{
-    const osc = audioCtx.createOscillator(), og = audioCtx.createGain();
-    osc.type = 'sine'; osc.frequency.value = freq*mult; og.gain.value = g;
-    osc.connect(og).connect(master);
-    osc.start(t0); osc.stop(t0+dur);
-  });
-}
 
 /* noFlash=true: เล่นแต่เสียง ไม่ไฮไลต์คีย์ (ใช้กับ mode 3 ที่ต้องให้เด็กหาคีย์เอง ไม่เฉลยตำแหน่ง) */
 /* เก็บ timer ของเพลงที่กำลังเล่นไว้ยกเลิกได้ — กดฟังซ้ำ = เริ่มใหม่ (ไม่เล่นทับกัน)
@@ -402,20 +379,6 @@ function playMusicSequence(seq, noFlash, beats, opts){
   musicSeqTimers.push(setTimeout(stopMusicSequence, at + 300));
 }
 
-/* วาดคีย์เปียโนลงใน element ที่ระบุ (ใช้ทั้งเกมดนตรีและ modal เปียโนอิสระ) */
-function renderPianoKeys(piano, hideLabels){
-  piano.classList.toggle('no-key-labels', !!hideLabels);
-  const n = MUSIC_WHITE_KEYS.length;
-  let html = '';
-  MUSIC_WHITE_KEYS.forEach((k,i)=>{
-    html += '<button class="music-key music-white" data-white="'+i+'" style="--key-color:'+k.color+'" aria-label="'+k.th+'">'
-         +  '<span class="mk-label">'+musicKeyLabel(k)+'</span></button>';
-  });
-  MUSIC_BLACK_KEYS.forEach((b,i)=>{
-    html += '<button class="music-key music-black" data-black="'+i+'" style="left:'+((b.after+1)*(100/n))+'%" aria-label="คีย์ดำ"></button>';
-  });
-  piano.innerHTML = html;
-}
 function buildPiano(){ renderPianoKeys($('music-piano'), musicGame.mode===3); }
 
 function renderMusicNotes(allDone){
