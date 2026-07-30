@@ -685,18 +685,40 @@ $('ar-camera-toggle').addEventListener('click', ()=>{
 
 
 /* ============================= LAZY LOAD: โหมดบ้านของหนู (3D) =============================
-   three.min.js (594 KB) + house.js (140 KB) = 734 KB ที่เด็กส่วนใหญ่ไม่ได้ใช้ทุกครั้ง
+   three.min.js + house-map.js + house-furniture.js + house.js รวม ~1.2 MB ที่เด็กส่วนใหญ่ไม่ได้ใช้ทุกครั้ง
    จึงโหลดเมื่อจำเป็นเท่านั้น 2 กรณี:
-     1) กดปุ่มเข้าบ้าน — โหลดแล้วเปิดบ้านต่อทันที
-     2) เด็กคนนี้ "มีบ้านอยู่แล้ว" — โหลดตอนว่างเพื่อให้เพื่อนซี้หน้าหลักโผล่มาเหมือนเดิม
+     1) กดปุ่มเข้าบ้าน — โหลดแล้วเปิดบ้านต่อทันที (โชว์ม่านโหลดระหว่างดาวน์โหลด)
+     2) เด็กคนนี้ "มีบ้านอยู่แล้ว" — โหลดเงียบๆ ตอนว่างเพื่อให้เพื่อนซี้หน้าหลักโผล่มาเหมือนเดิม
    ใช้ createElement('script') (ไม่ใช่ dynamic import) จึงทำงานบน file:// ได้ตามหลักการของโปรเจค */
 let housePromise = null;
-function loadHouseMode(){
+
+/* ม่านโหลด #house-loading อยู่ใน index.html ตลอด (ไม่ได้มากับ house.js) หน้านี้จึงเปิดเองได้
+   ตั้งแต่ "เริ่มดาวน์โหลด" ซึ่งเป็นช่วงที่นานที่สุด — พอ house.js โหลดเสร็จมันจะรับช่วงเดินหลอด
+   ต่อจาก 22% ไปเองใน startHouseGame() ตัวเลขที่นี่จึงหยุดแค่ราวๆ 20% */
+function houseCurtain(pct, msg){
+  const el = $('house-loading'), bar = $('house-loading-bar'), tx = $('house-loading-text');
+  if(!el) return;
+  el.classList.remove('done');
+  el.hidden = false;
+  if(bar) bar.style.width = Math.round(pct*100) + '%';
+  if(msg && tx) tx.textContent = msg;
+}
+function houseCurtainHide(){
+  const el = $('house-loading');
+  if(el) el.hidden = true;       /* ใช้เฉพาะตอนโหลดไม่สำเร็จ (house.js ยังไม่มา จึงไม่ต้องเฟด) */
+}
+
+/* curtain=true → เดินหลอดความคืบหน้าระหว่างดาวน์โหลดให้เด็กเห็นว่ากำลังทำงานอยู่ */
+function loadHouseMode(curtain){
   if(housePromise) return housePromise;
   const v = (window.APP_ASSET_VER || '');
+  const step = (pct, msg) => { if(curtain) houseCurtain(pct, msg); };
+  step(.05, 'กำลังเตรียมบ้านของหนู…');
   housePromise = loadScriptOnce('js/vendor/three.min.js'+v)
-    .then(()=>loadScriptOnce('js/house-furniture.js'+v))   /* คลังเฟอร์นิเจอร์ — house.js เรียกใช้ */
-    .then(()=>loadScriptOnce('js/house.js'+v))
+    .then(()=>{ step(.12, 'โหลดเครื่องมือสร้างเมือง…'); return loadScriptOnce('js/house-map.js'+v); })
+    .then(()=>loadScriptOnce('js/house-furniture.js'+v))
+    .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
+    .then(()=>{ step(.20, 'กำลังปลุกเมืองให้ตื่น…'); })
     .catch(err=>{ housePromise = null; throw err; });
   return housePromise;
 }
@@ -704,10 +726,10 @@ function childHasHouse(){
   if(!activeChild) return false;
   try{ return !!localStorage.getItem('p1quiz_house_'+activeChild.id); }catch(e){ return false; }
 }
-/* โหลดตอนว่าง (ไม่แย่ง first paint) ถ้าเด็กคนนี้มีบ้านอยู่แล้ว */
+/* โหลดตอนว่าง (ไม่แย่ง first paint) ถ้าเด็กคนนี้มีบ้านอยู่แล้ว — เบื้องหลัง ไม่ต้องมีม่าน */
 function preloadHouseIfOwned(){
   if(housePromise || !childHasHouse()) return;
-  const go = ()=>loadHouseMode().then(()=>{ if(window.houseBuddyRefresh) window.houseBuddyRefresh(); }).catch(()=>{});
+  const go = ()=>loadHouseMode(false).then(()=>{ if(window.houseBuddyRefresh) window.houseBuddyRefresh(); }).catch(()=>{});
   if(window.requestIdleCallback) requestIdleCallback(go, { timeout:2500 }); else setTimeout(go, 1200);
 }
 /* ปุ่มเข้าบ้าน: ครั้งแรกโหลดสคริปต์ก่อนแล้วเปิดบ้าน ครั้งต่อไป house.js จัดการเอง */
@@ -718,13 +740,15 @@ function preloadHouseIfOwned(){
     if(window.startHouseGame){ btn.removeEventListener('click', onFirstClick); return; }
     e.stopImmediatePropagation();
     btn.disabled = true;
-    showToast('\u{1F3E1}','กำลังเปิดบ้านของหนู…');
-    loadHouseMode().then(()=>{
+    loadHouseMode(true).then(()=>{
       btn.disabled = false;
       btn.removeEventListener('click', onFirstClick);
+      /* startHouseGame() เห็นม่านเปิดค้างอยู่แล้ว จะเดินหลอดต่อและปิดม่านให้เองตอนฉากพร้อม */
       if(window.startHouseGame) window.startHouseGame();
+      else houseCurtainHide();
     }).catch(()=>{
       btn.disabled = false;
+      houseCurtainHide();
       showToast('\u{1F614}','เปิดบ้าน 3D ไม่ได้ ลองเช็คการเชื่อมต่อแล้วลองใหม่นะ');
     });
   };
