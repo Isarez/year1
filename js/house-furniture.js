@@ -15,6 +15,7 @@
      colors  พาเลตต์สี (ถ้ามี) — ชิ้นเดียวเลือกได้หลายสี, index 0 = ปริยาย
      action  ชนิด interaction ('sit'|'sleep'|'bounce'|'spin'|'toggle') ปริยาย 'bounce'
      leafy   แตะแล้วมีใบไม้ร่วง (ต้นไม้/พุ่ม) · leafyTall = ต้นสูง ใบร่วงจากที่สูงและเยอะกว่า
+     flat    เป็น "พื้น" ไม่ใช่ของเล่น (แผ่นทางเดิน) — แตะแล้วเดินไปตรงนั้นเหมือนแตะพื้นปกติ
      sit     {dz,dx,ry,sy} จุดที่เด็กไปยืน/นั่งสัมพัทธ์กับชิ้น (สำหรับ action sit/sleep)
      build(g, col, k)  ใส่ meshes ลง group g (หันหน้าไป +z, กึ่งกลางที่ origin,
                         ขนาดพอดี fw×fd ช่อง ช่องละ 1 หน่วย)
@@ -468,7 +469,7 @@
           const doorH=cyl(.2,.2,.12,0x6d4530,16); doorH.rotation.x=Math.PI/2; doorH.position.set(0,.4,.48); g.add(doorH);
           const doorB=box(.4,.28,.12, 0x6d4530, .03); doorB.position.set(0,.22,.48); g.add(doorB);
         } },
-      { id:'path', name:'แผ่นทางเดิน', cat:'decorout', scope:'out', emoji:'🟫', block:false, colors:[0xe3ddd0,0xd8c9a8,0xcbb891,0xbca77e],
+      { id:'path', flat:true, name:'แผ่นทางเดิน', cat:'decorout', scope:'out', emoji:'🟫', block:false, colors:[0xe3ddd0,0xd8c9a8,0xcbb891,0xbca77e],
         build(g,col,k,rec){
           /* ขนาด+เอียงแบบแผ่นหินในฉาก (0.6×0.6 เอียงสลับ ±.35) */
           const tilt = rec ? (((rec.x+rec.z)%2) ? .35 : -.35) : .2;
@@ -497,7 +498,7 @@
           const hat=cone(.16,.4,shade(col,.8),12); hat.position.y=.82; g.add(hat);
           const nose=ball(.04,0xffb27d,8); nose.position.set(0,.56,.15); g.add(nose);
         } },
-      { id:'stone-path', name:'ทางเดินหิน', cat:'decorout', scope:'out', emoji:'🪨', block:false, colors:[0xbcaaa4,0x90a4ae,0xd7ccc8],
+      { id:'stone-path', flat:true, name:'ทางเดินหิน', cat:'decorout', scope:'out', emoji:'🪨', block:false, colors:[0xbcaaa4,0x90a4ae,0xd7ccc8],
         build(g,col){
           [[-.22,-.2,.2],[.2,.18,.19],[-.05,.22,.22],[.24,-.18,.17],[-.24,.24,.16]].forEach(([x,z,r])=>{
             const s=cyl(r,r,.06,col,10); s.scale.set(1,1,1.2); s.position.set(x,.03,z); g.add(s); });
