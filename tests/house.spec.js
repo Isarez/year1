@@ -113,6 +113,11 @@ test('มาสคอตนกฮูก: มีอยู่ในแผนที
       id: owl && owl.id, icon: owl && owl.icon, roam: owl && owl.roam,
       hasLook: !!(owl && owl.look && owl.look.skin != null),
       dupIds: ids.filter((x, i) => ids.indexOf(x) !== i),
+      /* ต้องเกิดกลางเมือง (ในลานน้ำพุ) และไม่ทับตัวน้ำพุ/เสาไฟ/ที่ยืนของชาวบ้านคนอื่น */
+      inPlaza: !!owl && owl.x >= M.PLAZA.x0 && owl.x <= M.PLAZA.x1 && owl.z >= M.PLAZA.z0 && owl.z <= M.PLAZA.z1,
+      onFountain: !!owl && owl.x >= M.FOUNTAIN.x0 && owl.x <= M.FOUNTAIN.x1 && owl.z >= M.FOUNTAIN.z0 && owl.z <= M.FOUNTAIN.z1,
+      onLamp: !!owl && M.LAMP_SPOTS.some(p => p[0] === owl.x && p[1] === owl.z),
+      onOther: !!owl && M.NPCS.some(n => n !== owl && n.x === owl.x && n.z === owl.z),
       /* คนที่เดิน (roam/route) ต้องไม่จองช่องในกริด ไม่งั้นจะบล็อกทางเดินของตัวเอง */
       inTiles: owl ? M.NPC_TILES.some(t => t[0] === owl.x && t[1] === owl.z) : true,
     };
@@ -122,5 +127,9 @@ test('มาสคอตนกฮูก: มีอยู่ในแผนที
   expect(m.icon).toBe('🦉');
   expect(m.roam).toEqual({ map: true });   // map:true = เดินได้ทุกช่องที่เดินได้จริง ไม่จำกัดถนน
   expect(m.dupIds).toEqual([]);
+  expect(m.inPlaza).toBe(true);
+  expect(m.onFountain).toBe(false);
+  expect(m.onLamp).toBe(false);
+  expect(m.onOther).toBe(false);
   expect(m.inTiles).toBe(false);
 });
