@@ -3848,6 +3848,9 @@ function finishArrive(){
       else if(act==='toggle') decorToggle(g);
       else if(act==='spin') decorSpin(g);
       else decorBounce(g);
+      /* ต้นไม้/พุ่มที่เด็กปลูกเอง: เขย่าแล้วใบร่วงด้วย ให้เหมือนต้นไม้ในป่า
+         (ธง leafy/leafyTall อยู่ในคลังเฟอร์นิเจอร์ js/house-furniture.js) */
+      if(item.leafy) dropLeaves(g.position, !!item.leafyTall, leafColorOf(item, g.userData.deco.rec.col));
     }
   }
 }
@@ -4062,20 +4065,28 @@ function treeTiles(){
   wildLayout().forEach(r => treeTileMap.set(r.x + ',' + r.z, r));
   return treeTileMap;
 }
-function shakeTreeLeaves(gx, gz){
-  const rec = treeTiles().get(gx + ',' + gz);
-  if(!rec) return false;
-  const item = FURN.byId[rec.id];
-  const p = tileWorld({x:gx, z:gz});
-  const tall = WILD_TALL.includes(rec.id);
-  const pal = (item && item.colors) || [0x66c878];
-  const base = pal[(rec.col||0) % pal.length];
+/* ของตกแต่งที่ "มีใบไม้" — เขย่าแล้วใบร่วงเหมือนต้นไม้ในป่า
+   (เดิมมีแต่ต้นไม้ฉากตายตัวที่ใบร่วง ต้นไม้ที่เด็กปลูกเองแตะแล้วเด้งเฉยๆ ไม่มีใบร่วง
+    เด็กเลยงงว่าทำไมกดต้นสนในป่าแล้วมีใบ แต่กดต้นไม้หน้าบ้านแล้วไม่มี — แก้เมื่อ 2026-07-31) */
+/* โปรยใบไม้รอบจุดหนึ่ง — ใช้ร่วมกันทั้งต้นไม้ในป่าและต้นไม้ที่เด็กปลูกเอง */
+function dropLeaves(p, tall, base){
   for(let i=0; i<(tall ? 9 : 5); i++){
     spawnLeaf(p.x + (Math.random()-.5)*(tall ? 1.5 : .8),
               (tall ? 1.7 + Math.random()*1.1 : .55 + Math.random()*.4),
               p.z + (Math.random()-.5)*(tall ? 1.5 : .8),
               i%3 ? base : 0xffc46b);          /* ใบเขียวสลับใบเหลือง ให้ดูเป็นใบไม้ร่วงจริง */
   }
+}
+/* สีใบของชิ้นนั้น (ตามสีที่เด็กเลือกไว้) — ไม่มีก็ใช้เขียวมาตรฐาน */
+function leafColorOf(item, colIdx){
+  const pal = (item && item.colors) || [0x66c878];
+  return pal[(colIdx||0) % pal.length];
+}
+function shakeTreeLeaves(gx, gz){
+  const rec = treeTiles().get(gx + ',' + gz);
+  if(!rec) return false;
+  const item = FURN.byId[rec.id];
+  dropLeaves(tileWorld({x:gx, z:gz}), (item && item.leafyTall) || WILD_TALL.includes(rec.id), leafColorOf(item, rec.col));
   if(typeof playClick==='function') playClick();
   return true;
 }
@@ -6266,6 +6277,7 @@ function frame(t){
     updatePenAnimals(dt, t);
     updateNpcs(dt, t);
     updateFountainFx(t, dt);
+
     checkQuestZone(dt);
     updateFx(t, dt);
     updatePet(dt);

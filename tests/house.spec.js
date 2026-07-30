@@ -42,6 +42,7 @@ async function loadCatalog(page) {
       meta: items.map(it => ({
         id: it.id, name: it.name, cat: it.cat, scope: it.scope, emoji: it.emoji,
         fw: it.fw || 1, fd: it.fd || 1, action: it.action || 'bounce', hasBuild: typeof it.build === 'function',
+        leafy: !!it.leafy, leafyTall: !!it.leafyTall,
       })),
       built,
     };
@@ -132,4 +133,16 @@ test('มาสคอตนกฮูก: มีอยู่ในแผนที
   expect(m.onLamp).toBe(false);
   expect(m.onOther).toBe(false);
   expect(m.inTiles).toBe(false);
+});
+
+test('คลังเฟอร์นิเจอร์: ต้นไม้/พุ่มทุกชิ้นติดธง leafy (แตะแล้วใบร่วง)', async ({ page }) => {
+  /* บั๊กเดิม: มีแต่ต้นไม้ฉากตายตัวที่ใบร่วง ต้นไม้ที่เด็กปลูกเองแตะแล้วเด้งเฉยๆ
+     ตอนนี้ js/house.js อ่านธง leafy จากคลัง — ถ้าเพิ่มต้นไม้ใหม่แล้วลืมติดธง เทสนี้จะฟ้อง */
+  const { meta } = await loadCatalog(page);
+  const shouldLeaf = meta.filter(m => /tree|pine|bush|palm|hedge|topiary|arch/.test(m.id));
+  expect(shouldLeaf.length).toBeGreaterThanOrEqual(9);
+  expect(shouldLeaf.filter(m => !m.leafy).map(m => m.id)).toEqual([]);
+  /* ต้นสูงต้องถูกทำเครื่องหมายไว้ด้วย ใบจะได้ร่วงจากยอดไม่ใช่จากพื้น */
+  const tall = meta.filter(m => m.leafyTall).map(m => m.id).sort();
+  expect(tall).toEqual(['flower-arch', 'palm-tall', 'pine', 'tree', 'tree-round']);
 });

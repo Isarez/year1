@@ -14,6 +14,7 @@
      block   บล็อกทางเดินไหม (ปริยาย true; พรม/ทางเดิน = false เดินผ่านได้)
      colors  พาเลตต์สี (ถ้ามี) — ชิ้นเดียวเลือกได้หลายสี, index 0 = ปริยาย
      action  ชนิด interaction ('sit'|'sleep'|'bounce'|'spin'|'toggle') ปริยาย 'bounce'
+     leafy   แตะแล้วมีใบไม้ร่วง (ต้นไม้/พุ่ม) · leafyTall = ต้นสูง ใบร่วงจากที่สูงและเยอะกว่า
      sit     {dz,dx,ry,sy} จุดที่เด็กไปยืน/นั่งสัมพัทธ์กับชิ้น (สำหรับ action sit/sleep)
      build(g, col, k)  ใส่ meshes ลง group g (หันหน้าไป +z, กึ่งกลางที่ origin,
                         ขนาดพอดี fw×fd ช่อง ช่องละ 1 หน่วย)
@@ -279,7 +280,7 @@
         } },
 
       /* ============ นอกบ้าน — สวน/ต้นไม้ ============ */
-      { id:'tree-round', name:'ต้นไม้กลม', cat:'garden', scope:'out', emoji:'🌳', colors:GREEN,
+      { id:'tree-round', leafy:true, leafyTall:true, name:'ต้นไม้กลม', cat:'garden', scope:'out', emoji:'🌳', colors:GREEN,
         build(g,col){
           const trunk=cyl(.14,.18,1.0,0x9c6238,8); trunk.position.y=.5; g.add(trunk);
           const f1=ball(.6,col,12); f1.position.y=1.3; g.add(f1);
@@ -287,7 +288,7 @@
           const f3=ball(.35,shade(col,.9),10); f3.position.set(-.32,1.15,-.16); g.add(f3);
         } },
       /* ต้นไม้ใหญ่แบบในฉาก (สูงสุ่มตามพิกัด + ดอกขาว) — ใช้กับต้นไม้เดิมในสนามที่ย้ายได้ */
-      { id:'tree', name:'ต้นไม้ใหญ่', cat:'garden', scope:'out', emoji:'🌴', colors:GREEN,
+      { id:'tree', leafy:true, leafyTall:true, name:'ต้นไม้ใหญ่', cat:'garden', scope:'out', emoji:'🌴', colors:GREEN,
         build(g,col,k,rec){
           const rnd = rec ? (((rec.x*73 + rec.z*151 + 37)%100)/100) : .5;
           const th = .8+rnd*.95, fs = .85+rnd*.3;
@@ -298,12 +299,12 @@
           const b1=ball(.07,0xffffff,6); b1.position.set(.22*fs,th+.86*fs,.3*fs); g.add(b1);
           const b2=ball(.055,0xffffff,6); b2.position.set(-.32*fs,th+.56*fs,.34*fs); g.add(b2);
         } },
-      { id:'pine', name:'ต้นสน', cat:'garden', scope:'out', emoji:'🌲', colors:[0x388e3c,0x2e7d32,0x43a047],
+      { id:'pine', leafy:true, leafyTall:true, name:'ต้นสน', cat:'garden', scope:'out', emoji:'🌲', colors:[0x388e3c,0x2e7d32,0x43a047],
         build(g,col){
           const trunk=cyl(.12,.15,.5,0x795548,8); trunk.position.y=.25; g.add(trunk);
           [[.7,.6,.55],[.55,1.05,.45],[.4,1.45,.35]].forEach(([r,y,h])=>{ const c=cone(r,h*1.6,col,10); c.position.y=y; g.add(c); });
         } },
-      { id:'bush', name:'พุ่มไม้', cat:'garden', scope:'out', emoji:'🌿', colors:GREEN,
+      { id:'bush', leafy:true, name:'พุ่มไม้', cat:'garden', scope:'out', emoji:'🌿', colors:GREEN,
         build(g,col){
           [[0,.28,0,.34],[.28,.24,.05,.26],[-.26,.26,-.04,.24],[.05,.36,-.2,.22]].forEach(([x,y,z,r])=>{
             const b=ball(r,col,10); b.scale.set(1,.85,1); b.position.set(x,y,z); g.add(b); });
@@ -323,7 +324,7 @@
           const cap=ball(.32,col,14); cap.scale.set(1,.62,1); cap.position.y=.46; g.add(cap);
           [[.14,.52,.1],[-.16,.5,-.06],[.02,.56,-.16],[-.1,.53,.15]].forEach(([x,y,z])=>{ const d=ball(.05,0xffffff,8); d.position.set(x,y,z); g.add(d); });
         } },
-      { id:'topiary', name:'พุ่มตัดกลม', cat:'garden', scope:'out', emoji:'🎍', colors:GREEN,
+      { id:'topiary', leafy:true, name:'พุ่มตัดกลม', cat:'garden', scope:'out', emoji:'🎍', colors:GREEN,
         build(g,col){
           const pot=cyl(.22,.17,.28,0xd7a86e,14); pot.position.y=.14; g.add(pot);
           const b1=ball(.28,col,12); b1.position.y=.6; g.add(b1);
@@ -770,7 +771,7 @@
             const up=cyl(.07,.08,.22,col,10); up.position.set(s*.28,.74,0); g.add(up); });
           const fl=ball(.06,0xf48fb1,8); fl.position.y=1.02; g.add(fl);
         } },
-      { id:'flower-arch', name:'ซุ้มดอกไม้', cat:'garden', scope:'out', emoji:'🌸', fw:2, fd:1, colors:[0xf48fb1,0xce93d8,0xffb3c1],
+      { id:'flower-arch', leafy:true, leafyTall:true, name:'ซุ้มดอกไม้', cat:'garden', scope:'out', emoji:'🌸', fw:2, fd:1, colors:[0xf48fb1,0xce93d8,0xffb3c1],
         build(g,col){
           [-1,1].forEach(s=>{ const post=cyl(.06,.06,1.2,0xffffff,10); post.position.set(s*.62,.6,0); g.add(post); });
           const ring=torus(.62,.07,0x81c784,24); ring.position.set(0,1.55,0); g.add(ring);
@@ -778,13 +779,13 @@
           for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const fl=ball(.1,petals[i%petals.length],8); fl.position.set(Math.cos(a)*.62,1.55+Math.sin(a)*.62,.02); g.add(fl);
             const leaf=ball(.05,0x66bb6a,6); leaf.scale.set(1.4,.5,1); leaf.position.set(Math.cos(a)*.62,1.55+Math.sin(a)*.62,-.04); g.add(leaf); }
         } },
-      { id:'palm-tall', name:'ต้นมะพร้าว', cat:'garden', scope:'out', emoji:'🥥', colors:[0x66bb6a,0x4caf50],
+      { id:'palm-tall', leafy:true, leafyTall:true, name:'ต้นมะพร้าว', cat:'garden', scope:'out', emoji:'🥥', colors:[0x66bb6a,0x4caf50],
         build(g,col){
           const trunk=cyl(.1,.16,1.8,0xc98d4e,10); trunk.position.y=.9; trunk.rotation.z=.06; g.add(trunk);
           for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const leaf=box(.7,.05,.2,col,.04); leaf.position.set(Math.cos(a)*.42,1.85,Math.sin(a)*.42); leaf.rotation.y=-a; leaf.rotation.z=.2; g.add(leaf); }
           [[.1,.1],[-.1,.12],[.14,-.08]].forEach(([x,z])=>{ const co=ball(.09,0x8d6e63,8); co.position.set(x,1.72,z); g.add(co); });
         } },
-      { id:'hedge', name:'พุ่มรั้วเขียว', cat:'garden', scope:'out', emoji:'🍃', fw:2, fd:1, colors:GREEN,
+      { id:'hedge', leafy:true, name:'พุ่มรั้วเขียว', cat:'garden', scope:'out', emoji:'🍃', fw:2, fd:1, colors:GREEN,
         build(g,col){
           const body=box(1.6,.6,.5,col,.14); body.position.y=.35; g.add(body);
           [-.5,0,.5].forEach(x=>{ const b=ball(.32,shade(col,1.08),10); b.scale.set(1,.7,1); b.position.set(x,.62,0); g.add(b); });
@@ -796,7 +797,7 @@
           [[-.1,-.05],[.1,-.05],[0,.1]].forEach(([x,z])=>{ const stem=cyl(.02,.02,.26,0x66bb6a,6); stem.position.set(x,.4,z); g.add(stem);
             const fl=ball(.08,col,8); fl.scale.set(1,1.3,1); fl.position.set(x,.56,z); g.add(fl); });
         } },
-      { id:'rose-bush', name:'พุ่มกุหลาบ', cat:'garden', scope:'out', emoji:'🌹', colors:GREEN,
+      { id:'rose-bush', leafy:true, name:'พุ่มกุหลาบ', cat:'garden', scope:'out', emoji:'🌹', colors:GREEN,
         build(g,col){
           const bush=ball(.4,col,12); bush.scale.set(1,.8,1); bush.position.y=.36; g.add(bush);
           [[.2,.5,.1],[-.2,.46,-.1],[0,.6,.2],[.14,.52,-.2],[-.16,.56,.14]].forEach(([x,y,z])=>{ const rose=ball(.08,0xef5350,8); rose.position.set(x,y,z); g.add(rose); });
