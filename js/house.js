@@ -1736,8 +1736,11 @@ function butterflySpots(){
   return bflySpots;
 }
 /* สุ่มดอกไม้ที่อยู่ในระยะรอบตัวเด็ก (สุ่มไม่กี่ครั้ง ไม่ไล่ทั้งอาเรย์ทุกครั้ง)
-   ข้ามทุ่งที่ผีเสื้อเต็มเพดานแล้ว */
-function pickFlowerNear(cx, cz, rad){
+   - ข้ามทุ่งที่ผีเสื้อเต็มเพดานแล้ว
+   - เว้นระยะจากผีเสื้อตัวอื่นอย่างน้อย BFLY_MIN_GAP ให้กระจายกันทั่วทุ่ง ไม่กระจุกอยู่กอเดียว
+     (ถ้าสุ่มไม่เจอที่ห่างพอจริงๆ ก็เอาจุดที่ห่างที่สุดเท่าที่สุ่มเจอ ดีกว่าไม่ได้ที่เลย) */
+const BFLY_MIN_GAP = 5;
+function pickFlowerNear(cx, cz, rad, self){
   const arr = butterflySpots();
   if(!arr.length) return null;
   const zones = butterflyZones();
@@ -1746,13 +1749,24 @@ function pickFlowerNear(cx, cz, rad){
     const h = butterflies[i].home;
     if(h && used[h.zi] != null) used[h.zi]++;
   }
-  for(let i=0; i<24; i++){
+  let best = null, bestGap = -1;
+  for(let i=0; i<28; i++){
     const s = arr[(Math.random()*arr.length)|0];
     if(used[s.zi] >= zones[s.zi].max) continue;
     const wx = outWX(s.x), wz = outWZ(s.z);
-    if(Math.hypot(wx-cx, wz-cz) < rad) return {x:wx, z:wz, zi:s.zi};
+    if(Math.hypot(wx-cx, wz-cz) >= rad) continue;
+    let gap = Infinity;                                  /* ห่างจากตัวที่ใกล้ที่สุดเท่าไร */
+    for(let k=0; k<butterflies.length; k++){
+      const b = butterflies[k];
+      if(b === self) continue;
+      const h = b.next || b.home;
+      if(!h) continue;
+      gap = Math.min(gap, Math.hypot(wx-h.x, wz-h.z));
+    }
+    if(gap >= BFLY_MIN_GAP) return {x:wx, z:wz, zi:s.zi};
+    if(gap > bestGap){ bestGap = gap; best = {x:wx, z:wz, zi:s.zi}; }
   }
-  return null;
+  return best;
 }
 function initButterflies(){
   butterflies = [];
@@ -1776,7 +1790,7 @@ function updateButterflies(dt, t){
   for(let i=0; i<butterflies.length; i++){
     const b = butterflies[i], g = b.g;
     if(scan && (!b.home || Math.hypot(b.home.x-cx, b.home.z-cz) > 17)){
-      const spot = pickFlowerNear(cx, cz, 13);
+      const spot = pickFlowerNear(cx, cz, 13, b);
       if(!spot){ if(g.visible) g.visible = false; b.home = null; continue; }
       b.home = spot; b.next = null; b.blend = 1;
       g.position.set(spot.x, .8, spot.z);
@@ -1789,7 +1803,7 @@ function updateButterflies(dt, t){
     b.hold -= dt;
     if(b.rest > 0) b.rest -= dt;
     if(b.hold <= 0 && !b.next){
-      const spot = pickFlowerNear(cx, cz, 12);
+      const spot = pickFlowerNear(cx, cz, 12, b);
       if(spot){ b.next = spot; b.blend = 0; b.rest = 0; }
       b.hold = 3.5 + Math.random()*4;
       if(Math.random() < .45) b.rest = 2 + Math.random()*2.5;   /* บางครั้งลงเกาะดอกไม้นิ่งๆ ก่อนบินต่อ */
