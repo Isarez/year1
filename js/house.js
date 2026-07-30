@@ -1986,12 +1986,24 @@ function updateSceneryFx(t, dt){
         o.rotation.z = f.brz + Math.sin(s*1.15 + ph)*.07;
         o.rotation.y = f.bry + Math.sin(s*.6 + ph)*.09;
         break;
-      case 'ducky': {                                /* เป็ดว่ายวนในบ่อ */
-        const a2 = s*f.sp + f.ph;
-        o.position.x = f.cx + Math.cos(a2)*f.rx;
-        o.position.z = f.cz + Math.sin(a2)*f.rz;
-        o.position.y = f.by + Math.sin(s*1.7 + f.ph)*.035;          /* ลอยขึ้นลงตามคลื่น */
-        o.rotation.y = Math.atan2(-Math.sin(a2)*f.rx*f.sp, Math.cos(a2)*f.rz*f.sp);   /* หันหัวตามทางว่าย */
+      case 'ducky': {                                /* เป็ดประจำบ่อ: ว่ายไปหาจุดหมายทีละจุดในบ่อ */
+        if(f.tx == null || Math.hypot(f.tx-o.position.x, f.tz-o.position.z) < .3){
+          const p2 = randPondPoint();                /* ถึงแล้ว → สุ่มจุดใหม่ในบ่อ (เลี่ยงใบบัว) */
+          f.tx = p2.x; f.tz = p2.z;
+          f.wait = .6 + Math.random()*1.4;           /* แวะลอยนิ่งแป๊บนึงก่อนไปต่อ ดูเป็นธรรมชาติ */
+        }
+        if(f.wait > 0){ f.wait -= dt; }
+        else {
+          const dx2 = f.tx - o.position.x, dz2 = f.tz - o.position.z;
+          const d2 = Math.hypot(dx2, dz2) || 1;
+          o.position.x += dx2/d2 * f.sp * dt;
+          o.position.z += dz2/d2 * f.sp * dt;
+          let want = Math.atan2(dx2, dz2), cur = o.rotation.y;   /* ค่อยๆ หันหัวไปทางที่ว่าย */
+          while(want - cur > Math.PI) want -= Math.PI*2;
+          while(want - cur < -Math.PI) want += Math.PI*2;
+          o.rotation.y = cur + (want-cur) * Math.min(1, dt*2.5);
+        }
+        o.position.y = f.by + Math.sin(s*1.7 + f.ph)*.03;         /* ลอยขึ้นลงตามคลื่น */
         o.rotation.z = Math.sin(s*1.3 + f.ph)*.05;
         break;
       }
@@ -3358,16 +3370,13 @@ function buildStaticScenery(){
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
   mergeCollectFx(pier, parts, chunkKeyOf(POND_PIER.x, POND_PIER.z));
   /* ลุงตกปลาย้ายไปเป็น NPC เต็มตัวแล้ว (ดู npc-fisher ใน NPC_DEFS) จึงไม่สร้างเป็นฉากตายตัวที่นี่ */
-  /* เป็ดในบ่อ: เดิมเป็นของฉากตายตัวยืนแข็งอยู่ 2 จุด → ให้ว่ายวนอยู่ในบ่อตลอดเวลา (ไม่หายไปไหน)
-     วนเป็นวงรีตามรูปบ่อ คนละรัศมี/คนละจังหวะ แล้วหันหัวไปตามทางที่ว่าย */
-  POND_DUCKS.forEach(([x,z],i)=>{
-    const dk = buildFarmAnimal('duck');
-    dk.position.set(outWX(x)+.15, WATER_Y + .1, outWZ(z)-.1);
-    addFxProp(dk, 'ducky', {
-      cx: outWX(POND.cx), cz: outWZ(POND.cz),
-      rx: POND.rx * (i ? .42 : .62), rz: POND.rz * (i ? .38 : .55),
-      sp: i ? .17 : -.13, ph: i * 2.4,
-    });
+  /* เป็ดประจำบ่อ 2 ตัว — ใช้โมเดลเดียวกับเป็ดที่ว่ายในแหล่งน้ำอื่น (buildCritter) และว่ายเปะปะ
+     ไปเรื่อยๆ ในบ่อ (สุ่มจุดหมายทีละจุด ไม่ใช่วนเป็นวงกลม) อยู่ในบ่อตลอด ไม่มีวันหายไป */
+  POND_DUCKS.forEach(([x,z])=>{
+    const dk = buildCritter('duck');
+    delete dk.userData.hCritter;              /* ไม่ใช่สัตว์ป่าในระบบ critter — กันแตะแล้วไปเรียก startleCritter */
+    dk.position.set(outWX(x)+.15, WATER_Y + .06, outWZ(z)-.1);
+    addFxProp(dk, 'ducky', {sp: .55 + Math.random()*.25});
   });
   /* ลานกิจกรรมก่อนถึงทะเล: เวที + เสาธงราว */
   mergeCollectFx(buildStagePlatform(), parts, chunkKeyOf(STAGE.x0, STAGE.z0));
@@ -4652,7 +4661,8 @@ let npcTalk = null;                        /* {n, until} — ฟองคำพ�
 const _npcV = new THREE.Vector3();
 function talkToNpc(n){
   const d = n.def;
-  n.faceT = 2.8;                           /* หันหน้ามาหาเด็กชั่วครู่ */
+  /* ลุงตกปลาไม่หันมาหาเด็ก — กำลังจ้องทุ่นอยู่ (คุยไปตกปลาไป) */
+  if(!d.fisher) n.faceT = 2.8;             /* คนอื่นหันหน้ามาหาเด็กชั่วครู่ */
   if(typeof playClick==='function') playClick();
   for(let i=0; i<5; i++)
     spawnParticle(n.g.position.x+(Math.random()-.5)*.9, 1.7+Math.random()*.5,
@@ -5012,6 +5022,17 @@ function awayFromPads(x, z){
   }
   return true;
 }
+/* สุ่มจุดในบ่อน้ำ (ในวงรีของบ่อจริง เว้นขอบไว้หน่อย และเลี่ยงใบบัว) — ใช้กับเป็ดประจำบ่อ */
+function randPondPoint(){
+  let x = 0, z = 0;
+  for(let i=0; i<10; i++){
+    const a = Math.random()*Math.PI*2, r = Math.sqrt(Math.random())*.72;
+    x = outWX(POND.cx) + Math.cos(a)*POND.rx*r;
+    z = outWZ(POND.cz) + Math.sin(a)*POND.rz*r;
+    if(awayFromPads(x, z)) break;
+  }
+  return {x, z};
+}
 function randWaterPoint(region){
   let x = 0, z = 0;
   for(let i=0; i<8; i++){
@@ -5069,7 +5090,11 @@ function spawnCritter(){
     critterLine(c, g.position.clone(), critterTileV(land), 3.2, .3);
   }else if(domain==='water'){
     const r = Math.random();
-    c.water = r < .45 ? pondWaterRegion() : (r < .85 ? riverWaterRegion() : seaWaterRegion());   /* เน้นบึงกับแม่น้ำที่เด็กเดินผ่านบ่อย */
+    /* บ่อน้ำมีเป็ดประจำบ่ออยู่แล้ว 2 ตัว → ในบ่อให้เกิดเฉพาะปลา ส่วนเป็ดไปแม่น้ำ/ทะเลแทน
+       (ไม่งั้นเป็ดในบ่อจะแน่นและมีทั้งตัวที่อยู่ถาวรกับตัวที่เดี๋ยวก็ว่ายหายไป ดูสับสน) */
+    c.water = (type === 'duck')
+      ? (r < .7 ? riverWaterRegion() : seaWaterRegion())
+      : (r < .45 ? pondWaterRegion() : (r < .85 ? riverWaterRegion() : seaWaterRegion()));
     const start = new THREE.Vector3(c.water.xmin + Math.random()*(c.water.xmax-c.water.xmin), WATER_Y, c.water.exitZ);
     g.position.copy(start);
     critterLine(c, start, randWaterPoint(c.water), c.speed);
