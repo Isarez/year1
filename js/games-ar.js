@@ -695,6 +695,7 @@ function loadHouseMode(){
   if(housePromise) return housePromise;
   const v = (window.APP_ASSET_VER || '');
   housePromise = loadScriptOnce('js/vendor/three.min.js'+v)
+    .then(()=>loadScriptOnce('js/house-furniture.js'+v))   /* คลังเฟอร์นิเจอร์ — house.js เรียกใช้ */
     .then(()=>loadScriptOnce('js/house.js'+v))
     .catch(err=>{ housePromise = null; throw err; });
   return housePromise;
