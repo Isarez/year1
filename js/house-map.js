@@ -205,6 +205,11 @@ function lotDoorTile(lot){ return {x: Math.round((lot.x0+lot.x1)/2), z: lot.z1 +
 /* กลุ่มต้นไม้ฉากตายตัวนอกกรอบบ้าน: [x กลางกลุ่ม, z กลางกลุ่ม, จำนวนต้น, ชนิด]
    ฉากทั้งหมดนี้ถูก "รวม geometry" เป็นก้อนต่อโซน (ดู buildStaticScenery) จึงใส่ได้เยอะโดยไม่กิน draw call */
 const WILD_GROVES = [
+  /* แนวป่าปิดขอบเหนือของฟาร์ม (หลังคอกสัตว์) — เดิมเป็นหญ้าโล่งยาวจนดูโหวง */
+  [15,0,3,'pine'], [17,1,2,'tree-round'], [14,2,3,'pine'], [16,3,2,'tree'],
+  [18,1,2,'pine'], [15,5,2,'tree-round'], [14,7,2,'pine'], [16,8,2,'tree-round'],
+
+
   /* ป่าใต้แนวพุ่ม (ฝั่งบ้าน z≥21) */
   [2,24,3,'pine'], [7,26,3,'tree-round'], [12,23,2,'pine'], [4,28,2,'tree-round'], [14,27,2,'pine'],
   [2,33,3,'pine'], [8,34,3,'tree-round'], [13,32,2,'pine'], [5,38,3,'tree-round'], [11,39,3,'pine'],
@@ -303,7 +308,8 @@ const FISH_RACKS = [[54,21,0],[54,23,0]];
 const ANIMAL_PENS = [
   {id:'pen-cow',   x0:2,  x1:9,  z0:0, z1:3, soil:false, gate:[[9,2]]},
   {id:'pen-sheep', x0:5,  x1:11, z0:5, z1:9, soil:false, gate:[[11,7]]},
-  {id:'pen-pig',   x0:22, x1:26, z0:0, z1:4, soil:true,  gate:[[22,2]]},
+  /* คอกหมู: ขยายให้ใหญ่ขึ้นและเลื่อนขอบตะวันตกมาชิดทางเดินฟาร์ม (x19-20) ประตูจึงเปิดออกที่ทางเดินพอดี */
+  {id:'pen-pig',   x0:21, x1:27, z0:0, z1:5, soil:true,  gate:[[21,2],[21,3]]},   /* x28-29 เป็นแม่น้ำ ขยายเกินนี้ไม่ได้ */
   {id:'pen-chick', x0:21, x1:26, z0:5, z1:8, soil:true,  gate:[[21,6]]},
 ];
 function penAt(x, z){

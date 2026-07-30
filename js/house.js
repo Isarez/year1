@@ -62,7 +62,7 @@ function isSceneryPropTile(x, z){
 const seatMap = new Map();
 const SEAT_ITEMS = {
   bench: {id:'scene-bench', name:'ม้านั่ง',      sit:{sy:.56, dz:-.06}},
-  deck:  {id:'scene-deck',  name:'เก้าอี้ผ้าใบ', sit:{sy:.54, dz:-.04, lean:-.4, legBend:-.5}},
+  deck:  {id:'scene-deck',  name:'เก้าอี้ผ้าใบ', sit:{sy:.58, dz:.16, lean:-.36, legBend:-.5}},   /* dz บวก = นั่งค่อนมาทางหน้าเก้าอี้ ไม่งั้นพอเอนแล้วหลังทะลุพนัก */
 };
 const SEAT_FWD = [[0,1],[1,0],[0,-1],[-1,0]];   /* ทิศ "หน้า" ของที่นั่งตาม rot (local +z) */
 function addSeatSpot(x, z, rot, kind){ seatMap.set(x+','+z, {x, z, rot:(rot||0)%4, kind}); }
@@ -1727,8 +1727,14 @@ function buildButterfly(pal){
    ทุ่งใหญ่ 2 ผืนได้เต็มฝูง ส่วนทุ่งรอบลานน้ำพุเป็นสวนกลางเมือง เอาแค่ 3 ตัวพอไม่ให้รก */
 function inField(x, z, b){ return x>=b.x0 && x<=b.x1 && z>=b.z0 && z<=b.z1; }
 function butterflyZones(){
+  /* ทุ่งรอบลานน้ำพุแบ่งเป็น 4 มุม มุมละ 1 ตัว — ผีเสื้อจะได้กระจายรอบลาน
+     ไม่ไปกระจุกอยู่มุมเดียวกันหมด (ทุ่งใหญ่ 2 ผืนไม่ต้องแบ่ง พื้นที่กว้างพออยู่แล้ว) */
+  const py = PLAZA_YARD, mx = (py.x0 + py.x1) >> 1, mz = (py.z0 + py.z1) >> 1;
   return [ {box:FLOWER_FIELD, max:BUTTERFLY_MAX}, {box:FLOWER_MEADOW, max:BUTTERFLY_MAX},
-           {box:PLAZA_YARD,   max:3} ];
+           {box:{x0:py.x0, x1:mx,     z0:py.z0, z1:mz    }, max:1},
+           {box:{x0:mx+1,   x1:py.x1, z0:py.z0, z1:mz    }, max:1},
+           {box:{x0:py.x0,  x1:mx,    z0:mz+1,  z1:py.z1 }, max:1},
+           {box:{x0:mx+1,   x1:py.x1, z0:mz+1,  z1:py.z1 }, max:1} ];
 }
 function butterflySpots(){
   if(!bflySpots){
@@ -1922,7 +1928,13 @@ function extractFx(g){
 function mergeCollectFx(g, parts, key){ extractFx(g); mergeCollect(g, parts, key); }
 /* prop ทั้งชิ้นที่ต้องขยับทั้งก้อน (เรือ/หุ่นไล่กา) — ยุบชิ้นส่วนภายในให้เหลือน้อย mesh แล้วไม่ merge รวมฉาก */
 function addFxProp(g, kind, opts){
-  mergeDecorGroup(g);                 /* ต้อง merge ก่อนติด tag (mergeDecorGroup ไม่ยุ่งกับกลุ่มที่มี userData) */
+  /* ⚠ mergeCollect อบ matrixWorld ลงไปใน geometry — ถ้า merge ตอนกลุ่มถูกวางตำแหน่งไว้แล้ว
+     ตำแหน่งจะถูกนับซ้ำสองรอบ (ของกระเด็นไปไกลเป็นเท่าตัวจนหายจากแผนที่ — เคยทำเรือหายมาแล้ว)
+     จึงต้องย้ายกลับไปที่จุดกำเนิดก่อน merge แล้วค่อยคืนตำแหน่งเดิม */
+  const p = g.position.clone(), q = g.quaternion.clone();
+  g.position.set(0,0,0); g.quaternion.identity(); g.updateMatrixWorld(true);
+  mergeDecorGroup(g);
+  g.position.copy(p); g.quaternion.copy(q); g.updateMatrixWorld(true);
   fxTag(g, kind, opts); registerFx(g);
 }
 function updateSceneryFx(t, dt){
@@ -2547,12 +2559,16 @@ function buildFlagPole(){
   const knob = sphere(.11, 0xffd54f, 10); knob.position.y = 3.56; g.add(knob);
   /* ธงชาติไทย: แดง-ขาว-น้ำเงิน-ขาว-แดง (แถบน้ำเงินกลางหนาเป็น 2 เท่า) วางเรียงลงมาจากยอดเสา */
   const STRIPES = [[0xef5f5f,.1],[0xfdfbf5,.1],[0x3f5aa6,.2],[0xfdfbf5,.1],[0xef5f5f,.1]];
+  /* ห่อทั้งผืนไว้ในกลุ่มที่จุดหมุนอยู่ "ที่เสา" ธงจึงสะบัดรอบเสาได้ทั้งผืนพร้อมกัน
+     (ถ้าติดธง fx ทีละแถบ แต่ละแถบจะหมุนรอบตัวเองจนธงฉีกออกจากกัน) */
+  const cloth = new THREE.Group();
   let fy = 3.35;
   STRIPES.forEach(([c,h])=>{
     const st = box(.9, h, .04, c, .01);
     st.position.set(.52, fy - h/2, 0);
-    g.add(st); fy -= h;
+    cloth.add(st); fy -= h;
   });
+  fxTag(cloth, 'flag'); g.add(cloth);
   return g;
 }
 /* ---------- กระท่อมช่างไม้ (ป่าทิศเหนือ) ----------
@@ -2771,6 +2787,7 @@ function buildFishRack(twoBars){
 /* NPC นั่งตกปลาที่ปลายท่า (นั่งห้อยขา + คันเบ็ด + สายเอ็น + ทุ่นลอยน้ำ) */
 function buildFisherNpc(){
   const g = new THREE.Group();
+  g.scale.setScalar(1.28);              /* เดิมตัวเล็กกว่าชาวบ้านคนอื่นชัดเจน — ขยายให้สัดส่วนเท่ากัน */
   const hip = box(.34,.22,.3,0x5aa9e6,.08); hip.position.set(0,.42,0); g.add(hip);
   const torso = box(.38,.44,.32,0xffd54f,.1); torso.position.set(-.02,.72,0); g.add(torso);
   [-1,1].forEach(s=>{                                    /* ขาห้อยลงน้ำ */
@@ -3572,14 +3589,21 @@ function buildWorld(){
   const waterMesh = new THREE.Mesh(new THREE.BoxGeometry(RIVER_X.length, .14, OUT_D), waterMat);
   waterMesh.position.set(outWX((RIVER_X[0]+RIVER_X[RIVER_X.length-1])/2), -.25, 0);
   worldGroup.add(waterMesh);
-  fxTag(waterMesh, 'water', {ph:0}); registerFx(waterMesh);
+  /* วงคลื่นในแม่น้ำ — แม่น้ำ/บ่อไม่ขยับผิวน้ำแล้ว (ยกทั้งผืนแล้วเห็นรอยต่อกับตลิ่ง) ใช้วงคลื่นแทน */
+  for(let i=0; i<4; i++){
+    const rv = new THREE.Mesh(new THREE.RingGeometry(.35, .46, 22),
+      new THREE.MeshBasicMaterial({color:0xdff5ff, transparent:true, opacity:.3, depthWrite:false}));
+    rv.rotation.x = -Math.PI/2;
+    rv.position.set(outWX(RIVER_X[0]) + (i%2 ? .4 : -.1), -.16, outWZ(8 + i*15));
+    worldGroup.add(rv);
+    fxTag(rv, 'ripple', {ph:i/4}); registerFx(rv);
+  }
   /* บ่อน้ำใหญ่ทิศเหนือ: วงรีแผ่นเดียว (ทำใหญ่กว่าขอบช่องน้ำเล็กน้อย ให้บล็อกหญ้าริมบ่อบังขอบเนียนๆ) */
   const pondGeo = new THREE.CylinderGeometry(1, 1, .14, 40);
   pondGeo.scale(POND.rx + .8, 1, POND.rz + .8);
   const pond = new THREE.Mesh(pondGeo, waterMat);
   pond.position.set(outWX(POND.cx), -.25, outWZ(POND.cz));
   worldGroup.add(pond);
-  fxTag(pond, 'water', {ph:2.1}); registerFx(pond);
   /* วงคลื่นบนบ่อน้ำ 3 วง ขยายออกแล้วจางหาย ให้ผิวน้ำดูไม่นิ่งสนิท */
   for(let i=0; i<3; i++){
     const rp = new THREE.Mesh(new THREE.RingGeometry(.5, .62, 26),
@@ -3594,7 +3618,6 @@ function buildWorld(){
   /* ต่ำกว่าผืนอื่นนิดเดียว กันผิวน้ำซ้อนกันแล้วกะพริบ (z-fighting) ตรงรอยต่อบ่อ/คลองหลัก */
   canal.position.set(outWX((CANAL_X0 + CANAL_X1)/2), -.254, outWZ((CANAL_Z[0] + CANAL_Z[CANAL_Z.length-1])/2));
   worldGroup.add(canal);
-  fxTag(canal, 'water', {ph:4.2}); registerFx(canal);
   /* ทะเลมุมตะวันออกเฉียงใต้: ผืนสี่เหลี่ยมใหญ่ใต้ระดับหญ้า — ชายฝั่งจริงเกิดจากบล็อกทราย/หญ้าที่บังไว้ */
   /* กว้าง/ลึกพอดีขอบแผนที่เป๊ะ (ล้นออกไปจะเห็นผืนน้ำลอยพ้นขอบเกาะ) */
   const seaW = OUT_W - VILLAGE_X0, seaD = SEA_MAX_Z + 1;
@@ -4770,9 +4793,9 @@ function updateFx(now, dt){
 }
 
 /* ---------- สัตว์ตัวเล็กเดินเข้า-ออกฉาก (นก/กระต่าย/กระรอก) ให้โลกมีชีวิต ---------- */
-const CRITTER_MAX = 8;               /* เฟส 4: แผนที่ 40×30 กว้างขึ้นอีก เพิ่มสัตว์ป่าให้โลกไม่โหวง */
+const CRITTER_MAX = 18;              /* แผนที่ 68×68 กว้างมาก ถ้ามีน้อยกว่านี้จะนานๆ ทีถึงจะเจอสัตว์สักตัว */
 const critters = [];
-let critterSpawnT = 3;
+let critterSpawnT = 1;
 let outEdgeTiles = null;
 
 function collectEdgeTiles(){
@@ -4922,12 +4945,14 @@ function seaWaterRegion(){    /* ทะเลกว้าง — ว่ายเ
 
 function spawnCritter(){
   if(!outEdgeTiles || !outEdgeTiles.length) return;
-  const types = ['rabbit','bird','squirrel','chicken','cat','duck','fish'];
+  /* ถ่วงน้ำหนักให้ นก/เป็ด/ปลา ออกบ่อยกว่าสัตว์บก (ผู้ใช้บอกว่าเจอน้อยเกินไป) */
+  const types = ['bird','bird','bird','duck','duck','duck','fish','fish','fish',
+                 'rabbit','squirrel','chicken','cat'];
   const type = types[(Math.random()*types.length)|0];
   const domain = CRITTER_DOMAIN[type];
   const g = buildCritter(type);
   const c = {type, domain, group:g, tile:null, path:[], seg:0, segT:0, segFrom:null,
-             state:'enter', mode:'line', pauseT:0, legs: 2+((Math.random()*3)|0),
+             state:'enter', mode:'line', pauseT:0, legs: 5+((Math.random()*5)|0),   /* อยู่ในฉากนานขึ้นก่อนเดินออก */
              speed: {squirrel:3.2, rabbit:2.3, bird:2.6, chicken:2, cat:2.4, duck:1.4, fish:2.2}[type],
              t: Math.random()*10};
   if(domain==='air'){
@@ -4938,7 +4963,7 @@ function spawnCritter(){
     critterLine(c, g.position.clone(), critterTileV(land), 3.2, .3);
   }else if(domain==='water'){
     const r = Math.random();
-    c.water = r < .34 ? pondWaterRegion() : (r < .55 ? seaWaterRegion() : riverWaterRegion());
+    c.water = r < .45 ? pondWaterRegion() : (r < .85 ? riverWaterRegion() : seaWaterRegion());   /* เน้นบึงกับแม่น้ำที่เด็กเดินผ่านบ่อย */
     const start = new THREE.Vector3(c.water.xmin + Math.random()*(c.water.xmax-c.water.xmin), WATER_Y, c.water.exitZ);
     g.position.copy(start);
     critterLine(c, start, randWaterPoint(c.water), c.speed);
@@ -5309,7 +5334,7 @@ function updateCritters(dt, t){
   critterSpawnT -= dt;
   if(critters.length < CRITTER_MAX && critterSpawnT <= 0){
     spawnCritter();
-    critterSpawnT = 6 + Math.random()*8;
+    critterSpawnT = 1.8 + Math.random()*2.6;
   }
   for(let i=critters.length-1; i>=0; i--){
     const c = critters[i];
