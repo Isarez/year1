@@ -6249,8 +6249,16 @@ function stopHouseGame(){
 let hbRenderer=null, hbScene=null, hbCam=null, hbChar=null, hbPet=null, hbPetName='';
 let hbShadC=null, hbShadP=null;
 let hbRaf=null, hbLast=0, hbT=0, hbKey='';
-const HB_FRAME_MS = 1000/30;      /* เพดานเฟรมเรตของเพื่อนซี้หน้าหลัก */
+/* เฟรมเรตของเพื่อนซี้หน้าหลัก: ตอน "ขยับแรง" (โบกมือ/กระโดด/สัตว์เด้ง) ปล่อยเต็มจอ 60fps
+   ให้ลื่นจริง ส่วนตอนยืนเฉยๆ (หายใจ/เอียงหัว = คลื่นช้ามาก) 24fps ตาแทบแยกไม่ออก
+   แต่ประหยัดแบตกว่ามาก (นี่เป็น WebGL context ที่ 2 ที่เปิดค้างอยู่บนหน้าหลัก) */
+const HB_IDLE_MS = 1000/24;
+/* ease in-out นุ่มๆ (smoothstep) — ใช้แทนการไล่ค่าแบบเส้นตรงที่หัว-ท้ายจังหวะจะกระตุก */
+function hbEase(x){ x = x<0 ? 0 : (x>1 ? 1 : x); return x*x*(3-2*x); }
+/* ไล่ค่าเข้าหาเป้าหมายแบบไม่ขึ้นกับเฟรมเรต — สลับ 24↔60fps แล้วความเร็วยังเท่าเดิม ไม่กระตุก */
+function hbDamp(cur, tgt, lambda, dt){ return cur + (tgt-cur)*(1 - Math.exp(-lambda*dt)); }
 let hbWaveT=2, hbWaveK=0, hbHopT=1.6, hbHopK=0, hbJumpK=0, hbMsgT=0, hbSparkT=3;
+let hbArmL=0, hbArmR=0, hbHeadZ=0, hbPetHeadZ=0;   /* ค่าปัจจุบันของแขน/หัว ใช้ไล่เข้าหาเป้าแบบนุ่มๆ */
 const HB_W=280, HB_H=190, HB_WAVE_DUR=1.6, HB_HOP_DUR=.55;
 function hbMsgs(){
   const m = [
@@ -6318,43 +6326,71 @@ function hbSpark(emoji){
 function hbLoop(now){
   if(homeView.hidden || $('house-buddy').hidden || document.hidden){ hbRaf = null; return; }
   hbRaf = requestAnimationFrame(hbLoop);
-  /* เพื่อนซี้เป็นตัวการ์ตูนเล็กๆ ยืนเล่นอยู่เฉยๆ — วาด ~30fps พอ ไม่ต้องกิน GPU เต็ม 60fps
-     ตลอดเวลาที่หน้าหลักเปิดอยู่ (WebGL context ที่ 2 กินแบตบน iPad ชัดเจน) */
-  if(now - hbLast < HB_FRAME_MS) return;
+  /* กำลังมีท่าใหญ่อยู่ไหม → วาดทุกเฟรม ไม่งั้นจำกัดที่ 24fps */
+  const busy = hbWaveK>0 || hbJumpK>0 || hbHopK>0;
+  if(!busy && now - hbLast < HB_IDLE_MS) return;
   const dt = Math.min(.05, (now - hbLast)/1000 || .016);
   hbLast = now; hbT += dt;
   const t = hbT;
+
   if(hbChar){
     const u = hbChar.userData;
     u.rig.position.y = Math.sin(t*2.4)*.03;                       /* หายใจ */
-    u.head.rotation.z = Math.sin(t*1.1)*.05;                      /* เอียงหัวน่ารักๆ */
+    u.rig.rotation.z = Math.sin(t*.75)*.018;                      /* โยกตัวช้าๆ ให้ดูมีชีวิต */
+
     hbWaveT -= dt;
     if(hbWaveT<=0 && hbWaveK<=0){ hbWaveK = HB_WAVE_DUR; hbWaveT = 5 + Math.random()*4; }
-    u.arms[0].rotation.z = -.16 - Math.sin(t*2.4)*.03;
+    const swing = Math.sin(t*2.4)*.03;                            /* แขนแกว่งตามจังหวะหายใจ */
+    let armLT = -.16 - swing, armRT = .16 + swing, headT = Math.sin(t*1.1)*.05;
     if(hbWaveK>0){                                                /* โบกมือทักทาย */
-      hbWaveK -= dt;
-      const k = Math.max(0, Math.min(1, (HB_WAVE_DUR-hbWaveK)*4, hbWaveK*4));
-      u.arms[1].rotation.z = (1-k)*(.16+Math.sin(t*2.4)*.03) + k*(2.35+Math.sin(t*14)*.4);
-    }else{
-      u.arms[1].rotation.z = .16 + Math.sin(t*2.4)*.03;
+      hbWaveK = Math.max(0, hbWaveK - dt);
+      /* ยกแขนขึ้น-ลงด้วย ease (เดิมเป็นเส้นตรง หัว-ท้ายจะสะดุด) แล้วค่อยสะบัดมือ */
+      const k = hbEase(Math.min((HB_WAVE_DUR-hbWaveK)*2.6, hbWaveK*2.6));
+      armRT = (1-k)*armRT + k*(2.35 + Math.sin(t*13)*.38);
+      headT += k*.07;                                             /* เอียงหัวเข้าหามือที่โบก */
     }
+    /* ไล่เข้าหาเป้าแบบ exponential — ท่าเปลี่ยนกลางคันก็ไหลต่อเนื่อง ไม่กระชาก */
+    hbArmL  = hbDamp(hbArmL,  armLT, 16, dt);
+    hbArmR  = hbDamp(hbArmR,  armRT, 16, dt);
+    hbHeadZ = hbDamp(hbHeadZ, headT, 10, dt);
+    u.arms[0].rotation.z = hbArmL;
+    u.arms[1].rotation.z = hbArmR;
+    u.head.rotation.z = hbHeadZ;
+
     if(hbJumpK>0){                                                /* กระโดดดีใจตอนแตะ */
       hbJumpK = Math.max(0, hbJumpK - dt*2.4);
-      hbChar.position.y = Math.sin((1-hbJumpK)*Math.PI)*.3;
+      const p = 1 - hbJumpK;                                      /* 0 → 1 ตลอดจังหวะกระโดด */
+      hbChar.position.y = Math.sin(p*Math.PI)*.32;
+      const sq = Math.sin(p*Math.PI*2)*.07;                       /* ยืดตอนพุ่งขึ้น หดตอนลงพื้น */
+      hbChar.scale.set(1-sq, 1+sq, 1-sq);
+      if(hbJumpK===0){ hbChar.position.y = 0; hbChar.scale.set(1,1,1); }
     }
   }
+
   if(hbPet){
     const u = hbPet.userData.anim || {};
     hbHopT -= dt;
     if(hbHopT<=0 && hbHopK<=0){ hbHopT = 1.8 + Math.random()*2.4; hbHopK = HB_HOP_DUR; }
     if(hbHopK>0){                                                 /* เด้งหยองๆ เป็นพักๆ */
       hbHopK = Math.max(0, hbHopK - dt);
-      hbPet.position.y = Math.sin((1-hbHopK/HB_HOP_DUR)*Math.PI)*.15;
-    }else hbPet.position.y = 0;
-    if(u.tail) u.tail.rotation.z = Math.sin(t*8)*.3;
-    if(u.wings) u.wings.forEach(w=>{ w.rotation.z = (hbHopK>0 ? Math.sin(t*26)*.6 : Math.sin(t*3)*.1)*w.userData.side; });
-    if(u.head) u.head.rotation.z = Math.sin(t*1.4)*.06;
+      const p = 1 - hbHopK/HB_HOP_DUR;
+      hbPet.position.y = Math.sin(p*Math.PI)*.16;
+      const sq = Math.sin(p*Math.PI*2)*.09;
+      hbPet.scale.set(1-sq, 1+sq, 1-sq);
+      hbPet.rotation.x = -Math.sin(p*Math.PI)*.12;                /* เงยหน้าตอนลอย */
+      if(hbHopK===0){ hbPet.position.y = 0; hbPet.scale.set(1,1,1); hbPet.rotation.x = 0; }
+    }
+    if(u.tail) u.tail.rotation.z = Math.sin(t*7)*.3 + Math.sin(t*11.3)*.06;   /* หางสะบัดมีจังหวะรอง */
+    if(u.wings) u.wings.forEach(w=>{
+      const flap = hbHopK>0 ? Math.sin(t*22)*.6 : Math.sin(t*3)*.1;
+      w.rotation.z = hbDamp(w.rotation.z, flap*w.userData.side, 24, dt);      /* ปีกไม่กระตุกตอนเริ่ม/หยุดเด้ง */
+    });
+    if(u.head){
+      hbPetHeadZ = hbDamp(hbPetHeadZ, Math.sin(t*1.4)*.06, 10, dt);
+      u.head.rotation.z = hbPetHeadZ;
+    }
   }
+
   hbMsgT -= dt;                                                   /* สลับข้อความให้กำลังใจ */
   if(hbMsgT<=0){ hbShowMsg(); hbMsgT = 8; }
   hbSparkT -= dt;                                                 /* ประกายวิบวับรอบตัว */
@@ -6396,6 +6432,9 @@ function houseBuddyRefresh(){
     }
     hbShadP.visible = !!hbPet;
     if(hbPet) hbShadP.position.set(hbPet.position.x, .01, hbPet.position.z);
+    /* สร้างตัวใหม่แล้ว → ล้างค่าที่ค้างจากตัวเก่า ไม่งั้นเฟรมแรกจะเห็นแขน/หัวไหลจากท่าเดิม */
+    hbArmL = hbArmR = hbHeadZ = hbPetHeadZ = 0;
+    hbWaveK = hbJumpK = hbHopK = 0;
   }
   hbMsgT = .5;                            /* โชว์ข้อความแรกไวๆ หลังกลับเข้าหน้าหลัก */
   if(!hbRaf){ hbLast = performance.now(); hbRaf = requestAnimationFrame(hbLoop); }
