@@ -1855,12 +1855,13 @@ function updateDecorWind(t, dt){
     const cx = charGroup.position.x, cz = charGroup.position.z;
     for(let i=0; i<decorGroups.out.length; i++){
       const g = decorGroups.out[i], d = g.userData.deco;
-      if(!d || (!d.item.leafy && d.item.id !== 'balloon')) continue;
+      if(!d || (!d.item.leafy && d.item.id !== 'balloon' && !d.item.rock)) continue;
       if(Math.hypot(g.position.x-cx, g.position.z-cz) > 20) continue;
       if(g.userData.windPh == null){
         g.userData.windPh = (g.position.x*1.7 + g.position.z*2.3) % 6.28;   /* เฟสคงที่ต่อชิ้น ไม่ไหวพร้อมกันทั้งสวน */
         g.userData.windBaseY = g.position.y;
         g.userData.windBalloon = d.item.id === 'balloon';
+        g.userData.windSwing = !!d.item.rock;      /* ชิงช้า: แกว่งที่ pivot ไม่ใช่เอนทั้งตัว */
       }
       windList.push(g);
     }
@@ -1868,7 +1869,10 @@ function updateDecorWind(t, dt){
   const s = t*.001;
   for(let i=0; i<windList.length; i++){
     const g = windList[i], ph = g.userData.windPh;
-    if(g.userData.windBalloon){                       /* ลูกโป่ง: ลอยขึ้นลง + เอียงตามลม */
+    if(g.userData.windSwing){                         /* ชิงช้า: ไกวเบาๆ ตามลมตอนไม่มีใครนั่ง */
+      const piv = g.userData.swingPiv;
+      if(piv && !(sitState && sitState.group === g)) piv.rotation.x = Math.sin(s*1.15 + ph)*.07;
+    }else if(g.userData.windBalloon){                 /* ลูกโป่ง: ลอยขึ้นลง + เอียงตามลม */
       g.position.y = g.userData.windBaseY + .09 + Math.sin(s*1.25 + ph)*.09;
       g.rotation.z = Math.sin(s*.9 + ph)*.1;
       g.rotation.x = Math.cos(s*.75 + ph)*.07;
@@ -1876,6 +1880,37 @@ function updateDecorWind(t, dt){
       g.rotation.z = Math.sin(s*.8 + ph)*.028;
       g.rotation.x = Math.sin(s*.62 + ph*1.3)*.02;
     }
+  }
+}
+
+/* ---------- ของเล่นลอยน้ำในสระ + ผิวน้ำกระเพื่อม ----------
+   สระถูกแยกออกจากก้อน merge เพื่อให้ขยับได้ (เหมือนน้ำพุ) */
+let poolFx = null;
+function addPoolFloats(g, w, d){
+  const u = { floats: [] };
+  g.traverse(o=>{ if(o.isMesh && o.geometry && Math.abs(o.position.y - .26) < .01) u.water = o; });  /* แผ่นน้ำ */
+  const ring = torus(.34, .11, 0xff8a65, 14);       /* ห่วงยางลอยน้ำ */
+  ring.rotation.x = Math.PI/2; ring.position.set(-w*.2, .34, d*.1); g.add(ring);
+  u.floats.push({m:ring, ph:0, rx:w*.22, rz:d*.22, spin:.5});
+  const ball = sphere(.24, 0xffd54f, 10);           /* ลูกบอลชายหาด */
+  ball.position.set(w*.22, .38, -d*.12); g.add(ball);
+  u.floats.push({m:ball, ph:2.1, rx:w*.2, rz:d*.18, spin:1.1});
+  g.userData.poolFx = u;
+}
+function updatePoolFx(t, dt){
+  if(!poolFx || hScene !== 'out' || !charGroup) return;
+  const near = Math.hypot(charGroup.position.x - poolFx.position.x, charGroup.position.z - poolFx.position.z) < 24;
+  if(poolFx.visible !== near) poolFx.visible = near;
+  if(!near) return;
+  const u = poolFx.userData.poolFx, s = t*.001;
+  if(u.water) u.water.position.y = .26 + Math.sin(s*1.3)*.012;      /* ผิวน้ำขยับเบาๆ */
+  for(let i=0; i<u.floats.length; i++){
+    const f = u.floats[i];
+    f.m.position.x = Math.sin(s*.32 + f.ph)*f.rx;                   /* ลอยวนช้าๆ ในสระ */
+    f.m.position.z = Math.cos(s*.26 + f.ph*1.3)*f.rz;
+    f.m.position.y = .34 + Math.sin(s*1.5 + f.ph)*.035;             /* ขึ้นลงตามคลื่น */
+    f.m.rotation.y += dt*f.spin*.5;
+    f.m.rotation.z = Math.sin(s*1.1 + f.ph)*.12;                    /* โคลงตามน้ำ */
   }
 }
 
@@ -3233,9 +3268,11 @@ function buildStaticScenery(){
   const pdk = buildPoolDeckFloor(pdW, pdD);
   pdk.position.set(outWX((POOL_DECK.x0+POOL_DECK.x1)/2), 0, outWZ((POOL_DECK.z0+POOL_DECK.z1)/2));
   mergeCollect(pdk, parts, chunkKeyOf(POOL_DECK.x0, POOL_DECK.z0));
-  const pw = buildPoolWater(POOL.x1-POOL.x0+1, POOL.z1-POOL.z0+1);
-  pw.position.set(outWX((POOL.x0+POOL.x1)/2), 0, outWZ((POOL.z0+POOL.z1)/2));
-  mergeCollect(pw, parts, chunkKeyOf(POOL.x0, POOL.z0));
+  /* สระว่ายน้ำไม่ merge — ผิวน้ำต้องกระเพื่อมได้ และมีของเล่นลอยน้ำ (ดู updatePoolFx) */
+  poolFx = buildPoolWater(POOL.x1-POOL.x0+1, POOL.z1-POOL.z0+1);
+  poolFx.position.set(outWX((POOL.x0+POOL.x1)/2), 0, outWZ((POOL.z0+POOL.z1)/2));
+  addPoolFloats(poolFx, POOL.x1-POOL.x0+1, POOL.z1-POOL.z0+1);
+  worldGroup.add(poolFx);
   POOL_PROPS.forEach(([x,z,kind])=>{
     const pp = buildPoolProp(kind);
     pp.position.set(outWX(x), 0, outWZ(z));
@@ -4322,11 +4359,30 @@ function walkToTag(gx, gz, action){
   if(!t) return;
   walkTo(t.x, t.z, {action: Object.assign({pos: tileWorld({x:gx, z:gz})}, action)});
 }
+/* ช่องที่ "อยู่ข้างๆ" เป้าหมาย (ไม่ใช่ช่องเดียวกับเป้าหมาย) และใกล้เด็กที่สุด
+   คนที่เดินไปมา (roam/route) ไม่ได้จองช่องในกริด nearestWalkable จึงคืนช่องเดียวกับตัวเขาเอง
+   ทำให้เด็กเดินเข้าไปทับ — ต้องเลือกช่องข้างเคียงเองเสมอ */
+function tileBesideTarget(gx, gz){
+  const cx = Math.round(charGroup.position.x + (OUT_W-1)/2);
+  const cz = Math.round(charGroup.position.z + (OUT_D-1)/2);
+  const cand = [];
+  [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dx,dz])=>{
+    const x = gx+dx, z = gz+dz;
+    if(x<0 || z<0 || x>=OUT_W || z>=OUT_D) return;
+    if(!isWalk(outGrid, OUT_W, OUT_D, x, z)) return;
+    cand.push({x, z, d: Math.hypot(x-cx, z-cz) + (dx && dz ? .35 : 0)});   /* ชอบช่องตรงทิศมากกว่าเฉียง */
+  });
+  if(!cand.length) return nearestWalkable(outGrid, OUT_W, OUT_D, gx, gz);
+  cand.sort((a,b)=>a.d-b.d);
+  return cand[0];
+}
 function tapNpc(def){
   const n = npcs.find(k => k.def === def); if(!n) return;
   n.hold = 14;   /* คนที่เดินไปมา: ยืนรอให้เด็กเดินมาถึงก่อน จะได้ไม่ต้องวิ่งไล่คุย */
   const gx = Math.round(n.g.position.x + (OUT_W-1)/2), gz = Math.round(n.g.position.z + (OUT_D-1)/2);
-  walkToTag(gx, gz, {type:'npc', npc:def.id});
+  const t = tileBesideTarget(gx, gz);
+  if(!t) return;
+  walkTo(t.x, t.z, {action:{type:'npc', npc:def.id, pos: tileWorld({x:gx, z:gz})}});
 }
 /* ---------- ชาวบ้านพูดคุย ----------
    หมายเหตุ: เคยให้ชาวบ้านอ่านออกเสียงประโยคด้วย Web Speech แต่โทนเสียงสังเคราะห์ไม่เข้ากับตัวการ์ตูน
@@ -6483,6 +6539,7 @@ function frame(t){
     updatePenAnimals(dt, t);
     updateNpcs(dt, t);
     updateFountainFx(t, dt);
+    updatePoolFx(t, dt);
     updateButterflies(dt, t);
     updateDecorWind(t, dt);
 
