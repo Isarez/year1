@@ -1104,10 +1104,11 @@
   </div>
 </div>
 
-<script src="js/vendor/three.min.js?v=1.20.0"></script>
 <script src="js/data.js?v=1.20.0"></script>
 <script src="js/owl-messages.js?v=1.20.0"></script>
 <script src="js/app.js?v=1.20.0"></script>
-<script src="js/house.js?v=1.20.0"></script>
+<!-- โหมด "บ้านของหนู" (three.min.js 594 KB + house.js 140 KB) โหลดแบบ lazy จาก app.js
+     เฉพาะตอนกดเข้าบ้าน หรือตอนเด็กคนนี้มีบ้านอยู่แล้ว (ต้องโชว์เพื่อนซี้หน้าหลัก)
+     ทำให้เด็กที่ไม่เคยเข้าบ้านไม่ต้องโหลด/แปลไฟล์ 734 KB ทุกครั้งที่เปิดแอป -->
 </body>
 </html>

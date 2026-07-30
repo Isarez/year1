@@ -1,3 +1,4 @@
+window.APP_ASSET_VER = '?v=1.20.0';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy — ต้องตรงกับไฟล์ version */
 /* ============================= STATE ============================= */
 let progress = {};
 let soundOn = true;
@@ -821,6 +822,7 @@ function renderHome(){
   });
   updateTally();
   if(window.houseBuddyRefresh) window.houseBuddyRefresh(); // เพื่อนซี้หน้าหลัก (js/house.js โหลดทีหลัง — ครั้งแรกสุด house.js เรียกเองตอนโหลดเสร็จ)
+  preloadHouseIfOwned();  // เด็กที่มีบ้านอยู่แล้ว → โหลดโหมดบ้านตอนว่างเพื่อให้เพื่อนซี้โผล่มา
 }
 
 /* ============================= QUIZ FLOW ============================= */
@@ -1766,7 +1768,7 @@ async function sciInitCamera(){
     const canvas = $('sci-canvas');
     sciResize = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     sciResize(); window.addEventListener('resize', sciResize);
-    sciHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    sciHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
     sciHands.setOptions({ maxNumHands:2, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
     sciHands.onResults(res=>{
       sciLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks.length) ? res.multiHandLandmarks : null;
@@ -5365,7 +5367,8 @@ function shuffleDomChildren(container){
 function loadScriptOnce(src){
   return new Promise((resolve, reject)=>{
     const s = document.createElement('script');
-    s.src = src; s.crossOrigin = 'anonymous';
+    s.src = src;
+    if(/^https?:/.test(src)) s.crossOrigin = 'anonymous';   /* ไฟล์ในโปรเจคไม่ต้องใส่ (พังบน file://) */
     s.onload = ()=>resolve();
     s.onerror = ()=>reject(new Error('โหลดสคริปต์ไม่สำเร็จ: '+src));
     document.head.appendChild(s);
@@ -5374,8 +5377,8 @@ function loadScriptOnce(src){
 function loadMediaPipeScripts(){
   if(window.Hands && window.Camera) return Promise.resolve();
   if(_mpLoadPromise) return _mpLoadPromise;
-  _mpLoadPromise = loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js')
-    .then(()=>loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'))
+  _mpLoadPromise = loadScriptOnce('js/vendor/mediapipe/hands/hands.js'+(window.APP_ASSET_VER||''))
+    .then(()=>loadScriptOnce('js/vendor/mediapipe/camera_utils/camera_utils.js'+(window.APP_ASSET_VER||'')))
     .then(()=>{ if(!window.Hands || !window.Camera) throw new Error('ไม่พบ MediaPipe Hands/Camera'); });
   return _mpLoadPromise;
 }
@@ -6272,7 +6275,7 @@ async function initHandTracking(){
     arResizeHandler();
     window.addEventListener('resize', arResizeHandler);
 
-    arHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    arHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
     arHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
     arHands.onResults(res=>{ arLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
 
@@ -6449,7 +6452,7 @@ async function startHandPlay(){
     hpResizeHandler = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     hpResizeHandler();
     window.addEventListener('resize', hpResizeHandler);
-    hpHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    hpHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
     hpHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
     hpHands.onResults(res=>{ hpLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
     hpCamera = new Camera(video, { onFrame: async ()=>{ if(hpHands){ await hpHands.send({ image:video }); } }, width:480, height:360 });
@@ -6587,6 +6590,53 @@ $('ar-camera-toggle').addEventListener('click', ()=>{
   playClick();
   toggleARCamera();
 });
+
+
+/* ============================= LAZY LOAD: โหมดบ้านของหนู (3D) =============================
+   three.min.js (594 KB) + house.js (140 KB) = 734 KB ที่เด็กส่วนใหญ่ไม่ได้ใช้ทุกครั้ง
+   จึงโหลดเมื่อจำเป็นเท่านั้น 2 กรณี:
+     1) กดปุ่มเข้าบ้าน — โหลดแล้วเปิดบ้านต่อทันที
+     2) เด็กคนนี้ "มีบ้านอยู่แล้ว" — โหลดตอนว่างเพื่อให้เพื่อนซี้หน้าหลักโผล่มาเหมือนเดิม
+   ใช้ createElement('script') (ไม่ใช่ dynamic import) จึงทำงานบน file:// ได้ตามหลักการของโปรเจค */
+let housePromise = null;
+function loadHouseMode(){
+  if(housePromise) return housePromise;
+  const v = (window.APP_ASSET_VER || '');
+  housePromise = loadScriptOnce('js/vendor/three.min.js'+v)
+    .then(()=>loadScriptOnce('js/house.js'+v))
+    .catch(err=>{ housePromise = null; throw err; });
+  return housePromise;
+}
+function childHasHouse(){
+  if(!activeChild) return false;
+  try{ return !!localStorage.getItem('p1quiz_house_'+activeChild.id); }catch(e){ return false; }
+}
+/* โหลดตอนว่าง (ไม่แย่ง first paint) ถ้าเด็กคนนี้มีบ้านอยู่แล้ว */
+function preloadHouseIfOwned(){
+  if(housePromise || !childHasHouse()) return;
+  const go = ()=>loadHouseMode().then(()=>{ if(window.houseBuddyRefresh) window.houseBuddyRefresh(); }).catch(()=>{});
+  if(window.requestIdleCallback) requestIdleCallback(go, { timeout:2500 }); else setTimeout(go, 1200);
+}
+/* ปุ่มเข้าบ้าน: ครั้งแรกโหลดสคริปต์ก่อนแล้วเปิดบ้าน ครั้งต่อไป house.js จัดการเอง */
+(function wireHouseEntry(){
+  const btn = $('house-entry-btn');
+  if(!btn) return;
+  const onFirstClick = (e)=>{
+    if(window.startHouseGame){ btn.removeEventListener('click', onFirstClick); return; }
+    e.stopImmediatePropagation();
+    btn.disabled = true;
+    showToast('\u{1F3E1}','กำลังเปิดบ้านของหนู…');
+    loadHouseMode().then(()=>{
+      btn.disabled = false;
+      btn.removeEventListener('click', onFirstClick);
+      if(window.startHouseGame) window.startHouseGame();
+    }).catch(()=>{
+      btn.disabled = false;
+      showToast('\u{1F614}','เปิดบ้าน 3D ไม่ได้ ลองเช็คการเชื่อมต่อแล้วลองใหม่นะ');
+    });
+  };
+  btn.addEventListener('click', onFirstClick);
+})();
 
 /* ============================= SOUND TOGGLE ============================= */
 const soundBtn = $('sound-toggle');

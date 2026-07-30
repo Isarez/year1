@@ -194,8 +194,23 @@ function sphere(r,hex,seg){
 let hShadows = false;
 
 /* ---------- ตัวละคร blocky ---------- */
+/* คืนหน่วยความจำ GPU ให้ครบทั้ง geometry + material + texture
+   (เดิมคืนแค่ geometry — แก้ตัวละคร/เข้า-ออกบ้านซ้ำหลายรอบแล้ว material ค้างสะสมบน iPad) */
+function disposeMaterial(m){
+  if(!m) return;
+  ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','alphaMap','aoMap'].forEach(k=>{
+    if(m[k] && m[k].dispose) m[k].dispose();
+  });
+  if(m.dispose) m.dispose();
+}
 function disposeGroup(g){
-  g.traverse(o=>{ if(o.isMesh && o.geometry) o.geometry.dispose(); });
+  if(!g) return;
+  g.traverse(o=>{
+    if(!o.isMesh) return;
+    if(o.geometry) o.geometry.dispose();
+    if(Array.isArray(o.material)) o.material.forEach(disposeMaterial);
+    else disposeMaterial(o.material);
+  });
 }
 
 /* เปลือกผมหลัก: โดมขอบมนครอบหัวเป็นก้อนเดียว — ทุกทรงต่อยอดจากเปลือกนี้แล้วเอาชิ้นเสริม
@@ -1396,7 +1411,7 @@ function spawnCritter(){
 }
 
 function removeCritter(c){
-  worldGroup.remove(c.group);
+  worldGroup.remove(c.group); disposeGroup(c.group);
   disposeGroup(c.group);
   const i = critters.indexOf(c);
   if(i>=0) critters.splice(i,1);
@@ -1737,6 +1752,7 @@ function spawnPet(cfg){
 function removePetGroup(){
   if(hPet.group){
     if(hPet.group.parent) hPet.group.parent.remove(hPet.group);
+    disposeGroup(hPet.group);
     disposeGroup(hPet.group);
     hPet.group = null;
   }
@@ -2351,6 +2367,9 @@ function syncHouseCtrls(){
 }
 
 /* ---------- bind ปุ่ม ---------- */
+/* app.js โหลดไฟล์นี้แบบ lazy ตอนกดเข้าบ้านครั้งแรก จึง expose ให้เรียกจากภายนอกได้
+   และผูก listener ของตัวเองไว้สำหรับการกดครั้งต่อๆ ไป */
+window.startHouseGame = startHouseGame;
 $('house-entry-btn').addEventListener('click', startHouseGame);
 $('house-back').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); stopHouseGame(); });
 $('house-edit-btn').addEventListener('click', ()=>{
