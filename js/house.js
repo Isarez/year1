@@ -1088,6 +1088,31 @@ function addShopEmblem(g, kind, bh){
     [-1,1].forEach(s=>{ const ea = sphere(.1,0xd9a86c,10); ea.position.set(s*.18, base+.78, 0); g.add(ea); });
     [-1,1].forEach(s=>{ const ey = sphere(.03,0x3a2f28,8); ey.position.set(s*.08, base+.64, .2); g.add(ey); });
     const mz = sphere(.09,0xf2d5a8,10); mz.position.set(0, base+.56, .18); g.add(mz);
+  } else if(kind==='game'){                         /* จอยเกมยักษ์ */
+    const pad = box(.62,.24,.34,0x7c6ce0,.1); pad.position.set(0, base+.3, 0); g.add(pad);
+    [-1,1].forEach(sd=>{ const gr = sphere(.16,0x9b8cf0,10); gr.scale.set(1,.9,1);
+      gr.position.set(sd*.3, base+.26, 0); g.add(gr); });
+    const dpV = box(.07,.05,.22,0xfffaf0,.02); dpV.position.set(-.2, base+.43, 0); g.add(dpV);
+    const dpH = box(.22,.05,.07,0xfffaf0,.02); dpH.position.set(-.2, base+.43, 0); g.add(dpH);
+    [[.16,.06],[.28,-.04]].forEach(([bx,bz])=>{ const bt = cyl(.05,.05,.05,0xff8fb3,10);
+      bt.position.set(bx, base+.44, bz); g.add(bt); });
+  } else if(kind==='pet'){                          /* รอยเท้าสัตว์ยักษ์ */
+    const pw = sphere(.26,0xf2a65a,12); pw.scale.set(1.05,.55,.9); pw.position.set(0, base+.28, 0); g.add(pw);
+    [[-.22,.24],[-.08,.36],[.08,.36],[.22,.24]].forEach(([px,pz])=>{
+      const toe = sphere(.1,0xf7c08a,10); toe.scale.set(1,.6,1); toe.position.set(px, base+.3, pz); g.add(toe);
+    });
+  } else if(kind==='furniture'){                    /* เก้าอี้นวมยักษ์ */
+    const seat = box(.56,.16,.46,0xef8354,.07); seat.position.set(0, base+.28, 0); g.add(seat);
+    const back = box(.56,.34,.14,0xef8354,.06); back.position.set(0, base+.5, -.18); g.add(back);
+    [-1,1].forEach(sd=>{ const arm = box(.12,.18,.44,0xf2a184,.05); arm.position.set(sd*.24, base+.42, 0); g.add(arm); });
+    [-1,1].forEach(sd=>[-1,1].forEach(sz=>{ const lg = cyl(.045,.045,.2,0x8f6231,6);
+      lg.position.set(sd*.22, base+.1, sz*.18); g.add(lg); }));
+  } else if(kind==='food'){                         /* ชามก๋วยเตี๋ยวยักษ์ + ตะเกียบ */
+    const bowl = cyl(.34,.2,.3,0xfffaf0,14); bowl.position.set(0, base+.2, 0); g.add(bowl);
+    const soup = cyl(.3,.3,.05,0xe8b46a,14); soup.position.set(0, base+.34, 0); g.add(soup);
+    const rim = torus(.33,.035,0xe4574a,14); rim.rotation.x = Math.PI/2; rim.position.set(0, base+.35, 0); g.add(rim);
+    [-1,1].forEach(sd=>{ const ck = cyl(.025,.025,.62,0xd9a86c,6); ck.rotation.z = .3 + sd*.08;
+      ck.rotation.x = -.25; ck.position.set(.1 + sd*.05, base+.6, -.06); g.add(ck); });
   } else if(kind==='book'){                         /* หนังสือเปิดกางเล่มโต */
     [-1,1].forEach(s=>{
       const pg = box(.46,.08,.52,0xfffaf0,.02); pg.rotation.z = -s*.3;
@@ -1136,6 +1161,64 @@ function addShopFront(g, kind, bw, bd, bh, roofHex){
     }
     const ball = sphere(.2,0xff8a65,12); ball.position.set(bw*.3,.2,front+.1); g.add(ball);
     [[0,.16],[.02,.44]].forEach((p,i)=>{ const bk = box(.28,.28,.28,[0x7fc4e8,0xffd54f][i],.04); bk.position.set(-bw*.34+p[0],p[1],front+.05); g.add(bk); });
+  }else if(kind==='game'){                          /* ตู้เกมหยอดเหรียญหน้าร้าน + ธงราวดาว */
+    const cab = box(.62,1.3,.5,0x5b4fa8,.06); cab.position.set(-bw*.28,.65,front); g.add(cab);
+    const scr = box(.46,.42,.06,0x2b2f5e,.03); scr.position.set(-bw*.28,1.0,front+.26); g.add(scr);
+    const glow = box(.36,.3,.04,0x7fe6ff,.02); glow.position.set(-bw*.28,1.0,front+.29); g.add(glow);
+    const panel = box(.5,.1,.3,0x3d3572,.04); panel.rotation.x = -.5; panel.position.set(-bw*.28,.66,front+.24); g.add(panel);
+    const stick = cyl(.03,.03,.16,0xe8e2ff,6); stick.position.set(-bw*.34,.76,front+.26); g.add(stick);
+    const knob = sphere(.06,0xff5252,8); knob.position.set(-bw*.34,.85,front+.26); g.add(knob);
+    [[-.16,0xffd54f],[-.06,0x7fc4e8]].forEach(([ox,c])=>{ const bt = cyl(.05,.05,.05,c,10);
+      bt.rotation.x = -.5; bt.position.set(-bw*.28-ox+.16,.74,front+.27); g.add(bt); });
+    [-1,1].forEach(sd=>{ const p = cyl(.04,.04,1.5,0xf7f3ee,6); p.position.set(sd*(bw/2-.1),.75,front); g.add(p); });
+    for(let i=0;i<5;i++){                            /* ธงราวรูปดาวเหนือหน้าร้าน */
+      const st2 = cone(.11,.2,[0xff8fb3,0xffd54f,0x7fc4e8,0xb388ff,0x9be7a3][i],5);
+      st2.rotation.x = Math.PI; st2.position.set(-bw/2+.4+i*(bw-.8)/4, 1.34, front); g.add(st2);
+    }
+  }else if(kind==='pet'){                           /* บ้านหมาหน้าร้าน + ลูกสัตว์ + ชามอาหาร */
+    const hs = box(.62,.5,.56,0xf7c08a,.06); hs.position.set(bw*.28,.25,front); g.add(hs);
+    const rf1 = box(.5,.09,.62,0xe07a4a,.03); rf1.rotation.z = .62; rf1.position.set(bw*.28-.16,.62,front); g.add(rf1);
+    const rf2 = box(.5,.09,.62,0xe07a4a,.03); rf2.rotation.z = -.62; rf2.position.set(bw*.28+.16,.62,front); g.add(rf2);
+    const hole = cyl(.15,.15,.1,0x8d6e63,12); hole.rotation.x = Math.PI/2; hole.position.set(bw*.28,.24,front+.3); g.add(hole);
+    const pup = sphere(.16,0xf7e3c8,12); pup.scale.set(1.15,.9,1.3);           /* ลูกหมานั่งอยู่ข้างบ้าน */
+    pup.position.set(bw*.28-.62,.16,front+.12); g.add(pup);
+    const ph = sphere(.13,0xfff0dc,12); ph.position.set(bw*.28-.62,.34,front+.22); g.add(ph);
+    [-1,1].forEach(sd=>{ const ear = sphere(.06,0xe8c9a0,8); ear.scale.set(.8,1.3,.6);
+      ear.position.set(bw*.28-.62+sd*.11,.42,front+.2); g.add(ear); });
+    [-1,1].forEach(sd=>{ const ey = sphere(.022,0x4a3b32,6); ey.position.set(bw*.28-.62+sd*.05,.36,front+.34); g.add(ey); });
+    const nose = sphere(.03,0xb4766a,6); nose.position.set(bw*.28-.62,.31,front+.35); g.add(nose);
+    const bowl = cyl(.14,.11,.09,0x7fc4e8,12); bowl.position.set(-bw*.3,.05,front+.1); g.add(bowl);
+    const food = cyl(.11,.11,.04,0xd9a86c,12); food.position.set(-bw*.3,.1,front+.1); g.add(food);
+  }else if(kind==='furniture'){                     /* โซฟาโชว์หน้าร้าน + โคมไฟตั้งพื้น + เก้าอี้ซ้อน */
+    const sofa = box(1.0,.22,.5,0xef8354,.08); sofa.position.set(-bw*.2,.3,front+.05); g.add(sofa);
+    const sback = box(1.0,.4,.16,0xef8354,.06); sback.position.set(-bw*.2,.55,front-.15); g.add(sback);
+    [-1,1].forEach(sd=>{ const arm = box(.16,.26,.5,0xf2a184,.05); arm.position.set(-bw*.2+sd*.42,.5,front+.05); g.add(arm); });
+    [-1,1].forEach(sd=>[-1,1].forEach(sz=>{ const lg = cyl(.05,.05,.2,0x8f6231,6);
+      lg.position.set(-bw*.2+sd*.4,.1,front+.05+sz*.18); g.add(lg); }));
+    const lampP = cyl(.045,.06,1.0,0xb4763a,8); lampP.position.set(bw*.3,.5,front); g.add(lampP);
+    const shade = cone(.26,.3,0xfff3c4,12); shade.position.set(bw*.3,1.12,front); g.add(shade);
+    [0,1].forEach(i=>{                                /* เก้าอี้ไม้ซ้อนกัน 2 ตัว */
+      const seat = box(.36,.07,.36,0xd9a86c,.03); seat.position.set(bw*.03,.34+i*.2,front+.24); g.add(seat);
+      const bk = box(.36,.28,.06,0xc98d4e,.03); bk.position.set(bw*.03,.5+i*.2,front+.08); g.add(bk);
+    });
+  }else if(kind==='food'){                          /* โต๊ะกินข้าวหน้าร้าน + ร่ม + ชามร้อนๆ + โคมไฟ */
+    const tTop = cyl(.36,.36,.07,0xfffaf0,14); tTop.position.set(-bw*.18,.56,front+.16); g.add(tTop);
+    const tLeg = cyl(.06,.09,.56,0xc98d4e,8); tLeg.position.set(-bw*.18,.28,front+.16); g.add(tLeg);
+    const tBase = cyl(.2,.22,.05,0xb4763a,12); tBase.position.set(-bw*.18,.03,front+.16); g.add(tBase);
+    [-1,1].forEach(sd=>{                              /* ม้านั่งกลม 2 ตัว */
+      const st3 = cyl(.14,.14,.06,0xef8354,12); st3.position.set(-bw*.18+sd*.56,.34,front+.16); g.add(st3);
+      const sl = cyl(.05,.06,.34,0xc98d4e,8); sl.position.set(-bw*.18+sd*.56,.17,front+.16); g.add(sl);
+    });
+    const bowl2 = cyl(.13,.09,.11,0xfffaf0,12); bowl2.position.set(-bw*.18,.65,front+.16); g.add(bowl2);
+    const soup2 = cyl(.11,.11,.03,0xe8b46a,12); soup2.position.set(-bw*.18,.71,front+.16); g.add(soup2);
+    [[0,.82,.055],[.05,.92,.045],[-.04,1.0,.035]].forEach(([ox,y,r])=>{      /* ไอร้อนลอยขึ้น */
+      const sm = sphere(r,0xf4f1ea,8); sm.position.set(-bw*.18+ox,y,front+.16); g.add(sm);
+    });
+    const uPole = cyl(.035,.035,1.5,0xb4763a,8); uPole.position.set(-bw*.18,.75,front+.16); g.add(uPole);
+    const uTop = cone(.62,.34,0xe4574a,14); uTop.position.set(-bw*.18,1.6,front+.16); g.add(uTop);
+    const uTop2 = cone(.66,.14,0xfffaf0,14); uTop2.position.set(-bw*.18,1.48,front+.16); g.add(uTop2);
+    const lan = cyl(.13,.13,.24,0xef8354,12); lan.position.set(bw*.34,1.06,front); g.add(lan);
+    const lanT = cyl(.05,.05,.16,0x8f6231,8); lanT.position.set(bw*.34,1.24,front); g.add(lanT);
   }else if(kind==='book'){                          /* แท่นหนังสือเปิดกางหน้าร้าน */
     const st = box(.7,.5,.44,0xa9784f,.04); st.position.set(-bw*.26,.25,front); g.add(st);
     [-1,1].forEach(s=>{ const pg = box(.34,.06,.4,0xfffaf0,.02); pg.rotation.z = -s*.22; pg.position.set(-bw*.26+s*.17,.56,front); g.add(pg); });
@@ -1174,7 +1257,7 @@ function addShopFront(g, kind, bw, bd, bh, roofHex){
     const hoop = torus(.2,.025,0x8f6231,12); hoop.rotation.x = Math.PI/2; hoop.position.set(0,.34,front+.34); g.add(hoop);
   }
   addShopEmblem(g, kind, bh);                       /* สัญลักษณ์ยักษ์บนหลังคา — มองไกลๆ ก็รู้ว่าร้านขายอะไร */
-  if(kind!=='toy'){                                 /* ร้านของเล่นมีธงราวอยู่แล้ว ไม่ต้องมีกันสาด */
+  if(kind!=='toy' && kind!=='game'){                /* ร้านของเล่น/ร้านเกมมีธงราวอยู่แล้ว ไม่ต้องมีกันสาด */
     const n = 6, sw = bw*.86/n;                     /* กันสาดลายทางเหนือประตู */
     for(let i=0;i<n;i++){
       const st = box(sw, .07, .62, i%2 ? 0xffffff : roofHex, .02);

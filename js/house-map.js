@@ -151,7 +151,7 @@ const FOUNTAIN = sRect({x0:33, x1:34, z0:17, z1:18});  /* น้ำพุกล�
    icon = อิโมจิบนป้ายร้าน (วาดรวมเป็น texture แผ่นเดียว ดู buildSignAtlas) */
 const VILLAGE_LOTS = [
   {id:'shop-bakery',  kind:'shop', shopKind:'bakery', name:'ร้านขนมปัง',   icon:'🥐', wall:0xfff2dc, roof:0xef8354, x0:20, x1:23, z0:5,  z1:7},
-  {id:'shop-toy',     kind:'shop', shopKind:'toy',    name:'ร้านของเล่น',  icon:'🧸', wall:0xffe6f0, roof:0xf28cae, x0:30, x1:33, z0:5,  z1:7},
+  {id:'shop-game',    kind:'shop', shopKind:'game',   name:'ร้านเกม',      icon:'🎮', wall:0xe9e3ff, roof:0x7c6ce0, x0:30, x1:33, z0:5,  z1:7},
   {id:'shop-book',    kind:'shop', shopKind:'book',   name:'ร้านหนังสือ',  icon:'📚', wall:0xdff1fb, roof:0x5aa9e6, x0:36, x1:39, z0:5,  z1:7},
   /* โรงพยาบาลของชุมชน (เดิมเป็นล็อตร้านผลไม้) — ล็อตใหญ่ 8×5 ตึกขาว 2 ชั้น + ลานจอดรถพยาบาล
      ร้านผลไม้ย้ายไปอยู่ท้ายแถวร้านค้าด้านล่างแทน (ล็อตเดิมเล็กเกินไปสำหรับโรงพยาบาล) */
@@ -160,7 +160,10 @@ const VILLAGE_LOTS = [
   {id:'shop-ice',     kind:'shop', shopKind:'ice',    name:'ร้านไอศกรีม',  icon:'🍦', wall:0xfff6c9, roof:0xffc857, x0:20, x1:23, z0:12, z1:14},
   {id:'shop-flower',  kind:'shop', shopKind:'flower', name:'ร้านดอกไม้',   icon:'💐', wall:0xf0e4ff, roof:0xb388ff, x0:46, x1:49, z0:12, z1:14},
   {id:'shop-fruit',   kind:'shop', shopKind:'fruit',  name:'ร้านผลไม้',    icon:'🍎', wall:0xe4f7dd, roof:0x6fbf73, x0:51, x1:54, z0:12, z1:14},
-  {id:'home-1',       kind:'home', style:'gable',     name:'บ้านเพื่อนบ้าน', icon:'🏠', wall:0xfff2dc, roof:0xe36f5c, x0:20, x1:23, z0:20, z1:22},
+  /* ร้านใหม่ฝั่งตะวันออกของลานน้ำพุ (พื้นที่ว่างเดิม ประตูออกทางถนนเส้นล่าง) */
+  {id:'shop-furniture', kind:'shop', shopKind:'furniture', name:'ร้านเฟอร์นิเจอร์', icon:'🛋️', wall:0xf7ecda, roof:0xb4763a, x0:51, x1:54, z0:16, z1:18},
+  {id:'shop-food',      kind:'shop', shopKind:'food',      name:'ร้านอาหาร',       icon:'🍜', wall:0xfff4e2, roof:0xe4574a, x0:51, x1:54, z0:23, z1:25},
+  {id:'shop-pet',     kind:'shop', shopKind:'pet',    name:'ร้านสัตว์เลี้ยง', icon:'🐾', wall:0xfff0e0, roof:0xf2a65a, x0:20, x1:23, z0:20, z1:22},
   /* บ้านหลังใหญ่ของท่านเทศมนตรี (เดิม home-2 บ้านฟ้าหลังเล็ก) — ล็อตกว้างขึ้นเป็น 5×4 ให้สมฐานะ */
   {id:'mayor-house',  kind:'mayor', name:'บ้านท่านเทศมนตรี', icon:'🏛️', desc:'บ้านหลังใหญ่ที่สุดในชุมชน มีเสาสูงกับหอนาฬิกาด้วย',
    wall:0xfff6ea, roof:0x6f86c9, x0:19, x1:23, z0:29, z1:32},
@@ -487,10 +490,22 @@ const NPC_DEFS = [
    look:{girl:true, skin:0, shirt:0xffd54f, pants:0xf7f3ee, hair:1, hairC:2, hat:'cook', prop:'tray', apron:true},
    lines:['ขนมปังเพิ่งออกจากเตาเลยนะ หอมมาก!', 'วันนี้อยากได้ขนมปังรูปอะไรดีจ๊ะ'],
    quest:'ช่วยพี่นับขนมปังในถาดหน่อยได้ไหม'},
-  {id:'npc-toy',    name:'พี่ต้น',    icon:'🧸', job:'vendor', lot:'shop-toy', side:1,
-   look:{skin:1, shirt:0xf28cae, pants:0x5aa9e6, hair:0, hairC:0, hat:'cap', prop:'ball'},
-   lines:['ของเล่นใหม่มาแล้ว มาดูก่อนสิ!', 'หนูชอบตุ๊กตาตัวไหนมากที่สุดจ๊ะ'],
-   quest:'มาเล่นเกมจับคู่ของเล่นกับพี่ไหม'},
+  {id:'npc-game',   name:'พี่ต้น',    icon:'🎮', job:'vendor', lot:'shop-game', side:1,
+   look:{skin:1, shirt:0x9b8cf0, pants:0x4a4a6a, hair:0, hairC:0, hat:null, prop:null},
+   lines:['เกมใหม่มาแล้วนะ มาลองเล่นกันไหม', 'เล่นเกมแล้วอย่าลืมพักสายตาด้วยนะ'],
+   quest:'มาแข่งเกมทายภาพกับพี่ไหม'},
+  {id:'npc-pet',    name:'พี่ปุย',    icon:'🐾', job:'vendor', lot:'shop-pet', side:1,
+   look:{skin:0, shirt:0xffb877, pants:0x6d4c41, hair:2, hairC:2, hat:null, prop:null},
+   lines:['ที่ร้านมีลูกหมาลูกแมวน่ารักเยอะเลย', 'เลี้ยงสัตว์ต้องให้อาหารกับน้ำทุกวันนะ'],
+   quest:'ช่วยพี่นับลูกสัตว์ในร้านหน่อยได้ไหม'},
+  {id:'npc-furniture', name:'ลุงเก้าอี้', icon:'🛋️', job:'vendor', lot:'shop-furniture', side:1,
+   look:{skin:3, shirt:0xc98d4e, pants:0x5d4037, hair:4, hairC:1, hat:null, prop:null},
+   lines:['โต๊ะเก้าอี้ของลุงทำจากไม้จริงทั้งหมดเลย', 'อยากได้ของแต่งบ้านแบบไหน บอกลุงได้เลย'],
+   quest:'ทายซิว่าเก้าอี้ตัวไหนสูงที่สุด'},
+  {id:'npc-food',   name:'ป้าอิ่ม',    icon:'🍜', job:'vendor', lot:'shop-food', side:1,
+   look:{girl:true, skin:2, shirt:0xef8354, pants:0xfff3e0, hair:2, hairC:0, hat:null, prop:null, apron:true},
+   lines:['ก๋วยเตี๋ยวร้อนๆ ของป้าอร่อยที่สุดในเมืองเลย', 'กินข้าวให้ครบทุกมื้อนะหนู'],
+   quest:'ช่วยป้านับชามในร้านหน่อยได้ไหมจ๊ะ'},
   {id:'npc-book',   name:'พี่แก้ว',   icon:'📚', job:'vendor', lot:'shop-book', side:1,
    look:{girl:true, skin:0, shirt:0x5aa9e6, pants:0x4a6fa5, hair:2, hairC:1, hat:null, prop:'book', glasses:true},
    lines:['หนังสือนิทานเล่มใหม่มาถึงแล้วนะ', 'อ่านหนังสือวันละนิด เก่งขึ้นทุกวันเลย'],
