@@ -35,7 +35,7 @@ const {
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
-  FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
+  FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, FOOD_DECK, FOOD_FLOWER_COL, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
   NPC_STAND, QUEST_BOARD, LAMP_FIXED, LAMP_SPOTS, LAMP_SET, HEDGE_LINES,
   HEDGE_SET, HEDGE_TILES, isBridgeZ, isFenceTile, inHomeZone, clampHomeTile,
@@ -642,6 +642,8 @@ function wildPlantable(x, z, tall, plazaPad){
   if(isVillageRoadTile(x, z)) return false;
   if(inBox(PLAZA, x, z, pp) || inBox(PLAZA2, x, z, pp)) return false;  /* ลานกลางชุมชน/ลานกิจกรรม + ขอบลาน (ปกติ 2 ช่อง) */
   if(inPlazaYard(x, z)) return false;                            /* กรอบลานน้ำพุจัดวางเองทั้งหมด ไม่ให้ของสุ่มงอกแทรก */
+  if(inBox(FOOD_DECK, x, z)) return false;                      /* ลานโต๊ะหน้าร้านอาหาร — ต้องโล่ง เดินนั่งได้ */
+  if(inBox(FOOD_FLOWER_COL, x, z)) return false;                /* แถวข้างลาน เอาไว้ปลูกดอกไม้ล้วน ไม่เอาต้นไม้ */
   if(penAt(x, z)) return false;                                 /* คอกสัตว์ในฟาร์ม (รวมรั้ว) */
   if(isSceneryPropTile(x, z)) return false;                     /* ม้านั่ง/รถเข็น/ของในฟาร์ม/เวที */
   if(lotAt(x, z, 1)) return false;                              /* ล็อตอาคาร + ขอบล็อต 1 ช่อง (ให้เดินรอบได้) */
@@ -1266,6 +1268,29 @@ function addShopFront(g, kind, bw, bd, bh, roofHex){
   }
 }
 
+/* ป้ายเมนูทรงสามเหลี่ยมตั้งพื้น (sandwich board) — กางเป็นตัว A มีกระดานเขียนเมนูทั้ง 2 ด้าน */
+function buildSandwichSign(){
+  const g = new THREE.Group();
+  [-1,1].forEach(sd=>{
+    const board = box(.9, 1.0, .07, 0xfdf6e6, .04);
+    board.rotation.x = sd*.26; board.position.set(0, .55, sd*.16); g.add(board);
+    const frame = box(.98, 1.08, .04, 0xb4763a, .04);
+    frame.rotation.x = sd*.26; frame.position.set(0, .55, sd*.19); g.add(frame);
+    /* บรรทัดเมนูเป็นแถบสีอ่อนๆ (เด็กอ่านไม่ออกก็ดูรู้ว่าเป็นป้ายเมนู) */
+    [.78,.6,.42].forEach((y,i)=>{
+      const ln = box(.5 - i*.08, .07, .03, i ? 0xd9c7a5 : 0xe4574a, .02);
+      ln.rotation.x = sd*.26; ln.position.set(0, y, sd*(.21 + (y-.55)*.26)); g.add(ln);
+    });
+  });
+  const hinge = cyl(.05,.05,.86, 0x8f6231, 8); hinge.rotation.z = Math.PI/2; hinge.position.y = 1.06; g.add(hinge);
+  [-1,1].forEach(sd=>{                       /* ขาป้าย 2 ข้าง */
+    const ft = box(.14,.08,.62, 0x8f6231, .03); ft.position.set(sd*.4, .04, 0); g.add(ft);
+  });
+  const bowl = cyl(.11,.08,.09,0xfffaf0,10); bowl.position.set(0, 1.18, 0); g.add(bowl);   /* ชามเล็กบนยอดป้าย */
+  const soup = cyl(.09,.09,.03,0xe8b46a,10); soup.position.set(0, 1.23, 0); g.add(soup);
+  return g;
+}
+
 /* ---------- ร้านอาหารหลังใหญ่กลางเมือง ----------
    ตัวอาคารกว้างเต็มล็อต + ลานโต๊ะกินข้าวยื่นออกไปทางหน้าร้าน (นอก lot จึงเดินเข้าไปนั่งได้จริง)
    โต๊ะแต่ละตัวลงทะเบียนเป็น "ที่นั่ง" ด้วย addSeatSpot เด็กจึงแตะแล้วเดินไปนั่งได้เหมือนม้านั่ง */
@@ -1302,9 +1327,10 @@ function buildRestaurant(lot){
   }
 
   /* ---- ลานโต๊ะกินข้าวหน้าร้าน (พิกัดช่องจริง → แปลงเป็นพิกัด local ของกลุ่ม) ---- */
-  const deck = box(w-.2, .06, 5.6, 0xe9d7b4, .05);
-  deck.position.set(0, .03, (lot.z1 + 3.3) - cz); g.add(deck);
-  [[lot.x0+1, lot.z1+2], [lot.x0+2, lot.z1+4], [lot.x0+1, lot.z1+6]].forEach(([tx,tz],i)=>{
+  const dz0 = FOOD_DECK.z0, dz1 = FOOD_DECK.z1;               /* ลานยาวถึง z50 ตามผังในแผนที่ */
+  const deck = box(w-.2, .06, (dz1-dz0+1) - .2, 0xe9d7b4, .05);
+  deck.position.set(0, .03, ((dz0+dz1)/2) - cz); g.add(deck);
+  [[lot.x0+1, dz0+1], [lot.x0+2, dz0+3], [lot.x0+1, dz0+5], [lot.x0+2, dz0+7]].forEach(([tx,tz],i)=>{
     const lx = tx - cx, lz = tz - cz;
     const top = cyl(.42,.42,.08,0xfffaf0,14); top.position.set(lx,.62,lz); g.add(top);
     const leg = cyl(.07,.1,.6,0xc98d4e,8);   leg.position.set(lx,.31,lz); g.add(leg);
@@ -3627,6 +3653,13 @@ function buildStaticScenery(){
     if(kind === 'chair') pp.rotation.y = Math.PI;      /* เตียงหันหน้าเข้าหาสระ */
     mergeCollectFx(pp, parts, chunkKeyOf(x, z));
   });
+  /* ป้ายเมนูสามเหลี่ยมตั้งพื้นหน้าลานร้านอาหาร */
+  {
+    const sb = buildSandwichSign();
+    sb.position.set(outWX(36), 0, outWZ(43));
+    sb.rotation.y = -.5;
+    mergeCollectFx(sb, parts, chunkKeyOf(36, 43));
+  }
   /* ---------- ซุ้มทางเดินเข้าลานน้ำพุ 3 ทาง ---------- */
   PLAZA_GATES.forEach(gt=>{
     const alongX = gt.axis === 'x';
@@ -3647,6 +3680,7 @@ function buildStaticScenery(){
     if(fieldDone.has(x + ',' + z)) return false;
     if(outGrid[z][x]!==0 || isVillageRoadTile(x,z) || isPlazaTile(x,z) || lotAt(x,z,1)) return false;
     if(inPoolDeck(x,z) || isSandTile(x,z) || inHomeZone(x,z)) return false;
+    if(inBox(FOOD_DECK, x, z)) return false;                 /* ลานโต๊ะร้านอาหารต้องโล่ง */
     return !VILLAGE_LOTS.some(l=>{ const d = lotDoorTile(l); return d.x===x && d.z===z; });   /* เว้นช่องหน้าประตูบ้าน */
   };
   /* ช่องที่เป็น "ทางเดิน" ในทุ่ง — แตะแล้วต้องเดินเฉยๆ เหมือนถนนในเมือง ไม่มีเสียง/ไม่หันหน้าเข้าหา */
@@ -3668,6 +3702,11 @@ function buildStaticScenery(){
     /* เว้นช่องเป็นหย่อมๆ ให้เห็นหญ้าโล่งแทรก ดูเป็นทุ่งธรรมชาติ ไม่ใช่พรมดอกไม้ทึบทั้งผืน */
     if(((x*5 + z*11) % 5) === 0) continue;
     putField(x, z, buildFieldFlowers(x, z, {base:3, band: (x + z*2) >> 1}), true);
+  }
+  /* แถวดอกไม้ริมลานร้านอาหาร (x31) — ปลูกทุกช่องที่ว่าง ให้เป็นแนวดอกไม้ล้วนข้างลานนั่งกินข้าว */
+  for(let z=FOOD_FLOWER_COL.z0; z<=FOOD_FLOWER_COL.z1; z++) for(let x=FOOD_FLOWER_COL.x0; x<=FOOD_FLOWER_COL.x1; x++){
+    if(!fieldOpen(x, z)) continue;
+    putField(x, z, buildFieldFlowers(x, z, {base:4, band: (z*2) & 3}), true);
   }
   /* ทุ่งดอกไม้ตีขอบแผนที่ทิศใต้ฝั่งตะวันตก (ต่อแนวกับทุ่งใหญ่ทางตะวันออก) */
   for(let z=FLOWER_WEST.z0; z<=FLOWER_WEST.z1; z++) for(let x=FLOWER_WEST.x0; x<=FLOWER_WEST.x1; x++){

@@ -438,6 +438,10 @@ const FIELD_ROW_COLORS = [[0xff8fb3,0xffc1d6], [0xffd54f,0xffe9a8], [0xb388ff,0x
 /* ทุ่งดอกไม้ตีขอบแผนที่ทิศใต้ฝั่งตะวันตก — ต่อกับทุ่งใหญ่ FLOWER_MEADOW (x30-67) ให้เป็นแนวเดียวกันตลอดขอบใต้
    (ช่องที่เป็นน้ำ/ของฉาก/ทางเดิน จะถูกข้ามเองด้วย fieldOpen ตอนสร้างทุ่ง) */
 const FLOWER_WEST = {x0:0, x1:26, z0:65, z1:67};
+/* ลานโต๊ะหน้าร้านอาหาร (นอกล็อตอาคาร เดินเข้าไปนั่งได้) — ห้ามให้ต้นไม้/เห็ด/ดอกไม้งอกทับลาน */
+const FOOD_DECK = {x0:32, x1:35, z0:43, z1:50};
+/* แถวดอกไม้ริมลานร้านอาหารฝั่งตะวันตก (x31) — เป็นดอกไม้ล้วน ไม่เอาต้นไม้ */
+const FOOD_FLOWER_COL = {x0:31, x1:31, z0:41, z1:51};
 const FLOWER_MEADOW = {x0:30, x1:67, z0:62, z1:67};
 const MEADOW_TRAILS = [{x0:37, x1:38, z0:64, z1:67}, {x0:53, x1:54, z0:64, z1:67}];
 function inMeadowTrail(x, z){
@@ -764,7 +768,7 @@ return {
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
-  FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
+  FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, FOOD_DECK, FOOD_FLOWER_COL, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
   NPC_STAND, QUEST_BOARD, LAMP_FIXED, LAMP_SPOTS, LAMP_SET, HEDGE_LINES,
   HEDGE_SET, HEDGE_TILES, isBridgeZ, isFenceTile, inHomeZone, clampHomeTile,
