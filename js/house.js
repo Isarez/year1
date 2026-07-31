@@ -1271,23 +1271,26 @@ function addShopFront(g, kind, bw, bd, bh, roofHex){
 /* ป้ายเมนูทรงสามเหลี่ยมตั้งพื้น (sandwich board) — กางเป็นตัว A มีกระดานเขียนเมนูทั้ง 2 ด้าน */
 function buildSandwichSign(){
   const g = new THREE.Group();
+  /* หมุน -sd*.26 = "ยอดชนกัน ฐานถ่างออก" (ทรงตัว A) — ถ้าเป็น +sd จะกลายเป็นตัว V กลับหัว
+     สร้างแต่ละด้านเป็นกลุ่มย่อยแล้วเอียงทั้งกลุ่ม กระดาน/กรอบ/บรรทัดเมนูจึงเอียงตามกันเสมอ */
   [-1,1].forEach(sd=>{
-    const board = box(.9, 1.0, .07, 0xfdf6e6, .04);
-    board.rotation.x = sd*.26; board.position.set(0, .55, sd*.16); g.add(board);
-    const frame = box(.98, 1.08, .04, 0xb4763a, .04);
-    frame.rotation.x = sd*.26; frame.position.set(0, .55, sd*.19); g.add(frame);
-    /* บรรทัดเมนูเป็นแถบสีอ่อนๆ (เด็กอ่านไม่ออกก็ดูรู้ว่าเป็นป้ายเมนู) */
-    [.78,.6,.42].forEach((y,i)=>{
-      const ln = box(.5 - i*.08, .07, .03, i ? 0xd9c7a5 : 0xe4574a, .02);
-      ln.rotation.x = sd*.26; ln.position.set(0, y, sd*(.21 + (y-.55)*.26)); g.add(ln);
+    const side = new THREE.Group();
+    side.position.set(0, .55, sd*.16);
+    side.rotation.x = -sd*.26;
+    const board = box(.9, 1.0, .07, 0xfdf6e6, .04); side.add(board);
+    const frame = box(.98, 1.08, .04, 0xb4763a, .04); frame.position.z = sd*.03; side.add(frame);
+    [.24, .04, -.16].forEach((y,i)=>{               /* บรรทัดเมนู (บรรทัดแรกสีแดง = หัวข้อ) */
+      const ln = box(.52 - i*.08, .07, .03, i ? 0xd9c7a5 : 0xe4574a, .02);
+      ln.position.set(0, y, sd*.06); side.add(ln);
     });
+    g.add(side);
   });
-  const hinge = cyl(.05,.05,.86, 0x8f6231, 8); hinge.rotation.z = Math.PI/2; hinge.position.y = 1.06; g.add(hinge);
-  [-1,1].forEach(sd=>{                       /* ขาป้าย 2 ข้าง */
-    const ft = box(.14,.08,.62, 0x8f6231, .03); ft.position.set(sd*.4, .04, 0); g.add(ft);
+  const hinge = cyl(.05,.05,.86, 0x8f6231, 8); hinge.rotation.z = Math.PI/2; hinge.position.y = 1.05; g.add(hinge);
+  [-1,1].forEach(sd=>{                              /* ขาป้าย 2 ข้าง */
+    const ft = box(.14,.08,.66, 0x8f6231, .03); ft.position.set(sd*.4, .04, 0); g.add(ft);
   });
-  const bowl = cyl(.11,.08,.09,0xfffaf0,10); bowl.position.set(0, 1.18, 0); g.add(bowl);   /* ชามเล็กบนยอดป้าย */
-  const soup = cyl(.09,.09,.03,0xe8b46a,10); soup.position.set(0, 1.23, 0); g.add(soup);
+  const bowl = cyl(.11,.08,.09,0xfffaf0,10); bowl.position.set(0, 1.16, 0); g.add(bowl);   /* ชามเล็กบนยอดป้าย */
+  const soup = cyl(.09,.09,.03,0xe8b46a,10); soup.position.set(0, 1.21, 0); g.add(soup);
   return g;
 }
 
