@@ -4,6 +4,8 @@
   "description": "เครื่องมือ dev ของ \"นกฮูกสนุกคิด\" (ชุดเทส Playwright เท่านั้น — ตัวแอปยังเป็น static ล้วน ไม่มี build step)",
   "main": "index.js",
   "scripts": {
+    "setup": "bash tools/setup-playwright.sh",
+    "pretest": "bash tools/setup-playwright.sh",
     "test": "playwright test",
     "test:desktop": "playwright test --project=desktop"
   },

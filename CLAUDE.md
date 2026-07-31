@@ -48,6 +48,11 @@
   try { new Function(combined); console.log('OK JS syntax'); } catch(e){ console.error('ERROR:', e.message); }
   "
   ```
+- **ชุดเทส Playwright — ติดตั้งไว้นอกโปรเจค (ห้าม `npm install` ในโฟลเดอร์โปรเจค)**:
+  1. **ก่อนรัน `npx playwright test` ครั้งแรกของแต่ละเครื่อง/แต่ละ session ให้รัน `bash tools/setup-playwright.sh` เสมอ** สคริปต์นี้เช็คให้เองว่าเครื่องนี้มี Playwright แล้วหรือยัง ถ้ามีครบแล้วจะจบทันทีไม่ทำอะไร (รันซ้ำได้ปลอดภัย) ถ้ายังไม่มีจะติดตั้งให้เอง แล้วจดสถานะไว้ที่ `~/.local/share/playwright-shared/.installed` — **เครื่องที่มีไฟล์นี้แล้วคือติดตั้งเรียบร้อยแล้ว ไม่ต้องติดตั้งซ้ำ**
+  2. ตัว Playwright ติดตั้งกลางไว้ที่ `~/.local/share/playwright-shared/` (นอก repo) ส่วน `node_modules` ในโปรเจคเป็นแค่ **symlink** ชี้ไปที่นั่น (จึงไม่มีไฟล์ dependency จริงอยู่ในโปรเจค) — เบราว์เซอร์ chromium อยู่ที่ `~/Library/Caches/ms-playwright` ตามปกติของ Playwright
+  3. `package.json` ในโปรเจคเก็บไว้เพื่อบอกเวอร์ชันที่ต้องการ (สคริปต์อ่านค่า `devDependencies['@playwright/test']` ไปติดตั้ง) — **อย่ารัน `npm install` ที่ root โปรเจค** เพราะจะเขียนทับ symlink แล้วเอา `node_modules` ตัวจริงกลับเข้ามาในโปรเจคอีก ถ้าจะอัปเวอร์ชันให้แก้ `package.json` แล้วรัน `bash tools/setup-playwright.sh`
+  4. `.gitignore` ใช้ `node_modules` (ไม่มี `/` ปิดท้าย) โดยตั้งใจ — ถ้าใส่ `/` จะไม่ ignore symlink
 - **หลัง push/deploy สำเร็จทุกครั้ง**:
   1. สรุปสิ่งที่เปลี่ยนแปลงสั้นๆ ให้ผู้ใช้ทราบ
   2. เขียนสรุปนั้นลงไฟล์ `LOG.md` ด้วย โดยเพิ่มเป็นรายการใหม่ **ไว้บนสุด** ของไฟล์ (รูปแบบ: `- YYYY-MM-DD: สรุปสั้นๆ`) แล้วอัปเดตหัวข้อ "ประวัติการเปลี่ยนแปลง (changelog)" ใน `CLAUDE.md` ให้เป็นรายการล่าสุด 5 รายการเสมอ (ตัดรายการเก่าสุดออกถ้าเกิน 5) และถ้าเปลี่ยนแปลงพฤติกรรม/สถานะสำคัญของแอป ให้อัปเดตหัวข้อ "สถานะปัจจุบันของแอป" ใน `CLAUDE.md` ให้ตรงด้วย
