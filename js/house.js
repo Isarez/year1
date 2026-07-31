@@ -2211,12 +2211,11 @@ function buildFieldPath(x, z){                      /* ทางเดินด�
   const g = new THREE.Group();
   const rnd = fieldRnd(x, z);
   const road = box(1.02,.07,.84, 0xd0b483,.06); road.position.y = .035; g.add(road);
-  /* แผ่นหินปูวางตามแนวทาง (ชุดเดียวกับถนนในเมือง) แทนก้อนกรวดกลมแบบเดิม */
-  for(let k=0; k<2; k++){
-    const st = box(.4,.05,.26, 0xc19a62, .05);
-    st.position.set((rnd()-.5)*.5, .075, (rnd()-.5)*.4);
-    if(rnd() < .35) st.rotation.y = Math.PI/2;
-    g.add(st);
+  /* ก้อนหินกลมโรยบนทาง สีกลืนไปกับพื้นทางดิน (เข้มกว่าเล็กน้อยพอให้เห็นเป็นลาย) + รับเงาได้ */
+  for(let k=0; k<3; k++){
+    const st = cyl(.13,.15,.05, 0xc5a370, 7);
+    st.receiveShadow = hShadows;
+    st.position.set((rnd()-.5)*.8, .07, (rnd()-.5)*.6); g.add(st);
   }
   [-1,1].forEach(sgn=>{                             /* หญ้าริมทาง */
     const tf = sphere(.15, 0x8fd06c, 7); tf.scale.set(1,.42,1);
@@ -3745,19 +3744,16 @@ function buildWorld(){
   /* ทางเดินทั้งเมืองใช้หน้าตาเดียวกับทางเดินดินในทุ่งดอกไม้: โรยก้อนหินเล็กบนทาง + หญ้าเป็นกอตรงริมทาง
      ทั้งหมดเป็นของตกแต่งนิ่งๆ (instanced เฉยๆ ไม่ใช่ decor ที่กดได้) คลิกทางเดินจึงไม่เกิด effect อะไร
      ตำแหน่งสุ่มจาก fieldRnd(x,z) จึงคงที่ทุกครั้งที่เข้าเกม ไม่กระโดดไปมา */
-  /* ลายพื้นถนน: "แผ่นหินปู" สี่เหลี่ยมมนวางตามแนวแกน (สลับแนวยาว-แนวขวาง) แทนก้อนหินกลมแบบเดิม
-     — ก้อนกลมดูเป็นกรวดหล่นบนถนน ไม่เข้ากับพื้นลายตารางกับขอบทางที่เป็นเส้นตรงของเมือง
-     แผ่นปูใช้โทนเดียวกับถนนแต่เข้มลงนิดเดียว จึงเห็นเป็นลายพื้น ไม่ใช่ของวางเกะกะ */
+  /* ลายพื้นถนน: ก้อนหินกลมแบนโรยบนทาง — แยกเป็น 2 ชุดตามเฉดของช่องที่มันวางอยู่
+     (พื้นถนนสลับ 2 เฉดฟันปลา) แล้วใช้สีที่ "กลืน" ไปกับช่องนั้นๆ เข้มกว่านิดเดียวพอให้เห็นเป็นลายพื้น
+     ไม่ใช่ก้อนกรวดลอยเด่นขึ้นมา + รับเงาได้ เงาต้นไม้/ตัวละครจึงทาบผ่านได้เนียนเหมือนพื้น */
   if(roadTiles.length){
-    const slabX = [], slabZ = [], tufts = [];
+    const stoneA = [], stoneB = [], tufts = [];
     const isRoad = (x,z)=> x>=0 && z>=0 && x<OUT_W && z<OUT_D && isVillageRoadTile(x,z);
     roadTiles.forEach(([x,z])=>{
       const rnd = fieldRnd(x, z);
-      const n = rnd() < .5 ? 1 : 2;                               /* ช่องละ 1-2 แผ่น ไม่ต้องเต็มทุกช่อง */
-      for(let k=0; k<n; k++){
-        const p = [outWX(x) + (rnd()-.5)*.46, .035, outWZ(z) + (rnd()-.5)*.46];
-        (rnd() < .5 ? slabX : slabZ).push(p);
-      }
+      const list = ((x+z)&1) === 0 ? stoneA : stoneB;            /* ตามเฉดของช่องที่หินวางอยู่ */
+      for(let k=0; k<2; k++) list.push([outWX(x) + (rnd()-.5)*.72, .035, outWZ(z) + (rnd()-.5)*.72]);
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dz])=>{           /* ด้านที่ติดกับพื้นหญ้า = ริมทาง */
         if(isRoad(x+dx, z+dz)) return;
         if(rnd() > .55) return;                                  /* ไม่ต้องมีทุกช่อง จะดูรกเกินไป */
@@ -3768,10 +3764,13 @@ function buildWorld(){
       if(!list.length) return;
       const im = new THREE.InstancedMesh(geo, mat, list.length);
       list.forEach((p,i)=>{ m4.makeTranslation(p[0], p[1], p[2]); if(sy) m4.scale(sy); im.setMatrixAt(i, m4); });
-      im.instanceMatrix.needsUpdate = true; worldGroup.add(im);
+      im.instanceMatrix.needsUpdate = true;
+      im.receiveShadow = hShadows;                               /* ให้เงาทาบทับก้อนหินได้ */
+      worldGroup.add(im);
     };
-    addInst(roundedBoxGeo(.42,.05,.26,.05), toonMat(0xc19a62), slabX);
-    addInst(roundedBoxGeo(.26,.05,.42,.05), toonMat(0xc19a62), slabZ);
+    const stoneGeo = new THREE.CylinderGeometry(.13,.15,.05,7);
+    addInst(stoneGeo, toonMat(0xcbaf7c), stoneA);                /* กลืนกับช่องเฉดอ่อน 0xd3b886 */
+    addInst(stoneGeo, toonMat(0xbf9d6b), stoneB);                /* กลืนกับช่องเฉดเข้ม 0xc7a674 */
     addInst(new THREE.SphereGeometry(.15,7,5), toonMat(0x8fd06c), tufts, new THREE.Vector3(1,.42,1));
   }
 
