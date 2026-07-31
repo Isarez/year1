@@ -152,18 +152,19 @@ const FOUNTAIN = sRect({x0:33, x1:34, z0:17, z1:18});  /* น้ำพุกล�
 const VILLAGE_LOTS = [
   {id:'shop-bakery',  kind:'shop', shopKind:'bakery', name:'ร้านขนมปัง',   icon:'🥐', wall:0xfff2dc, roof:0xef8354, x0:20, x1:23, z0:5,  z1:7},
   {id:'shop-game',    kind:'shop', shopKind:'game',   name:'ร้านเกม',      icon:'🎮', wall:0xe9e3ff, roof:0x7c6ce0, x0:30, x1:33, z0:5,  z1:7},
-  {id:'shop-book',    kind:'shop', shopKind:'book',   name:'ร้านหนังสือ',  icon:'📚', wall:0xdff1fb, roof:0x5aa9e6, x0:36, x1:39, z0:5,  z1:7},
+  /* ร้านสัตว์เลี้ยงหลังใหญ่ (ย้ายมาแทนที่ร้านหนังสือเดิม) — หลังร้านมีกรงสัตว์ให้เดินเล่น */
+  {id:'shop-pet',     kind:'shop', shopKind:'pet',    name:'ร้านสัตว์เลี้ยง', icon:'🐾', wall:0xfff0e0, roof:0xf2a65a, x0:36, x1:39, z0:5,  z1:7},
   /* โรงพยาบาลของชุมชน (เดิมเป็นล็อตร้านผลไม้) — ล็อตใหญ่ 8×5 ตึกขาว 2 ชั้น + ลานจอดรถพยาบาล
      ร้านผลไม้ย้ายไปอยู่ท้ายแถวร้านค้าด้านล่างแทน (ล็อตเดิมเล็กเกินไปสำหรับโรงพยาบาล) */
   {id:'hospital',     kind:'hospital', name:'โรงพยาบาล', icon:'🏥', desc:'โรงพยาบาลของชุมชน มีคุณหมอกับพยาบาลคอยดูแลทุกคนให้แข็งแรง',
    wall:0xf7fbff, roof:0x5aa9e6, x0:44, x1:51, z0:3,  z1:7},
-  {id:'shop-ice',     kind:'shop', shopKind:'ice',    name:'ร้านไอศกรีม',  icon:'🍦', wall:0xfff6c9, roof:0xffc857, x0:20, x1:23, z0:12, z1:14},
   {id:'shop-flower',  kind:'shop', shopKind:'flower', name:'ร้านดอกไม้',   icon:'💐', wall:0xf0e4ff, roof:0xb388ff, x0:46, x1:49, z0:12, z1:14},
   {id:'shop-fruit',   kind:'shop', shopKind:'fruit',  name:'ร้านผลไม้',    icon:'🍎', wall:0xe4f7dd, roof:0x6fbf73, x0:51, x1:54, z0:12, z1:14},
   /* ร้านใหม่ฝั่งตะวันออกของลานน้ำพุ (พื้นที่ว่างเดิม ประตูออกทางถนนเส้นล่าง) */
   {id:'shop-furniture', kind:'shop', shopKind:'furniture', name:'ร้านเฟอร์นิเจอร์', icon:'🛋️', wall:0xf7ecda, roof:0xb4763a, x0:51, x1:54, z0:16, z1:18},
-  {id:'shop-food',      kind:'shop', shopKind:'food',      name:'ร้านอาหาร',       icon:'🍜', wall:0xfff4e2, roof:0xe4574a, x0:51, x1:54, z0:23, z1:25},
-  {id:'shop-pet',     kind:'shop', shopKind:'pet',    name:'ร้านสัตว์เลี้ยง', icon:'🐾', wall:0xfff0e0, roof:0xf2a65a, x0:20, x1:23, z0:20, z1:22},
+  /* ร้านอาหารหลังใหญ่: รวมที่ของร้านไอติมเดิมกับร้านสัตว์เลี้ยงเดิมเป็นผืนเดียว มีลานโต๊ะนั่งกินข้าวด้วย */
+  {id:'shop-food',      kind:'shop', shopKind:'food',      name:'ร้านอาหาร',       icon:'🍜', wall:0xfff4e2, roof:0xe4574a, x0:20, x1:23, z0:12, z1:16},   /* lot = เฉพาะตัวอาคาร ลานโต๊ะยื่นออกไปทางใต้ (เดินเข้าไปนั่งได้) */
+  {id:'shop-book',      kind:'shop', shopKind:'book',      name:'ร้านหนังสือ',     icon:'📚', wall:0xdff1fb, roof:0x5aa9e6, x0:51, x1:54, z0:23, z1:25},
   /* บ้านหลังใหญ่ของท่านเทศมนตรี (เดิม home-2 บ้านฟ้าหลังเล็ก) — ล็อตกว้างขึ้นเป็น 5×4 ให้สมฐานะ */
   {id:'mayor-house',  kind:'mayor', name:'บ้านท่านเทศมนตรี', icon:'🏛️', desc:'บ้านหลังใหญ่ที่สุดในชุมชน มีเสาสูงกับหอนาฬิกาด้วย',
    wall:0xfff6ea, roof:0x6f86c9, x0:19, x1:23, z0:29, z1:32},
@@ -313,6 +314,9 @@ const ANIMAL_PENS = [
   {id:'pen-sheep', x0:5,  x1:11, z0:5, z1:9, soil:false, gate:[[11,7]]},
   /* คอกหมู: ขยายให้ใหญ่ขึ้นและเลื่อนขอบตะวันตกมาชิดทางเดินฟาร์ม (x19-20) ประตูจึงเปิดออกที่ทางเดินพอดี */
   {id:'pen-pig',   x0:21, x1:27, z0:0, z1:5, soil:true,  gate:[[21,2],[21,3]]},   /* x28-29 เป็นแม่น้ำ ขยายเกินนี้ไม่ได้ */
+  /* กรงสัตว์เลี้ยงหลังร้านสัตว์ (x48-51, z28-29) — ใช้ระบบคอกเดียวกับฟาร์ม สัตว์จึงเดินไปมาเองได้ */
+  {id:'pen-shop1', x0:48, x1:49, z0:28, z1:29, soil:false, gate:[[48,30]]},
+  {id:'pen-shop2', x0:50, x1:51, z0:28, z1:29, soil:false, gate:[[51,30]]},
   {id:'pen-chick', x0:21, x1:26, z0:5, z1:8, soil:true,  gate:[[21,6]]},
 ];
 function penAt(x, z){
@@ -328,6 +332,7 @@ function isPenFenceTile(x, z){
 function isPenSoilTile(x, z){ const p = penAt(x, z); return !!p && !!p.soil; }
 /* สัตว์ในฟาร์ม: [x, z, ชนิด] — บล็อกช่องตัวเอง (เดินชนตัวสัตว์ไม่ได้) */
 const FARM_ANIMALS = [
+  [48,28,'chick'], [49,29,'chick'], [50,28,'duck'], [51,29,'chick'],   /* สัตว์ในกรงหลังร้านสัตว์เลี้ยง */
   [4,1,'cow'],  [6,1,'cow'],  [8,1,'cow'],
   [7,6,'sheep'],[9,6,'sheep'],[8,8,'sheep'],
   [24,1,'pig'], [24,3,'pig'],
@@ -514,9 +519,9 @@ const NPC_DEFS = [
    look:{girl:true, skin:2, shirt:0x6fbf73, pants:0xd8a24a, hair:3, hairC:1, hat:'straw', prop:'basket'},
    lines:['ผลไม้ป้าหวานทุกลูกเลยจ้า', 'กินผลไม้เยอะๆ นะ จะได้แข็งแรง'],
    quest:'ช่วยป้านับผลไม้ในตะกร้าหน่อยได้ไหมจ๊ะ'},
-  {id:'npc-ice',    name:'พี่ฟ้า',    icon:'🍦', job:'vendor', lot:'shop-ice', side:1,
-   look:{skin:1, shirt:0x7fc4e8, pants:0xf7f3ee, hair:0, hairC:0, hat:'cap', prop:'cone', apron:true},
-   lines:['วันนี้มีไอศกรีมรสสตรอว์เบอร์รีด้วยนะ', 'เลือกได้เลย พี่ตักให้เต็มโคน!'],
+  {id:'npc-ice',    name:'พี่ฟ้า',    icon:'🍨', job:'vendor', lot:'shop-food', side:-1,
+   look:{skin:0, shirt:0x7fc4e8, pants:0xfff3e0, hair:1, hairC:0, hat:null, prop:null, apron:true},
+   lines:['ร้านเรามีของหวานกับไอศกรีมด้วยนะ', 'นั่งโต๊ะข้างนอกได้เลย ลมเย็นสบาย'],
    quest:'ทายสีไอศกรีมกับพี่ไหม'},
   {id:'npc-flower', name:'พี่พลอย',   icon:'💐', job:'vendor', lot:'shop-flower', side:1,
    look:{girl:true, skin:0, shirt:0xb388ff, pants:0xf0e4ff, hair:2, hairC:3, hat:'flower', prop:'bouquet'},

@@ -1265,6 +1265,117 @@ function addShopFront(g, kind, bw, bd, bh, roofHex){
     }
   }
 }
+
+/* ---------- ร้านอาหารหลังใหญ่กลางเมือง ----------
+   ตัวอาคารกว้างเต็มล็อต + ลานโต๊ะกินข้าวยื่นออกไปทางหน้าร้าน (นอก lot จึงเดินเข้าไปนั่งได้จริง)
+   โต๊ะแต่ละตัวลงทะเบียนเป็น "ที่นั่ง" ด้วย addSeatSpot เด็กจึงแตะแล้วเดินไปนั่งได้เหมือนม้านั่ง */
+function buildRestaurant(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const cx = (lot.x0+lot.x1)/2, cz = (lot.z0+lot.z1)/2;
+  const bw = w-.4, bd = d-.6, bh = 2.1;
+  const body = box(bw, bh, bd, lot.wall, .06); body.position.y = bh/2; g.add(body);
+  const band = box(bw+.06, .16, bd+.06, lot.roof, .04); band.position.y = 1.15; g.add(band);   /* คาดกลางลายร้าน */
+  addRoofGable(g, bw, bd, bh, lot.roof, lot.wall, 1.0);
+  const fz = bd/2;
+  addDoor(g, bd, 0x9c6238);
+  [-1,1].forEach(sd=>{                                   /* หน้าต่างบานใหญ่ 2 ฝั่งประตู */
+    const wf = box(1.0,.9,.08,0xfffaf0,.04); wf.position.set(sd*(bw/2-.85), 1.15, fz+.02); g.add(wf);
+    const wi = box(.82,.72,.1,0xaadcf5,.03); wi.position.set(sd*(bw/2-.85), 1.15, fz+.04); g.add(wi);
+    const sill = box(1.06,.1,.16,lot.roof,.03); wi.position.z += .0; sill.position.set(sd*(bw/2-.85), .66, fz+.08); g.add(sill);
+  });
+  /* กันสาดลายทางเต็มหน้าร้าน */
+  const n = 8, sw = bw*.94/n;
+  for(let i=0;i<n;i++){
+    const st = box(sw, .08, .8, i%2 ? 0xfffaf0 : lot.roof, .02);
+    st.position.set(-bw*.47 + sw*(i+.5), 1.62, fz+.34); st.rotation.x = -.32; g.add(st);
+  }
+  const sfr = box(1.5,.9,.1,0xfffaf0,.05); sfr.position.set(0, bh+.55, fz+.06); g.add(sfr);   /* ป้ายร้าน */
+  const sg = signPlane(lot.icon, .7); sg.position.set(0, bh+.55, fz+.13); g.add(sg);
+  addShopEmblem(g, 'food', bh);
+  addChimney(g, bw, bd, bh, 1.0);
+  for(let i=0;i<3;i++){                                   /* ควันจากปล่องครัว */
+    const sm = sphere(.15, 0xf4f1ea, 8);
+    sm.material = sm.material.clone(); sm.material.transparent = true; sm.material.opacity = .78;
+    sm.position.set(bw*.28, bh + .5 + .58, -bd*.18);
+    fxTag(sm, 'smoke', {ph: i/3}); g.add(sm);
+  }
+
+  /* ---- ลานโต๊ะกินข้าวหน้าร้าน (พิกัดช่องจริง → แปลงเป็นพิกัด local ของกลุ่ม) ---- */
+  const deck = box(w-.2, .06, 5.6, 0xe9d7b4, .05);
+  deck.position.set(0, .03, (lot.z1 + 3.3) - cz); g.add(deck);
+  [[lot.x0+1, lot.z1+2], [lot.x0+2, lot.z1+4], [lot.x0+1, lot.z1+6]].forEach(([tx,tz],i)=>{
+    const lx = tx - cx, lz = tz - cz;
+    const top = cyl(.42,.42,.08,0xfffaf0,14); top.position.set(lx,.62,lz); g.add(top);
+    const leg = cyl(.07,.1,.6,0xc98d4e,8);   leg.position.set(lx,.31,lz); g.add(leg);
+    const base = cyl(.24,.26,.06,0xb4763a,12); base.position.set(lx,.06,lz); g.add(base);
+    const pole = cyl(.04,.04,1.7,0xb4763a,8); pole.position.set(lx,.85,lz); g.add(pole);
+    const cap = cone(.85,.4,[0xe4574a,0xffc857,0x7fc4e8][i%3],14); cap.position.set(lx,1.85,lz); g.add(cap);
+    const cap2 = cone(.9,.16,0xfffaf0,14); cap2.position.set(lx,1.7,lz); g.add(cap2);
+    const bowl = cyl(.12,.09,.1,0xfffaf0,12); bowl.position.set(lx,.71,lz); g.add(bowl);
+    const soup = cyl(.1,.1,.03,0xe8b46a,12); soup.position.set(lx,.77,lz); g.add(soup);
+    [-1,1].forEach(sd=>{                                  /* ม้านั่ง 2 ตัว/โต๊ะ + ลงทะเบียนเป็นที่นั่ง */
+      const sx = lx + sd*.95;
+      const seat = cyl(.17,.17,.08,0xef8354,12); seat.position.set(sx,.42,lz); g.add(seat);
+      const sl = cyl(.06,.07,.38,0xc98d4e,8);   sl.position.set(sx,.21,lz); g.add(sl);
+      addSeatSpot(Math.round(tx + sd), tz, sd>0 ? 3 : 1, 'bench');
+    });
+  });
+  g.position.set(outWX(cx), 0, outWZ(cz));
+  return g;
+}
+
+/* ---------- ร้านสัตว์เลี้ยงหลังใหญ่ ----------
+   อาคารสองชั้นมีตู้โชว์กระจกบานใหญ่ + หลังร้านเป็นโรงเรือนคลุมกรงสัตว์
+   (ตัวกรงกับสัตว์ที่เดินไปมาใช้ระบบคอกสัตว์เดียวกับฟาร์ม — ดู pen-shop1/2 ใน ANIMAL_PENS) */
+function buildPetShop(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const cx = (lot.x0+lot.x1)/2, cz = (lot.z0+lot.z1)/2;
+  const bw = w-.4, bd = d-.35, bh = 2.2;
+  const body = box(bw, bh, bd, lot.wall, .06); body.position.y = bh/2; g.add(body);
+  const band = box(bw+.06, .16, bd+.06, lot.roof, .04); band.position.y = 1.2; g.add(band);
+  addRoofGable(g, bw, bd, bh, lot.roof, lot.wall, 1.0);
+  const fz = bd/2;
+  addDoor(g, bd, 0x9c6238);
+  /* ตู้โชว์กระจกบานใหญ่ข้างประตู — มีลูกแมวนั่งอยู่ข้างใน */
+  const show = box(1.5,1.15,.12,0xfffaf0,.05); show.position.set(-bw*.28, 1.05, fz+.02); g.add(show);
+  const glass = box(1.28,.95,.1,0xaadcf5,.04); glass.position.set(-bw*.28, 1.05, fz+.06); g.add(glass);
+  const kb = sphere(.16,0xffd8a8,12); kb.scale.set(1.2,.9,1); kb.position.set(-bw*.28, .78, fz+.1); g.add(kb);
+  const kh = sphere(.13,0xffe6c8,12); kh.position.set(-bw*.28, 1.0, fz+.12); g.add(kh);
+  [-1,1].forEach(sd=>{ const ear = cone(.06,.11,0xffd8a8,4); ear.position.set(-bw*.28+sd*.09, 1.14, fz+.12); g.add(ear); });
+  [-1,1].forEach(sd=>{ const ey = sphere(.02,0x4a3b32,6); ey.position.set(-bw*.28+sd*.05, 1.02, fz+.2); g.add(ey); });
+  /* หน้าต่างบานเล็กอีกฝั่ง + กันสาดลายทาง + ป้ายร้าน */
+  const wf = box(.7,.7,.08,0xfffaf0,.04); wf.position.set(bw*.3, 1.1, fz+.02); g.add(wf);
+  const wi = box(.54,.54,.1,0xaadcf5,.03); wi.position.set(bw*.3, 1.1, fz+.05); g.add(wi);
+  const n = 7, sw = bw*.94/n;
+  for(let i=0;i<n;i++){
+    const st = box(sw, .08, .72, i%2 ? 0xfffaf0 : lot.roof, .02);
+    st.position.set(-bw*.47 + sw*(i+.5), 1.72, fz+.3); st.rotation.x = -.32; g.add(st);
+  }
+  const sfr = box(1.3,.85,.1,0xfffaf0,.05); sfr.position.set(0, bh+.6, fz+.06); g.add(sfr);
+  const sg = signPlane(lot.icon, .66); sg.position.set(0, bh+.6, fz+.13); g.add(sg);
+  addShopEmblem(g, 'pet', bh);
+  /* ของหน้าร้าน: บ้านหมา + ชามอาหาร */
+  const front = fz + .55;
+  const hs = box(.6,.48,.54,0xf7c08a,.06); hs.position.set(bw*.32,.24,front); g.add(hs);
+  const rf1 = box(.48,.09,.6,0xe07a4a,.03); rf1.rotation.z = .62; rf1.position.set(bw*.32-.15,.6,front); g.add(rf1);
+  const rf2 = box(.48,.09,.6,0xe07a4a,.03); rf2.rotation.z = -.62; rf2.position.set(bw*.32+.15,.6,front); g.add(rf2);
+  const bowl = cyl(.14,.11,.09,0x7fc4e8,12); bowl.position.set(-bw*.34,.05,front); g.add(bowl);
+  /* ---- โรงเรือนคลุมกรงสัตว์หลังร้าน (กรง/สัตว์มาจาก ANIMAL_PENS: pen-shop1/2 ที่ z28-29) ---- */
+  [[48.5, 28.5],[50.5, 28.5]].forEach(([px,pz])=>{
+    const lx = px - cx, lz = pz - cz;
+    const roof = box(2.2,.12,2.2, lot.roof, .05); roof.position.set(lx, 1.28, lz); g.add(roof);
+    const ridge = box(2.3,.1,.3, 0xfffaf0, .04); ridge.position.set(lx, 1.36, lz); g.add(ridge);
+    [-1,1].forEach(sd=>[-1,1].forEach(sz=>{
+      const post = cyl(.06,.06,1.25, 0xfffaf0, 8); post.position.set(lx+sd*1.0, .62, lz+sz*1.0); g.add(post);
+    }));
+    const trough = box(.5,.1,.24, 0xd9a86c, .03); trough.position.set(lx, .06, lz+.8); g.add(trough);
+  });
+  g.position.set(outWX(cx), 0, outWZ(cz));
+  return g;
+}
+
 /* ตึกเรียน 2 ชั้น หลังคาแบน มีมุขหน้า+หอระฆัง+เสาธง (ต่างจากบ้าน/ร้านชัดเจน ให้เด็กแยกออกทันที) */
 function buildSchoolBuilding(lot){
   const g = new THREE.Group();
@@ -1447,6 +1558,8 @@ function buildPoliceStation(lot){
   return g;
 }
 function buildLotBuilding(lot){
+  if(lot.shopKind==='food') return buildRestaurant(lot);
+  if(lot.shopKind==='pet')  return buildPetShop(lot);
   if(lot.kind==='school') return buildSchoolBuilding(lot);
   if(lot.kind==='hospital') return buildHospital(lot);
   if(lot.kind==='police') return buildPoliceStation(lot);
