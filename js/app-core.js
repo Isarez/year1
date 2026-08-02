@@ -152,6 +152,7 @@ function enterHome(){
   $('child-select-view').hidden = true;
   $('owl-widget').hidden = false;
   $('clear-btn').hidden = false;
+  $('reload-btn').hidden = true;      /* ปุ่มโหลดใหม่มีเฉพาะหน้าเลือกเด็ก */
   homeView.hidden = false;
   updateHeaderChild();
   renderHome();
@@ -236,6 +237,7 @@ function renderChildSelect(){
   initDobPicker();
   $('child-select-view').hidden = false;
   $('clear-btn').hidden = true;
+  $('reload-btn').hidden = false;     /* กลับมาหน้าเลือกเด็ก → โชว์ปุ่มโหลดใหม่อีกครั้ง */
   homeView.hidden = true;
   $('owl-widget').hidden = true;
   $('free-piano-btn').hidden = true;
