@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สังคม ป.6 · ประเทศเพื่อนบ้านและภูมิศาสตร์ไทย">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#edac76"/><stop offset="1" stop-color="#E5893B"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M6 46 22 18l10 16 8-12 18 24z" fill="url(#g)" stroke="#955926" stroke-width="2.8" stroke-linejoin="round"/><path d="M22 18l5 9h-10z" fill="#fff" opacity=".85"/><path d="M40 22l4 6h-8z" fill="#fff" opacity=".85"/><rect x="6" y="46" width="52" height="6" rx="3" fill="#f3caa7" stroke="#955926" stroke-width="2.4"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#955926" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#955926" text-anchor="middle">ป.6</text></g>
+</svg>

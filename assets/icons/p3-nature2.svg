@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ธรรมชาติ ป.3 · ดิน หิน น้ำ และท้องฟ้า">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#87bd72"/><stop offset="1" stop-color="#4F9E2F"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cee4c5"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M31 52c-1-14 2-22 6-28" fill="none" stroke="#B07A46" stroke-width="4.4" stroke-linecap="round"/><g fill="url(#g)" stroke="#366b20" stroke-width="2.4" stroke-linejoin="round"><path d="M37 24c-9-6-16-4-20 2 8 1 14 2 20-2z"/><path d="M37 24c9-6 16-4 20 2-8 1-14 2-20-2z"/><path d="M37 24c-4-9-11-11-17-8 5 5 10 9 17 8z"/><path d="M37 24c4-8 11-10 16-7-5 5-9 8-16 7z"/></g><circle cx="37" cy="24" r="3.4" fill="#8B5E34" stroke="#366b20" stroke-width="1.8"/><path d="M8 52h48" stroke="#F4D9A0" stroke-width="6" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#3b7723" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#376f21" text-anchor="middle">ป.3</text></g>
+</svg>

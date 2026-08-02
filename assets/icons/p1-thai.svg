@@ -1,0 +1,16 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย ป.1">
+  <defs>
+    <linearGradient id="p1thaiG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8dc4"/>
+      <stop offset="1" stop-color="#ef5da8"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="19" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- stacked books -->
+  <rect x="13" y="42" width="38" height="9" rx="3" fill="#ffd1e7" stroke="#c73d85" stroke-width="2.5"/>
+  <rect x="16" y="33" width="34" height="9" rx="3" fill="#ffb3d6" stroke="#c73d85" stroke-width="2.5"/>
+  <!-- top book cover -->
+  <rect x="14" y="12" width="36" height="22" rx="5" fill="url(#p1thaiG)" stroke="#c73d85" stroke-width="3"/>
+  <rect x="18" y="15" width="7" height="16" rx="3.5" fill="#fff" opacity="0.22"/>
+  <text x="34" y="29" font-family="'Sarabun','Noto Sans Thai',sans-serif" font-size="17" font-weight="bold" fill="#fff" text-anchor="middle">ก</text>
+</svg>

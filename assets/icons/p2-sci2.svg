@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นักวิทย์ ป.2 · วัสดุดูดซับน้ำ">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a69de3"/><stop offset="1" stop-color="#7C6FD6"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dad7f4"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="26" y="6" width="12" height="32" rx="6" fill="#fff" stroke="#544b92" stroke-width="3"/><circle cx="32" cy="44" r="10" fill="url(#g)" stroke="#544b92" stroke-width="3"/><rect x="29" y="18" width="6" height="22" rx="3" fill="url(#g)"/><g stroke="#544b92" stroke-width="2" stroke-linecap="round"><path d="M40 14h5M40 20h4M40 26h5M40 32h4"/></g><circle cx="29" cy="41" r="2.4" fill="#fff" opacity=".6"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#5d53a1" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#574e96" text-anchor="middle">ป.2</text></g>
+</svg>

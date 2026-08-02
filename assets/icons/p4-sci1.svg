@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วิทยาศาสตร์ ป.4 · สิ่งมีชีวิตและการจำแนก">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72c09a"/><stop offset="1" stop-color="#2FA36B"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c5e5d6"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M14 52h34" stroke="#206f49" stroke-width="4" stroke-linecap="round"/><path d="M22 48V38h8v10z" fill="#82c8a6" stroke="#206f49" stroke-width="2.6" stroke-linejoin="round"/><rect x="14" y="34" width="26" height="5" rx="2.5" fill="url(#g)" stroke="#206f49" stroke-width="2.4"/><path d="M34 34V20a8 8 0 0 1 8-8" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round"/><rect x="36" y="8" width="14" height="9" rx="4" fill="url(#g)" stroke="#206f49" stroke-width="2.6" transform="rotate(28 43 12)"/><circle cx="24" cy="36.5" r="2.4" fill="#FFC53D" stroke="#206f49" stroke-width="1.4"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#237a50" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#21724b" text-anchor="middle">ป.4</text></g>
+</svg>

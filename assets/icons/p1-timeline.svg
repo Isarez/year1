@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เรียงเรื่องราว ป.1">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8a26d"/><stop offset="1" stop-color="#B07A2E"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="6" y="28" width="52" height="6" rx="3" fill="#dbc3a1" stroke="#724f1e" stroke-width="2.4"/><path d="M14 28V18h10v10M40 28V14h10v14" fill="url(#g)" stroke="#724f1e" stroke-width="2.6" stroke-linejoin="round"/><circle cx="19" cy="44" r="4" fill="url(#g)" stroke="#724f1e" stroke-width="2.2"/><circle cx="32" cy="44" r="4" fill="#dbc3a1" stroke="#724f1e" stroke-width="2.2"/><circle cx="45" cy="44" r="4" fill="url(#g)" stroke="#724f1e" stroke-width="2.2"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#724f1e" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#724f1e" text-anchor="middle">ป.1</text></g>
+</svg>

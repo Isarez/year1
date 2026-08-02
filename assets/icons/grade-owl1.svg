@@ -1,0 +1,20 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ลูกนกฮูกเพิ่งฟัก">
+  <ellipse cx="32" cy="58" rx="11" ry="2.4" fill="#000" opacity=".1"/>
+  <!-- feet -->
+  <g stroke="#F5B93C" stroke-width="1.8" stroke-linecap="round" fill="none">
+    <path d="M28 53 v4 M28 57 l-2.4 2.2 M28 57 l2.4 2.2"/>
+    <path d="M36 53 v4 M36 57 l-2.4 2.2 M36 57 l2.4 2.2"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="32" cy="40" rx="12" ry="14" fill="#AC633C"/>
+  <ellipse cx="32" cy="43" rx="8" ry="10" fill="#E09C64"/>
+  <!-- eyes -->
+  <circle cx="26" cy="38" r="6.6" fill="#F7F5EE"/><circle cx="38" cy="38" r="6.6" fill="#F7F5EE"/>
+  <circle cx="26.5" cy="38.5" r="3.3" fill="#3A2416"/><circle cx="37.5" cy="38.5" r="3.3" fill="#3A2416"/>
+  <circle cx="27.7" cy="37.3" r="1.1" fill="#fff"/><circle cx="38.7" cy="37.3" r="1.1" fill="#fff"/>
+  <!-- beak -->
+  <path d="M29.6 44 h4.8 l-2.4 3.2 Z" fill="#F5B93C" stroke="#D9902B" stroke-width=".8" stroke-linejoin="round"/>
+  <!-- eggshell hat -->
+  <path d="M19 28 L23 21 L27 27 L31.5 20 L35 27 L39 21 L45 28 Z" fill="#FBEFD6" stroke="#C9A96A" stroke-width="1.6" stroke-linejoin="round"/>
+  <circle cx="26.5" cy="24.5" r="1.1" fill="#D8B98A"/><circle cx="37.5" cy="24.5" r="1.1" fill="#D8B98A"/>
+</svg>

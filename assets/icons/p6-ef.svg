@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ ป.6 · นกฮูกสั่ง">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5dc18c"/><stop offset="1" stop-color="#17A65B"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="28" r="18" fill="url(#g)" stroke="#0f6c3b" stroke-width="2.8"/><circle cx="25" cy="26" r="6" fill="#fff"/><circle cx="39" cy="26" r="6" fill="#fff"/><circle cx="25" cy="26" r="2.8" fill="#0f6c3b"/><circle cx="39" cy="26" r="2.8" fill="#0f6c3b"/><path d="M28 36h8l-4 5z" fill="#97d7b5" stroke="#0f6c3b" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 14l6 5M48 14l-6 5" stroke="#0f6c3b" stroke-width="3" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#0f6c3b" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#0f6c3b" text-anchor="middle">ป.6</text></g>
+</svg>

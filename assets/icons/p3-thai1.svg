@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย ป.3 · ชนิดของคำ-มาตราตัวสะกด">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f491c4"/><stop offset="1" stop-color="#EF5DA8"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#fbd2e7"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M8 16c8-4 14-4 24 1v33c-10-5-16-5-24-1z" fill="url(#g)" stroke="#a33f72" stroke-width="3" stroke-linejoin="round"/><path d="M56 16c-8-4-14-4-24 1v33c10-5 16-5 24-1z" fill="#f8b6d8" stroke="#a33f72" stroke-width="3" stroke-linejoin="round"/><path d="M32 17v33" stroke="#a33f72" stroke-width="2.4" stroke-linecap="round"/><text x="44" y="36" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="13" font-weight="bold" fill="#a33f72" text-anchor="middle">ค</text><g stroke="#f386be" stroke-width="2" stroke-linecap="round" opacity=".85"><path d="M13 25h13M13 31h11M13 37h13"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#b3467e" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#a74176" text-anchor="middle">ป.3</text></g>
+</svg>

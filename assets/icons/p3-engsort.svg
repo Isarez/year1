@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English ป.3 · จัดหมวดหมู่คำ">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58a5a1"/><stop offset="1" stop-color="#0A7A75"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#badad8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M8 20a6 6 0 0 1 6-6h20l22 18-22 18H14a6 6 0 0 1-6-6z" fill="url(#g)" stroke="#075350" stroke-width="3" stroke-linejoin="round"/><circle cx="18" cy="32" r="3.6" fill="#fff"/><text x="36" y="38" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">A-Z</text>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#085c58" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#075552" text-anchor="middle">ป.3</text></g>
+</svg>

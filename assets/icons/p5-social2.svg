@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สังคม ป.5 · อยุธยาและธนบุรี">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#edac76"/><stop offset="1" stop-color="#E5893B"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 6l7 10h-4v6h6l5 9h-5v20H23V31h-5l5-9h6v-6h-4z" fill="url(#g)" stroke="#955926" stroke-width="2.6" stroke-linejoin="round"/><rect x="16" y="45" width="32" height="6" rx="2" fill="#f3caa7" stroke="#955926" stroke-width="2.4"/><path d="M28 36h8v9h-8z" fill="#fff" opacity=".7"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#955926" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#955926" text-anchor="middle">ป.5</text></g>
+</svg>

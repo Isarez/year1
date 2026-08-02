@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="คณิต ป.5 · ทศนิยมและการแปลงหน่วย">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8e79e9"/><stop offset="1" stop-color="#5E3FE0"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="8" y="14" width="48" height="32" rx="8" fill="url(#g)" stroke="#3d2992" stroke-width="2.8"/><rect x="12" y="18" width="8" height="24" rx="4" fill="#fff" opacity=".2"/><text x="32" y="37" font-family="Arial" font-size="16" font-weight="bold" fill="#fff" text-anchor="middle">2.5</text><circle cx="24" cy="34" r="2.6" fill="#fff"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#3d2992" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#3d2992" text-anchor="middle">ป.5</text></g>
+</svg>

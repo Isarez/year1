@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วิทยาศาสตร์ ป.5 · วัฏจักรน้ำ เมฆฝน และดวงดาว">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#62b1bf"/><stop offset="1" stop-color="#1F8FA3"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M18 38a9 9 0 0 1 1-18 13 13 0 0 1 25 3 8 8 0 0 1-2 15z" fill="url(#g)" stroke="#145d6a" stroke-width="2.8" stroke-linejoin="round"/><path d="M22 44l-3 7M32 44l-3 7M42 44l-3 7" stroke="#9acdd6" stroke-width="3.4" stroke-linecap="round"/><path d="M50 12l1.6 3.6L55 17l-3.4 1.4L50 22l-1.6-3.6L45 17l3.4-1.4z" fill="#9acdd6" stroke="#145d6a" stroke-width="1.4" stroke-linejoin="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#145d6a" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#145d6a" text-anchor="middle">ป.5</text></g>
+</svg>

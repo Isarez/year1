@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ตาชั่งแรงและมวล ป.5">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3aeff"/><stop offset="1" stop-color="#7C8CFF"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 10v34" stroke="#515ba6" stroke-width="3.2" stroke-linecap="round"/><path d="M12 18h40" stroke="#515ba6" stroke-width="3.2" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="url(#g)" stroke="#515ba6" stroke-width="2.4"/><path d="M4 30a8 8 0 0 0 16 0z" fill="url(#g)" stroke="#515ba6" stroke-width="2.4" stroke-linejoin="round"/><path d="M44 30a8 8 0 0 0 16 0z" fill="#c4cbff" stroke="#515ba6" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 18v12M52 18v12" stroke="#515ba6" stroke-width="2.2"/><rect x="22" y="44" width="20" height="7" rx="3" fill="url(#g)" stroke="#515ba6" stroke-width="2.6"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#515ba6" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#515ba6" text-anchor="middle">ป.5</text></g>
+</svg>

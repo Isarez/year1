@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="สังคม ป.4 · แผนที่และภูมิศาสตร์ไทย">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f9c258"/><stop offset="1" stop-color="#F6A609"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#fce6ba"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M8 14l16-6 16 6 16-6v42l-16 6-16-6-16 6z" fill="#fce0a9" stroke="#a77106" stroke-width="3" stroke-linejoin="round"/><path d="M24 8v42M40 14v42" stroke="#a77106" stroke-width="2.4" opacity=".7"/><path d="M12 30c6-6 12 2 18-2s10 4 16 0" fill="none" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/><circle cx="34" cy="24" r="5" fill="#E85C4A" stroke="#a77106" stroke-width="2.2"/><path d="M34 29l0 8" stroke="#a77106" stroke-width="2.4" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#b97d07" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#ac7406" text-anchor="middle">ป.4</text></g>
+</svg>

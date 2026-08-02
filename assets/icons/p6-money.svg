@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ร้านค้าและส่วนลด ป.6">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4b06b"/><stop offset="1" stop-color="#D98E2B"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="6" y="18" width="52" height="28" rx="6" fill="url(#g)" stroke="#8d5c1c" stroke-width="2.8"/><circle cx="32" cy="32" r="9" fill="#fff" opacity=".92" stroke="#8d5c1c" stroke-width="2.4"/><text x="32" y="37" font-family="'Sarabun',Arial,sans-serif" font-size="13" font-weight="bold" fill="#8d5c1c" text-anchor="middle">%</text><path d="M13 25h5M46 39h5" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#8d5c1c" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#8d5c1c" text-anchor="middle">ป.6</text></g>
+</svg>

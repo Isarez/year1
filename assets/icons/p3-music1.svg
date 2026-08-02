@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ดนตรี ป.3 · เครื่องดนตรีและการบรรเลง">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#85b1f5"/><stop offset="1" stop-color="#4C8DF0"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cddffb"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M14 22h36v20c0 5-8 8-18 8s-18-3-18-8z" fill="url(#g)" stroke="#3460a3" stroke-width="3" stroke-linejoin="round"/><ellipse cx="32" cy="22" rx="18" ry="8" fill="#b7d1f9" stroke="#3460a3" stroke-width="3"/><g stroke="#3460a3" stroke-width="2.2" opacity=".7"><path d="M16 28l8 12M48 28l-8 12M32 30v14"/></g><path d="M44 8l10 12" stroke="#B07A46" stroke-width="3.4" stroke-linecap="round"/><circle cx="43" cy="7" r="4" fill="#B07A46" stroke="#7b5531" stroke-width="2"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#396ab4" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#3563a8" text-anchor="middle">ป.3</text></g>
+</svg>

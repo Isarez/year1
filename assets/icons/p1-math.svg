@@ -1,0 +1,22 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="คณิต ป.1">
+  <defs>
+    <linearGradient id="p1mathG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a892ff"/>
+      <stop offset="1" stop-color="#7c5cfc"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="18" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- number card -->
+  <rect x="12" y="9" width="40" height="46" rx="11" fill="url(#p1mathG)" stroke="#5a3fd6" stroke-width="3"/>
+  <rect x="16" y="13" width="9" height="38" rx="4.5" fill="#fff" opacity="0.18"/>
+  <!-- 1 2 3 -->
+  <text x="32" y="25" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle" opacity="0.9">123</text>
+  <!-- plus -->
+  <g stroke="#fff" stroke-width="4.6" stroke-linecap="round">
+    <path d="M27 40v10"/><path d="M22 45h10"/>
+  </g>
+  <!-- minus -->
+  <g stroke="#fff" stroke-width="4.6" stroke-linecap="round">
+    <path d="M38 45h9"/>
+  </g>
+</svg>

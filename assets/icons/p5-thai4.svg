@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ภาษาไทย ป.5 · จับใจความและแยกข้อคิดเห็น">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d46da5"/><stop offset="1" stop-color="#C22E7E"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M14 8h24l12 12v36H14z" fill="#e4a1c5" stroke="#7e1e52" stroke-width="2.8" stroke-linejoin="round"/><path d="M38 8v12h12" fill="none" stroke="#7e1e52" stroke-width="2.6"/><path d="M20 30h18M20 38h18M20 46h10" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="42" r="9" fill="none" stroke="url(#g)" stroke-width="3.4"/><path d="M50 48l7 7" stroke="#7e1e52" stroke-width="3.4" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#7e1e52" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#7e1e52" text-anchor="middle">ป.5</text></g>
+</svg>

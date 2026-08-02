@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ฟังประโยคเติมคำ ป.6 · 1">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f69f8e"/><stop offset="1" stop-color="#F2765E"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M10 12h44a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H30l-12 10V42h-8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z" fill="url(#g)" stroke="#9d4d3d" stroke-width="2.8" stroke-linejoin="round"/><rect x="16" y="18" width="14" height="8" rx="2.5" fill="#fff" opacity=".92" stroke="#9d4d3d" stroke-width="1.8" stroke-dasharray="3 2.6"/><path d="M34 22h14M16 32h20" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#9d4d3d" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#9d4d3d" text-anchor="middle">ป.6</text></g>
+</svg>

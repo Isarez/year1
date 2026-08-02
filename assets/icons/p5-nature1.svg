@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ธรรมชาติ ป.5 · ระบบนิเวศและการอนุรักษ์">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ad276"/><stop offset="1" stop-color="#6FBF3B"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M32 8c8 6 12 12 12 18a12 12 0 0 1-24 0c0-6 4-12 12-18z" fill="url(#g)" stroke="#487c26" stroke-width="2.8" stroke-linejoin="round"/><path d="M32 26v24" stroke="#487c26" stroke-width="3" stroke-linecap="round"/><path d="M12 44c6 0 9 3 10 7M52 44c-6 0-9 3-10 7" fill="none" stroke="#bee2a7" stroke-width="3" stroke-linecap="round"/><path d="M18 52h28" stroke="#487c26" stroke-width="2.8" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#487c26" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#487c26" text-anchor="middle">ป.5</text></g>
+</svg>

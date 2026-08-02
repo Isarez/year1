@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ปฏิทินวิเศษ">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eea7bc"/><stop offset="1" stop-color="#E67E9C"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f8dbe3"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="9" y="12" width="46" height="40" rx="8" fill="#fff" stroke="#9c566a" stroke-width="3"/><path d="M9 22a8 8 0 0 1 8-8h30a8 8 0 0 1 8 8z" fill="url(#g)" stroke="#9c566a" stroke-width="3" stroke-linejoin="round"/><g stroke="#9c566a" stroke-width="3" stroke-linecap="round"><path d="M20 7v9M44 7v9"/></g><g fill="#efabbf"><circle cx="20" cy="31" r="3"/><circle cx="32" cy="31" r="3"/><circle cx="44" cy="31" r="3"/><circle cx="20" cy="42" r="3"/></g><circle cx="32" cy="42" r="4.6" fill="#FF8A5B"/><circle cx="44" cy="42" r="3" fill="#efabbf"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#ad5f75" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#a1586d" text-anchor="middle">ป.2</text></g>
+</svg>

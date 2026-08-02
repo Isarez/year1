@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เชาวน์ ป.2 · ตรรกะและแบบรูป">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72cda0"/><stop offset="1" stop-color="#2FB673"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c5ebd8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M26 12c-8 0-13 5-13 10-4 2-5 8-1 11-2 5 2 10 8 10 2 4 8 5 12 2V12c-2-2-4-2-6 0z" fill="url(#g)" stroke="#207c4e" stroke-width="3" stroke-linejoin="round"/><path d="M38 12c8 0 13 5 13 10 4 2 5 8 1 11 2 5-2 10-8 10-2 4-8 5-12 2V12c2-2 4-2 6 0z" fill="#6dcc9d" stroke="#207c4e" stroke-width="3" stroke-linejoin="round"/><g fill="none" stroke="#207c4e" stroke-width="2" stroke-linecap="round" opacity=".65"><path d="M22 20c4 1 5 4 3 7M42 20c-4 1-5 4-3 7M24 34c4 0 6 2 6 6M40 34c-4 0-6 2-6 6"/></g><path d="M30 48h4v6h-4z" fill="#59c58f" stroke="#207c4e" stroke-width="2.2"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#238956" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#217f51" text-anchor="middle">ป.2</text></g>
+</svg>

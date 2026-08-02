@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นาฬิกาและระยะเวลา ป.3">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9a779"/><stop offset="1" stop-color="#E0813F"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="32" cy="30" r="21" fill="#f1c6a9" stroke="#925429" stroke-width="2.8"/><circle cx="32" cy="30" r="16" fill="#fff" opacity=".55"/><path d="M32 30V18M32 30l10 6" stroke="#925429" stroke-width="3.4" stroke-linecap="round"/><circle cx="32" cy="30" r="3" fill="url(#g)"/><g fill="#925429"><circle cx="32" cy="13" r="1.8"/><circle cx="49" cy="30" r="1.8"/><circle cx="32" cy="47" r="1.8"/><circle cx="15" cy="30" r="1.8"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#925429" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#925429" text-anchor="middle">ป.3</text></g>
+</svg>

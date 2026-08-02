@@ -1,0 +1,18 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ฟังสะกดคำไทย ป.1">
+  <defs>
+    <linearGradient id="p1lisG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9e7a"/>
+      <stop offset="1" stop-color="#f2765e"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <!-- headphone band -->
+  <path d="M14 34a18 18 0 0 1 36 0" fill="none" stroke="#d9542f" stroke-width="4" stroke-linecap="round"/>
+  <!-- ear cups -->
+  <rect x="10" y="32" width="11" height="18" rx="5.5" fill="url(#p1lisG)" stroke="#d9542f" stroke-width="3"/>
+  <rect x="43" y="32" width="11" height="18" rx="5.5" fill="url(#p1lisG)" stroke="#d9542f" stroke-width="3"/>
+  <!-- ก in a speech bubble -->
+  <rect x="24" y="18" width="20" height="19" rx="6" fill="#fff" stroke="#d9542f" stroke-width="2.6"/>
+  <path d="M31 37l3 5 3-5z" fill="#fff" stroke="#d9542f" stroke-width="2.6" stroke-linejoin="round"/>
+  <text x="34" y="33" font-family="'Sarabun','Noto Sans Thai',sans-serif" font-size="15" font-weight="bold" fill="#d9542f" text-anchor="middle">ก</text>
+</svg>

@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="อ่านแผนภูมิรูปภาพ ป.2">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6db1e2"/><stop offset="1" stop-color="#2F8FD6"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M10 50V12M10 50h46" stroke="#1f5d8b" stroke-width="3" stroke-linecap="round"/><g fill="url(#g)" stroke="#1f5d8b" stroke-width="2.2"><rect x="17" y="34" width="9" height="16" rx="2"/><rect x="30" y="24" width="9" height="26" rx="2"/><rect x="43" y="30" width="9" height="20" rx="2"/></g><circle cx="21" cy="28" r="3" fill="#a1cded" stroke="#1f5d8b" stroke-width="1.6"/><circle cx="47" cy="22" r="3" fill="#a1cded" stroke="#1f5d8b" stroke-width="1.6"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#1f5d8b" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#1f5d8b" text-anchor="middle">ป.2</text></g>
+</svg>

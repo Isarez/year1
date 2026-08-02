@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="พื้นที่และปริมาตร ป.6">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9b182"/><stop offset="1" stop-color="#E0904C"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <path d="M10 22h26v-8h18v36H10z" fill="url(#g)" stroke="#925e31" stroke-width="2.8" stroke-linejoin="round"/><path d="M22 22v28M36 14v36M10 36h44" stroke="#fff" stroke-width="2" opacity=".75"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#925e31" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#925e31" text-anchor="middle">ป.6</text></g>
+</svg>

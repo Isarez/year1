@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English ป.5 · Going to &amp; Because">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#54b1ac"/><stop offset="1" stop-color="#0A8F89"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="8" y="34" width="48" height="6" rx="3" fill="#91cdca" stroke="#065d59" stroke-width="2.4"/><path d="M18 32 40 10l8 8-22 22-11 3z" fill="url(#g)" stroke="#065d59" stroke-width="2.8" stroke-linejoin="round"/><path d="M40 10l8 8" stroke="#065d59" stroke-width="2.4"/><path d="M15 45h34" stroke="url(#g)" stroke-width="3" stroke-linecap="round"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#065d59" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#065d59" text-anchor="middle">ป.5</text></g>
+</svg>

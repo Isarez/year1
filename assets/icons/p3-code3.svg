@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="พาหุ่นยนต์ ป.3 · 3">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67a7ae"/><stop offset="1" stop-color="#1F7E88"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c0dbde"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <rect x="7" y="14" width="50" height="34" rx="10" fill="url(#g)" stroke="#15565c" stroke-width="3"/><g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".85"><path d="M15 24h34M15 32h34M15 40h34"/></g><g fill="#fff" stroke="#15565c" stroke-width="2.2"><circle cx="24" cy="24" r="4"/><circle cx="40" cy="32" r="4"/><circle cx="20" cy="40" r="4"/></g><circle cx="50" cy="10" r="3" fill="#FFC53D" stroke="#15565c" stroke-width="1.8"/>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#175f66" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#16585f" text-anchor="middle">ป.3</text></g>
+</svg>

@@ -125,14 +125,6 @@ function playTone(freq, dur, type, delay, vol){
   osc.connect(g).connect(audioCtx.destination);
   osc.start(t); osc.stop(t+dur+0.05);
 }
-function playCorrect(){ playTone(523.25,.15,'sine',0,.14); playTone(659.25,.18,'sine',.12,.14); playTone(783.99,.24,'sine',.24,.14); }
-function playWrong(){ playTone(190,.28,'sawtooth',0,.07); }
-function playClick(){ playTone(659.25,.08,'sine',0,.12); playTone(1318.5,.05,'sine',0,.04); }
-function playCongrats(){
-  playTone(523.25,.16,'sine',0,.13); playTone(659.25,.16,'sine',.14,.13);
-  playTone(783.99,.16,'sine',.28,.13); playTone(1046.5,.22,'sine',.42,.15);
-  playTone(1318.5,.55,'sine',.64,.11); playTone(1046.5,.55,'sine',.64,.10); playTone(783.99,.55,'sine',.64,.08);
-}
 
 /* ---------- เพลงพื้นหลัง (procedural playlist 5 เพลง — engine เดียวกับหน้าหลัก, key p1quiz_music ร่วมกัน) ---------- */
 let musicOn = true;
@@ -199,90 +191,9 @@ const MUSIC_TRACKS = [
   [587.33,.5],[493.88,.5],[523.25,1.5],[null,.5]
 ]}
 ];
-function ensureMusicGain(){
-  ensureAudio();
-  if(audioCtx && !musicGain){
-    musicGain = audioCtx.createGain();
-    musicGain.gain.value = 0.0001;
-    musicGain.connect(audioCtx.destination);
-  }
-}
-function scheduleMusicNote(freq, startTime, dur){
-  if(freq==null) return;
-  const tail = 0.12;
-  const osc = audioCtx.createOscillator();
-  const noteGain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freq, startTime);
-  noteGain.gain.setValueAtTime(0.0001, startTime);
-  noteGain.gain.exponentialRampToValueAtTime(0.9, startTime+0.06);
-  noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
-  osc.connect(noteGain).connect(musicGain);
-  osc.start(startTime); osc.stop(startTime+dur+tail);
-
-  const subOsc = audioCtx.createOscillator();
-  const subGain = audioCtx.createGain();
-  subOsc.type = 'sine';
-  subOsc.frequency.setValueAtTime(freq/2, startTime);
-  subGain.gain.setValueAtTime(0.0001, startTime);
-  subGain.gain.exponentialRampToValueAtTime(0.35, startTime+0.05);
-  subGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
-  subOsc.connect(subGain).connect(musicGain);
-  subOsc.start(startTime); subOsc.stop(startTime+dur+tail);
-}
-function musicScheduler(){
-  if(!musicOn || !audioCtx) return;
-  while(musicNextTime < audioCtx.currentTime + 1.0){
-    const track = MUSIC_TRACKS[musicTrackIdx];
-    const beat = 60/track.bpm;
-    const [freq, beats] = track.notes[musicNoteIndex];
-    const dur = beats*beat;
-    scheduleMusicNote(freq, musicNextTime, dur);
-    musicNextTime += dur;
-    musicNoteIndex++;
-    if(musicNoteIndex >= track.notes.length){
-      musicNoteIndex = 0;
-      musicTrackIdx = (musicTrackIdx+1) % MUSIC_TRACKS.length;
-      musicNextTime += beat*2;
-    }
-  }
-}
-function startMusic(){
-  ensureMusicGain();
-  if(!audioCtx) return;
-  if(audioCtx.state==='suspended') audioCtx.resume();
-  const now = audioCtx.currentTime;
-  musicGain.gain.cancelScheduledValues(now);
-  musicGain.gain.setValueAtTime(musicGain.gain.value, now);
-  musicGain.gain.linearRampToValueAtTime(0.025, now+0.4);
-  musicNextTime = now + 0.1;
-  musicNoteIndex = 0;
-  if(musicSchedulerId) clearInterval(musicSchedulerId);
-  musicScheduler();
-  musicSchedulerId = setInterval(musicScheduler, 250);
-}
-function stopMusic(){
-  if(musicGain && audioCtx){
-    const now = audioCtx.currentTime;
-    musicGain.gain.cancelScheduledValues(now);
-    musicGain.gain.setValueAtTime(musicGain.gain.value, now);
-    musicGain.gain.linearRampToValueAtTime(0.0001, now+0.4);
-  }
-  if(musicSchedulerId){ clearInterval(musicSchedulerId); musicSchedulerId=null; }
-}
 
 /* ---------- toast แจ้งเตือน (pattern เดียวกับหน้าหลัก — CSS .toast อยู่ใน style.css แล้ว) ---------- */
 let _toastTimer = null;
-function showToast(emoji, msg){
-  $('toast-emoji').textContent = emoji;
-  $('toast-msg').textContent = msg;
-  const t = $('toast');
-  t.classList.remove('visible');
-  void t.offsetWidth;
-  t.classList.add('visible');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(()=>t.classList.remove('visible'), 2600);
-}
 
 /* ---------- views ---------- */
 const setupView   = $('teacher-setup-view');
@@ -308,15 +219,8 @@ const SVG_MOON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" st
 const SVG_SUN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#E8A020" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#FFD040"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
 const themeBtn = $('theme-toggle');
 const bgDecorEl = $('bg-decor');
-function isNightMode(){ return document.body.classList.contains('night-mode'); }
 function refreshThemeBtn(){
   themeBtn.innerHTML = isNightMode() ? SVG_SUN : SVG_MOON;
-}
-function setTheme(night, persist){
-  document.body.classList.toggle('night-mode', night);
-  if(persist){ try{ localStorage.setItem('p1quiz_theme', night?'night':'day'); }catch(e){} }
-  refreshThemeBtn();
-  bgDecorEl.querySelectorAll('.bg-floater, .bg-cloud').forEach(e=>e.remove());
 }
 let nightMode = false;
 try{ nightMode = localStorage.getItem('p1quiz_theme') === 'night'; }catch(e){}
@@ -342,7 +246,6 @@ const SVG_EXPAND = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" 
 const SVG_COMPRESS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
 
 const musicBtn = $('music-toggle');
-function refreshMusicBtn(){ musicBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_MUSIC+'</span><span class="mute-stripe"></span></span>'; musicBtn.classList.toggle('muted', !musicOn); musicBtn.dataset.tooltip = musicOn ? 'ปิดเพลงพื้นหลัง' : 'เปิดเพลงพื้นหลัง'; }
 refreshMusicBtn();
 musicBtn.addEventListener('click', ()=>{
   musicOn = !musicOn;
@@ -356,7 +259,6 @@ if(musicOn){
 }
 
 const soundBtn = $('sound-toggle');
-function refreshSoundBtn(){ soundBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_SPEAKER+'</span><span class="mute-stripe"></span></span>'; soundBtn.classList.toggle('muted', !soundOn); soundBtn.dataset.tooltip = soundOn ? 'ปิดเสียง' : 'เปิดเสียง'; }
 refreshSoundBtn();
 soundBtn.addEventListener('click', ()=>{
   soundOn = !soundOn;
@@ -1366,13 +1268,6 @@ $('b-publish').addEventListener('click', ()=>{ playClick(); saveBuilder(true); }
 
 /* ---------- quiz play (adapt จาก engine หน้าหลัก — ไม่มีสติกเกอร์) ---------- */
 let quiz = null;   // {gameId, qIndex, score, wrong:[], answered, questions:[{q,choices,correct}]}
-function shuffleArray(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]] = [arr[j],arr[i]];
-  }
-  return arr;
-}
 /* แปลงโจทย์ {q,answers,correct} → {q,choices,correct} พร้อมสลับตัวเลือกถ้าเปิด shuffle */
 function prepareQuestion(qd, shuffleChoices){
   const idxs = qd.answers.map((_,i)=>i);
@@ -1651,17 +1546,6 @@ $('data-delete-btn').addEventListener('click', ()=>{
   setTimeout(()=>openOverlay('confirm-del-modal'), 320);
 });
 
-/* ---------- Buy me a Milk (QR modal — id `qr-modal` เดียวกับหน้าหลัก ได้ CSS centering จาก style.css) ---------- */
-function openOverlay(id){
-  const el = $(id);
-  el.hidden = false;
-  requestAnimationFrame(()=> requestAnimationFrame(()=> el.classList.add('show')));
-}
-function closeOverlay(id){
-  const el = $(id);
-  el.classList.remove('show');
-  setTimeout(()=>{ el.hidden = true; }, 300);
-}
 $('bmm-btn').addEventListener('click', ()=>{ playClick(); openOverlay('qr-modal'); });
 $('qr-close-btn').addEventListener('click', ()=>{ playClick(); closeOverlay('qr-modal'); });
 $('qr-modal-backdrop').addEventListener('click', ()=>{ closeOverlay('qr-modal'); });

@@ -1,0 +1,24 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="นักวิทย์ทายผล ลอยหรือจม ป.1">
+  <defs>
+    <linearGradient id="p1sci1w" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#aee6f5"/>
+      <stop offset="1" stop-color="#5fc0e2"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="16" ry="3.2" fill="#000" opacity="0.10"/>
+  <!-- jar -->
+  <path d="M16 16 H48 V50 Q48 56 42 56 H22 Q16 56 16 50 Z" fill="#eafcff" stroke="#3f8fb0" stroke-width="3" stroke-linejoin="round"/>
+  <!-- water -->
+  <path d="M17 30 H47 V50 Q47 55 42 55 H22 Q17 55 17 50 Z" fill="url(#p1sci1w)"/>
+  <path d="M17 30 H47" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
+  <!-- rim -->
+  <rect x="13" y="12" width="38" height="7" rx="3.5" fill="#cdeefa" stroke="#3f8fb0" stroke-width="3"/>
+  <!-- floating ball -->
+  <circle cx="26" cy="34" r="5" fill="#ffd24d" stroke="#e0913f" stroke-width="2"/>
+  <!-- sinking ball -->
+  <circle cx="39" cy="48" r="5" fill="#ff8fa3" stroke="#c74f66" stroke-width="2"/>
+  <!-- bubbles -->
+  <circle cx="34" cy="40" r="2" fill="#fff" opacity="0.85"/>
+  <circle cx="30" cy="46" r="1.5" fill="#fff" opacity="0.7"/>
+  <circle cx="42" cy="37" r="1.6" fill="#fff" opacity="0.7"/>
+</svg>

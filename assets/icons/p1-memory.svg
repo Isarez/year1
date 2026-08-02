@@ -1,0 +1,38 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="จับคู่โดมิโน">
+  <defs>
+    <linearGradient id="domA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb3d1"/>
+      <stop offset="1" stop-color="#f56aa0"/>
+    </linearGradient>
+    <linearGradient id="domB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a7d4ff"/>
+      <stop offset="1" stop-color="#4f97f5"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="56" rx="20" ry="3.5" fill="#000" opacity="0.10"/>
+
+  <!-- domino tile 1 (pink, tilted) -->
+  <g transform="rotate(-8 22 32)">
+    <rect x="8" y="14" width="22" height="38" rx="6" fill="url(#domA)" stroke="#d34a80" stroke-width="3"/>
+    <path d="M9 33h20" stroke="#d34a80" stroke-width="2.6" stroke-linecap="round"/>
+    <g fill="#fff4f8">
+      <circle cx="14" cy="21" r="2.4"/><circle cx="24" cy="21" r="2.4"/>
+      <circle cx="14" cy="27" r="2.4"/><circle cx="24" cy="27" r="2.4"/>
+      <circle cx="19" cy="44" r="2.6"/>
+    </g>
+  </g>
+
+  <!-- domino tile 2 (blue, tilted) -->
+  <g transform="rotate(8 44 32)">
+    <rect x="34" y="14" width="22" height="38" rx="6" fill="url(#domB)" stroke="#2f6bc4" stroke-width="3"/>
+    <rect x="37" y="17" width="5" height="32" rx="2.5" fill="#fff" opacity="0.2"/>
+    <path d="M35 33h20" stroke="#2f6bc4" stroke-width="2.6" stroke-linecap="round"/>
+    <g fill="#eaf4ff">
+      <circle cx="45" cy="24" r="2.6"/>
+      <circle cx="40" cy="44" r="2.4"/><circle cx="50" cy="44" r="2.4"/>
+      <circle cx="40" cy="39" r="2.4"/><circle cx="50" cy="39" r="2.4"/>
+    </g>
+  </g>
+  <circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#C25A34" stroke-width="2.5"/>
+  <text x="53" y="56.5" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#C25A34" text-anchor="middle">ป.1</text>
+</svg>

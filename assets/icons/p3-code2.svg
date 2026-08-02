@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="พาหุ่นยนต์ ป.3 · 2">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6bb8be"/><stop offset="1" stop-color="#2596A0"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c2e2e4"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <ellipse cx="32" cy="47" rx="18" ry="4" fill="#7FE7FF" opacity=".25"/><path d="M14 46 L24 30h16l10 16z" fill="#7FE7FF" opacity=".3"/><ellipse cx="32" cy="30" rx="24" ry="9" fill="url(#g)" stroke="#19666d" stroke-width="3"/><path d="M20 26a12 12 0 0 1 24 0z" fill="#BFF0FF" stroke="#19666d" stroke-width="2.6" stroke-linejoin="round"/><g fill="#FFC53D" stroke="#19666d" stroke-width="1.6"><circle cx="18" cy="32" r="2.6"/><circle cx="32" cy="34" r="2.6"/><circle cx="46" cy="32" r="2.6"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#1c7178" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#1a6970" text-anchor="middle">ป.3</text></g>
+</svg>

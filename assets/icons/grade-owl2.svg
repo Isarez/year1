@@ -1,0 +1,22 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ลูกนกฮูก">
+  <ellipse cx="32" cy="59" rx="12" ry="2.6" fill="#000" opacity=".1"/>
+  <g stroke="#F5B93C" stroke-width="1.9" stroke-linecap="round" fill="none">
+    <path d="M27 54 v4 M27 58 l-2.6 2.2 M27 58 l2.6 2.2"/>
+    <path d="M37 54 v4 M37 58 l-2.6 2.2 M37 58 l2.6 2.2"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="32" cy="38" rx="14" ry="17" fill="#AC633C"/>
+  <!-- wings -->
+  <ellipse cx="19.5" cy="39" rx="4.5" ry="9" fill="#8A4A28"/>
+  <ellipse cx="44.5" cy="39" rx="4.5" ry="9" fill="#8A4A28"/>
+  <!-- belly/face -->
+  <ellipse cx="32" cy="41" rx="9.5" ry="12" fill="#E09C64"/>
+  <!-- little head fluff -->
+  <path d="M30 22 q2 -5 4 0" fill="none" stroke="#8A4A28" stroke-width="2" stroke-linecap="round"/>
+  <!-- eyes -->
+  <circle cx="26" cy="36" r="6.8" fill="#F7F5EE"/><circle cx="38" cy="36" r="6.8" fill="#F7F5EE"/>
+  <circle cx="26.6" cy="36.4" r="3.4" fill="#3A2416"/><circle cx="37.4" cy="36.4" r="3.4" fill="#3A2416"/>
+  <circle cx="27.8" cy="35.2" r="1.1" fill="#fff"/><circle cx="38.6" cy="35.2" r="1.1" fill="#fff"/>
+  <!-- beak -->
+  <path d="M29.4 42 h5.2 l-2.6 3.4 Z" fill="#F5B93C" stroke="#D9902B" stroke-width=".8" stroke-linejoin="round"/>
+</svg>

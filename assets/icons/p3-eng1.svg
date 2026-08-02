@@ -1,0 +1,6 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="English ป.3 · Months &amp; Weather">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ccdc8"/><stop offset="1" stop-color="#0FB5AE"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bceae8"/></linearGradient></defs>
+  <ellipse cx="32" cy="57" rx="17" ry="3.5" fill="#000" opacity="0.10"/>
+  <circle cx="24" cy="22" r="11" fill="#FFD54F" stroke="#E0A512" stroke-width="2.6"/><g stroke="#FFD54F" stroke-width="2.8" stroke-linecap="round"><path d="M24 4v5M9 22H4M24 40v-5M39 22h5M13 11l-3-3M35 11l3-3"/></g><path d="M22 46a9 9 0 0 1 2-17 12 12 0 0 1 22 4 7 7 0 0 1-2 13z" fill="url(#g)" stroke="#0a7b76" stroke-width="3" stroke-linejoin="round"/><g stroke="#5BB8F5" stroke-width="3" stroke-linecap="round"><path d="M24 50v4M34 50v5M44 50v4"/></g>
+  <g><circle cx="53" cy="53" r="9.5" fill="#fff" stroke="#0b8883" stroke-width="2.5"/><text x="53" y="56.3" font-family="'Sarabun','Noto Sans Thai',Arial,sans-serif" font-size="8" font-weight="bold" fill="#0b7f7a" text-anchor="middle">ป.3</text></g>
+</svg>
