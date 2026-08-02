@@ -122,8 +122,12 @@
         <div class="house-buddy-bubble" id="house-buddy-bubble" hidden></div>
         <canvas id="house-buddy-canvas" width="280" height="190" aria-label="ตัวละครของหนู"></canvas>
       </div>
-      <button class="house-entry-btn" id="house-entry-btn"><img class="house-entry-icon" src="assets/icons/my-house.svg" alt=""> บ้านของหนู <span class="house-entry-new">NEW ✨</span></button>
-      <p class="house-entry-desc">โลก 3D ส่วนตัวของหนูเอง — สร้างตัวละคร เดินเล่นรอบบ้าน เข้าไปสำรวจในบ้านได้<br>เล่นเกมให้จบแล้วจะได้ของตกแต่งบ้านมาสะสมเรื่อยๆ (เร็วๆ นี้) 🪑✨</p>
+      <!-- HOUSE_FEATURE_OFF: ปิดทางเข้า "บ้านของหนู" ไว้ก่อน (ยังพัฒนาไม่เสร็จ) — เด็กจะไม่เห็นปุ่มนี้
+           element ยังอยู่ใน DOM (แค่ hidden) เพราะ js/house.js ผูก listener กับ id นี้ตรงๆ และชุดเทสยิง
+           dispatchEvent('click') เข้ามาทดสอบ engine อยู่ — ห้ามลบทิ้ง
+           เปิดกลับ: เอา hidden ออกจาก 2 บรรทัดนี้ + ปลด early return ใน preloadHouseIfOwned (js/games-ar.js) -->
+      <button class="house-entry-btn" id="house-entry-btn" hidden><img class="house-entry-icon" src="assets/icons/my-house.svg" alt=""> บ้านของหนู <span class="house-entry-new">NEW ✨</span></button>
+      <p class="house-entry-desc" hidden>โลก 3D ส่วนตัวของหนูเอง — สร้างตัวละคร เดินเล่นรอบบ้าน เข้าไปสำรวจในบ้านได้<br>เล่นเกมให้จบแล้วจะได้ของตกแต่งบ้านมาสะสมเรื่อยๆ (เร็วๆ นี้) 🪑✨</p>
     </div>
     <div class="grade-bar-wrap">
       <div class="grade-bar-title">📚 เลือกระดับชั้น</div>
