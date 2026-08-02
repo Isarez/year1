@@ -2265,8 +2265,9 @@
     box-shadow:var(--shadow-btn); cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
-  /* HOUSE_FEATURE_OFF: จำเป็นจริง — display:inline-flex ด้านบนมี specificity สูงกว่า
-     [hidden]{display:none} ของเบราว์เซอร์ ถ้าไม่มีบรรทัดนี้ ใส่ hidden ในปุ่มก็ยังโผล่อยู่ดี */
+  /* คงไว้แม้ตอนนี้เปิด feature แล้ว — display:inline-flex ด้านบนมี specificity สูงกว่า
+     [hidden]{display:none} ของเบราว์เซอร์ ถ้าจะซ่อนปุ่มด้วย attribute hidden อีกในอนาคต
+     ต้องมีบรรทัดนี้ ไม่งั้นใส่ hidden แล้วปุ่มก็ยังโผล่อยู่ดี */
   .house-entry-btn[hidden]{display:none;}
   .house-entry-btn:hover{transform:translateY(-2px) scale(1.03);}
   .house-entry-btn:active{transform:scale(.97);}

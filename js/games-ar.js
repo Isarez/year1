@@ -728,12 +728,6 @@ function childHasHouse(){
 }
 /* โหลดตอนว่าง (ไม่แย่ง first paint) ถ้าเด็กคนนี้มีบ้านอยู่แล้ว — เบื้องหลัง ไม่ต้องมีม่าน */
 function preloadHouseIfOwned(){
-  /* HOUSE_FEATURE_OFF: ปิดทางเข้า "บ้านของหนู" ไว้ก่อน (ดูปุ่ม #house-entry-btn ใน index.html)
-     ปุ่มถูกซ่อนแล้ว เด็กเข้าบ้านไม่ได้ จึงไม่ต้องดาวน์โหลดชุดไฟล์ 3D (~1.2 MB) ทิ้งไว้เบื้องหลัง
-     สำหรับเด็กที่เคยสร้างบ้านไว้ก่อนหน้านี้ — และเพื่อนซี้ตัวจิ๋วหน้าหลักก็จะไม่ขึ้นตามไปด้วย
-     (houseBuddyRefresh อยู่ใน house.js ซึ่งจะไม่ถูกโหลดเลย)
-     เปิดกลับ: ลบ return บรรทัดล่างนี้ทิ้ง แล้วเอา hidden ออกจากปุ่มใน index.html */
-  return;
   if(housePromise || !childHasHouse()) return;
   const go = ()=>loadHouseMode(false).then(()=>{ if(window.houseBuddyRefresh) window.houseBuddyRefresh(); }).catch(()=>{});
   if(window.requestIdleCallback) requestIdleCallback(go, { timeout:2500 }); else setTimeout(go, 1200);

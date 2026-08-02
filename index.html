@@ -122,12 +122,8 @@
         <div class="house-buddy-bubble" id="house-buddy-bubble" hidden></div>
         <canvas id="house-buddy-canvas" width="280" height="190" aria-label="ตัวละครของหนู"></canvas>
       </div>
-      <!-- HOUSE_FEATURE_OFF: ปิดทางเข้า "บ้านของหนู" ไว้ก่อน (ยังพัฒนาไม่เสร็จ) — เด็กจะไม่เห็นปุ่มนี้
-           element ยังอยู่ใน DOM (แค่ hidden) เพราะ js/house.js ผูก listener กับ id นี้ตรงๆ และชุดเทสยิง
-           dispatchEvent('click') เข้ามาทดสอบ engine อยู่ — ห้ามลบทิ้ง
-           เปิดกลับ: เอา hidden ออกจาก 2 บรรทัดนี้ + ปลด early return ใน preloadHouseIfOwned (js/games-ar.js) -->
-      <button class="house-entry-btn" id="house-entry-btn" hidden><img class="house-entry-icon" src="assets/icons/my-house.svg" alt=""> บ้านของหนู <span class="house-entry-new">NEW ✨</span></button>
-      <p class="house-entry-desc" hidden>โลก 3D ส่วนตัวของหนูเอง — สร้างตัวละคร เดินเล่นรอบบ้าน เข้าไปสำรวจในบ้านได้<br>เล่นเกมให้จบแล้วจะได้ของตกแต่งบ้านมาสะสมเรื่อยๆ (เร็วๆ นี้) 🪑✨</p>
+      <button class="house-entry-btn" id="house-entry-btn"><img class="house-entry-icon" src="assets/icons/my-house.svg" alt=""> บ้านของหนู <span class="house-entry-new">NEW ✨</span></button>
+      <p class="house-entry-desc">โลก 3D ส่วนตัวของหนูเอง — สร้างตัวละคร เดินเล่นรอบบ้าน เข้าไปสำรวจในบ้านได้<br>เล่นเกมให้จบแล้วจะได้ของตกแต่งบ้านมาสะสมเรื่อยๆ (เร็วๆ นี้) 🪑✨</p>
     </div>
     <div class="grade-bar-wrap">
       <div class="grade-bar-title">📚 เลือกระดับชั้น</div>
@@ -1126,7 +1122,7 @@
   </div>
 </div>
 
-<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
+<footer>ทำเพื่อเตรียมความพร้อมก่อนสอบเข้า ป.1 ด้วยความรักจากคุณพ่อคุณแม่ 💛<span class="footer-privacy">🔒 ข้อมูลทั้งหมดถูกจัดเก็บบนเครื่องคุณพ่อคุณแม่เท่านั้น ไม่มีการเผยแพร่ไปยังเซิร์ฟเวอร์ใดๆ</span><span class="footer-credit"><img class="visitor-badge" src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fowlkids.net%2Ftest&label=visitors&icon=eye&color=%23ffb020" alt="visitors" loading="lazy">สร้างสรรค์โดย ISAREZ 🦉<button class="bmm-btn" id="bmm-btn">Buy me a Milk 🍼</button><span class="app-version" id="app-version"></span></span></footer>
 
 <!-- BUY ME A MILK QR MODAL -->
 <div id="install-modal" hidden>

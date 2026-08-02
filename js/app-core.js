@@ -6,7 +6,8 @@
    ต้องโหลดหลัง js/data.js + js/owl-messages.js และก่อนไฟล์เกมทุกไฟล์
    ================================================================================ */
 
-window.APP_ASSET_VER = '?v=1.20.0';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy — ต้องตรงกับไฟล์ version */
+window.APP_ASSET_VER = '?v=2.0.0';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
+                                        ⚠️ ตัวนี้อยู่นอก index.html คำสั่ง sed ที่แก้ ?v= ตอน release จับไม่ถึง ต้องแก้มือทุกครั้ง */
 /* ============================= STATE ============================= */
 let progress = {};
 let soundOn = true;
