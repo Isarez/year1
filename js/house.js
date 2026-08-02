@@ -36,6 +36,7 @@ const {
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
+  MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
   FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, FOOD_DECK, FOOD_FLOWER_COL, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
@@ -50,6 +51,7 @@ const {
 
 function isSceneryPropTile(x, z){
   const hit = a => a.some(p => p[0]===x && p[1]===z);
+  if(inMarket(x, z)) return true;               /* ลานตลาด: ของฉากสุ่ม (ต้นไม้/พุ่ม/เห็ด) ห้ามงอกแทรกกลางตลาด */
   return hit(BENCH_SPOTS) || hit(CART_SPOTS) || hit(FARM_PROPS) || hit(BANNER_POLES) || hit(FISH_RACKS)
       || hit(NPC_STAND) || isQuestBoardTile(x, z) || inFlowerBed(x, z) || hit(CARPENTER_PROPS)
       || inPool(x, z) || hit(POOL_PROPS)
@@ -604,6 +606,7 @@ function isPlazaTile(x, z){
   if(inBox(PLAZA2, x, z)) return true;                     /* ลานกิจกรรมริมทางไปชายหาด */
   if(inPlazaGate(x, z)) return true;            /* ทางเดินเข้าลานน้ำพุ 3 ทาง (ปูหินต่อจากลาน) */
   if(inSchoolYard(x, z)) return true;                      /* ลานหน้าโรงเรียน (พื้นในรั้ว รอบตัวอาคาร) */
+  if(inMarket(x, z)) return true;                          /* ลานตลาดรถเข็นหน้าโรงเรียน (ปูหินเต็มบล็อก) */
   return inBox(PLAZA, x, z) && !inBox(FOUNTAIN, x, z);
 }
 /* ---------- ใบไม้ "ล้ำ" ทับถนนบนจอ (เรื่องมุมกล้อง ไม่ใช่เรื่องช่องกริด) ----------
@@ -661,7 +664,7 @@ function wildPlantable(x, z, tall, plazaPad){
 }
 /* แถบโล่งหน้าอาคาร: กว้างเท่าตัวอาคาร (+ข้างละ 1 ช่อง) ยาว 3 ช่องออกมาทางประตู
    กล้อง isometric มองจาก (+x,+z) → ของสูงในแถบนี้บังหน้าร้าน/ขวางทางเข้าพอดี
-   (เดิมกันแค่ 3 ช่องกลางประตู ต้นไม้เยื้องไปข้างๆ ยังบังหน้าร้านอยู่ — ผู้ใช้แจ้งเรื่องหน้าร้านขนมปัง) */
+   (เดิมกันแค่ 3 ช่องกลางประตู ต้นไม้เยื้องไปข้างๆ ยังบังหน้าร้านอยู่ — ผู้ใช้แจ้งเรื่องหน้าร้านล็อต shop-mart) */
 function inLotFrontStrip(x, z){
   for(let i=0; i<VILLAGE_LOTS.length; i++){
     const l = VILLAGE_LOTS[i];
@@ -997,6 +1000,7 @@ const SIGN_ICONS = [], SIGN_COLS = 5, SIGN_CELL = 128;
 VILLAGE_LOTS.forEach(l=>{ if(l.kind!=='home' && SIGN_ICONS.indexOf(l.icon)<0) SIGN_ICONS.push(l.icon); });
 SIGN_ICONS.push('🌷');                     /* ป้ายทุ่งดอกไม้ (ไม่ได้ผูกกับล็อตไหน แต่ใช้ป้าย atlas เดียวกัน) */
 SIGN_ICONS.push('🎠');                     /* ป้ายสนามเด็กเล่นกลางเมือง */
+SIGN_ICONS.push('🍢');                     /* ป้ายตลาดรถเข็นหน้าโรงเรียน */
 let signMat = null;
 function signAtlasMat(){
   if(signMat) return signMat;
@@ -1090,10 +1094,13 @@ function addShopEmblem(g, kind, bh){
   const y0 = bh + .95;                              /* สันหลังคา */
   const post = cyl(.07,.07,.5,0xf7f3ee,8); post.position.set(0, y0+.2, 0); g.add(post);
   const base = y0 + .5;
-  if(kind==='bakery'){                              /* ขนมปังก้อนโต */
-    const lf = sphere(.34,0xe0a860,12); lf.scale.set(1.45,.85,.95); lf.position.set(0, base+.28, 0); g.add(lf);
-    [-.2,0,.2].forEach(o=>{ const cut = box(.1,.06,.5,0xd8954a,.02); cut.rotation.y = .5;
-      cut.position.set(o, base+.5, 0); g.add(cut); });
+  if(kind==='mart'){                                /* ตะกร้าช็อปปิ้งใบโต มีของโผล่พ้นปาก */
+    const bk = cyl(.32,.26,.34,0xef8354,14); bk.position.set(0, base+.2, 0); g.add(bk);
+    const rim = torus(.32,.045,0xfffaf0,14); rim.rotation.x = Math.PI/2; rim.position.set(0, base+.36, 0); g.add(rim);
+    const hd = torus(.22,.035,0xd8dee3,14); hd.position.set(0, base+.42, 0); g.add(hd);   /* หูหิ้วโค้ง */
+    [[-.14,.44,.06,0x7fc4e8],[.13,.48,0,0xffd54f],[-.02,.52,-.1,0xff8fb3]].forEach(([ox,oy,oz,c])=>{
+      const gd = box(.19,.22,.16,c,.03); gd.position.set(ox, base+oy, oz); g.add(gd);
+    });
   } else if(kind==='toy'){                          /* ตุ๊กตาหมียักษ์ */
     const bd2 = sphere(.26,0xd9a86c,12); bd2.position.set(0, base+.24, 0); g.add(bd2);
     const hd = sphere(.22,0xe8b46a,12); hd.position.set(0, base+.62, 0); g.add(hd);
@@ -1151,13 +1158,8 @@ function addShopEmblem(g, kind, bh){
 /* ของหน้าร้านตามประเภทร้าน — เรียกหลังตัวอาคารเสร็จ (พิกัดอ้างกลางอาคาร ประตูอยู่ +z) */
 function addShopFront(g, kind, bw, bd, bh, roofHex){
   const front = bd/2 + .3;
-  if(kind==='bakery'){                             /* ชั้นวางขนมปังหน้าร้าน */
-    const shelf = box(1.5,.12,.4,0xd9a86c,.04); shelf.position.set(-bw*.22,.62,front); g.add(shelf);
-    [-.42,0,.42].forEach((o,i)=>{
-      const lf = sphere(.17,[0xe0a860,0xd8954a,0xecc07a][i],10);
-      lf.scale.set(1.3,.8,.9); lf.position.set(-bw*.22+o,.78,front); g.add(lf);
-    });
-  }else if(kind==='toy'){                          /* ธงราวเล็ก + ลูกบอล + ตัวต่อ */
+  /* (ร้านสะดวกซื้อ shopKind 'mart' ไม่ผ่านทางนี้ — มี buildMinimart สร้างหน้าร้านของตัวเองครบทั้งหลัง) */
+  if(kind==='toy'){                                /* ธงราวเล็ก + ลูกบอล + ตัวต่อ */
     [-1,1].forEach(s=>{ const p = cyl(.04,.04,1.5,0xf7f3ee,6); p.position.set(s*(bw/2-.1),.75,front); g.add(p); });
     for(let i=0;i<5;i++){
       const fl = cone(.12,.22,[0xff8fb3,0xffd54f,0x7fc4e8,0xb388ff,0xff8a65][i],4);
@@ -1436,6 +1438,134 @@ function buildPetShop(lot){
     });
   });
   g.position.set(outWX(cx), 0, outWZ(cz));
+  return g;
+}
+
+/* ---------- ร้านสะดวกซื้อ (minimart) ของชุมชน — ล็อต shop-mart ----------
+   เดิมล็อตนี้เป็น "ร้านขนมปัง" ที่ใช้ทรงบ้านจั่วของ buildLotBuilding แล้วแปะชั้นขนมปังทับหน้าบ้าน
+   เด็กมองแล้วเหมือนบ้านหลังหนึ่ง → เปลี่ยนเป็นร้านสะดวกซื้อเต็มตัว มีตึกเป็นของตัวเอง:
+     - หลังคาแบน + แถบป้ายหนา (fascia) คาดรอบตัวตึก = สัญลักษณ์เด่นที่สุดของร้านสะดวกซื้อ (ไม่มีหน้าจั่ว/ปล่องไฟ)
+     - หน้าร้านเป็นกระจกบานใหญ่เต็มแนวทั้ง 2 ฝั่ง + ประตูกระจกบานเลื่อนคู่ตรงกลาง
+     - กันสาดลายทาง + ป้ายร้านบนแถบ fascia + ป้ายยื่นข้างอาคาร
+     - ทางเท้าหน้าร้าน: ชั้นวางของกิน/น้ำ ตู้แช่ไอศกรีม ตะกร้าซ้อน พรมเช็ดเท้า กระถางต้นไม้
+   ตะกร้าช็อปปิ้งยักษ์บนหลังคามาจาก addShopEmblem('mart') (ส่ง bh ลดลง .45 ให้ฐานไปตกบนขอบ fascia พอดี) */
+function buildMinimart(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const bw = w-.4, bd = d-.7, bh = 2.0;          /* ตื้นกว่าบ้านทั่วไป → เหลือทางเท้าหน้าร้านให้วางของ */
+  const fz = bd/2;
+  const brand = lot.roof, accent = 0x6fbf73;     /* สีแบรนด์ร้าน: ส้ม (จากผัง) + เขียว = แถบคาดสองสีแบบร้านสะดวกซื้อ */
+  const base = box(bw+.18,.24,bd+.18, 0xe6ddce,.05); base.position.y = .12; g.add(base);
+  const body = box(bw, bh, bd, lot.wall,.06); body.position.y = bh/2; g.add(body);
+  /* --- แถบป้ายหนารอบหลังคาแบน (fascia) + คิ้วสองสี --- */
+  const fascia = box(bw+.22,.5,bd+.22, brand,.06); fascia.position.y = bh+.25; g.add(fascia);
+  const st1 = box(bw+.26,.11,bd+.26, 0xfffaf0,.03); st1.position.y = bh+.06; g.add(st1);
+  const st2 = box(bw+.26,.09,bd+.26, accent,.03);   st2.position.y = bh+.19; g.add(st2);
+  /* พื้นดาดฟ้า **แคบกว่าแถบ fascia เสมอ** และอยู่ต่ำกว่าขอบบน — มองมุมไอโซจะเห็นแถบสีส้มตีกรอบรอบดาดฟ้า
+     (เคยทำเป็นแผ่นขาวกว้างคลุมทับ กลายเป็นฝากล่องขาวใบโต กลืนกับผนัง มองไม่ออกว่าเป็นแถบป้ายร้าน) */
+  const deck = box(bw+.02,.12,bd+.02, 0xdcd5c6,.03); deck.position.y = bh+.46; g.add(deck);
+  /* --- เสาตกแต่งมุมหน้าร้าน 2 ต้น (ตีกรอบแนวกระจกให้ดูเป็นหน้าร้าน) --- */
+  [-1,1].forEach(sd=>{
+    const pil = box(.28, bh, .3, brand,.05); pil.position.set(sd*(bw/2-.14), bh/2, fz-.08); g.add(pil);
+  });
+  /* --- กระจกหน้าร้านบานใหญ่ 2 ฝั่ง (ฝั่งละบานคู่) --- */
+  [-1,1].forEach(sd=>{
+    const px = sd*1.12;
+    const fr = box(1.3, 1.5, .1, 0xfffaf0,.04);  fr.position.set(px, 1.0, fz+.02); g.add(fr);
+    const gl = box(1.14, 1.34, .08, 0xd5f0fb,.03); gl.position.set(px, 1.0, fz+.06); g.add(gl);   /* ฟ้าอ่อน — ใต้กันสาดมีเงาทับอยู่แล้ว ถ้าใช้ฟ้าเข้มจะออกมาเป็นสีเทาทึบ */
+    const mul = box(.08, 1.34, .06, 0xfffaf0,.02); mul.position.set(px, 1.0, fz+.1); g.add(mul);
+    const sill = box(1.36,.14,.22, brand,.04); sill.position.set(px, .27, fz+.08); g.add(sill);
+    /* สติกเกอร์วงกลมสีลูกกวาดติดกระจก (ร้านสะดวกซื้อชอบมีป้ายโปรโมชันติดกระจก) */
+    [[-.34,1.44,0xffd54f],[.34,1.44,0xff8fb3]].forEach(([ox,oy,c])=>{
+      const dot = cyl(.1,.1,.04,c,12); dot.rotation.x = Math.PI/2; dot.position.set(px+ox, oy, fz+.11); g.add(dot);
+    });
+  });
+  /* --- ประตูกระจกบานเลื่อนคู่ตรงกลาง --- */
+  const dfr = box(1.14, 1.5, .1, 0xd8dee3,.04); dfr.position.set(0, .75, fz+.02); g.add(dfr);
+  [-1,1].forEach(sd=>{
+    const leaf = box(.5, 1.34, .08, 0xd5f0fb,.03); leaf.position.set(sd*.27, .69, fz+.07); g.add(leaf);
+    const bar  = cyl(.035,.035,1.0, 0xb8c2c8, 8);  bar.position.set(sd*.08, .69, fz+.12); g.add(bar);
+  });
+  const dtop = box(1.2,.12,.16, accent,.03); dtop.position.set(0, 1.48, fz+.08); g.add(dtop);
+  /* --- กันสาดลายทางเต็มหน้าร้าน + ไฟใต้กันสาด --- */
+  const n = 10, sw = bw*.96/n;
+  for(let i=0;i<n;i++){
+    const st = box(sw, .08, .64, i%2 ? 0xfffaf0 : brand, .02);   /* กันสาดตื้น (.64) — ลึกกว่านี้จะคลุมกระจกหน้าร้านจนมองไม่เห็น */
+    st.position.set(-bw*.48 + sw*(i+.5), 1.86, fz+.3); st.rotation.x = -.32; g.add(st);
+  }
+  [-1.1, 0, 1.1].forEach(ox=>{
+    const lamp = cyl(.09,.09,.07, 0xfff3c4, 10); lamp.position.set(ox, 1.68, fz+.24); g.add(lamp);
+  });
+  /* --- ป้ายร้านบนแถบ fascia (แผ่นขาว + รูปสินค้า + บรรทัดชื่อร้านจำลอง) --- */
+  const sfr = box(2.5,.44,.08, 0xfffaf0,.05); sfr.position.set(0, bh+.26, fz+.16); g.add(sfr);
+  const sg = signPlane(lot.icon, .34); sg.position.set(-.86, bh+.26, fz+.22); g.add(sg);
+  /* 2 บรรทัดจำลอง "ชื่อร้าน" — y ต้องอยู่ในช่วงแผ่นป้าย (bh+.04 ถึง bh+.48) ไม่งั้นบรรทัดล่างจะหลุดออกนอกป้าย
+     ใช้โทนน้ำตาลอ่อน-เข้ม (ไม่ใช่สีแบรนด์) เพราะบรรทัดสีส้มบนป้ายขาวจะกลืนไปกับแถบ fascia สีเดียวกันที่อยู่หลังป้าย */
+  [[.3,.35,.98,0x8f6231],[.16,.17,.72,0xd9c7a5]].forEach(([ox,oy,lw,c])=>{
+    const ln = box(lw,.12,.03, c,.02); ln.position.set(ox, bh+oy, fz+.22); g.add(ln);
+  });
+  /* --- ป้ายยื่นข้างอาคาร (blade sign) ฝั่ง +x = ฝั่งที่กล้องไอโซเห็นเต็มๆ ---
+     เดิมเป็นป้ายเสาสูงตั้งบนทางเท้า แต่เสาเรียวๆ มองมุมไอโซแล้วเหมือนป้ายลอยอยู่กลางอากาศ
+     เปลี่ยนเป็นป้ายติดผนังยื่นออกด้านข้างแทน — เห็นชัดกว่า ไม่กินที่ทางเท้า และช่วยแก้ผนังข้างที่ว่างโล่ง */
+  const bx = bw/2, bz = fz-.55;
+  const arm = box(.3,.1,.12, 0xd8dee3,.03); arm.position.set(bx+.1, 2.02, bz); g.add(arm);
+  const bfr = box(.14,.78,.9, brand,.06);    bfr.position.set(bx+.2, 1.6, bz); g.add(bfr);
+  const bfc = box(.08,.62,.74, 0xfffaf0,.05); bfc.position.set(bx+.28, 1.6, bz); g.add(bfc);
+  [1,-1].forEach(sd=>{                       /* รูปสินค้าทั้ง 2 หน้าป้าย (เดินผ่านทางไหนก็เห็น) */
+    const bsg = signPlane(lot.icon, .48); bsg.rotation.y = sd*Math.PI/2;
+    bsg.position.set(bx + (sd>0 ? .33 : .11), 1.6, bz); g.add(bsg);
+  });
+  /* --- ของบนหลังคา: คอมเพรสเซอร์แอร์ + ขนมปังยักษ์ --- */
+  const ac = box(.6,.34,.48, 0xc3ccd2,.05); ac.position.set(bw*.28, bh+.64, -bd*.16); g.add(ac);
+  const fan = cyl(.15,.15,.05, 0x9fabb3, 12); fan.position.set(bw*.28, bh+.83, -bd*.16); g.add(fan);
+  addShopEmblem(g, 'mart', bh-.45);
+  /* --- ทางเท้าหน้าร้าน ---
+     ของชิ้นใหญ่ (ชั้นขนมปัง/ตู้แช่) วาง "หันตามแนว z" ชิดขอบซ้าย-ขวาของทางเท้า ไม่วางขวางกลาง
+     ไม่งั้นมุมกล้องไอโซจะบังกระจกหน้าร้านทั้งบาน เหลือแต่หลังคากับกันสาดให้ดู */
+  const front = fz + .42;
+  /* ลานปูนหน้าร้าน — ของหน้าร้านจะได้ไม่ดูตั้งอยู่บนหญ้า
+     บางมาก (.05) เพราะยื่นเลยขอบล็อตไปทับช่องทางเดินหน้าร้านนิดหน่อย เด็กเดินผ่านแล้วต้องไม่เห็นเท้าจม */
+  const apron = box(bw+.3,.05,1.05, 0xefe7d8,.02); apron.position.set(0,.025,fz+.42); g.add(apron);
+  const mat = box(1.16,.05,.5, brand,.02); mat.position.set(0,.06,front-.02); g.add(mat);
+  /* ชั้นวางของริมซ้าย 2 ชั้น: กล่องขนมสีสด (ชั้นบน) + ขวดน้ำ (ชั้นล่าง) = ของที่ร้านสะดวกซื้อขาย */
+  const shx = -(bw/2 - .26);
+  [0,1].forEach(i=>{
+    const shy = .44 + i*.34;                       /* ระดับแผ่นชั้น — ของต้องวางที่ shy+.17 (ครึ่งความสูงของ+ครึ่งความหนาชั้น) ไม่ใช่ค่าคงที่ */
+    const sh = box(.44,.09,1.06, 0xd8d3c8,.03); sh.position.set(shx,shy,front+.06); g.add(sh);
+    [-.32,0,.32].forEach((o,k)=>{
+      const c = [0xef8354,0xffd54f,0x7fc4e8,0xff8fb3,0x8fd694,0xb388ff][(k+i*3)%6];
+      if(i){ const bx2 = box(.26,.24,.24, c,.03); bx2.position.set(shx,shy+.17,front+.06+o); g.add(bx2); }
+      else { const bt = cyl(.09,.1,.24, c,10); bt.position.set(shx,shy+.17,front+.06+o); g.add(bt);
+             const cp = cyl(.055,.055,.06, 0xfffaf0,8); cp.position.set(shx,shy+.32,front+.06+o); g.add(cp); }
+    });
+  });
+  [-1,1].forEach(sd=>{ const lg = cyl(.05,.05,.44, 0xc3ccd2, 8); lg.position.set(shx,.22,front+.06+sd*.44); g.add(lg); });
+  /* ตู้แช่ (ฝาบานเลื่อนสีฟ้า + ไอศกรีมโคนเล็กๆ ตั้งบนฝา) — วางฝั่ง **ซ้าย** ของประตูเท่านั้น
+     ฝั่งขวาหน้าประตูคือช่องที่พี่นวล (npc-mart, side:1) ยืนประจำอยู่ กล้องไอโซมุมเดียวตายตัว
+     ⇒ ของอะไรที่วางตรงนั้นจะโดนตัว NPC บังถาวร ไม่มีวันเห็น (เคยวางไว้แล้วหายทั้งตู้) */
+  const cfx = -.86;
+  const chest = box(.5,.54,.96, 0xfffaf0,.06); chest.position.set(cfx,.29,front+.04); g.add(chest);
+  const lid   = box(.54,.1,1.0, 0x7fc4e8,.04); lid.position.set(cfx,.6,front+.04); g.add(lid);
+  const band  = box(.54,.12,1.0, brand,.03);   band.position.set(cfx,.44,front+.04); g.add(band);
+  const cs = cone(.11,.24,0xe0a860,10); cs.rotation.x = Math.PI; cs.position.set(cfx,.74,front+.04); g.add(cs);
+  [[0,.9,0xffb3c6],[.07,1.0,0xa8e6cf]].forEach(([oz,oy,c])=>{
+    const sc = sphere(.11,c,10); sc.position.set(cfx,oy,front+.04+oz); g.add(sc);
+  });
+  /* ตะกร้าซ้อนข้างประตู + กระถางดอกไม้ริมขวา (คู่กับชั้นขนมปังริมซ้าย ให้หน้าร้านสมดุลกัน) */
+  [0,1,2].forEach(i=>{
+    const bk = box(.4,.13,.3, [0xef8354,0xffd54f,0x7fc4e8][i],.04);
+    bk.position.set(.86,.1+i*.13,front+.1); g.add(bk);
+  });
+  /* กระถางดอกไม้ย้ายมาอยู่ "ข้างตัวอาคารฝั่ง +x" (ใต้ป้ายยื่น) แทนที่จะอยู่หน้าประตูฝั่งขวา
+     เหตุผลเดียวกับตู้แช่: หน้าประตูฝั่งขวามีพี่นวลยืนบังอยู่ ส่วนแถบข้างอาคารฝั่งนี้กล้องเห็นเต็มๆ แต่เดิมโล่งเปล่า */
+  const potX = bw/2 + .2, potZ = fz - .45;
+  const pot = cyl(.22,.18,.34, 0xd9784f,10); pot.position.set(potX,.17,potZ); g.add(pot);
+  const bush = sphere(.26,0x8fd694,10); bush.scale.y = .85; bush.position.set(potX,.5,potZ); g.add(bush);
+  [[-.12,.62],[.12,.64],[0,.74]].forEach((o,i)=>{
+    const fl = sphere(.08,[0xffd54f,0xff8fb3,0xfffaf0][i],8);
+    fl.position.set(potX+o[0],o[1],potZ); g.add(fl);
+  });
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
   return g;
 }
 
@@ -1955,9 +2085,109 @@ function buildPoliceStation(lot){
   star.position.set(.44,.42,0); car.add(star);
   return g;
 }
+/* ---------- ตึกแล็บวิทยาศาสตร์ (kind 'lab' — ล็อต 6×5 ช่อง เหนือตลาดรถเข็น) ----------
+   ตึกขาว 2 ชั้นหลังคาแบน + โดมดูดาวมีกล้องโทรทรรศน์โผล่ + ขวดทดลองยักษ์เดือดปุดๆ บนดาดฟ้า
+   (บทพูดของ ดร.ต้น กับพี่ผู้ช่วยแล็บ พูดถึงโดมกับขวดบนหลังคาไว้ ต้องมีของจริงให้เด็กมองเห็น)
+   หน้าตึกหันไป +z (เข้าหากล้องไอโซ + หันออกถนนคนเดินของตลาด) ⇒ ของตกแต่งที่อยากให้เห็นต้องอยู่ฝั่ง +z เท่านั้น
+   ใช้โทนขาว-ฟ้าของล็อต ตัดด้วยน้ำยาทดลองสีลูกกวาด (เขียว/ชมพู/เหลือง/ม่วง) ให้ดูสนุกไม่ใช่ตึกทำงานจริงจัง */
+function buildScienceLab(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;      /* ล็อต 6×5 ช่อง */
+  const bw = w-.8, bd = d-.9, fh = 1.3, bh = fh*2;
+  const dz = bd/2;
+  const glass = 0xbfe6f7, cream = 0xfffaf0;
+  const LIQ = [0x8fd694, 0xef8fa5, 0xffd54f, 0xb388ff, 0x7fc4e8];   /* สีน้ำยาในขวดทดลอง */
+  const body = box(bw, bh, bd, lot.wall, .08); body.position.y = bh/2; g.add(body);
+  const band = box(bw+.06,.16,bd+.06, lot.roof,.04); band.position.y = fh; g.add(band);      /* คาดแบ่งชั้น */
+  const para = box(bw+.24,.26,bd+.24, lot.roof,.06); para.position.y = bh+.11; g.add(para);  /* ขอบดาดฟ้า */
+  const RTOP = bh+.24;                                  /* ระดับพื้นดาดฟ้า — ของบนหลังคาวางจากค่านี้ */
+  /* --- หน้าต่างแล็บ: กระจกบานใหญ่ + ขวดทดลองสีๆ ตั้งอยู่ในหน้าต่างให้เห็นจากข้างนอก --- */
+  const winAt = (x, y, c1, c2)=>{
+    const wf = box(1.06,.86,.06, cream,.03); wf.position.set(x, y, dz+.02); g.add(wf);
+    const wi = box(.92,.72,.09, glass,.02);  wi.position.set(x, y, dz+.03); g.add(wi);
+    const sl = box(1.12,.08,.14, lot.roof,.02); sl.position.set(x, y-.47, dz+.06); g.add(sl);
+    /* ขวดในหน้าต่าง: ฝั่งซ้ายเป็นขวดก้นแบน ฝั่งขวาเป็นหลอดทดลอง (นูนออกมาหน้ากระจกนิดเดียว) */
+    const fl = cone(.15,.26, c1, 10); fl.position.set(x-.22, y-.2, dz+.1); g.add(fl);
+    const fn = cyl(.045,.045,.16, cream, 8); fn.position.set(x-.22, y-.01, dz+.1); g.add(fn);
+    const tb = cyl(.07,.07,.34, c2, 8); tb.position.set(x+.24, y-.16, dz+.1); g.add(tb);
+    const tr = box(.34,.05,.1, 0xd8d3c8,.02); tr.position.set(x+.24, y-.33, dz+.1); g.add(tr);
+  };
+  [-1.75, 1.75].forEach((o,i)=> winAt(o, .95, LIQ[i*2], LIQ[i*2+1]));    /* ชั้นล่าง — เว้นกลางไว้ทำทางเข้า */
+  [-1.75, 1.75].forEach((o,i)=> winAt(o, 2.05, LIQ[i+2], LIQ[i]));       /* ชั้นบน — เว้นกลางไว้ติดอะตอม */
+  /* --- สัญลักษณ์อะตอมบนผนังชั้น 2 (นิวเคลียส + วงโคจร 3 วง เอียงคนละมุม) --- */
+  const abg = box(1.0,1.0,.06, cream,.05); abg.position.set(0, 2.05, dz+.03); g.add(abg);
+  [0, Math.PI/3, -Math.PI/3].forEach(rz=>{
+    const ring = torus(.36,.038, lot.roof, 18); ring.rotation.z = rz; ring.scale.y = .46;
+    ring.position.set(0, 2.05, dz+.07); g.add(ring);
+  });
+  const nuc = sphere(.13, 0xef8354, 10); nuc.position.set(0, 2.05, dz+.09); g.add(nuc);
+  /* --- ทางเข้า: ประตูกระจกบานคู่ + กันสาดสองเสา + พรมเช็ดเท้า --- */
+  const dr = box(1.5,1.15,.12, glass,.04); dr.position.set(0,.58,dz+.03); g.add(dr);
+  const dfr = box(1.68,1.3,.06, cream,.03); dfr.position.set(0,.65,dz+.01); g.add(dfr);
+  const dsp = box(.07,1.15,.15, cream,.02); dsp.position.set(0,.58,dz+.06); g.add(dsp);
+  const cvp = box(2.3,.14,.92, lot.roof,.05); cvp.position.set(0,1.52,dz+.42); g.add(cvp);
+  [-1,1].forEach(sd=>{ const p = cyl(.08,.08,1.46, cream,10); p.position.set(sd*.98,.73,dz+.8); g.add(p); });
+  const mat = box(1.9,.06,.7, 0x7fc4e8,.03); mat.position.set(0,.03,dz+.5); g.add(mat);
+  /* --- ป้ายชื่อตึกบนดาดฟ้า (รูปกล้องจุลทรรศน์) --- */
+  const sbf = box(1.62,.82,.06, lot.roof,.05); sbf.position.set(0, RTOP+.42, dz+.02); g.add(sbf);
+  const sbg = box(1.5,.7,.1, cream,.05);       sbg.position.set(0, RTOP+.42, dz+.06); g.add(sbg);
+  const sg = signPlane(lot.icon,.58);          sg.position.set(0, RTOP+.42, dz+.13); g.add(sg);
+  /* --- โดมดูดาวมุมดาดฟ้าฝั่ง -x + กล้องโทรทรรศน์โผล่ออกทางช่องเปิด ---
+     โดมเป็นทรงกลมวางจุดศูนย์กลางไว้ที่ "ขอบบนของฐาน" พอดี ครึ่งล่างจึงจมอยู่ในฐาน (ฐานรัศมีเท่ากัน) */
+  const dmx = -bw*.28, dmz = -bd*.16, DR = .74;
+  const drum = cyl(DR, DR, .34, cream, 18); drum.position.set(dmx, RTOP+.17, dmz); g.add(drum);
+  const dome = sphere(DR, 0x9ad9f0, 18); dome.scale.y = .78; dome.position.set(dmx, RTOP+.34, dmz); g.add(dome);
+  const slit = box(.24,.1,DR*2.02, cream,.03); slit.position.set(dmx, RTOP+.86, dmz); g.add(slit);
+  const tele = cyl(.11,.13,.9, 0x4a6fa5, 12);      /* กล้องเอียงชี้ขึ้นฟ้าไปทาง +z ให้กล้องไอโซเห็นตัวกล้องเต็มๆ */
+  tele.rotation.x = .95; tele.position.set(dmx, RTOP+.86, dmz+.42); g.add(tele);
+  const lens = cyl(.14,.14,.08, 0xfff3c4, 12); lens.rotation.x = .95; lens.position.set(dmx, RTOP+1.15, dmz+.66); g.add(lens);
+  /* --- ขวดทดลองยักษ์เดือดปุดๆ บนดาดฟ้าฝั่ง +x (ตัวเอกที่ NPC ชวนเด็กมาดู) --- */
+  const flx = bw*.3, flz = -bd*.06;
+  const stand = cyl(.34,.38,.12, 0xd8d3c8, 14); stand.position.set(flx, RTOP+.06, flz); g.add(stand);
+  const gflask = cone(.44,.78, 0x8fd694, 14); gflask.position.set(flx, RTOP+.51, flz); g.add(gflask);
+  const gneck  = cyl(.13,.13,.34, cream, 12);  gneck.position.set(flx, RTOP+1.03, flz); g.add(gneck);
+  const glip   = cyl(.17,.17,.08, lot.roof, 12); glip.position.set(flx, RTOP+1.22, flz); g.add(glip);
+  [[.0,1.44,.11,0xfffaf0],[-.13,1.66,.09,0x8fd694],[.11,1.86,.13,0xfffaf0],[-.06,2.08,.08,0x8fd694]]
+    .forEach(([ox,oy,r,c])=>{                      /* ฟองไอลอยขึ้นจากปากขวด */
+      const bb = sphere(r, c, 10); bb.position.set(flx+ox, RTOP+oy, flz); g.add(bb);
+    });
+  /* --- ผนังข้างฝั่ง +x: ท่อแล็บสีลูกกวาด + ช่องหน้าต่างกลม ---
+     ฝั่งนี้คือด้านที่กล้องไอโซเห็นเต็มบาน (เหมือนป้ายยื่นของร้านสะดวกซื้อ) ปล่อยว่างแล้วเป็นผนังขาวโล่งใบใหญ่
+     ท่อวางเป็นคู่ "ท่อตั้ง + ข้องอ + ท่อนอน" ให้ดูเหมือนท่อเดินระบบของห้องแล็บจริง */
+  const sx = bw/2;
+  [[-.95, 0x8fd694],[ .95, 0x7fc4e8]].forEach(([oz,c])=>{
+    const up = cyl(.09,.09,1.5, c, 10); up.position.set(sx+.14, 1.25, oz); g.add(up);
+    const el = sphere(.12, c, 10);      el.position.set(sx+.14, 2.0, oz); g.add(el);
+    const hz = cyl(.09,.09,.5, c, 10);  hz.rotation.x = Math.PI/2; hz.position.set(sx+.14, 2.0, oz+(oz<0?.25:-.25)); g.add(hz);
+    const fl2 = cyl(.13,.13,.09, cream, 10); fl2.position.set(sx+.14, .62, oz); g.add(fl2);
+  });
+  [-.95, .95].forEach((oz,i)=>{                      /* หน้าต่างกลมมีน้ำยาสีอยู่ข้างใน */
+    const rim = cyl(.28,.28,.08, cream, 14); rim.rotation.z = Math.PI/2; rim.position.set(sx+.03, .95, oz); g.add(rim);
+    const pane = cyl(.21,.21,.1, LIQ[i*3], 14); pane.rotation.z = Math.PI/2; pane.position.set(sx+.06, .95, oz); g.add(pane);
+  });
+  /* --- ท่อระบายอากาศเล็กๆ ท้ายดาดฟ้า (เติมความเป็นตึกทดลอง ไม่บังของชิ้นเอก) --- */
+  [[-.9,-1.5],[.4,-1.6]].forEach(([ox,oz])=>{
+    const pipe = cyl(.11,.11,.42, 0xc3ccd2, 10); pipe.position.set(ox, RTOP+.21, oz); g.add(pipe);
+    const cap  = cyl(.16,.16,.09, lot.roof, 10);  cap.position.set(ox, RTOP+.46, oz); g.add(cap);
+  });
+  /* --- ลานหน้าตึก: ทางเดินปูน + กระถางต้นไม้ + ถังเก็บสารเคมีสีลูกกวาดข้างประตู --- */
+  const apron = box(bw+.4,.05,1.1, 0xefe7d8,.02); apron.position.set(0,.025,dz+.5); g.add(apron);
+  [-1,1].forEach(sd=>{
+    const pot = cyl(.24,.2,.32, 0xf3e7d6,12); pot.position.set(sd*2.0,.16,dz+.44); g.add(pot);
+    const bs  = sphere(.27,0x6fbf73,10); bs.scale.y = .88; bs.position.set(sd*2.0,.46,dz+.44); g.add(bs);
+  });
+  [[-2.55,LIQ[0]],[-2.55+.5,LIQ[3]]].forEach(([ox,c],i)=>{     /* ถังสารเคมี 2 ใบ วางชิดขอบซ้ายของลาน */
+    const drum2 = cyl(.2,.2,.44, c, 12); drum2.position.set(ox,.22,dz+.32+i*.1); g.add(drum2);
+    const lid2  = cyl(.22,.22,.07, cream, 12); lid2.position.set(ox,.47,dz+.32+i*.1); g.add(lid2);
+  });
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
+  return g;
+}
 function buildLotBuilding(lot){
   if(lot.shopKind==='food') return buildRestaurant(lot);
   if(lot.shopKind==='pet')  return buildPetShop(lot);
+  if(lot.shopKind==='mart') return buildMinimart(lot);     /* ร้านสะดวกซื้อ — ตึกหลังคาแบน ไม่ใช้ทรงบ้าน */
+  if(lot.kind==='lab') return buildScienceLab(lot);
   if(lot.kind==='school') return buildSchoolBuilding(lot);
   if(lot.kind==='hospital') return buildHospital(lot);
   if(lot.kind==='police') return buildPoliceStation(lot);
@@ -3010,7 +3240,10 @@ function buildBench(){
 /* รถเข็นขายของ: ตัวรถ + ล้อ 2 ล้อ + ที่จับ + กันสาดลายทาง + ของขายตามประเภท */
 function buildCart(kind){
   const g = new THREE.Group();
-  const tone = {fruit:0xef8354, ice:0x7fc4e8, noodle:0xe4574a, balloon:0xb388ff}[kind] || 0xef8354;
+  const tone = {fruit:0xef8354, ice:0x7fc4e8, noodle:0xe4574a, balloon:0xb388ff,
+                meatball:0xe4574a, sausage:0xef8354, tokyo:0xffc857, snack:0x5aa9e6,
+                smoothie:0xb388ff, popcorn:0xe36f5c, cotton:0xef8fa5, toy:0x6fbf73,
+                milk:0x9ad9f0, shave:0xffd54f}[kind] || 0xef8354;
   const body = box(1.15,.5,.72,0xf3e7d6,.06); body.position.y = .55; g.add(body);
   const trim = box(1.2,.12,.78,tone,.04); trim.position.y = .78; g.add(trim);
   const base = box(1.0,.1,.6,0xc98d4e,.03); base.position.y = .3; g.add(base);
@@ -3042,11 +3275,151 @@ function buildCart(kind){
     [[-.2,1.32,.11],[-.1,1.46,.09]].forEach(p=>{ const st = sphere(p[2],0xffffff,8); st.position.set(p[0],p[1],0); g.add(st); });
     const bowl = cyl(.19,.13,.16,0xfffaf0,12); bowl.position.set(.34,.94,0); g.add(bowl);
     const nd = cyl(.15,.15,.05,0xffe0a3,12); nd.position.set(.34,1.03,0); g.add(nd);
+  /* ---- รถเข็นของตลาดหน้าโรงเรียน ----
+     ของทุกชิ้นต้องสูงไม่เกิน ~1.45 (กันสาดอยู่ y 1.6) ยกเว้นลูกโป่งที่ตั้งใจให้ลอยทะลุขึ้นไป */
+  }else if(kind==='meatball' || kind==='sausage'){     /* ลูกชิ้นปิ้ง / ไส้กรอกย่าง — เตาถ่านมีไม้เรียงย่าง */
+    const grill = box(.86,.16,.44, 0x5b4a42,.04); grill.position.set(-.14,.9,0); g.add(grill);
+    const coal  = box(.72,.05,.32, 0xef6a58,.02); coal.position.set(-.14,.99,0); g.add(coal);
+    [-.28,-.14,0].forEach((ox,i)=>{
+      const sk = cyl(.018,.018,.52, 0xe8d9b8, 6); sk.rotation.x = Math.PI/2;
+      sk.position.set(ox+.06,1.05,0); g.add(sk);
+      [-.14,0,.14].forEach(oz=>{
+        if(kind==='meatball'){ const bl = sphere(.065,0xd2a86a,8); bl.position.set(ox+.06,1.06,oz); g.add(bl); }
+        else { const ss = cyl(.055,.055,.16, 0xe0714f, 8); ss.rotation.x = Math.PI/2; ss.position.set(ox+.06,1.06,oz*1.05); g.add(ss); }
+      });
+    });
+    const cup = cyl(.11,.09,.2, 0xfffaf0,10); cup.position.set(.42,.98,0); g.add(cup);   /* ถ้วยน้ำจิ้ม */
+    const sauce = cyl(.09,.09,.04, kind==='meatball' ? 0xe4574a : 0xffc857,10); sauce.position.set(.42,1.09,0); g.add(sauce);
+  }else if(kind==='tokyo'){                            /* ขนมโตเกียว — กระทะกลมแบน + ม้วนเรียง */
+    const pan = cyl(.3,.3,.07, 0xb8c2c8,16); pan.position.set(-.2,.88,0); g.add(pan);
+    const oil = cyl(.26,.26,.03, 0xe8d9b8,16); oil.position.set(-.2,.93,0); g.add(oil);
+    [-.14,0,.14].forEach((oz,i)=>{
+      const rl = cyl(.055,.055,.3, [0xf2d5a8,0xecc07a,0xf7e3c8][i], 8); rl.rotation.z = Math.PI/2;
+      rl.position.set(-.2,.98,oz); g.add(rl);
+    });
+    const jug = cyl(.12,.13,.24, 0xfffaf0,10); jug.position.set(.36,1.0,0); g.add(jug);
+    const bat = cyl(.1,.1,.04, 0xffe9a8,10); bat.position.set(.36,1.11,0); g.add(bat);
+  }else if(kind==='snack'){                            /* ขนมขบเคี้ยว — ราวแขวนถุงขนมสีสด */
+    [-1,1].forEach(s=>{ const po = cyl(.028,.028,.56, 0xd8dee3,6); po.position.set(s*.44,1.14,-.24); g.add(po); });
+    const bar = cyl(.025,.025,.9, 0xd8dee3,6); bar.rotation.z = Math.PI/2; bar.position.set(0,1.4,-.24); g.add(bar);
+    [[-.32,0xef8354],[-.11,0xffd54f],[.11,0x8fd694],[.32,0xef8fa5]].forEach(([ox,c])=>{
+      const bg = box(.17,.24,.06, c,.03); bg.position.set(ox,1.24,-.24); g.add(bg);
+      const cl = box(.17,.05,.06, 0xfffaf0,.02); cl.position.set(ox,1.37,-.24); g.add(cl);
+    });
+    const jar = cyl(.14,.14,.26, 0xd5f0fb,12); jar.position.set(.3,1.0,.14); g.add(jar);   /* โหลขนมบนรถ */
+    [[.26,1.0],[.34,1.06],[.3,.94]].forEach(([ox,oy])=>{
+      const cd = sphere(.05,0xffc857,8); cd.position.set(ox,oy,.14); g.add(cd);
+    });
+  }else if(kind==='smoothie'){                         /* น้ำปั่น — เครื่องปั่น + แก้วมีหลอด */
+    const bl2 = cyl(.13,.11,.3, 0xd5f0fb,12); bl2.position.set(-.34,1.0,0); g.add(bl2);
+    const juice = cyl(.11,.1,.16, 0xff8fb3,12); juice.position.set(-.34,.95,0); g.add(juice);
+    const lid2 = cyl(.14,.14,.06, 0xb388ff,12); lid2.position.set(-.34,1.18,0); g.add(lid2);
+    [[.06,0xffb3c6],[.3,0xffd54f]].forEach(([ox,c],i)=>{
+      const cu = cyl(.085,.065,.22, 0xfffaf0,10); cu.position.set(ox,.96,i?.1:-.1); g.add(cu);
+      const dr = cyl(.075,.075,.14, c,10); dr.position.set(ox,.94,i?.1:-.1); g.add(dr);
+      const sw = cyl(.016,.016,.24, 0xef8354,6); sw.rotation.z = .3; sw.position.set(ox+.05,1.16,i?.1:-.1); g.add(sw);
+    });
+    [[-.04,0xe4574a],[.42,0x8fd06c]].forEach(([ox,c])=>{ const fr = sphere(.09,c,8); fr.position.set(ox,.92,.24); g.add(fr); });
+  }else if(kind==='popcorn'){                          /* ป๊อปคอร์น — ตู้คั่วกระจก + ถังลายทาง */
+    const mc = box(.46,.44,.4, 0xe4574a,.05); mc.position.set(-.3,1.04,0); g.add(mc);
+    const gl2 = box(.34,.3,.06, 0xd5f0fb,.03); gl2.position.set(-.3,1.06,.2); g.add(gl2);
+    const rf = box(.52,.08,.46, 0xffd54f,.03); rf.position.set(-.3,1.3,0); g.add(rf);
+    [[-.36,1.4,.06],[-.24,1.44,.05],[-.3,1.5,.045]].forEach(([ox,oy,r])=>{
+      const pc = sphere(r,0xfff3b0,8); pc.position.set(ox,oy,0); g.add(pc);
+    });
+    const bkt = cyl(.15,.12,.26, 0xfffaf0,12); bkt.position.set(.36,1.0,0); g.add(bkt);
+    const stp = cyl(.155,.13,.09, 0xe4574a,12); stp.position.set(.36,1.0,0); g.add(stp);
+    [[.3,1.18],[.42,1.2],[.36,1.26]].forEach(([ox,oy])=>{
+      const pc = sphere(.055,0xfff3b0,8); pc.position.set(ox,oy,0); g.add(pc);
+    });
+  }else if(kind==='cotton'){                           /* สายไหม — หม้อปั่น + ไม้สายไหมปักเรียง */
+    const drum = cyl(.24,.24,.18, 0xd8dee3,14); drum.position.set(-.3,.94,0); g.add(drum);
+    const hole = cyl(.15,.15,.05, 0xf0e4ff,12); hole.position.set(-.3,1.05,0); g.add(hole);
+    [[.06,0xff8fb3],[.26,0x9fd8f5],[.46,0xffd54f]].forEach(([ox,c],i)=>{
+      const st2 = cyl(.018,.018,.3, 0xe8d9b8,6); st2.position.set(ox,.98,i%2?.12:-.12); g.add(st2);
+      const cc = sphere(.15,c,10); cc.scale.set(1,1.15,1); cc.position.set(ox,1.24,i%2?.12:-.12); g.add(cc);
+      const cc2 = sphere(.1,c,8); cc2.position.set(ox+.07,1.34,i%2?.12:-.12); g.add(cc2);
+    });
+  }else if(kind==='toy'){                              /* ของเล่น — ชั้นวาง 2 ชั้น + กังหันลม + ตุ๊กตาหมี */
+    [0,1].forEach(i=>{
+      const sh = box(.92,.06,.34, 0xc98d4e,.02); sh.position.set(0,.94+i*.32,-.08); g.add(sh);
+    });
+    [-1,1].forEach(s=>{ const po = cyl(.03,.03,.5, 0xb4763a,6); po.position.set(s*.44,1.1,-.08); g.add(po); });
+    const ball = sphere(.11,0xef8354,10); ball.position.set(-.32,1.08,-.08); g.add(ball);
+    [0,1].forEach(i=>{ const bk = box(.14,.14,.14,[0x7fc4e8,0xffd54f][i],.03); bk.position.set(.3,1.04+i*.15,-.08); g.add(bk); });
+    const bear = sphere(.11,0xd9a86c,10); bear.position.set(-.02,1.4,-.08); g.add(bear);
+    const bhd = sphere(.085,0xe8b46a,10); bhd.position.set(-.02,1.56,-.08); g.add(bhd);
+    [-1,1].forEach(s=>{ const er = sphere(.04,0xd9a86c,7); er.position.set(-.02+s*.07,1.63,-.08); g.add(er); });
+    const wst = cyl(.018,.018,.44, 0xe8d9b8,6); wst.position.set(.42,1.2,.2); g.add(wst);   /* กังหันลม */
+    [0,1,2,3].forEach(i=>{
+      const bd3 = box(.12,.12,.02, [0xff8fb3,0xffd54f,0x7fc4e8,0x8fd694][i],.02);
+      bd3.position.set(.42 + Math.cos(i*Math.PI/2)*.1, 1.42 + Math.sin(i*Math.PI/2)*.1, .21); g.add(bd3);
+    });
+  }else if(kind==='milk'){                             /* นมเย็น — ถังนมสเตนเลส + ขวดนมเรียง + ลังแช่ */
+    const can = cyl(.17,.21,.32, 0xc9d6de,12); can.position.set(-.34,1.0,0); g.add(can);
+    const nk  = cyl(.1,.12,.1, 0xb4c3cc,10);   nk.position.set(-.34,1.2,0); g.add(nk);
+    const lid3= cyl(.13,.13,.05, 0x8fa3ad,10); lid3.position.set(-.34,1.27,0); g.add(lid3);
+    [[.02,-.11],[.14,.06],[.3,-.06]].forEach(([ox,oz],i)=>{
+      const bt = cyl(.075,.08,.26, 0xfbf7f0,10); bt.position.set(ox,.97,oz); g.add(bt);
+      const cp = cyl(.05,.05,.06, [0x7fc4e8,0xef8fa5,0xffd54f][i],8); cp.position.set(ox,1.13,oz); g.add(cp);
+    });
+    const crate = box(.34,.2,.4, 0x7fc4e8,.04); crate.position.set(.46,.94,.12); g.add(crate);
+  }else if(kind==='shave'){                            /* น้ำแข็งไส — ก้อนน้ำแข็ง + เครื่องไส + ถ้วยราดน้ำหวาน */
+    const mach = box(.36,.42,.34, 0xd8dee3,.05); mach.position.set(-.36,1.05,0); g.add(mach);
+    const iceB = box(.24,.2,.22, 0xd5f0fb,.04);  iceB.position.set(-.36,1.36,0); g.add(iceB);
+    const crank= cyl(.03,.03,.24, 0x8f6231,6); crank.rotation.z = Math.PI/2; crank.position.set(-.1,1.24,0); g.add(crank);
+    const knob = sphere(.06,0xe4574a,8); knob.position.set(.02,1.24,0); g.add(knob);
+    [[.12,-.12,0xff8fb3],[.3,.08,0x8fd694]].forEach(([ox,oz,c])=>{     /* ถ้วยน้ำแข็งไสพูนราดน้ำหวาน */
+      const bw2 = cyl(.13,.09,.12, 0xfffaf0,12); bw2.position.set(ox,.92,oz); g.add(bw2);
+      const mound = sphere(.13,0xf2fbff,10); mound.scale.y = .8; mound.position.set(ox,1.03,oz); g.add(mound);
+      const syr = sphere(.09,c,8); syr.scale.y = .5; syr.position.set(ox,1.09,oz); g.add(syr);
+    });
+    [[.44,-.14,0xe4574a],[.5,.04,0x8fd694],[.44,.2,0xffd54f]].forEach(([ox,oz,c])=>{   /* ขวดน้ำหวาน */
+      const bo = cyl(.05,.055,.22, c,8); bo.position.set(ox,.95,oz); g.add(bo);
+      const cp = cyl(.03,.03,.05, 0xfffaf0,6); cp.position.set(ox,1.09,oz); g.add(cp);
+    });
   }else{                                               /* รถเข็นลูกโป่ง */
     const str = cyl(.03,.03,.7,0xf7f3ee,6); str.position.set(.3,1.5,0); g.add(str);
     [[0,1.95,0xff8fb3],[.24,2.06,0xffd54f],[-.2,2.1,0x7fc4e8],[.06,2.26,0xb388ff]].forEach(p=>{
       const bl = sphere(.2,p[2],12); bl.scale.set(1,1.16,1); bl.position.set(.3+p[0],p[1],0); g.add(bl);
     });
+  }
+  return g;
+}
+/* ป้ายตลาดหน้าโรงเรียน (ตั้งมุมทางเข้าตลาด) — ทรงเดียวกับป้ายสนามเด็กเล่น แต่สีตลาด + มีธงเล็กบนยอด */
+function buildMarketSign(){
+  const g = new THREE.Group();
+  [-1,1].forEach(sd=>{
+    const p = cyl(.07,.07,1.1, 0xb4763a,10); p.position.set(sd*.34,.55,0); g.add(p);
+    const c = sphere(.1, 0xffc857,10); c.position.set(sd*.34,1.14,0); g.add(c);
+  });
+  const board = box(1.0,.72,.1, 0xfdfbf5,.06); board.position.set(0,.94,.02); g.add(board);
+  const frame = box(1.1,.82,.06, 0xe4574a,.05); frame.position.set(0,.94,-.02); g.add(frame);
+  const sg = signPlane('🍢', .52); sg.position.set(0,.94,.09); g.add(sg);
+  const bar = box(.9,.09,.06, 0x6fbf73,.03); bar.position.set(0,.52,.02); g.add(bar);
+  for(let i=0;i<5;i++){                                /* ธงราวเล็กบนหัวป้าย */
+    const fl = cone(.07,.14,[0xff8fb3,0xffd54f,0x7fc4e8,0x8fd694,0xb388ff][i],4);
+    fl.rotation.x = Math.PI; fl.position.set(-.34+i*.17, 1.36, .02); g.add(fl);
+  }
+  return g;
+}
+/* เสาธงราวของตลาด: เสาสูง 2 ต้นขึงเชือกธงสามเหลี่ยมข้ามลาน (ห่างกัน span ช่อง)
+   ต้นซ้าย (withRope) เป็นคนถือเชือก+ธงทั้งเส้น ต้นขวาเป็นแค่เสาเปล่ารับปลายเชือก
+   ธงอยู่สูง ~2 หน่วย = เหนือกันสาดรถเข็น (1.6) จึงไม่ทับของบนรถ */
+function buildMarketBunting(withRope, span){
+  const g = new THREE.Group();
+  const post = cyl(.055,.055,2.3, 0xf7f3ee,8); post.position.y = 1.15; g.add(post);
+  const cap = sphere(.09, 0xffc857, 8); cap.position.y = 2.38; g.add(cap);
+  if(!withRope) return g;
+  /* ธงถี่ (ครึ่งช่องต่อผืน) และผืนใหญ่พอ — เคยทำผืนเล็ก/ห่างช่องละผืน มองมุมไอโซแล้วเห็นแต่เชือกขึงพาดยาว
+     เหมือนสายไฟลอยอยู่กลางจอ ไม่รู้ว่าคืออะไร */
+  const n = span * 2 - 1;
+  const rope = box(span,.05,.05, 0xc98d4e,.02); rope.position.set(span/2, 2.26, 0); g.add(rope);
+  const cols = [0xff8fb3,0xffd54f,0x7fc4e8,0x8fd694,0xb388ff,0xef8354];
+  for(let i=0;i<n;i++){
+    const fl = cone(.17,.38, cols[i%cols.length], 4);
+    fl.rotation.x = Math.PI; fl.rotation.y = Math.PI/4;        /* หันหน้าธงออกด้านข้าง (ทิศที่กล้องมอง) */
+    fl.position.set((i+1)*span/(n+1), 2.03, 0); g.add(fl);   /* สูงพ้นหัวคน+กันสาดรถเข็น ไม่พาดหน้าตัวละคร */
   }
   return g;
 }
@@ -4107,6 +4480,19 @@ function buildStaticScenery(){
     ct.rotation.y = (rot||0) * Math.PI/2;
     mergeCollectFx(ct, parts, chunkKeyOf(x, z));
   });
+  /* ---------- ตลาดรถเข็นหน้าโรงเรียน: ป้ายตลาด + เสาธงราวขึงข้ามทางเดินกลาง ---------- */
+  {
+    MARKET_SIGNS.forEach(sp=>{
+      const ms = buildMarketSign();
+      ms.position.set(outWX(sp.x), 0, outWZ(sp.z));
+      mergeCollectFx(ms, parts, chunkKeyOf(sp.x, sp.z));
+    });
+    MARKET_BUNTING.forEach(([x,z,span])=>{                         /* span>0 = ต้นซ้ายที่ถือเชือกธงทั้งเส้น */
+      const bt = buildMarketBunting(span > 0, span);
+      bt.position.set(outWX(x), 0, outWZ(z));
+      mergeCollectFx(bt, parts, chunkKeyOf(x, z));
+    });
+  }
   FLOWER_BEDS.forEach((b,i)=>{                       /* แปลงดอกไม้หน้าลานกิจกรรม */
     mergeCollectFx(buildFlowerBed(b, i), parts, chunkKeyOf(b.x0, b.z0));
   });
@@ -4222,6 +4608,9 @@ function buildOutGrid(noWild){
     .forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   /* ป้ายเมนูสามเหลี่ยมหน้าร้านอาหาร: ตัวป้ายตั้งพื้นเต็มช่อง ต้องบล็อกด้วย ไม่งั้นเดินทะลุป้ายได้ */
   if(grid[FOOD_SIGN.z] && grid[FOOD_SIGN.z][FOOD_SIGN.x]===0) grid[FOOD_SIGN.z][FOOD_SIGN.x] = 3;
+  /* ตลาดหน้าโรงเรียน: ป้ายตลาด + เสาธงราว บล็อกช่องตัวเอง (รถเข็น/ม้านั่งบล็อกไปแล้วในชุดด้านบน) */
+  MARKET_SIGNS.forEach(sp=>{ if(grid[sp.z] && grid[sp.z][sp.x]===0) grid[sp.z][sp.x] = 3; });
+  MARKET_BUNTING.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   /* สนามเด็กเล่น: พื้นยางเดินได้ทั้งผืน บล็อกเฉพาะตัวเครื่องเล่นกับป้ายหน้าสนาม */
   PLAY_ITEMS.forEach(it => it.tiles.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; }));
   for(let z=PLAYGROUND.z0; z<=PLAYGROUND.z1; z++) for(let x=PLAYGROUND.x0; x<=PLAYGROUND.x1; x++)
@@ -4383,7 +4772,9 @@ function buildWorld(){
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
     if(outGrid[z][x]===1 || outGrid[z][x]===2) continue;   /* ไม่ปูพื้นทับผิวน้ำ/สะพาน */
     if(farmPlotAt(x,z) || isPenSoilTile(x,z)) soilTiles.push([x,z]);
-    else if(isVillageRoadTile(x,z)) roadTiles.push([x,z]);
+    /* ลานตลาดปูพื้นชุดเดียวกับถนน (คำขอผู้ใช้ 2026-08-03) — ถนนใหญ่ z57-58 ที่พาดผ่านกลางตลาด
+       จึงต่อเนื่องเป็นผืนเดียวกับลาน ไม่เห็นรอยต่อโซน (เดิมปูอิฐโทนส้ม ห้ามใส่กลับโดยไม่ถาม) */
+    else if(isVillageRoadTile(x,z) || inMarket(x,z)) roadTiles.push([x,z]);
     else if(isPlazaTile(x,z)) plazaTiles.push([x,z]);
   }
   /* โทนถนน/ลานเข้มขึ้นกว่าเดิม (เดิม 0xe8d3a9/0xeadfc8 อ่อนจนกลืนกับหญ้าอ่อนและทราย
@@ -4427,11 +4818,15 @@ function buildWorld(){
      ไม่ใช่ก้อนกรวดลอยเด่นขึ้นมา + รับเงาได้ เงาต้นไม้/ตัวละครจึงทาบผ่านได้เนียนเหมือนพื้น */
   if(roadTiles.length){
     const stoneA = [], stoneB = [], tufts = [];
-    const isRoad = (x,z)=> x>=0 && z>=0 && x<OUT_W && z<OUT_D && isVillageRoadTile(x,z);
+    /* ต้องเช็คให้ตรงกับ "ช่องที่ปูพื้นถนนจริง" (roadTiles) ไม่ใช่แค่ isVillageRoadTile —
+       ลานตลาดถูกปูเป็นพื้นถนนด้วย ถ้าเช็คแค่ถนน ทุกช่องในตลาดจะนึกว่าตัวเองติดหญ้าทั้ง 4 ด้าน
+       แล้วโรยกอหญ้าเขียวเต็มลานไปหมด */
+    const isRoad = (x,z)=> x>=0 && z>=0 && x<OUT_W && z<OUT_D && (isVillageRoadTile(x,z) || inMarket(x,z));
     roadTiles.forEach(([x,z])=>{
       const rnd = fieldRnd(x, z);
       const list = ((x+z)&1) === 0 ? stoneA : stoneB;            /* ตามเฉดของช่องที่หินวางอยู่ */
       for(let k=0; k<2; k++) list.push([outWX(x) + (rnd()-.5)*.72, .035, outWZ(z) + (rnd()-.5)*.72]);
+      if(inMarket(x, z)) return;                                 /* ในลานตลาดไม่โรยกอหญ้าเลย (คำขอผู้ใช้ 2026-08-03) */
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dz])=>{           /* ด้านที่ติดกับพื้นหญ้า = ริมทาง */
         if(isRoad(x+dx, z+dz)) return;
         if(rnd() > .55) return;                                  /* ไม่ต้องมีทุกช่อง จะดูรกเกินไป */
