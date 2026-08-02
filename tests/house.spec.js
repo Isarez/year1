@@ -59,7 +59,7 @@ test('คลังเฟอร์นิเจอร์: ข้อมูลทุ
   const bad = meta.filter(m =>
     !m.id || !m.name || !m.cat || !m.emoji || !m.hasBuild ||
     !['in', 'out'].includes(m.scope) ||
-    !['sit', 'sleep', 'bounce', 'spin', 'toggle'].includes(m.action) ||
+    !['sit', 'sleep', 'bounce', 'spin', 'toggle', 'slide'].includes(m.action) ||   // slide = ปีนขึ้นแล้วลื่นลง (สไลเดอร์)
     !(m.fw >= 1 && m.fw <= 4) || !(m.fd >= 1 && m.fd <= 4));
   expect(bad).toEqual([]);
 

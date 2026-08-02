@@ -589,6 +589,40 @@ function mascotOops(){ mascot.classList.remove('happy'); mascot.classList.remove
 function saveProgress(){
   try{ localStorage.setItem(progressKey(), JSON.stringify(progress)); }catch(e){}
 }
+/* ---------- เงินนกฮูก (Owl Coin) 🪙 — สกุลเงินในเกมของเด็กแต่ละคน ----------
+   เก็บไว้ใน progress ของเด็ก (`progress.coins`) จึงถูกพ่วงไปกับระบบ export/import ย้ายเครื่อง
+   และแยกตามเด็กแต่ละคนอัตโนมัติ (progressKey ผูกกับ activeChild อยู่แล้ว)
+   **เด็กใหม่/เด็กเก่าที่ยังไม่มีค่า = 0 เสมอ**
+   ตอนนี้ยังไม่มีที่ให้หาเงิน/ใช้เงิน — วางระบบไว้ก่อน เวลาจะต่อของจริงให้เรียกผ่าน 4 ฟังก์ชันนี้เท่านั้น
+   (ห้ามไปแก้ `progress.coins` ตรงๆ จากที่อื่น จะได้มีจุดเดียวที่บันทึก/ยิง event)
+   ทุกครั้งที่ยอดเปลี่ยน จะยิง event `owlcoins` ที่ document พร้อม detail {coins, delta}
+   ให้ UI ในอนาคต (ป้ายยอดเงิน/ร้านค้า) มาดักฟังได้เลย
+   ไฟล์อื่นที่อยู่ใน IIFE (เช่น js/house.js) เรียกผ่าน `window.OwlCoins` ได้ */
+const COIN_MAX = 9999999;
+function getCoins(){
+  const n = progress && progress.coins;
+  return (typeof n === 'number' && isFinite(n) && n > 0) ? Math.floor(n) : 0;
+}
+function setCoins(n){
+  const before = getCoins();
+  const val = Math.max(0, Math.min(COIN_MAX, Math.floor(Number(n) || 0)));
+  progress.coins = val;
+  saveProgress();
+  if(val !== before){
+    try{ document.dispatchEvent(new CustomEvent('owlcoins', {detail:{coins:val, delta:val-before}})); }catch(e){}
+  }
+  return val;
+}
+function addCoins(n){ return setCoins(getCoins() + (Number(n) || 0)); }
+/* ตัดเงิน — คืน true ถ้าเงินพอและตัดสำเร็จ, false ถ้าเงินไม่พอ (ยอดไม่เปลี่ยน) */
+function spendCoins(n){
+  const cost = Math.max(0, Math.floor(Number(n) || 0));
+  if(getCoins() < cost) return false;
+  setCoins(getCoins() - cost);
+  return true;
+}
+window.OwlCoins = {get:getCoins, set:setCoins, add:addCoins, spend:spendCoins};
+
 function catById(id){ return CATS.find(c=>c.id===id); }
 /* นับสติกเกอร์เฉพาะระดับชั้นที่กำลังดูอยู่ (สติกเกอร์แยกตามระดับชั้น) */
 function stickerCount(){ return catsForGrade(selectedGrade).filter(c=>progress[c.id] && progress[c.id].unlocked).length; }

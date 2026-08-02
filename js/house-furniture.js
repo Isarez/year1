@@ -347,7 +347,9 @@
           const anc = new T.Group(); anc.position.set(0,.45-1.65,0); anc.userData.swingSeat = true; piv.add(anc);
         } },
       { id:'slide', name:'สไลเดอร์', cat:'play', scope:'out', emoji:'🛝', fw:1, fd:2, colors:PLASTIC,
-        action:'bounce',
+        /* แตะแล้วเด็กปีนขึ้นชานแล้วลื่นลงจริง (ใช้ท่าเดียวกับสไลเดอร์ในสนามเด็กเล่น)
+           slide = จุดขึ้น/จุดลงในพิกัดของชิ้นเอง — ดู startSlideRide ใน js/house.js */
+        action:'slide', slide:{climbZ:-.62, climbY:1.02, botZ:1.15, botY:.02},
         build(g,col){
           const platY = .95;
           /* ชานบันไดด้านบน (ฝั่ง -z) */
