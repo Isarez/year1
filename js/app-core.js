@@ -6,7 +6,9 @@
    ต้องโหลดหลัง js/data.js + js/owl-messages.js และก่อนไฟล์เกมทุกไฟล์
    ================================================================================ */
 
-window.APP_ASSET_VER = '?v=1.20.0';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy — ต้องตรงกับไฟล์ version */
+window.APP_ASSET_VER = '?v=2.0.1';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
+                                        ⚠️ ตัวนี้อยู่นอก index.html คำสั่ง sed ที่แก้ ?v= ตอน release จับไม่ถึง ต้องแก้มือทุกครั้ง
+                                        (เคยค้างที่ 1.20.0 ข้าม v2.0.0 มาแล้ว) */
 /* ============================= STATE ============================= */
 let progress = {};
 let soundOn = true;
@@ -152,6 +154,7 @@ function enterHome(){
   $('child-select-view').hidden = true;
   $('owl-widget').hidden = false;
   $('clear-btn').hidden = false;
+  $('reload-btn').hidden = true;      /* ปุ่มโหลดใหม่มีเฉพาะหน้าเลือกเด็ก */
   homeView.hidden = false;
   updateHeaderChild();
   renderHome();
@@ -236,6 +239,7 @@ function renderChildSelect(){
   initDobPicker();
   $('child-select-view').hidden = false;
   $('clear-btn').hidden = true;
+  $('reload-btn').hidden = false;     /* กลับมาหน้าเลือกเด็ก → โชว์ปุ่มโหลดใหม่อีกครั้ง */
   homeView.hidden = true;
   $('owl-widget').hidden = true;
   $('free-piano-btn').hidden = true;

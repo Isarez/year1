@@ -43,6 +43,31 @@ test.describe('โหลดแอปและหน้าหลัก', () => {
     expect(bad).toEqual([]);
   });
 
+  /* ปุ่มโหลดเวอร์ชันใหม่ — แก้ปัญหา iPad ที่ Add to Home Screen แล้วค้าง index.html เก่าใน cache
+     (ไม่มี service worker) ปุ่มต้องมีเฉพาะหน้าเลือกเด็ก และต้องพาไป URL ใหม่จริง ไม่ใช่แค่ reload เฉยๆ */
+  test('ปุ่มโหลดเวอร์ชันใหม่: โชว์เฉพาะหน้าเลือกเด็ก และบังคับดึง index.html ใหม่', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('p1quiz_children', JSON.stringify([
+        { id: 'c1', name: 'เทส', emoji: '🦉', birthDate: '2016-01-15' }]));
+      localStorage.setItem('p1quiz_music', 'off');
+    });
+    await page.goto('/');
+    await expect(page.locator('#reload-btn')).toBeVisible();          // หน้าเลือกเด็ก → เห็น
+
+    await page.locator('#child-select-view .child-card').first().click();
+    await expect(page.locator('#home-view')).toBeVisible();
+    await expect(page.locator('#reload-btn')).toBeHidden();           // หน้าหลัก → ซ่อน
+
+    await page.locator('#switch-child-btn').click();
+    await expect(page.locator('#reload-btn')).toBeVisible();          // กลับมา → เห็นอีก
+
+    await page.locator('#reload-btn').click();
+    await page.waitForURL(/\?r=\d+/, { timeout: 10000 });             // ต้องเปลี่ยน URL จริง
+    await expect(page.locator('#child-select-view')).toBeVisible();
+    // ข้อมูลเด็กอยู่ใน localStorage ต้องไม่หายไปกับการรีโหลด
+    expect(await page.locator('#child-select-view .child-card').count()).toBe(1);
+  });
+
   test('การ์ดหมวดทุกใบสูงเท่ากันและไม่มี scroll แนวนอน', async ({ page }) => {
     await openApp(page);
     for (const g of ['prep-p1', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6']) {
