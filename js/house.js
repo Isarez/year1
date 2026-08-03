@@ -31,13 +31,14 @@ const {
   VILLAGE_LOTS, LOT_BY_ID, WILD_GROVES, WILD_BUSHES, WILD_MUSHROOMS, POND,
   CANAL_Z, CANAL_X0, CANAL_X1, CANAL_BRIDGE_X, FARM_PLOTS, FARM_TRAIL,
   SEA_X0, SEA_SLOPE, SEA_MAX_Z, SEA_BASE_Z, BEACH_W, PALM_SPOTS,
-  BOAT_SPOTS, BEACHED_BOAT, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
+  BOAT_SPOTS, BEACH_RACKS, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
   SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN,
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
+  SUNFLOWER_FIELDS,
   FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, FOOD_DECK, FOOD_FLOWER_COL, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
   NPC_STAND, QUEST_BOARD, LAMP_FIXED, LAMP_SPOTS, LAMP_SET, HEDGE_LINES,
@@ -648,6 +649,9 @@ function wildPlantable(x, z, tall, plazaPad){
   if(inBox(PLAZA, x, z, pp) || inBox(PLAZA2, x, z, pp)) return false;  /* ลานกลางชุมชน/ลานกิจกรรม + ขอบลาน (ปกติ 2 ช่อง) */
   if(inPlazaYard(x, z)) return false;                            /* กรอบลานน้ำพุจัดวางเองทั้งหมด ไม่ให้ของสุ่มงอกแทรก */
   if(inBox(FOOD_DECK, x, z)) return false;                      /* ลานโต๊ะหน้าร้านอาหาร — ต้องโล่ง เดินนั่งได้ */
+  /* ทุ่งดอกทานตะวัน = แปลงที่จัดไว้แล้ว ห้ามต้นไม้/พุ่มสุ่มงอกแทรก (ถ้าปล่อยให้งอก ช่องนั้นจะเสียทานตะวันไป
+     1 ต้นเพราะทุ่งข้ามช่องที่ถูกจองไปแล้ว — และการ ban ต้นนั้นทีหลังจะทำให้ป่าเด้งไปงอกช่องข้างๆ ในแปลงแทน) */
+  if(SUNFLOWER_FIELDS.some(f => inBox(f, x, z))) return false;
   if(inBox(FOOD_FLOWER_COL, x, z)) return false;                /* แถวข้างลาน เอาไว้ปลูกดอกไม้ล้วน ไม่เอาต้นไม้ */
   if(penAt(x, z)) return false;                                 /* คอกสัตว์ในฟาร์ม (รวมรั้ว) */
   if(inPlayground(x, z)) return false;                          /* สนามเด็กเล่น — พื้นสนามต้องโล่ง ไม่ให้ต้นไม้/พุ่มสุ่มงอกกลางสนาม */
@@ -668,7 +672,10 @@ function wildPlantable(x, z, tall, plazaPad){
 function inLotFrontStrip(x, z){
   for(let i=0; i<VILLAGE_LOTS.length; i++){
     const l = VILLAGE_LOTS[i];
-    if(x>=l.x0-1 && x<=l.x1+1 && z>=l.z1+1 && z<=l.z1+2) return true;
+    /* ล็อตที่หันหน้าไป +x (face:'x' — เฟอร์นิเจอร์มอลล์) แถบหน้าร้านอยู่คอลัมน์ x1+1..x1+2 แทน */
+    if(l.face === 'x'){
+      if(z>=l.z0-1 && z<=l.z1+1 && x>=l.x1+1 && x<=l.x1+2) return true;
+    } else if(x>=l.x0-1 && x<=l.x1+1 && z>=l.z1+1 && z<=l.z1+2) return true;
   }
   return false;
 }
@@ -690,7 +697,10 @@ function nearWildWater(x, z, m){
 const WILD_TALL = ['tree', 'tree-round', 'pine'];
 let wildLayoutCache = null;
 /* ช่องที่สั่งถอนต้นไม้ออกถาวร (ผู้ใช้ชี้เองว่าต้นนี้เกะกะ/ไม่สวย) — กันทั้งตอนปลูกและตอนเก็บกวาดคอขวด */
-const WILD_BAN = new Set(['54,22', '11,19', '3,31', '4,31', '5,31', '7,29', '6,32', '3,35', '4,35', '5,39', '5,40', '8,49', '9,49', '34,61', '35,60']);
+const WILD_BAN = new Set(['54,22', '11,19', '3,31', '4,31', '5,31', '7,29', '6,32', '3,35', '4,35', '5,39', '5,40', '8,49', '9,49', '34,61', '35,60',
+  /* ทุ่งโล่งฝั่งตะวันออกของตึกแล็บ — ถอนต้นสน 2 ต้น (26,47 / 27,47) กับพุ่มเล็ก (27,48) ออกตามคำขอผู้ใช้
+     (2026-08-03) เปิดที่ให้แนวพุ่มไม้จัดสวน x27 กับทุ่งทานตะวัน x25-26 ลงแทน */
+  '26,47', '27,47', '27,48']);
 /* ---------- ต้นไม้ในชุมชน ----------
    กติกาป่า (wildPlantable แบบ tall) เว้นถนน 3 ช่อง + อาคาร 4 ช่อง → ในชุมชนแทบไม่เหลือช่องเลย ชุมชนจึงโล่งไม่มีต้นไม้
    ชุดกติกานี้ผ่อนให้เหลือ ถนน/ลาน 2 ช่อง + อาคาร 2 ช่อง + ใบไม้ล้ำบนจอสั้นลงเหลือ 2 ช่อง
@@ -2183,10 +2193,280 @@ function buildScienceLab(lot){
   g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
   return g;
 }
+/* ---------- ห้างสรรพสินค้าของชุมชนที่ 2 (kind:'mall') ----------
+   ใช้ร่วมกัน 2 หลัง: เฟอร์นิเจอร์มอลล์ (mallKind 'furniture') กับแฟชั่นมอลล์ (mallKind 'fashion')
+   โครงเดียวกันทั้งคู่: ตึกกระจก 2 ชั้นหลังคาแบน + ขอบดาดฟ้า (fascia) หนาคาดรอบ + ตู้โชว์กระจกเรียงเต็มหน้าร้าน
+   + ทางเข้าใหญ่สูง 2 ชั้นตรงกลางมีกันสาด + หน้าต่างริบบิ้นชั้น 2 + ป้ายใหญ่บนดาดฟ้า + ของยักษ์บนหลังคา
+   + ธงปลิวมุมดาดฟ้า + ลานหน้าห้างมีของโชว์ กระถางต้นไม้ ม้านั่ง
+   ต่างกันแค่: สีแบรนด์ · ของในตู้โชว์ · ของยักษ์บนหลังคา · ของที่ตั้งโชว์บนลานหน้าห้าง
+   ⚠ ล็อตที่ติดธง `face:'x'` (เฟอร์นิเจอร์มอลล์ — ผู้ใช้ขอให้หันหน้าไปทางทิศใต้) สร้างในกรอบท้องถิ่น
+     "หน้าอยู่ +z" เหมือนอาคารอื่นทุกหลังในแผนที่ แล้วค่อยหมุนทั้งกลุ่ม 90° ตอนท้าย
+     (mergeCollect อบ matrixWorld ลงไปใน geometry ให้อยู่แล้ว ของที่ติดธง fx ก็ถูก extractFx แปลงพิกัดให้)
+     ⇒ ในฟังก์ชันนี้ "ความกว้างหน้าร้าน" ของหลังนั้นคือด้าน z ของล็อต ส่วน "ความลึก" คือด้าน x */
+function buildMall(lot){
+  const g = new THREE.Group();
+  const faceX = lot.face === 'x';
+  const along = faceX ? (lot.z1-lot.z0+1) : (lot.x1-lot.x0+1);   /* ด้านหน้าร้าน (กว้าง) */
+  const deep  = faceX ? (lot.x1-lot.x0+1) : (lot.z1-lot.z0+1);   /* ความลึกอาคาร */
+  const fash = lot.mallKind === 'fashion';
+  /* ตัวตึกตื้นกว่าล็อตพอสมควร (deep-2.2) โดยตั้งใจ — ที่เหลือหน้าอาคารคือ "ลานหน้าห้าง"
+     ของโชว์/กระถาง/เสากันสาดทั้งหมดต้องอยู่ในกรอบล็อต (ครึ่งลึก = deep/2) เพราะช่องนอกล็อตเด็กเดินทะลุได้จริง
+     ถ้าวางเลยออกไป เด็กจะเดินทะลุโซฟา/หุ่นลองชุดกลางทางเท้า (ร้านสะดวกซื้อ/ตึกแล็บก็คุมกติกาเดียวกัน) */
+  const bw = along - .6, bd = deep - 2.2, fh = 1.6, bh = fh*2, fz = bd/2;
+  const brand = lot.roof, cream = 0xfffaf0, glass = 0xd5f0fb, gold = 0xffd54f;
+  const accent = fash ? 0xb388ff : 0x8fd694;      /* สีคู่แบรนด์: แฟชั่น = ลาเวนเดอร์ / เฟอร์นิเจอร์ = เขียวมิ้นต์ */
+  const wood = 0xc98d4e;
+  /* --- ฐาน + ตัวตึก + คิ้วคั่นชั้น --- */
+  const base = box(bw+.26,.24,bd+.26, 0xe6ddce,.05); base.position.y = .12; g.add(base);
+  const body = box(bw, bh, bd, lot.wall,.12); body.position.y = bh/2; g.add(body);
+  const band = box(bw+.1,.2,bd+.1, brand,.05); band.position.y = fh; g.add(band);
+  const bandL = box(bw+.14,.07,bd+.14, cream,.03); bandL.position.y = fh+.15; g.add(bandL);
+  /* --- ขอบดาดฟ้าหนาๆ (fascia) คาดรอบตึก + คิ้ว 2 สี + พื้นดาดฟ้า (แคบกว่า fascia เสมอ) --- */
+  const fascia = box(bw+.3,.56,bd+.3, brand,.08); fascia.position.y = bh+.28; g.add(fascia);
+  const st1 = box(bw+.34,.12,bd+.34, cream,.03);  st1.position.y = bh+.07; g.add(st1);
+  const st2 = box(bw+.34,.1,bd+.34, accent,.03);  st2.position.y = bh+.21; g.add(st2);
+  /* พื้นดาดฟ้าต้อง "แคบกว่า fascia แต่ผิวบนสูงกว่าขอบ fascia นิดเดียว" — มองมุมไอโซจะเห็นแถบสีแบรนด์
+     ตีกรอบรอบดาดฟ้าสีเทา (ถ้าตั้งต่ำกว่าขอบ fascia ดาดฟ้าจะจมหาย เหลือแต่ฝากล่องสีแบรนด์ใบโตทั้งหลังคา) */
+  const deck = box(bw+.04,.12,bd+.04, 0xdcd5c6,.03); deck.position.y = bh+.51; g.add(deck);
+  const RTOP = bh + .57;                            /* ระดับพื้นดาดฟ้า — ของบนหลังคาวางจากค่านี้ */
+  /* --- เสาตกแต่ง 4 มุมตึก (ตีกรอบแนวกระจกให้ดูเป็นหน้าห้าง ไม่ใช่กล่องเปล่า) --- */
+  [-1,1].forEach(sx2=>[-1,1].forEach(sz2=>{
+    const pil = box(.3, bh, .3, brand,.06);
+    pil.position.set(sx2*(bw/2-.14), bh/2, sz2*(bd/2-.14)); g.add(pil);
+  }));
+  /* ---------- ตู้โชว์กระจกชั้นล่าง ----------
+     แบ่งหน้าร้านเป็น: ตู้โชว์ n ช่อง | ทางเข้าใหญ่ตรงกลาง | ตู้โชว์ n ช่อง (สมมาตร)
+     ของในตู้เปลี่ยนไปตามช่อง ให้เดินผ่านแล้วเห็นของไม่ซ้ำกันเลยสักบาน */
+  const dW = Math.min(1.8, bw*.24), inner = dW/2 + .18;
+  const sideW = bw/2 - inner - .2, nBay = Math.max(2, Math.round(sideW/1.5)), bwid = sideW/nBay;
+  /* ของโชว์ในตู้ (วางบนแท่นสูง .23) — เฟอร์นิเจอร์: โซฟา/โคมไฟ/เตียง/ตู้ · แฟชั่น: หุ่นลองชุด 4 แบบ */
+  const DISP = [0xef8fa5, 0x7fc4e8, gold, 0x8fd694, 0xb388ff, 0xef8354];
+  const putDisplay = (idx, x, y, z)=>{
+    const c = DISP[idx % DISP.length], c2 = DISP[(idx+3) % DISP.length];
+    if(!fash){
+      if(idx % 4 === 0){                              /* โซฟาตัวเล็ก */
+        const st = box(.52,.13,.26, c,.05); st.position.set(x, y+.14, z); g.add(st);
+        const bk = box(.52,.22,.09, c,.04); bk.position.set(x, y+.3, z-.1); g.add(bk);
+        [-1,1].forEach(sd=>{ const am = box(.09,.16,.26, c2,.03); am.position.set(x+sd*.22, y+.25, z); g.add(am); });
+      }else if(idx % 4 === 1){                        /* โคมไฟตั้งพื้น */
+        const pl = cyl(.03,.045,.5, wood,8); pl.position.set(x, y+.25, z); g.add(pl);
+        const sh = cone(.2,.24, 0xfff3c4,12);         sh.position.set(x, y+.6, z); g.add(sh);
+        const bl = sphere(.07, gold, 8);              bl.position.set(x, y+.44, z); g.add(bl);
+      }else if(idx % 4 === 2){                        /* เตียงนอนพร้อมหมอน */
+        const bs = box(.54,.12,.3, cream,.04); bs.position.set(x, y+.13, z); g.add(bs);
+        const bl2 = box(.54,.09,.19, c,.03);   bl2.position.set(x, y+.23, z+.05); g.add(bl2);
+        const pw = box(.2,.09,.12, cream,.04); pw.position.set(x, y+.24, z-.1); g.add(pw);
+        const hb = box(.54,.24,.06, wood,.04); hb.position.set(x, y+.3, z-.12); g.add(hb);
+      }else{                                          /* ตู้เก็บของ 2 บาน */
+        const cb = box(.42,.56,.24, wood,.05); cb.position.set(x, y+.28, z); g.add(cb);
+        [-1,1].forEach(sd=>{
+          const dr2 = box(.17,.46,.05, c,.03); dr2.position.set(x+sd*.1, y+.28, z+.13); g.add(dr2);
+          const kn = sphere(.03, gold, 6);     kn.position.set(x+sd*.02, y+.28, z+.17); g.add(kn);
+        });
+      }
+    }else{                                            /* หุ่นลองชุด (ไม่มีหน้าตา — เป็นหุ่นโชว์เสื้อผ้า) */
+      const st2b = cyl(.13,.15,.05, 0xd8d3c8,12); st2b.position.set(x, y+.03, z); g.add(st2b);
+      const pl2  = cyl(.035,.035,.16, 0xd8d3c8,8); pl2.position.set(x, y+.13, z); g.add(pl2);
+      if(idx % 4 === 1){                              /* ชุดเสื้อ+กระโปรงบาน */
+        const sk = cone(.24,.34, c,12); sk.position.set(x, y+.38, z); g.add(sk);
+        const tp = box(.24,.22,.16, c2,.06); tp.position.set(x, y+.63, z); g.add(tp);
+      }else{                                          /* ชุดกระโปรงยาวชิ้นเดียว */
+        const dr3 = cone(.27,.62, c,12); dr3.position.set(x, y+.5, z); g.add(dr3);
+        const wb = cyl(.13,.13,.07, c2,10); wb.position.set(x, y+.62, z); g.add(wb);
+      }
+      const nk = cyl(.05,.05,.1, 0xf0e4d4,8); nk.position.set(x, y+.8, z); g.add(nk);
+      const hd = sphere(.1, 0xf0e4d4,12);     hd.position.set(x, y+.92, z); g.add(hd);
+      if(idx % 4 === 2){                              /* ใส่หมวกปีกกว้าง */
+        const hb2 = cyl(.2,.2,.03, c2,12);  hb2.position.set(x, y+1.0, z); g.add(hb2);
+        const hc  = cyl(.1,.11,.1, c2,10);  hc.position.set(x, y+1.05, z); g.add(hc);
+      }
+      if(idx % 4 === 3){                              /* ถือกระเป๋าใบเล็ก */
+        const bg = box(.15,.14,.07, c2,.04); bg.position.set(x+.24, y+.5, z+.05); g.add(bg);
+        const hn = torus(.06,.017, c2, 10);  hn.position.set(x+.24, y+.6, z+.05); g.add(hn);
+      }
+    }
+  };
+  let bayIdx = 0;
+  [-1,1].forEach(sd=>{
+    for(let i=0;i<nBay;i++){
+      const x = sd*(inner + bwid*(i+.5));
+      const fr = box(bwid-.06, 1.24, .1, cream,.04);  fr.position.set(x, .9, fz+.02); g.add(fr);
+      const gl = box(bwid-.22, 1.06, .08, glass,.03); gl.position.set(x, .92, fz+.06); g.add(gl);
+      const mu = box(.07, 1.06, .06, cream,.02);      mu.position.set(x, .92, fz+.1); g.add(mu);
+      /* แท่นวางของโชว์ยื่นออกมาจากผนัง — ของในตู้ต้องอยู่ "หน้ากระจก" เสมอ (ผนังกับกระจกเป็นกล่องทึบ
+         ถ้าวางลึกกว่าผิวหน้ากระจกที่ fz+.10 ของจะจมหายเข้าไปในตึกทั้งชิ้น) */
+      const sl = box(bwid, .22, .5, brand,.05); sl.position.set(x, .13, fz+.19); g.add(sl);
+      const lp = box(bwid-.3,.06,.1, gold,.02); lp.position.set(x, 1.44, fz+.13); g.add(lp);   /* ไฟส่องตู้โชว์ */
+      putDisplay(bayIdx++, x, .24, fz+.27);
+    }
+  });
+  /* ---------- ทางเข้าใหญ่ตรงกลาง (สูงคร่อม 2 ชั้น) ---------- */
+  const pfr = box(dW+.5, 2.55, .16, brand,.06);  pfr.position.set(0, 1.28, fz+.02); g.add(pfr);
+  const pin = box(dW+.24, 2.35, .1, cream,.05);  pin.position.set(0, 1.24, fz+.07); g.add(pin);
+  const tr  = box(dW, .92, .07, glass,.03);      tr.position.set(0, 1.82, fz+.11); g.add(tr);
+  const trm = box(dW, .09, .06, brand,.02);      trm.position.set(0, 1.3, fz+.12); g.add(trm);
+  [-1,1].forEach(sd=>{                            /* ประตูกระจกบานคู่ + มือจับยาว */
+    const lf = box(dW/2-.09, 1.16, .08, glass,.03); lf.position.set(sd*(dW/4), .64, fz+.11); g.add(lf);
+    const hb3 = cyl(.03,.03,.6, 0xb8c2c8, 8);       hb3.position.set(sd*.09, .64, fz+.16); g.add(hb3);
+  });
+  /* กันสาดใหญ่หน้าทางเข้า + เสารับ 2 ต้น + ไฟใต้กันสาด */
+  const cnp = box(dW+1.7,.18,.98, brand,.06);  cnp.position.set(0, 2.6, fz+.5); g.add(cnp);
+  const cnl = box(dW+1.5,.09,.82, accent,.03); cnl.position.set(0, 2.48, fz+.48); g.add(cnl);
+  [-1,1].forEach(sd=>{
+    const ps = cyl(.08,.08,2.5, cream,10); ps.position.set(sd*(dW/2+.72), 1.25, fz+.84); g.add(ps);
+  });
+  [-1,0,1].forEach(o=>{
+    const dl = cyl(.09,.09,.07, 0xfff3c4,10); dl.position.set(o*(dW/2+.3), 2.44, fz+.42); g.add(dl);
+  });
+  /* ---------- ชั้น 2: หน้าต่างริบบิ้นยาวตลอดหน้าตึก ---------- */
+  const ry = fh + .78;
+  const rfr = box(bw*.94, 1.06, .06, cream,.04); rfr.position.set(0, ry, fz+.02); g.add(rfr);
+  const rgl = box(bw*.9, .9, .08, glass,.03);    rgl.position.set(0, ry, fz+.05); g.add(rgl);
+  const nMul = Math.max(3, Math.round(bw/1.1));
+  for(let i=1;i<nMul;i++){
+    const mx = -bw*.45 + bw*.9*i/nMul;
+    const ml = box(.09,.9,.05, cream,.02); ml.position.set(mx, ry, fz+.1); g.add(ml);
+  }
+  const rsl = box(bw*.96,.14,.26, brand,.04); rsl.position.set(0, ry-.6, fz+.08); g.add(rsl);
+  /* กระถางดอกไม้เรียงบนคิ้วชั้น 2 (เติมสีให้ผนังชั้นบนไม่โล่ง) */
+  const nPot = Math.max(2, Math.round(bw/2.4));
+  for(let i=0;i<nPot;i++){
+    const px = -bw*.36 + bw*.72*(nPot===1 ? .5 : i/(nPot-1));
+    const pt = box(.3,.16,.18, 0xf3e7d6,.04); pt.position.set(px, ry-.44, fz+.16); g.add(pt);
+    const fl = sphere(.13, DISP[i % DISP.length], 8); fl.scale.y = .8;
+    fl.position.set(px, ry-.3, fz+.16); g.add(fl);
+  }
+  /* ---------- ป้ายใหญ่บนดาดฟ้า (รูปสินค้า + บรรทัดชื่อห้างจำลอง + หลอดไฟรอบป้าย) ---------- */
+  const sbW = Math.min(bw*.62, 4.4);
+  const sfr = box(sbW+.16, 1.06, .1, brand,.06); sfr.position.set(0, RTOP+.62, fz+.01); g.add(sfr);
+  const sbg = box(sbW, .9, .12, cream,.05);      sbg.position.set(0, RTOP+.62, fz+.05); g.add(sbg);
+  const sg = signPlane(lot.icon, .62); sg.position.set(-sbW*.3, RTOP+.62, fz+.13); g.add(sg);
+  [[.24,.9,0x8f6231],[.1,.66,0xd9c7a5]].forEach(([oy,lw,c])=>{
+    const ln = box(lw*(sbW/2.6),.13,.04, c,.02); ln.position.set(sbW*.16, RTOP+.62+oy-.2, fz+.13); g.add(ln);
+  });
+  for(let i=0;i<6;i++){                            /* หลอดไฟกลมเรียงบนขอบป้าย */
+    const bx2 = -sbW/2 + sbW*i/5;
+    const bl3 = sphere(.06, gold, 8); bl3.position.set(bx2, RTOP+1.15, fz+.08); g.add(bl3);
+  }
+  /* เสาป้ายรับใต้แผ่นป้าย (ให้ป้ายดูตั้งอยู่บนดาดฟ้าจริง ไม่ลอย) */
+  [-1,1].forEach(sd=>{
+    const sp = box(.12,.42,.12, 0xd8d3c8,.03); sp.position.set(sd*sbW*.32, RTOP+.05, fz-.02); g.add(sp);
+  });
+  /* ---------- ของยักษ์บนดาดฟ้า (มองไกลๆ ก็รู้ว่าห้างนี้ขายอะไร) ---------- */
+  /* สีของยักษ์ต้อง **ไม่ใช่สีแบรนด์** (สีเดียวกับขอบดาดฟ้า) ไม่งั้นจะกลืนหายไปกับหลังคาทั้งชิ้น */
+  const ex = -bw*.3, ez = -bd*.06, emb = fash ? accent : 0xef8354;
+  if(!fash){                                       /* โซฟายักษ์ */
+    const gs = box(1.5,.36,.72, emb,.12);  gs.position.set(ex, RTOP+.34, ez); g.add(gs);
+    const gb = box(1.5,.62,.22, emb,.1);   gb.position.set(ex, RTOP+.72, ez-.26); g.add(gb);
+    [-1,1].forEach(sd=>{ const ga = box(.24,.46,.72, 0xf2c185,.09); ga.position.set(ex+sd*.63, RTOP+.6, ez); g.add(ga); });
+    [[-.5,-.24],[.5,-.24],[-.5,.24],[.5,.24]].forEach(([ox,oz])=>{
+      const lg2 = cyl(.08,.08,.3, wood,8); lg2.position.set(ex+ox, RTOP+.15, ez+oz); g.add(lg2);
+    });
+    [[-.42,accent],[.42,gold]].forEach(([ox,c])=>{ /* หมอนอิง 2 ใบ */
+      const cu = box(.34,.3,.12, c,.06); cu.rotation.z = ox<0 ? .18 : -.18;
+      cu.position.set(ex+ox, RTOP+.66, ez-.1); g.add(cu);
+    });
+  }else{                                           /* ไม้แขวนชุดกระโปรงยักษ์ + หมวก */
+    const hk = torus(.16,.035, 0xd8d3c8,12); hk.position.set(ex, RTOP+1.42, ez); g.add(hk);
+    const hbar = box(1.1,.09,.09, 0xd8d3c8,.03);  hbar.position.set(ex, RTOP+1.18, ez); g.add(hbar);
+    const gd = cone(.66,1.1, emb,14);             gd.position.set(ex, RTOP+.58, ez); g.add(gd);
+    const gw = cyl(.3,.3,.12, gold,14);           gw.position.set(ex, RTOP+.96, ez); g.add(gw);
+    const gc = box(.5,.26,.3, emb,.08);           gc.position.set(ex, RTOP+1.12, ez); g.add(gc);
+    [-1,1].forEach(sd=>{ const sh2 = box(.2,.16,.24, emb,.06); sh2.position.set(ex+sd*.34, RTOP+1.1, ez); g.add(sh2); });
+    const hbr = cyl(.36,.36,.05, gold,14);   hbr.position.set(ex+1.0, RTOP+.16, ez+.1); g.add(hbr);   /* หมวกปีกกว้างยักษ์ */
+    const hcr = cyl(.18,.2,.22, gold,12);    hcr.position.set(ex+1.0, RTOP+.28, ez+.1); g.add(hcr);
+    const hbd = cyl(.19,.19,.06, accent,12); hbd.position.set(ex+1.0, RTOP+.22, ez+.1); g.add(hbd);
+  }
+  /* คอมเพรสเซอร์แอร์ท้ายดาดฟ้า (ตึกจริงต้องมี — เติมความเป็นห้าง) */
+  [[bw*.3,-bd*.2],[bw*.42,bd*.12]].forEach(([ox,oz])=>{
+    const ac = box(.56,.32,.44, 0xc3ccd2,.05); ac.position.set(ox, RTOP+.16, oz); g.add(ac);
+    const fn = cyl(.14,.14,.05, 0x9fabb3,12);  fn.position.set(ox, RTOP+.34, oz); g.add(fn);
+  });
+  /* ธงปลิวมุมดาดฟ้าฝั่งหน้าร้าน (fxTag 'flag' — extractFx ดึงออกไปแกว่งเองตอน merge ฉาก) */
+  [-1,1].forEach((sd,i)=>{
+    const po = cyl(.045,.045,.95, cream,6); po.position.set(sd*(bw/2-.2), RTOP+.48, fz-.15); g.add(po);
+    const fp = new THREE.Group(); fp.position.set(sd*(bw/2-.2), RTOP+.86, fz-.15);
+    const fl2 = box(.42,.28,.04, [accent, gold][i],.02); fl2.position.x = sd*.28;
+    fp.add(fl2); fxTag(fp,'flag',{ph:i*1.9}); g.add(fp);
+  });
+  /* ---------- ป้ายยื่นข้างอาคารทั้ง 2 ฝั่ง ----------
+     ทำทั้งซ้าย-ขวาเพราะหลังที่หมุน 90° (face:'x') ด้านที่กล้องไอโซเห็นเป็นคนละฝั่งกับหลังปกติ */
+  [-1,1].forEach(sd=>{
+    const bx3 = sd*(bw/2), bz = fz-.7;
+    const arm = box(.3,.1,.12, 0xd8dee3,.03); arm.position.set(bx3+sd*.1, 2.5, bz); g.add(arm);
+    const bfr = box(.14,.9,1.0, brand,.06);   bfr.position.set(bx3+sd*.2, 1.96, bz); g.add(bfr);
+    const bfc = box(.08,.74,.84, cream,.05);  bfc.position.set(bx3+sd*.28, 1.96, bz); g.add(bfc);
+    [1,-1].forEach(f=>{
+      const bsg = signPlane(lot.icon, .52); bsg.rotation.y = f*Math.PI/2;
+      bsg.position.set(bx3 + sd*(f>0 ? .33 : .23), 1.96, bz); g.add(bsg);
+    });
+  });
+  /* ---------- ลานหน้าห้าง (อยู่ในกรอบล็อตทั้งหมด) ---------- */
+  const apron = box(bw+.5,.05,1.3, 0xefe7d8,.02); apron.position.set(0,.025, fz+.62); g.add(apron);
+  const mat2 = box(dW+.3,.05,.56, accent,.02);    mat2.position.set(0,.06, fz+.34); g.add(mat2);
+  /* กระถางต้นไม้ใหญ่ขนาบทางเข้า */
+  [-1,1].forEach(sd=>{
+    const px = sd*(dW/2+1.15);
+    const pot = cyl(.26,.22,.4, 0xf3e7d6,12); pot.position.set(px,.2, fz+.42); g.add(pot);
+    const bs2 = sphere(.32, 0x6fbf73,10); bs2.scale.y = .95; bs2.position.set(px,.62, fz+.42); g.add(bs2);
+    const bs3 = sphere(.22, 0x8fd694,10); bs3.position.set(px+sd*.12,.88, fz+.42); g.add(bs3);
+  });
+  /* ของโชว์บนลาน — วางเป็น "แถวนอก" (พ้นเสากันสาดที่ z = fz+1.1 ออกมา) จะได้ไม่ชนกับ
+     กระถางแถวในที่อยู่ชิดประตู และไม่บังกระจกหน้าร้านบนจอ */
+  const front = fz + .75;
+  if(!fash){
+    const sx1 = -bw*.4;                                 /* โซฟาโชว์ตัวใหญ่ริมซ้ายสุดของลาน */
+    const so = box(1.1,.24,.54, 0xef8354,.09);  so.position.set(sx1,.33, front); g.add(so);
+    const sb = box(1.1,.44,.18, 0xef8354,.07);  sb.position.set(sx1,.6, front-.2); g.add(sb);
+    [-1,1].forEach(sd=>{ const am = box(.18,.3,.54, 0xf2a184,.06); am.position.set(sx1+sd*.46,.54, front); g.add(am); });
+    [-1,1].forEach(sd=>[-1,1].forEach(sz2=>{ const lg3 = cyl(.05,.05,.22, wood,6);
+      lg3.position.set(sx1+sd*.44,.11, front+sz2*.2); g.add(lg3); }));
+    [[-.3,gold],[.3,accent]].forEach(([ox,c])=>{        /* หมอนอิง 2 ใบบนโซฟา */
+      const cu = box(.26,.24,.1, c,.05); cu.rotation.z = ox<0 ? .2 : -.2; cu.position.set(sx1+ox,.56, front-.12); g.add(cu);
+    });
+    const lx = bw*.36;                                  /* โคมไฟตั้งพื้น + เก้าอี้ไม้ซ้อนริมขวา */
+    const lp2 = cyl(.05,.07,1.1, wood,8);   lp2.position.set(lx,.55, front); g.add(lp2);
+    const sh3 = cone(.3,.34, 0xfff3c4,12);  sh3.position.set(lx,1.24, front); g.add(sh3);
+    [0,1].forEach(i=>{
+      const se = box(.38,.08,.38, wood,.03);     se.position.set(bw*.24,.36+i*.22, front+.06); g.add(se);
+      const bk2 = box(.38,.3,.07, 0xb4763a,.03); bk2.position.set(bw*.24,.54+i*.22, front-.1); g.add(bk2);
+    });
+    /* ม้านั่งพักเท้า (เฉพาะหลังยาว มีที่ว่างพอ) */
+    const bx4 = -bw*.24;
+    const se2 = box(.9,.1,.34, wood,.04);  se2.position.set(bx4,.34, front); g.add(se2);
+    const bk3 = box(.9,.3,.08, wood,.04);  bk3.position.set(bx4,.54, front-.15); g.add(bk3);
+    [-1,1].forEach(s2=>{ const lg4 = cyl(.05,.05,.3, 0xd8d3c8,6); lg4.position.set(bx4+s2*.34,.15, front); g.add(lg4); });
+  }else{
+    [[-bw*.38,0],[bw*.38,3]].forEach(([mx,ix])=>{       /* หุ่นลองชุด 2 ตัวตั้งโชว์ริมลานทั้ง 2 ฝั่ง */
+      const bs4 = cyl(.16,.19,.06, 0xd8d3c8,12); bs4.position.set(mx,.04, front); g.add(bs4);
+      const pl3 = cyl(.04,.04,.2, 0xd8d3c8,8);   pl3.position.set(mx,.16, front); g.add(pl3);
+      const dr4 = cone(.34,.78, DISP[ix],14);    dr4.position.set(mx,.62, front); g.add(dr4);
+      const wb2 = cyl(.17,.17,.09, DISP[ix+1],12); wb2.position.set(mx,.78, front); g.add(wb2);
+      const nk2 = cyl(.06,.06,.12, 0xf0e4d4,8);  nk2.position.set(mx,1.06, front); g.add(nk2);
+      const hd2 = sphere(.12, 0xf0e4d4,12);      hd2.position.set(mx,1.24, front); g.add(hd2);
+    });
+    [-1,1].forEach((sd,i)=>{                            /* แผงวางหมวก/กระเป๋า/รองเท้า ขนาบทางเข้า */
+      const cx2 = sd*(dW/2+.32);
+      const cr = box(.5,.42,.36, wood,.05);  cr.position.set(cx2,.21, front); g.add(cr);
+      const tp2 = box(.54,.07,.4, cream,.03); tp2.position.set(cx2,.45, front); g.add(tp2);
+      if(i){
+        const hb4 = cyl(.17,.17,.04, DISP[1],12); hb4.position.set(cx2,.51, front); g.add(hb4);
+        const hc2 = cyl(.09,.1,.14, DISP[1],10);  hc2.position.set(cx2,.56, front); g.add(hc2);
+      }else{
+        const bg2 = box(.24,.2,.12, DISP[4],.05); bg2.position.set(cx2,.59, front); g.add(bg2);
+        const hn2 = torus(.08,.02, DISP[4],10);   hn2.position.set(cx2,.73, front); g.add(hn2);
+      }
+    });
+  }
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
+  if(faceX) g.rotation.y = Math.PI/2;                   /* หน้าร้านหันไป +x (ทิศใต้) */
+  return g;
+}
 function buildLotBuilding(lot){
   if(lot.shopKind==='food') return buildRestaurant(lot);
   if(lot.shopKind==='pet')  return buildPetShop(lot);
   if(lot.shopKind==='mart') return buildMinimart(lot);     /* ร้านสะดวกซื้อ — ตึกหลังคาแบน ไม่ใช้ทรงบ้าน */
+  if(lot.kind==='mall') return buildMall(lot);
   if(lot.kind==='lab') return buildScienceLab(lot);
   if(lot.kind==='school') return buildSchoolBuilding(lot);
   if(lot.kind==='hospital') return buildHospital(lot);
@@ -2692,26 +2972,89 @@ function updateButterflies(dt, t){
   }
 }
 
+/* ---------- ชิ้นส่วนของตกแต่งที่ "ขยับเองตลอดเวลา" (ธงสะบัด / กังหันหมุน / น้ำพุพุ่ง / ไฟกะพริบ) ----------
+   คลังเฟอร์นิเจอร์ติดธงไว้ที่ตัวชิ้นส่วนเลย: `o.userData.anim = {kind, ...}` (ดู js/house-furniture.js)
+   ⚠ ชิ้นไหนมี userData ติดอยู่ mergeDecorGroup จะไม่ยุบรวมทั้งกลุ่มให้เอง (ดูเงื่อนไขในฟังก์ชันนั้น)
+      ⇒ ของที่ใส่ anim จะกิน draw call มากกว่าปกติเล็กน้อย ใส่เฉพาะชิ้นที่คุ้มจริงๆ
+   ⚠ ห้ามขยับด้วยการแก้ "สี/material" เด็ดขาด — material ถูกแคชรวมตามสี (toonMat) แก้ทีเดียวเพี้ยนทั้งเมือง
+      ใช้ได้แค่ตำแหน่ง/หมุน/สเกลเท่านั้น
+   ค่าเริ่มต้น (base) ของแต่ละชิ้นถูกจดไว้ตอนสร้าง แล้วแกว่งรอบค่านั้นด้วยสูตร sin ล้วนๆ */
+function collectDecorAnim(g){
+  const parts = [];
+  g.traverse(o=>{
+    const a = o.userData && o.userData.anim;
+    if(!a || o === g) return;
+    a.brx = o.rotation.x; a.bry = o.rotation.y; a.brz = o.rotation.z;
+    a.by = o.position.y;
+    a.sx = o.scale.x; a.sy = o.scale.y; a.sz = o.scale.z;
+    if(a.ph == null) a.ph = parts.length * 1.7;
+    parts.push(o);
+  });
+  return parts.length ? parts : null;
+}
+function updateDecorAnimParts(g, s, ph0){
+  const list = g.userData.animParts;
+  for(let i=0; i<list.length; i++){
+    const o = list[i], a = o.userData.anim, ph = ph0 + a.ph, sp = a.sp || 1;
+    switch(a.kind){
+      case 'spin':                                   /* หมุนรอบแกนตัวเอง (ใบพัดกังหัน/ลูกโลก) */
+        o.rotation[a.axis || 'z'] = (a.axis === 'y' ? a.bry : a.axis === 'x' ? a.brx : a.brz) + s*sp;
+        break;
+      case 'wave':                                   /* ผ้าธงสะบัด — ชุดเดียวกับธงในเมือง (updateSceneryFx 'flag') */
+        o.rotation.y = a.bry + Math.sin(s*2.1 + ph)*.3;
+        o.rotation.z = a.brz + Math.sin(s*3.2 + ph)*.1;
+        o.scale.x = a.sx * (1 + Math.sin(s*4.1 + ph)*.09);
+        break;
+      case 'jet': {                                  /* สายน้ำพุ่งขึ้น-ตกลง */
+        const k = 1 + Math.sin(s*3.1*sp + ph)*.2;
+        o.scale.set(a.sx, a.sy*k, a.sz);
+        o.position.y = a.by + (k-1)*.24;
+        break;
+      }
+      case 'drop': {                                 /* หยดน้ำ/ฟองน้ำเด้งขึ้นลง */
+        o.position.y = a.by + (Math.sin(s*3.1*sp + ph)*.5 + .5)*(a.amp || .3);
+        break;
+      }
+      case 'pulse': {                                /* ดวงไฟ/ผิวน้ำเต้นเบาๆ */
+        const k = 1 + Math.sin(s*(sp*3) + ph)*(a.amp || .22);
+        o.scale.set(a.sx*k, a.sy*k, a.sz*k);
+        break;
+      }
+      case 'flame': {                                /* เปลวไฟวูบวาบ */
+        const k = 1 + Math.sin(s*9 + ph)*.16 + Math.sin(s*13.7 + ph*2)*.09;
+        o.scale.set(a.sx*k, a.sy*(1 + (k-1)*1.8), a.sz*k);
+        o.rotation.z = a.brz + Math.sin(s*7 + ph)*.13;
+        break;
+      }
+      case 'bob':                                    /* ลอยขึ้นลงเบาๆ (ว่าว/นก) */
+        o.position.y = a.by + Math.sin(s*1.5*sp + ph)*(a.amp || .1);
+        o.rotation.z = a.brz + Math.sin(s*1.1*sp + ph)*.1;
+        break;
+    }
+  }
+}
 /* ---------- ของตกแต่งไหวตามลม ----------
    ต้นไม้/พุ่มที่เด็กปลูกเอง และลูกโป่ง เป็น group เดี่ยว (ไม่ได้ merge รวมฉาก) จึงขยับได้
    ไล่รายชื่อใหม่ทุก ~1 วิ เอาเฉพาะชิ้นที่อยู่ใกล้ตัวเด็ก แล้วค่อยขยับทีละเฟรม */
 let windList = [], windScanT = 0;
 function updateDecorWind(t, dt){
-  if(hScene !== 'out' || !charGroup) return;
+  if(!charGroup) return;
   windScanT -= dt;
   if(windScanT <= 0){
     windScanT = 1;
     windList = [];
     const cx = charGroup.position.x, cz = charGroup.position.z;
-    for(let i=0; i<decorGroups.out.length; i++){
-      const g = decorGroups.out[i], d = g.userData.deco;
-      if(!d || (!d.item.leafy && d.item.id !== 'balloon' && !d.item.rock)) continue;
+    const list = decorGroups[hScene] || [];       /* ในบ้านก็ต้องขยับด้วย (ตู้ปลา/นาฬิกา ฯลฯ ที่ติดธง anim) */
+    for(let i=0; i<list.length; i++){
+      const g = list[i], d = g.userData.deco;
+      if(!d || (!d.item.leafy && d.item.id !== 'balloon' && !d.item.rock && !g.userData.animParts)) continue;
       if(Math.hypot(g.position.x-cx, g.position.z-cz) > 20) continue;
       if(g.userData.windPh == null){
         g.userData.windPh = (g.position.x*1.7 + g.position.z*2.3) % 6.28;   /* เฟสคงที่ต่อชิ้น ไม่ไหวพร้อมกันทั้งสวน */
         g.userData.windBaseY = g.position.y;
         g.userData.windBalloon = d.item.id === 'balloon';
         g.userData.windSwing = !!d.item.rock;      /* ชิงช้า: แกว่งที่ pivot ไม่ใช่เอนทั้งตัว */
+        g.userData.windLeafy = !!d.item.leafy;     /* เอนไหวทั้งต้นได้เฉพาะต้นไม้/พุ่ม — ของอย่างน้ำพุ/เสาธงห้ามเอียง */
       }
       windList.push(g);
     }
@@ -2719,6 +3062,7 @@ function updateDecorWind(t, dt){
   const s = t*.001;
   for(let i=0; i<windList.length; i++){
     const g = windList[i], ph = g.userData.windPh;
+    if(g.userData.animParts) updateDecorAnimParts(g, s, ph);   /* ธง/กังหัน/น้ำพุ/ไฟ — ขยับเฉพาะชิ้นส่วนข้างใน */   /* ธง/กังหัน/น้ำพุ/ไฟ — ขยับเฉพาะชิ้นส่วนข้างใน */
     if(g.userData.windSwing){                         /* ชิงช้า: ไกวเบาๆ ตามลมตอนไม่มีใครนั่ง */
       const piv = g.userData.swingPiv;
       if(piv && !(sitState && sitState.group === g)) piv.rotation.x = Math.sin(s*1.15 + ph)*.07;
@@ -2726,7 +3070,7 @@ function updateDecorWind(t, dt){
       g.position.y = g.userData.windBaseY + .09 + Math.sin(s*1.25 + ph)*.09;
       g.rotation.z = Math.sin(s*.9 + ph)*.1;
       g.rotation.x = Math.cos(s*.75 + ph)*.07;
-    }else{                                            /* ต้นไม้/พุ่ม: เอนไหวเบาๆ */
+    }else if(g.userData.windLeafy){                   /* ต้นไม้/พุ่ม: เอนไหวเบาๆ */
       g.rotation.z = Math.sin(s*.8 + ph)*.028;
       g.rotation.x = Math.sin(s*.62 + ph*1.3)*.02;
     }
@@ -3031,6 +3375,40 @@ function buildFieldFlowers(x, z, opt){
      ของที่ merge แล้วขยับไม่ได้ ผีเสื้อเดิมจึงเป็นแค่ปีกแข็งค้างกลางอากาศ */
   return g;
 }
+/* ---------- ทุ่งดอกทานตะวัน (ข้างห้าง ชุมชนที่ 2) ----------
+   ต้นสูงกว่าดอกไม้ทุ่งอื่นมาก (~1.1-1.4) จึงวางแค่ 3 ต้นต่อช่อง ไม่งั้นจะทึบจนบังตัวห้างบนจอ
+   จานดอกหันหน้าไป +z (ทิศที่กล้องไอโซมอง) ทุกต้น เด็กจึงเห็น "หน้ายิ้ม" ของดอกทานตะวันเสมอ */
+function buildSunflower(h, seed){
+  const g = new THREE.Group();
+  const petal = seed % 2 ? 0xffc93c : 0xffd54f;
+  const stem = cyl(.035,.05,h, 0x5aa74e, 6); stem.position.y = h/2; g.add(stem);
+  [-1,1].forEach((sd,i)=>{                          /* ใบ 2 ใบ คนละระดับ */
+    const lf = sphere(.15, 0x6fbf73, 6); lf.scale.set(1.5,.28,.85);
+    lf.position.set(sd*.15, h*(.4 + i*.16), 0); lf.rotation.z = -sd*.5; g.add(lf);
+  });
+  const head = new THREE.Group(); head.position.set(0, h + .06, .04); g.add(head);
+  for(let p=0; p<10; p++){                          /* กลีบดอกเรียงรอบจาน */
+    const a = p*Math.PI*2/10;
+    const pt = sphere(.14, petal, 5); pt.scale.set(.62,.62,.3);
+    pt.position.set(Math.cos(a)*.24, Math.sin(a)*.24, 0); head.add(pt);
+  }
+  const disc = cyl(.19,.19,.07, 0x8d5a2b, 12); disc.rotation.x = Math.PI/2; head.add(disc);
+  const seedC = cyl(.13,.13,.09, 0x6b4423, 10);     seedC.rotation.x = Math.PI/2; head.add(seedC);
+  const back = cyl(.21,.21,.05, 0x6fbf73, 12); back.rotation.x = Math.PI/2; back.position.z = -.06; head.add(back);
+  return g;
+}
+function buildSunflowers(x, z){
+  const g = new THREE.Group();
+  const rnd = fieldRnd(x, z);
+  for(let k=0; k<3; k++){
+    const fx = (rnd()-.5)*.78, fz = (rnd()-.5)*.7;
+    const sf = buildSunflower(1.05 + rnd()*.35, (x + z + k) & 3);
+    sf.position.set(fx, 0, fz); sf.rotation.y = (rnd()-.5)*.5; g.add(sf);
+  }
+  const tuft = sphere(.19, 0x8fd06c, 5); tuft.scale.set(1,.42,1);
+  tuft.position.set((rnd()-.5)*.7, .04, (rnd()-.5)*.7); g.add(tuft);
+  return g;
+}
 function buildFieldPath(x, z){                      /* ทางเดินดินกลางทุ่ง + ก้อนหินเล็กๆ ข้างทาง */
   const g = new THREE.Group();
   const rnd = fieldRnd(x, z);
@@ -3155,20 +3533,125 @@ function buildScarecrow(){
   const mo = box(.12,.03,.04,0x4a3b32,.01); mo.position.set(0,1.19,.19); g.add(mo);
   return g;
 }
+/* ---------- ต้นมะพร้าวริมหาด ----------
+   เดิมเป็นเสาตรงท่อนเดียว + ใบแผ่นแบน 6 แผ่นกางเป็นดาว มองแล้วไม่เหมือนมะพร้าว (ผู้ใช้แจ้ง 2026-08-03)
+   ของใหม่: ลำต้นโค้งทำจากท่อนซ้อนไล่ขนาด + วงปล้องรอบต้น, ทางใบ 7 ทาง ทางละ 3 ท่อน "ลู่ลงเป็นโค้ง"
+   (ปลายทางใบเล็กและต่ำลงเรื่อยๆ) + ก้านทางใบ, มะพร้าวเป็นพวง 3 ลูกใต้ยอด */
 function buildPalm(){
   const g = new THREE.Group();
-  const h = 2.1;
-  const tr = cyl(.13,.21,h,0xcf9f68,8); tr.position.set(.06,h/2,0); tr.rotation.z = .1;
-  tr.castShadow = hShadows; g.add(tr);
-  for(let i=0;i<6;i++){
-    const a = i/6*Math.PI*2;
-    const lf = box(1.2,.09,.4,0x5cb85c,.05);
-    lf.position.set(.12 + Math.cos(a)*.6, h+.02, Math.sin(a)*.6);
-    lf.rotation.y = -a; lf.rotation.z = -.28; g.add(lf);
+  const SEG = 6, H = 2.35, lean = .55;                 /* lean = ยอดเอนออกจากโคนไปทาง +x กี่หน่วย */
+  let tx = 0, ty = 0;
+  for(let i=0; i<SEG; i++){
+    const t = i/SEG, t2 = (i+1)/SEG;
+    const y0 = H*t, y1 = H*t2;
+    const x0 = lean*t*t, x1 = lean*t2*t2;              /* โค้งแบบพาราโบลา โคนตั้งตรง ยอดเอน */
+    const len = Math.hypot(x1-x0, y1-y0);
+    const sg = cyl(.115 - i*.011, .155 - i*.011, len + .04, i%2 ? 0xcf9f68 : 0xc4914f, 9);
+    sg.position.set((x0+x1)/2, (y0+y1)/2, 0);
+    sg.rotation.z = -Math.atan2(x1-x0, y1-y0);
+    sg.castShadow = hShadows; g.add(sg);
+    if(i%2 === 0){                                     /* วงปล้องรอบลำต้น */
+      const rg = cyl(.135 - i*.011, .135 - i*.011, .05, 0xb98446, 9);
+      rg.position.set(x0 + (x1-x0)*.4, y0 + (y1-y0)*.4, 0); rg.rotation.z = sg.rotation.z; g.add(rg);
+    }
+    tx = x1; ty = y1;
   }
-  [[.2,h-.14,.12],[0,h-.2,-.1]].forEach(p=>{
-    const co = sphere(.1,0x8d6e63,8); co.position.set(p[0],p[1],p[2]); g.add(co);
+  const crown = sphere(.17, 0xb98446, 8); crown.position.set(tx, ty + .04, 0); g.add(crown);
+  /* ทางใบ: กลุ่มละ 1 ทาง หมุนรอบยอดต้น แล้วในกลุ่มวางท่อนใบเรียงออกไปตามแกน +x
+     **ต้องให้ปลายทางใบ "ลู่ลง" ชัดๆ (dy ติดลบมากขึ้นเรื่อยๆ + เอียง tilt แรงขึ้น)**
+     ถ้าวางแบนระนาบเดียวกันหมด กล้องไอโซจะเห็นเป็นจานกลมแบนๆ เหมือนดอกไม้ ไม่ใช่ต้นมะพร้าว (เคยพลาดมาแล้ว) */
+  const FR = 7;
+  for(let i=0; i<FR; i++){
+    const fr = new THREE.Group();
+    fr.position.set(tx, ty + .06 + (i%2 ? .07 : -.03), 0);   /* สลับสูง-ต่ำ ทางใบจะได้ไม่เรียงเป็นจานเดียวกันเป๊ะ */
+    fr.rotation.y = -(i/FR*Math.PI*2 + .3);
+    g.add(fr);
+    /* ใบเป็น "ก้อนกลมแบน" (ทรงกลมบีบแบน) ไล่เล็กลงตามปลายทางใบ — ชุดเดียวกับพุ่มใบของต้นไม้อื่นทั้งแผนที่
+       (เดิมเป็นแผ่นไม้กระดานบางๆ ดูเป็นคนละธีมกับต้นไม้ต้นอื่น — ผู้ใช้แจ้ง 2026-08-03) */
+    [[.30,.30,.20,-.04,0x6fbf73],[.72,.25,.15,-.24,0x5cb85c],[1.06,.18,.10,-.60,0x4fa85c]].forEach(([r,rad,thin,dy,c],k)=>{
+      const lf = sphere(rad, c, 8);
+      lf.scale.set(1.9, thin/rad*1.1, 1.15);
+      lf.position.set(r, dy, 0); lf.rotation.z = -.18 - k*.34; fr.add(lf);
+    });
+    const rib = cyl(.035,.05,1.16, 0x4a9c4a, 6);       /* ก้านทางใบ (โค้งลงตามใบ) */
+    rib.rotation.z = Math.PI/2 - .34; rib.position.set(.54, -.2, 0); fr.add(rib);
+  }
+  const bud = cone(.1,.5, 0x6fbf73, 7); bud.position.set(tx, ty + .34, 0); bud.rotation.z = -.2; g.add(bud);  /* ยอดอ่อนกลางพุ่ม กันยอดแบน */
+  [[.17,-.1,.05],[-.05,-.14,.17],[.06,-.2,-.12]].forEach(([ox,oy,oz])=>{   /* พวงมะพร้าวใต้ยอด */
+    const co = sphere(.115, 0x8d6e63, 8); co.scale.y = .92;
+    co.position.set(tx + ox, ty + oy, oz); g.add(co);
   });
+  return g;
+}
+/* ---------- ที่เก็บเรือแคนูริมหาด (มีเรือเก็บอยู่ 2 ลำ) ----------
+   ชั้นวางไม้ 2 ชั้น (ขาทรงตัว A 2 ชุด + คานยาว) + เรือแคนู 2 ลำวางคว่ำอยู่บนชั้น
+   หันตัวเรือตามแกน x ของกลุ่ม แล้วให้คนเรียกหมุน 45° ทีหลัง เรือจะได้ขวางจอพอดี (กล้องไอโซมองจาก +x,+z) */
+/* เรือแคนู 1 ลำ (วางตามแกน x) — กล้องไอโซมองจากด้านบน ⇒ **ห้ามเอาแผ่นขอบเรือกว้างคลุมทับหลังคาเรือ**
+   ไม่งั้นจะเห็นเป็นแผ่นไม้สีขาวแบนๆ แผ่นเดียว (เคยพลาดมาแล้ว) ต้องโชว์ตัวถังสี + ร่องกลางเรือสีเข้ม
+   + ราวขอบเรียวข้างละเส้น จึงจะอ่านออกว่าเป็นเรือ */
+function buildCanoe(col, len){
+  const g = new THREE.Group();
+  const hull = box(len, .3, .38, col, .14); g.add(hull);
+  const cav  = box(len*.76, .12, .2, petShade(col,.62), .05); cav.position.y = .13; g.add(cav);
+  [-1,1].forEach(s=>{
+    const rail = box(len*.92, .07, .06, 0xfffaf0, .025); rail.position.set(0,.15,s*.16); g.add(rail);
+    /* หัว-ท้ายเรือ: กรวยต้อง "ชี้ออกนอกลำ" ทั้งสองข้าง และเชิดขึ้นนิดหน่อย
+       ⚠ หมุนรอบแกน z ด้วย +90° จะได้ปลายชี้ไป -x (ทิ่มเข้าในลำเรือ) ⇒ ต้องเป็น -s*(…) เท่านั้น
+       (ของเดิม s*Math.PI/2 ทำให้หัวเรือข้างหนึ่งกลับด้าน ดูเหมือนเรือหัวท้ายผิด) */
+    const tip = cone(.2, .46, col, 9); tip.rotation.z = -s*(Math.PI/2 - .22);
+    tip.position.set(s*(len/2 + .16), .05, 0); tip.scale.set(1,1,.9); g.add(tip);
+    const lip = cyl(.055,.055,.16, 0xfffaf0, 8); lip.rotation.z = Math.PI/2;   /* ปลอกปลายหัวเรือ */
+    lip.position.set(s*(len/2 + .3), .11, 0); g.add(lip);
+  });
+  [-.22,.22].forEach(ox=>{                       /* ที่นั่งพาดกลางลำ */
+    const st = box(.13,.06,.3, 0xd9a86c,.02); st.position.set(ox,.14,0); g.add(st);
+  });
+  return g;
+}
+function buildCanoeRack(){
+  const g = new THREE.Group();
+  const wood = 0xc98d4e, dark = 0xa9784f;
+  [-1,1].forEach(s=>{                           /* ขาทรงตัว A 2 ชุด */
+    [-1,1].forEach(d=>{
+      const lg = cyl(.055,.07,1.15, wood, 7);
+      lg.position.set(s*.52, .55, d*.3); lg.rotation.x = -d*.28; g.add(lg);
+    });
+    const tie = box(.09,.09,.62, dark,.03); tie.position.set(s*.52,.42,0); g.add(tie);
+  });
+  [-1,1].forEach(d=>{                            /* คานพาดยาว 2 เส้น */
+    const bar = box(1.5,.09,.1, dark,.04); bar.position.set(0,1.06,d*.24); g.add(bar);
+  });
+  const c1 = buildCanoe(0xef8354, 1.5); c1.position.set(0, 1.28, 0); g.add(c1);
+  const c2 = buildCanoe(0x7fc4e8, 1.34); c2.position.set(.06, .5, .04); c2.rotation.z = .05; g.add(c2);
+  [-1,1].forEach(s=>{                            /* ไม้พายพิงชั้น */
+    const pd = cyl(.03,.03,1.1, 0xd9a86c, 6); pd.rotation.z = s*.34;
+    pd.position.set(s*.78, .55, -.34); g.add(pd);
+    const bl = box(.1,.3,.05, 0xffd54f,.02); bl.position.set(s*(.78 + .19), .04, -.34); g.add(bl);
+  });
+  return g;
+}
+/* ---------- ราวแขวนห่วงยางริมหาด (มีห่วงยางแขวนอยู่) ---------- */
+function buildRingRack(){
+  const g = new THREE.Group();
+  const wood = 0xc98d4e, dark = 0xa9784f;
+  [-1,1].forEach(s=>{
+    const post = cyl(.075,.095,1.5, wood, 8); post.position.set(s*.58,.75,0); g.add(post);
+    const cap  = sphere(.1, 0xffd54f, 8);     cap.position.set(s*.58,1.54,0); g.add(cap);
+    const ft   = box(.26,.1,.4, dark,.04);    ft.position.set(s*.58,.05,0); g.add(ft);
+  });
+  const bar = box(1.36,.1,.1, dark,.04); bar.position.y = 1.36; g.add(bar);
+  /* ห่วงยาง 3 ห่วง แขวนคนละระดับ (แดง-ขาว / ฟ้า / เหลือง) — ห่วงตั้งระนาบ XY หันหน้าเข้าหากล้อง */
+  [[-.42,.86,0xe4574a,.3],[.02,.74,0x7fc4e8,.27],[.44,.9,0xffd54f,.24]].forEach(([ox,oy,c,r])=>{
+    const rope = cyl(.018,.018,1.36-oy-r, 0xfbf7f0, 5); rope.position.set(ox, (1.36+oy+r)/2, 0); g.add(rope);
+    const rg = torus(r,.075, c, 14); rg.position.set(ox, oy, 0); g.add(rg);
+    for(let k=0;k<4;k++){                        /* แถบขาวคาดห่วง */
+      const a = k*Math.PI/2 + Math.PI/4;
+      const wp = box(.13,.13,.17, 0xfbf7f0,.03);
+      wp.position.set(ox + Math.cos(a)*r, oy + Math.sin(a)*r, 0); g.add(wp);
+    }
+  });
+  const box2 = box(.62,.34,.42, 0x8fd694,.06); box2.position.set(0,.17,.42); g.add(box2);   /* ลังเก็บของข้างราว */
+  const lid  = box(.66,.08,.46, 0x6fbf73,.03); lid.position.set(0,.38,.42); g.add(lid);
   return g;
 }
 /* เก้าอี้ผ้าใบชายหาด — นั่งได้จริง (ดู SEAT_ITEMS/seatSpots) หันหน้าไปทาง +z ตอน rot 0 */
@@ -3223,6 +3706,10 @@ function beachPropTiles(){
   add(PALM_SPOTS, 'palm');
   add(UMBRELLA_SPOTS, 'umbrella');
   add(BEACH_CHAIRS, 'chair');
+  BEACH_RACKS.forEach(([x, off, kind])=>{           /* ชั้นวางเรือแคนู / ราวห่วงยาง (ชนิดมากับข้อมูลเลย) */
+    const z = seaEdgeZ(x) + off;
+    if(z>=0 && z<OUT_D && isSandTile(x, z)) out.push([x, z, kind]);
+  });
   return out;
 }
 
@@ -3845,7 +4332,9 @@ function buildBannerPole(i){
    (ให้ตรงกับ Math.atan2(dx,dz) ตอนหันหน้ามาหาเด็ก) ประกอบทุกชิ้นไว้ในกลุ่มลูก `b`
    เพื่อย่อขนาดเด็ก/ผู้ใหญ่ได้โดยที่กลุ่มนอกยัง identity (mergeDecorGroup อ่าน matrixWorld) */
 const NPC_SKIN = [0xf6e3cc, 0xf0d0a8, 0xe3b189, 0xc98d5e];
-const NPC_HAIR = [0x4a3b32, 0x2f2a26, 0x6d4c41, 0x8d6e63, 0xd9d3cc];
+/* index 5 = ผมสีส้มสด เพิ่มไว้ให้โบโซ่ (npc-clown) โดยเฉพาะ — ต่อท้ายเท่านั้น ห้ามแทรกกลาง
+   เพราะ NPC ทุกคนอ้าง `hairC` เป็นเลข index ของอาเรย์นี้ตรงๆ (แทรกกลางแล้วผมทั้งเมืองเปลี่ยนสียกเมือง) */
+const NPC_HAIR = [0x4a3b32, 0x2f2a26, 0x6d4c41, 0x8d6e63, 0xd9d3cc, 0xef8354];
 /* สร้างตัวชาวบ้าน — `animated` = คนที่เดินได้ ให้แยกแขน/ขาเป็นกลุ่มย่อยไว้แกว่งตอนเดิน
    (merge ทีละกลุ่ม → คนละ ~5 draw call) ส่วนคนที่ยืนเฉยๆ รวมทุกชิ้นในกลุ่มเดียว (1 draw call) */
 function buildVillager(lk, animated){
@@ -3874,6 +4363,31 @@ function buildVillager(lk, animated){
   }
   const body = box(.52,.5,.32, shirt); body.position.y = .68; core.add(body);
   if(lk.apron){ const ap = box(.4,.42,.05,0xfbf7f0,.02); ap.position.set(0,.62,.18); core.add(ap); }
+  /* ---- เครื่องแบบเพิ่มเติม (ใส่บนตัวเสื้อ) ----
+     sash   = สายสะพายพาดอกเฉียง + เหรียญตรา → ท่านนายกเทศมนตรี (เด็กเห็นแล้วรู้ว่าเป็นคนใหญ่คนโตของเมือง)
+     cross  = กากบาทแดงบนอกเสื้อ → หมอ/พยาบาล
+     stetho = หูฟังคล้องคอ → หมอ */
+  if(lk.sash){
+    const sh = box(.14,.68,.05, lk.sashC ?? 0xffd54f, .02);
+    sh.rotation.z = .62; sh.position.set(0,.68,.18); core.add(sh);
+    const md = cyl(.075,.075,.03, 0xf0c14b, 10); md.rotation.x = Math.PI/2; md.position.set(-.15,.5,.2); core.add(md);
+    const rb = box(.09,.07,.03, 0xe4574a,.01); rb.position.set(-.15,.58,.2); core.add(rb);
+  }
+  if(lk.cross){
+    const c1 = box(.13,.045,.03, 0xe4574a,.01); c1.position.set(.14,.8,.18); core.add(c1);
+    const c2 = box(.045,.13,.03, 0xe4574a,.01); c2.position.set(.14,.8,.18); core.add(c2);
+  }
+  if(lk.stetho){
+    /* ตัวละครไม่มีคอ (หัววางบนลำตัวเลย) → ห่วงคล้องคอจะจมหายใต้คาง จึงวาดเป็น "สายรูปตัว V พาดอก"
+       + หูฟัง 2 ข้างบนไหล่ + จานฟังบนอกแทน มองมุมไอโซแล้วเห็นครบทั้งเส้น */
+    [-1,1].forEach(s=>{
+      const ep = sphere(.035, 0x4a5560, 8); ep.position.set(.19*s,.9,.1); core.add(ep);
+      const tb = box(.035,.34,.035, 0x4a5560,.015); tb.rotation.z = s*.34;
+      tb.position.set(.13*s,.74,.18); core.add(tb);
+    });
+    const dc = cyl(.06,.06,.035, 0xc9d3d9, 12); dc.rotation.x = Math.PI/2; dc.position.set(0,.57,.19); core.add(dc);
+    const dc2 = cyl(.035,.035,.045, 0x4a5560, 10); dc2.rotation.x = Math.PI/2; dc2.position.set(0,.57,.185); core.add(dc2);
+  }
   /* แขน — pivot ที่ไหล่แบบเดียวกับเด็ก (กางออกเล็กน้อย) */
   [-1,1].forEach(s=>{
     const piv = new THREE.Group();
@@ -3952,6 +4466,29 @@ function buildVillager(lk, animated){
     const cp = box(.72,.24,.74, 0x2f3f66, .1); cp.position.y = .6; head.add(cp);      /* หมวกตำรวจกรมท่า */
     const vs = box(.4,.06,.28, 0x24304f, .02); vs.position.set(0,.5,.46); head.add(vs);
     const bd2 = box(.16,.13,.05, 0xffd54f, .02); bd2.position.set(0,.63,.38); head.add(bd2);   /* ตราหน้าหมวก */
+  } else if(lk.hat === 'top'){
+    /* หมวกทรงสูงของท่านนายกฯ — ปีกกว้าง + ทรงกระบอกสูง + ริบบิ้นคาด (คู่กับสายสะพาย sash) */
+    const br = cyl(.42,.42,.06, lk.hatC ?? 0x3a3540, 14); br.position.y = .5; head.add(br);
+    const cr = cyl(.29,.29,.44, lk.hatC ?? 0x3a3540, 14); cr.position.y = .75; head.add(cr);
+    const bn = cyl(.3,.3,.1, lk.hatC2 ?? 0xe4574a, 14);   bn.position.y = .58; head.add(bn);
+  } else if(lk.hat === 'nurse'){
+    /* หมวกพยาบาลใบเล็กสีขาว มีกากบาทแดงหน้าหมวก */
+    const cp = box(.5,.2,.42, 0xfbf7f0, .06); cp.position.set(0,.55,-.04); head.add(cp);
+    const c1 = box(.11,.035,.03, 0xe4574a,.01); c1.position.set(0,.56,.18); head.add(c1);
+    const c2 = box(.035,.11,.03, 0xe4574a,.01); c2.position.set(0,.56,.18); head.add(c2);
+  } else if(lk.hat === 'clown'){
+    /* ชุดโบโซ่: หมวกกรวยลายทาง + ปอมปอมบนยอด + ผมฟูกลมสองข้าง + จมูกกลมแดง
+       (จมูกรวมไว้ในบล็อกนี้เลย เพราะเป็นชิ้นเดียวกับ "หน้าโบโซ่" — ตั้ง nose:0 ใน NPC_DEFS กันจมูกซ้อน) */
+    const hc = lk.hatC ?? 0xb388ff;
+    const cn = cone(.26,.5, hc, 10); cn.position.y = .78; head.add(cn);
+    [.6,.74,.88].forEach((y,i)=>{                        /* แถบลายรอบหมวก (ไล่เล็กลงตามทรงกรวย) */
+      const st = cyl(.235 - i*.06, .21 - i*.06, .06, i%2 ? 0xfbf7f0 : 0xffd54f, 10);
+      st.position.y = y; head.add(st);
+    });
+    const pom = sphere(.11, 0xff8fb3, 8); pom.position.y = 1.06; head.add(pom);
+    [-1,1].forEach(s=>{ const pf = sphere(.19, hairC, 8); pf.scale.set(1,.9,.95);
+      pf.position.set(.34*s, .3, -.02); head.add(pf); });
+    const rn = sphere(.075, 0xef5f5f, 8); rn.position.set(0,-.01,.36); head.add(rn);
   } else if(lk.hat === 'beanie'){
     const bn = new THREE.Mesh(roundedBoxGeo(.72,.36,.74), toonMat(lk.hatC ?? 0x7fc4e8));
     bn.castShadow = hShadows; bn.position.y = .62; head.add(bn);
@@ -4020,6 +4557,17 @@ function buildVillager(lk, animated){
     const bl = box(.34,.14,.03,0xc9d3d9,.01); bl.rotation.z = .18; bl.position.set(.44,.72,.12); hold.add(bl);
     for(let i=0;i<5;i++){ const th = cone(.022,.05,0xb4c2cb,4); th.rotation.x = Math.PI; th.position.set(.32+i*.07,.635+i*.013,.12); hold.add(th); }
     const hd = box(.11,.16,.06,0xa9784f,.03); hd.position.set(.25,.7,.12); hold.add(hd);
+  } else if(P === 'ring'){                                 /* ห่วงชูชีพ/ห่วงยาง แดง-ขาว (พนักงานสระ/คนเล่นน้ำ) */
+    const rg = torus(.17,.055,0xe4574a,14); rg.position.set(.4,.62,.14); hold.add(rg);
+    [0,1,2,3].forEach(i=>{
+      const a = i*Math.PI/2 + Math.PI/4;
+      const wp = box(.09,.09,.13,0xfbf7f0,.02);
+      wp.position.set(.4+Math.cos(a)*.17,.62+Math.sin(a)*.17,.14); hold.add(wp);
+    });
+  } else if(P === 'suitcase'){                             /* กระเป๋าเดินทางของพนักงานโรงแรม */
+    const sc = box(.3,.24,.13,0xa9784f,.04); sc.position.set(.36,.44,.12); hold.add(sc);
+    const bd2 = box(.32,.05,.15,0xd9a86c,.02); bd2.position.set(.36,.44,.12); hold.add(bd2);
+    const hd2 = torus(.06,.018,0x6d4c41,10); hd2.position.set(.36,.58,.12); hold.add(hd2);
   } else if(P === 'bowl'){
     const bw = cyl(.16,.09,.14,0xfbf7f0,10); bw.position.set(.36,.66,.12); hold.add(bw);
     const nd = sphere(.12,0xe8b46a,8); nd.scale.y = .5; nd.position.set(.36,.73,.12); hold.add(nd);
@@ -4224,10 +4772,15 @@ const pathSet = new Set();         /* ช่องทางเดินในท
      'sprig' = ดอกไม้กระจุกเล็กริมถนน-ริมอาคารทั่วเมือง → เดินได้ (ถ้าบล็อกจะไปปิดทางเดินริมถนนทั้งเมือง)
    ลำดับการไล่กรอบสำคัญ: กรอบทับกันได้ (ทุ่งใหญ่ทับทุ่งหญ้าใต้แผนที่) ช่องไหนถูกจองแล้วจะข้ามไปเอง */
 let fieldPlanCache = null;
+/* ช่องที่สั่ง "ห้ามมีดอกไม้" ถาวร (ผู้ใช้ชี้เองว่าดอกนี้เกะกะ) — ทุ่งดอกไม้บล็อกทางเดิน
+   ช่องพวกนี้จึงเปิดโล่งให้เดินผ่านได้แทน (คู่ขนานกับ WILD_BAN ของต้นไม้ป่า)
+   42,60 = ช่องหน้าประตูโรงแรมพอดี ปิดอยู่ทำให้เดินจากทางเดินกลางทุ่ง (z61) เข้าประตูตรงๆ ไม่ได้ */
+const FIELD_BAN = new Set(['42,60']);
 function fieldFlowerPlan(grid){
   const out = [], done = new Set();
   const open = (x, z) => {
     if(x<0 || z<0 || x>=OUT_W || z>=OUT_D) return false;
+    if(FIELD_BAN.has(x + ',' + z)) return false;
     if(done.has(x + ',' + z)) return false;
     if(grid[z][x]!==0 || isVillageRoadTile(x,z) || isPlazaTile(x,z) || lotAt(x,z,1)) return false;
     if(inPoolDeck(x,z) || isSandTile(x,z) || inHomeZone(x,z)) return false;
@@ -4240,6 +4793,13 @@ function fieldFlowerPlan(grid){
     if(!open(x, z)) continue;
     put(x, z, z === FLOWER_FIELD_PATH ? 'path' : 'field');
   }
+  /* ทุ่งดอกทานตะวันทุกผืน — ผืนไหนระบุ `path` ไว้ เว้นแถวนั้นเป็นทางเดินดินเข้ากลางทุ่ง */
+  SUNFLOWER_FIELDS.forEach(sf=>{
+    for(let z=sf.z0; z<=sf.z1; z++) for(let x=sf.x0; x<=sf.x1; x++){
+      if(!open(x, z)) continue;
+      put(x, z, z === sf.path ? 'path' : 'sun');
+    }
+  });
   for(let z=FLOWER_MEADOW.z0; z<=FLOWER_MEADOW.z1; z++) for(let x=FLOWER_MEADOW.x0; x<=FLOWER_MEADOW.x1; x++){
     if(!open(x, z)) continue;
     if(inMeadowTrail(x, z)){ put(x, z, 'path'); continue; }
@@ -4319,6 +4879,13 @@ function buildStaticScenery(){
       mergeCollectFx(ch, parts, chunkKeyOf(x, z));
       return;
     }
+    if(kind==='canoe' || kind==='ring'){       /* ที่เก็บอุปกรณ์ริมหาด — หันขวางจอ (45°) ให้เห็นด้านยาวเต็มๆ */
+      const rk = kind==='canoe' ? buildCanoeRack() : buildRingRack();
+      rk.position.set(outWX(x), 0, outWZ(z));
+      rk.rotation.y = Math.PI/4;
+      mergeCollectFx(rk, parts, chunkKeyOf(x, z));
+      return;
+    }
     const pr = kind==='palm' ? buildPalm() : buildBeachUmbrella();
     pr.position.set(outWX(x), 0, outWZ(z));
     pr.rotation.y = ((x*5+z*11)%4) * Math.PI/2;
@@ -4333,11 +4900,7 @@ function buildStaticScenery(){
     bt.rotation.y = ((x*7 + z*5) % 4) * Math.PI/2 + .35;
     addFxProp(bt, 'boat');                        /* โคลงตามคลื่น */
   });
-  const bboat = buildBoat('row');
-  bboat.position.set(outWX(BEACHED_BOAT.x), -.06, outWZ(BEACHED_BOAT.z));
-  bboat.rotation.y = (BEACHED_BOAT.rot||0) * Math.PI/2 + .25;
-  bboat.rotation.z = .06;                                  /* เอียงนิดๆ เหมือนเรือเกยทราย */
-  addFxProp(bboat, 'boat');                                /* เกยทรายอยู่ แต่ยังขยับตามคลื่นซัดเบาๆ */
+  /* (เรือเกยหาดเอาออกแล้ว — ดูหมายเหตุที่ BEACH_RACKS ใน js/house-map.js) */
   FISH_RACKS.forEach(([x,z,rot])=>{                        /* ราวตากปลาหน้าบ้านชาวประมง */
     const rk = buildFishRack((x+z)%2===0);
     rk.position.set(outWX(x), 0, outWZ(z));
@@ -4535,7 +5098,9 @@ function buildStaticScenery(){
      ผังทั้งหมดคิดที่ fieldFlowerPlan() ที่เดียว (ใช้ร่วมกับตอนสร้างกริดทางเดิน)
      'field' = ทุ่ง/สวนดอกไม้ (เดินเหยียบไม่ได้) · 'path' = ทางเดินกลางทุ่ง · 'sprig' = ดอกไม้ริมทาง (เดินได้) */
   (fieldPlanCache || fieldFlowerPlan(outGrid)).forEach(f=>{
-    const g2 = f.kind==='path' ? buildFieldPath(f.x, f.z) : buildFieldFlowers(f.x, f.z, f.opt);
+    const g2 = f.kind==='path' ? buildFieldPath(f.x, f.z)
+             : f.kind==='sun'  ? buildSunflowers(f.x, f.z)
+             : buildFieldFlowers(f.x, f.z, f.opt);
     g2.position.set(outWX(f.x), 0, outWZ(f.z));
     mergeCollectFx(g2, parts, chunkKeyOf(f.x, f.z));
     if(f.kind==='path') pathSet.add(f.x + ',' + f.z);       /* แตะแล้วเดินเฉยๆ เหมือนถนน */
@@ -4592,11 +5157,9 @@ function buildOutGrid(noWild){
   });
   /* หุ่นไล่กาในฟาร์ม + ต้นมะพร้าวริมหาด บล็อกทางเดิน (ร่มชายหาดเดินลอดได้ ไม่บล็อก) */
   SCARECROW_TILES.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
-  if(grid[BEACHED_BOAT.z] && grid[BEACHED_BOAT.z][BEACHED_BOAT.x]===0)
-    grid[BEACHED_BOAT.z][BEACHED_BOAT.x] = 3;                    /* เรือเกยหาดบล็อกช่องตัวเอง */
   FISH_RACKS.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   beachPropTiles().forEach(([x,z,kind])=>{
-    if((kind==='palm' || kind==='chair') && grid[z] && grid[z][x]===0) grid[z][x] = 3;
+    if((kind==='palm' || kind==='chair' || kind==='canoe' || kind==='ring') && grid[z] && grid[z][x]===0) grid[z][x] = 3;
   });
   /* เฟส 7: รั้ว/ของในคอก + เวที/เสาธง/ม้านั่ง/รถเข็น บล็อกทางเดิน
      (สัตว์ในคอกเดินไปมาได้ จึงไม่บล็อกช่อง / ท่าไม้กับคนตกปลาอยู่บนผืนน้ำที่บล็อกอยู่แล้ว) */
@@ -4629,7 +5192,7 @@ function buildOutGrid(noWild){
      ทำก่อนขั้นตอนปิดช่องที่เดินเข้าไม่ถึงด้านล่าง → ถ้าทุ่งไปปิดจนเกิดซอกตัน ซอกนั้นจะถูกปิดตามให้เอง */
   if(!noWild){
     fieldPlanCache = fieldFlowerPlan(grid);
-    fieldPlanCache.forEach(f=>{ if(f.kind==='field' && grid[f.z][f.x]===0) grid[f.z][f.x] = 3; });
+    fieldPlanCache.forEach(f=>{ if((f.kind==='field' || f.kind==='sun') && grid[f.z][f.x]===0) grid[f.z][f.x] = 3; });
   }
   /* ปิดช่องหญ้าที่ถูกต้นไม้ล้อมจนเดินเข้าไม่ได้ (เกิดเองได้จากการสุ่มป่า)
      ถ้าปล่อยไว้ เด็กแตะช่องนั้นแล้วตัวละครจะยืนนิ่งเพราะหาทางไม่เจอ
@@ -7408,6 +7971,7 @@ function buildDecorGroup(sc, rec){
     g.traverse(o=>{ if(o.userData.swingPivot) g.userData.swingPiv = o; if(o.userData.swingSeat) g.userData.swingSeat = o; });
   }
   if(item.light) setupLamp(g, item);   /* โคมไฟ/เสาไฟ/กองไฟ: สร้าง PointLight + หลอดเรืองแสง เปิด/ปิดได้ */
+  g.userData.animParts = collectDecorAnim(g);   /* ชิ้นส่วนที่ขยับเองตลอด (ธง/กังหัน/น้ำพุ/ไฟกะพริบ) */
   g.userData.deco = {rec, item, scene:sc};
   g.userData.hDecor = g.userData.deco;
   return g;

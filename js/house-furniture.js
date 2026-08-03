@@ -261,11 +261,18 @@
           }
         } },
       { id:'wall-clock', wall:true, name:'นาฬิกาแขวน', cat:'decor', scope:'in', emoji:'🕐', block:false, colors:[0xffd54f,0xef9a9a,0x90caf9],
-        build(g,col){
+        build(g,col,k){
           const face=cyl(.28,.28,.08,0xfffde7,20); face.rotation.x=Math.PI/2; face.position.y=1.4; g.add(face);
           const rim=torus(.28,.04,col,20); rim.position.y=1.4; g.add(rim);
-          const h1=box(.03,.16,.02,0x37474f); h1.position.set(0,1.46,.05); g.add(h1);
-          const h2=box(.03,.11,.02,0x37474f); h2.position.set(.06,1.4,.05); h2.rotation.z=-1; g.add(h2);
+          for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const tk=ball(.018,0x90a4ae,5);
+            tk.position.set(Math.cos(a)*.21,1.4+Math.sin(a)*.21,.05); g.add(tk); }
+          const hm=new k.THREE.Group(); hm.position.set(0,1.4,.05); g.add(hm);      /* เข็มยาว — เดินจริง */
+          hm.userData.anim={kind:'spin', axis:'z', sp:-.12};
+          const hmB=box(.03,.17,.02,0x37474f); hmB.position.y=.085; hm.add(hmB);
+          const hh=new k.THREE.Group(); hh.position.set(0,1.4,.055); g.add(hh);     /* เข็มสั้น — เดินช้ากว่า 12 เท่า */
+          hh.userData.anim={kind:'spin', axis:'z', sp:-.01};
+          const hhB=box(.035,.11,.02,0x546e7a); hhB.position.y=.055; hh.add(hhB);
+          const pin=ball(.03,0xffd54f,8); pin.position.set(0,1.4,.07); g.add(pin);
         } },
       { id:'toy-box', name:'กล่องของเล่น', cat:'decor', scope:'in', emoji:'🧸', colors:BRIGHT,
         build(g,col){
@@ -420,13 +427,25 @@
           const lamp=box(.28,.32,.28,0xfff59d,.06); lamp.position.y=1.85; lamp.userData.bulb=true; g.add(lamp);
           const cap=cone(.22,.14,col,4); cap.position.y=2.06; g.add(cap);
         } },
+      /* น้ำพุ — เพิ่มน้ำพุ่งจริง (2026-08-03): ลำน้ำยืด-หดตลอดเวลา + หยดน้ำเด้ง 4 หยดรอบจาน + ผิวน้ำในอ่างกระเพื่อม
+         ชิ้นที่ติด `userData.anim` จะถูก collectDecorAnim เก็บไปขยับใน updateDecorAnimParts (js/house.js) */
       { id:'fountain', name:'น้ำพุ', cat:'decorout', scope:'out', emoji:'⛲', fw:2, fd:2, colors:[0xb0bec5,0xd7ccc8,0x90a4ae],
         build(g,col){
           const basin=cyl(.85,.9,.3,col,20); basin.position.y=.15; g.add(basin);
-          const water=cyl(.75,.75,.06,0x4dd0e1,20); water.position.y=.3; g.add(water);
+          const lip=cyl(.9,.9,.07,shade(col,1.12),20); lip.position.y=.31; g.add(lip);
+          const water=cyl(.75,.75,.06,0x4dd0e1,20); water.position.y=.3;
+          water.userData.anim={kind:'pulse', sp:.5, amp:.02}; g.add(water);
           const pillar=cyl(.15,.2,.5,col,14); pillar.position.y=.55; g.add(pillar);
           const dish=cyl(.35,.32,.08,col,16); dish.position.y=.82; g.add(dish);
-          const spout=ball(.1,0x4dd0e1,10); spout.position.y=.95; g.add(spout);
+          const dishW=cyl(.3,.3,.04,0x4dd0e1,16); dishW.position.y=.86; g.add(dishW);
+          const jet=cyl(.05,.09,.5,0x7fd8e8,10); jet.position.y=1.14;
+          jet.userData.anim={kind:'jet', sp:1}; g.add(jet);
+          const cap=ball(.1,0x9ae4f0,10); cap.position.y=1.42;
+          cap.userData.anim={kind:'drop', sp:1, amp:.14}; g.add(cap);
+          [[.26,0],[-.26,0],[0,.26],[0,-.26]].forEach(([x,z],i)=>{      /* หยดน้ำโปรยลงจาน */
+            const d=ball(.06,0x9ae4f0,8); d.position.set(x,1.0,z);
+            d.userData.anim={kind:'drop', sp:1.3, amp:.22, ph:i*1.5}; g.add(d);
+          });
         } },
       { id:'mailbox', name:'ตู้จดหมาย', cat:'decorout', scope:'out', emoji:'📪', colors:[0xef5350,0x42a5f5,0x66bb6a,0xffca28],
         build(g,col){
@@ -479,10 +498,13 @@
         } },
       { id:'pond', name:'บ่อน้ำ', cat:'decorout', scope:'out', emoji:'🦆', block:false, fw:2, fd:2, colors:[0x4dd0e1,0x4fc3f7,0x81d4fa],
         build(g,col){
-          const water=cyl(.85,.85,.06,col,24); water.position.y=.03; g.add(water);
+          const water=cyl(.85,.85,.06,col,24); water.position.y=.03;
+          water.userData.anim={kind:'pulse', sp:.45, amp:.015}; g.add(water);   /* ผิวน้ำกระเพื่อมช้าๆ */
           const rim=torus(.85,.07,0x9e9e9e,24); rim.position.y=.05; g.add(rim);
-          const lily=cyl(.14,.14,.02,0x66bb6a,10); lily.position.set(.3,.07,.2); g.add(lily);
-          const flower=ball(.06,0xf48fb1,8); flower.position.set(.3,.1,.2); g.add(flower);
+          const lily=cyl(.14,.14,.02,0x66bb6a,10); lily.position.set(.3,.07,.2);
+          lily.userData.anim={kind:'bob', sp:.7, amp:.03}; g.add(lily);
+          const flower=ball(.06,0xf48fb1,8); flower.position.set(.3,.1,.2);
+          flower.userData.anim={kind:'bob', sp:.7, amp:.03}; g.add(flower);
         } },
       { id:'balloon', name:'ลูกโป่ง', cat:'decorout', scope:'out', emoji:'🎈', colors:BRIGHT,
         action:'bounce',
@@ -493,12 +515,24 @@
         } },
       { id:'gnome', name:'ตุ๊กตาคนแคระ', cat:'decorout', scope:'out', emoji:'🧙', colors:[0xef5350,0x42a5f5,0x66bb6a,0xffca28],
         action:'bounce',
+        /* เดิมเป็นกรวย+ลูกกลม ไม่มีหน้าตา มองไกลๆ เหมือนหยดสีแดง (ปรับ 2026-08-03)
+           ของใหม่: มีตา แก้มชมพู แขนสองข้าง รองเท้า เข็มขัด และหนวดเครายาวถึงอก */
         build(g,col){
-          const body=cone(.24,.5,col,12); body.position.y=.25; g.add(body);
-          const head=ball(.15,0xffd9b3,12); head.position.y=.58; g.add(head);
-          const beard=cone(.13,.2,0xffffff,10); beard.rotation.x=Math.PI; beard.position.set(0,.5,.08); g.add(beard);
-          const hat=cone(.16,.4,shade(col,.8),12); hat.position.y=.82; g.add(hat);
-          const nose=ball(.04,0xffb27d,8); nose.position.set(0,.56,.15); g.add(nose);
+          const boots=box(.3,.1,.22,shade(0x6d4c41,1),.04); boots.position.y=.05; g.add(boots);
+          const body=cone(.26,.52,col,12); body.position.y=.3; g.add(body);
+          const belt=cyl(.2,.22,.07,shade(col,.6),12); belt.position.y=.32; g.add(belt);
+          const buckle=box(.09,.08,.04,0xffd54f,.02); buckle.position.set(0,.32,.19); g.add(buckle);
+          [-1,1].forEach(s=>{ const arm=cyl(.05,.055,.24,col,7); arm.rotation.z=s*.85;
+            arm.position.set(s*.22,.44,.06); g.add(arm);
+            const hand=ball(.055,0xffd9b3,7); hand.position.set(s*.3,.35,.08); g.add(hand); });
+          const head=ball(.17,0xffd9b3,12); head.position.y=.68; g.add(head);
+          [-1,1].forEach(s=>{ const eye=ball(.028,0x3a2f28,7); eye.position.set(s*.07,.72,.15); g.add(eye);
+            const ch=ball(.04,0xffb3a0,7); ch.scale.z=.5; ch.position.set(s*.12,.66,.13); g.add(ch); });
+          const nose=ball(.05,0xffb27d,8); nose.position.set(0,.68,.17); g.add(nose);
+          const beard=cone(.15,.34,0xfbf7f0,10); beard.rotation.x=Math.PI; beard.position.set(0,.52,.09); g.add(beard);
+          const mous=ball(.07,0xfbf7f0,7); mous.scale.set(1.5,.6,.7); mous.position.set(0,.63,.15); g.add(mous);
+          const hat=cone(.2,.46,shade(col,.75),12); hat.position.y=.98; g.add(hat);
+          const brim=cyl(.19,.19,.05,shade(col,.75),12); brim.position.y=.79; g.add(brim);
         } },
       { id:'stone-path', flat:true, name:'ทางเดินหิน', cat:'decorout', scope:'out', emoji:'🪨', block:false, colors:[0xbcaaa4,0x90a4ae,0xd7ccc8],
         build(g,col){
@@ -721,8 +755,12 @@
           const stand=box(.9,.5,.4,shade(0xc98d4e,.9),.04); stand.position.y=.25; g.add(stand);
           const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);
           const water=box(.8,.4,.32,0x4dd0e1,.02); water.position.y=.74; g.add(water);
-          const fish=ball(.06,0xff8a65,8); fish.scale.set(1.4,1,.6); fish.position.set(-.1,.78,.1); g.add(fish);
-          const fish2=ball(.05,0xffd54f,8); fish2.scale.set(1.4,1,.6); fish2.position.set(.16,.68,0); g.add(fish2);
+          const fish=ball(.06,0xff8a65,8); fish.scale.set(1.4,1,.6); fish.position.set(-.1,.78,.1);
+          fish.userData.anim={kind:'bob', sp:1.3, amp:.06}; g.add(fish);           /* ปลาว่ายขึ้นลงในตู้ */
+          const fish2=ball(.05,0xffd54f,8); fish2.scale.set(1.4,1,.6); fish2.position.set(.16,.68,0);
+          fish2.userData.anim={kind:'bob', sp:1.7, amp:.05, ph:2.4}; g.add(fish2);
+          [[-.28,.66],[.3,.8],[.02,.6]].forEach(([x,y],i)=>{ const bb=ball(.025,0xe0f7fa,6);
+            bb.position.set(x,y,.05); bb.userData.anim={kind:'bob', sp:2.4, amp:.12, ph:i*1.9}; g.add(bb); });
         } },
       { id:'piano', wall:true, name:'เปียโน', cat:'decor', scope:'in', emoji:'🎹', fw:2, fd:1, colors:[0x37474f,0x8d4e2a,0xef9a9a],
         action:'bounce',
@@ -748,22 +786,36 @@
         } },
       { id:'globe', stack:true, name:'ลูกโลกหมุน', cat:'decor', scope:'in', emoji:'🌐', colors:[0x42a5f5,0x66bb6a],
         action:'spin',
-        build(g,col){
-          const globe=ball(.24,col,16); globe.position.y=.5; g.add(globe);
-          const land=ball(.1,0x66bb6a,8); land.scale.set(1.2,1,.6); land.position.set(.08,.55,.18); g.add(land);
+        build(g,col,k){
+          const gl=new k.THREE.Group(); gl.position.y=.5; g.add(gl);               /* ลูกโลกหมุนเองช้าๆ */
+          gl.userData.anim={kind:'spin', axis:'y', sp:.35};
+          const globe=ball(.24,col,16); gl.add(globe);
+          const land=ball(.1,0x66bb6a,8); land.scale.set(1.2,1,.6); land.position.set(.08,.05,.18); gl.add(land);
+          const land2=ball(.08,0x66bb6a,8); land2.scale.set(1,1.3,.6); land2.position.set(-.12,-.04,-.14); gl.add(land2);
           const ring=torus(.28,.02,0xffd54f,20); ring.rotation.x=.4; ring.position.y=.5; g.add(ring);
           const base=cyl(.08,.12,.16,shade(0xc98d4e,.9),12); base.position.y=.12; g.add(base);
         } },
 
       /* ============ นอกบ้าน — สวน/ต้นไม้ (เพิ่ม) ============ */
+      /* ทานตะวัน — ทรงเดียวกับต้นในทุ่งดอกทานตะวันบนแผนที่เป๊ะ (buildSunflower ใน js/house.js)
+         กลีบเป็นลูกกลมแบน 10 กลีบรอบจานเมล็ด + ใบใหญ่ 2 ใบ + จานหลังสีเขียว · ต้นตกแต่งวาง 2 ต้นสูงไม่เท่ากัน
+         ⚠ ถ้าแก้ทรงในทุ่ง ให้แก้ที่นี่ตามด้วย ไม่งั้นต้นที่เด็กปลูกเองจะหน้าตาไม่เหมือนทุ่งข้างๆ */
       { id:'sunflower', name:'ทานตะวัน', cat:'garden', scope:'out', emoji:'🌻', colors:[0xffd54f,0xffb300],
-        build(g,col){
-          const stem=cyl(.04,.05,.9,0x66bb6a,8); stem.position.y=.45; g.add(stem);
-          [[.12,.5],[-.14,.7]].forEach(([x,y])=>{ const lf=ball(.1,0x66bb6a,8); lf.scale.set(1.6,.4,1); lf.position.set(x,y,0); g.add(lf); });
-          /* หน้าดอกหันไปข้างหน้า (+z): จานเกสร disc ตั้ง (x=90°) + กลีบเรียงเป็นวงในระนาบ XY รอบจาน */
-          for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const p=box(.16,.06,.03,col,.02); p.position.set(Math.cos(a)*.24,1.0+Math.sin(a)*.24,.0); p.rotation.z=a; g.add(p); }
-          const center=cyl(.17,.17,.06,0x8d6e63,18); center.rotation.x=Math.PI/2; center.position.set(0,1.0,.04); g.add(center);
-          const seeds=cyl(.13,.13,.03,shade(0x8d6e63,.8),16); seeds.rotation.x=Math.PI/2; seeds.position.set(0,1.0,.08); g.add(seeds);
+        build(g,col,k){
+          const T=k.THREE;
+          const stalk=(h,px,pz,petal)=>{
+            const stem=cyl(.035,.05,h,0x5aa74e,7); stem.position.set(px,h/2,pz); g.add(stem);
+            [-1,1].forEach((sd,i)=>{ const lf=ball(.14,0x6fbf73,7); lf.scale.set(1.5,.28,.85);
+              lf.position.set(px+sd*.14,h*(.42+i*.16),pz); lf.rotation.z=-sd*.5; g.add(lf); });
+            const head=new T.Group(); head.position.set(px,h+.06,pz+.04); g.add(head);
+            for(let p=0;p<10;p++){ const a=p*Math.PI*2/10; const pt=ball(.14,petal,6);
+              pt.scale.set(.62,.62,.3); pt.position.set(Math.cos(a)*.24,Math.sin(a)*.24,0); head.add(pt); }
+            const disc=cyl(.19,.19,.07,0x8d5a2b,12); disc.rotation.x=Math.PI/2; head.add(disc);
+            const seed=cyl(.13,.13,.09,0x6b4423,10); seed.rotation.x=Math.PI/2; head.add(seed);
+            const back=cyl(.21,.21,.05,0x6fbf73,12); back.rotation.x=Math.PI/2; back.position.z=-.06; head.add(back);
+          };
+          stalk(1.15,-.13,-.05,col);
+          stalk(.82,.17,.12,shade(col,.92));
         } },
       { id:'cactus', name:'กระบองเพชร', cat:'garden', scope:'out', emoji:'🌵', colors:[0x66bb6a,0x4caf50,0x81c784],
         build(g,col){
@@ -782,11 +834,32 @@
           for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const fl=ball(.1,petals[i%petals.length],8); fl.position.set(Math.cos(a)*.62,1.55+Math.sin(a)*.62,.02); g.add(fl);
             const leaf=ball(.05,0x66bb6a,6); leaf.scale.set(1.4,.5,1); leaf.position.set(Math.cos(a)*.62,1.55+Math.sin(a)*.62,-.04); g.add(leaf); }
         } },
-      { id:'palm-tall', leafy:true, leafyTall:true, name:'ต้นมะพร้าว', cat:'garden', scope:'out', emoji:'🥥', colors:[0x66bb6a,0x4caf50],
-        build(g,col){
-          const trunk=cyl(.1,.16,1.8,0xc98d4e,10); trunk.position.y=.9; trunk.rotation.z=.06; g.add(trunk);
-          for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const leaf=box(.7,.05,.2,col,.04); leaf.position.set(Math.cos(a)*.42,1.85,Math.sin(a)*.42); leaf.rotation.y=-a; leaf.rotation.z=.2; g.add(leaf); }
-          [[.1,.1],[-.1,.12],[.14,-.08]].forEach(([x,z])=>{ const co=ball(.09,0x8d6e63,8); co.position.set(x,1.72,z); g.add(co); });
+      /* ต้นมะพร้าว — ทรงเดียวกับต้นมะพร้าวริมหาดบนแผนที่ (buildPalm ใน js/house.js)
+         ลำต้นโค้งทำจากท่อนซ้อน + วงปล้อง · ทางใบ 7 ทาง ทางละ 3 ท่อน "ลู่ลง" (ห้ามวางแบนระนาบเดียว
+         ไม่งั้นกล้องไอโซจะเห็นเป็นจานกลมแบนเหมือนดอกไม้) · ยอดอ่อนกลางพุ่ม + พวงมะพร้าว 3 ลูก */
+      { id:'palm-tall', leafy:true, leafyTall:true, name:'ต้นมะพร้าว', cat:'garden', scope:'out', emoji:'🥥', colors:[0x5cb85c,0x66bb6a,0x4caf50],
+        build(g,col,k){
+          const T=k.THREE, SEG=5, H=2.0, lean=.42;
+          let tx=0, ty=0;
+          for(let i=0;i<SEG;i++){
+            const t=i/SEG, t2=(i+1)/SEG, y0=H*t, y1=H*t2, x0=lean*t*t, x1=lean*t2*t2;
+            const len=Math.hypot(x1-x0,y1-y0);
+            const sg=cyl(.1-i*.011,.14-i*.011,len+.04,i%2?0xcf9f68:0xc4914f,9);
+            sg.position.set((x0+x1)/2,(y0+y1)/2,0); sg.rotation.z=-Math.atan2(x1-x0,y1-y0); g.add(sg);
+            if(i%2===0){ const rg=cyl(.12-i*.011,.12-i*.011,.05,0xb98446,9);
+              rg.position.set(x0+(x1-x0)*.4,y0+(y1-y0)*.4,0); rg.rotation.z=sg.rotation.z; g.add(rg); }
+            tx=x1; ty=y1;
+          }
+          const crown=ball(.15,0xb98446,8); crown.position.set(tx,ty+.04,0); g.add(crown);
+          for(let i=0;i<7;i++){
+            const fr=new T.Group(); fr.position.set(tx,ty+.06+(i%2?.06:-.03),0); fr.rotation.y=-(i/7*Math.PI*2+.3); g.add(fr);
+            [[.26,.5,.26,-.05,-.16],[.7,.42,.21,-.26,-.5],[1.0,.32,.13,-.64,-.95]].forEach(([r,len,wid,dy,tilt])=>{
+              const lf=box(len,.06,wid,col,.03); lf.position.set(r,dy,0); lf.rotation.z=tilt; fr.add(lf); });
+            const rib=box(.92,.045,.055,shade(col,.82),.02); rib.position.set(.48,-.18,0); rib.rotation.z=-.36; fr.add(rib);
+          }
+          const bud=cone(.09,.44,shade(col,1.1),7); bud.position.set(tx,ty+.3,0); bud.rotation.z=-.2; g.add(bud);
+          [[.15,-.09,.05],[-.05,-.13,.15],[.05,-.18,-.11]].forEach(([x,y,z])=>{
+            const co=ball(.1,0x8d6e63,8); co.scale.y=.92; co.position.set(tx+x,ty+y,z); g.add(co); });
         } },
       { id:'hedge', leafy:true, name:'พุ่มรั้วเขียว', cat:'garden', scope:'out', emoji:'🍃', fw:2, fd:1, colors:GREEN,
         build(g,col){
@@ -805,10 +878,22 @@
           const bush=ball(.4,col,12); bush.scale.set(1,.8,1); bush.position.y=.36; g.add(bush);
           [[.2,.5,.1],[-.2,.46,-.1],[0,.6,.2],[.14,.52,-.2],[-.16,.56,.14]].forEach(([x,y,z])=>{ const rose=ball(.08,0xef5350,8); rose.position.set(x,y,z); g.add(rose); });
         } },
+      /* พุ่มโคลเวอร์ — เดิมเป็นจานแบนโรยเม็ดกลมเล็ก มองมุมไอโซแล้วเหมือนแพนเค้ก (ปรับ 2026-08-03)
+         ของใหม่: เนินหญ้าเตี้ย + ก้านโคลเวอร์ยกสูงคนละระดับ ใบ 3 แฉกต่อก้าน + ดอกโคลเวอร์ขาว 2 ดอก */
       { id:'clover-patch', name:'พุ่มโคลเวอร์', cat:'garden', scope:'out', emoji:'☘️', block:false, colors:[0x66bb6a,0x4caf50,0x81c784],
         build(g,col){
-          const base=cyl(.42,.42,.04,col,20); base.position.y=.02; g.add(base);
-          [[-.2,-.15],[.18,-.1],[.05,.2],[-.15,.18],[.25,.15]].forEach(([x,z])=>{ for(let j=0;j<3;j++){ const a=j/3*Math.PI*2; const leaf=ball(.05,shade(col,1.1),6); leaf.scale.set(1,.5,1); leaf.position.set(x+Math.cos(a)*.05,.08,z+Math.sin(a)*.05); g.add(leaf); } });
+          const mound=ball(.44,shade(col,.9),12); mound.scale.set(1,.32,1); mound.position.y=.04; g.add(mound);
+          [[-.22,-.16,.3],[.18,-.12,.24],[.04,.2,.34],[-.16,.2,.2],[.26,.14,.27],[-.02,-.02,.4]].forEach(([x,z,h])=>{
+            const stem=cyl(.022,.028,h,shade(col,.85),5); stem.position.set(x,h/2,z); g.add(stem);
+            for(let j=0;j<3;j++){ const a=j/3*Math.PI*2+.4;
+              const leaf=ball(.1,shade(col,1.12),7); leaf.scale.set(1,.32,.85);
+              leaf.position.set(x+Math.cos(a)*.09,h+.02,z+Math.sin(a)*.09); g.add(leaf); }
+          });
+          [[-.3,.1,.34],[.24,-.24,.28]].forEach(([x,z,h])=>{        /* ดอกโคลเวอร์ขาวชมพู */
+            const stem=cyl(.02,.024,h,shade(col,.8),5); stem.position.set(x,h/2,z); g.add(stem);
+            const fl=ball(.075,0xfbf7f0,8); fl.scale.y=1.2; fl.position.set(x,h+.06,z); g.add(fl);
+            const tip=ball(.05,0xf8bbd0,7); tip.position.set(x,h+.12,z); g.add(tip);
+          });
         } },
 
       /* ============ นอกบ้าน — เครื่องเล่น (เพิ่ม) ============ */
@@ -835,9 +920,12 @@
       { id:'kiddie-pool', name:'สระเด็ก', cat:'play', scope:'out', emoji:'🏊', block:false, fw:2, fd:2, colors:[0x4dd0e1,0x81d4fa],
         build(g,col){
           const ring=torus(.85,.14,shade(col,1.1),24); ring.rotation.x=Math.PI/2; ring.position.y=.14; g.add(ring);
-          const water=cyl(.82,.82,.14,col,24); water.position.y=.1; g.add(water);
-          const ball1=ball(.1,0xef5350,10); ball1.position.set(.3,.24,.2); g.add(ball1);
-          const ball2=ball(.09,0xffd54f,10); ball2.position.set(-.28,.22,-.1); g.add(ball2);
+          const water=cyl(.82,.82,.14,col,24); water.position.y=.1;
+          water.userData.anim={kind:'pulse', sp:.6, amp:.012}; g.add(water);
+          const ball1=ball(.1,0xef5350,10); ball1.position.set(.3,.24,.2);
+          ball1.userData.anim={kind:'bob', sp:1.2, amp:.05}; g.add(ball1);          /* ลูกบอลลอยน้ำ */
+          const ball2=ball(.09,0xffd54f,10); ball2.position.set(-.28,.22,-.1);
+          ball2.userData.anim={kind:'bob', sp:1.5, amp:.05, ph:2.2}; g.add(ball2);
         } },
       { id:'basketball-hoop', wall:true, name:'แป้นบาส', cat:'play', scope:'out', emoji:'🏀', colors:PLASTIC,
         build(g,col){
@@ -854,12 +942,28 @@
           const net=box(1.5,.9,.02,0xeceff1,.02); net.position.set(0,.5,-.24); net.rotation.x=.3; g.add(net);
           const bl=ball(.12,col,10); bl.position.set(.4,.12,.4); g.add(bl);
         } },
+      /* ว่าว — เดิมตัวว่าวเล็กมากและลอยลอยอยู่เฉยๆ ไม่มีที่ยึด (ปรับ 2026-08-03)
+         ของใหม่: ตัวว่าวใหญ่ขึ้นเท่าตัว มีคานไม้กากบาท ผ้าสองสี หางยาวมีโบว์ 5 อัน และหลอดเก็บสายวางที่พื้น */
       { id:'kite', name:'ว่าว', cat:'play', scope:'out', emoji:'🪁', colors:BRIGHT,
-        build(g,col){
-          const str=cyl(.008,.008,1.2,0x9e9e9e,4); str.position.y=.6; str.rotation.z=.2; g.add(str);
-          const kite=box(.36,.36,.03,col,.02); kite.position.set(.24,1.4,0); kite.rotation.z=Math.PI/4; g.add(kite);
-          const cross1=box(.5,.03,.04,shade(col,.8)); cross1.position.set(.24,1.4,.02); cross1.rotation.z=Math.PI/4; g.add(cross1);
-          for(let i=0;i<3;i++){ const bow=ball(.05,i%2?0xffd54f:0xef5350,8); bow.position.set(.24-i*.12,1.14-i*.12,0); g.add(bow); }
+        build(g,col,k){
+          const T=k.THREE, air=new T.Group(); g.add(air);      /* ตัวว่าว+หาง ลอยไหวตามลมทั้งชุด */
+          air.userData.anim={kind:'bob', sp:.9, amp:.12};
+          const spool=cyl(.09,.09,.16,0xc98d4e,10); spool.rotation.z=Math.PI/2; spool.position.set(-.3,.09,0); g.add(spool);
+          [-1,1].forEach(s=>{ const cap=cyl(.13,.13,.03,shade(0xc98d4e,.8),10); cap.rotation.z=Math.PI/2;
+            cap.position.set(-.3+s*.09,.09,0); g.add(cap); });
+          const str=cyl(.012,.012,1.55,0xfbf7f0,4); str.position.set(.05,.78,0); str.rotation.z=.42; g.add(str);
+          const kx=.52, ky=1.62;
+          const kite=box(.62,.62,.04,col,.03); kite.position.set(kx,ky,0); kite.rotation.z=Math.PI/4; air.add(kite);
+          const half=box(.6,.3,.05,shade(col,1.18),.02); half.position.set(kx,ky,.02); half.rotation.z=Math.PI/4; air.add(half);
+          [0,1].forEach(i=>{ const bar=box(.86,.04,.05,0xc98d4e,.02);
+            bar.position.set(kx,ky,.05); bar.rotation.z=Math.PI/4+i*Math.PI/2; air.add(bar); });
+          for(let i=0;i<5;i++){                       /* หางว่าว: เชือกเฉียงลง + โบว์สลับสี */
+            const t=(i+1)/5;
+            const bow=ball(.07,i%2?0xffd54f:0xef5350,8); bow.scale.set(1.4,.7,.7);
+            bow.position.set(kx-.44*t-.06, ky-.5-.34*i, 0); air.add(bow);
+            const tie=cyl(.012,.012,.3,0xfbf7f0,4); tie.rotation.z=.5;
+            tie.position.set(kx-.44*t+.05, ky-.34-.34*i, 0); air.add(tie);
+          }
         } },
       { id:'playhouse', name:'บ้านของเล่น', cat:'play', scope:'out', emoji:'🛖', fw:2, fd:2, colors:[0xffcc80,0xef9a9a,0x90caf9,0xa5d6a7],
         build(g,col){
@@ -933,12 +1037,26 @@
           [-1,1].forEach(s=>{ const eye=box(.04,.06,.02,0x37474f); eye.position.set(s*.07,1.52,.19); g.add(eye); });
           const straw=cone(.05,.14,0xffd54f,6); straw.rotation.z=Math.PI/2; straw.position.set(.62,1.1,0); g.add(straw);
         } },
+      /* กังหันลม — เดิมใบพัดกางอยู่ในระนาบแนวนอน (หมุนแล้วเหมือนพัดลมเพดานเล็กๆ) มองมุมไอโซแทบไม่เห็นใบ
+         ของใหม่ (2026-08-03): ใบพัดกังหันกระดาษ 6 กลีบ "ตั้งฉากกับเสา" หันหน้าเข้าหากล้อง (ระนาบ XY)
+         หมุนเองตลอดเวลา (anim spin) + ดุมกลาง + หมุดสีทอง + ใบไม้ประดับที่โคนเสา */
       { id:'windmill', name:'กังหันลม', cat:'decorout', scope:'out', emoji:'🌬️', colors:BRIGHT,
         action:'spin',
-        build(g,col){
-          const pole=cyl(.03,.04,1.2,0x66bb6a,8); pole.position.y=.6; g.add(pole);
-          const hub=ball(.06,0xffd54f,10); hub.position.y=1.2; g.add(hub);
-          for(let i=0;i<5;i++){ const a=i/5*Math.PI*2; const blade=box(.32,.03,.18,i%2?col:shade(col,1.2),.02); blade.position.set(Math.cos(a)*.2,1.2,Math.sin(a)*.2); blade.rotation.y=-a; g.add(blade); }
+        build(g,col,k){
+          const T=k.THREE;
+          const pole=cyl(.035,.05,1.3,0x9c6238,8); pole.position.y=.65; g.add(pole);
+          [-1,1].forEach(s=>{ const lf=ball(.12,0x66bb6a,7); lf.scale.set(1.5,.35,.9);
+            lf.position.set(s*.11,.3+s*.08,0); lf.rotation.z=-s*.5; g.add(lf); });
+          const fan=new T.Group(); fan.position.set(0,1.32,.09); g.add(fan);
+          fan.userData.anim={kind:'spin', axis:'z', sp:1.9};
+          for(let i=0;i<6;i++){
+            const a=i/6*Math.PI*2;
+            const c=[col,shade(col,1.25),0xfbf7f0][i%3];
+            const pt=box(.34,.22,.03,c,.05);                 /* กลีบใบพัด (ระนาบ XY = หันหน้าเข้ากล้อง) */
+            pt.position.set(Math.cos(a)*.2,Math.sin(a)*.2,0); pt.rotation.z=a+.5; fan.add(pt);
+            const tip=ball(.05,shade(c,.85),7); tip.position.set(Math.cos(a)*.36,Math.sin(a)*.36,.02); fan.add(tip);
+          }
+          const hub=cyl(.07,.07,.08,0xffd54f,12); hub.rotation.x=Math.PI/2; hub.position.set(0,1.32,.14); g.add(hub);
         } },
       { id:'well', name:'บ่อน้ำโบราณ', cat:'decorout', scope:'out', emoji:'🪣', fw:2, fd:2, colors:[0x90a4ae,0xbcaaa4,0xa1887f],
         build(g,col){
@@ -958,23 +1076,38 @@
           [-1,1].forEach(s=>{ const eye=box(.06,.1,.02,shade(col,.6)); eye.position.set(s*.09,1.12,.19); g.add(eye); });
           const nose=box(.06,.18,.1,shade(col,.9)); nose.position.set(0,1.02,.2); g.add(nose);
         } },
-      { id:'flag-pole', name:'เสาธง', cat:'decorout', scope:'out', emoji:'🚩', colors:[0xcfd8dc,0xb0bec5],
+      /* เสาธง — เปลี่ยนเป็น **ธงชาติไทย** พร้อมสะบัดจริง (2026-08-03 ตามคำขอผู้ใช้)
+         ธงไตรรงค์ = 5 แถบ แดง-ขาว-น้ำเงิน-ขาว-แดง สัดส่วนความสูง 1:1:2:1:1 (แถบน้ำเงินหนาเป็น 2 เท่า)
+         ผ้าธงอยู่ในกลุ่มย่อยที่ "จุดหมุนติดเสา" แล้วติดธง anim wave → สะบัดชุดเดียวกับธงในเมือง */
+      { id:'flag-pole', name:'เสาธงไทย', cat:'decorout', scope:'out', emoji:'🇹🇭', colors:[0xcfd8dc,0xb0bec5],
         action:'bounce',
-        build(g,col){
+        build(g,col,k){
+          const T=k.THREE;
           const pole=cyl(.04,.05,2.2,col,10); pole.position.y=1.1; g.add(pole);
           const base=cyl(.18,.22,.1,shade(col,.8),14); base.position.y=.05; g.add(base);
-          const top=ball(.06,0xffd54f,10); top.position.y=2.2; g.add(top);
-          const flag=box(.5,.34,.02,0xef5350,.02); flag.position.set(.27,2.0,0); g.add(flag);
-          const star=ball(.05,0xffd54f,8); star.position.set(.27,2.0,.03); g.add(star);
+          const ring=cyl(.06,.06,.05,shade(col,.7),10); ring.position.y=1.86; g.add(ring);
+          const top=ball(.07,0xffd54f,10); top.position.y=2.24; g.add(top);
+          const cloth=new T.Group(); cloth.position.set(.02,1.98,0); g.add(cloth);
+          cloth.userData.anim={kind:'wave'};
+          const W=.62, H=.42, unit=H/6;                     /* 6 ส่วน: 1 แดง / 1 ขาว / 2 น้ำเงิน / 1 ขาว / 1 แดง */
+          [[0xa51931,unit,2.5],[0xf4f5f8,unit,1.5],[0x2d2a4a,unit*2,0],[0xf4f5f8,unit,-1.5],[0xa51931,unit,-2.5]]
+            .forEach(([c,h,off])=>{
+              const st=box(W,h,.025,c,.008); st.position.set(W/2, off*unit, 0); cloth.add(st);
+            });
         } },
       { id:'bird-bath', name:'อ่างน้ำนก', cat:'decorout', scope:'out', emoji:'🕊️', colors:[0xd7ccc8,0x90a4ae,0xbcaaa4],
         build(g,col){
           const stand=cyl(.1,.16,.7,col,12); stand.position.y=.35; g.add(stand);
           const base=cyl(.24,.28,.06,col,16); base.position.y=.03; g.add(base);
           const basin=cyl(.34,.28,.12,shade(col,1.1),18); basin.position.y=.76; g.add(basin);
-          const water=cyl(.28,.28,.03,0x4dd0e1,18); water.position.y=.8; g.add(water);
-          const bird=ball(.08,0xffffff,10); bird.position.set(.2,.86,0); g.add(bird);
-          const beak=cone(.03,.06,0xffca28,6); beak.rotation.x=Math.PI/2; beak.position.set(.28,.86,0); g.add(beak);
+          const water=cyl(.28,.28,.03,0x4dd0e1,18); water.position.y=.8;
+          water.userData.anim={kind:'pulse', sp:.8, amp:.03}; g.add(water);        /* น้ำกระเพื่อมตอนนกเล่นน้ำ */
+          const bird=ball(.08,0xffffff,10); bird.position.set(.2,.86,0);
+          bird.userData.anim={kind:'bob', sp:1.8, amp:.05}; g.add(bird);
+          const beak=cone(.03,.06,0xffca28,6); beak.rotation.x=Math.PI/2; beak.position.set(.28,.86,0);
+          beak.userData.anim={kind:'bob', sp:1.8, amp:.05}; g.add(beak);
+          const wing=ball(.06,0xf5f5f5,8); wing.scale.set(1.3,.5,.9); wing.position.set(.17,.9,.06);
+          wing.userData.anim={kind:'bob', sp:1.8, amp:.05, ph:.4}; g.add(wing);
         } },
       { id:'wheelbarrow', name:'รถเข็นสวน', cat:'decorout', scope:'out', emoji:'🛒', fw:2, fd:1, colors:[0xef5350,0x42a5f5,0x66bb6a],
         build(g,col){
@@ -989,7 +1122,8 @@
         action:'toggle', light:{y:1.3, color:0xfff0d0, dist:4.5, intensity:.8},
         build(g,col){
           [-1,1].forEach(s=>{ const post=cyl(.04,.04,1.6,0x8d6e63,8); post.position.set(s*.8,.8,0); g.add(post); });
-          for(let i=0;i<=8;i++){ const t=i/8; const x=-.8+t*1.6; const y=1.5-Math.sin(t*Math.PI)*.4; const bulb=ball(.06,[0xef5350,0xffd54f,0x66bb6a,0x42a5f5,0xf06292][i%5],8); bulb.position.set(x,y,0); bulb.userData.bulb=true; g.add(bulb); }
+          for(let i=0;i<=8;i++){ const t=i/8; const x=-.8+t*1.6; const y=1.5-Math.sin(t*Math.PI)*.4; const bulb=ball(.06,[0xef5350,0xffd54f,0x66bb6a,0x42a5f5,0xf06292][i%5],8); bulb.position.set(x,y,0); bulb.userData.bulb=true;
+        bulb.userData.anim={kind:'pulse', sp:.8, amp:.2, ph:i*.9}; g.add(bulb); }   /* หลอดไฟเต้นสลับกันเป็นระลอก */
         } },
       { id:'wooden-bridge', name:'สะพานไม้', cat:'decorout', scope:'out', emoji:'🌉', block:false, fw:2, fd:1, colors:WOOD,
         build(g,col){
@@ -1001,7 +1135,8 @@
         build(g,col){
           for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const logL=cyl(.05,.06,.5,0x8d6e63,8); logL.rotation.z=Math.PI/2.4; logL.rotation.y=a; logL.position.set(Math.cos(a)*.14,.1,Math.sin(a)*.14); g.add(logL); }
           for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const st=ball(.07,0x90a4ae,8); st.scale.set(1,.7,1); st.position.set(Math.cos(a)*.3,.05,Math.sin(a)*.3); g.add(st); }
-          [[0,.3],[.08,.5],[-.08,.44]].forEach(([x,h])=>{ const fl=cone(.14,h*.7,col,8); fl.position.set(x,h*.6,0); fl.userData.bulb=true; g.add(fl); });
+          [[0,.3],[.08,.5],[-.08,.44]].forEach(([x,h],i)=>{ const fl=cone(.14,h*.7,col,8); fl.position.set(x,h*.6,0);
+            fl.userData.bulb=true; fl.userData.anim={kind:'flame', ph:i*2.1}; g.add(fl); });
         } },
     ];
 
