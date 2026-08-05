@@ -6782,12 +6782,12 @@ function openCreator(fromWorld){
   $('house-creator').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
-  $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true;
+  $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true; $('house-child-chip').hidden = true;
   $('house-hint').hidden = true;
-  /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (ดินสอ = ชุดเดียวกับปุ่มแก้ไข, หน้าเด็ก = ชุด row "หนูเป็น...") */
+  /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (เสื้อ = ชุดเดียวกับปุ่มแต่งตัว #house-edit-btn, หน้าเด็ก = ชุด row "หนูเป็น...") */
   const _icChild = '<svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg>';
-  const _icPencil = '<svg class="house-title-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg>';
-  $('house-creator-title').innerHTML = fromWorld ? (_icPencil + ' แก้ไขตัวละครของหนู') : (_icChild + ' สร้างตัวละครของหนู');
+  const _icDress = '<svg class="house-title-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 3.6L4 6.2L5.9 10.6L8.2 9.6L8.2 20L15.8 20L15.8 9.6L18.1 10.6L20 6.2L14.8 3.6Q12 7.2 9.2 3.6Z" fill="#FFD6E8"/><path d="M12 15.9c-1.8-1.3-2.6-2.1-2.6-3.1 0-.8.65-1.4 1.4-1.4.5 0 .9.25 1.2.65.3-.4.7-.65 1.2-.65.75 0 1.4.6 1.4 1.4 0 1-.8 1.8-2.6 3.1z" fill="#C0527A" stroke="none"/></svg>';
+  $('house-creator-title').innerHTML = fromWorld ? (_icDress + ' แก้ไขตัวละครของหนู') : (_icChild + ' สร้างตัวละครของหนู');
   worldGroup.visible = false; interiorGroup.visible = false;
   creatorGroup.visible = true;
   rebuildChar(creatorCfg);
@@ -6803,7 +6803,7 @@ function closeCreator(){
   $('house-creator').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
-  $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false;
+  $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false; $('house-child-chip').hidden = false;
   creatorGroup.visible = false;
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
   rebuildChar(creatorCfg);
@@ -8415,7 +8415,7 @@ function openPetPicker(){
   $('house-pet-picker').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
-  $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true;
+  $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true; $('house-child-chip').hidden = true;
   $('house-hint').hidden = true;
   $('house-pet-remove').hidden = !data.pet;
   $('house-pet-done').textContent = data.pet ? 'บันทึกเลย 💕' : 'รับเลี้ยงเลย 💕';
@@ -8438,7 +8438,7 @@ function closePetPicker(kind){
   $('house-pet-picker').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
-  $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false;
+  $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false; $('house-child-chip').hidden = false;
   creatorGroup.visible = false;
   if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
@@ -9497,6 +9497,7 @@ function enterHouseGame(){
   houseOpen = true;
   $('house-char-name').textContent = activeChild.name;
   syncHouseCtrls();
+  houseSyncChild();
   fadeIn();
   if(!critters.length) critterSpawnT = Math.min(critterSpawnT, 2.5);
 
@@ -9528,7 +9529,7 @@ function enterHouseGame(){
     $('house-pet-picker').hidden = true;
     $('house-rotate-wrap').hidden = true;
     $('house-edit-btn').hidden = false;
-    $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false;
+    $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false; $('house-child-chip').hidden = false;
     if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
     creatorGroup.visible = false;
     worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
@@ -9562,6 +9563,7 @@ function stopHouseGame(){
   $('house-char-name').hidden = true;
   $('house-pet-name').hidden = true;
   $('house-compass').hidden = true;
+  $('house-child-chip').hidden = true;
   { const cb = $('house-coins'); if(cb){ cb.hidden = true; coinShownVal = null; } }
   $('house-pos-chip').hidden = true; posChipKey = '';
   $('house-pet-bubble').classList.remove('on');
@@ -9801,6 +9803,23 @@ function syncHouseCtrls(){
   });
 }
 
+/* ---------- ป้ายชื่อเด็ก (child chip) ในโหมดบ้าน ----------
+   proxy ของ #child-chip-group ใน header เหมือนกัน — ก๊อบ emoji/ชื่อจาก chip จริง
+   (ไม่อ่าน activeChild ตรงๆ เพื่อให้เพี้ยนไม่ได้ถ้าวันหลังเปลี่ยนรูปแบบชื่อใน header)
+   app-core.js เรียกฟังก์ชันนี้ท้าย updateHeaderChild() ทุกครั้ง → แก้ชื่อ/emoji จากในบ้าน
+   แล้วป้ายบนหัวตัวละครกับ chip อัปเดตตามทันทีโดยไม่ต้องออกจากบ้าน */
+function houseSyncChild(){
+  const chip = $('house-child-chip'); if(!chip) return;
+  const em = $('header-child-emoji'), nm = $('header-child-name');
+  const hasChild = !$('child-chip-group').hidden;
+  $('house-child-emoji').textContent = em ? em.textContent : '';
+  $('house-child-name').textContent  = nm ? nm.textContent : '';
+  if(nm) $('house-char-name').textContent = nm.textContent;
+  /* ระหว่างสร้าง/แก้ตัวละคร แผงสัตว์เลี้ยง หรือโหมดตกแต่ง ปุ่มบนถูกซ่อนอยู่ — อย่าแอบโชว์กลับมา */
+  chip.hidden = !hasChild || !houseOpen || hMode !== 'world' || editMode;
+}
+window.houseSyncChild = houseSyncChild;
+
 /* ---------- bind ปุ่ม ---------- */
 /* app.js โหลดไฟล์นี้แบบ lazy ตอนกดเข้าบ้านครั้งแรก จึง expose ให้เรียกจากภายนอกได้
    และผูก listener ของตัวเองไว้สำหรับการกดครั้งต่อๆ ไป */
@@ -9817,6 +9836,14 @@ $('house-decorate-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   if(hMode==='world' && !editMode) enterEditMode();
 });
+/* ป้ายชื่อเด็ก: กดชื่อ = ออกจากบ้านก่อนแล้วไปหน้าเลือกเด็ก (ปล่อยให้ปุ่มจริงจัดการต่อ
+   ถ้าไม่ stop ก่อน ฉาก 3D จะยังวน rAF อยู่เบื้องหลังทั้งที่ view ถูกซ่อนไปแล้ว)
+   กดดินสอ = เปิด modal แก้ชื่อ/emoji ตัวเดิม (z-index สูงกว่าโหมดบ้าน ใช้ทับได้เลย) */
+$('house-child-btn').addEventListener('click', ()=>{
+  stopHouseGame();
+  $('switch-child-btn').click();
+});
+$('house-child-edit-btn').addEventListener('click', ()=> $('header-edit-emoji-btn').click());
 $('house-compass').addEventListener('click', compassGoHome);
 $('house-edit-done').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); exitEditMode(); });
 $('house-edit-rotate').addEventListener('click', rotateSel);

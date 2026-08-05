@@ -2360,6 +2360,17 @@
     position:fixed; right:14px; top:78px; z-index:8;
     display:flex; flex-direction:column; gap:10px; pointer-events:auto;
   }
+  /* ป้ายชื่อเด็กในแถบบนของโหมดบ้าน — ใช้ .child-chip-group ชุดเดียวกับ header หลัก
+     ต่างแค่ต้องบีบชื่อให้สั้นลง เพราะแถวนี้มีปุ่มกลม 4 ปุ่มแย่งที่อยู่แล้ว */
+  .house-child-chip{min-width:0;}
+  .house-child-chip[hidden]{display:none;}
+  #house-child-name{overflow:hidden; text-overflow:ellipsis; max-width:84px; display:inline-block;}
+  @media (max-width:480px){
+    .house-overlay-ui .quiz-top{gap:8px;}   /* บีบช่องไฟให้ชื่อเด็กเหลือที่มากขึ้นบนจอแคบ */
+    #house-child-name{max-width:64px;}
+    .house-child-chip .child-chip{padding:6px 9px 6px 7px; font-size:14px;}
+    .house-child-chip .child-edit-btn{padding:6px 8px;}
+  }
   /* ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว — ตำแหน่ง JS อัปเดตทุกเฟรมจาก projection 3D */
   .house-char-name{
     position:fixed; z-index:5; transform:translate(-50%,-100%);
@@ -2580,6 +2591,7 @@
   /* ซ่อนปุ่มบนที่ไม่เกี่ยวตอนตกแต่ง (คงปุ่มย้อนกลับ = ปิดโหมดตกแต่ง) */
   body.house-edit #house-pet-btn,
   body.house-edit #house-edit-btn,
+  body.house-edit #house-child-chip,
   body.house-edit #house-decorate-btn{display:none;}
 
   /* กล่องเลือกของ — ลิ้นชักด้านล่าง */

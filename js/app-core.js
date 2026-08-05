@@ -171,6 +171,9 @@ function updateHeaderChild(){
     chipGroup.hidden = true;
     $('brand-sub').textContent = 'เก็บสติกเกอร์ให้ครบทุกหมวด!';
   }
+  /* โหมดบ้านมี chip ชื่อเด็กชุด proxy ของตัวเอง (header ถูกซ่อน) — sync ให้ตรงกันเสมอ
+     house.js โหลดแบบ lazy จึงต้องเช็คก่อนเรียก */
+  if(window.houseSyncChild) window.houseSyncChild();
 }
 
 function renderChildSelect(){
