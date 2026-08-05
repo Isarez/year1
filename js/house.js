@@ -20,7 +20,8 @@ const HOUSE_KEY = id => 'p1quiz_house_' + id;
    ดึงกลับมาเป็นตัวแปรชื่อเดิมทุกตัว โค้ดส่วนที่เหลือของไฟล์นี้จึงใช้งานได้เหมือนเดิมทุกบรรทัด */
 if(typeof HOUSE_MAP !== 'function') return;   /* แผนที่โหลดไม่สำเร็จ → ปิดโหมดบ้านเงียบๆ เหมือนกรณี THREE */
 const {
-  H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS,
+  H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
+  H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
   H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_ROWS, H_ROW_ICONS, NPAD,
   EPAD, EPAD2, EPAD_ALL, OUT_W, OUT_D, sx,
   sz, sRect, sTile, sList, s2z, s2Rect,
@@ -37,7 +38,8 @@ const {
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,
-  CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
+  CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, CAMP, CAMP_TENTS, CAMP_FIRE, CAMP_PROPS,
+  FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
   SUNFLOWER_FIELDS,
   FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, FOOD_DECK, FOOD_FLOWER_COL, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
@@ -58,7 +60,8 @@ function isSceneryPropTile(x, z){
       || inPool(x, z) || hit(POOL_PROPS)
       || (x===SCHOOL_FLAG.x && z===SCHOOL_FLAG.z) || isSchoolFenceTile(x, z)
       || (x>=STAGE.x0 && x<=STAGE.x1 && z>=STAGE.z0 && z<=STAGE.z1)
-      || isLampTile(x, z) || isHedgeTile(x, z);   /* เสาไฟ/แนวพุ่มไม้จองช่องไว้ ของฉากสุ่มห้ามงอกทับ */
+      || isLampTile(x, z) || isHedgeTile(x, z)   /* เสาไฟ/แนวพุ่มไม้จองช่องไว้ ของฉากสุ่มห้ามงอกทับ */
+      || hit(CAMP_PROPS) || (x===CAMP_FIRE.x && z===CAMP_FIRE.z);
 }
 
 /* ---------- ที่นั่งของฉากตายตัว (ม้านั่ง + เก้าอี้ผ้าใบชายหาด) ----------
@@ -412,15 +415,472 @@ function addEyes(head, style, hex){
   }
 }
 
+/* ============================================================
+   ชุดของเด็ก: ลายเสื้อ + ของแต่งตัว (เครื่องหัว / แว่น / ของสะพายหลัง / ของถือ)
+   ------------------------------------------------------------
+   ⚠ กติกาที่ผู้ใช้ย้ำไว้ (2026-08-04) ห้ามย้อนโดยไม่ถาม:
+     **ลายบนชุดต้องเป็นเนื้อเดียวกับชุด ห้ามดูเป็นก้อน object มาแปะทับ**
+     ⇒ 1) ลายทุกแบบใช้ทรงกล่องขอบมนชุดเดียวกับตัวเสื้อ ยื่นพ้นผิวเสื้อแค่ ~.005-.01 (แค่พอไม่ z-fight)
+       2) ลายที่พันรอบตัว (ทางขวาง/เอี๊ยม/ปกกะลาสี) ต้องพัน "แขนที่ความสูงเดียวกัน" ด้วยเสมอ
+          ไม่งั้นแถบจะขาดตอนตรงไหล่ กลายเป็นสติกเกอร์แปะหน้าอกทันที
+       3) ลายจุด/ดาว/หัวใจ วางได้เฉพาะกลางหน้าอก-หลัง (|x|<.15) เพราะขอบเสื้อโค้งมน ถ้าไปวางริมจะลอย
+   ตัวเลขทรงตัวเสื้อ/แขนด้านล่างต้องตรงกับ buildCharacter เป๊ะ (แก้ที่ไหนต้องแก้ให้ตรงกัน)
+   ============================================================ */
+const CH_BW = .52, CH_BH = .5, CH_BD = .32, CH_BY = .68;   /* ตัวเสื้อ: กว้าง สูง หนา และความสูงจุดกึ่งกลาง */
+const CH_AW = .15, CH_AD = .16, CH_SHO_Y = .9, CH_ARM_T = .16;  /* แขน + ความสูงไหล่ + มุมกางแขน */
+/* สีลายบนเสื้อ: เสื้อแบบ 2 สีใช้สีที่สองเลย · เสื้อสีเดียวเลือกสีตัดกันให้อัตโนมัติ
+   (เสื้อสว่าง → ลายเข้มลง, เสื้อเข้ม → ลายครีม) ลายจะได้เห็นชัดทุกสีเสื้อโดยไม่ต้องให้เด็กเลือกเอง */
+function chPatColor(shirtC, shirtB){
+  if(shirtB != null && shirtB !== shirtC) return shirtB;
+  const lum = (((shirtC>>16)&255)*.299 + ((shirtC>>8)&255)*.587 + (shirtC&255)*.114) / 255;
+  return lum > .62 ? petShade(shirtC, .58) : 0xfff3d0;
+}
+/* ดาว 6 แฉกแบนๆ (กล่องบางไขว้ 3 อัน) — ใช้ทั้งลายเสื้อ แว่นดาว และหัวไม้กายสิทธิ์ */
+function chStar(r, t, col){
+  const g = new THREE.Group();
+  for(let i=0;i<3;i++){ const b = box(r*2, t, .022, col, .008); b.rotation.z = i*Math.PI/3; g.add(b); }
+  return g;
+}
+/* หัวใจแบนๆ (พู่ 2 ลูก + ปลายแหลม) — ใช้ทั้งลายเสื้อและแว่นหัวใจ */
+function chHeart(s, col){
+  const g = new THREE.Group();
+  [-1,1].forEach(k=>{ const lb = sphere(s*.52, col, 10); lb.scale.z = .3; lb.position.set(k*s*.4, s*.3, 0); g.add(lb); });
+  const tip = cone(s*.78, s*1.05, col, 12); tip.rotation.z = Math.PI; tip.scale.z = .3; tip.position.y = -s*.16; g.add(tip);
+  return g;
+}
+/* แถบพันรอบแขนทั้ง 2 ข้างที่ระดับความสูง y เดียวกับแถบบนลำตัว
+   (แขน pivot อยู่ที่ไหล่และเอียง CH_ARM_T → ต้องหารกลับด้วย cos ไม่งั้นแถบเลื่อนต่ำกว่าตัว) */
+function chArmBand(arms, y, h, col){
+  arms.forEach(piv=>{
+    const b = box(CH_AW+.012, h, CH_AD+.012, col, .055);
+    b.position.y = (y - CH_SHO_Y)/Math.cos(CH_ARM_T);
+    piv.add(b);
+  });
+}
+function addShirtPattern(rig, arms, style, shirtC, shirtB, botC, girl){
+  if(!style) return;
+  const c = chPatColor(shirtC, shirtB);
+  const F = CH_BD/2 + .006, BK = -(CH_BD/2 + .006);
+  const face = (mesh, x, y, back)=>{                 /* แปะลายแบนบนหน้าอก/หลัง */
+    mesh.position.set(x, y, back ? BK : F);
+    if(back) mesh.rotation.y = Math.PI;
+    rig.add(mesh); return mesh;
+  };
+  switch(style){
+    case 1:                                          /* ลายทางขวาง — พันรอบตัว+แขน (เสื้อลายทางจริงๆ) */
+      [.56, .69, .82].forEach(y=>{
+        const b = box(CH_BW+.012, .075, CH_BD+.012, c, .1); b.position.y = y; rig.add(b);
+        chArmBand(arms, y, .07, c);
+      });
+      break;
+    case 2:                                          /* ลายจุด */
+      [[-.1,.78],[.1,.78],[0,.66],[-.1,.55],[.1,.55]].forEach(([x,y])=>{
+        const d = cyl(.042,.042,.02, c, 12); d.rotation.x = Math.PI/2; face(d, x, y);
+      });
+      [[0,.72],[0,.58]].forEach(([x,y])=>{ const d = cyl(.042,.042,.02, c, 12); d.rotation.x = Math.PI/2; face(d, x, y, true); });
+      arms.forEach(piv=>{ const d = cyl(.032,.032,.02, c, 10); d.rotation.x = Math.PI/2;
+        d.position.set(0, (.72-CH_SHO_Y)/Math.cos(CH_ARM_T), CH_AD/2+.006); piv.add(d); });
+      break;
+    case 3:                                          /* ลายดาวโรย */
+      face(chStar(.075,.05,c), 0, .74);
+      face(chStar(.05,.035,c), -.12, .58); face(chStar(.05,.035,c), .12, .6);
+      face(chStar(.06,.04,c), 0, .68, true);
+      arms.forEach(piv=>{ const st = chStar(.042,.03,c);
+        st.position.set(0, (.7-CH_SHO_Y)/Math.cos(CH_ARM_T), CH_AD/2+.006); piv.add(st); });
+      break;
+    case 4:                                          /* ลายหัวใจ */
+      face(chHeart(.11,c), 0, .72);
+      face(chHeart(.06,c), -.13, .56); face(chHeart(.06,c), .13, .56);
+      face(chHeart(.08,c), 0, .68, true);
+      break;
+    case 5: {                                        /* เอี๊ยม (ชุดหมี) — ใช้สีกางเกงจริง จึงต่อเนื่องเป็นชุดเดียวกัน */
+      const bib = box(.3, .26, CH_BD+.012, botC, .06); bib.position.y = .58; rig.add(bib);
+      [-1,1].forEach(s=>{                            /* สายเอี๊ยมพาดไหล่: หน้า → ข้ามไหล่ → หลัง */
+        const fr = box(.07,.26,.02, botC,.02); fr.position.set(.13*s,.78, F); rig.add(fr);
+        const ov = box(.075,.06,.2, botC,.025); ov.position.set(.13*s,.905,-.02); rig.add(ov);
+        const bk = box(.07,.24,.02, botC,.02); bk.position.set(.13*s,.79, BK); rig.add(bk);
+        const bt = cyl(.03,.03,.02, 0xfff3d0, 8); bt.rotation.x = Math.PI/2; bt.position.set(.13*s,.7, F+.012); rig.add(bt);
+      });
+      break; }
+    case 6:                                          /* ลายซิกแซก (พันรอบตัว) */
+      [[.62,1],[.74,-1]].forEach(([y,dir])=>{
+        for(let i=-2;i<=2;i++){
+          const zg = box(.115,.045,CH_BD+.012, c, .02);
+          zg.rotation.z = (i%2 ? .6 : -.6)*dir; zg.position.set(i*.1, y, 0); rig.add(zg);
+        }
+      });
+      break;
+    case 7: {                                        /* กระเป๋าหน้าอก + ชายเสื้อ (ทรงเสื้อเชิ้ตเด็ก) */
+      const hem = box(CH_BW+.012, .07, CH_BD+.012, c, .1); hem.position.y = .55; rig.add(hem);   /* ชายเสื้อ = ขอบบนกางเกงพอดี (สะโพกอยู่ .35-.57) */
+      const pk = box(.15,.14,.02, c, .03); face(pk, -.13, .72);
+      const fl = box(.155,.05,.025, petShade(c,.88), .02); face(fl, -.13, .8);
+      /* สาบเสื้อกลางอก: ต้องเริ่มจากคอ (y .93) แล้ว "จบพอดีขอบบนเข็มขัด" (เข็มขัดอยู่ .55 หนา .07 → ขอบบน .585)
+         ⇒ สูง .345 จุดกึ่งกลาง .7575 (ถ้าปล่อยยาวเลยเข็มขัด จะเห็นเป็นเส้นโผล่พ้นเข็มขัดลงไปบนกางเกง) */
+      const plc = box(.05, .345, .02, c, .015); face(plc, 0, .7575);
+      break; }
+    case 8: {                                        /* ปกกะลาสี + โบว์ (ชุดกะลาสีเด็ก) */
+      const col2 = chPatColor(shirtC, shirtB);
+      const bck = box(.42,.2,.02, col2,.03); bck.position.set(0,.86,BK); rig.add(bck);
+      [-1,1].forEach(s=>{
+        const fr = box(.1,.24,.02, col2,.02); fr.position.set(.11*s,.85,F); fr.rotation.z = -s*.22; rig.add(fr);
+        const sh = box(.11,.06,.19, col2,.025); sh.position.set(.16*s,.905,-.01); rig.add(sh);
+      });
+      const kn = box(.09,.07,.04, 0xef5350,.02); kn.position.set(0,.79,F+.01); rig.add(kn);
+      [-1,1].forEach(s=>{ const tl = box(.05,.13,.03, 0xef5350,.02); tl.position.set(.045*s,.71,F+.008); tl.rotation.z = s*.3; rig.add(tl); });
+      break; }
+    case 9:                                          /* ลายทางตั้ง (ย้ายมาจากแถว "สีเสื้อ" แบบ 2 สีเดิม) */
+      [-.104,.104].forEach(x=>{
+        const st = box(.104, CH_BH, CH_BD+.01, c); st.position.set(x, CH_BY, 0); rig.add(st); });
+      /* ลายทางตั้งไม่ลงแขน (ผู้ใช้ขอ 2026-08-04) — ต่างจากลายทางขวางที่ต้องพันแขนเพื่อไม่ให้แถบขาดตอน */
+      break;
+  }
+}
+/* ---------- ทรงผมประจำหมวก ----------
+   ⚠ ผู้ใช้แจ้ง 2026-08-04: หมวกที่ครอบหัวจริง (แก๊ป/ไหมพรม/ฟาง) เดิมมีผมทรงที่เลือกทะลุออกมาทุกใบ
+     เพราะเปลือกผม (hairShell) สูง .5+ กว้าง .8-.86 ใหญ่กว่าตัวหมวก
+     ⇒ หมวก 3 แบบนี้ให้ **ซ่อนทรงผมที่เลือก** แล้ววาดผมชุดนี้แทน (โผล่เฉพาะขอบหมวก: หน้าม้า/ข้างหู/ท้ายทอย)
+       **ต้องใช้สีผมที่เด็กเลือกเสมอ ห้าม hardcode สี** ส่วนหมวกที่เป็นที่คาดผม/มงกุฎ/หมวกปาร์ตี้
+       ไม่ครอบหัว จึงยังโชว์ทรงผมที่เลือกได้ตามปกติ */
+const HAT_COVER_HAIR = new Set([1,2,3]);
+function addHatHair(head, style, c, girl){
+  /* หมวกอ้างอิงค่านี้แทนเปลือกผม → สวมพอดีหัวจริง ไม่ลอยสูงเหมือนตอนมีผมหนาอยู่ข้างใต้ */
+  head.userData._hairTop = .46; head.userData._hairW = .70;
+  /* เปลือกผม "ชิ้นเดียวต่อเนื่อง" คลุมข้าง+ท้ายทอยรอบเดียวจบ
+     (เดิมแยกเป็นก้อนท้ายทอย + ก้อนข้างหู มองแล้วขาดเป็นช่วงๆ ไม่ต่อกัน — ผู้ใช้แจ้ง 2026-08-04)
+     ลึกแค่ z +.24 เพื่อไม่ให้ล้ำมาบังหน้า (หน้าอยู่ z .33) */
+  const shell = box(.76,.46,.7, c, .22); shell.position.set(0,.02,-.05); head.add(shell);
+  if(style === 2){                                   /* ไหมพรม: โผล่หน้าผากนิดเดียว */
+    const bg = box(.5,.08,.14, c, .04); bg.position.set(0,.2,.28); head.add(bg);
+  }else{                                             /* แก๊ป/ฟาง: หน้าม้าสั้นใต้ปีกหมวก */
+    const bg = box(.56,.1,.16, c, .05); bg.position.set(0,.19,.27); head.add(bg);
+  }
+  if(style === 3 && girl) [-1,1].forEach(s=>hairStrand(head,c,.32*s,-.1,-.04,3,.12,.16));   /* หมวกฟาง+เด็กหญิง = ผมยาวลงมาถึงบ่า (เด็กชายใส่แล้วดูเป็นเปียผิดเพศ) */
+  if(girl) [-1,1].forEach(s=>hairStrand(head,c,.28*s,-.18,-.08,3,.11,.14));
+}
+/* ---------- เครื่องหัว (index 0 = ไม่ใส่) ----------
+   ⚠ ต้องวางหมวก "อ้างอิงยอดผม" ไม่ใช่อ้างอิงกะโหลก — เปลือกผม (hairShell) สูงถึง y≈.52 กว้าง .8-.86
+     ซึ่งใหญ่กว่ากะโหลก (.64) ถ้าวางตามกะโหลกหมวกจะจมหายเข้าไปในผม เหลือแต่ปีกโผล่ออกมา (เคยพลาดมาแล้ว)
+     hairShell จดค่าไว้ให้ที่ head.userData._hairTop / _hairW แล้ว ใช้ค่านั้นเสมอ */
+function addHeadwear(head, style, col){
+  if(!style) return;
+  const HT = head.userData._hairTop ?? .34;        /* ยอดผม */
+  const HW = head.userData._hairW ?? .8;           /* ความกว้างเปลือกผม */
+  const R = HW/2 + .05;                            /* รัศมีหมวกที่ครอบผมได้พอดี */
+  switch(style){
+    case 1: {                                      /* หมวกแก๊ป */
+      /* กะโหลก+ผมยาวถึง z -.33 → ทรงหมวกต้องยืดลึกตามแนว z ไม่งั้นด้านหลังหัวโผล่ทะลุหมวกออกมา */
+      const crown = sphere(R+.03, col, 16); crown.scale.set(1.02,.62,1.18); crown.position.set(0, HT-.17, -.02); head.add(crown);
+      const brim = box(R*1.25,.05,.36, petShade(col,.88), .025); brim.position.set(0, HT-.26, .44); head.add(brim);
+      const btn = sphere(.05, petShade(col,.8), 8); btn.position.y = HT+.08; head.add(btn);
+      break; }
+    case 2: {                                      /* หมวกไหมพรม + ปอมปอม */
+      const cap = sphere(R-.02, col, 16); cap.scale.set(1.02,.72,1.12); cap.position.set(0, HT-.14, -.01); head.add(cap);
+      const band = cyl(R,R,.1, petShade(col,.84), 16); band.scale.z = 1.1; band.position.set(0, HT-.24, -.01); head.add(band);
+      const pom = sphere(.08, 0xfff3d0, 10); pom.position.set(0, HT+.13, -.01); head.add(pom);
+      break; }
+    case 3: {                                      /* หมวกฟาง (ปีกกว้าง + ริบบิ้นสีของแต่ง) */
+      const brim = cyl(R+.16,R+.16,.05, 0xf3d79a, 18); brim.position.y = HT-.26; head.add(brim);
+      const crown = cyl(R-.09,R-.02,.28, 0xf8e3ba, 16); crown.position.y = HT-.11; head.add(crown);
+      const rib = cyl(R-.005,R-.005,.09, col, 16); rib.position.y = HT-.21; head.add(rib);
+      break; }
+    case 4: {                                      /* โบว์ใหญ่ข้างหัว */
+      const kx = R-.07, ky = HT-.16;
+      [-1,1].forEach(s=>{
+        const lp = box(.22,.16,.12, col, .065); lp.position.set(kx, ky + s*.14, .06); lp.rotation.z = s*.5; head.add(lp); });
+      const kn = sphere(.06, petShade(col,.85), 10); kn.position.set(kx, ky, .08); head.add(kn);
+      break; }
+    case 5: {                                      /* มงกุฎ */
+      /* มงกุฎ "วางบนหัว" ไม่ใช่ห่วงคาดรอบผม (ผู้ใช้แจ้ง 2026-08-04) → วงเล็กกว่าหัว ตั้งอยู่บนยอด */
+      const CR = R*.62;
+      const ring = cyl(CR,CR,.12, col, 16); ring.position.y = HT+.02; head.add(ring);
+      const rim = torus(CR,.028, petShade(col,.82), 16); rim.rotation.x = Math.PI/2; rim.position.y = HT-.04; head.add(rim);
+      for(let i=0;i<6;i++){
+        const a = i/6*Math.PI*2, sx = Math.cos(a)*CR, sz = Math.sin(a)*CR;
+        const sp = cone(.06,.17, col, 6); sp.position.set(sx, HT+.16, sz); head.add(sp);
+        const gm = sphere(.032, 0xff5c8a, 8); gm.position.set(sx*1.03, HT+.25, sz*1.03); head.add(gm);
+      }
+      break; }
+    case 6: {                                      /* ที่คาดผมหูสัตว์ */
+      /* ⚠ **ไม่มีที่คาดผม** เหลือเฉพาะหูกระต่ายตั้งบนหัว (ผู้ใช้ขอ 2026-08-04 — ตัวคาดผมทำยังไงก็ดูเป็นห่วงคร่อมหัว)
+         โคนหูจึงต้องจมลงในผมนิดหน่อยให้ดูเหมือนงอกออกมาจากหัว ไม่ใช่ลอยอยู่เหนือหัว */
+      [-1,1].forEach(s=>{                            /* หูกระต่ายยาว ตั้งเอียงออกข้างเล็กน้อย */
+        const ear = box(.15,.5,.11, col, .07); ear.position.set(.2*s, HT+.14, -.02); ear.rotation.z = -s*.17; head.add(ear);
+        const inn = box(.075,.34,.06, 0xffc2d1, .035); inn.position.set(.2*s + .014*s, HT+.14, .035); inn.rotation.z = -s*.17; head.add(inn);
+      });
+      break; }
+    case 7: {                                      /* หมวกปาร์ตี้ */
+      /* หมวกปาร์ตี้ทรงเล็ก: กรวยเรียวสูง + วงแหวนครีมคาด 3 ชั้น + ปอมบนยอด + ขอบหมวกที่ฐาน
+         ฐานกรวยต้องอยู่ "เหนือยอดผม" ไม่งั้นครึ่งล่างจมหายเข้าไปในหัว (ผู้ใช้แจ้ง 2026-08-04) */
+      /* ⚠ ทุกชิ้นสีครีม (ขอบหมวก/วงแหวน/ปอม) ต้องวางตาม "แกนจริงของกรวยที่เอียงแล้ว" เสมอ
+         กรวยหมุน rotation.z = tilt (บวก) ⇒ แกนขึ้นของมันเอนไป **ทาง -x** คือ u = (-sin tilt, cos tilt)
+         ของเดิมเลื่อนวงแหวนไปทาง +sin(tilt) (ผิดทิศตรงข้าม) + ตั้งขอบหมวกด้วยเลขมือ วงครีมจึงไถลหลุด
+         ออกนอกตัวกรวยไปกองข้างเดียว (ผู้ใช้แจ้ง 2026-08-05) — คำนวณจากจุดฐานกรวยตรงๆ ห้ามใส่เลขเดา */
+      const PR = R*.52, tilt = .2, PH = .42;
+      const ux = -Math.sin(tilt), uy = Math.cos(tilt);        /* ทิศ "ขึ้น" ตามแกนกรวยหลังเอียง */
+      const cx = -.05, cy = HT+.16;                           /* จุดกึ่งกลางกรวย */
+      const bx = cx - ux*PH/2, by = cy - uy*PH/2;             /* จุดกึ่งกลาง "ฐาน" กรวย */
+      const onAxis = (o, d)=>{ o.position.set(bx + ux*d, by + uy*d, 0); o.rotation.z = tilt; head.add(o); };
+      const hat = cone(PR,PH, col, 14); hat.position.set(cx, cy, 0); hat.rotation.z = tilt; head.add(hat);
+      onAxis(cyl(PR+.025,PR+.025,.035, 0xfff3d0, 16), .012);  /* ขอบหมวกที่ฐาน */
+      [0,1,2].forEach(i=>{                           /* วงแหวนคาดไล่เล็กขึ้นไปตามกรวย (รัศมีกรวยที่ระดับนั้น + นิดหน่อย) */
+        const t = (i+1)/4;
+        onAxis(cyl(PR*(1-t)+.012, PR*(1-t)+.012, .03, 0xfff3d0, 14), PH*t);
+      });
+      onAxis(sphere(.062, 0xfff3d0, 10), PH);                 /* ปอมบนยอดกรวย */
+      break; }
+    case 8: {                                      /* ที่คาดผมดอกไม้ */
+      /* **ไม่มีที่คาดผม** เหลือเฉพาะดอกไม้ติดข้างหัว (ดูหมายเหตุแบบที่ 6) — ใบไม้ 2 ใบช่วยให้ดอกดูติดผมจริง */
+      const fx = (R+.02)*.66, fy = HT-.08, fz = .1;
+      [-1,1].forEach(s=>{ const lf = sphere(.055, 0x7cc47f, 8); lf.scale.set(1.5,.55,.8);
+        lf.position.set(fx - .09, fy - .08*s, fz - .04); lf.rotation.z = s*.5; head.add(lf); });
+      for(let i=0;i<5;i++){
+        const a = i/5*Math.PI*2, p = sphere(.06, 0xfff3d0, 8);
+        p.position.set(fx + Math.cos(a)*.08, fy + Math.sin(a)*.08, fz); head.add(p);
+      }
+      const ctr = sphere(.045, 0xffd54f, 8); ctr.position.set(fx, fy, fz+.045); head.add(ctr);
+      break; }
+  }
+}
+/* ---------- แว่นตา (index 0 = ไม่ใส่) ----------
+   ⚠ ตาบางแบบเป็นลูกกลมยื่นถึง z≈.44 → กรอบแว่นต้องอยู่หน้าตา (Z=.42) และเป็น "กรอบโปร่ง" เป็นหลัก
+     ไม่งั้นเลนส์ทึบจะกลืนตาหายทั้งดวง (เว้นแบบกันแดด/ว่ายน้ำที่ตั้งใจให้ทึบ) */
+function addGlasses(head, style, col){
+  if(!style) return;
+  const Z = .42, EY = .04, EX = .16;
+  const temples = c => [-1,1].forEach(s=>{
+    const t = box(.035,.035,.34, c, .015); t.position.set(.3*s, EY+.04, .2); t.rotation.y = -s*.18; head.add(t); });
+  switch(style){
+    case 1:                                          /* แว่นกลม */
+      [-1,1].forEach(s=>{ const rim = torus(.135,.024, col, 18); rim.position.set(EX*s, EY, Z); head.add(rim); });
+      { const br = box(.09,.028,.03, col,.012); br.position.set(0, EY+.02, Z); head.add(br); }
+      temples(col); break;
+    case 2:                                          /* แว่นเหลี่ยม (กรอบเป็นแท่ง 4 ด้าน เห็นตาชัด) */
+      [-1,1].forEach(s=>{
+        const cx = EX*s;
+        [[0,.085,.26,.03],[0,-.085,.26,.03],[-.115,0,.03,.2],[.115,0,.03,.2]].forEach(([dx,dy,w,h])=>{
+          const b = box(w,h,.03, col,.012); b.position.set(cx+dx, EY+dy, Z); head.add(b); });
+      });
+      { const br = box(.09,.03,.03, col,.012); br.position.set(0, EY+.05, Z); head.add(br); }
+      temples(col); break;
+    case 3:                                          /* แว่นกันแดด */
+      [-1,1].forEach(s=>{
+        const ln = box(.26,.19,.035, 0x37474f,.06); ln.position.set(EX*s+.01*s, EY, Z); head.add(ln);
+        const gl = box(.1,.05,.02, 0x8fb6c9,.02); gl.position.set(EX*s-.05*s, EY+.04, Z+.02); head.add(gl); });
+      { const br = box(.1,.05,.035, col,.02); br.position.set(0, EY+.03, Z); head.add(br); }
+      temples(col); break;
+    case 4:                                          /* แว่นหัวใจ */
+      [-1,1].forEach(s=>{ const h = chHeart(.145, 0xff8fb0); h.position.set(EX*s, EY, Z); head.add(h);
+        const rim = torus(.135,.02, col, 16); rim.position.set(EX*s, EY, Z-.01); head.add(rim); });
+      { const br = box(.09,.028,.03, col,.012); br.position.set(0, EY+.02, Z); head.add(br); }
+      temples(col); break;
+    case 5:                                          /* แว่นดาว */
+      [-1,1].forEach(s=>{ const st = chStar(.155,.075, col); st.position.set(EX*s, EY, Z); head.add(st);
+        const ct = cyl(.055,.055,.03, 0xfff3d0, 12); ct.rotation.x = Math.PI/2; ct.position.set(EX*s, EY, Z+.015); head.add(ct); });
+      temples(col); break;
+    case 6: {                                        /* แว่นว่ายน้ำ */
+      [-1,1].forEach(s=>{
+        const cup = cyl(.14,.15,.09, col, 16); cup.rotation.x = Math.PI/2; cup.position.set(EX*s, EY, Z-.03); head.add(cup);
+        const lens = cyl(.115,.115,.03, 0x9fdcf5, 16); lens.rotation.x = Math.PI/2; lens.position.set(EX*s, EY, Z+.02); head.add(lens); });
+      const br = box(.08,.04,.05, col,.02); br.position.set(0, EY, Z-.03); head.add(br);
+      const strap = box(.68,.07,.7, col, .3); strap.position.set(0, EY+.02, .02); head.add(strap);   /* สายรัดรอบหัว */
+      break; }
+  }
+}
+/* ---------- ของสะพายหลัง (index 0 = ไม่สะพาย) ---------- */
+/* ⚠ เป้ 1-3 **ไม่ใส่สายพาดอก/สายข้ามไหล่** (ผู้ใช้ขอ 2026-08-04) — มุมกล้องในเกมเห็นตัวเด็กจากด้านหน้าเป็นหลัก
+   สายพาดอกเลยกลายเป็นเส้นขวางหน้าอกทับลายเสื้อ ดูรกกว่าได้ประโยชน์ ตัวเป้ด้านหลังพอแล้ว */
+function addBackpack(rig, style, col){
+  if(!style) return;
+  switch(style){
+    case 1: {                                        /* เป้นักเรียน */
+      const bag = box(.42,.44,.2, col,.09); bag.position.set(0,.7,-.27); rig.add(bag);
+      const flap = box(.44,.19,.215, petShade(col,.85),.075); flap.position.set(0,.86,-.275); rig.add(flap);
+      const bk = box(.1,.07,.05, 0xfff3d0,.02); bk.position.set(0,.75,-.39); rig.add(bk);
+      break; }
+    case 2: {                                        /* เป้หมี */
+      const bag = sphere(.24, col, 16); bag.scale.set(1,1.05,.78); bag.position.set(0,.72,-.28); rig.add(bag);
+      [-1,1].forEach(s=>{ const ear = sphere(.085, col, 10); ear.scale.z = .8; ear.position.set(.16*s,.92,-.28); rig.add(ear); });
+      const mz = sphere(.1, 0xfff3d0, 12); mz.scale.set(1,.8,.6); mz.position.set(0,.66,-.42); rig.add(mz);
+      const ns = sphere(.035, 0x5d4037, 8); ns.position.set(0,.7,-.47); rig.add(ns);
+      [-1,1].forEach(s=>{ const ey = sphere(.03, 0x3d2b1f, 8); ey.position.set(.09*s,.79,-.44); rig.add(ey); });
+      break; }
+    case 3: {                                        /* กระดองเต่า */
+      const sh = sphere(.27, col, 16); sh.scale.set(1,.95,.55); sh.position.set(0,.72,-.26); rig.add(sh);
+      const rim = torus(.25,.035, petShade(col,.8), 18); rim.position.set(0,.72,-.24); rig.add(rim);
+      [[0,.72],[0,.55],[-.14,.64],[.14,.64],[-.13,.85],[.13,.85]].forEach(([x,y])=>{
+        const pl = cyl(.055,.055,.03, petShade(col,1.15), 6); pl.rotation.x = Math.PI/2; pl.position.set(x,y,-.4); rig.add(pl); });
+      break; }
+    case 4:                                          /* ปีกผีเสื้อ — ทรงโค้งมนล้วน (กรวยเหลี่ยมดูแข็ง ผู้ใช้แจ้ง 2026-08-04)
+        ปีกข้างละ 2 แผ่น: แผ่นบนใหญ่ทรงหยดน้ำเอียงขึ้น + แผ่นล่างเล็กเอียงลง ต่อกันเป็นปีกผีเสื้อโค้งเดียว */
+      [-1,1].forEach(s=>{
+        /* ⚠ ปีกแต่ละแผ่นห่อไว้ใน Group ของตัวเอง แล้วค่อยเอาจุดลายใส่ "ในกลุ่มเดียวกับแผ่นปีก"
+           → จุดจะเอียง/หมุนตามแผ่นปีกเองอัตโนมัติ (ผู้ใช้แจ้ง 2026-08-05 ว่าจุดไม่เอียงตามปีก)
+           ห้ามเอาจุดไปแปะเป็นลูกของ rig ตรงๆ อีก และห้ามใส่จุดเป็นลูกของ "แผ่นปีก" เพราะแผ่นปีกถูก scale
+             บางเป็นแผ่น (scale z .08) จุดจะโดนบีบแบนไปด้วย
+           ปีกชิ้นบนเอนปลายไปด้านหลัง (หมุนแกน x ติดลบ) กันปลายปีกไปโผล่ชนผมด้านหลังหัว */
+        const mkWing = (px,py,pz, rx,ry,rz) => {
+          const w = new THREE.Group(); w.position.set(px,py,pz); w.rotation.set(rx,ry,rz); rig.add(w); return w; };
+        const wUp = mkWing(.34*s,1.0,-.3, -.38,-s*.2,-s*.5);
+        const up = sphere(.26, col, 18); up.scale.set(1,1.22,.08); wUp.add(up);
+        const tipW = mkWing(.56*s,1.14,-.36, -.38,-s*.2,-s*.5);
+        const tip = sphere(.15, col, 16); tip.scale.set(1,1.15,.08); tipW.add(tip);
+        const wLo = mkWing(.33*s,.6,-.27, 0,-s*.2,s*.35);
+        const lo = sphere(.2, petShade(col,1.12), 18); lo.scale.set(1,1.1,.08); wLo.add(lo);
+        const bd = box(.07,.52,.1, petShade(col,.7), .035); bd.position.set(0,.8,-.25); rig.add(bd);   /* ลำตัวผีเสื้อกลางปีก */
+        [[wUp,.02,.06,.055],[wUp,-.04,-.14,.04],[wLo,0,-.02,.045]].forEach(([w,dx,dy,r])=>{
+          /* จุดหนา .05 วางกลางแผ่นปีก (z 0) → โผล่ทั้งสองด้านของผืนปีกที่บางมาก มองจากหน้าหรือหลังก็เห็น */
+          const dot = cyl(r,r,.05, 0xfff3d0, 12); dot.rotation.x = Math.PI/2;
+          dot.position.set(dx*s, dy, 0); w.add(dot); });
+      });
+      break;
+    case 5:                                          /* ปีกนก — ขน 2 ชั้น (ขนปลายปีกยาว + ขนคลุมโคนปีกสั้น)
+        **ใช้สีที่เด็กเลือกทั้งปีก** (ห้ามกลับไป hardcode ขาวแบบปีกนางฟ้าเดิม — ผู้ใช้ขอ 2026-08-05)
+        ชั้นคลุมใช้เฉดอ่อนกว่าเล็กน้อย ให้เห็นเป็น 2 ชั้นโดยไม่ต้องเพิ่มแถวเลือกสี */
+      /* ⚠ ทรงปีกที่ผู้ใช้กำหนด (2026-08-05): ขนทุกเส้น **เริ่มจากจุดโคนเดียวกัน** แล้วกางปลายด้านนอก
+         ออกเป็นพัด ⇒ เงาปีกข้างละอันเป็น "สามเหลี่ยม" ปลายแหลมชี้เข้าหาตัว สองข้างจึงเหมือน
+         สามเหลี่ยม 2 อันหันเข้าหากัน — ห้ามกลับไปวางขนแบบเรียงขนานเยื้องกันทีละเส้น
+         ทำโดยใส่ขนทุกเส้นไว้ใน Group ที่ตั้งอยู่ "จุดโคนปีก" แล้วเลื่อนขนออกไปครึ่งความยาวตามมุมของตัวเอง */
+      [-1,1].forEach(s=>{
+        const root = new THREE.Group();
+        root.position.set(.24*s, .74, -.3);           /* โคนปีกอยู่กลางแผ่นหลัง ไม่ใช่ระดับหัว/ไหล่ (ผู้ใช้แจ้ง 2026-08-05) */
+        /* rotation.z = เอียง "ทั้งปีก" ขึ้น (ผู้ใช้ขอ 2026-08-05) — หมุนที่ root ทีเดียว
+           ขนทุกเส้นจึงยกขึ้นพร้อมกันโดยรูปพัดไม่เพี้ยน (ถ้าไปลด th ทีละเส้นพัดจะบีบแคบลงแทน)
+           เครื่องหมายต้องคูณ s: ปีกขวา (x บวก) หมุนบวกถึงจะยกขึ้น ปีกซ้ายกลับด้าน
+           scale ที่ root = ขยายทั้งปีกพร้อมกัน (ทั้งความยาวขนและระยะกางจากโคน) */
+        root.rotation.set(-.3, -s*.18, s*.3);        /* เอนไปด้านหลังทั้งปีก กันผมทับ + เอียงขึ้น */
+        root.scale.setScalar(1.2);
+        rig.add(root);
+        /* ขน 1 เส้น: โคนอยู่ที่จุด (0,0) ของ root เสมอ · th = มุมกางจากแนวตั้ง (มากขึ้น = ชี้ลงล่าง)
+           **ไล่ขนาดจากบนลงล่าง: เส้นบนสุดยาว/หนาสุด แล้วสั้นและเรียวลงเรื่อยๆ** (ผู้ใช้แจ้ง 2026-08-05) */
+        const quill = (th, L, c, w) => {
+          const f = sphere(1, c, 14);
+          f.scale.set(w, L/2, .028);
+          f.position.set(Math.sin(s*th)*L/2, Math.cos(th)*L/2, 0);
+          f.rotation.z = -s*th;
+          root.add(f);
+        };
+        /* เส้นบนสุดกางเกือบขนานพื้น (th ~1.3 rad) ไม่ใช่ชี้ขึ้น → ปลายปีกไม่เลยระดับไหล่ขึ้นไปเทียบข้างหัว
+           แล้วไล่ลงถึง ~2.35 rad (ชี้ลงเฉียงหลัง) พร้อมสั้น+เรียวลงทุกเส้น */
+        for(let i=0;i<6;i++){                        /* ขนปลายปีก 6 เส้น กางเป็นพัดจากบนลงล่าง */
+          const t = i/5;
+          quill(1.3 + t*1.05, .76 - t*.36, col, .062 - t*.02);
+        }
+        for(let i=0;i<3;i++){                        /* ขนคลุมโคนปีก สั้นกว่า ซ้อนอยู่ด้านหน้าโคนเดียวกัน */
+          const t = i/2;
+          const f = sphere(1, petShade(col,1.16), 14);
+          const th = 1.4 + t*.75, L = .38 - t*.1;
+          f.scale.set(.056 - t*.014, L/2, .026);
+          f.position.set(Math.sin(s*th)*L/2, Math.cos(th)*L/2, .03);
+          f.rotation.z = -s*th;
+          root.add(f);
+        }
+      });
+      break;
+    case 6: {                                        /* กระเป๋าสะพายเฉียง
+        ⚠ สายต้องพาดจากไหล่ "ฝั่งตรงข้าม" ลงมาหาตัวกระเป๋า (กระเป๋าซ้าย → สายพาดไหล่ขวา)
+          รอบแรกสายกับกระเป๋าอยู่ฝั่งเดียวกัน มองแล้วผิดด้านทันที (ผู้ใช้แจ้ง 2026-08-04) */
+      /* ⚠ ตัวกระเป๋าต้องอยู่ "หน้าเสื้อ" ไม่ใช่ข้างสะโพก — ข้างสะโพกจะไปทับมือเด็กพอดี (ผู้ใช้แจ้ง 2026-08-04) */
+      const bag = box(.28,.24,.13, col,.06); bag.position.set(-.1,.56,.24); rig.add(bag);
+      const flap = box(.29,.1,.14, petShade(col,.85),.04); flap.position.set(-.1,.66,.245); rig.add(flap);
+      const bt = cyl(.03,.03,.03, 0xfff3d0, 8); bt.rotation.x = Math.PI/2; bt.position.set(-.1,.59,.315); rig.add(bt);
+      [.17,-.17].forEach(z=>{                        /* สายพาดเฉียงจากไหล่ขวาลงมาหาตัวกระเป๋าฝั่งซ้าย */
+        const st = box(.06,.56,.04, petShade(col,.85),.02);
+        st.position.set(.04,.78,z); st.rotation.z = -.55; rig.add(st); });
+      const ov = box(.075,.06,.2, petShade(col,.85),.025); ov.position.set(.22,.9,-.02); rig.add(ov);   /* ช่วงข้ามไหล่ */
+      break; }
+  }
+}
+/* ---------- ของถือ (index 0 = ไม่ถือ) — ผูกกับ pivot แขนขวา ของจึงแกว่งไปกับมือตอนเดิน ---------- */
+function addHoldItem(piv, style, col){
+  if(!style) return;
+  const g = new THREE.Group();
+  /* อยู่ที่มือ (มืออยู่ y -.46 ของ pivot) แต่ **หักล้างมุมเอียงของแขนทิ้ง** แล้วเอียงออกนอกตัวอีกนิด
+     ⚠ ถ้าปล่อยให้ของเอียงตามแขน (แขนกางออก .16 rad) ปลายของจะชี้เข้าหาตัว ชนลำตัว/หัวเด็กทันที
+       (ผู้ใช้แจ้ง 2026-08-04) — ค่านี้คือ -CH_ARM_T แล้วเผื่อออกนอกตัวอีก .12 */
+  /* จุดยึด = "กลางฝ่ามือ" เป๊ะ (มืออยู่ (0,-.46,0) ขนาด .12×.1×.14) โคนของทุกชิ้นถูกวาดที่ y=0 ของกลุ่มนี้
+     ⇒ โคนของจะจมอยู่ในมือพอดี ดูเป็นการ "กำไว้" จริงๆ
+     ⚠ ห้ามเลื่อนจุดยึดออกไปข้างหน้า/ข้างข้างเพื่อกันของชนตัว — การหมุนด้านล่างหมุนรอบจุดนี้อยู่แล้ว
+       จุดยึดขยับเมื่อไหร่ ของจะหลุดลอยห่างมือทันที (ผู้ใช้แจ้ง 2026-08-05) */
+  g.position.set(0, -.48, .01);
+  /* เอียง 2 แกน: แกน z เอียงออกข้าง (หักล้างมุมกางแขน .16 แล้วเผื่ออีก .12)
+     + **แกน x เอียงมาข้างหน้า** เพราะของงอกขึ้นจากมือแล้วชนท่อนแขนที่อยู่เหนือมือพอดี (ผู้ใช้แจ้ง 2026-08-04) */
+  g.rotation.set(.42, 0, -CH_ARM_T - .12);
+  piv.add(g);
+  switch(style){
+    case 1: {                                        /* ลูกโป่ง — เอียงเชือกออกนอกตัว ไม่งั้นลูกโป่งไปทับหัวพอดี */
+      g.rotation.z -= .2;
+      /* เชือกต่อจากข้อสั้นๆ เอียงสลับกันเล็กน้อย = ดูอ่อนพลิ้ว (แท่งตรงยาวท่อนเดียวดูแข็งเป็นไม้ — ผู้ใช้แจ้ง 2026-08-04) */
+      let px = 0, py = 0;
+      [.1,-.13,.09,-.05].forEach(a=>{
+        const L = .22, seg = cyl(.009,.009,L+.02, 0xfff3d0, 5);
+        seg.rotation.z = a;
+        seg.position.set(px - Math.sin(a)*L/2, py + Math.cos(a)*L/2, 0); g.add(seg);
+        px -= Math.sin(a)*L; py += Math.cos(a)*L;
+      });
+      const bl = sphere(.21, col, 14); bl.scale.y = 1.15; bl.position.set(px, py+.22, 0); g.add(bl);
+      const kn = cone(.05,.07, petShade(col,.85), 8); kn.rotation.x = Math.PI; kn.position.set(px, py+.03, 0); g.add(kn);
+      const sh = sphere(.05, 0xffffff, 8); sh.scale.set(1,1.3,.4); sh.position.set(px-.08, py+.3, .16); g.add(sh);
+      break; }
+    case 2: {                                        /* ตุ๊กตาหมี */
+      const bd = sphere(.13, 0xc79a6b, 12); bd.scale.y = 1.1; bd.position.y = .04; g.add(bd);
+      const hd = sphere(.11, 0xc79a6b, 12); hd.position.y = .21; g.add(hd);
+      [-1,1].forEach(s=>{ const er = sphere(.045, 0xc79a6b, 8); er.position.set(.08*s,.29,0); g.add(er);
+        const ar = sphere(.055, 0xc79a6b, 8); ar.position.set(.13*s,.06,.02); g.add(ar); });
+      const mz = sphere(.055, 0xf0dcc0, 10); mz.scale.set(1,.8,.7); mz.position.set(0,.18,.08); g.add(mz);
+      const ns = sphere(.022, 0x5d4037, 8); ns.position.set(0,.2,.13); g.add(ns);
+      const bow = box(.09,.05,.05, col,.02); bow.position.set(0,.1,.1); g.add(bow);
+      break; }
+    case 3: {                                        /* ไอศกรีมโคน */
+      const cn = cone(.09,.24, 0xe0a55c, 12); cn.rotation.x = Math.PI; cn.position.y = .1; g.add(cn);
+      const s1 = sphere(.1, col, 12); s1.position.y = .26; g.add(s1);
+      const s2 = sphere(.085, 0xfff3d0, 12); s2.position.set(.02,.4,0); g.add(s2);
+      const ch = sphere(.035, 0xef5350, 8); ch.position.set(.02,.5,0); g.add(ch);
+      break; }
+    case 4: {                                        /* หนังสือ */
+      const bk = box(.26,.3,.07, col,.02); bk.rotation.z = .25; bk.position.y = .12; g.add(bk);
+      const pg = box(.24,.28,.075, 0xfffdf5,.015); pg.rotation.z = .25; pg.position.set(.02,.12,.005); g.add(pg);
+      const sp = box(.05,.3,.08, petShade(col,.82),.02); sp.rotation.z = .25; sp.position.set(-.12,.09,0); g.add(sp);
+      break; }
+    case 5: {                                        /* ไม้กายสิทธิ์ */
+      const st = cyl(.02,.02,.44, 0xfff3d0, 8); st.position.y = .2; g.add(st);
+      const star = chStar(.13,.07, col); star.position.y = .48; g.add(star);
+      const ct = cyl(.045,.045,.03, 0xfff3d0, 10); ct.rotation.x = Math.PI/2; ct.position.set(0,.48,.02); g.add(ct);
+      [[-.16,.36],[.17,.6]].forEach(([x,y])=>{ const sp = chStar(.045,.028, col); sp.position.set(x,y,0); g.add(sp); });
+      break; }
+    case 6: {                                        /* ลูกบอล */
+      const bl = sphere(.16, 0xfffdf5, 14); bl.position.y = .1; g.add(bl);
+      [0,1].forEach(i=>{ const bd = torus(.155,.028, col, 18); bd.rotation.y = i*Math.PI/2; bd.position.y = .1; g.add(bd); });
+      break; }
+    case 7: {                                        /* ช่อดอกไม้ */
+      const wrap = cone(.1,.2, 0xfff3d0, 10); wrap.position.y = .06; g.add(wrap);
+      [[-.09,.3,0],[.09,.28,.02],[0,.38,-.02]].forEach(([x,y,z],i)=>{
+        const stm = cyl(.014,.014,.24, 0x66bb6a, 6); stm.position.set(x*.5,y-.14,z); stm.rotation.z = -x*1.2; g.add(stm);
+        const pc = i===1 ? 0xfff3d0 : (i===2 ? 0xffd54f : col);
+        for(let k=0;k<5;k++){ const a = k/5*Math.PI*2, p = sphere(.05, pc, 8);
+          p.scale.z = .7; p.position.set(x + Math.cos(a)*.06, y + Math.sin(a)*.06, z); g.add(p); }
+        const ct = sphere(.032, 0xffd54f, 8); ct.position.set(x,y,z+.03); g.add(ct);
+      });
+      break; }
+    case 8: {                                        /* ร่ม — ผืนร่มกว้าง ต้องเอียงออกนอกตัวเยอะกว่าของชิ้นอื่น ไม่งั้นชนหน้าเด็ก */
+      g.rotation.z -= .38; g.position.x += .06;
+      const sh = cyl(.016,.016,.72, 0xfff3d0, 8); sh.position.y = .33; g.add(sh);
+      const cap = cone(.33,.3, col, 16); cap.position.y = .72; g.add(cap);           /* กรวย = ทรงร่มกางจริง (ทรงกลมแบนดูเป็นอมยิ้ม) */
+      for(let i=0;i<4;i++){ const pn = box(.04,.02,.5, 0xfff3d0,.008);
+        pn.rotation.set(-.5, i*Math.PI/4 + .4, 0); pn.position.y = .68; g.add(pn); }  /* ก้านร่มพาดตามผืน */
+      const tp = sphere(.035, petShade(col,.85), 8); tp.position.y = .89; g.add(tp);
+      const hk = torus(.05,.016, 0xfff3d0, 12); hk.rotation.y = Math.PI/2; hk.position.set(0,-.03,.05); g.add(hk);
+      break; }
+  }
+}
+
 function buildCharacter(cfg){
   const g = new THREE.Group();
   const rig = new THREE.Group(); g.add(rig);
   const girl = cfg.gender === 1;
-  /* เสื้อ/กางเกง-กระโปรง รองรับ "แบบ 2 สี" (entry เป็น object {a,b}) — a สีหลัก, b สีท่อนล่าง/ชาย */
+  /* กางเกง-กระโปรง ยังรองรับ "แบบ 2 สี" (entry เป็น object {a,b}) — a สีหลัก, b ท่อนล่าง/ชายกระโปรง
+     ส่วนเสื้อเป็นสีเดียวล้วนแล้ว (ลายทางตั้งย้ายไปอยู่แถว "ลายเสื้อ") — เผื่อข้อมูลเก่าที่ยังเก็บ object ไว้ ให้หยิบ .a มาใช้ */
   const shirtE = H_SHIRT_COLORS[cfg.shirt] ?? H_SHIRT_COLORS[0];
-  const shirt2 = (shirtE && typeof shirtE === 'object') ? shirtE : null;
-  const shirtC = shirt2 ? shirt2.a : shirtE;
-  const shirtB = shirt2 ? shirt2.b : shirtE;
+  const shirtC = (shirtE && typeof shirtE === 'object') ? shirtE.a : shirtE;
   const botE = H_BOTTOM_COLORS[cfg.bottom] ?? H_BOTTOM_COLORS[0];
   const bot2 = (botE && typeof botE === 'object') ? botE : null;
   const botC = bot2 ? bot2.a : botE;
@@ -460,12 +920,6 @@ function buildCharacter(cfg){
      โดยตัวเสื้อฐานยังเป็นกล่องขอบมน มุม/ข้างจึงมนเหมือนแบบสีเดียว ไม่เป็นเหลี่ยม */
   {
     const body = box(.52,.5,.32, shirtC); body.position.y = .68; rig.add(body);
-    if(shirt2){
-      [-.104, .104].forEach(x=>{
-        const strip = box(.104,.5,.33, shirtB); /* ขอบมน แนบหน้าเสื้อ (ยื่นราวๆ .005 พอเห็นเป็นทาง ไม่นูน) */
-        strip.position.set(x, .68, 0); rig.add(strip);
-      });
-    }
   }
   /* แขน (pivot ที่ไหล่) — แขนเป็นแท่งมนแท่งเดียวยาวเท่าลำตัว ปลายบนซ้อนเข้าไหล่ให้เชื่อมเนียน
      (เลิกใช้ลูกกลมที่ไหล่ เพราะดูป่องเป็นก้อนกลมเกินไป ไม่เป็นทรงแขน) */
@@ -476,16 +930,28 @@ function buildCharacter(cfg){
     const hand = box(.12,.1,.14, H_SKIN, .045); hand.position.y = -.46; piv.add(hand);
     rig.add(piv); return piv;
   });
+  /* ลายเสื้อ + ของสะพายหลัง + ของถือ (ลายต้องมาหลังแขน เพราะลายทางขวางต้องพันแขนด้วย)
+     สีของแต่งแยกจานสีของใครของมัน (hatC/glassC/bagC/holdC) — ค่าที่ไม่มีในข้อมูลเก่าถอยไปใช้ค่า default */
+  const accOf = (k, d) => H_ACC_COLORS[cfg[k] ?? H_DEFAULT_CHAR[k] ?? d] ?? H_ACC_COLORS[d];
+  addShirtPattern(rig, arms, (cfg.pattern|0) % H_PATTERN_N, shirtC, null, botC, girl);
+  addBackpack(rig, (cfg.bag|0) % H_BAG_N, accOf('bagC', 0));
+  addHoldItem(arms[1], (cfg.hold|0) % H_HOLD_N, accOf('holdC', 2));   /* arms[1] = แขนขวา (s=+1) */
   /* หัว + หน้า — ใช้ softMat กับกะโหลกให้เงาบนใบหน้านุ่มลง (ไม่เข้มเป็นหย่อม) */
   const head = new THREE.Group(); head.position.y = 1.26; rig.add(head);
   const skull = new THREE.Mesh(roundedBoxGeo(.64,.6,.66), softMat(H_SKIN));
   skull.castShadow = hShadows; head.add(skull);
-  /* % H_HAIR_N: ตัวละครที่ save ไว้ตอนยังมี 10 ทรง (index 6-9) ให้วนกลับเข้าช่วง 6 ทรงปัจจุบัน ไม่กลายเป็นหัวล้าน */
-  addHair(head, girl, (cfg.hair|0) % H_HAIR_N, H_HAIR_COLORS[cfg.hairC] ?? H_HAIR_COLORS[0]);
+  /* % H_HAIR_N: ตัวละครที่ save ไว้ตอนยังมี 10 ทรง (index 6-9) ให้วนกลับเข้าช่วง 6 ทรงปัจจุบัน ไม่กลายเป็นหัวล้าน
+     หมวกที่ครอบหัวจริง (แก๊ป/ไหมพรม/ฟาง) → ซ่อนทรงผมที่เลือกแล้วใช้ "ผมประจำหมวก" แทน (ดู addHatHair) */
+  const hatStyle = (cfg.hat|0) % H_HAT_N;
+  const hairCol = H_HAIR_COLORS[cfg.hairC] ?? H_HAIR_COLORS[0];
+  if(HAT_COVER_HAIR.has(hatStyle)) addHatHair(head, hatStyle, hairCol, girl);
+  else addHair(head, girl, (cfg.hair|0) % H_HAIR_N, hairCol);
   addEyes(head, cfg.eyes|0, H_EYE_COLORS[cfg.eyeC] ?? H_EYE_COLORS[0]);
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(.06,.018,6,10,Math.PI), toonMat(0xc9573f));
   mouth.rotation.z = Math.PI; mouth.position.set(0,-.12,.345); head.add(mouth);
   [-1,1].forEach(s=>{ const ch = sphere(.045,0xffb3a0,8); ch.scale.z = .4; ch.position.set(.24*s,-.08,.34); head.add(ch); });
+  addGlasses(head, (cfg.glass|0) % H_GLASS_N, accOf('glassC', 9));   /* แว่นก่อนหมวก: หมวกจะได้ทับขาแว่นตรงขมับ ไม่ใช่แว่นทับหมวก */
+  addHeadwear(head, hatStyle, accOf('hatC', 5));
 
   g.userData = {rig, legs, arms, head};
   return g;
@@ -652,6 +1118,7 @@ function wildPlantable(x, z, tall, plazaPad){
   /* ทุ่งดอกทานตะวัน = แปลงที่จัดไว้แล้ว ห้ามต้นไม้/พุ่มสุ่มงอกแทรก (ถ้าปล่อยให้งอก ช่องนั้นจะเสียทานตะวันไป
      1 ต้นเพราะทุ่งข้ามช่องที่ถูกจองไปแล้ว — และการ ban ต้นนั้นทีหลังจะทำให้ป่าเด้งไปงอกช่องข้างๆ ในแปลงแทน) */
   if(SUNFLOWER_FIELDS.some(f => inBox(f, x, z))) return false;
+  if(inBox(CAMP, x, z)) return false;                           /* ลานตั้งแคมป์ต้องโล่ง (ต้นไม้ล้อมอยู่รอบนอกกรอบแล้ว) */
   if(inBox(FOOD_FLOWER_COL, x, z)) return false;                /* แถวข้างลาน เอาไว้ปลูกดอกไม้ล้วน ไม่เอาต้นไม้ */
   if(penAt(x, z)) return false;                                 /* คอกสัตว์ในฟาร์ม (รวมรั้ว) */
   if(inPlayground(x, z)) return false;                          /* สนามเด็กเล่น — พื้นสนามต้องโล่ง ไม่ให้ต้นไม้/พุ่มสุ่มงอกกลางสนาม */
@@ -3089,7 +3556,7 @@ function registerFx(o){
   const f = o.userData.fx;
   if(f.ph == null) f.ph = Math.abs(o.position.x*1.7 + o.position.z*2.3) % 6.28;
   f.by = o.position.y; f.brx = o.rotation.x; f.bry = o.rotation.y; f.brz = o.rotation.z;
-  f.bsx = o.scale.x;
+  f.bsx = o.scale.x; f.bsy = o.scale.y;
   sceneryFx.add(o); fxProps.push(o);
 }
 /* ดึงชิ้นที่ติดธง fx ออกจากกลุ่ม (คงตำแหน่ง/หมุนเดิมโดยแปลงเป็นพิกัดโลก) ก่อนเอากลุ่มไป merge */
@@ -3132,6 +3599,11 @@ function updateSceneryFx(t, dt){
       case 'banner':                                 /* ธงราวสามเหลี่ยม: ปลิวขึ้นลงเบาๆ */
         o.rotation.z = f.brz + Math.sin(s*2.6 + ph)*.34;
         o.rotation.y = f.bry + Math.sin(s*1.7 + ph)*.2;
+        break;
+      case 'fire':                                   /* เปลวไฟกองแคมป์: วูบวาบ + เอนตามลม */
+        o.scale.y = f.bsy * (1 + Math.sin(s*9 + ph)*.22 + Math.sin(s*13.7 + ph*2)*.1);
+        o.scale.x = f.bsx * (1 + Math.sin(s*11 + ph)*.12);
+        o.rotation.z = f.brz + Math.sin(s*7 + ph)*.14;
         break;
       case 'smoke': {                                /* ควันปล่องไฟ: ลอยขึ้น พองตัว แล้ววนกลับ */
         const k = ((s*.28 + ph) % 1);
@@ -4140,6 +4612,163 @@ function carpenterStump(g){
   const ring = torus(.19,.022, 0xd2a56f, 14); ring.rotation.x = Math.PI/2; ring.position.y = .545; g.add(ring);
 }
 /* ของในลานช่างไม้: กองซุง / กองไม้แปรรูป / ม้าเลื่อยไม้ / ตอไม้ / ตอไม้ปักขวาน */
+/* ---------- ลานตั้งแคมป์กลางป่า (เต็นท์ / กองไฟ / ของในแคมป์) ----------
+   เต็นท์แคมป์ปิ้ง "ขนาด 2 คนนอน": ผ้าใบหักมุม 2 ท่อนต่อด้าน (ทรงระฆังนิดๆ ไม่ใช่สามเหลี่ยมแบนแผ่นเดียว)
+   + สันบน + หน้าจั่วมีช่องประตูโค้ง + ผ้าประตูม้วนรัด 2 ข้าง + เชือกยึด 4 เส้นลงสมอบก
+   ⚠ กติกาที่ผู้ใช้แจ้งไว้ (2026-08-04) ห้ามย้อนโดยไม่ถามก่อน:
+     1. **ห้ามทำใหญ่ขึ้น** — ต้องเป็นเต็นท์ 2 คนนอนที่เตี้ยกว่าหัวชาวเมือง (ชาวเมืองสูง ~1.5)
+        เคยทำ W1.62×L1.72×H1.02 แล้วมองมุมไอโซเหมือน "ผ้าใบขึงแผ่นใหญ่/แผงลอย" ไม่ใช่เต็นท์
+     2. **ประตูต้องอยู่ที่หน้าจั่วด้าน +z ไม่ใช่บนผืนหลังคา** (สันทอดตามแกน z) หน้าเต็นท์จะได้หันเข้าหา
+        กองไฟ (z มากกว่า) และหันเข้ากล้องไอโซพอดี
+     3. **ห้ามใส่กันสาดแผ่นใหญ่/เสาสีครีมหน้าเต็นท์** — เคยทำแล้วกลายเป็นแผงลอยขายของ */
+const TENT_COLORS = [
+  {wall:0xe4574a, trim:0xfbf7f0},   /* แดงส้ม */
+  {wall:0x5aa9e6, trim:0xfff3c4},   /* ฟ้า */
+  {wall:0x8fd694, trim:0xfbf7f0},   /* เขียวมิ้นต์ */
+];
+function buildTent(idx){
+  const g = new THREE.Group();
+  const c = TENT_COLORS[idx % TENT_COLORS.length];
+  const W = 1.14, L = 1.5, H = .86;                /* กว้างฐาน(x) × ยาวตามสัน(z) × สูง — เต็นท์ 2 คนนอน */
+  const W1 = W*.68, HK = H*.44;                    /* จุดหักผ้าใบ (ช่วงบนชัน ช่วงล่างผายออก = ผ้าใบตึงจริง) */
+  const dark = 0x3d3129, fz = L/2, bz = -L/2;
+  /* ครึ่งความกว้างของหน้าจั่วที่ความสูง y — ใช้ทั้งวาดกรอบจั่ว/ผนังจั่ว/ประตู ให้ทุกชิ้นอยู่ในเงาผ้าใบพอดี
+     (ถ้าคิดความกว้างมั่วๆ มุมบนของแถบจะโผล่พ้นแนวผ้าใบ กลายเป็นขอบหยักบันไดตามสัน) */
+  const halfW = y => y >= HK ? (W1/2)*(H-y)/(H-HK) : W1/2 + (W/2 - W1/2)*(HK-y)/HK;
+  /* แผ่นผ้าใบ 1 ท่อน: ลากจาก (x0,y0) ไป (x1,y1) บนหน้าตัด แล้วยืดตามแนว z ยาว dep */
+  const panel = (x0,y0,x1,y1, dep, th, col) => {
+    const dx = x1-x0, dy = y1-y0;
+    const m = box(Math.hypot(dx,dy) + .05, th, dep, col, .035);
+    m.rotation.z = Math.atan2(dy, dx);
+    m.position.set((x0+x1)/2, (y0+y1)/2, 0);
+    return m;
+  };
+  [-1,1].forEach(s=>{                              /* ผ้าใบ 2 ด้าน ด้านละ 2 ท่อน (บนชัน + ล่างผาย) */
+    [[0,H, s*W1/2,HK], [s*W1/2,HK, s*W/2,0]].forEach(([x0,y0,x1,y1])=>{
+      const pn = panel(x0,y0,x1,y1, L, .1, c.wall);
+      pn.castShadow = hShadows; g.add(pn);
+    });
+    const hem = box(.11,.07,L+.05, c.trim, .03);   /* ขลิบชายผ้าใบติดพื้น */
+    hem.position.set(s*(W/2 - .02), .04, 0); g.add(hem);
+  });
+  const ridge = cyl(.04,.04,L+.2, 0xc98d4e, 8);    /* เสาสันเต็นท์ (โผล่พ้นหัวท้ายไว้ผูกเชือก) */
+  ridge.rotation.x = Math.PI/2; ridge.position.y = H - .02; g.add(ridge);
+  /* ผนังหน้าจั่ว: ก่อเป็นแถบซ้อนชั้นไล่แคบลงตาม halfW (ทรงสามเหลี่ยมแบบก้อนๆ เข้าธีมของเล่นไม้ในเกม) */
+  const gableBars = (zz, col, y0, y1, n, wScale, dep) => {
+    for(let i=0;i<n;i++){
+      const a = y0 + (y1-y0)*i/n, b = y0 + (y1-y0)*(i+1)/n;
+      const wd = 2*halfW(b)*wScale - .04;
+      if(wd < .06) continue;
+      const bar = box(wd, (b-a) + .02, dep, col, .03);
+      bar.position.set(0, (a+b)/2, zz); g.add(bar);
+    }
+  };
+  gableBars(bz + .03, petShade(c.wall,.9), 0, H, 6, 1, .08);      /* ท้ายเต็นท์: ปิดทึบทั้งบาน */
+  const vent = cyl(.11,.11,.05, 0x4a5560, 10);                    /* ช่องระบายอากาศกลม */
+  vent.rotation.x = Math.PI/2; vent.position.set(0,.42,bz-.02); g.add(vent);
+  const vrim = torus(.13,.025, c.trim, 12); vrim.position.set(0,.42,bz-.03); g.add(vrim);
+  gableBars(fz - .03, petShade(c.wall,.88), 0, H, 6, 1, .08);     /* หน้าเต็นท์: ผ้าใบเต็มบาน... */
+  gableBars(fz + .02, dark, 0, H*.62, 5, .6, .06);                /* ...แล้วแปะช่องประตูมืดทับ = ประตูเปิด */
+  [-1,1].forEach(s=>{                                             /* ขอบจั่วหน้าเป็นตัว Λ ตีกรอบให้อ่านออกว่าเป็นเต็นท์ */
+    [[0,H, s*W1/2,HK], [s*W1/2,HK, s*W/2,0]].forEach(([x0,y0,x1,y1])=>{
+      const eg = panel(x0,y0,x1,y1, .1, .1, petShade(c.wall,.78));
+      eg.position.z = fz - .02; g.add(eg);
+    });
+  });
+  const zip = box(.04, H*.55, .05, c.trim, .02);                  /* ซิปกลางประตู */
+  zip.position.set(0, H*.3, fz + .06); g.add(zip);
+  [-1,1].forEach(s=>{                                             /* ผ้าประตูม้วนรัดเก็บไว้ 2 ข้าง (บางๆ ไม่ใช่เสา) */
+    const roll = cyl(.05,.05,H*.42, petShade(c.wall,.86), 7);
+    roll.position.set(s*(W*.21), H*.27, fz + .07); g.add(roll);
+    const tie = cyl(.058,.058,.045, c.trim, 7);
+    tie.position.set(s*(W*.21), H*.44, fz + .08); g.add(tie);
+  });
+  const mat3 = box(W*.52, .045, .26, 0xd9a86c, .02);              /* พรมเช็ดเท้าหน้าประตู */
+  mat3.position.set(0,.025, fz + .2); g.add(mat3);
+  /* เชือกยึดเต็นท์ 4 เส้น จากปลายสันลงสมอบก — รายละเอียดนี้แหละที่ทำให้เด็กอ่านออกทันทีว่า "เต็นท์" */
+  const UP = new THREE.Vector3(0,1,0);
+  [-1,1].forEach(s=>[[fz + .1, 1],[bz - .1, -1]].forEach(([rz, d])=>{
+    const px = s*(W/2 + .24), pz = rz + d*.28;
+    const dir = new THREE.Vector3(px - 0, -H + .06, pz - rz);
+    const rope = cyl(.012,.012, dir.length(), 0xe0cfae, 5);
+    rope.position.set(px/2, (H + .06)/2, (rz + pz)/2);
+    rope.quaternion.setFromUnitVectors(UP, dir.clone().normalize());
+    g.add(rope);
+    const peg = cyl(.03,.03,.18, 0x8d6e63, 5); peg.rotation.z = s*.32;
+    peg.position.set(px, .06, pz); g.add(peg);
+  }));
+  return g;
+}
+/* กองไฟกลางแคมป์: ก้อนหินล้อม + ฟืนไขว้ + เปลวไฟ 3 ชั้น (ติดธง fx 'fire' = วูบวาบ)
+   + ขาตั้ง 3 ขาแขวนหม้อซุป + ควันลอย (fx 'smoke' ชุดเดียวกับปล่องไฟบ้าน) */
+function buildCampFire(){
+  const g = new THREE.Group();
+  for(let i=0;i<7;i++){                              /* วงหินล้อมกองไฟ */
+    const a = i/7*Math.PI*2;
+    const st = sphere(.15, i%2 ? 0x9fabb3 : 0xb9c2c8, 7); st.scale.y = .7;
+    st.position.set(Math.cos(a)*.52, .06, Math.sin(a)*.52); g.add(st);
+  }
+  [0,1,2].forEach(i=>{                               /* ฟืนไขว้กัน */
+    const lg = cyl(.075,.09,.9, i%2 ? 0xa9784f : 0x8d6e63, 7);
+    lg.rotation.z = Math.PI/2 - .35; lg.rotation.y = i*1.05;
+    lg.position.set(0,.16,0); g.add(lg);
+  });
+  const em = sphere(.22, 0xef8354, 10); em.scale.y = .45; em.position.y = .13; g.add(em);
+  [[0,.34,.3,0xffd54f],[.06,.52,.24,0xef8354],[-.05,.68,.17,0xffe08a]].forEach(([ox,y,r,c],i)=>{
+    const fl = cone(r, r*2.1, c, 8); fl.position.set(ox, y, 0);
+    fxTag(fl, 'fire', {ph:i*2.1}); g.add(fl);        /* เปลวไฟวูบวาบ (ดู updateSceneryFx kind 'fire') */
+  });
+  [0,1,2].forEach(i=>{                               /* ควันลอยขึ้นจากกองไฟ — เริ่มเหนือฝาหม้อ ไม่งั้นควันจะโผล่ออกมาจากในหม้อ */
+    const sm = sphere(.13, 0xe8e4dc, 8);
+    sm.position.set(.02, 1.45 + i*.3, 0);
+    fxTag(sm, 'smoke', {ph:i*2.1}); g.add(sm);
+  });
+  [0,1,2].forEach(i=>{                               /* ขาตั้งหม้อ 3 ขา */
+    const a = i/3*Math.PI*2 + .5;
+    const lg = cyl(.045,.055,1.5, 0x8d6e63, 6);
+    lg.position.set(Math.cos(a)*.34, .72, Math.sin(a)*.34);
+    lg.rotation.z = -Math.cos(a)*.44; lg.rotation.x = Math.sin(a)*.44; g.add(lg);
+  });
+  const hook = cyl(.02,.02,.3, 0x6f8290, 5); hook.position.y = 1.24; g.add(hook);
+  const pot = cyl(.28,.24,.32, 0x4a5560, 12); pot.position.y = .95; g.add(pot);
+  const lid = cyl(.3,.3,.06, 0x6f8290, 12); lid.position.y = 1.13; g.add(lid);
+  const knob = sphere(.055, 0xffd54f, 7); knob.position.y = 1.19; g.add(knob);
+  const hd = torus(.26,.025, 0x6f8290, 12); hd.rotation.y = Math.PI/2; hd.position.y = 1.06; g.add(hd);
+  return g;
+}
+function buildCampProp(kind){
+  const g = new THREE.Group();
+  if(kind === 'log'){                                /* ท่อนไม้นั่งข้างกองไฟ */
+    const lg = cyl(.24,.24,1.0, 0xa9784f, 10); lg.rotation.z = Math.PI/2; lg.position.y = .24; g.add(lg);
+    [-1,1].forEach(s=>{ const ring = cyl(.245,.245,.05, 0xd9a86c, 10);
+      ring.rotation.z = Math.PI/2; ring.position.set(s*.5,.24,0); g.add(ring); });
+    [-1,1].forEach(s=>{ const bs = box(.16,.14,.3, 0x8d6e63,.04); bs.position.set(s*.3,.07,0); g.add(bs); });
+  }else if(kind === 'wood'){                         /* กองฟืนซ้อน */
+    [[0,.13,-.16],[0,.13,.16],[0,.39,0]].forEach(([x,y,z])=>{
+      const lg = cyl(.14,.14,.9, 0xa9784f, 8); lg.rotation.z = Math.PI/2; lg.position.set(x,y,z); g.add(lg);
+      const rg = cyl(.145,.145,.05, 0xd9a86c, 8); rg.rotation.z = Math.PI/2; rg.position.set(.45,y,z); g.add(rg);
+    });
+    const axe = cyl(.035,.035,.62, 0xc98d4e, 6); axe.rotation.z = .5; axe.position.set(-.4,.44,.3); g.add(axe);
+    const bl = box(.22,.2,.06, 0xc3ccd2,.03); bl.rotation.z = .5; bl.position.set(-.53,.68,.3); g.add(bl);
+  }else if(kind === 'gear'){                         /* เป้เดินป่า + ลังเสบียง + ม้วนที่นอน */
+    const bag = box(.46,.6,.36, 0x6fbf73,.1); bag.position.set(-.16,.32,0); g.add(bag);
+    const lidb = box(.44,.16,.34, 0x4fa85c,.06); lidb.position.set(-.16,.66,0); g.add(lidb);
+    [-1,1].forEach(s=>{ const st = box(.09,.4,.06, 0x4a3b32,.02); st.position.set(-.16+s*.14,.42,-.2); g.add(st); });
+    const crate = box(.5,.34,.44, 0xc98d4e,.05); crate.position.set(.4,.17,.12); g.add(crate);
+    const clid = box(.52,.06,.46, 0xd9a86c,.03); clid.position.set(.4,.37,.12); g.add(clid);
+    const roll = cyl(.16,.16,.62, 0xef8fa5, 10); roll.rotation.z = Math.PI/2; roll.position.set(.36,.52,.12); g.add(roll);
+    const cap2 = cyl(.165,.165,.05, 0xfbf7f0, 10); cap2.rotation.z = Math.PI/2; cap2.position.set(.64,.52,.12); g.add(cap2);
+  }else{                                             /* lantern: เสาไม้แขวนตะเกียง */
+    const post = cyl(.06,.08,1.5, 0x8d6e63, 7); post.position.y = .75; g.add(post);
+    const arm = box(.46,.07,.07, 0x8d6e63,.03); arm.position.set(.2,1.46,0); g.add(arm);
+    const rope = cyl(.015,.015,.18, 0xf0e4d4, 5); rope.position.set(.38,1.36,0); g.add(rope);
+    const cap3 = cone(.16,.14, 0x4a5560, 8); cap3.position.set(.38,1.24,0); g.add(cap3);
+    const glass = sphere(.13, 0xfff3c4, 10); glass.position.set(.38,1.08,0); g.add(glass);
+    const base2 = cyl(.11,.11,.05, 0x4a5560, 8); base2.position.set(.38,.96,0); g.add(base2);
+    const bs = cyl(.2,.24,.1, 0x8d6e63, 8); bs.position.y = .05; g.add(bs);
+  }
+  return g;
+}
 function buildCarpenterProp(kind){
   const g = new THREE.Group();
   if(kind === 'logs'){
@@ -4557,6 +5186,12 @@ function buildVillager(lk, animated){
     const bl = box(.34,.14,.03,0xc9d3d9,.01); bl.rotation.z = .18; bl.position.set(.44,.72,.12); hold.add(bl);
     for(let i=0;i<5;i++){ const th = cone(.022,.05,0xb4c2cb,4); th.rotation.x = Math.PI; th.position.set(.32+i*.07,.635+i*.013,.12); hold.add(th); }
     const hd = box(.11,.16,.06,0xa9784f,.03); hd.position.set(.25,.7,.12); hold.add(hd);
+  } else if(P === 'marsh'){                                /* ไม้ปิ้งมาร์ชแมลโลว์ (เด็กในแคมป์) */
+    const st = cyl(.022,.022,.62, 0xd9a86c, 5); st.rotation.z = -.5; st.position.set(.42,.78,.12); hold.add(st);
+    [[.62,1.0],[.7,1.12]].forEach(([x,y],i)=>{
+      const mm = cyl(.06,.06,.11, i ? 0xfbf7f0 : 0xe8c9a0, 8); mm.rotation.z = -.5;
+      mm.position.set(x,y,.12); hold.add(mm);
+    });
   } else if(P === 'ring'){                                 /* ห่วงชูชีพ/ห่วงยาง แดง-ขาว (พนักงานสระ/คนเล่นน้ำ) */
     const rg = torus(.17,.055,0xe4574a,14); rg.position.set(.4,.62,.14); hold.add(rg);
     [0,1,2,3].forEach(i=>{
@@ -4978,6 +5613,24 @@ function buildStaticScenery(){
   const cy = buildWoodYard(CARPENTER_YARD.x1 - CARPENTER_YARD.x0 + 1, CARPENTER_YARD.z1 - CARPENTER_YARD.z0 + 1);
   cy.position.set(outWX((CARPENTER_YARD.x0 + CARPENTER_YARD.x1)/2), 0, outWZ((CARPENTER_YARD.z0 + CARPENTER_YARD.z1)/2));
   mergeCollectFx(cy, parts, chunkKeyOf(CARPENTER_YARD.x0, CARPENTER_YARD.z0));
+  /* ---- ลานตั้งแคมป์กลางป่าทิศเหนือ: เต็นท์ 3 หลัง + กองไฟ + ของในแคมป์ ---- */
+  CAMP_TENTS.forEach(([x,z,ci])=>{
+    const tn = buildTent(ci);
+    tn.position.set(outWX(x), 0, outWZ(z));
+    tn.rotation.y = ((x*3 + z) % 3 - 1) * .08;     /* เอียงคนละนิด ดูเหมือนกางเอง ไม่เรียงเป๊ะ */
+    mergeCollectFx(tn, parts, chunkKeyOf(x, z));
+  });
+  const cfire = buildCampFire();
+  cfire.position.set(outWX(CAMP_FIRE.x), 0, outWZ(CAMP_FIRE.z));
+  mergeCollectFx(cfire, parts, chunkKeyOf(CAMP_FIRE.x, CAMP_FIRE.z));
+  CAMP_PROPS.forEach(([x,z,kind])=>{
+    const cp = buildCampProp(kind);
+    cp.position.set(outWX(x), 0, outWZ(z));
+    /* ท่อนไม้นั่ง: หันด้านยาวขวางแนวที่หันเข้ากองไฟ · ของอื่นเอียงคนละนิด */
+    cp.rotation.y = kind==='log' ? (Math.abs(x-CAMP_FIRE.x) > Math.abs(z-CAMP_FIRE.z) ? Math.PI/2 : 0) + .12
+                                 : ((x*7 + z*5) % 4) * .3;
+    mergeCollectFx(cp, parts, chunkKeyOf(x, z));
+  });
   CARPENTER_PROPS.forEach(([x,z,kind])=>{
     const cp = buildCarpenterProp(kind);
     cp.position.set(outWX(x), 0, outWZ(z));
@@ -5158,6 +5811,10 @@ function buildOutGrid(noWild){
   /* หุ่นไล่กาในฟาร์ม + ต้นมะพร้าวริมหาด บล็อกทางเดิน (ร่มชายหาดเดินลอดได้ ไม่บล็อก) */
   SCARECROW_TILES.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   FISH_RACKS.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
+  /* ลานแคมป์: เต็นท์กินช่องละ 2 ช่องตามแนว z · กองไฟกับของในแคมป์บล็อกช่องตัวเอง */
+  CAMP_TENTS.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
+  if(grid[CAMP_FIRE.z] && grid[CAMP_FIRE.z][CAMP_FIRE.x]===0) grid[CAMP_FIRE.z][CAMP_FIRE.x] = 3;
+  CAMP_PROPS.forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   beachPropTiles().forEach(([x,z,kind])=>{
     if((kind==='palm' || kind==='chair' || kind==='canoe' || kind==='ring') && grid[z] && grid[z][x]===0) grid[z][x] = 3;
   });
@@ -6093,7 +6750,12 @@ function buildCreatorRows(cfg){
           b.style.background = '#'+col.toString(16).padStart(6,'0');
         }
         b.setAttribute('aria-label', row.label+' แบบที่ '+(i+1));
-      }else if(row.type==='num'){ b.textContent = i+1; }
+      }else if(row.type==='num'){
+        /* แถวของแต่ง (row.none) — ตัวเลือกแรกคือ "ไม่ใส่" โชว์เป็นเครื่องหมายกากบาท ไม่ใช่เลข 1
+           (ไม่งั้นเด็กเลือกแบบที่ 1 แล้วไม่มีอะไรขึ้น นึกว่าแอปเสีย) */
+        b.textContent = row.none ? (i===0 ? '✖' : String(i)) : String(i+1);
+        if(row.none && i===0){ b.classList.add('house-chip-none'); b.setAttribute('aria-label', row.label+' — ไม่ใส่'); }
+      }
       else{ b.textContent = row.options[i]; }
       if(cfg[row.key]===i) b.classList.add('active');
       b.addEventListener('click', ()=>{
@@ -9198,4 +9860,5 @@ $('house-rot-right').addEventListener('click', ()=>{
 /* หน้าหลักเปิดค้างอยู่แล้วตอนไฟล์นี้โหลดเสร็จ (เช่น reload กลางเซสชัน) → โชว์เพื่อนซี้เลย
    กรณีปกติ (เลือกโปรไฟล์เด็กก่อน) renderHome ใน app.js จะเรียกให้เอง */
 if(!homeView.hidden) houseBuddyRefresh();
+/* DEBUG-TEMP */ window.__houseDbg = {tp:(x,z)=>{ charGroup.position.set(outWX(x),0,outWZ(z)); }, grid:()=>outGrid};
 })();

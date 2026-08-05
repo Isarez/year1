@@ -2402,6 +2402,8 @@
   .house-chip:active{transform:scale(.92);}
   .house-chip.active{border-color:#33B7EE; box-shadow:0 0 0 3px rgba(51,183,238,.25); transform:scale(1.06);}
   .house-chip-color{padding:0; width:42px;}
+  /* ชิป "ไม่ใส่" ของแถวเครื่องแต่งตัว (หมวก/แว่น/เป้/ของถือ) — สีจางกว่าชิปแบบอื่นให้รู้ว่าเป็นตัวเลือกถอดออก */
+  .house-chip-none{background:#EDE4D6; color:#A08E77;}
   .house-done-btn{
     border:none; border-radius:999px; padding:13px 22px; margin-top:2px;
     background:linear-gradient(135deg,#66BB6A,#43A047); color:#fff;

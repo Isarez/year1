@@ -17,18 +17,38 @@ window.HOUSE_MAP = function(ctx){
 const inBox = ctx.inBox;
 
 const H_SKIN = 0xffd9b3;
-const H_HAIR_COLORS = [0x3b2a1a,0x6b4423,0xa5692a,0xe8c05c,0xf28c28,0xd94f30,0xf48fb1,0x9b59b6,0x5aa7e8,0x58c473];
-const H_EYE_COLORS  = [0x33261d,0x6b4423,0x3a79d8,0x3f9d5a,0x8e5bc0,0xe56aa4,0x7a8894,0xd8a520];
+const H_HAIR_COLORS = [0x3b2a1a,0x6b4423,0xa5692a,0xe8c05c,0xf28c28,0xd94f30,0xf48fb1,0x9b59b6,0x5aa7e8,0x58c473,
+  /* สีผมชุดใหม่ (2026-08-04) — โทนพาสเทล/สีสนุกสำหรับเด็ก */
+  0x1c1c1c,0xc9a227,0xe0e0e0,0xff8a65,0x4dd0e1,0xffb7d5,0xb39ddb];
+const H_EYE_COLORS  = [0x33261d,0x6b4423,0x3a79d8,0x3f9d5a,0x8e5bc0,0xe56aa4,0x7a8894,0xd8a520,
+  0x26c6da,0xef5350,0x7e57c2,0x66bb6a];
+/* เสื้อ: สีเดียวล้วน — **ลายทางตั้ง (เดิมเป็น entry 2 สีในแถวนี้) ย้ายไปเป็น "ลายเสื้อ" แบบที่ 9 แล้ว**
+   (ผู้ใช้แจ้ง 2026-08-04: สีกับลายต้องแยกแถวกัน ไม่ปนกันในแถวสี) ห้ามเอา entry {a,b} กลับมาใส่แถวนี้ */
 const H_SHIRT_COLORS  = [0xef5350,0xffa726,0xffd54f,0x9ccc65,0x4db6ac,0x42a5f5,0x7986cb,0xba68c8,0xf06292,0x8d6e63,
-  /* แบบ 2 สี (ท่อนบนสี a / ท่อนล่างสี b) */
-  {a:0xef5350,b:0xffffff},{a:0x42a5f5,b:0xffd54f},{a:0x66bb6a,b:0xffffff},{a:0x9575cd,b:0xf06292},{a:0x26a69a,b:0xffa726}];
+  0xffffff,0x26c6da,0xff7043,0xd4e157,0xf8bbd0,0xfff59d,0xb39ddb,0x00bfa5,0x5c6bc0,0xa1887f,
+  0x37474f,0x66bb6a,0x9575cd,0x4dd0e1,0xffab91,0xc5e1a5];
 const H_BOTTOM_COLORS = [0x3f5aa8,0x6d4c41,0x455a64,0x00897b,0xc62828,0xf48fb1,0x9575cd,0x558b2f,0xffb74d,0x263238,
+  0x1e88e5,0x00acc1,0xe57373,0x9ccc65,0x5c6bc0,0xff8a65,0xffffff,0x795548,
   /* แบบ 2 สี (กางเกงท่อนบน a / ท่อนล่าง b, กระโปรงตัว a / ชายกระโปรง b) */
-  {a:0x3f5aa8,b:0xffffff},{a:0xf48fb1,b:0xffffff},{a:0xc62828,b:0x3f5aa8},{a:0x558b2f,b:0xffd54f},{a:0x7e57c2,b:0xffffff}];
-const H_SHOE_COLORS   = [0xffffff,0x333333,0xef5350,0x42a5f5,0xffca28,0x66bb6a,0xab47bc,0x8d6e63];
+  {a:0x3f5aa8,b:0xffffff},{a:0xf48fb1,b:0xffffff},{a:0xc62828,b:0x3f5aa8},{a:0x558b2f,b:0xffd54f},{a:0x7e57c2,b:0xffffff},
+  {a:0x455a64,b:0xffd54f},{a:0x00897b,b:0xffffff},{a:0xba68c8,b:0xfff59d},{a:0x1e88e5,b:0xf06292}];
+const H_SHOE_COLORS   = [0xffffff,0x333333,0xef5350,0x42a5f5,0xffca28,0x66bb6a,0xab47bc,0x8d6e63,
+  0xff7043,0x26a69a,0xf06292,0x7e57c2,0xfff176,0x90a4ae];
+/* สีของแต่ง — จานสีเดียวกันแต่ **แยกแถวให้เลือกสีของหมวก/แว่น/เป้/ของถือ ได้อิสระของใครของมัน**
+   (เดิมใช้แถวเดียวคุมทุกชิ้น ผู้ใช้ขอให้แยกเมื่อ 2026-08-04) */
+const H_ACC_COLORS = [0xef5350,0xff9800,0xffd54f,0x66bb6a,0x26c6da,0x42a5f5,0x7e57c2,0xf06292,
+  0xffffff,0x546e7a,0x8d6e63,0xa5d6a7];
 const H_HAIR_N = 6, H_EYE_N = 8;
+/* จำนวนแบบของชุดตกแต่งใหม่ (index 0 = ไม่ใส่ เสมอ ยกเว้นลายเสื้อที่ index 0 = เสื้อเรียบ)
+   ⚠ ทุกแบบวาดใน js/house.js — เพิ่มเลขตรงนี้ต้องไปเพิ่ม case ในฟังก์ชันที่คู่กันด้วยเสมอ */
+const H_PATTERN_N = 10;  /* ลายเสื้อ: เรียบ/ทางขวาง/จุด/ดาว/หัวใจ/เอี๊ยม/ซิกแซก/กระเป๋าหน้าอก/ปกกะลาสี/ทางตั้ง */
+const H_HAT_N = 9;       /* เครื่องหัว: ไม่ใส่/แก๊ป/ไหมพรม/ฟาง/โบว์/มงกุฎ/หูสัตว์/หมวกปาร์ตี้/ที่คาดผมดอกไม้ */
+const H_GLASS_N = 7;     /* แว่น: ไม่ใส่/กลม/เหลี่ยม/กันแดด/หัวใจ/ดาว/แว่นว่ายน้ำ */
+const H_BAG_N = 7;       /* ของสะพายหลัง: ไม่สะพาย/เป้นักเรียน/เป้หมี/กระดองเต่า/ปีกผีเสื้อ/ปีกนางฟ้า/กระเป๋าสะพายเฉียง */
+const H_HOLD_N = 9;      /* ของถือ: ไม่ถือ/ลูกโป่ง/ตุ๊กตาหมี/ไอศกรีม/หนังสือ/ไม้กายสิทธิ์/ลูกบอล/ช่อดอกไม้/ร่ม */
 
-const H_DEFAULT_CHAR = {gender:0, hair:0, hairC:0, eyes:1, eyeC:0, shirt:5, bottom:0, shoes:0};
+const H_DEFAULT_CHAR = {gender:0, hair:0, hairC:0, eyes:1, eyeC:0, shirt:5, bottom:0, shoes:0,
+  pattern:0, hat:0, hatC:5, glass:0, glassC:9, bag:0, bagC:0, hold:0, holdC:2};
 
 const H_ROWS = [
   {key:'gender', label:'หนูเป็น...', type:'text', options:['👦 เด็กชาย','👧 เด็กหญิง']},
@@ -37,8 +57,17 @@ const H_ROWS = [
   {key:'eyes',   label:'ดวงตา',      type:'num',  n:H_EYE_N},
   {key:'eyeC',   label:'สีตา',       type:'color', colors:H_EYE_COLORS},
   {key:'shirt',  label:'สีเสื้อ',     type:'color', colors:H_SHIRT_COLORS},
+  {key:'pattern',label:'ลายเสื้อ',    type:'num',  n:H_PATTERN_N, none:true},
   {key:'bottom', label:'สีกางเกง/กระโปรง', type:'color', colors:H_BOTTOM_COLORS},
   {key:'shoes',  label:'สีรองเท้า',   type:'color', colors:H_SHOE_COLORS},
+  {key:'hat',    label:'เครื่องหัว',   type:'num',  n:H_HAT_N, none:true},
+  {key:'hatC',   label:'สีเครื่องหัว', type:'color', colors:H_ACC_COLORS},
+  {key:'glass',  label:'แว่นตา',      type:'num',  n:H_GLASS_N, none:true},
+  {key:'glassC', label:'สีแว่นตา',    type:'color', colors:H_ACC_COLORS},
+  {key:'bag',    label:'สะพายหลัง',   type:'num',  n:H_BAG_N, none:true},
+  {key:'bagC',   label:'สีของสะพาย',  type:'color', colors:H_ACC_COLORS},
+  {key:'hold',   label:'ของถือ',      type:'num',  n:H_HOLD_N, none:true},
+  {key:'holdC',  label:'สีของถือ',    type:'color', colors:H_ACC_COLORS},
 ];
 /* ไอคอน SVG แบนๆ พาสเทลขอบมน ชุดเดียวกับธีมไอคอนหมวดในแอป (แทน emoji ระบบเดิมที่ไม่เข้ากับ template) */
 const H_ROW_ICONS = {
@@ -50,6 +79,16 @@ const H_ROW_ICONS = {
   shirt:  '<svg viewBox="0 0 24 24"><path d="M8.5 4 L4 7 L6 10.2 L8 9 V20 H16 V9 L18 10.2 L20 7 L15.5 4 Q12 6.8 8.5 4 z" fill="#7ec0f5" stroke="#3a86c9" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   bottom: '<svg viewBox="0 0 24 24"><path d="M6.5 4 H17.5 L16.6 20 H13 L12 10.5 L11 20 H7.4 z" fill="#7f8fd6" stroke="#4a5aa8" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   shoes:  '<svg viewBox="0 0 24 24"><path d="M3 15.5 V11.5 Q3 9.5 5 9.5 L8 9.5 L11 12.5 L18 14.2 Q21 14.8 21 17 V18.5 H3 z" fill="#ffd24d" stroke="#d99a1f" stroke-width="1.8" stroke-linejoin="round"/><line x1="8" y1="11" x2="9.6" y2="12.6" stroke="#d99a1f" stroke-width="1.5" stroke-linecap="round"/><line x1="10.2" y1="12" x2="11.8" y2="13.6" stroke="#d99a1f" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  pattern:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="#ffe08a" stroke="#e0a52e" stroke-width="1.8"/><circle cx="9" cy="9" r="1.7" fill="#ef5350"/><circle cx="15" cy="9" r="1.7" fill="#42a5f5"/><circle cx="9" cy="15" r="1.7" fill="#42a5f5"/><circle cx="15" cy="15" r="1.7" fill="#ef5350"/></svg>',
+  hat:    '<svg viewBox="0 0 24 24"><path d="M6 13 Q6 5.5 12 5.5 Q18 5.5 18 13 z" fill="#7fd1a6" stroke="#2f9e6b" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.5 13 H20.5 Q21 15.5 18.5 15.5 H5.5 Q3 15.5 3.5 13 z" fill="#a8e6c4" stroke="#2f9e6b" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  glass:  '<svg viewBox="0 0 24 24"><circle cx="7.5" cy="13" r="4.2" fill="#dff1fb" stroke="#4a6fa5" stroke-width="1.8"/><circle cx="16.5" cy="13" r="4.2" fill="#dff1fb" stroke="#4a6fa5" stroke-width="1.8"/><path d="M11.7 12.6 Q12 11.6 12.3 12.6" fill="none" stroke="#4a6fa5" stroke-width="1.8" stroke-linecap="round"/><path d="M3.3 11.4 L4.6 9.6 M20.7 11.4 L19.4 9.6" stroke="#4a6fa5" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  bag:    '<svg viewBox="0 0 24 24"><rect x="5" y="9" width="14" height="11.5" rx="3.2" fill="#f2a0b8" stroke="#c9557a" stroke-width="1.8"/><path d="M9 9.5 V7.5 a3 3 0 0 1 6 0 V9.5" fill="none" stroke="#c9557a" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="13.5" width="6" height="3.6" rx="1.4" fill="#fff" stroke="#c9557a" stroke-width="1.5"/></svg>',
+  hold:   '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="5.6" ry="6.3" fill="#ff9fb0" stroke="#e05575" stroke-width="1.8"/><path d="M12 15.3 L11 17 h2 z" fill="#e05575"/><path d="M12 17 q2 2.5 0 4.5" fill="none" stroke="#e05575" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="9.8" cy="7.2" rx="1.5" ry="2" fill="#fff" opacity=".6"/></svg>',
+  hatC:   '<svg viewBox="0 0 24 24"><path d="M6 12.5 Q6 6 12 6 Q18 6 18 12.5 z" fill="#7fb8f5" stroke="#3a79d8" stroke-width="1.7" stroke-linejoin="round"/><path d="M4 12.5 H20 Q20.5 14.8 18.2 14.8 H5.8 Q3.5 14.8 4 12.5 z" fill="#b7d9fb" stroke="#3a79d8" stroke-width="1.7" stroke-linejoin="round"/><circle cx="19.2" cy="18.6" r="2.7" fill="#ffb3c8" stroke="#e0709a" stroke-width="1.4"/></svg>',
+  glassC: '<svg viewBox="0 0 24 24"><circle cx="7.5" cy="11" r="4" fill="#dff1fb" stroke="#78909c" stroke-width="1.7"/><circle cx="16.5" cy="11" r="4" fill="#dff1fb" stroke="#78909c" stroke-width="1.7"/><path d="M11.6 10.7 Q12 9.8 12.4 10.7" fill="none" stroke="#78909c" stroke-width="1.7" stroke-linecap="round"/><circle cx="19.2" cy="18.6" r="2.7" fill="#a5e0b0" stroke="#4caf70" stroke-width="1.4"/></svg>',
+  bagC:   '<svg viewBox="0 0 24 24"><rect x="4.5" y="8" width="12" height="9.5" rx="2.8" fill="#f2a0b8" stroke="#c9557a" stroke-width="1.7"/><path d="M8 8.5 V7 a2.5 2.5 0 0 1 5 0 V8.5" fill="none" stroke="#c9557a" stroke-width="1.7" stroke-linecap="round"/><circle cx="19.2" cy="18.6" r="2.7" fill="#ffe08a" stroke="#e0a52e" stroke-width="1.4"/></svg>',
+  holdC:  '<svg viewBox="0 0 24 24"><ellipse cx="10" cy="8.5" rx="4.6" ry="5.2" fill="#ff9fb0" stroke="#e05575" stroke-width="1.7"/><path d="M10 13.7 q1.7 2.3 0 4.6" fill="none" stroke="#e05575" stroke-width="1.5" stroke-linecap="round"/><circle cx="19.2" cy="18.6" r="2.7" fill="#9fd8f5" stroke="#3a9ad8" stroke-width="1.4"/></svg>',
+  accC:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="#fff3c4" stroke="#e0a52e" stroke-width="1.8"/><path d="M12 3.5 a8.5 8.5 0 0 1 0 17 z" fill="#ffb3c8"/><circle cx="8.6" cy="9.4" r="1.5" fill="#66bb6a"/><circle cx="8.6" cy="14.6" r="1.5" fill="#42a5f5"/></svg>',
 };
 
 /* ---------- แผนที่นอกบ้าน (grid) ----------
@@ -278,6 +317,10 @@ const WILD_GROVES = [
   /* ป่าเหนือ (แถบใหม่ทิศเหนือ x<12) — พิกัดใหม่ ไม่ต้องเลื่อน */
   [2,19,3,'pine'], [7,22,3,'tree-round'], [3,27,3,'pine'], [9,30,2,'tree-round'], [2,35,3,'tree-round'],
   [7,38,3,'pine'], [3,43,3,'tree-round'], [11,33,2,'pine'], [5,17,2,'tree-round'], [1,41,2,'pine'],
+  /* ป่าล้อมลานแคมป์ (ทิศใต้+ตะวันตกของแคมป์) — ลานแคมป์ห้ามต้นไม้สุ่มงอกในกรอบ CAMP ถ้าไม่ปลูกล้อมไว้
+     รอบนอก แถบนี้จะกลายเป็นทุ่งหญ้าโล่งใหญ่ ไม่เหลือความเป็น "แคมป์กลางป่า" (เติมเมื่อ 2026-08-04) */
+  [0,20,2,'pine'], [2,22,2,'tree-round'], [11,19,2,'pine'], [10,24,2,'tree-round'],
+  [12,16,2,'pine'], [9,22,2,'pine'], [11,21,1,'tree-round'],
   /* ริมบ่อน้ำใหญ่ */
   [11,3,1,'pine'], [11,12,1,'tree-round'], [1,0,1,'tree-round'], [6,16,1,'pine'],
   /* กรอบต้นไม้ของชุมชนที่ 2: แนวเหนือ (คั่นป่ากับชุมชน) + สวนเล็กท้ายชุมชนริมขอบแผนที่ทิศตะวันตก */
@@ -290,6 +333,9 @@ const WILD_BUSHES = [[1,22],[9,29],[15,22],[5,21],[19,21],[24,17],[28,3],[35,25]
                      /* พุ่มกกริมบ่อน้ำ + ริมคลองส่งน้ำในฟาร์ม (พิกัดใหม่) */
                      [1,15],[4,15],[8,14],[11,10],[11,5],[7,0],[3,0],[0,9],[12,6],[12,9],
                      [16,6],[27,9],[18,15],[13,15],[21,6],
+                     /* พุ่มไม้เตี้ยแทรกป่ารอบลานแคมป์ (กติกาพุ่มเว้นระยะอาคารน้อยกว่าต้นไม้สูง
+                        จึงแทรกช่วง z33-35 ที่ติดกระท่อมช่างไม้จนต้นไม้สูงปลูกไม่ได้) */
+                     [1,22],[3,24],[6,25],[8,25],[10,21],[3,18],[2,20],[11,17],
                      /* สวนเล็กท้ายชุมชนที่ 2 (ทิศตะวันตก) */
                      [9,57],[14,55],[19,56],[22,57],[6,57],[26,55]].map(p=>[p[0], p[1]+EPAD2]));
 /* ต้นไม้/พุ่มที่ผู้ใช้เลือกช่องเอง — วางตรงช่องนี้เป๊ะ ไม่ต้องผ่านกติกาเว้นระยะถนน/อาคารของป่าอัตโนมัติ
@@ -297,6 +343,23 @@ const WILD_BUSHES = [[1,22],[9,29],[15,22],[5,21],[19,21],[24,17],[28,3],[35,25]
    หมายเหตุ: แถวนี้อยู่รอบสถานีตำรวจ (x56-62 z47-50) ซึ่งเข้าเงื่อนไข "ขอบล็อตอาคาร"
    ต้นไม้จึงถูกกติกาป่าตัดทิ้งตอนท้าย — js/house.js ติดธง fixed ให้ชุดนี้รอดทุกต้น (ดู wildLayout) */
 const FIXED_PLANTS = [
+  /* --- ป่ารอบลานตั้งแคมป์ + ชายบ่อน้ำ (ผู้ใช้เลือกช่องเอง 2026-08-04) ---
+     ช่องพวกนี้อยู่ในระยะ 4 ช่องรอบล็อตกระท่อม หรืออยู่ในกรอบ CAMP กติกาป่าอัตโนมัติจึงปลูกให้ไม่ได้
+     ต้องลงเป็น FIXED_PLANTS เท่านั้น (ธง fixed ข้ามทั้งตัวกรองกติกาป่าและการถอนต้นแก้คอขวด) */
+  [5,30,'pine'], [6,31,'tree-round'], [4,32,'tree'], [5,26,'pine'], [4,24,'tree-round'], [11,23,'pine'],
+  [7,24,'bush'], [8,24,'bush'],                /* พุ่มกกริมน้ำหน้าแคมป์ */
+  [11,20,'bush'], [11,21,'bush'],              /* พุ่มกกข้างท่าไม้ตกปลา (POND_PIER อยู่ที่ 11,19 — ห้ามปลูกทับ) */
+  /* --- ขอบแผนที่เหนือ-ตะวันตกของบ่อน้ำใหญ่ ---
+     แถบหญ้าริมขอบแผนที่กว้าง 2 ช่อง (x0-1) เดิมโล่งเตียนตลอดแนวบ่อ ปลูกเฉพาะคอลัมน์นอกสุด x0
+     ⚠ ห้ามปลูกคอลัมน์ x1 และห้ามปลูก (0,10)/(0,11) เด็ดขาด — เป็น "ทางเดินเลียบบ่อ" เส้นเดียวของฝั่งนี้
+       (ทิศใต้ตันด้วยล็อตกระท่อม x0-3/z24-26 ทิศเหนือออกได้ทางช่อง 0,9 ช่องเดียว) ปลูกทับแล้วเด็กเดินเข้าไม่ได้ */
+  [0,12,'pine'], [0,14,'tree-round'], [0,17,'pine'], [0,18,'bush'],
+  [0,20,'tree-round'], [0,23,'pine'],
+  /* แบ่งมาปลูก "ริมขอบบ่อด้านบน" ด้วย ไม่ให้ไปกองอยู่ริมขอบแผนที่แถวเดียว (ผู้ใช้แจ้ง 2026-08-04)
+     เลือกเฉพาะช่องที่ติดผิวน้ำจริง → ได้แนวต้นไม้เลียบชายบ่อ มองจากในเมืองเห็นบ่ออยู่ในดงไม้ */
+  [2,11,'bush'], [3,11,'bush'], [4,11,'tree-round'], [4,10,'tree-round'],   /* ปลายบ่อด้านเหนือฝั่งตะวันตก */
+  [8,11,'bush'], [8,10,'bush'], [9,10,'bush'],                              /* ปลายบ่อด้านเหนือฝั่งตะวันออก */
+  [9,12,'pine'], [10,13,'bush'], [11,15,'tree-round'], [11,11,'pine'],      /* ชายบ่อฝั่งตะวันออกไล่ลงมา */
   [66,26,'tree'],                              /* ต้นไม้ริมทางเดินเหนือโรงพยาบาล (ผู้ใช้เลือกช่องเอง) */
   [61,46,'tree-round'], [56,46,'tree'], [67,44,'tree'],
   [63,48,'bush'],                              /* 63,46-47 เปลี่ยนเป็นม้านั่งแล้ว (ดู BENCH_SPOTS) */
@@ -540,6 +603,32 @@ const CARPENTER_PROPS = [
   [0,40,'chop'],     [6,40,'logs'],    [0,42,'logs'],
 ];
 const CARPENTER_YARD = {x0:1, x1:4, z0:39, z1:40};   /* พื้นไม้หน้ากระท่อม (ตกแต่ง ไม่บล็อก) */
+/* ---------- ลานตั้งแคมป์กลางป่าทิศเหนือ (เหนือบ้านเด็กขึ้นไป) ----------
+   กรอบ CAMP = ลานโล่งกลางป่า **ห้ามของฉากสุ่ม (ต้นไม้/พุ่ม/เห็ด) งอกในกรอบนี้** (ดู wildPlantable)
+   ต้นไม้รอบนอกกรอบยังแน่นเหมือนเดิม ลานจึงดูเป็น "ที่โล่งกลางป่า" ที่คนมากางเต็นท์จริงๆ
+   ผัง (แคมป์เล็ก 2 เต็นท์ริมบ่อน้ำ — ถอยห่างกระท่อมกับชายน้ำเมื่อ 2026-08-04 ตามคำขอผู้ใช้):
+        **เต็นท์ 2 หลังเท่านั้น** (ห้ามเพิ่มเป็น 3 หลังกลับโดยไม่ถาม) วาง **เว้นจากผิวน้ำ 2 ช่องพอดี**
+        ทั้งคู่ — ชายบ่อเป็นเส้นโค้ง (น้ำถึง z24 ที่ x6 แต่ถึงแค่ z22 ที่ x9) เต็นท์จึงเยื้องกันตามแนวโค้ง
+        ของชายน้ำ ไม่ได้เรียงตรงแถวเดียวกัน **ห้ามดันกลับไปเรียงแถวเดียวกัน** เพราะหลังหนึ่งจะไปติดน้ำทันที
+        และเว้นจากกระท่อมไม้ริมบ่อ (ล็อต x0-3 / z24-26) ไว้ 2 ช่อง (x4-5 โล่ง)
+        **เต็นท์เป็นทรงจั่วขนาด 2 คนนอน กินที่หลังละ 1 ช่อง** สันทอดตามแกน z
+        ⇒ ประตูอยู่ที่ "หน้าจั่ว" ด้าน +z (ไม่ใช่ด้านลาดหลังคา) หันหลังให้บ่อน้ำ หันหน้าเข้าหากองไฟ
+        กองไฟอยู่หน้าเต็นท์ (z มากกว่า = ใกล้กล้องกว่า) จึงไม่ถูกเต็นท์บัง มีท่อนไม้นั่ง **2 ที่** ขนาบ
+        ⚠ กรอบ CAMP ย่อ/ขยับตามของที่วางจริงทุกครั้ง — ถ้ากรอบใหญ่เกิน ป่ารอบแคมป์จะโหว่เป็นทุ่งหญ้าโล่ง
+          ใหญ่ผิดที่ (กรอบนี้ห้ามต้นไม้สุ่มงอก) แต่ต้องคลุมแถบระหว่างเต็นท์กับน้ำไว้ด้วย ไม่งั้นต้นไม้ป่า
+          จะงอกแทรกตรงช่องว่าง 2 ช่องนั้นแล้วบังวิวบ่อน้ำ */
+const CAMP = {x0:4, x1:10, z0:24, z1:31};
+const CAMP_TENTS = [   /* [x, z, สี] — เต็นท์ 2 คนนอน กินช่องละ 1 ช่อง · สี = index ใน TENT_COLORS */
+  [6, 27, 0],          /* น้ำถึง z24 ตรงคอลัมน์นี้ → เว้น z25-26 = 2 ช่อง */
+  [9, 25, 1],          /* น้ำถึงแค่ z22 ตรงคอลัมน์นี้ → เว้น z23-24 = 2 ช่อง */
+];
+const CAMP_FIRE = {x:9, z:28};
+const CAMP_PROPS = [   /* [x, z, ชนิด] — บล็อกช่องตัวเองทุกชิ้น (เดินอ้อมได้) */
+  [8,29,'log'], [10,29,'log'],  /* ท่อนไม้นั่ง 2 ที่ ขนาบหน้ากองไฟ (เว้นช่องกลาง 9,29 ให้เดินเข้าถึงไฟ) */
+  [10,27,'wood'],     /* กองฟืน — ข้างกองไฟ หยิบมาเติมได้ทันที */
+  [7,28,'gear'],      /* เป้+ลังเสบียง วางระหว่างเต็นท์แดงกับกองไฟ (ของใช้อยู่กลางแคมป์ ไม่ใช่กองทิ้งไกลๆ) */
+  [10,30,'lantern'],  /* เสาแขวนตะเกียง */
+];
 /* กรอบเดินเล่นของลุงช่างไม้กับป้ามะลิ = ล็อตกระท่อม (x1-4 / z36-38) ขยายออกทุกทิศ 7 ช่อง
    (ตัดที่ขอบแผนที่ x0) — สองคนนี้เดินวนอยู่แถวบ้านตัวเอง ไม่เดินไปไกลทั่วเมืองเหมือน npc-walk */
 const CARPENTER_ROAM = {x0:0, x1:11, z0:29, z1:45};
@@ -918,6 +1007,30 @@ const NPC_DEFS = [
   /* --- คนที่ชายหาด (ทรายที่เดินได้อยู่แถบ x42-56 / z15-21 นอกนั้นเป็นทะเล) ---
      พี่ชายหาดเดิมยืนนิ่งจุดเดียว ใส่ `roam` ให้เดินเล่นตามหาดแล้วเมื่อ 2026-08-03 ตามคำขอผู้ใช้
      พร้อมเพิ่มเพื่อนอีก 3 คน (เด็กก่อกองทราย / คนเล่นน้ำ / ป้าเก็บเปลือกหอย) หาดจะได้ไม่โล่งเหงา */
+  /* --- กลุ่มคนตั้งแคมป์กลางป่าทิศเหนือ (ดูผังลานที่ CAMP/CAMP_TENTS) ---
+     3 คนเดินวนอยู่ในลานแคมป์ของตัวเอง ไม่เดินหลุดเข้าไปในเขตบ้านเด็ก
+     กรอบ roam กว้างกว่ากรอบลานนิดหน่อย ให้เดินเข้าป่ารอบๆ ได้บ้าง แต่ยังอยู่แถวแคมป์ */
+  {id:'npc-camp1', name:'พี่หัวหน้าแคมป์', icon:'⛺', job:'villager', x:10, z:28, rot:0,
+   roam:{x0:5, x1:10, z0:27, z1:31},
+   look:{skin:2, shirt:0x6fbf73, pants:0x6d4c41, hair:0, hairC:1, hat:'straw', prop:'box'},
+   lines:['กางเต็นท์ริมบ่อน้ำสนุกมากเลยนะ กลางคืนเห็นดาวสะท้อนบนผิวน้ำด้วย',
+          'ก่อไฟต้องมีผู้ใหญ่อยู่ด้วยเสมอนะ แล้วต้องดับให้สนิทก่อนนอน',
+          'เดินป่าอย่าเดินคนเดียวนะ ไปเป็นกลุ่มปลอดภัยกว่า'],
+   quest:'มาช่วยพี่นับเต็นท์ในแคมป์ไหม'},
+  {id:'npc-camp2', name:'ป้าแม่ครัวแคมป์', icon:'🍲', job:'villager', x:7, z:30, rot:0,
+   roam:{x0:5, x1:10, z0:27, z1:31},
+   look:{girl:true, skin:1, shirt:0xef8354, pants:0x4a6fa5, hair:3, hairC:2, hat:'bandana', hatC:0xffd54f,
+         prop:'bowl', apron:true},
+   lines:['ซุปร้อนๆ ในหม้อบนกองไฟ กินแล้วอุ่นท้องมากจ้ะ',
+          'กลิ่นหอมไปทั้งป่าเลยใช่ไหมล่ะ', 'กินเสร็จอย่าลืมเก็บขยะกลับไปด้วยนะ'],
+   quest:'มาช่วยป้าคนซุปในหม้อไหมจ๊ะ'},
+  {id:'npc-camp3', name:'น้องลูกเสือ', icon:'🔥', job:'kid', x:6, z:29, rot:0,
+   roam:{x0:5, x1:10, z0:27, z1:31},
+   look:{skin:0, shirt:0xffd54f, pants:0x6fbf73, hair:0, hairC:0, hat:'beanie', hatC:0xe4574a,
+         prop:'marsh', kid:true},
+   lines:['เราปิ้งมาร์ชแมลโลว์อยู่! ไหม้นิดหน่อยแต่อร่อยมาก',
+          'เมื่อคืนได้ยินเสียงนกเค้าแมวร้องด้วยนะ', 'คืนนี้จะนอนเต็นท์หลังสีฟ้า!'],
+   quest:'มาปิ้งมาร์ชแมลโลว์กับเราไหม'},
   {id:'npc-beach',   name:'พี่ชายหาด',  icon:'🏖️', job:'villager', x:45, z:17, rot:0,
    roam:{x0:30, x1:52, z0:9,  z1:21},        /* ถึงหาดเหนือสุดที่ติดหัวสะพาน (x30-33 / z9-13) ตามคำขอผู้ใช้ */
    look:{skin:2, shirt:0x7fc4e8, pants:0xffd54f, hair:0, hairC:0, hat:'cap', prop:'ball'},
@@ -1129,7 +1242,8 @@ const HEDGE_TILES = Array.from(HEDGE_SET).map(k => k.split(',').map(Number));
 function isHedgeTile(x, z){ return HEDGE_SET.has(x + ',' + z); }
 
 return {
-  H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS,
+  H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
+  H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
   H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_ROWS, H_ROW_ICONS, NPAD,
   EPAD, EPAD2, EPAD_ALL, OUT_W, OUT_D, sx,
   sz, sRect, sTile, sList, s2z, s2Rect,
@@ -1146,7 +1260,8 @@ return {
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,
-  CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
+  CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, CAMP, CAMP_TENTS, CAMP_FIRE, CAMP_PROPS,
+  FLOWER_BEDS, FLOWER_FIELD, FLOWER_FIELD_PATH,
   SUNFLOWER_FIELDS,
   FIELD_ROW_COLORS, FLOWER_MEADOW, FLOWER_WEST, FOOD_DECK, FOOD_FLOWER_COL, MEADOW_TRAILS, POOL, POOL_DECK, POOL_PROPS,
   PLAZA_YARD, PLAZA_GATES, NPC_DEFS, FARM_ROAM, NPCS, NPC_TILES,
