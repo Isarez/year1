@@ -123,12 +123,17 @@
           const pillow=cushion(1.3,.16,.4,0xffffff); pillow.position.set(0,.5,-.6); g.add(pillow);
           const head=box(1.7,.6,.14,shade(0xc98d4e,.88),.05); head.position.set(0,.5,-.9); g.add(head);
         } },
-      { id:'crib', name:'เตียงเด็ก', cat:'bed', scope:'in', emoji:'🧸', fw:1, fd:2, colors:SOFT,
+      /* เตียงเดี่ยว — ทรงเดียวกับ 'bed' เป๊ะ แค่แคบลงเหลือ 1 ช่อง (นอนได้จริงเหมือนกัน)
+         ⚠ id ยังเป็น 'crib' ตามเดิม ห้ามเปลี่ยน — ผูกกับ save/สิทธิ์ของเด็กที่มีอยู่แล้ว
+         (เดิมเป็น "เตียงเด็ก" มีซี่กรงแบบเตียงเด็กอ่อน ผู้ใช้ขอเปลี่ยนเป็นเตียงปกติเมื่อ 2026-08-07) */
+      { id:'crib', name:'เตียงเดี่ยว', cat:'bed', scope:'in', emoji:'🛌', fw:1, fd:2, colors:SOFT,
+        action:'sleep', sit:{dz:-.3, ry:0, sy:.55, sleepOff:.75},
         build(g,col){
-          const base=box(.8,.2,1.5,shade(col,1.1),.05); base.position.y=.45; g.add(base);
-          const mat_=box(.7,.12,1.4,0xfdfdf8,.05); mat_.position.y=.58; g.add(mat_);
-          [-1,1].forEach(s=>{ for(let i=0;i<5;i++){ const bar=cyl(.02,.02,.4,col,6); bar.position.set(s*.38,.6,-.6+i*.3); g.add(bar);} });
-          const rail=box(.84,.06,1.54,col,.03); rail.position.y=.82; g.add(rail);
+          const frame=box(.85,.3,1.9,shade(0xc98d4e,.95),.06); frame.position.y=.2; g.add(frame);
+          const mat_=box(.72,.22,1.7,0xfdfdf8,.06); mat_.position.set(0,.42,.05); g.add(mat_);
+          const blanket=box(.72,.14,1.05,col,.06); blanket.position.set(0,.5,.35); g.add(blanket);
+          const pillow=cushion(.58,.16,.4,0xffffff); pillow.position.set(0,.5,-.6); g.add(pillow);
+          const head=box(.85,.6,.14,shade(0xc98d4e,.88),.05); head.position.set(0,.5,-.9); g.add(head);
         } },
       { id:'wardrobe', wall:true, name:'ตู้เสื้อผ้า', cat:'bed', scope:'in', emoji:'🚪', fw:2, fd:1, colors:WOOD,
         build(g,col){

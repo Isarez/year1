@@ -37,22 +37,29 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
   const d = await readHouse(page);
   expect(d.econVer).toBe(2);
 
-  /* 8 ชิ้นในบ้าน (ห้องนอน 2 · นั่งเล่น 3 · ครัว 2 · น้ำ 1) — ตามข้อ 26 ของแผนแม่บท */
+  /* 9 ชิ้นในบ้าน (ห้องนอน 2 · นั่งเล่น 3 · ครัว 3 · น้ำ 1) — ตามข้อ 26 ของแผนแม่บท + เตา */
   const inIds = (d.decor.in || []).map(r => r.id);
-  ['crib', 'wardrobe', 'sofa', 'coffee-table', 'bookshelf', 'dining-table', 'chair', 'toilet']
+  ['crib', 'wardrobe', 'sofa', 'coffee-table', 'bookshelf', 'dining-table', 'chair', 'stove', 'toilet']
     .forEach(id => expect(inIds).toContain(id));
 
-  /* ของที่วางให้ต้องอยู่ถูกห้องจริง ไม่ทับกำแพง/ประตูหน้าบ้าน และไม่ทับกันเอง */
+  /* ผังบ้าน 14×14: z<=6 ครึ่งบน (x0-7 นั่งเล่น | กำแพง x=8 | x9-13 ครัว)
+                    z>=8 ครึ่งล่าง (x0-9 นอน | กำแพง x=10 | x11-13 น้ำ) · กำแพงนอน z=7 */
   const FW = { sofa: [2, 1], 'coffee-table': [1, 1], bookshelf: [1, 1], 'dining-table': [2, 2],
-               chair: [1, 1], crib: [1, 2], wardrobe: [2, 1], toilet: [1, 1] };
+               chair: [1, 1], stove: [1, 1], crib: [1, 2], wardrobe: [2, 1], toilet: [1, 1] };
+  const ROOM = { sofa: 'living', 'coffee-table': 'living', bookshelf: 'living',
+                 stove: 'kitchen', 'dining-table': 'kitchen', chair: 'kitchen',
+                 crib: 'bed', wardrobe: 'bed', toilet: 'bath' };
+  const roomOf = (x, z) => z <= 7 ? (x <= 8 ? 'living' : 'kitchen') : (x <= 10 ? 'bed' : 'bath');
   const used = new Set();
   (d.decor.in || []).forEach(r => {
+    expect(roomOf(r.x, r.z)).toBe(ROOM[r.id]);            // ของแต่ละชิ้นต้องอยู่ห้องที่ควรอยู่
     const [w, h] = FW[r.id] || [1, 1];
     for (let dz = 0; dz < h; dz++) for (let dx = 0; dx < w; dx++) {
       const x = r.x + dx, z = r.z + dz, k = x + ',' + z;
+      expect(x < 14 && z < 14).toBe(true);                // ต้องอยู่ในกรอบบ้าน
       expect(z).not.toBe(7);                              // แนวกำแพงกลางบ้าน
-      expect(z <= 6 && x === 12 && z !== 2 && z !== 3).toBe(false);   // กำแพงตั้งครึ่งบน
-      expect(z >= 8 && x === 14 && z !== 10 && z !== 11).toBe(false); // กำแพงตั้งครึ่งล่าง
+      expect(z <= 6 && x === 8 && z !== 2 && z !== 3).toBe(false);    // กำแพงตั้งครึ่งบน
+      expect(z >= 8 && x === 10 && z !== 10 && z !== 11).toBe(false); // กำแพงตั้งครึ่งล่าง
       expect(x === 4 && z <= 1).toBe(false);              // ช่องประตูหน้าบ้าน
       expect(used.has(k)).toBe(false);                    // ห้ามวางทับกันเอง
       used.add(k);
