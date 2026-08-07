@@ -50,23 +50,28 @@ const H_HOLD_N = 9;      /* ของถือ: ไม่ถือ/ลูกโ�
 const H_DEFAULT_CHAR = {gender:0, hair:0, hairC:0, eyes:1, eyeC:0, shirt:5, bottom:0, shoes:0,
   pattern:0, hat:0, hatC:5, glass:0, glassC:9, bag:0, bagC:0, hold:0, holdC:2};
 
+/* ลำดับแถวในหน้าแต่งตัว — **จับคู่ "แบบ" มาก่อน "สี" ของชิ้นนั้นเสมอ**
+   (ทรงผม→สีผม · ดวงตา→สีตา · ลายเสื้อ→สีเสื้อ · เครื่องหัว→สีเครื่องหัว …)
+   เด็กจะได้เลือกว่าจะใส่อะไรก่อน แล้วค่อยเลือกสีของสิ่งนั้น ไม่สลับไปมา
+   `sec:true` = ขึ้นกลุ่มใหม่ → `buildCreatorRows` ขีดเส้นคั่นให้ก่อนแถวนี้
+   (แถวสีเกาะอยู่ในกลุ่มเดียวกับแบบของมัน เด็กจะได้รู้ว่าสีนี้ของชิ้นไหน) */
 const H_ROWS = [
   {key:'gender', label:'หนูเป็น...', type:'text', options:['👦 เด็กชาย','👧 เด็กหญิง']},
-  {key:'hair',   label:'ทรงผม',      type:'num',  n:H_HAIR_N},
+  {key:'hair',   label:'ทรงผม',      type:'num',  n:H_HAIR_N, sec:true},
   {key:'hairC',  label:'สีผม',       type:'color', colors:H_HAIR_COLORS},
-  {key:'eyes',   label:'ดวงตา',      type:'num',  n:H_EYE_N},
+  {key:'eyes',   label:'ดวงตา',      type:'num',  n:H_EYE_N, sec:true},
   {key:'eyeC',   label:'สีตา',       type:'color', colors:H_EYE_COLORS},
+  {key:'pattern',label:'ลายเสื้อ',    type:'num',  n:H_PATTERN_N, none:true, sec:true},
   {key:'shirt',  label:'สีเสื้อ',     type:'color', colors:H_SHIRT_COLORS},
-  {key:'pattern',label:'ลายเสื้อ',    type:'num',  n:H_PATTERN_N, none:true},
-  {key:'bottom', label:'สีกางเกง/กระโปรง', type:'color', colors:H_BOTTOM_COLORS},
-  {key:'shoes',  label:'สีรองเท้า',   type:'color', colors:H_SHOE_COLORS},
-  {key:'hat',    label:'เครื่องหัว',   type:'num',  n:H_HAT_N, none:true},
+  {key:'bottom', label:'สีกางเกง/กระโปรง', type:'color', colors:H_BOTTOM_COLORS, sec:true},
+  {key:'shoes',  label:'สีรองเท้า',   type:'color', colors:H_SHOE_COLORS, sec:true},
+  {key:'hat',    label:'เครื่องหัว',   type:'num',  n:H_HAT_N, none:true, sec:true},
   {key:'hatC',   label:'สีเครื่องหัว', type:'color', colors:H_ACC_COLORS},
-  {key:'glass',  label:'แว่นตา',      type:'num',  n:H_GLASS_N, none:true},
+  {key:'glass',  label:'แว่นตา',      type:'num',  n:H_GLASS_N, none:true, sec:true},
   {key:'glassC', label:'สีแว่นตา',    type:'color', colors:H_ACC_COLORS},
-  {key:'bag',    label:'สะพายหลัง',   type:'num',  n:H_BAG_N, none:true},
+  {key:'bag',    label:'สะพายหลัง',   type:'num',  n:H_BAG_N, none:true, sec:true},
   {key:'bagC',   label:'สีของสะพาย',  type:'color', colors:H_ACC_COLORS},
-  {key:'hold',   label:'ของถือ',      type:'num',  n:H_HOLD_N, none:true},
+  {key:'hold',   label:'ของถือ',      type:'num',  n:H_HOLD_N, none:true, sec:true},
   {key:'holdC',  label:'สีของถือ',    type:'color', colors:H_ACC_COLORS},
 ];
 /* ไอคอน SVG แบนๆ พาสเทลขอบมน ชุดเดียวกับธีมไอคอนหมวดในแอป (แทน emoji ระบบเดิมที่ไม่เข้ากับ template) */

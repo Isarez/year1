@@ -6958,7 +6958,13 @@ function rebuildChar(cfg){
 function buildCreatorRows(cfg){
   const wrap = $('house-creator-rows');
   wrap.innerHTML = '';
-  H_ROWS.forEach(row=>{
+  H_ROWS.forEach((row, ri)=>{
+    /* เส้นคั่นกลุ่ม (ธง sec ใน H_ROWS) — แยกให้เห็นว่าแถวสีไหนเป็นของชิ้นไหน */
+    if(row.sec && ri > 0){
+      const sep = document.createElement('div');
+      sep.className = 'house-row-sep';
+      wrap.appendChild(sep);
+    }
     const div = document.createElement('div');
     const lab = document.createElement('div');
     lab.className = 'house-row-label';
