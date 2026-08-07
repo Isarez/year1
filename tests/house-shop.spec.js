@@ -43,13 +43,13 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
     .forEach(id => expect(inIds).toContain(id));
 
   /* ผังบ้าน 14×14: z<=6 ครึ่งบน (x0-7 นั่งเล่น | กำแพง x=8 | x9-13 ครัว)
-                    z>=8 ครึ่งล่าง (x0-9 นอน | กำแพง x=10 | x11-13 น้ำ) · กำแพงนอน z=7 */
+                    z>=8 ครึ่งล่าง (x0-8 นอน | กำแพง x=9 | x10-13 น้ำ) · กำแพงนอน z=7 */
   const FW = { sofa: [2, 1], 'coffee-table': [1, 1], bookshelf: [1, 1], 'dining-table': [2, 2],
                chair: [1, 1], stove: [1, 1], crib: [1, 2], wardrobe: [2, 1], toilet: [1, 1] };
   const ROOM = { sofa: 'living', 'coffee-table': 'living', bookshelf: 'living',
                  stove: 'kitchen', 'dining-table': 'kitchen', chair: 'kitchen',
                  crib: 'bed', wardrobe: 'bed', toilet: 'bath' };
-  const roomOf = (x, z) => z <= 7 ? (x <= 8 ? 'living' : 'kitchen') : (x <= 10 ? 'bed' : 'bath');
+  const roomOf = (x, z) => z <= 7 ? (x <= 8 ? 'living' : 'kitchen') : (x <= 9 ? 'bed' : 'bath');
   const used = new Set();
   (d.decor.in || []).forEach(r => {
     expect(roomOf(r.x, r.z)).toBe(ROOM[r.id]);            // ของแต่ละชิ้นต้องอยู่ห้องที่ควรอยู่
@@ -59,7 +59,7 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
       expect(x < 14 && z < 14).toBe(true);                // ต้องอยู่ในกรอบบ้าน
       expect(z).not.toBe(7);                              // แนวกำแพงกลางบ้าน
       expect(z <= 6 && x === 8 && z !== 2 && z !== 3).toBe(false);    // กำแพงตั้งครึ่งบน
-      expect(z >= 8 && x === 10 && z !== 10 && z !== 11).toBe(false); // กำแพงตั้งครึ่งล่าง
+      expect(z >= 8 && x === 9 && z !== 10 && z !== 11).toBe(false);  // กำแพงตั้งครึ่งล่าง
       expect(x === 4 && z <= 1).toBe(false);              // ช่องประตูหน้าบ้าน
       expect(used.has(k)).toBe(false);                    // ห้ามวางทับกันเอง
       used.add(k);
@@ -68,9 +68,17 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
 
   /* สิทธิ์: ของฉากนอกบ้านที่ seed ไว้ก็ต้องนับเป็นของเด็กด้วย (ลบแล้วหยิบกลับมาวางได้) */
   ['tree', 'fence-seg', 'path', 'sofa', 'toilet'].forEach(id => expect(d.unlocked).toContain(id));
-  /* ชุดแต่งตัวเริ่มต้น: ทรงผม 2 · สีเสื้อ 4 · สีกางเกง 3 · สีรองเท้า 2 */
-  ['fit:hair:0', 'fit:hair:1', 'fit:shirt:5', 'fit:bottom:0', 'fit:shoes:0']
+  /* ชุดแต่งตัวเริ่มต้น: ทรงผม 2 · สีผม 3 (ดำ+น้ำตาล 2 เฉด) · สีเสื้อ 4 · สีกางเกง 3 · สีรองเท้า 2 */
+  ['fit:hair:0', 'fit:hair:1', 'fit:hairC:0', 'fit:hairC:1', 'fit:hairC:2',
+   'fit:shirt:2', 'fit:shirt:3', 'fit:shirt:4', 'fit:shirt:5', 'fit:bottom:0', 'fit:shoes:0']
     .forEach(k => expect(d.unlocked).toContain(k));
+  /* index ที่แจกฟรีของแต่ละแถวต้องเรียงติดกัน (ไม่มีชิปที่ล็อกคั่นกลาง) */
+  ['hair', 'hairC', 'shirt', 'bottom', 'shoes'].forEach(row => {
+    const idx = d.unlocked.filter(k => k.startsWith('fit:' + row + ':'))
+                          .map(k => Number(k.split(':')[2])).sort((a, b) => a - b);
+    expect(idx.length).toBeGreaterThan(0);
+    expect(idx[idx.length - 1] - idx[0]).toBe(idx.length - 1);
+  });
   /* หมวก/แว่น/เป้/ของถือ ต้อง **ไม่** ได้ฟรี (ต้องซื้อทั้งหมด) */
   expect(d.unlocked.some(k => /^fit:(hat|glass|bag|hold):[1-9]/.test(k))).toBe(false);
 });
