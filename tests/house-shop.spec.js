@@ -35,7 +35,7 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
   const errors = await openHouse(page);
   expect(errors).toEqual([]);
   const d = await readHouse(page);
-  expect(d.econVer).toBe(2);
+  expect(d.econVer).toBe(3);
 
   /* 9 ชิ้นในบ้าน (ห้องนอน 2 · นั่งเล่น 3 · ครัว 3 · น้ำ 1) — ตามข้อ 26 ของแผนแม่บท + เตา */
   const inIds = (d.decor.in || []).map(r => r.id);
@@ -94,7 +94,7 @@ test('migration: ของที่เด็กวางไว้/ใส่อ�
   const errors = await openHouse(page, legacy);
   expect(errors).toEqual([]);
   const d = await readHouse(page);
-  expect(d.econVer).toBe(2);
+  expect(d.econVer).toBe(3);
 
   /* ของที่วางอยู่ = ซื้อแล้ว */
   ['piano', 'trampoline'].forEach(id => expect(d.unlocked).toContain(id));
@@ -353,10 +353,9 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(fash.cards).toBeGreaterThan(0);
   expect(fash.hasFree).toBe(false);
   const st = await tabState();
-  expect(st.tabs).toBe(11);                     // 11 แถวที่มีราคา (เพศ/ทรงตา/สีของแต่ง = ฟรี ไม่ขาย)
+  expect(st.tabs).toBe(15);                     // 15 แถวที่มีราคา (เพศ/ทรงตา = ฟรี ไม่ขาย)
   expect(st.secs).toBe(4);                      // หัวข้อกลุ่ม: ผม / ดวงตา / เสื้อผ้า / ของแต่ง
-  expect(st.clippedY).toBe(0);                  // 11 หมวด + 4 หัวข้อ ต้องเห็นครบพร้อมกัน ไม่ถูกตัด
-  expect(st.outsideX).toBe(0);
+  expect(st.outsideX).toBe(0);                  // ห้ามมีหมวดล้นออกทางขวา (เลื่อนแนวตั้งเอาได้)
 
   await page.evaluate(() => window.HouseShop.close());
   expect(await page.evaluate(() => document.getElementById('house-shop').hidden)).toBe(true);
