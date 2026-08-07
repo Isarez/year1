@@ -279,12 +279,12 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
 
   /* ...และแถวสีก็พรีวิวได้เหมือนกัน (เห็นสีจริงบนตัวละคร ไม่ใช่แค่สวอตช์เล็กๆ) */
   await page.evaluate(() => {
-    Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /สีเสื้อ/.test(b.textContent)).click();
+    Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /เสื้อ/.test(b.textContent)).click();
   });
   await page.waitForTimeout(300);
   /* เปลี่ยนหมวดแล้วพรีวิวต้อง **ไม่หาย** — เลื่อนไปโชว์ของชิ้นแรกของหมวดใหม่แทน */
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
-  expect(await page.evaluate(() => document.getElementById('house-shop-buy').textContent)).toContain('สีเสื้อ');
+  expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(false);
   await page.evaluate(() => document.querySelectorAll('#house-shop-items .hs-card')[0].click());
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
@@ -313,6 +313,7 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
     return {
       tabs: tabs.length,
       secs: t.querySelectorAll('.hs-tabsec').length,
+      icons: t.querySelectorAll('.he-tab-ic svg').length,
       clippedY: t.scrollHeight - t.clientHeight,      // 0 = ไม่มีหมวดไหนถูกตัดหาย
       wrap: getComputedStyle(t).flexWrap,             // wrap = ขึ้นบรรทัดใหม่ ไม่เลื่อนแนวนอน
       /* ห้ามมีแท็บล้นออกนอกกรอบทางแนวนอน (= เลื่อนแนวนอนแล้วมีหมวดซ่อนอยู่ทางขวา ซึ่งคือบั๊กเดิม)
@@ -340,6 +341,7 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(ft.wrap).toBe('wrap');
   expect(ft.clippedY).toBe(0);                  // 10 หมวด + 2 หัวข้อ ต้องเห็นครบพร้อมกัน ไม่ถูกตัด
   expect(ft.outsideX).toBe(0);
+  expect(ft.icons).toBe(ft.tabs);               // ทุกหมวดต้องมีไอคอน SVG
 
   const fash = await page.evaluate(() => {
     window.HouseShop.open('mall-fashion');
@@ -353,9 +355,13 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(fash.cards).toBeGreaterThan(0);
   expect(fash.hasFree).toBe(false);
   const st = await tabState();
-  expect(st.tabs).toBe(15);                     // 15 แถวที่มีราคา (เพศ/ทรงตา = ฟรี ไม่ขาย)
-  expect(st.secs).toBe(4);                      // หัวข้อกลุ่ม: ผม / ดวงตา / เสื้อผ้า / ของแต่ง
-  expect(st.outsideX).toBe(0);                  // ห้ามมีหมวดล้นออกทางขวา (เลื่อนแนวตั้งเอาได้)
+  /* 9 หมวด = ผม/ดวงตา/เสื้อ/กางเกง/รองเท้า + เครื่องหัว/แว่นตา/สะพายหลัง/ของถือ
+     (สีของแต่ละชิ้นอยู่ในแท็บของชิ้นนั้น ไม่แยกเป็นหมวดต่างหาก) */
+  expect(st.tabs).toBe(9);
+  expect(st.secs).toBe(2);                      // หัวข้อกลุ่ม: ตัวเรา / ของแต่ง
+  expect(st.clippedY).toBe(0);                  // ต้องเห็นหมวดครบพร้อมกัน ไม่ต้องมี scrollbar เลื่อนหา
+  expect(st.outsideX).toBe(0);
+  expect(st.icons).toBe(st.tabs);               // ทุกหมวดต้องมีไอคอน SVG
 
   await page.evaluate(() => window.HouseShop.close());
   expect(await page.evaluate(() => document.getElementById('house-shop').hidden)).toBe(true);

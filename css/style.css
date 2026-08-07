@@ -2717,7 +2717,7 @@
     touch-action:none; box-sizing:border-box;
     /* มือถือ: ลอยกลางจอเหนือ sheet ของร้าน */
     left:50%; transform:translateX(-50%); top:74px;
-    width:min(300px, 74vw); height:min(255px, 27vh);
+    width:min(290px, 72vw); height:min(198px, 24vh);
   }
   .house-prev-card[hidden]{display:none;}
   .house-prev-card:active{cursor:grabbing;}
@@ -2736,8 +2736,7 @@
   }
   /* มือถือตอนเปิดพรีวิว: ย่อ sheet ลงให้พอดีใต้กรอบพรีวิว แต่ **ยังเห็นรายการสินค้าอยู่**
      (ไม่ซ่อนแถบหมวด/ตารางแล้ว — ผู้ใช้ขอให้ไม่ต้องสลับหน้าไปมา) */
-  body.house-preview .house-creator.house-shop{max-height:60vh; max-height:60dvh;}
-  body.house-preview .house-shop .he-tabs{max-height:min(15vh, 112px);}
+  body.house-preview .house-creator.house-shop{max-height:66vh; max-height:66dvh;}
   .hs-items{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:8px;
     overflow-y:auto; padding:4px 2px 2px; min-height:112px;   /* อย่างน้อย 1 แถวเต็มเสมอ */
@@ -2750,12 +2749,21 @@
     flex-wrap:wrap; overflow-x:visible; overflow-y:auto;
     max-height:min(46vh, 340px); gap:8px; padding:2px 2px 4px; scrollbar-width:thin;
     /* ⚠ ห้ามให้ตารางสินค้าบีบแถบหมวด (flex-shrink:0) — ไม่งั้นหมวดท้ายๆ ถูกตัดหายทั้งที่ยังมีที่เหลือ
-       ถ้าหมวดยาวเกินเพดาน (เช่นร้านแฟชั่นที่มี 15 หมวด) ให้เลื่อนแนวตั้งในแถบเอา
-       เพดานต้องไม่สูงเกินไปด้วย ไม่งั้นตารางสินค้าจะไม่เหลือที่ให้แสดงสักแถว */
+       หมวดถูกจัดให้เหลือ 10-11 อัน (สีของเครื่องแต่งไปอยู่ในแท็บของชิ้นนั้น) จึงลงพอดีไม่ต้องเลื่อน
+       ถ้าวันหลังหมวดเยอะขึ้นอีกจนเกินเพดาน ให้ไปยุบหมวดก่อน อย่าแก้ด้วยการปล่อยให้เลื่อน */
     flex-shrink:0;
   }
   .house-shop .he-tab{font-size:15px; padding:9px 14px; border-radius:16px; gap:6px;}
   .house-shop .he-tab-emoji{font-size:19px;}
+  /* ไอคอน SVG ประจำหมวด (ชุดเดียวกับไอคอนแถวในหน้าแต่งตัว + ชุดเฟอร์นิเจอร์ใน js/house-shop.js) */
+  .he-tab-ic{flex:0 0 auto; width:22px; height:22px; display:inline-flex;}
+  .he-tab-ic svg{width:100%; height:100%; display:block;}
+  /* หัวข้อย่อยในตารางสินค้า (เช่น "🎨 สีเครื่องหัว" ต่อท้ายรายการหมวก) — กินเต็มแถวของ grid */
+  .hs-subsec{
+    grid-column:1 / -1; margin:6px 2px 0; font-size:13.5px; font-weight:800; color:var(--ink-soft);
+    display:flex; align-items:center; gap:8px;
+  }
+  .hs-subsec::after{content:''; flex:1; height:0; border-top:2px dashed rgba(120,90,50,.16);}
   /* หัวข้อกลุ่มหมวด (ในบ้าน/นอกบ้าน · ผม/ตา/เสื้อผ้า/ของแต่ง) — กินเต็มบรรทัด
      ดันแท็บของกลุ่มถัดไปขึ้นบรรทัดใหม่เสมอ กลุ่มจึงไม่ปนกัน */
   .hs-tabsec{
@@ -2926,9 +2934,11 @@
     .he-item-emoji{font-size:24px;}
     /* จอแคบ: แท็บย่อลงนิดเพื่อให้ลงบรรทัดได้มากขึ้น แต่เพดานความสูงต้องพอให้เห็น **ทุกหมวดพร้อมกัน**
        (ประเด็นหลักที่ผู้ใช้แจ้ง: หมวดถูกซ่อน เด็กไม่รู้ว่ามีอีก) ตัวสินค้าเลื่อนดูอยู่แล้วเป็นปกติ */
-    .house-shop .he-tabs{max-height:min(56vh, 420px); gap:7px;}
-    .house-shop .he-tab{font-size:14px; padding:8px 12px;}
+    .house-shop .he-tabs{max-height:min(56vh, 420px); gap:6px;}
+    .he-tab-ic{width:19px; height:19px;}
+    .house-shop .he-tab{font-size:13.5px; padding:7px 10px; gap:5px;}
     .house-shop .he-tab-emoji{font-size:17px;}
+    .hs-tabsec{font-size:12.5px; margin-top:4px;}
   }
 
   /* จอใหญ่ (แท็บเล็ต/เดสก์ท็อป): แผงตัวเลือกย้ายไปชิดขวาเป็นการ์ดแนวตั้ง

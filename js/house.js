@@ -274,7 +274,7 @@ const FURN = (typeof window.HOUSE_FURNITURE === 'function')
    ไฟล์นั้นไม่แตะ localStorage เอง ใช้ load/save ที่ส่งไปให้ตรงนี้ (ข้อมูลจึงอยู่ก้อนเดียวกับบ้าน export ตามไปเอง) */
 const SHOP = (typeof window.HOUSE_SHOP === 'function')
   ? window.HOUSE_SHOP({
-      FURN, H_ROWS, H_DEFAULT_CHAR,
+      FURN, H_ROWS, H_ROW_ICONS, H_DEFAULT_CHAR,
       load: loadHouseData, save: saveHouseData,
       childId: ()=> (activeChild ? activeChild.id : ''),
       onChange: onShopChange,

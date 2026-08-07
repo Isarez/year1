@@ -156,6 +156,23 @@
   /* 2 = เริ่มระบบเศรษฐกิจ · 3 = เปิดขายสีของเครื่องแต่ง (2026-08-07)
      ⚠ ต้องปั๊มเลขทุกครั้งที่ "เพิ่มแถวที่มีราคา" — migrate() จะได้รันซ้ำแล้วแจกสิทธิ์ของแถวใหม่
        ให้เด็กที่ใส่สีนั้นอยู่ก่อนแล้ว ไม่งั้นชุดที่ใส่อยู่จะกลายเป็นล็อกทันที (ผิดกติกาเหล็กข้อ 3) */
+  /* ---------- ไอคอน SVG ประจำหมวดเฟอร์นิเจอร์ (10 หมวด) ----------
+     สไตล์เดียวกับ H_ROW_ICONS ใน js/house-map.js: แบนๆ พาสเทล ขอบมน viewBox 24×24
+     (ของเดิมใช้ emoji ระบบ ซึ่งหน้าตาต่างกันทุกเครื่องและไม่เข้าชุดกับธีมไอคอนของแอป)
+     ⚠ เพิ่มหมวดใหม่ในคลังเฟอร์นิเจอร์ต้องมาเพิ่มไอคอนที่นี่ด้วย ไม่งั้นแท็บจะโล่ง */
+  const FURN_CAT_ICONS = {
+    seat:  '<svg viewBox="0 0 24 24"><path d="M4 12a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v.6a2.4 2.4 0 0 0-2.4 2.4V17H6.4v-2A2.4 2.4 0 0 0 4 12.6z" fill="#FFD6A0" stroke="#E59A5B" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 9V7.5A1.5 1.5 0 0 1 8.5 6h7A1.5 1.5 0 0 1 17 7.5V9" fill="#FFE9C8" stroke="#E59A5B" stroke-width="1.4"/><path d="M5.5 17v2M18.5 17v2" stroke="#E59A5B" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    table: '<svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="3.2" rx="1.5" fill="#E8B87C" stroke="#C08340" stroke-width="1.6"/><path d="M6 12.2V19M18 12.2V19" stroke="#C08340" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="6.6" r="2.1" fill="#FFF3D6" stroke="#C08340" stroke-width="1.4"/></svg>',
+    bed:   '<svg viewBox="0 0 24 24"><path d="M3 16v-4.5A2.5 2.5 0 0 1 5.5 9H19a2 2 0 0 1 2 2v5z" fill="#F2A0B8" stroke="#C9557A" stroke-width="1.6" stroke-linejoin="round"/><rect x="5" y="10.4" width="5" height="3.2" rx="1.4" fill="#FFF" stroke="#C9557A" stroke-width="1.3"/><path d="M3 16h18M4 16v2.6M20 16v2.6" stroke="#C9557A" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    kitchen:'<svg viewBox="0 0 24 24"><path d="M5 10h11a1 1 0 0 1 1 1v4.5a3.5 3.5 0 0 1-3.5 3.5h-6A3.5 3.5 0 0 1 4 15.5V11a1 1 0 0 1 1-1z" fill="#B9D9EC" stroke="#3F7FA6" stroke-width="1.6" stroke-linejoin="round"/><path d="M17 11.6h2.2a1.6 1.6 0 0 1 0 3.2H17" fill="none" stroke="#3F7FA6" stroke-width="1.6"/><path d="M8 7.4c0-1.2 1.2-1.2 1.2-2.4M12 7.4c0-1.2 1.2-1.2 1.2-2.4" stroke="#7FB3CE" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    bath:  '<svg viewBox="0 0 24 24"><path d="M3 12h18v2.5A4.5 4.5 0 0 1 16.5 19h-9A4.5 4.5 0 0 1 3 14.5z" fill="#CDEEE0" stroke="#2F9E6B" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 12V7.2A2.2 2.2 0 0 1 8.2 5a2.2 2.2 0 0 1 2.2 2.2" fill="none" stroke="#2F9E6B" stroke-width="1.6" stroke-linecap="round"/><circle cx="10.4" cy="7.6" r="1" fill="#2F9E6B"/><path d="M6 19v1.4M18 19v1.4" stroke="#2F9E6B" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    decor: '<svg viewBox="0 0 24 24"><path d="M7 14h10l-1.2 6H8.2z" fill="#E8B87C" stroke="#C08340" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 14c0-3 1.4-5.4 4-6.4-.4 3.4-1.8 5.4-4 6.4z" fill="#8CD08C" stroke="#3E9E52" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 14c0-2.6-1.2-4.6-3.4-5.6.3 3 1.5 4.7 3.4 5.6z" fill="#A8DDA8" stroke="#3E9E52" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    garden:'<svg viewBox="0 0 24 24"><circle cx="12" cy="9.4" r="5.6" fill="#8CD08C" stroke="#3E9E52" stroke-width="1.7"/><circle cx="8.6" cy="11.4" r="3.4" fill="#A8DDA8" stroke="#3E9E52" stroke-width="1.5"/><path d="M12 14v6" stroke="#A9743F" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    play:  '<svg viewBox="0 0 24 24"><path d="M5 19 15 7h4v2L9.5 19z" fill="#8FC7F0" stroke="#3A79D8" stroke-width="1.6" stroke-linejoin="round"/><path d="M15 7V4.6M19 7V4.6" stroke="#3A79D8" stroke-width="1.7" stroke-linecap="round"/><path d="M4 19h7" stroke="#3A79D8" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    seatout:'<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="2.8" rx="1.3" fill="#C9A06A" stroke="#8A5F30" stroke-width="1.5"/><rect x="3" y="6.6" width="18" height="2.6" rx="1.2" fill="#DDBB88" stroke="#8A5F30" stroke-width="1.5"/><path d="M5.5 13.8V19M18.5 13.8V19" stroke="#8A5F30" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    decorout:'<svg viewBox="0 0 24 24"><path d="M6 20h12l-1-3.2H7z" fill="#BFD8E6" stroke="#4A7E9E" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 16.8V12h6v4.8z" fill="#D8ECF5" stroke="#4A7E9E" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 12V7.4" stroke="#4A7E9E" stroke-width="1.7" stroke-linecap="round"/><path d="M12 4.2c1.6 1.4 2.4 2.4 2.4 3.2a2.4 2.4 0 0 1-4.8 0c0-.8.8-1.8 2.4-3.2z" fill="#7FC7EC" stroke="#3A93C4" stroke-width="1.4"/></svg>',
+  };
+
   const ECON_VER = 3;
 
   /* ---------- ผังร้าน ----------
@@ -172,6 +189,7 @@
 
   window.HOUSE_SHOP = function(kit){
     const FURN   = kit.FURN;
+    const ICONS  = kit.H_ROW_ICONS || {};
     const H_ROWS = kit.H_ROWS;
     const DEF    = kit.H_DEFAULT_CHAR || {};
     const load   = kit.load, save = kit.save;
@@ -340,12 +358,15 @@
        ของเยอะจนแท็บล้นแถวเดียว จึงจัดกลุ่มให้เด็กกวาดตาหาหมวดที่ต้องการเจอเร็วขึ้น */
     /* ชื่อแท็บสั้นลงเฉพาะในร้าน (หน้าแต่งตัวยังใช้ชื่อเต็มเหมือนเดิม)
        — ชื่อยาวกินความกว้าง 1 แถวเต็มบนมือถือ ทำให้แถบหมวดสูงขึ้นอีกบรรทัดโดยไม่จำเป็น */
-    const TAB_SHORT = {bottom:'สีกางเกง', hatC:'สีหมวก', glassC:'สีแว่น', bagC:'สีเป้', holdC:'สีของถือ'};
+    /* ชื่อแท็บใช้ชื่อ "ตัวของ" ไม่ใช่ชื่อแถว — เพราะแท็บเดียวมีทั้งแบบและสีของชิ้นนั้นอยู่ด้วยกันแล้ว */
+    const TAB_SHORT = {hair:'ผม', eyeC:'ดวงตา', pattern:'เสื้อ', bottom:'กางเกง', shoes:'รองเท้า'};
+    /* เครื่องแต่งชิ้นไหนมีแถวสีคู่กัน → **ไม่แยกเป็นแท็บ** แต่เอาสีไปต่อท้ายรายการในแท็บของชิ้นนั้น
+       (แยกเป็นแท็บแล้วหมวดพุ่งเป็น 15 อัน ยาวเกินจอจนต้องมี scrollbar เลื่อนหาหมวด — ผู้ใช้แจ้ง 2026-08-08
+        แถมซื้อหมวกกับสีหมวกคนละที่ก็ไม่เป็นธรรมชาติ) */
+    const FIT_COLOR_OF = {hair:'hairC', pattern:'shirt', hat:'hatC', glass:'glassC', bag:'bagC', hold:'holdC'};
     const FASHION_GROUPS = [
-      {sec:'💇 ผม',       keys:['hair','hairC']},
-      {sec:'👀 ดวงตา',    keys:['eyeC']},
-      {sec:'👕 เสื้อผ้า',  keys:['pattern','shirt','bottom','shoes']},
-      {sec:'🎀 ของแต่ง',  keys:['hat','hatC','glass','glassC','bag','bagC','hold','holdC']},
+      {sec:'👕 ตัวเรา',   keys:['hair','eyeC','pattern','bottom','shoes']},
+      {sec:'🎀 ของแต่ง',  keys:['hat','glass','bag','hold']},
     ];
     function tabsFor(){
       const cfg = SHOPS[openId];
@@ -356,7 +377,7 @@
           const rows = g.keys.map(k => H_ROWS.find(r => r.key === k)).filter(r => r && FIT_PRICE[r.key]);
           if(!rows.length) return;
           out.push({sec:g.sec});
-          rows.forEach(r => out.push({id:r.key, label:TAB_SHORT[r.key] || r.label, emoji:''}));
+          rows.forEach(r => out.push({id:r.key, label:TAB_SHORT[r.key] || r.label, svg:ICONS[r.key] || ''}));
         });
         return out;
       }
@@ -365,7 +386,7 @@
         const cats = FURN.cats[sc] || [];
         if(!cats.length) return;
         out.push({sec:label});
-        cats.forEach(c => out.push({id:sc + ':' + c.id, label:c.label, emoji:c.emoji}));
+        cats.forEach(c => out.push({id:sc + ':' + c.id, label:c.label, svg:FURN_CAT_ICONS[c.id] || '', emoji:c.emoji}));
       });
       return out;
     }
@@ -386,7 +407,9 @@
         }
         const b = document.createElement('button');
         b.className = 'he-tab' + (c.id === shopTab ? ' active' : '');
-        b.innerHTML = (c.emoji ? '<span class="he-tab-emoji">' + c.emoji + '</span>' : '')
+        /* ไอคอน SVG มาก่อน (เข้าชุดกับธีมไอคอนของแอป) ถ้าหมวดไหนยังไม่มีค่อยตกไปใช้ emoji เดิม */
+        b.innerHTML = (c.svg ? '<span class="he-tab-ic">' + c.svg + '</span>'
+                             : (c.emoji ? '<span class="he-tab-emoji">' + c.emoji + '</span>' : ''))
                     + '<span>' + c.label + '</span>';
         /* เปลี่ยนหมวด → เลือกของชิ้นแรกของหมวดใหม่ต่อทันที **ห้ามปิดพรีวิว**
            (กรอบพรีวิวเป็นหน้าต่างลอยแล้ว รายการยังอยู่ครบ ถ้าปิดทิ้งเด็กจะงงว่าของหายไปไหน) */
@@ -496,6 +519,23 @@
       bar.appendChild(btn);
     }
 
+    /* วางการ์ดของ "แถวชุดแต่งตัว" 1 แถวลงในตาราง (ข้ามตัวเลือกที่ฟรี เช่น "ไม่ใส่") */
+    function addFitCards(wrap, row){
+      const n = row.type === 'color' ? row.colors.length : (row.type === 'num' ? row.n : 0);
+      for(let i = 0; i < n; i++){
+        const price = priceFit(row.key, i);
+        if(price === 0) continue;
+        const nm = (FIT_NAMES[row.key] && FIT_NAMES[row.key][i]) || (row.label + ' ' + (i + 1));
+        wrap.appendChild(makeCard({
+          key: 'fit:' + row.key + ':' + i,
+          name: nm, price, owned: ownsFit(row.key, i),
+          color: row.type === 'color' ? row.colors[i] : null,
+          emoji: String(i + 1),
+          preview: previewableFit(row) ? {kind:'fit', row:row.key, i} : null,
+          onBuy: ()=> buyFit(row.key, i, nm),
+        }));
+      }
+    }
     function renderItems(){
       const wrap = $('house-shop-items');
       if(!wrap) return;
@@ -505,19 +545,17 @@
       if(cfg.kind === 'fashion'){
         const row = H_ROWS.find(r => r.key === shopTab);
         if(!row) return;
-        const n = row.type === 'color' ? row.colors.length : (row.type === 'num' ? row.n : 0);
-        for(let i = 0; i < n; i++){
-          const price = priceFit(row.key, i);
-          if(price === 0) continue;                 /* ตัวเลือกฟรี (เช่น "ไม่ใส่") ไม่ต้องวางขาย */
-          const nm = (FIT_NAMES[row.key] && FIT_NAMES[row.key][i]) || (row.label + ' ' + (i + 1));
-          wrap.appendChild(makeCard({
-            key: 'fit:' + row.key + ':' + i,
-            name: nm, price, owned: ownsFit(row.key, i),
-            color: row.type === 'color' ? row.colors[i] : null,
-            emoji: String(i + 1),
-            preview: previewableFit(row) ? {kind:'fit', row:row.key, i} : null,
-            onBuy: ()=> buyFit(row.key, i, nm),
-          }));
+        addFitCards(wrap, row);
+        /* เครื่องแต่งที่มีแถวสีคู่กัน — เอาสีมาต่อท้ายในแท็บเดียวกัน คั่นด้วยหัวข้อย่อย
+           (ซื้อหมวกกับสีหมวกอยู่ที่เดียวกัน และหมวดไม่บานจนต้องเลื่อนหา) */
+        const cKey = FIT_COLOR_OF[row.key];
+        const cRow = cKey && H_ROWS.find(r => r.key === cKey);
+        if(cRow){
+          const h = document.createElement('div');
+          h.className = 'hs-subsec';
+          h.innerHTML = '<span>🎨 ' + cRow.label + '</span>';
+          wrap.appendChild(h);
+          addFitCards(wrap, cRow);
         }
         return;
       }
