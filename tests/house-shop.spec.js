@@ -240,8 +240,13 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
     barText: document.getElementById('house-shop-buy').textContent,
     coins: window.OwlCoins.get(),
     owns: window.HouseShop.ownsFurn('armchair'),
+    cardShown: !document.getElementById('house-prev-card').hidden,
+    listShown: document.querySelectorAll('#house-shop-items .hs-card').length > 0
+               && getComputedStyle(document.getElementById('house-shop-items')).display !== 'none',
   }));
   expect(st.preview).toBe(true);            // โมเดล 3D ขึ้นแล้ว
+  expect(st.cardShown).toBe(true);          // กรอบพรีวิวลอยอยู่จริง
+  expect(st.listShown).toBe(true);          // **รายการสินค้ายังอยู่ครบ ไม่ใช่สลับหน้า**
   expect(st.selected).toBe(1);
   expect(st.barShown).toBe(true);
   expect(st.barText).toContain('เก้าอี้นวม');
@@ -259,6 +264,7 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
   await page.waitForTimeout(400);
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
   expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(true);
+  expect(await page.evaluate(() => document.getElementById('house-prev-card').hidden)).toBe(true);
 
   /* ชุดแต่งตัวพรีวิวได้ทุกแถว — แบบ "มีทรง" (หมวก) */
   await page.evaluate(() => window.HouseShop.open('mall-fashion'));
@@ -289,9 +295,10 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
     preview: document.body.classList.contains('house-preview'),
     bar: document.getElementById('house-shop-buy').hidden,
     shop: document.getElementById('house-shop').hidden,
+    card: document.getElementById('house-prev-card').hidden,
     stillHome: !document.getElementById('house-view').hidden,   // ยังไม่หลุดออกจากโหมดบ้าน
   }));
-  expect(after).toEqual({ preview: false, bar: true, shop: true, stillHome: true });
+  expect(after).toEqual({ preview: false, bar: true, shop: true, card: true, stillHome: true });
 });
 
 test('หน้าร้าน: เปิดห้างเฟอร์นิเจอร์/ห้างแฟชั่นแล้วมีสินค้าโชว์ครบ', async ({ page }) => {

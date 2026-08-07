@@ -1022,6 +1022,12 @@
     <div class="he-items" id="house-edit-items"></div>
     <button class="hs-reset-btn" id="house-reset-home" hidden>🏡 จัดบ้านกลับแบบเดิม</button>
   </div>
+  <!-- กรอบพรีวิวสินค้า 3D — หน้าต่างลอยข้างกล่องร้าน (บนมือถือลอยเหนือ sheet)
+       ตัวโมเดลวาดด้วย WebGL ลงกรอบนี้โดยตรง (renderPreviewInset ใน js/house.js)
+       กล่องนี้จึงต้องพื้นหลังโปร่ง เหลือแค่ขอบ/เงา ไม่งั้นจะบังโมเดลที่วาดอยู่ข้างหลัง -->
+  <div class="house-prev-card" id="house-prev-card" hidden>
+    <span class="hpv-hint">👆 ลากเพื่อหมุนดูรอบๆ</span>
+  </div>
   <!-- เฟส 1 เศรษฐกิจ: หน้าร้าน (ห้างเฟอร์นิเจอร์/ห้างแฟชั่น) — bottom sheet เห็นตัวร้านข้างหลังได้ -->
   <div class="house-creator house-shop" id="house-shop" hidden>
     <div class="house-creator-panel">

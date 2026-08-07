@@ -2702,12 +2702,44 @@
      จึงกินพื้นที่มากกว่าแผงสร้างตัวละคร — บนมือถือสูงขึ้น บนจอใหญ่กว้างขึ้น */
   .house-shop{z-index:8;}
   .house-creator.house-shop{max-height:88vh; max-height:88dvh;}
-  /* กำลังดูตัวอย่าง 3D อยู่ —  บนมือถือกล่องเป็น bottom sheet เต็มความกว้าง ไม่มีที่ว่างข้างๆ
-     จึงยุบเหลือ "โหมดดูของชิ้นเดียว": ซ่อนแถบหมวด+ตารางสินค้า เหลือชื่อของ + ปุ่มซื้อ + ปุ่มกลับ
-     ⇒ โมเดลได้พื้นที่ ~3 ใน 4 ของจอ เห็นเต็มตัวจริงๆ (จอใหญ่ไม่ต้องยุบ กล่องอยู่ชิดขวาอยู่แล้ว) */
-  body.house-preview .house-creator.house-shop{max-height:none;}
-  body.house-preview .house-shop .he-tabs,
-  body.house-preview .house-shop .hs-items,
+  /* ---- กรอบพรีวิวสินค้า 3D: หน้าต่างลอย (ไม่สลับหน้า รายการสินค้ายังอยู่ครบ) ----
+     ⚠ **พื้นหลังต้องโปร่ง** — ตัวโมเดลถูกวาดด้วย WebGL ลงบนพื้นที่ตรงนี้โดยตรง
+       (renderPreviewInset ใน js/house.js ยิงเรนเดอร์รอบ 2 ด้วย scissor ให้ตรงกรอบนี้พอดี)
+       ถ้าใส่ background ทึบจะบังโมเดลทั้งใบ เหลือแค่ขอบ/เงา/ข้อความช่วยเท่านั้น */
+  /* ⚠ **ขอบหนาสีเดียวกับพื้นหลังกรอบ (PREV_BG ใน js/house.js) เป็นตัวปิดมุม** —
+     WebGL วาดได้แค่สี่เหลี่ยมมุมฉาก (scissor) มุมสี่เหลี่ยมจึงล้นออกนอกมุมโค้งของกล่องเสมอ
+     แก้ด้วยการเรนเดอร์ลง "padding box" (ในกรอบขอบ) แล้วให้ขอบทึบหนาๆ ทับมุมที่ล้นไว้
+     ⇒ ขอบต้องหนากว่า innerRadius×0.3 เสมอ (ตอนนี้ radius ใน 14 → ต้อง ≥ 5px, ใช้ 12px) */
+  .house-prev-card{
+    position:absolute; z-index:12; pointer-events:auto; cursor:grab;
+    border-radius:26px; border:12px solid #DFF1FB; background:transparent;
+    box-shadow:0 0 0 3px rgba(255,255,255,.92), 0 8px 26px rgba(70,40,10,.24);
+    touch-action:none; box-sizing:border-box;
+    /* มือถือ: ลอยกลางจอเหนือ sheet ของร้าน */
+    left:50%; transform:translateX(-50%); top:74px;
+    width:min(300px, 74vw); height:min(255px, 27vh);
+  }
+  .house-prev-card[hidden]{display:none;}
+  .house-prev-card:active{cursor:grabbing;}
+  /* ⚠ ป้ายชื่อ/ฟองคำพูดของฉากเมืองต้องซ่อนตอนเปิดกรอบพรีวิว —
+     โมเดลถูกวาดบน canvas ซึ่งอยู่หลัง HTML ทั้งหมด z-index ของกรอบจึงเอาชนะป้ายพวกนี้ไม่ได้
+     ป้ายจะลอยทับโมเดลเสมอถ้าไม่ซ่อน (ตอนช้อปปิ้งก็ไม่ได้ต้องใช้อยู่แล้ว) */
+  body.house-preview .house-char-name,
+  body.house-preview .house-char-bubble,
+  body.house-preview .house-pet-name,
+  body.house-preview .house-pet-bubble,
+  body.house-preview .house-npc-bubble{display:none !important;}
+  .hpv-hint{
+    position:absolute; left:50%; bottom:-4px; transform:translateX(-50%);
+    background:rgba(255,255,255,.86); border-radius:999px; padding:3px 10px;
+    font-size:11.5px; font-weight:800; color:var(--ink-soft); white-space:nowrap; pointer-events:none;
+  }
+  /* มือถือตอนเปิดพรีวิว: ย่อ sheet ลงให้พอดีใต้กรอบพรีวิว แต่ **ยังเห็นรายการสินค้าอยู่**
+     (ไม่ซ่อนแถบหมวด/ตารางแล้ว — ผู้ใช้ขอให้ไม่ต้องสลับหน้าไปมา) */
+  body.house-preview .house-creator.house-shop{max-height:60vh; max-height:60dvh;}
+  body.house-preview .house-shop .he-tabs{max-height:min(15vh, 112px);}
+  /* ตอนเปิดกรอบพรีวิวบนมือถือ พื้นที่แน่นมาก — ตัดบรรทัดคำแนะนำออก (อ่านไปแล้วตอนเข้าร้าน)
+     เอาที่ไปให้ตารางสินค้าได้อย่างน้อย 2 แถว จะได้เลือกของอื่นต่อได้โดยไม่ต้องปิดพรีวิว */
   body.house-preview .house-shop .house-creator-sub{display:none;}
   .hs-items{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:8px;
@@ -2907,10 +2939,15 @@
     .house-creator-panel{border-radius:26px; height:100%;}
     /* ร้านค้ากว้างกว่าแผงอื่นบนจอใหญ่ — ของเยอะ ถ้าแคบเท่ากันจะได้แค่ 3 ใบต่อแถว เลื่อนยาวมาก */
     .house-creator.house-shop{width:min(640px,56vw); max-height:none;}
-    /* จอใหญ่: กล่องอยู่ชิดขวา โมเดลโชว์ฝั่งซ้าย — ไม่ต้องยุบอะไร เลือกของต่อได้ระหว่างดูตัวอย่าง */
-    body.house-preview .house-shop .he-tabs{display:flex;}
-    body.house-preview .house-shop .hs-items{display:grid;}
-    body.house-preview .house-shop .house-creator-sub{display:block;}
+    /* จอใหญ่: กรอบพรีวิวลอย "ข้างซ้าย" ของกล่องร้านพอดี — ไม่ต้องยุบอะไรทั้งนั้น
+       ระยะขวาต้องเท่ากับ (กว้างกล่องร้าน + ขอบขวา 18px + ช่องไฟ 14px) */
+    body.house-preview .house-creator.house-shop{max-height:none;}
+    body.house-preview .house-shop .he-tabs{max-height:min(56vh, 420px);}
+    .house-prev-card{
+      left:auto; transform:none; top:80px;
+      right:calc(min(640px, 56vw) + 32px);
+      width:min(410px, 31vw); height:min(440px, 56vh);
+    }
     /* จอใหญ่กล่องสูงเต็มจอ — ให้ตารางสินค้ายืดกินที่ว่างที่เหลือ ปุ่ม "ออกจากร้าน" จะได้อยู่ติดก้นกล่อง
        ไม่ลอยค้างกลางกล่องแล้วเหลือพื้นขาวโล่งใต้ปุ่ม (บนมือถือไม่ใส่ ปล่อยให้ sheet หดตามเนื้อหา) */
     .house-shop .hs-items{flex:1 1 auto;}
