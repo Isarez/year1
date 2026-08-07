@@ -1,0 +1,1399 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- เอกสารสรุปแผนแม่บทโหมด "บ้านของหนู" — เนื้อหาเดียวกับ QUEST-DESIGN.md ที่ root แต่อ่านง่ายกว่า
+     ไฟล์เดียวจบ ไม่มี asset ภายนอก เปิดตรงๆ ด้วยเบราว์เซอร์ได้เลย -->
+<title>ระบบเควสต์ · เศรษฐกิจ · สัตว์เลี้ยง — โหมดบ้านของหนู</title>
+
+<style>
+  :root{
+    --paper:#EDF2F7; --panel:#FFFFFF; --panel-2:#F4F8FB;
+    --ink:#0E1822; --ink-2:#43576C; --ink-3:#72879D;
+    --line:#C7D5E2; --line-soft:#DEE7EF;
+    --accent:#1F6FD4; --accent-soft:#DDE9FA;
+    --gold:#A9700F; --gold-soft:#F8EACC;
+    --leaf:#1C7A54; --leaf-soft:#D6ECE1;
+    --rose:#BE3A55; --rose-soft:#F9DCE2;
+    --grid:rgba(31,111,212,.07);
+    --hard:#0E1822;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0A121B; --panel:#111C27; --panel-2:#16232F;
+      --ink:#E5EDF5; --ink-2:#A2B5C7; --ink-3:#74899C;
+      --line:#2A3D50; --line-soft:#1E2E3D;
+      --accent:#6BB0FF; --accent-soft:#152C48;
+      --gold:#E3A73F; --gold-soft:#3A2C12;
+      --leaf:#5FCB9B; --leaf-soft:#123325;
+      --rose:#F0798F; --rose-soft:#3A1A22;
+      --grid:rgba(107,176,255,.06);
+      --hard:#000000;
+    }
+  }
+</style>
+
+<style>
+  :root[data-theme="light"]{
+    --paper:#EDF2F7; --panel:#FFFFFF; --panel-2:#F4F8FB;
+    --ink:#0E1822; --ink-2:#43576C; --ink-3:#72879D;
+    --line:#C7D5E2; --line-soft:#DEE7EF;
+    --accent:#1F6FD4; --accent-soft:#DDE9FA;
+    --gold:#A9700F; --gold-soft:#F8EACC;
+    --leaf:#1C7A54; --leaf-soft:#D6ECE1;
+    --rose:#BE3A55; --rose-soft:#F9DCE2;
+    --grid:rgba(31,111,212,.07);
+    --hard:#0E1822;
+  }
+  :root[data-theme="dark"]{
+    --paper:#0A121B; --panel:#111C27; --panel-2:#16232F;
+    --ink:#E5EDF5; --ink-2:#A2B5C7; --ink-3:#74899C;
+    --line:#2A3D50; --line-soft:#1E2E3D;
+    --accent:#6BB0FF; --accent-soft:#152C48;
+    --gold:#E3A73F; --gold-soft:#3A2C12;
+    --leaf:#5FCB9B; --leaf-soft:#123325;
+    --rose:#F0798F; --rose-soft:#3A1A22;
+    --grid:rgba(107,176,255,.06);
+    --hard:#000000;
+  }
+
+  /* ---- ฐาน: หน้ากระดาษเป็นตารางช่อง (ผังเมืองแบบ tile grid ของโหมดบ้าน) ---- */
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),
+                     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);
+    font-family:"Sukhumvit Set","Noto Sans Thai","IBM Plex Sans Thai","Leelawadee UI",
+                -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    font-size:16.5px; line-height:1.72;
+    -webkit-text-size-adjust:100%;
+  }
+  .mono{
+    font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  ::selection{background:var(--accent-soft); color:var(--ink);}
+  a{color:var(--accent);}
+  :focus-visible{outline:2.5px solid var(--accent); outline-offset:3px;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px 96px;}
+
+  /* ---- หัวเอกสาร ---- */
+  .masthead{padding:56px 0 30px; border-bottom:2px solid var(--ink);}
+  .eyebrow{
+    font-size:11.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-3); font-weight:700; margin:0 0 14px;
+  }
+  .masthead h1{
+    margin:0; font-size:clamp(30px,5.2vw,50px); line-height:1.16; font-weight:800;
+    letter-spacing:-.015em; text-wrap:balance; max-width:19ch;
+  }
+  .masthead .lede{
+    margin:18px 0 0; max-width:62ch; font-size:17.5px; color:var(--ink-2);
+  }
+  .meta{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:22px;
+    font-size:12.5px;
+  }
+  .tag{
+    border:1.5px solid var(--line); background:var(--panel);
+    padding:4px 10px; color:var(--ink-2); white-space:nowrap;
+  }
+  .tag.warn{border-color:var(--rose); background:var(--rose-soft); color:var(--rose); font-weight:700;}
+
+  /* ---- แถบสถิติ ---- */
+  .stats{
+    display:grid; gap:12px; margin:34px 0 0;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  }
+  .stat{
+    background:var(--panel); border:2px solid var(--ink);
+    box-shadow:5px 5px 0 var(--hard); padding:14px 15px 13px;
+  }
+  .stat b{
+    display:block; font-size:31px; line-height:1.05; font-weight:800;
+    font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+  }
+  .stat span{display:block; font-size:12.5px; color:var(--ink-2); margin-top:5px;}
+  .stat.is-new b{color:var(--accent);}
+
+  /* ---- โครงหน้า: สารบัญเกาะซ้าย ---- */
+  .cols{display:block;}
+  @media (min-width:1040px){
+    .cols{display:grid; grid-template-columns:212px minmax(0,1fr); gap:52px; align-items:start;}
+    .toc{position:sticky; top:24px;}
+  }
+  .toc{padding-top:38px;}
+  .toc-h{
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-3); font-weight:700; margin:0 0 10px; padding-bottom:8px;
+    border-bottom:1.5px solid var(--line);
+  }
+  .toc ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;}
+  .toc a{
+    display:flex; gap:9px; text-decoration:none; color:var(--ink-2);
+    font-size:13.5px; padding:4px 6px; border-left:2.5px solid transparent;
+  }
+  .toc a:hover{color:var(--accent); border-left-color:var(--accent); background:var(--panel-2);}
+  .toc a i{font-style:normal; color:var(--ink-3); font-size:11.5px; padding-top:2px;}
+  @media (max-width:1039px){.toc{display:none;}}
+
+  /* ---- section ---- */
+  section{padding-top:54px;}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:6px;}
+  .sec-num{
+    font-size:12px; font-weight:700; color:var(--accent);
+    border:1.5px solid var(--accent); padding:1px 7px; white-space:nowrap;
+  }
+  h2{
+    margin:0; font-size:clamp(22px,3.2vw,28px); font-weight:800;
+    letter-spacing:-.01em; line-height:1.28; text-wrap:balance;
+  }
+  h3{
+    margin:34px 0 10px; font-size:17.5px; font-weight:800; line-height:1.4;
+    letter-spacing:-.005em;
+  }
+  h4{margin:22px 0 8px; font-size:15px; font-weight:700; color:var(--ink-2);}
+  p{margin:0 0 14px; max-width:70ch;}
+  .sec-sub{color:var(--ink-2); margin-top:10px; max-width:70ch;}
+  ul,ol{margin:0 0 16px; padding-left:22px; max-width:70ch;}
+  li{margin-bottom:7px;}
+  li::marker{color:var(--ink-3);}
+  strong{font-weight:700;}
+  code{
+    font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    font-size:.87em; background:var(--panel-2); border:1px solid var(--line-soft);
+    padding:1px 5px; white-space:nowrap;
+  }
+  hr{border:none; border-top:1.5px solid var(--line); margin:44px 0 0;}
+
+  /* ---- ตาราง ---- */
+  .scroll{overflow-x:auto; margin:0 0 18px; border:1.5px solid var(--line); background:var(--panel);}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:520px;}
+  thead th{
+    text-align:left; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    font-weight:700; color:var(--ink-2); background:var(--panel-2);
+    padding:9px 13px; border-bottom:1.5px solid var(--line); white-space:nowrap;
+  }
+  td{padding:9px 13px; border-bottom:1px solid var(--line-soft); vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--panel-2);}
+  td.num{font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600;}
+  td.id{
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px;
+    color:var(--accent); white-space:nowrap;
+  }
+  caption{
+    caption-side:bottom; text-align:left; font-size:12.5px; color:var(--ink-3);
+    padding:9px 13px; border-top:1px solid var(--line-soft);
+  }
+
+  /* ---- กล่องเน้น ---- */
+  .note{
+    border:1.5px solid var(--line); border-left:5px solid var(--accent);
+    background:var(--panel); padding:15px 18px; margin:0 0 18px;
+  }
+  .note > :last-child{margin-bottom:0;}
+  .note.risk{border-left-color:var(--rose);}
+  .note.ok{border-left-color:var(--leaf);}
+  .note.coin{border-left-color:var(--gold);}
+  .note-h{
+    font-size:11.5px; letter-spacing:.12em; text-transform:uppercase;
+    font-weight:700; color:var(--ink-3); margin:0 0 7px;
+  }
+  .note.risk .note-h{color:var(--rose);}
+  .note.ok .note-h{color:var(--leaf);}
+  .note.coin .note-h{color:var(--gold);}
+
+  /* ---- การ์ดข้อสรุปที่ล็อกแล้ว ---- */
+  .locked{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin-bottom:20px;}
+  .lock{
+    background:var(--leaf-soft); border:2px solid var(--leaf);
+    box-shadow:5px 5px 0 var(--leaf); padding:14px 16px;
+  }
+  .lock .k{
+    font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+    font-weight:700; color:var(--leaf); margin:0 0 6px;
+  }
+  .lock .v{font-size:16px; font-weight:700; margin:0 0 6px; line-height:1.45;}
+  .lock .w{font-size:13.5px; color:var(--ink-2); margin:0; line-height:1.6;}
+
+  /* ---- แถวขั้นตอน (วงจรสัตว์เลี้ยง) ---- */
+  .flow{
+    display:flex; gap:0; flex-wrap:wrap; margin:0 0 20px;
+    border:1.5px solid var(--line); background:var(--panel);
+  }
+  .step{
+    flex:1 1 165px; min-width:0; padding:15px 16px;
+    border-right:1.5px solid var(--line-soft); position:relative;
+  }
+  .step:last-child{border-right:none;}
+  .step .n{
+    font-size:11px; font-weight:700; letter-spacing:.1em;
+    color:var(--ink-3); display:block; margin-bottom:7px;
+  }
+  .step .e{font-size:24px; line-height:1; display:block; margin-bottom:9px;}
+  .step .t{font-weight:700; font-size:14.5px; display:block; margin-bottom:4px;}
+  .step .d{font-size:13px; color:var(--ink-2); line-height:1.58;}
+  .step.alert{background:var(--rose-soft);}
+  .step.alert .n{color:var(--rose);}
+  .step.cure{background:var(--leaf-soft);}
+  .step.cure .n{color:var(--leaf);}
+
+  /* ---- กลุ่ม mechanic ---- */
+  .grp{
+    display:flex; align-items:center; gap:11px; margin:30px 0 12px;
+    border-bottom:1.5px solid var(--line); padding-bottom:9px;
+  }
+  .grp .letter{
+    font-size:15px; font-weight:800; color:var(--panel); background:var(--ink);
+    width:27px; height:27px; display:grid; place-items:center; flex:none;
+  }
+  .grp .name{font-weight:800; font-size:16.5px;}
+  .grp .count{
+    margin-left:auto; font-size:12px; color:var(--ink-3);
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+
+  .pill{
+    display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px;
+    border:1.5px solid currentColor; white-space:nowrap;
+  }
+  .pill.new{color:var(--accent);}
+  .pill.reuse{color:var(--leaf);}
+  .pill.idea{color:var(--gold);}
+  .pill.base{color:var(--rose);}
+
+  /* ---- checklist คำถามค้าง ---- */
+  .ask{list-style:none; padding:0; max-width:none;}
+  .ask li{
+    display:flex; gap:12px; align-items:flex-start;
+    border:1.5px solid var(--line); background:var(--panel);
+    padding:13px 15px; margin-bottom:9px;
+  }
+  .ask .box{
+    flex:none; width:19px; height:19px; border:2px solid var(--ink-3); margin-top:3px;
+  }
+  .ask b{display:block; margin-bottom:2px;}
+  .ask span{font-size:13.5px; color:var(--ink-2);}
+
+  .foot{
+    margin-top:56px; padding-top:22px; border-top:2px solid var(--ink);
+    font-size:13px; color:var(--ink-3); display:flex; flex-wrap:wrap; gap:14px;
+    justify-content:space-between;
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important;}}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">แผนแม่บท &mdash; อนุมัติแล้ว ยังไม่ลงมือเขียนโค้ด · branch feature/house-owl</p>
+    <h1>ระบบเควสต์ เศรษฐกิจ และสัตว์เลี้ยง ในโหมด &ldquo;บ้านของหนู&rdquo;</h1>
+    <p class="lede">
+      เปลี่ยนเมือง 3D ที่มี NPC 68 ตัวจาก &ldquo;ฉากให้เดินเล่น&rdquo; เป็นเมืองที่มีงานทำ มีเงิน
+      มีของให้ซื้อ และมีสัตว์เลี้ยงที่ต้องดูแลจริง โดยไม่มีบทลงโทษกับเด็กแม้แต่จุดเดียว
+    </p>
+    <div class="meta">
+      <span class="tag mono">2026-08-07 · ตัดสินครบทุกข้อ</span>
+      <span class="tag">ที่มา: QUEST-DESIGN.md ภาค 1 + 2 + 3</span>
+      <span class="tag">ตัวเลขทั้งหมดนับจากโค้ดจริง</span>
+      <span class="tag warn">โหมดบ้านยังปิดอยู่บน main (HOUSE_FEATURE_OFF)</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>68</b><span>NPC ในเมือง — มีบทเควสต์แล้ว 57 ตัว</span></div>
+      <div class="stat is-new"><b>180</b><span>เฟอร์นิเจอร์ (116 เดิม + 64 ใหม่ + หมวดเครื่องดนตรี)</span></div>
+      <div class="stat"><b>12</b><span>ชนิดสัตว์เลี้ยง</span></div>
+      <div class="stat is-new"><b>41</b><span>mechanic เล่นจริง (23 + ครอบครัว 8 + STEM 6 + coding 2 + ดนตรี 2)</span></div>
+      <div class="stat is-new"><b>~3,500</b><span>โจทย์ที่ไม่ซ้ำหน้า</span></div>
+      <div class="stat is-new"><b>106</b><span>ของแต่งตัว (56 เดิม + 50 ใหม่) เลือกด้วยภาพ ไม่ใช่ตัวเลข</span></div>
+    </div>
+  </header>
+
+  <div class="cols">
+
+    <nav class="toc" aria-label="สารบัญ">
+      <p class="toc-h">สารบัญ</p>
+      <ol>
+        <li><a href="#s1"><i>01</i>ภาพรวมระบบ</a></li>
+        <li><a href="#s2"><i>02</i>ข้อสรุปที่ล็อกแล้ว</a></li>
+        <li><a href="#s3"><i>03</i>ของเดิมที่มีในโค้ด</a></li>
+        <li><a href="#s4"><i>04</i>เควสต์ 3 ตระกูล</a></li>
+        <li><a href="#s5"><i>05</i>mechanic ชุดแรก 23 แบบ</a></li>
+        <li><a href="#s6"><i>06</i>ผังร้าน &rarr; กลไก</a></li>
+        <li><a href="#s7"><i>07</i>ความยากตามชั้น</a></li>
+        <li><a href="#s8"><i>08</i>ดาว &rarr; เหรียญ</a></li>
+        <li><a href="#s9"><i>09</i>เศรษฐกิจ &amp; ราคา</a></li>
+        <li><a href="#s10"><i>10</i>สัตว์เลี้ยง</a></li>
+        <li><a href="#s11"><i>11</i>กระดานเควสต์</a></li>
+        <li><a href="#s12"><i>12</i>ข้อมูล &amp; ไฟล์</a></li>
+        <li><a href="#s13"><i>13</i>แผนเฟส</a></li>
+        <li><a href="#s14"><i>14</i>ความเสี่ยง</a></li>
+      </ol>
+      <p class="toc-h" style="margin-top:22px;">ปรับเพิ่ม (ภาค 3)</p>
+      <ol>
+        <li><a href="#s16"><i>16</i>ประตูเช็คความพร้อม</a></li>
+        <li><a href="#s17"><i>17</i>สมุดสติกเกอร์คงเดิม</a></li>
+        <li><a href="#s18"><i>18</i>ชุดเฟอร์นิเจอร์เริ่มต้น</a></li>
+        <li><a href="#s19"><i>19</i>เฟอร์นิเจอร์เพิ่ม 64 ชิ้น</a></li>
+        <li><a href="#s20"><i>20</i>พ่อ แม่ ในบ้าน</a></li>
+        <li><a href="#s21"><i>21</i>ของแต่งตัว + ปุ่ม SVG</a></li>
+        <li><a href="#s22"><i>22</i>แล็บ STEM + coding</a></li>
+        <li><a href="#s23"><i>23</i>เครื่องดนตรี (เฟสท้าย)</a></li>
+        <li><a href="#s24"><i>24</i>แผนเฟสฉบับใหม่</a></li>
+        <li><a href="#s15"><i>25</i>ที่ยังต้องตัดสิน</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <section id="s1">
+        <div class="sec-head"><span class="sec-num mono">01</span><h2>ภาพรวมระบบ</h2></div>
+        <p class="sec-sub">
+          ทั้งหมดนี้คือระบบเดียวที่พึ่งพากันเป็นวง ถ้าขาดส่วนใดส่วนหนึ่งอีกสองส่วนจะพังตาม
+        </p>
+
+        <div class="flow">
+          <div class="step">
+            <span class="n mono">วง 1</span><span class="e">🧑&zwj;🌾</span>
+            <span class="t">คุย NPC รับงาน</span>
+            <span class="d">NPC ที่มีงานมีป้าย &ldquo;!&rdquo; ลอยเหนือหัว แตะแล้วรับงาน สุ่มกลไกใหม่ทุกวัน</span>
+          </div>
+          <div class="step">
+            <span class="n mono">วง 2</span><span class="e">🎮</span>
+            <span class="t">เล่นเกมย่อย</span>
+            <span class="d">overlay การ์ดลอยกลางจอ ยังเห็นร้านข้างหลัง 30&ndash;60 วินาที ไม่มีคำว่าแพ้</span>
+          </div>
+          <div class="step">
+            <span class="n mono">วง 3</span><span class="e">🪙</span>
+            <span class="t">ได้ดาว &rarr; เหรียญ</span>
+            <span class="d">ทำสำเร็จได้เงินเสมอ ผิดกี่ครั้งก็ยังได้ แค่ดาวน้อยลง</span>
+          </div>
+          <div class="step">
+            <span class="n mono">วง 4</span><span class="e">🛍️</span>
+            <span class="t">เอาเงินไปซื้อของ</span>
+            <span class="d">เฟอร์นิเจอร์ ชุดแต่งตัว สัตว์เลี้ยง อาหารสัตว์ ค่ารักษา &mdash; ทุกอย่างต้องซื้อ</span>
+          </div>
+          <div class="step">
+            <span class="n mono">วง 5</span><span class="e">🐶</span>
+            <span class="t">ของที่ซื้อสร้างงานใหม่</span>
+            <span class="d">มีสัตว์แล้วต้องหาเงินซื้ออาหาร ค่ารักษา ของแต่งบ้าน &rarr; กลับไปวง 1</span>
+          </div>
+        </div>
+
+        <div class="note risk">
+          <p class="note-h">กฎเหล็กของทั้งระบบ</p>
+          <p>
+            <strong>ห้ามมี dead end และห้ามลงโทษ</strong> &mdash; ไม่มี &ldquo;แพ้&rdquo; ไม่มีการยึดเงิน
+            สัตว์เลี้ยงไม่ตาย และถ้าเงินไม่พอค่ารักษา หมอจะให้ทำงานใช้แทนได้เสมอ
+            แย่ที่สุดที่เด็กเจอได้คือได้ดาวดวงเดียว
+          </p>
+        </div>
+      </section>
+
+      <section id="s2">
+        <div class="sec-head"><span class="sec-num mono">02</span><h2>ข้อสรุปที่ล็อกแล้ว</h2></div>
+        <p class="sec-sub">ตัดสินเมื่อ 7 ส.ค. 2026 &mdash; ใช้เป็นฐานเขียนโค้ดได้เลย ไม่ต้องถามซ้ำ</p>
+
+        <div class="locked">
+          <div class="lock">
+            <p class="k">ราคา</p>
+            <p class="v">ใช้ตัวเลขตามที่เสนอทั้งชุด</p>
+            <p class="w">เฟอร์นิเจอร์ 25&ndash;300 · ชุดแต่งตัว 15&ndash;80 · สัตว์ 250&ndash;1,500 · เควสต์ 20&ndash;80 🪙</p>
+          </div>
+          <div class="lock">
+            <p class="k">จำนวนสัตว์</p>
+            <p class="v">เลี้ยงได้ 1 ตัวเหมือนเดิม</p>
+            <p class="w">ไม่ต้องรื้อ <code>hPet</code> · บ้านสัตว์มีหลังเดียวเสมอ · เปลี่ยนตัวได้ ชนิดที่เคยซื้อแล้วซื้อซ้ำจ่ายครึ่งราคา</p>
+          </div>
+          <div class="lock">
+            <p class="k">ความหิว</p>
+            <p class="v">ลดตามวันที่เข้าเล่น</p>
+            <p class="w">ไม่ใช่เวลาจริง &mdash; หายไป 3 เดือนกลับมาสัตว์ก็แค่หิว 1 วัน ไม่ป่วยทันที</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="s3">
+        <div class="sec-head"><span class="sec-num mono">03</span><h2>ของเดิมที่มีในโค้ดอยู่แล้ว</h2></div>
+        <p class="sec-sub">
+          โครงกระดูกมีแล้วราว 70% ที่ขาดคือ &ldquo;โจทย์จริง&rdquo; &ldquo;เกมย่อย&rdquo; และ &ldquo;ที่ใช้เงิน&rdquo;
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>สิ่งที่มีอยู่แล้ว</th><th>ตำแหน่ง</th><th>สถานะ</th></tr></thead>
+            <tbody>
+              <tr><td>QUEST_POOL 12 ภารกิจ + QUEST_N = 3</td><td class="id">house.js:7230</td><td>เขียนครบ แต่ปิดอยู่</td></tr>
+              <tr><td>สวิตช์ QUEST_ENABLED</td><td class="id">house.js:7249</td><td><code>false</code> &mdash; รอเปิด</td></tr>
+              <tr><td>ตัวสุ่ม seeded RNG (FNV-1a + LCG)</td><td class="id">pickDailyQuests()</td><td>ใช้เป็นต้นแบบได้เลย</td></tr>
+              <tr><td>ตัวจับความคืบหน้า 7 ชนิด</td><td class="id">questEvent()</td><td>talk · vendor · zone · flower · critter · pet · sit</td></tr>
+              <tr><td>กระดานภารกิจข้างน้ำพุ</td><td class="id">#house-quest</td><td>UI เสร็จแล้ว</td></tr>
+              <tr><td>ระบบเงิน + ป้ายยอดเหรียญ</td><td class="id">window.OwlCoins</td><td>มีแล้ว แต่ยังไม่มีที่หา/ที่ใช้</td></tr>
+              <tr><td>คลังคำถาม 332 หมวดแยกตามชั้น</td><td class="id">CATS</td><td>ดึงมาเป็นโจทย์ได้ฟรี</td></tr>
+              <tr><td>ระบบแต่งตัว 11 แถว</td><td class="id">H_ROWS</td><td>เสร็จแล้ว &mdash; ต่อเป็นร้านขายได้เร็วสุด</td></tr>
+              <tr><td>คุณหมอ 🩺 + พยาบาล 💉 ในโรงพยาบาล</td><td class="id">npc-doctor</td><td>ยืนอยู่แล้ว รอบทพูด</td></tr>
+              <tr><td>ป้ายลอยเหนือหัว + particle</td><td class="id">signPlane()</td><td>ใช้ทำป้าย &ldquo;!&rdquo; ได้ทันที</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s4">
+        <div class="sec-head"><span class="sec-num mono">04</span><h2>เควสต์ 3 ตระกูล</h2></div>
+        <p class="sec-sub">สัดส่วนที่แนะนำ A 50% · B 30% · C 20% &mdash; คุมไม่ให้กลายเป็นการบ้านเลขล้วน</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ตระกูล</th><th>เล่นยังไง</th><th>ทำไมต้องมี</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>A &mdash; งานในร้าน</strong></td>
+                <td>จบในที่เดียว 30&ndash;60 วินาที overlay ทับฉาก 3D</td>
+                <td>เหมาะกับสมาธิเด็กเล็ก เป็นตระกูลหลัก</td>
+              </tr>
+              <tr>
+                <td><strong>B &mdash; งานเดินโลก</strong></td>
+                <td>ต้องออกไปเดินในแผนที่จริง ส่งของ ตามหา ซื้อของ</td>
+                <td><strong>จุดขายที่หน้าหลักทำไม่ได้</strong> &mdash; เหตุผลที่โหมดบ้านควรมีเควสต์ของตัวเอง</td>
+              </tr>
+              <tr>
+                <td><strong>C &mdash; งานสร้างสรรค์</strong></td>
+                <td>ไม่มีถูกผิด ได้ ⭐⭐⭐ เสมอ (ระบายสีป้าย จัดตู้โชว์ แต่งตัวตามธีม)</td>
+                <td>กันเด็กท้อ ทำให้เงินมีปลายทางที่มีความหมาย</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s5">
+        <div class="sec-head"><span class="sec-num mono">05</span><h2>mechanic ชุดแรก 23 แบบ</h2></div>
+        <p class="sec-sub">
+          หลักการ: <strong>1 mechanic = 1 generator</strong> ที่รับ <code>{tier, npc, seed}</code> แล้วคืนโจทย์ 1 ชุด
+          ไม่ผูกกับ NPC ตัวใดตัวหนึ่ง &rArr; NPC ตัวไหนก็หยิบไปใช้ได้ และโจทย์ต่างกันทุกครั้งเพราะสุ่มพารามิเตอร์
+        </p>
+
+        <div class="grp">
+          <span class="letter">A</span><span class="name">พื้นฐาน &mdash; ทุก NPC ต้องมี</span>
+          <span class="count mono">2 แบบ</span>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>ชื่อ</th><th>กติกา</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="id">quiz</td>
+                <td><strong>ตอบคำถาม</strong> <span class="pill base">บังคับ</span></td>
+                <td>3&ndash;5 ข้อ 4 ตัวเลือก ดึงจาก <code>CATS</code> ตามระดับชั้นของเด็ก + คลังคำถามธีมร้านเฉพาะ NPC</td>
+              </tr>
+              <tr>
+                <td class="id">count-things</td>
+                <td>นับของ</td>
+                <td>นับของในฉาก 3D จริงตรงหน้า NPC แล้วเลือกตัวเลข</td>
+              </tr>
+            </tbody>
+            <caption>
+              <code>quiz</code> เป็นค่าเริ่มต้นเสมอ &mdash; NPC ตัวไหนยังไม่ได้กำหนดกลไกเฉพาะจะได้ <code>quiz</code> อัตโนมัติ
+              ⇒ NPC ทั้ง 57 ตัวมีเควสต์ได้ตั้งแต่วันแรก ไม่ต้องรอทำ mechanic ครบ
+            </caption>
+          </table>
+        </div>
+
+        <div class="grp">
+          <span class="letter">B</span><span class="name">คิดใหม่สำหรับโหมดบ้านโดยเฉพาะ</span>
+          <span class="count mono">10 แบบ · เขียนใหม่ทั้งหมด</span>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>ชื่อ</th><th>กติกา</th><th>NPC ที่เหมาะ</th></tr></thead>
+            <tbody>
+              <tr><td class="id">pay-exact</td><td>จ่ายเงินให้พอดี</td><td>ของราคา N บาท เลือกเหรียญ/แบงก์ให้ครบพอดี</td><td>ทุกร้านค้า</td></tr>
+              <tr><td class="id">change-back</td><td>ทอนเงิน</td><td>จ่ายไป X ของราคา Y ต้องทอนเท่าไร</td><td>ร้านสะดวกซื้อ, ห้าง</td></tr>
+              <tr><td class="id">recipe-seq</td><td>ทำตามสูตร</td><td>ใส่วัตถุดิบตามลำดับ + จำนวน (เห็นสูตร 3 วิ แล้วสูตรหาย)</td><td>ร้านอาหาร, ไอศกรีม</td></tr>
+              <tr><td class="id">shopping-list</td><td>จำรายการซื้อของ</td><td>จำ 3&ndash;6 อย่าง แล้วไปหยิบจากชั้นให้ครบ</td><td>ร้านสะดวกซื้อ, ตลาด</td></tr>
+              <tr><td class="id">deliver</td><td>ส่งของถึงมือ</td><td>รับของจาก NPC A เดินไปส่ง NPC B ใช้แผนที่โลกจริง</td><td>ทุกตัว &mdash; เชื่อม NPC เข้าหากัน</td></tr>
+              <tr><td class="id">escort</td><td>พาไปส่ง</td><td>NPC เดินตามเด็กไปยังจุดหมายตามที่บอก</td><td>ตำรวจ, พยาบาล, ครู</td></tr>
+              <tr><td class="id">feed-pet</td><td>ให้อาหารถูกชนิด</td><td>จับคู่สัตว์ ↔ อาหารที่มันกิน</td><td>ร้านสัตว์เลี้ยง, ฟาร์ม</td></tr>
+              <tr><td class="id">stock-shelf</td><td>จัดชั้นวาง</td><td>เรียงของขึ้นชั้นตามหมวด / ขนาด / สี</td><td>ร้านสะดวกซื้อ, ห้าง</td></tr>
+              <tr><td class="id">fish-math</td><td>ตกปลาคิดเลข</td><td>ปลาแต่ละตัวมีเลข ตกให้ผลรวมเท่าโจทย์</td><td>กระท่อมริมบ่อ</td></tr>
+              <tr><td class="id">traffic-lr</td><td>ซ้าย-ขวาว่องไว</td><td>ไฟ/ป้ายบอกทิศ กดให้ทันเวลา</td><td>ตำรวจจราจร</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grp">
+          <span class="letter">C</span><span class="name">รื้อ engine เดิมในแอปมาใช้</span>
+          <span class="count mono">7 แบบ · คุ้มที่สุด</span>
+        </div>
+        <p>
+          engine พวกนี้เขียนเสร็จอยู่แล้วใน <code>js/games-*.js</code> งานที่เหลือคือ
+          <strong>ห่อเป็น overlay ในโหมดบ้าน</strong> ไม่ต้องเขียน logic เกมใหม่เลย
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>ชื่อ</th><th>ดึงจาก</th><th>NPC ที่เหมาะ</th></tr></thead>
+            <tbody>
+              <tr><td class="id">match-pair</td><td>จับคู่ความจำ</td><td class="id">games-think.js</td><td>ห้างเฟอร์นิเจอร์, ร้านของเล่น</td></tr>
+              <tr><td class="id">color-mix</td><td>ผสมสี</td><td class="id">games-art.js</td><td>ช่างไม้ (ทาสี), ห้างแฟชั่น</td></tr>
+              <tr><td class="id">melody-echo</td><td>เล่นตามทำนอง</td><td class="id">games-art.js + shared/piano.js</td><td>ร้านเครื่องดนตรี</td></tr>
+              <tr><td class="id">sound-guess</td><td>ทายเสียง</td><td class="id">games-art.js</td><td>ร้านดนตรี, ฟาร์ม (เสียงสัตว์)</td></tr>
+              <tr><td class="id">pattern-fill</td><td>เติมแพทเทิร์น</td><td class="id">หมวด pattern</td><td>โรงเรียน, ห้างแฟชั่น (ลายผ้า)</td></tr>
+              <tr><td class="id">weigh-balance</td><td>ตาชั่ง / ตวง</td><td class="id">games-math.js</td><td>ตลาด, ร้านขนม</td></tr>
+              <tr><td class="id">clock-set</td><td>ตั้งนาฬิกา</td><td class="id">games-math.js</td><td>โรงเรียน, โรงแรม</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grp">
+          <span class="letter">D</span><span class="name">ดึงไอเดียจาก IDEA.md มาทำในโหมดบ้าน</span>
+          <span class="count mono">4 แบบ</span>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>ชื่อ</th><th>ปรับให้เข้าโหมดบ้านยังไง</th><th>NPC</th></tr></thead>
+            <tbody>
+              <tr><td class="id">spot-diff</td><td>จับผิดภาพ</td><td>ใช้ตู้โชว์ / หน้าร้าน 2 ฝั่งเทียบกัน</td><td>ห้าง</td></tr>
+              <tr><td class="id">flash-count</td><td>นับแว้บเดียว</td><td>ของบนรถเข็นโผล่ 2 วิ แล้วปิด</td><td>ตลาดรถเข็น</td></tr>
+              <tr><td class="id">dress-order</td><td>แต่งตัวตามโจทย์</td><td><strong>ใช้ระบบแต่งตัวจริงของเกม</strong> NPC สั่ง &ldquo;หมวกฟาง + แว่นกลม + เป้หมี&rdquo;</td><td>ห้างแฟชั่น</td></tr>
+              <tr><td class="id">find-hidden</td><td>หาของที่หาย</td><td>ซ่อน object ในโลก 3D จริง เดินไปหา</td><td>ตำรวจ, เทศมนตรี</td></tr>
+            </tbody>
+            <caption>
+              ทำเสร็จแล้วต้องลบไอเดียนั้นออกจาก <code>IDEA.md</code> ตามกติกาโปรเจค
+              &mdash; ยกเว้นตั้งใจจะทำเป็นหมวดเกมแยกในหน้าหลักด้วย (ต้องถามก่อนลบ)
+            </caption>
+          </table>
+        </div>
+
+        <h3>&ldquo;โจทย์เยอะๆ&rdquo; คิดเป็นตัวเลขจริงเท่าไร</h3>
+        <div class="note coin">
+          <p class="note-h">การคำนวณ</p>
+          <ul>
+            <li>23 mechanic × 3 tier (ป.เล็ก / กลาง / โต) = <strong>69 แม่แบบ</strong></li>
+            <li>แต่ละแม่แบบสุ่มพารามิเตอร์ได้เฉลี่ย ~30 หน้าตา (ตัวเลข / สี / ของ / จำนวน) = <strong>~2,000 โจทย์ที่ไม่ซ้ำหน้า</strong></li>
+            <li><code>quiz</code> ดึงจาก <code>CATS</code> 332 หมวดที่มีอยู่แล้ว &rarr; คำถามหลักพันข้อโดยไม่ต้องเขียนใหม่</li>
+            <li>คูณธีม NPC 57 ตัว (ของในโจทย์เปลี่ยนตามร้าน) ⇒ เด็กแทบไม่เจอโจทย์เดิมซ้ำ</li>
+          </ul>
+          <p><strong>กันซ้ำ:</strong> เก็บ <code>recentQuests</code> 40 รายการล่าสุดในเซฟ แล้วสุ่มเลี่ยง</p>
+        </div>
+      </section>
+
+      <section id="s6">
+        <div class="sec-head"><span class="sec-num mono">06</span><h2>ผังร้าน &rarr; กลไก</h2></div>
+        <p class="sec-sub">
+          ธีมกลไกต้องตรงกับร้าน ไม่งั้นเด็กจะรู้สึกว่าเป็นควิซสุ่มมาแปะ &mdash; ทุกจุดใช้ล็อตที่มีอยู่แล้วในแผนที่ ไม่ต้องสร้างตึกใหม่
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ร้าน / สถานที่</th><th>lot id</th><th>NPC</th><th>กลไกที่เสนอ</th><th>ทักษะ</th></tr></thead>
+            <tbody>
+              <tr><td>🏪 ร้านสะดวกซื้อ</td><td class="id">shop-mart</td><td>พี่นวล</td><td>จ่ายเงินให้พอดี, ทอนเงิน, จัดชั้นวาง</td><td>เงิน, บวกลบ</td></tr>
+              <tr><td>🐾 ร้านสัตว์เลี้ยง</td><td class="id">shop-pet</td><td>พี่ปุย</td><td>จับคู่สัตว์-อาหาร-บ้าน, นับขาสัตว์รวม</td><td>จับคู่, นับ</td></tr>
+              <tr><td>🍜 ร้านอาหาร</td><td class="id">shop-food</td><td>ป้าอิ่ม</td><td>ทำตามสูตร (ลำดับ + จำนวน)</td><td>ลำดับ, ความจำ</td></tr>
+              <tr><td>🍨 ไอศกรีม</td><td class="id">shop-food</td><td>พี่ฟ้า</td><td>เรียงสกู๊ปตามแพทเทิร์น, แบ่งเค้กเศษส่วน</td><td>แพทเทิร์น, เศษส่วน</td></tr>
+              <tr><td>🎸 ร้านเครื่องดนตรี</td><td class="id">shop-music</td><td>พี่โน้ต</td><td>เล่นตามทำนอง, ทายเสียงเครื่องดนตรี</td><td>ฟัง, ความจำ</td></tr>
+              <tr><td>🏥 โรงพยาบาล</td><td class="id">hospital</td><td>คุณหมอ, พยาบาล</td><td>เรียงขั้นตอนดูแลตัวเอง, จับคู่อาการ-วิธีแก้ <strong>+ รักษาสัตว์ป่วย</strong></td><td>ลำดับ, สุขอนามัย</td></tr>
+              <tr><td>🚓 สถานีตำรวจ</td><td class="id">police-station</td><td>ตำรวจ</td><td>ตามหาของ/คนหาย, ซ้ายขวาว่องไว</td><td>สังเกต, ทิศทาง</td></tr>
+              <tr><td>🏫 โรงเรียน</td><td class="id">school</td><td>ครูอ้อย</td><td>ดึงคำถามจริงจาก <code>CATS</code> ตามชั้นเด็ก</td><td>ตรงหลักสูตร</td></tr>
+              <tr><td>🔬 ตึกแล็บ</td><td class="id">lab</td><td>ดร.แล็บ 1&ndash;3</td><td>เรียงขั้นตอนการทดลอง, จม-ลอย, แยกหมวด</td><td>วิทยาศาสตร์</td></tr>
+              <tr><td>🛋️ ห้างเฟอร์นิเจอร์</td><td class="id">mall-furniture</td><td>พี่โซฟา</td><td>จัดห้องตามแบบ, จับคู่ความจำ</td><td>มิติสัมพันธ์</td></tr>
+              <tr><td>👗 ห้างแฟชั่น</td><td class="id">mall-fashion</td><td>พี่ชุดสวย</td><td>แต่งตัวตามโจทย์, ผสมสี, เติมแพทเทิร์น</td><td>จำแนก, สี</td></tr>
+              <tr><td>🍉 ตลาดรถเข็น</td><td class="id">MARKET_CARTS</td><td>12 แม่ค้า</td><td>รายการซื้อของ, ตวง/ชั่ง, นับแว้บเดียว</td><td>ความจำ, ตาชั่ง</td></tr>
+              <tr><td>🌾🐄 นา / โรงนา</td><td class="id">farm-house</td><td>ลุงชาวนา, คาวบอย</td><td>นับผลผลิต/แบ่งเท่าๆ กัน, รดน้ำตามตาราง</td><td>หาร, ปฏิทิน</td></tr>
+              <tr><td>🎣 บ่อน้ำ</td><td class="id">pond-hut</td><td>ลุงตกปลา</td><td>ตกปลาตอบเลข</td><td>คิดเลขเร็ว</td></tr>
+              <tr><td>🏨 โรงแรม</td><td class="id">hotel</td><td>พนักงาน 2 คน</td><td>พาแขกไปห้องตามเลข, เรียงคิวเช็คอิน</td><td>เลขหลัก, เรียงลำดับ</td></tr>
+              <tr><td>🪚 ช่างไม้</td><td class="id">carpenter-hut</td><td>ลุงช่างไม้, ป้ามะลิ</td><td>ต่อรูปทรง / แทนแกรม, ผสมสีทาไม้</td><td>รูปทรง</td></tr>
+              <tr><td>⛺ ลานแคมป์</td><td class="id">camp</td><td>หัวหน้าแคมป์</td><td>เรียงขั้นตอนก่อไฟ / กางเต็นท์</td><td>ลำดับ</td></tr>
+              <tr><td>🏖️ ชายหาด</td><td class="id">zone: beach</td><td>พี่ชายหาด</td><td>เก็บเปลือกหอยให้ครบ, เรียงขนาด</td><td>นับ, เปรียบเทียบ</td></tr>
+              <tr><td>🏛️ บ้านเทศมนตรี</td><td class="id">mayor-house</td><td>ท่านเทศมนตรี</td><td>กระดานรวม + โบนัสตอนครบ</td><td>hub</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s7">
+        <div class="sec-head"><span class="sec-num mono">07</span><h2>ความยากตามระดับชั้น</h2></div>
+        <p class="sec-sub">
+          <strong>ไม่ทำเกมคนละชุดต่อชั้น</strong> (บำรุงรักษาไม่ไหว) แต่ให้กลไกเดียวรับพารามิเตอร์ความยาก
+          อ่านชั้นจาก <code>activeGradeId(activeChild)</code> ไม่ใช่จากอายุตรงๆ เพราะเด็กเลือกชั้นเองได้ในหน้าหลัก
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>พารามิเตอร์</th><th>ป.1&ndash;2</th><th>ป.3&ndash;4</th><th>ป.5&ndash;6</th></tr></thead>
+            <tbody>
+              <tr><td class="id">numMax</td><td class="num">1&ndash;10 · 1&ndash;20</td><td class="num">1&ndash;100 · 1&ndash;1000</td><td class="num">ทศนิยม / เศษส่วน</td></tr>
+              <tr><td class="id">seqLen</td><td class="num">3</td><td class="num">5</td><td class="num">7</td></tr>
+              <tr><td class="id">steps</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+              <tr><td class="id">timeLimit</td><td><strong>ไม่มีเลย</strong></td><td>ผ่อนปรน</td><td>มี แบบไม่กดดัน</td></tr>
+              <tr><td class="id">hints</td><td>ลูกศร / ไฮไลต์ช่วย</td><td>บางส่วน</td><td>ไม่มี</td></tr>
+              <tr><td>คำว่า &ldquo;ผิด&rdquo;</td><td><strong>ไม่มี</strong> ลองใหม่ไม่จำกัด</td><td>ลองใหม่ได้ ดาวลด</td><td>ลองใหม่ได้ ดาวลด</td></tr>
+            </tbody>
+            <caption>
+              ร้านบางร้านล็อกตามชั้น (เช่น ตึกแล็บ / โรงแรม เปิดที่ ป.3 ขึ้นไป) &rarr; โลกโตตามเด็ก ทำให้กลับมาเล่นอีก
+            </caption>
+          </table>
+        </div>
+      </section>
+
+      <section id="s8">
+        <div class="sec-head"><span class="sec-num mono">08</span><h2>ดาว &rarr; เหรียญ และการสุ่ม</h2></div>
+
+        <h3>สูตรรางวัล</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ดาว</th><th>เงื่อนไข</th><th>ตัวคูณ</th></tr></thead>
+            <tbody>
+              <tr><td>⭐</td><td>ทำสำเร็จ ไม่ว่าพยายามกี่ครั้ง &mdash; <strong>ทุกคนได้เงินเสมอ</strong></td><td class="num">×1.0</td></tr>
+              <tr><td>⭐⭐</td><td>ผิดไม่เกิน 1&ndash;2 ครั้ง</td><td class="num">×1.5</td></tr>
+              <tr><td>⭐⭐⭐</td><td>ผ่านรวดเดียว</td><td class="num">×2.0</td></tr>
+            </tbody>
+            <caption>
+              เหรียญ = base(ชนิดเควสต์) × ตัวคูณดาว × ตัวคูณชั้น
+              &nbsp;·&nbsp; base: งานในร้าน 5 · งานเดินโลก 10 · งานสร้างสรรค์ 6
+              &nbsp;·&nbsp; ตัวคูณชั้น ป.1 = 1.0 &rarr; ป.6 = 1.5
+            </caption>
+          </table>
+        </div>
+
+        <h3>กติกาการสุ่ม</h3>
+        <p>
+          ใช้ <strong>seeded RNG ไม่ใช่ <code>Math.random()</code> ตรงๆ</strong> แบบเดียวกับ <code>pickDailyQuests()</code> เดิม
+          &mdash; seed มาจาก <code>FNV1a(childId + วันที่ + npcId)</code>
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>กติกา</th><th>เหตุผล</th></tr></thead>
+            <tbody>
+              <tr><td>เปิดคุยกี่รอบก็ได้โจทย์เดิม</td><td>กันเด็ก reroll จนได้ข้อง่าย</td></tr>
+              <tr><td>สุ่ม 4 ชั้น: ชนิดเควสต์ &rarr; กลไก &rarr; ตัวเลข/ของในโจทย์ &rarr; บทพูด</td><td>ครบทุกชั้นตามที่ขอ</td></tr>
+              <tr><td>ทำเสร็จแล้ว NPC cooldown ถึงวันถัดไป (ยังคุยเล่นได้ปกติ)</td><td>กันฟาร์มเงิน</td></tr>
+              <tr><td>หัก 5 กลไกล่าสุดออกจากสระสุ่ม</td><td>กันเจอ &ldquo;จ่ายเงิน&rdquo; 3 ร้านติด</td></tr>
+              <tr><td>มีงานเฉพาะ 5&ndash;8 ร้านต่อวัน ไม่ใช่ทุกร้าน</td><td>บังคับให้เดินสำรวจว่าวันนี้ใครมีป้าย &ldquo;!&rdquo;</td></tr>
+              <tr><td>กลไกที่ยากเกิน tier ของเด็กถูกคัดออกก่อนสุ่ม</td><td>กันโจทย์ยากเกินวัย</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s9">
+        <div class="sec-head"><span class="sec-num mono">09</span><h2>เศรษฐกิจ &mdash; ปิดของฟรีทั้งหมด</h2></div>
+        <p class="sec-sub">
+          วันนี้ของทุกอย่างแจกฟรี ทำให้เงินไม่มีความหมาย &mdash; ทุกอย่างที่ custom ได้จะกลายเป็นสินค้าที่ต้องซื้อ
+        </p>
+
+        <h3>เฟอร์นิเจอร์ 116 ชิ้น &mdash; 4 ระดับราคา</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ระดับ</th><th>ราคา</th><th>ตัวอย่าง</th><th>จำนวนโดยประมาณ</th></tr></thead>
+            <tbody>
+              <tr><td>จิ๋ว</td><td class="num">25 🪙</td><td>กระถาง, ตุ๊กตา, พรม, ป้าย</td><td class="num">~35 ชิ้น</td></tr>
+              <tr><td>เล็ก</td><td class="num">60 🪙</td><td>เก้าอี้, โต๊ะเล็ก, ชั้นวาง</td><td class="num">~35 ชิ้น</td></tr>
+              <tr><td>กลาง</td><td class="num">140 🪙</td><td>โซฟา, เตียง, ตู้เย็น, ชิงช้า</td><td class="num">~30 ชิ้น</td></tr>
+              <tr><td>ใหญ่ / พิเศษ</td><td class="num">300 🪙</td><td>สระ, บ้านต้นไม้, ม้าหมุน, ไฟประดับ</td><td class="num">~16 ชิ้น</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>ชุดแต่งตัว</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ของ</th><th>ราคา</th></tr></thead>
+            <tbody>
+              <tr><td>สีเสื้อ / สีกางเกง / สีรองเท้า (ต่อสี)</td><td class="num">15 🪙</td></tr>
+              <tr><td>ทรงผม (ต่อทรง) · สีผม · สีตา</td><td class="num">30 🪙</td></tr>
+              <tr><td>ลายเสื้อ (ต่อลาย)</td><td class="num">40 🪙</td></tr>
+              <tr><td>หมวก · แว่น (ต่อชิ้น)</td><td class="num">60 🪙</td></tr>
+              <tr><td>เป้สะพาย · ของถือ (ต่อชิ้น)</td><td class="num">80 🪙</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>สัตว์เลี้ยง 12 ชนิด</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>กลุ่ม</th><th>ราคา</th><th>ชนิด</th></tr></thead>
+            <tbody>
+              <tr><td>เริ่มต้น</td><td class="num">250 🪙</td><td>🐶 หมาน้อย · 🐱 แมวเหมียว · 🐰 กระต่าย · 🐥 ลูกเจี๊ยบ</td></tr>
+              <tr><td>กลาง</td><td class="num">450 🪙</td><td>🐹 แฮมสเตอร์ · 🐢 เต่าน้อย · 🐸 กบน้อย · 🐷 หมูน้อย</td></tr>
+              <tr><td>พิเศษ</td><td class="num">800 🪙</td><td>🐑 แกะน้อย · 🐧 เพนกวิน</td></tr>
+              <tr><td>หายาก</td><td class="num">1,500 🪙</td><td>🐼 แพนด้า · 🦄 ยูนิคอร์น</td></tr>
+            </tbody>
+            <caption>
+              สีขนสีแรกแถมฟรีตอนซื้อ · สีอื่น 100 🪙 ต่อสี · ชนิดที่เคยซื้อแล้วซื้อซ้ำจ่ายครึ่งราคา
+              (กันเด็กเสียดายจนไม่กล้าลองสัตว์ตัวอื่น)
+            </caption>
+          </table>
+        </div>
+
+        <h3>ของแถมฟรีตอนเริ่ม</h3>
+        <div class="note ok">
+          <p class="note-h">กันบ้านโล่งจนเล่นวันแรกไม่สนุก</p>
+          <ul>
+            <li><strong>รั้ว + ทางเดินหน้าประตู + ต้นไม้ในสนาม</strong> &mdash; ของฉาก ไม่ใช่ของสะสม ให้ฟรีเหมือนเดิม</li>
+            <li><strong>เฟอร์นิเจอร์เริ่มต้น 6 ชิ้น</strong>: เตียง โต๊ะ เก้าอี้ ตู้เย็น พรม กระถางต้นไม้</li>
+            <li><strong>ชุดแต่งตัวเริ่มต้น</strong>: ทรงผม 2 · สีเสื้อ 4 · สีกางเกง 3 · สีรองเท้า 2 (หมวก/แว่น/เป้/ของถือ ต้องซื้อทั้งหมด)</li>
+            <li><strong>สัตว์เลี้ยงไม่แถม</strong> ต้องซื้อทุกตัว</li>
+            <li>เงินเริ่มต้น 0 🪙 แต่เควสต์แรกให้ 30&ndash;50 🪙 ⇒ เด็กซื้อของชิ้นแรกได้ในวันแรก</li>
+          </ul>
+        </div>
+
+        <div class="note risk">
+          <p class="note-h">จุดเสี่ยงอันดับหนึ่งของทั้งโปรเจค &mdash; migration</p>
+          <p>
+            <strong>ห้ามให้ของที่เด็กวางไว้แล้วหายไปเด็ดขาด</strong> ตอนอัปเกรด ครั้งแรกที่โหลดด้วยเวอร์ชันใหม่ต้องกวาดของเดิมมาเป็น &ldquo;ซื้อแล้ว&rdquo; ทั้งหมด:
+          </p>
+          <ul>
+            <li>ทุก id ที่ปรากฏใน <code>data.decor</code> &rarr; นับว่าซื้อเฟอร์นิเจอร์ชิ้นนั้นแล้ว</li>
+            <li>ทุกค่าที่ปรากฏใน <code>data.char</code> (ทรงผม สี ลาย หมวก&hellip; ที่ใส่อยู่) &rarr; นับว่าซื้อแล้ว</li>
+            <li>ถ้ามี <code>data.pet</code> อยู่แล้ว &rarr; นับว่าซื้อสัตว์ชนิดนั้นแล้ว สร้างบ้านสัตว์ให้ ความอิ่มเต็ม</li>
+            <li>ถ้าไม่มี <code>data.pet</code> &rarr; ลบบ้านสัตว์ที่ seed ไว้ออกจากสนาม</li>
+          </ul>
+          <p>ต้องทำ <strong>ก่อน</strong> โค้ดร้าน และต้องมีเทส Playwright ยิงเซฟเก่าเข้าไปแล้วเช็คว่าของครบ</p>
+        </div>
+
+        <h3>ร้านไหนขายอะไร</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ร้าน</th><th>ขาย</th></tr></thead>
+            <tbody>
+              <tr><td>🛒 ห้างเฟอร์นิเจอร์</td><td>เฟอร์นิเจอร์ในบ้าน &mdash; ห้องน้ำ ห้องนอน ครัว ที่นั่ง โต๊ะ ของตกแต่ง</td></tr>
+              <tr><td>🌷 ร้านต้นไม้ / สวน</td><td>ต้นไม้ ของตกแต่งสวน ที่นั่งกลางแจ้ง</td></tr>
+              <tr><td>👗 ห้างแฟชั่น</td><td>ชุดแต่งตัวทั้งหมด</td></tr>
+              <tr><td>🐾 ร้านสัตว์เลี้ยง</td><td>สัตว์เลี้ยง + สีขน + <strong>อาหารสัตว์</strong> + ของเล่นสัตว์</td></tr>
+              <tr><td>🎮 ร้านของเล่น</td><td>หมวดเครื่องเล่น</td></tr>
+              <tr><td>🏥 โรงพยาบาล</td><td>บริการรักษาสัตว์ป่วย (ไม่ใช่ของ)</td></tr>
+            </tbody>
+            <caption>
+              หน้าตาร้านใช้ overlay แบบเดียวกับหน้าเลือกสัตว์เลี้ยง/หน้าแต่งตัวที่มีอยู่ &mdash;
+              ของที่ซื้อแล้วขึ้น ✓ · ของที่เงินไม่พอขึ้นราคาสีเทาแต่ <strong>ไม่ซ่อน</strong> ให้เด็กเห็นเป้าหมาย
+            </caption>
+          </table>
+        </div>
+      </section>
+
+      <section id="s10">
+        <div class="sec-head"><span class="sec-num mono">10</span><h2>สัตว์เลี้ยง &mdash; วงจรชีวิตใหม่</h2></div>
+        <p class="sec-sub">
+          จากเดิม &ldquo;เลือกฟรี เดินตามเด็ก จบ&rdquo; เป็นสิ่งมีชีวิตที่ต้องซื้อ ต้องเลี้ยง และมีผลถ้าลืมดูแล
+          &mdash; แต่ <strong>ไม่ตาย</strong> ในทุกกรณี
+        </p>
+
+        <div class="flow">
+          <div class="step">
+            <span class="n mono">ขั้น 1</span><span class="e">🛍️</span>
+            <span class="t">ซื้อที่ร้านสัตว์</span>
+            <span class="d">ไม่มีสัตว์ = ไม่มีบ้านสัตว์ในสนาม บ้านจะโผล่ตอนซื้อสำเร็จเท่านั้น</span>
+          </div>
+          <div class="step">
+            <span class="n mono">ขั้น 2</span><span class="e">🏠</span>
+            <span class="t">บ้านสัตว์ปรากฏ</span>
+            <span class="d">วางที่ช่องที่จองไว้เดิม พร้อมเอฟเฟกต์ + นกฮูกพูดต้อนรับ ย้ายที่ได้แต่ลบเองไม่ได้</span>
+          </div>
+          <div class="step">
+            <span class="n mono">ขั้น 3</span><span class="e">🍖</span>
+            <span class="t">ให้อาหารถูกชนิด</span>
+            <span class="d">แตะชามหน้าบ้าน เลือกถุงอาหาร ให้ผิดชนิดสัตว์ส่ายหัวไม่กิน ไม่เสียของ ลองใหม่ได้</span>
+          </div>
+          <div class="step alert">
+            <span class="n mono">ขั้น 4</span><span class="e">🤒</span>
+            <span class="t">ลืมให้อาหาร &rarr; ป่วย</span>
+            <span class="d">นอนในบ้าน ออกมาเดินไม่ได้ ปลุกไม่ตื่น แตะแล้วขอให้พาไปหาหมอ</span>
+          </div>
+          <div class="step cure">
+            <span class="n mono">ขั้น 5</span><span class="e">🩺</span>
+            <span class="t">คุยหมอที่โรงพยาบาล</span>
+            <span class="d">จ่าย 120 🪙 &rarr; ตรวจ ฉีดยา พันผ้า ~5 วิ &rarr; หายป่วย วิ่งกลับมาหาเด็ก</span>
+          </div>
+        </div>
+
+        <h3>อาหาร 8 ประเภท</h3>
+        <p>
+          นี่ไม่ใช่แค่ค่าใช้จ่าย แต่เป็น <strong>ของเล่นที่สอนจริง</strong> &mdash; เด็กต้องรู้ว่าสัตว์ตัวไหนกินอะไร
+          และเป็นวัตถุดิบของกลไก <code>feed-pet</code> โดยตรง
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>อาหาร</th><th>ราคา / ถุง (5 มื้อ)</th><th>สัตว์ที่กิน</th></tr></thead>
+            <tbody>
+              <tr><td>🍖 อาหารเนื้อ</td><td class="num">60 🪙</td><td>🐶 หมาน้อย</td></tr>
+              <tr><td>🐟 อาหารปลา</td><td class="num">60 🪙</td><td>🐱 แมวเหมียว · 🐧 เพนกวิน</td></tr>
+              <tr><td>🥕 ผักสด</td><td class="num">50 🪙</td><td>🐰 กระต่าย · 🐢 เต่าน้อย</td></tr>
+              <tr><td>🌾 เมล็ดพืช</td><td class="num">45 🪙</td><td>🐥 ลูกเจี๊ยบ · 🐹 แฮมสเตอร์</td></tr>
+              <tr><td>🌿 หญ้าแห้ง</td><td class="num">50 🪙</td><td>🐑 แกะน้อย · 🐷 หมูน้อย</td></tr>
+              <tr><td>🦗 แมลง</td><td class="num">55 🪙</td><td>🐸 กบน้อย</td></tr>
+              <tr><td>🎋 ไผ่</td><td class="num">90 🪙</td><td>🐼 แพนด้า</td></tr>
+              <tr><td>🌈 อาหารวิเศษ</td><td class="num">150 🪙</td><td>🦄 ยูนิคอร์น</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>ความหิว &mdash; ออกแบบให้ไม่ลงโทษเด็กที่หายไปนาน</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>กติกา</th><th>ค่า</th><th>เหตุผล</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>ลดตามวันที่เข้าเล่น</td><td class="num">&minus;35 / วันเล่น</td>
+                <td><strong>ไม่ว่าห่างกัน 2 วันหรือ 2 เดือนก็ลดเท่ากัน</strong> &mdash; หายไปนานกลับมาสัตว์แค่หิว ไม่ป่วยทันที</td>
+              </tr>
+              <tr><td>ลดระหว่างวันเดียวกัน</td><td class="num">&minus;5 / 20 นาที</td><td>ให้ยังมีอะไรทำระหว่างวัน แต่ช้ามาก</td></tr>
+              <tr>
+                <td>แถบความอิ่ม</td><td>หัวใจเต็ม / ครึ่ง / ว่าง</td>
+                <td>โชว์เหนือหัวเมื่อต่ำกว่าครึ่ง &mdash; <strong>ไม่ใช้ตัวเลขเปอร์เซ็นต์</strong> เด็ก 5 ขวบอ่านไม่รู้เรื่อง</td>
+              </tr>
+              <tr>
+                <td>เงื่อนไขป่วย</td><td>ละเลย 2 วันเล่นติดกัน</td>
+                <td>ต้องเตือนล่วงหน้า 3 ชั้น: ฟองข้อความสัตว์ + นกฮูกเตือนตอนเข้าเกม + ไอคอน 🏥 บนเข็มทิศ</td>
+              </tr>
+              <tr><td>ป่วยแล้วหายเอง</td><td><strong>ไม่หาย</strong></td><td>ต้องคุยหมอเท่านั้น</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note ok">
+          <p class="note-h">กันตัน</p>
+          <p>
+            ถ้าเงินไม่พอค่ารักษา หมอ<strong>ไม่ไล่กลับ</strong> แต่เสนอ &ldquo;ทำงานช่วยหมอแทนค่ารักษา&rdquo; = เควสต์ 1 ชุด
+            ⇒ เด็กไม่มีทางติดตันในสภาพที่สัตว์ป่วยแล้วทำอะไรไม่ได้
+          </p>
+        </div>
+      </section>
+
+      <section id="s11">
+        <div class="sec-head"><span class="sec-num mono">11</span><h2>กระดานเควสต์ &mdash; โควตาแยก 5 ชุด/วัน</h2></div>
+        <p class="sec-sub">
+          กระดานข้างน้ำพุเปลี่ยนจาก &ldquo;ที่รวมเควสต์ NPC&rdquo; เป็น <strong>แหล่งเควสต์อิสระ</strong> ที่มีโควตาของตัวเอง
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th></th><th>📋 กระดานเควสต์</th><th>🧑 เควสต์ NPC</th></tr></thead>
+            <tbody>
+              <tr><td>โควตา</td><td><strong>5 ชุด / วัน</strong></td><td>ตามจำนวน NPC ที่ยังไม่ได้คุยวันนี้</td></tr>
+              <tr><td>ต้องเดินหาไหม</td><td>ไม่ต้อง รับที่กระดานได้เลย</td><td>ต้องเดินไปหา NPC ที่มีป้าย &ldquo;!&rdquo;</td></tr>
+              <tr><td>กลไก</td><td>สุ่มจากทั้ง 23 แบบ</td><td>จาก pool เฉพาะของ NPC ตัวนั้น + <code>quiz</code> เสมอ</td></tr>
+              <tr><td>รางวัล</td><td class="num">40&ndash;80 🪙 + ⭐</td><td class="num">20&ndash;50 🪙</td></tr>
+              <tr><td>โบนัส</td><td><strong>ครบ 5 ชุด &rarr; +100 🪙 + ⭐ พิเศษ</strong></td><td>&mdash;</td></tr>
+            </tbody>
+            <caption>
+              นับวันด้วย local date · เที่ยงคืนรีเซ็ต · <strong>ไม่หักดาว/เงินถ้าวันก่อนทำไม่ครบ</strong> ไม่มีบทลงโทษใดๆ ·
+              โควตา NPC เก็บคนละ key ⇒ ทำกระดานครบ 5 แล้วยังเดินคุย NPC ต่อได้
+            </caption>
+          </table>
+        </div>
+      </section>
+
+      <section id="s12">
+        <div class="sec-head"><span class="sec-num mono">12</span><h2>ข้อมูล &amp; ไฟล์ใหม่</h2></div>
+        <p class="sec-sub">
+          <code>js/house.js</code> วันนี้ <strong>10,199 บรรทัด</strong> ถ้ายัดทั้งหมดลงไปอีกจะแตะ ~14,000 บรรทัด แก้ยากมาก
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ไฟล์ใหม่</th><th>เนื้อหา</th><th>ประมาณ</th></tr></thead>
+            <tbody>
+              <tr><td class="id">js/house-quests.js</td><td>catalog 23 mechanic + generator + pool ต่อ NPC + logic กระดาน</td><td class="num">~1,800 บรรทัด</td></tr>
+              <tr><td class="id">js/house-shop.js</td><td>ตารางราคา + inventory + UI ร้าน + migration</td><td class="num">~900 บรรทัด</td></tr>
+              <tr><td class="id">js/house-pet-care.js</td><td>อาหาร / ความหิว / ป่วย / โรงพยาบาล</td><td class="num">~500 บรรทัด</td></tr>
+            </tbody>
+            <caption>
+              โหลด lazy ต่อกัน: three &rarr; map &rarr; furniture &rarr; <strong>shop &rarr; quests &rarr; pet-care</strong> &rarr; house
+              &nbsp;·&nbsp; ต้องใส่ <code>?v=</code> ตาม <code>window.APP_ASSET_VER</code> เหมือนไฟล์ lazy อื่น
+            </caption>
+          </table>
+        </div>
+        <p>
+          <code>js/house.js</code> แก้เฉพาะจุดเชื่อม: <code>seedWorldDecor</code> (ตัดบ้านสัตว์ออก),
+          หน้าเลือกสัตว์ (ย้ายไปผ่านร้าน), กล่องเลือกเฟอร์นิเจอร์ (กรองเฉพาะของที่ซื้อแล้ว), จุดคุย NPC (เรียก quest engine)
+        </p>
+        <p>
+          เซฟทั้งหมดอยู่ในก้อนเดิม <code>p1quiz_house_&lt;childId&gt;</code> ⇒ ระบบ export/import ย้ายเครื่องตามไปเอง
+          &mdash; ยกเว้นเหรียญที่ต้องผ่าน <code>window.OwlCoins</code> เท่านั้น ห้ามแตะ <code>progress.coins</code> ตรงๆ
+        </p>
+      </section>
+
+      <section id="s13">
+        <div class="sec-head"><span class="sec-num mono">13</span><h2>แผนทำเป็นเฟส <span style="font-size:.6em;font-weight:400;opacity:.7">(ฉบับเดิม &mdash; ดูฉบับใหม่ข้อ 24)</span></h2></div>
+        <p class="sec-sub">แต่ละเฟสจบแล้วเล่นได้จริงไม่พัง ⇒ merge เข้า main ได้ทีละเฟส</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>เฟส</th><th>เนื้อหา</th><th>ทำไมลำดับนี้</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="num">1</td><td><strong>เศรษฐกิจ + migration + ร้าน 2 ร้านแรก</strong> (เฟอร์นิเจอร์, แฟชั่น)</td>
+                <td>ถ้าไม่ปิดของฟรีก่อน เควสต์ก็ไม่มีความหมาย เพราะเงินไม่มีที่ใช้</td>
+              </tr>
+              <tr>
+                <td class="num">2</td><td>quest engine + <code>quiz</code> + <code>count-things</code> ให้ NPC ครบ 57 ตัว + กระดาน 5/วัน</td>
+                <td>เด็กเริ่มหาเงินได้จริงทั้งเมืองทันที</td>
+              </tr>
+              <tr>
+                <td class="num">3</td><td>ร้านสัตว์ + ซื้อสัตว์ + บ้านสัตว์ตามเงื่อนไข + อาหาร/ความหิว/ป่วย/หมอ</td>
+                <td>ก้อนใหญ่ที่สุด แต่ต้องรอเศรษฐกิจเสร็จก่อน</td>
+              </tr>
+              <tr>
+                <td class="num">4</td><td>mechanic กลุ่ม C (รื้อ engine เดิม 7 แบบ)</td>
+                <td>คุ้มที่สุดต่อแรง &mdash; โจทย์เพิ่มเยอะโดยแทบไม่เขียน logic ใหม่</td>
+              </tr>
+              <tr><td class="num">5</td><td>mechanic กลุ่ม B ที่เหลือ (10 แบบ)</td><td>งานเขียนใหม่จริง ทยอยเพิ่มได้</td></tr>
+              <tr><td class="num">6</td><td>mechanic กลุ่ม D จาก IDEA.md (4 แบบ)</td><td>เพิ่มความหลากหลายรอบสุดท้าย</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s14">
+        <div class="sec-head"><span class="sec-num mono">14</span><h2>ความเสี่ยงที่ต้องระวัง</h2></div>
+        <ol>
+          <li><strong>ของหายหลังอัปเดต</strong> &mdash; migration ต้องมาก่อนโค้ดร้าน พร้อมเทสที่ยิงเซฟเก่าเข้าไปตรวจ</li>
+          <li><strong>เงินฝืดเกิน</strong> &mdash; ของ 116 ชิ้น + สัตว์ 1,500 🪙 ถ้าเควสต์ให้ 30 🪙 เด็กต้องทำ 50 เควสต์กว่าจะได้แพนด้า ตัวเลขที่ตั้งไว้ให้วันละ ~400&ndash;500 🪙 ถ้าขยัน ต้องจูนจริงตอนเฟส 1&ndash;2</li>
+          <li><strong>เควสต์กลายเป็นการบ้าน</strong> &mdash; ถ้าเป็นเลขล้วนเด็กจะเลิกเข้าบ้าน ต้องคุมสัดส่วน A/B/C</li>
+          <li><strong>สัตว์ป่วยแล้วเด็กงง</strong> &mdash; ต้องมีสัญญาณชัด 3 ชั้นตามที่ระบุไว้</li>
+          <li><strong>เควสต์เดินโลกตัน</strong> &mdash; ถ้า NPC เป้าหมายเดินไปมา ต้องมีปุ่มยกเลิก/เปลี่ยนเป้าเสมอ</li>
+          <li><strong>ขนาดไฟล์โหลด</strong> &mdash; ชุด 3D วันนี้ ~1.2 MB เพิ่มอีก ~150 KB ยังรับได้ แต่ต้องอัปม่านโหลดให้เปอร์เซ็นต์ตรง</li>
+          <li><strong>เทสเดิมต้องไม่แดง</strong> &mdash; <code>tests/house.spec.js</code> ยิง click เข้าปุ่มบ้าน ต้องรันทุกเฟส</li>
+          <li><strong>ต้องถามก่อน merge เข้า main เสมอ</strong> &mdash; จะเปิดโหมดบ้านให้เด็กเล่นจริง หรือคง <code>HOUSE_FEATURE_OFF</code> ไว้</li>
+        </ol>
+      </section>
+
+      <hr>
+
+      <section id="s16">
+        <div class="sec-head"><span class="sec-num mono">16</span><h2>ประตูเช็คความพร้อม ก่อนเจอโจทย์ระดับสูงกว่า</h2></div>
+        <p class="sec-sub">
+          ยังคง &ldquo;โจทย์สูงกว่าระดับชั้นที่เด็กอยู่ 1 ระดับ&rdquo; ไว้เหมือนเดิม
+          แต่ไม่ยัดให้ตั้งแต่วันแรก &mdash; ต้องผ่านด่านวัดความพร้อมก่อน
+        </p>
+
+        <div class="flow">
+          <div class="step">
+            <span class="n mono">เงื่อนไข 1</span><span class="e">🧮</span>
+            <span class="t">ทำเควสต์ระดับตัวเองครบ 12 ชุด</span>
+            <span class="d">นับแยกตามระดับชั้น ถ้าเด็กเลื่อนชั้นตัวนับเริ่มใหม่</span>
+          </div>
+          <div class="step">
+            <span class="n mono">เงื่อนไข 2</span><span class="e">🎯</span>
+            <span class="t">ความแม่น 10 ชุดล่าสุด &ge; 70%</span>
+            <span class="d">วัดจากจำนวนดาวที่ได้ ไม่ใช่จำนวนครั้งที่ผิด</span>
+          </div>
+          <div class="step">
+            <span class="n mono">เงื่อนไข 3</span><span class="e">🙋</span>
+            <span class="t">เด็กต้องกดตอบรับเอง</span>
+            <span class="d">NPC ถาม &ldquo;อยากลองข้อยากขึ้นไหม&rdquo; มีปุ่ม &ldquo;ลองเลย&rdquo; / &ldquo;ยังไม่พร้อม&rdquo; ไม่โผล่มาเงียบๆ</span>
+          </div>
+          <div class="step cure">
+            <span class="n mono">ผ่านแล้ว</span><span class="e">⭐</span>
+            <span class="t">ปน 20% เท่านั้น</span>
+            <span class="d">80% ยังเป็นระดับตัวเอง โจทย์ท้าทายได้เหรียญ &times;1.5 + ดาวพิเศษ</span>
+          </div>
+          <div class="step alert">
+            <span class="n mono">ถ้าไม่ไหว</span><span class="e">🫧</span>
+            <span class="t">พลาด 3 ชุดติด &rarr; พักไว้ก่อน</span>
+            <span class="d">กลับไปเก็บระดับตัวเองอัตโนมัติ <strong>ไม่หักเงิน ไม่หักดาว ไม่มีข้อความว่าแพ้</strong> แล้วค่อยถามใหม่ทีหลัง</span>
+          </div>
+        </div>
+
+        <div class="note">
+          <p class="note-h">ทำไมต้องมีประตู</p>
+          <p>
+            เดิมทุกเควสต์ผสมโจทย์ระดับ +1 ตั้งแต่ชุดแรก เด็ก ป.1 ที่เพิ่งเข้าบ้านครั้งแรกจะเจอโจทย์ ป.2 ทันที
+            &rArr; เสี่ยงถอดใจก่อนจะรู้ว่าเมืองนี้มีอะไรให้ทำ ประตูนี้ทำให้ &ldquo;ยากขึ้น&rdquo; กลายเป็น<strong>รางวัลที่เด็กปลดล็อกเอง</strong>
+            ไม่ใช่อุปสรรคที่โผล่มาเอง &mdash; และยังคงเจตนาเดิมคือเด็กที่เก่งพอต้องได้เจอของยากกว่าชั้นตัวเอง
+          </p>
+        </div>
+
+        <div class="scroll">
+          <table>
+            <thead><tr><th>เก็บใน save</th><th>ความหมาย</th></tr></thead>
+            <tbody>
+              <tr><td class="id">chal.done[grade]</td><td>จำนวนเควสต์ระดับตัวเองที่ทำสำเร็จในชั้นนี้</td></tr>
+              <tr><td class="id">chal.recent[]</td><td>ดาวของ 10 ชุดล่าสุด (ใช้คิดความแม่น)</td></tr>
+              <tr><td class="id">chal.on</td><td>เด็กตอบรับโจทย์ท้าทายแล้วหรือยัง</td></tr>
+              <tr><td class="id">chal.miss</td><td>จำนวนโจทย์ท้าทายที่พลาดติดกัน (ถึง 3 &rarr; ปิดชั่วคราว)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s17">
+        <div class="sec-head"><span class="sec-num mono">17</span><h2>สมุดสติกเกอร์ยังอยู่ที่เดิม</h2></div>
+        <p class="sec-sub">ยืนยันชัดเจน: ระบบใหม่ทั้งหมดไม่แตะหน้าหลักเลยแม้แต่จุดเดียว</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ของเดิมในหน้าหลัก</th><th>สถานะหลังทำระบบนี้</th></tr></thead>
+            <tbody>
+              <tr><td class="id">#sticker-tally-btn</td><td>อยู่ที่เดิม มุมขวาล่างข้างนกฮูก <strong>ไม่ย้าย ไม่ซ่อน</strong></td></tr>
+              <tr><td class="id">#sticker-book</td><td>สมุดเล่มเดิม สติกเกอร์รายหมวดเดิมครบ ไม่ลบของใคร</td></tr>
+              <tr><td class="id">progress.stickers</td><td>ข้อมูลเดิม ไม่ย้าย ไม่แปลง</td></tr>
+              <tr><td>ดาวจากเควสต์ในบ้าน</td><td><strong>คนละระบบ</strong> ไม่ไปปนกับสติกเกอร์หมวดเรียน</td></tr>
+            </tbody>
+            <caption>
+              เควสต์ในบ้านให้ &ldquo;เหรียญ&rdquo; เท่านั้น &mdash; ไม่แจกสติกเกอร์หมวดเรียน
+              เพราะสติกเกอร์คือหลักฐานว่าเด็กเรียนจบหมวดนั้นจริง ถ้าแจกจากการเดินเล่นในเมืองด้วย ความหมายจะเจือจาง
+            </caption>
+          </table>
+        </div>
+        <div class="note ok">
+          <p class="note-h">ข้อเสนอเสริม (ยังไม่ทำถ้าไม่สั่ง)</p>
+          <p>
+            ถ้าอยากให้ 2 ระบบเชื่อมกัน ทำได้แบบไม่กระทบของเดิม: เพิ่ม <strong>แถบใหม่ในสมุดเล่มเดิม</strong>
+            ชื่อ &ldquo;สติกเกอร์บ้านของหนู&rdquo; เก็บเหรียญตราจากบ้าน (เลี้ยงสัตว์ครบ 7 วัน, ซื้อครบทุกร้าน, ทำกระดานครบ 5 ชุด 10 วัน)
+            แยกแถบชัดเจน ของเดิมไม่ขยับ
+          </p>
+        </div>
+      </section>
+
+      <section id="s18">
+        <div class="sec-head"><span class="sec-num mono">18</span><h2>บ้านมาพร้อมชุดเฟอร์นิเจอร์มาตรฐาน</h2></div>
+        <p class="sec-sub">
+          ตอบคำถามค้างเรื่อง &ldquo;ของแถมฟรีตอนเริ่ม&rdquo; &mdash; ไม่ใช่แค่ปลดล็อกให้ซื้อ
+          แต่<strong>วางไว้ในบ้านให้เรียบร้อยตั้งแต่แรก</strong> เด็กเปิดบ้านครั้งแรกต้องเจอบ้านที่อยู่ได้จริง ไม่ใช่ห้องว่างเปล่า
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>โซน</th><th>ชิ้นที่วางให้เลย</th><th>จำนวน</th></tr></thead>
+            <tbody>
+              <tr><td>🛏️ ห้องนอน</td><td>เตียงเด็ก · ตู้เสื้อผ้า</td><td class="num">2</td></tr>
+              <tr><td>🛋️ ห้องนั่งเล่น</td><td>โซฟา · โต๊ะกลาง · ชั้นวางของ</td><td class="num">3</td></tr>
+              <tr><td>🍳 ครัว</td><td>โต๊ะกินข้าว · เก้าอี้</td><td class="num">2</td></tr>
+              <tr><td>🛁 ห้องน้ำ</td><td>โถส้วม</td><td class="num">1</td></tr>
+              <tr><td>🌳 นอกบ้าน</td><td>รั้ว · ทางเดิน · ต้นไม้ 1 ต้น</td><td class="num">3</td></tr>
+            </tbody>
+            <caption>รวม 11 ชิ้น &mdash; ทุกชิ้นย้าย/หมุน/ลบได้ตามใจ</caption>
+          </table>
+        </div>
+        <ul>
+          <li><strong>ลบแล้วไม่ได้เงินคืน</strong> เพราะเป็นของแถม ไม่ได้ซื้อมา &mdash; แต่ยัง &ldquo;มีสิทธิ์&rdquo; อยู่ หยิบกลับมาวางใหม่ได้ฟรีเสมอ</li>
+          <li>มีปุ่ม <strong>&ldquo;จัดบ้านกลับแบบเดิม&rdquo;</strong> ในหน้าตกแต่ง กันเด็กเผลอลบจนบ้านโล่งแล้วกู้ไม่เป็น</li>
+          <li>บ้านของเด็กที่<strong>เคยเล่นอยู่แล้ว</strong>ไม่ถูกจัดใหม่ทับ &mdash; ของที่เขาวางเองสำคัญกว่าชุดมาตรฐาน (ดูข้อ 9 เรื่อง migration)</li>
+        </ul>
+        <div class="note ok">
+          <p class="note-h">ปรับให้บางลง &mdash; 19 &rarr; 11 ชิ้น</p>
+          <p>
+            ห้องนอนเหลือแค่เตียงกับตู้เสื้อผ้า · ครัวเหลือโต๊ะกินข้าวกับเก้าอี้ · ห้องน้ำเหลือโถส้วมอย่างเดียว · นอกบ้านตัดไฟสนามออกและเหลือต้นไม้ต้นเดียว
+          </p>
+          <p>
+            <strong>เจตนา:</strong> เริ่มมาแค่ &ldquo;พออยู่ได้&rdquo; ไม่ใช่ &ldquo;ครบแล้ว&rdquo; &mdash;
+            เตา ตู้เย็น อ่างล้างจาน อ่างล้างหน้า ฝักบัว โคมไฟ พรม ไฟสนาม กลายเป็นของที่ต้องเก็บเงินซื้อ
+            เด็กจึงมีเป้าหมายให้เล็งตั้งแต่เปิดบ้านวันแรก
+          </p>
+        </div>
+      </section>
+
+      <section id="s19">
+        <div class="sec-head"><span class="sec-num mono">19</span><h2>เฟอร์นิเจอร์ 116 &rarr; 180 ชิ้น</h2></div>
+        <p class="sec-sub">
+          ถ้าปิดของทั้งหมดให้ต้องซื้อ แต่มีของแค่ 116 ชิ้น เด็กขยันจะซื้อครบภายในไม่กี่สัปดาห์แล้วหมดเป้าหมาย
+          &mdash; ต้องมีของให้เล็งต่อ
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>หมวด</th><th>วันนี้</th><th>เพิ่ม</th><th>ตัวอย่างของใหม่</th></tr></thead>
+            <tbody>
+              <tr><td>🛏️ เตียง/ห้องนอน</td><td class="num">9</td><td class="num">+6</td><td>เตียงสองชั้น · เปลญวน · ตู้ลิ้นชัก · โต๊ะเครื่องแป้ง</td></tr>
+              <tr><td>🍳 ครัว</td><td class="num">9</td><td class="num">+8</td><td>ไมโครเวฟ · หม้อหุงข้าว · เครื่องปั่น · ชั้นเครื่องเทศ</td></tr>
+              <tr><td>🛁 ห้องน้ำ</td><td class="num">9</td><td class="num">+5</td><td>อ่างเป็ดยาง · ชั้นผ้าเช็ดตัว · กระจกดอกไม้</td></tr>
+              <tr><td>🪑 ที่นั่ง</td><td class="num">10</td><td class="num">+6</td><td>บีนแบ็ก · เก้าอี้โยก · เก้าอี้ไข่แขวน</td></tr>
+              <tr><td>🪵 โต๊ะ</td><td class="num">9</td><td class="num">+6</td><td>โต๊ะเรียน · โต๊ะวาดรูป · โต๊ะกาแฟกลม</td></tr>
+              <tr><td>🖼️ ของแต่งในบ้าน</td><td class="num">13</td><td class="num">+10</td><td>ตู้ปลา · นาฬิกาแขวน · โมบายดาว · กระดานดำ · กล่องของเล่น</td></tr>
+              <tr><td>🌷 สวน</td><td class="num">15</td><td class="num">+8</td><td>เรือนกระจกจิ๋ว · บ่อบัว · กังหันลม · รังนก</td></tr>
+              <tr><td>🎠 เครื่องเล่น</td><td class="num">12</td><td class="num">+5</td><td>บ้านต้นไม้ · แทรมโพลีน · สระน้ำเป่าลม</td></tr>
+              <tr><td>🪑 ที่นั่งนอกบ้าน</td><td class="num">7</td><td class="num">+4</td><td>เปลผ้าใบ · ชุดปิกนิก · ม้านั่งชิงช้า</td></tr>
+              <tr><td>🏮 ของแต่งนอกบ้าน</td><td class="num">23</td><td class="num">+6</td><td>ตู้ไปรษณีย์ · ป้ายชื่อบ้าน · ไฟราวประดับ</td></tr>
+              <tr><td>🎵 <strong>เครื่องดนตรี (หมวดใหม่)</strong></td><td class="num">&mdash;</td><td class="num">+11</td><td>ดูข้อ 23</td></tr>
+            </tbody>
+            <caption>รวม 116 + 64 = <strong>180 ชิ้น</strong> · 10 หมวด &rarr; 11 หมวด · ทยอยเพิ่มตามเฟส ไม่ต้องมาครบวันเดียว</caption>
+          </table>
+        </div>
+      </section>
+
+      <section id="s20">
+        <div class="sec-head"><span class="sec-num mono">20</span><h2>พ่อ แม่ อยู่ในบ้านด้วย</h2></div>
+        <p class="sec-sub">
+          บ้านวันนี้มีแค่เด็กคนเดียวกับสัตว์เลี้ยง &mdash; ใส่พ่อกับแม่เข้าไปเพื่อให้บ้านมีชีวิต
+          และเปิดเควสต์กลุ่มใหม่ที่ NPC ในเมืองให้ไม่ได้: <strong>เรื่องในครอบครัว</strong>
+        </p>
+
+        <h3>ตัวละคร</h3>
+        <ul>
+          <li>ใช้ระบบสร้างตัวละครเดิม (<code>buildCharacter</code>) ตัวสูงกว่าเด็กประมาณ 1.25 เท่า</li>
+          <li><strong>มี default มาให้ทั้งชื่อและหน้าตา</strong> (&ldquo;คุณพ่อ&rdquo; / &ldquo;คุณแม่&rdquo;) เด็กเปิดบ้านครั้งแรกเจอพ่อแม่ยืนอยู่แล้วทันที <strong>ไม่มีหน้าจอบังคับให้ตั้งค่าก่อน</strong></li>
+          <li>อยากแก้เมื่อไหร่ก็ได้ &mdash; แตะที่ตัวพ่อ/แม่แล้วเปิดหน้าเดียวกับแต่งตัวตัวเอง <strong>แก้ได้ทั้งชื่อและทุกแถวของ <code>H_ROWS</code></strong></li>
+          <li>เก็บที่ <code>data.parents = {dad:{name,char}, mom:{name,char}}</code> &mdash; ไม่มีข้อมูลนี้ = ใช้ default ⇒ เด็กเก่าไม่พัง</li>
+          <li>อยู่เฉพาะในบ้าน (interior) ไม่เดินออกไปในเมือง</li>
+          <li>ท่าประจำ: แม่ทำครัว / รดน้ำต้นไม้ / นั่งโซฟา &nbsp;·&nbsp; พ่ออ่านหนังสือ / ซ่อมของ / ยืนที่ระเบียง &mdash; สลับไปเรื่อยๆ พร้อมฟองข้อความสุ่มทักทาย</li>
+        </ul>
+
+        <h3>ใครให้เควสต์วันนี้ &mdash; สุ่มรายวัน</h3>
+        <p>
+          ใช้ seeded RNG จาก <code>childId + วันที่</code> เหมือนที่ระบบเควสต์รายวันใช้อยู่แล้ว
+          &rArr; วันนี้ได้พ่อก็คือพ่อทั้งวัน รีเฟรชกี่ครั้งก็ไม่เปลี่ยน (กันเด็กกดสุ่มใหม่จนได้เควสต์ง่าย)
+          อีกคนที่ไม่ได้ให้เควสต์จะพูดคุยให้กำลังใจ / บอกใบ้ว่าวันนี้อีกคนมีงานให้
+        </p>
+
+        <h3>เควสต์สายครอบครัว 8 แบบ</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>ชื่อ</th><th>เล่นยังไง</th><th>ฝึกอะไร</th></tr></thead>
+            <tbody>
+              <tr><td class="id">chore-tidy</td><td>เก็บของเข้าที่</td><td>ของวางผิดที่กระจายในบ้าน ลากกลับหมวดของมัน (ของเล่น&rarr;กล่อง จาน&rarr;ครัว)</td><td>จัดหมวดหมู่</td></tr>
+              <tr><td class="id">shopping-list</td><td>ไปซื้อของให้แม่</td><td>รับรายการ 3&ndash;5 อย่าง เดินไปตลาด/ร้านสะดวกซื้อ ซื้อให้ครบ + คิดเงินทอน</td><td>ความจำ + เงิน</td></tr>
+              <tr><td class="id">cook-help</td><td>ช่วยทำอาหาร</td><td>เรียงขั้นตอนทำอาหาร 4&ndash;5 ขั้นให้ถูกลำดับ</td><td>ลำดับเหตุการณ์</td></tr>
+              <tr><td class="id">family-time</td><td>กินข้าวพร้อมหน้า</td><td>ไปนั่งโต๊ะตอนพ่อแม่นั่งรออยู่ (ต้องมีโต๊ะกินข้าววางในบ้าน)</td><td>เดินสำรวจ + เวลา</td></tr>
+              <tr><td class="id">wake-up</td><td>ตื่นให้ตรงเวลา</td><td>พ่อ/แม่บอกเวลา ให้หมุนเข็มนาฬิกาให้ตรง <span class="pill reuse">ใช้ engine นาฬิกาวิเศษ</span></td><td>เวลา</td></tr>
+              <tr><td class="id">laundry-sort</td><td>แยกผ้าซัก</td><td>แยกผ้าตามสี / ประเภท ลงตะกร้าให้ถูกใบ</td><td>จัดหมวด + สี</td></tr>
+              <tr><td class="id">budget-help</td><td>ใช้เงินให้พอ</td><td>แม่ให้เงินจำนวนหนึ่ง เลือกซื้อของให้ครบโดยไม่เกินงบ</td><td>บวกลบ + วางแผน</td></tr>
+              <tr><td class="id">pet-remind</td><td>พ่อแม่เตือนเรื่องสัตว์</td><td>ให้อาหารสัตว์ตามชนิดที่บอก / พาไปหาหมอถ้าป่วย</td><td>ความรับผิดชอบ</td></tr>
+            </tbody>
+            <caption>
+              ค่าตอบแทน <strong>50&ndash;90 🪙</strong> สูงกว่าเควสต์ NPC ทั่วไป (20&ndash;50 🪙) เพราะทำได้วันละชุดเดียว ·
+              โควตาแยกจากทั้งกระดานและ NPC ในเมือง
+            </caption>
+          </table>
+        </div>
+        <div class="note ok">
+          <p class="note-h">โทนของเควสต์พ่อแม่</p>
+          <p>
+            เป็น &ldquo;ขอความช่วยเหลือ&rdquo; ไม่ใช่ &ldquo;สั่งให้ทำ&rdquo; &mdash; ทำไม่ได้ก็ไม่มีใครโกรธ ไม่มีการบ่น ไม่มีดุ
+            จบทุกชุดด้วยคำขอบคุณและกอด ให้บ้านเป็นที่ที่เด็กอยากกลับมา
+          </p>
+        </div>
+      </section>
+
+      <section id="s21">
+        <div class="sec-head"><span class="sec-num mono">21</span><h2>ของแต่งตัวเพิ่ม + ปุ่มเลือกเป็นภาพ ไม่ใช่ตัวเลข</h2></div>
+
+        <h3>ปัญหาของปุ่มวันนี้</h3>
+        <p>
+          หน้าแต่งตัวมี 17 แถว แถวที่เป็นรูปทรง (ทรงผม ตา ลายเสื้อ หมวก แว่น กระเป๋า ของถือ)
+          แสดงเป็นปุ่มตัวเลข <strong>1 2 3 4&hellip;</strong> เด็ก 5 ขวบต้องกดไล่ทีละปุ่มแล้วมองตัวละครว่าเปลี่ยนเป็นอะไร
+          &mdash; ขัดหลักการโปรเจคตรงๆ ที่ว่าไอคอนต้องเข้าใจได้ด้วยสายตาโดยไม่ต้องอ่านออก
+        </p>
+        <div class="note">
+          <p class="note-h">เปลี่ยนเป็น</p>
+          <p>
+            ทุกปุ่มในแถวรูปทรงวาดเป็น <strong>SVG จำลองของชิ้นนั้นจริงๆ</strong> &mdash; ปุ่มหมวกแบบที่ 3 คือรูปหมวกแบบที่ 3
+            สไตล์แบนพาสเทลขอบมน เข้าชุดกับไอคอนหัวข้อ <code>H_ROW_ICONS</code> ที่วาดไว้แล้ว ·
+            ปุ่ม &ldquo;ไม่ใส่&rdquo; ยังเป็น ✖ เหมือนเดิม · ชิปสีคงเดิมทั้งหมด (สวอตช์สีอ่านง่ายอยู่แล้ว)
+          </p>
+        </div>
+
+        <h3>จำนวนของแต่งตัว</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>แถว</th><th>วันนี้</th><th>ใหม่</th><th>ของที่เพิ่ม</th></tr></thead>
+            <tbody>
+              <tr><td>ทรงผม</td><td class="num">6</td><td class="num">12</td><td>ผมเปีย · มวยผม · ผมหยิก · ผมสั้นแสก · ผมหางม้าสูง · ผมบ๊อบ</td></tr>
+              <tr><td>ดวงตา</td><td class="num">8</td><td class="num">12</td><td>ตาง่วง · ตาหัวใจ · ตากลมโต · ตาปิดยิ้ม</td></tr>
+              <tr><td>ลายเสื้อ</td><td class="num">10</td><td class="num">20</td><td>ลายดาว · ลายหัวใจ · ลายจุด · ลายทางเฉียง · ลายสัตว์ · ตัวเลข</td></tr>
+              <tr><td>เครื่องหัว</td><td class="num">9</td><td class="num">18</td><td>หูสัตว์ · มงกุฎ · หมวกกันน็อก · โบว์ · หมวกไหมพรม · พวงมาลัยดอกไม้</td></tr>
+              <tr><td>แว่นตา</td><td class="num">7</td><td class="num">12</td><td>แว่นกันแดดหัวใจ · แว่นดำน้ำ · แว่นนักบิน · แว่นวิทยาศาสตร์</td></tr>
+              <tr><td>ของสะพาย</td><td class="num">7</td><td class="num">14</td><td>เป้ลายสัตว์ · กระเป๋าคาดอก · ถังน้ำ · ปีกผีเสื้อ · เป้จรวด</td></tr>
+              <tr><td>ของถือ</td><td class="num">9</td><td class="num">18</td><td>ไม้กายสิทธิ์ · ลูกโป่ง · ตาข่ายจับแมลง · ไอศกรีม · หนังสือ · กล้องถ่ายรูป</td></tr>
+              <tr><td><strong>รองเท้า (แถวใหม่)</strong></td><td class="num">&mdash;</td><td class="num">8</td><td>ผ้าใบ · บูท · รองเท้าแตะ · รองเท้าเต้น · บูทกันฝน</td></tr>
+            </tbody>
+            <caption>
+              56 &rarr; <strong>106 แบบ</strong> (+50) ยังไม่นับสี ·
+              ทั้งหมดต้องซื้อในร้านแฟชั่นตามข้อ 9 ยกเว้นชุดเริ่มต้นที่แถมให้ ·
+              ต้องวาดไอคอน SVG ~106 ชิ้น &rArr; กันเป็นงานเฟสของตัวเอง
+            </caption>
+          </table>
+        </div>
+      </section>
+
+      <section id="s22">
+        <div class="sec-head"><span class="sec-num mono">22</span><h2>ตึกแล็บ = แหล่งโจทย์ STEM + coding</h2></div>
+        <p class="sec-sub">
+          ตึกแล็บมี ดร.ฟ้า 🔬 กับนักวิทยาศาสตร์อีก 2 คนเดินวนอยู่แล้ว แต่วันนี้พูดได้อย่างเดียว
+          &mdash; ให้เป็นจุดเดียวในเมืองที่แจกโจทย์วิทยาศาสตร์และคณิตเชิงทดลอง
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>โจทย์</th><th>เล่นยังไง</th><th>สถานะ</th></tr></thead>
+            <tbody>
+              <tr><td class="id">sink-float</td><td>จมหรือลอย</td><td>หย่อนของลงถังน้ำ ทายก่อนว่าจมหรือลอย แล้วดูผลจริง</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">magnet-test</td><td>แม่เหล็กดูดอะไร</td><td>เอาแม่เหล็กจ่อของ 6 ชิ้น แยกว่าดูดติด/ไม่ติด</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">plant-grow</td><td>พืชโตยังไง</td><td>เรียง เมล็ด &rarr; ต้นกล้า &rarr; ดอก &rarr; ผล ให้ถูกลำดับ</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">states-matter</td><td>แข็ง เหลว แก๊ส</td><td>จัดของลง 3 ช่อง น้ำแข็ง/น้ำ/ไอน้ำ ฯลฯ</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">animal-habitat</td><td>สัตว์อยู่ที่ไหน</td><td>จับสัตว์ใส่ถิ่นที่อยู่ ทะเล/ป่า/ทะเลทราย/ขั้วโลก</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">measure-lab</td><td>วัดและตวง</td><td>ตวงน้ำให้ได้ตามขีด / วัดความยาวด้วยไม้บรรทัด</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">mix-color-lab</td><td>ผสมสีในหลอดทดลอง</td><td>โจทย์เดิม เปลี่ยนฉากเป็นหลอดทดลองในแล็บ</td><td><span class="pill reuse">รื้อ engine ผสมสี</span></td></tr>
+              <tr><td class="id">circuit-lab</td><td>ต่อวงจรให้ไฟติด</td><td>ต่อสายให้หลอดสว่าง</td><td><span class="pill reuse">รื้อ engine วงจรไฟฟ้า</span></td></tr>
+              <tr><td class="id">balance-lab</td><td>ตาชั่งสมดุล</td><td>เติมตุ้มให้ 2 ข้างเท่ากัน</td><td><span class="pill reuse">รื้อ engine ตาชั่ง</span></td></tr>
+              <tr><td class="id">shape-build</td><td>ต่อรูปทรงตามแบบ</td><td>ต่อชิ้นส่วนให้ได้รูปตามภาพ</td><td><span class="pill reuse">รื้อ engine แท็งแกรม</span></td></tr>
+            </tbody>
+            <caption>
+              10 แบบ &mdash; 6 แบบเขียนใหม่ + 4 แบบใช้ engine ที่มีอยู่แล้วเปลี่ยนฉากเป็นแล็บ ·
+              ดร.ฟ้าให้โจทย์ยากสุดในเมือง ค่าตอบแทน 60&ndash;100 🪙 · นักเรียนหน้าตึก 🎒 ให้โจทย์เวอร์ชันง่ายสำหรับเด็กเล็ก
+            </caption>
+          </table>
+        </div>
+
+        <h3>22.1 &mdash; เกม coding ในแล็บ</h3>
+        <p class="sec-sub">
+          แล็บไม่ได้มีแค่วิทย์กับคณิต &mdash; เป็นจุดเดียวในเมืองที่แจกโจทย์ <strong>เขียนโปรแกรม</strong> ด้วย
+        </p>
+        <div class="note ok">
+          <p class="note-h">ข่าวดี: engine มีครบอยู่แล้ว</p>
+          <p>
+            <span class="mono">js/games-code.js</span> มี <span class="mono">startCodeGame()</span> ·
+            <span class="mono">robotLevelsFor()</span> · ชุดด่านหุ่นยนต์ 12 ชุดครอบ ป.1&ndash;ป.6 และรองรับ
+            <span class="mono">codeLoop</span> (วนซ้ำ) กับ <span class="mono">codeCond</span> (เงื่อนไข) อยู่แล้ว
+            &rArr; เลือกชุดด่านตามระดับชั้นเด็กได้ทันที แทบไม่ต้องเขียน logic ใหม่
+          </p>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>โจทย์</th><th>เล่นยังไง</th><th>สถานะ</th></tr></thead>
+            <tbody>
+              <tr><td class="id">robot-lab</td><td>พาหุ่นยนต์ไปถึงเป้า</td><td>ต่อคำสั่งเดิน/เลี้ยว แล้วกดรัน ชุดด่านเลือกตามชั้นของเด็ก</td><td><span class="pill reuse">รื้อ engine หุ่นยนต์</span></td></tr>
+              <tr><td class="id">code-loop-lab</td><td>ใช้คำสั่งวนซ้ำ</td><td>ทำโปรแกรมให้สั้นที่สุดด้วยบล็อก &ldquo;ทำซ้ำ N ครั้ง&rdquo;</td><td><span class="pill reuse">รื้อ engine + codeLoop</span></td></tr>
+              <tr><td class="id">code-if-lab</td><td>ถ้าเจอกำแพงให้เลี้ยว</td><td>โปรแกรมมีเงื่อนไข ตัดสินใจเองระหว่างเดิน</td><td><span class="pill reuse">รื้อ engine + codeCond</span></td></tr>
+              <tr><td class="id">code-order</td><td>เรียงคำสั่งให้ถูกลำดับ</td><td>บล็อกคำสั่งสลับอยู่ ลากเรียงให้ถูก<strong>ก่อน</strong>กดรัน</td><td><span class="pill new">ใหม่</span></td></tr>
+              <tr><td class="id">code-debug</td><td>หาคำสั่งที่ผิด</td><td>ในโปรแกรมมีบรรทัดผิดอยู่ 1 บรรทัด หาให้เจอแล้วแก้</td><td><span class="pill new">ใหม่</span></td></tr>
+            </tbody>
+            <caption>
+              5 แบบ &mdash; 3 แบบรื้อ engine เดิม + 2 แบบเขียนใหม่ ·
+              แบ่งหน้าที่ NPC ในแล็บ: ดร.ฟ้า 🔬 วิทยาศาสตร์ · นักวิทย์คนที่ 2 วัด/ตวง/คณิต · คนที่ 3 หุ่นยนต์กับ coding
+            </caption>
+          </table>
+        </div>
+        <p><strong>รวมโจทย์ในแล็บ 15 แบบ</strong> (STEM 10 + coding 5) &mdash; มากที่สุดในเมือง สมกับเป็นตึกที่ยากที่สุด</p>
+        <div class="note coin">
+          <p class="note-h">รวม mechanic ทั้งระบบ</p>
+          <p>
+            23 (ชุดแรก) + 8 (ครอบครัว) + 6 (STEM ที่เขียนใหม่) + 2 (coding ที่เขียนใหม่) + 2 (ดนตรี) = <strong>41 mechanic</strong>
+            &times; 3 ระดับความยาก = 123 แม่แบบ &rArr; <strong>~3,500 โจทย์</strong> ที่ไม่ซ้ำหน้ากัน
+            <br>อีก 7 แบบในแล็บใช้ engine ที่รื้อไว้แล้วในเฟส 5 จึงไม่นับซ้ำ
+          </p>
+        </div>
+      </section>
+
+      <section id="s23">
+        <div class="sec-head"><span class="sec-num mono">23</span><h2>เฟสสุดท้าย &mdash; เครื่องดนตรีที่เล่นได้จริง</h2></div>
+        <p class="sec-sub">
+          หมวดเฟอร์นิเจอร์ใหม่ 🎵 ที่ไม่ได้ตั้งไว้ดูอย่างเดียว &mdash; แตะแล้วมีเสียงจริง
+          ใช้ Web Audio ชุดเดิมจาก <code>js/shared/piano.js</code> ไม่ต้องโหลดไฟล์เสียงเพิ่มแม้แต่ไฟล์เดียว
+        </p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ระดับการเล่น</th><th>เครื่อง</th><th>แตะแล้วเกิดอะไร</th><th>ราคา</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>1 · เสียงเดียว</strong></td><td>🔔 ฉิ่ง · 🥁 แทมบูริน · 🪘 กรับ · 🎐 ระฆังลม</td>
+                <td>แตะปุ๊บดังปั๊บ เด็กเล็กสุดก็เล่นได้ ไม่มีอะไรให้พลาด</td><td class="num">400&ndash;600 🪙</td>
+              </tr>
+              <tr>
+                <td><strong>2 · เล่นเป็นชุด</strong></td><td>🎁 กล่องดนตรี · 🎋 ระนาด · 🪈 ขลุ่ย</td>
+                <td>แตะแล้วเล่นทำนองสั้นๆ พร้อมตัวโน้ตลอยขึ้น</td><td class="num">700&ndash;900 🪙</td>
+              </tr>
+              <tr>
+                <td><strong>3 · เปิดหน้าเล่นเต็ม</strong></td><td>🎹 เปียโน · 🎛️ คีย์บอร์ด · 🎸 กีตาร์ · 🪗 อูคูเลเล่</td>
+                <td>เปิดหน้าเล่นเหมือน &ldquo;เปียโนของหนู&rdquo; ในแอปหลัก กดเป็นเพลงได้จริง</td><td class="num">1,000&ndash;1,500 🪙</td>
+              </tr>
+            </tbody>
+            <caption>11 ชิ้น · เป็นของแพงที่สุดในเกมโดยตั้งใจ ให้เป็นเป้าหมายปลายทางที่เด็กเก็บเงินไปเรื่อยๆ</caption>
+          </table>
+        </div>
+        <div class="note ok">
+          <p class="note-h">ร้านมีอยู่แล้ว</p>
+          <p>
+            <code>shop-music</code> &ldquo;ร้านเครื่องดนตรี&rdquo; 🎸 (ล็อต 7&times;4 แทน <code>home-6</code> เดิม) พร้อมพี่โน้ต <code>npc-musicshop</code>
+            และบทเควสต์ &ldquo;ช่วยพี่ทายเสียงเครื่องดนตรีหน่อยไหม&rdquo; <strong>สร้างไว้แล้วเมื่อ 2026-08-06</strong>
+            &rArr; เฟส 9 แค่เติมสินค้ากับกลไก ไม่ต้องสร้างร้านใหม่
+          </p>
+        </div>
+
+        <h3>เควสต์ที่ผูกกับเครื่องดนตรี</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>id</th><th>เล่นยังไง</th><th>ใครให้</th></tr></thead>
+            <tbody>
+              <tr><td class="id">play-along</td><td>ฟังทำนอง 4&ndash;6 โน้ตแล้วเล่นตาม (ใช้เครื่องที่ซื้อไว้ในบ้าน)</td><td>พ่อ/แม่ · นักดนตรีในเมือง</td></tr>
+              <tr><td class="id">find-sound</td><td>ฟังเสียงแล้วทายว่าเครื่องอะไร</td><td>นักดนตรีในเมือง</td></tr>
+            </tbody>
+            <caption>เควสต์ 2 แบบนี้ต้องมีเครื่องดนตรีในบ้านก่อน &rArr; เป็นแรงจูงใจให้ซื้อ ไม่ใช่ล็อกทางตัน (ยังมีอีก 37 mechanic ให้ทำ)</caption>
+          </table>
+        </div>
+      </section>
+
+      <section id="s24">
+        <div class="sec-head"><span class="sec-num mono">24</span><h2>แผนเฟสฉบับใหม่ &mdash; 9 เฟส</h2></div>
+        <p class="sec-sub">แทนที่แผน 6 เฟสในข้อ 13 · แต่ละเฟสจบแล้วเล่นได้จริงไม่พัง merge ทีละเฟสได้</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>เฟส</th><th>เนื้อหา</th><th>ทำไมลำดับนี้</th></tr></thead>
+            <tbody>
+              <tr><td class="num">1</td><td>เศรษฐกิจ + migration + <strong>ชุดเฟอร์นิเจอร์เริ่มต้น 11 ชิ้น</strong> + ร้านเฟอร์นิเจอร์/แฟชั่น</td><td>ต้องปิดของฟรีก่อน ไม่งั้นเงินไม่มีที่ใช้ &mdash; และของเก่าของเด็กต้องไม่หาย</td></tr>
+              <tr><td class="num">2</td><td>quest engine + <code>quiz</code> ครบ 57 NPC + กระดาน 5/วัน + <strong>ประตูเช็คความพร้อม</strong></td><td>เด็กเริ่มหาเงินได้ทั้งเมืองทันที และระบบความยากถูกตั้งแต่วันแรก</td></tr>
+              <tr><td class="num">3</td><td>สัตว์เลี้ยง: ร้าน · บ้านตามเงื่อนไข · อาหาร · ความหิว · ป่วย · หมอ</td><td>ก้อนใหญ่ที่สุด ต้องรอเศรษฐกิจเสร็จก่อน</td></tr>
+              <tr><td class="num">4</td><td><strong>พ่อ แม่ ในบ้าน + เควสต์ครอบครัว 8 แบบ</strong></td><td>ผูกกับสัตว์เลี้ยง (<code>pet-remind</code>) จึงมาหลังเฟส 3</td></tr>
+              <tr><td class="num">5</td><td>mechanic กลุ่ม C &mdash; รื้อ engine เดิม 7 แบบ</td><td>คุ้มที่สุดต่อแรง โจทย์เพิ่มเยอะโดยแทบไม่เขียน logic ใหม่</td></tr>
+              <tr><td class="num">6</td><td><strong>แล็บ STEM 10 แบบ + coding 5 แบบ</strong></td><td>7 ใน 15 ใช้ engine ที่รื้อไว้แล้วในเฟส 5 &mdash; รวม engine หุ่นยนต์ที่มีครบอยู่แล้ว</td></tr>
+              <tr><td class="num">7</td><td>mechanic กลุ่ม B ที่เหลือ (10) + กลุ่ม D จาก IDEA.md (4)</td><td>งานเขียนใหม่ล้วน ทยอยเพิ่มได้ไม่รีบ</td></tr>
+              <tr><td class="num">8</td><td><strong>เฟอร์นิเจอร์ +64 ชิ้น · ของแต่งตัว +50 แบบ · ปุ่มเลือกเป็น SVG ~106 ไอคอน</strong></td><td>งานวาดล้วน ไม่แตะ logic &rArr; ทำคู่ขนานกับเฟสอื่นได้ ไม่บล็อกใคร</td></tr>
+              <tr><td class="num">9</td><td><strong>เครื่องดนตรี 11 ชิ้น + เควสต์ดนตรี 2 แบบ</strong></td><td>ปิดท้ายตามที่สั่ง &mdash; ต้องมีเศรษฐกิจที่เด็กเก็บเงินถึงหลักพันได้แล้วจริงๆ ก่อน</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note risk">
+          <p class="note-h">ขอบเขตโตขึ้นเท่าไหร่</p>
+          <p>
+            จาก 6 เฟสเป็น 9 เฟส · mechanic 23 &rarr; 39 · เฟอร์นิเจอร์ 116 &rarr; 180 · ของแต่งตัว 56 &rarr; 106 แบบ
+            พร้อมไอคอน SVG ที่ต้องวาดมือ ~106 ชิ้น &rArr; <strong>เฟส 8 คือก้อนที่บวมที่สุด</strong>
+            ถ้าอยากได้ระบบเล่นได้เร็ว แนะนำเลื่อนเฟส 8 ไปท้ายสุดหรือแบ่งย่อยเป็นชุดละ 20 ไอคอน
+          </p>
+        </div>
+      </section>
+
+      <section id="s15">
+        <div class="sec-head"><span class="sec-num mono">25</span><h2>สถานะการตัดสินใจ &mdash; ปิดครบแล้ว</h2></div>
+        <p class="sec-sub">แผนนี้อนุมัติแล้ว เหลือรอสัญญาณว่าจะเริ่มเฟส 1 เมื่อไหร่</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>หัวข้อ</th><th>ที่ตกลง</th></tr></thead>
+            <tbody>
+              <tr><td>ราคา / ค่าตอบแทน</td><td>ใช้ตัวเลขตามข้อ 9 ทั้งหมด</td></tr>
+              <tr><td>จำนวนสัตว์เลี้ยง</td><td>เลี้ยงได้ 1 ตัวเหมือนเดิม · ซื้อตัวใหม่ทีหลังจ่ายครึ่งเดียว</td></tr>
+              <tr><td>ความหิว</td><td>ลดตาม &ldquo;วันที่เข้าเล่น&rdquo; (&minus;35/วันเล่น) ไม่ใช่เวลาจริง</td></tr>
+              <tr><td>โจทย์ระดับสูงกว่าชั้น</td><td>ยังมี แต่ต้องผ่านประตูเช็คความพร้อม (ข้อ 16) และเด็กกดตอบรับเอง</td></tr>
+              <tr><td>สมุดสติกเกอร์</td><td>อยู่ที่เดิมในหน้าหลัก ไม่แตะอะไรเลย (ข้อ 17)</td></tr>
+              <tr><td><strong>ชุดเฟอร์นิเจอร์เริ่มต้น</strong></td><td><strong>11 ชิ้นตามข้อ 18</strong> วางในบ้านให้เรียบร้อยตั้งแต่เปิดครั้งแรก (ปรับลดจาก 19 แล้ว)</td></tr>
+              <tr><td><strong>ชื่อ/หน้าตาพ่อแม่</strong></td><td><strong>มี default มาให้ แต่เด็กแก้ชื่อ + แต่งตัวใหม่เองได้ทั้งหมด</strong> (ข้อ 20)</td></tr>
+              <tr><td>กระดานเควสต์</td><td>1 จุด · 5 ชุด/วัน · โควตาแยกจากเควสต์ NPC เด็ดขาด</td></tr>
+              <tr><td>เครื่องดนตรี</td><td>เป็นเฟสสุดท้าย (เฟส 9)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="ask">
+          <li>
+            <span class="box" aria-hidden="true"></span>
+            <span>
+              <b>เริ่มเฟส 1 เมื่อไหร่</b>
+              <span>ข้อเดียวที่เหลือ &mdash; ยังไม่แตะโค้ดจนกว่าจะได้สัญญาณ</span>
+            </span>
+          </li>
+        </ul>
+        <div class="note ok">
+          <p class="note-h">สำหรับ session ถัดไป</p>
+          <p>
+            แผนเก็บไว้ที่ <code>QUEST-DESIGN.md</code> บน branch <code>feature/house-owl</code> แล้ว
+            พร้อมหัวข้อ <strong>&ldquo;⭐ สรุปบริบท &mdash; อ่านตรงนี้ก่อนเสมอ&rdquo;</strong> ที่หัวไฟล์
+            (กติกาเหล็ก 7 ข้อ · ข้อที่ล็อกแล้ว · ลำดับเฟส · ไฟล์ที่เกี่ยวข้อง · ของที่มีในโค้ดแล้วอย่าเขียนซ้ำ)
+            และ <code>CLAUDE.md</code> ชี้มาที่ไฟล์นี้แล้ว ⇒ ทุก session เข้าใจบริบทตรงกันโดยไม่ต้องอ่านทั้งเอกสาร
+          </p>
+        </div>
+      </section>
+
+      <div class="foot">
+        <span>เอกสารฉบับเต็มอยู่ที่ <span class="mono">QUEST-DESIGN.md</span> ในโปรเจค &mdash; หน้านี้คือฉบับอ่านง่ายของเนื้อหาเดียวกัน</span>
+        <span class="mono">นกฮูกสนุกคิด · owlkids.net</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
