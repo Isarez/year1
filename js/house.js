@@ -6957,8 +6957,12 @@ function rebuildChar(cfg){
 
 function buildCreatorRows(cfg){
   const wrap = $('house-creator-rows');
+  const keepScroll = wrap.scrollTop;    /* สร้างแถวใหม่ตอนใส่/ถอดของ — อย่าให้กระโดดกลับไปบนสุด */
   wrap.innerHTML = '';
   H_ROWS.forEach((row, ri)=>{
+    /* แถวสีของเครื่องแต่ง (ธง needs) — ซ่อนทั้งแถวถ้ายังไม่ได้ใส่ชิ้นนั้น หรือยังไม่มีชิ้นนั้น
+       (เลือกสีหมวกทั้งที่ไม่ได้ใส่หมวกไม่มีความหมาย พอเลือกใส่แล้วแถวสีจะโผล่มาเอง) */
+    if(row.needs && !wearsAcc(cfg, row.needs)) return;
     /* เส้นคั่นกลุ่ม (ธง sec ใน H_ROWS) — แยกให้เห็นว่าแถวสีไหนเป็นของชิ้นไหน */
     if(row.sec && ri > 0){
       const sep = document.createElement('div');
@@ -7005,16 +7009,28 @@ function buildCreatorRows(cfg){
             showToast('👗', 'แบบนี้ยังไม่มีนะ ราคา '+SHOP.priceFit(row.key, i)+' เหรียญ ไปซื้อได้ที่ห้างแฟชั่นในเมือง!');
           return;
         }
+        const was = cfg[row.key];
         cfg[row.key] = i;
+        rebuildChar(cfg);
+        /* ใส่/ถอดเครื่องแต่งที่มีแถวสีคู่กัน → สร้างรายการใหม่ให้แถวสีโผล่/หายทันที
+           (เช็คแค่ตอนข้ามเส้น 0 ↔ ไม่ใช่ 0 จะได้ไม่ต้องวาดใหม่ทุกครั้งที่แค่เปลี่ยนแบบ) */
+        if(H_ROWS.some(r=>r.needs===row.key) && (!was !== !i)){ buildCreatorRows(cfg); return; }
         chips.querySelectorAll('.house-chip').forEach(c=>c.classList.remove('active'));
         b.classList.add('active');
-        rebuildChar(cfg);
       });
       chips.appendChild(b);
     }
     div.appendChild(chips);
     wrap.appendChild(div);
   });
+  wrap.scrollTop = keepScroll;
+}
+/* ใส่เครื่องแต่งชิ้นนี้อยู่จริงไหม — ต้องทั้ง "เลือกไว้ไม่ใช่ ✖ ไม่ใส่" และ "มีสิทธิ์ในชิ้นนั้น"
+   (เด็กที่ยังไม่ได้ซื้อหมวกเลยจะเลือกได้แค่ ✖ อยู่แล้ว เงื่อนไขสิทธิ์เป็นตัวกันเคสข้อมูลเพี้ยน) */
+function wearsAcc(cfg, key){
+  const v = cfg[key];
+  if(!v) return false;
+  return SHOP ? SHOP.ownsFit(key, v) : true;
 }
 
 let creatorCfg = null;

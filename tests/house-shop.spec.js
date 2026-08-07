@@ -143,6 +143,58 @@ test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เ�
   expect(d.unlocked).toContain('piano');
 });
 
+test('หน้าแต่งตัว: แถวสีของเครื่องแต่งโผล่เฉพาะตอนใส่ชิ้นนั้นอยู่', async ({ page }) => {
+  /* เด็กที่มีสิทธิ์เฉพาะหมวกแบบ 1 — ยังไม่ได้ใส่อะไรเลย */
+  await openHouse(page, {
+    v: 1, mapV: 3, econVer: 2,
+    unlocked: ['fit:hair:0', 'fit:shirt:5', 'fit:bottom:0', 'fit:shoes:0', 'fit:hat:1'],
+    char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0,
+            pattern: 0, hat: 0, hatC: 5, glass: 0, glassC: 9, bag: 0, bagC: 0, hold: 0, holdC: 2 },
+  });
+  await page.locator('#house-edit-btn').dispatchEvent('click');
+  await page.waitForFunction(() => !document.getElementById('house-creator').hidden, null, { timeout: 10000 });
+  const rows = () => page.evaluate(() =>
+    Array.from(document.querySelectorAll('#house-creator-rows .house-row-label span:last-child')).map(e => e.textContent));
+
+  /* ยังไม่ใส่อะไร → ต้องไม่มีแถวสีของเครื่องแต่งสักแถว */
+  const before = await rows();
+  ['สีเครื่องหัว', 'สีแว่นตา', 'สีของสะพาย', 'สีของถือ'].forEach(l => expect(before).not.toContain(l));
+  expect(before).toContain('เครื่องหัว');          // ตัวเลือกชิ้นของยังอยู่ครบ
+
+  /* ใส่หมวกแบบที่ 1 → แถว "สีเครื่องหัว" ต้องโผล่ทันที ต่อท้ายแถวเครื่องหัว */
+  await page.evaluate(() => {
+    const row = Array.from(document.querySelectorAll('#house-creator-rows > div'))
+      .find(d => /เครื่องหัว/.test(d.textContent));
+    row.querySelectorAll('.house-chip')[1].click();
+  });
+  await page.waitForTimeout(400);
+  const after = await rows();
+  expect(after.indexOf('สีเครื่องหัว')).toBe(after.indexOf('เครื่องหัว') + 1);
+  ['สีแว่นตา', 'สีของสะพาย', 'สีของถือ'].forEach(l => expect(after).not.toContain(l));
+
+  /* ถอดหมวกกลับ (✖) → แถวสีหายไปอีกครั้ง */
+  await page.evaluate(() => {
+    const row = Array.from(document.querySelectorAll('#house-creator-rows > div'))
+      .find(d => /^.{0,4}เครื่องหัว/.test(d.textContent));
+    row.querySelectorAll('.house-chip')[0].click();
+  });
+  await page.waitForTimeout(400);
+  expect(await rows()).not.toContain('สีเครื่องหัว');
+});
+
+test('หน้าแต่งตัว: ลายเสื้อมาก่อนสีเสื้อ และมีเส้นคั่นแบ่งกลุ่ม', async ({ page }) => {
+  await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await page.locator('#house-edit-btn').dispatchEvent('click');
+  await page.waitForFunction(() => !document.getElementById('house-creator').hidden, null, { timeout: 10000 });
+  const r = await page.evaluate(() => ({
+    labels: Array.from(document.querySelectorAll('#house-creator-rows .house-row-label span:last-child')).map(e => e.textContent),
+    seps: document.querySelectorAll('#house-creator-rows .house-row-sep').length,
+  }));
+  expect(r.labels.indexOf('ลายเสื้อ')).toBe(r.labels.indexOf('สีเสื้อ') - 1);
+  /* 10 กลุ่ม (เพศ/ผม/ตา/เสื้อ/กางเกง/รองเท้า/เครื่องหัว/แว่น/เป้/ของถือ) → เส้นคั่น 9 เส้น */
+  expect(r.seps).toBe(9);
+});
+
 test('หน้าร้าน: เปิดห้างเฟอร์นิเจอร์/ห้างแฟชั่นแล้วมีสินค้าโชว์ครบ', async ({ page }) => {
   await openHouse(page);
   const furn = await page.evaluate(() => {

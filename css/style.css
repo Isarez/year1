@@ -2456,8 +2456,9 @@
   /* ⚠ ห้ามใช้ opacity กับตัวชิปตรงๆ — แม่กุญแจเป็น ::after ของชิปเอง จะจางตามไปด้วยจนมองไม่ออก
      ใช้ ::before เป็นแผ่นฝ้าคลุมสี/ตัวเลขแทน แล้ว ::after ลอยอยู่บนสุดแบบเต็มสี */
   .house-chip.house-chip-lock{position:relative; border-style:dashed; border-color:rgba(0,0,0,.12);}
+  .house-chip.house-chip-lock{color:#B3A491;}
   .house-chip.house-chip-lock::before{
-    content:''; position:absolute; inset:0; border-radius:inherit; background:rgba(246,239,227,.68);
+    content:''; position:absolute; inset:0; border-radius:inherit; background:rgba(246,239,227,.84);
   }
   .house-chip.house-chip-lock::after{
     content:'🔒'; position:absolute; top:-6px; right:-5px; font-size:11px; line-height:16px;
@@ -2678,9 +2679,9 @@
   .he-item-emoji{font-size:28px; line-height:1;}
   .he-item-name{font-size:11.5px; font-weight:800; text-align:center; line-height:1.15;}
   /* เฟส 1 เศรษฐกิจ: ของที่ยังไม่ได้ซื้อ — จางลงแต่ยังเห็นชัด (ให้เด็กเห็นเป้าหมาย) พร้อมป้ายราคา */
-  .he-item.he-locked{background:#F1EADF; border-style:dashed; border-color:rgba(0,0,0,.12);}
-  .he-item.he-locked .he-item-emoji{filter:grayscale(.75); opacity:.55;}
-  .he-item.he-locked .he-item-name{color:#A08E77;}
+  .he-item.he-locked{background:#F1EADF; border-style:dashed; border-color:rgba(0,0,0,.10);}
+  .he-item.he-locked .he-item-emoji{filter:grayscale(.9); opacity:.38;}
+  .he-item.he-locked .he-item-name{color:#B3A491;}
   .he-item-price{font-size:11px; font-weight:800; color:#C98B2E; line-height:1;
                  display:inline-flex; align-items:center; gap:3px;}
   /* ปุ่มจัดบ้านกลับแบบเดิม (ท้ายกล่องเลือกของ เฉพาะตอนตกแต่งในบ้าน) */
@@ -2720,10 +2721,10 @@
   /* ซื้อแล้ว = เขียวมีเครื่องหมายถูก · เงินไม่พอ = จางแต่ไม่ซ่อน เด็กจะได้เห็นว่าต้องเก็บเงินอีกเท่าไหร่ */
   .hs-card.hs-owned{background:#EAF9EC; border-color:#A5D6A7;}
   .hs-card.hs-owned .hs-price{color:#3B8F45;}
-  .hs-card.hs-poor{background:#F1EADF; border-style:dashed;}
-  .hs-card.hs-poor .hs-emoji{filter:grayscale(.7); opacity:.6;}
-  .hs-card.hs-poor .hs-sw{opacity:.55;}
-  .hs-card.hs-poor .hs-name{color:#A08E77;}
+  .hs-card.hs-poor{background:#F1EADF; border-style:dashed; border-color:rgba(0,0,0,.10);}
+  .hs-card.hs-poor .hs-emoji{filter:grayscale(.9); opacity:.38;}
+  .hs-card.hs-poor .hs-sw{opacity:.35;}
+  .hs-card.hs-poor .hs-name{color:#B3A491;}
   .hs-close-btn{background:linear-gradient(135deg,#FFB74D,#F59A2E);}
 
   /* แถบเครื่องมือชิ้นที่เลือก (ลอยเหนือกล่อง panel) */

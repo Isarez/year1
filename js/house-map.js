@@ -54,7 +54,9 @@ const H_DEFAULT_CHAR = {gender:0, hair:0, hairC:0, eyes:1, eyeC:0, shirt:5, bott
    (ทรงผม→สีผม · ดวงตา→สีตา · ลายเสื้อ→สีเสื้อ · เครื่องหัว→สีเครื่องหัว …)
    เด็กจะได้เลือกว่าจะใส่อะไรก่อน แล้วค่อยเลือกสีของสิ่งนั้น ไม่สลับไปมา
    `sec:true` = ขึ้นกลุ่มใหม่ → `buildCreatorRows` ขีดเส้นคั่นให้ก่อนแถวนี้
-   (แถวสีเกาะอยู่ในกลุ่มเดียวกับแบบของมัน เด็กจะได้รู้ว่าสีนี้ของชิ้นไหน) */
+   (แถวสีเกาะอยู่ในกลุ่มเดียวกับแบบของมัน เด็กจะได้รู้ว่าสีนี้ของชิ้นไหน)
+   `needs:'<คีย์>'` = แถวสีของเครื่องแต่งชิ้นนั้น → **ซ่อนทั้งแถวถ้ายังไม่ได้ใส่/ยังไม่มีชิ้นนั้น**
+   (เลือกสีหมวกทั้งที่ไม่ได้ใส่หมวกไม่มีความหมาย แถมทำให้รายการยาวโดยเปล่าประโยชน์) */
 const H_ROWS = [
   {key:'gender', label:'หนูเป็น...', type:'text', options:['👦 เด็กชาย','👧 เด็กหญิง']},
   {key:'hair',   label:'ทรงผม',      type:'num',  n:H_HAIR_N, sec:true},
@@ -66,13 +68,13 @@ const H_ROWS = [
   {key:'bottom', label:'สีกางเกง/กระโปรง', type:'color', colors:H_BOTTOM_COLORS, sec:true},
   {key:'shoes',  label:'สีรองเท้า',   type:'color', colors:H_SHOE_COLORS, sec:true},
   {key:'hat',    label:'เครื่องหัว',   type:'num',  n:H_HAT_N, none:true, sec:true},
-  {key:'hatC',   label:'สีเครื่องหัว', type:'color', colors:H_ACC_COLORS},
+  {key:'hatC',   label:'สีเครื่องหัว', type:'color', colors:H_ACC_COLORS, needs:'hat'},
   {key:'glass',  label:'แว่นตา',      type:'num',  n:H_GLASS_N, none:true, sec:true},
-  {key:'glassC', label:'สีแว่นตา',    type:'color', colors:H_ACC_COLORS},
+  {key:'glassC', label:'สีแว่นตา',    type:'color', colors:H_ACC_COLORS, needs:'glass'},
   {key:'bag',    label:'สะพายหลัง',   type:'num',  n:H_BAG_N, none:true, sec:true},
-  {key:'bagC',   label:'สีของสะพาย',  type:'color', colors:H_ACC_COLORS},
+  {key:'bagC',   label:'สีของสะพาย',  type:'color', colors:H_ACC_COLORS, needs:'bag'},
   {key:'hold',   label:'ของถือ',      type:'num',  n:H_HOLD_N, none:true, sec:true},
-  {key:'holdC',  label:'สีของถือ',    type:'color', colors:H_ACC_COLORS},
+  {key:'holdC',  label:'สีของถือ',    type:'color', colors:H_ACC_COLORS, needs:'hold'},
 ];
 /* ไอคอน SVG แบนๆ พาสเทลขอบมน ชุดเดียวกับธีมไอคอนหมวดในแอป (แทน emoji ระบบเดิมที่ไม่เข้ากับ template) */
 const H_ROW_ICONS = {
