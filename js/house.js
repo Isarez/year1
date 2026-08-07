@@ -6984,11 +6984,14 @@ function buildCreatorRows(cfg){
       b.type = 'button';
       if(row.type==='color'){
         const col = row.colors[i];
+        /* ⚠ ตั้งเป็น longhand (backgroundImage/backgroundColor) ห้ามใช้ shorthand `background`
+           — shorthand จะรีเซ็ต `background-clip` กลับเป็น border-box ทับ CSS ของชิปที่ล็อกอยู่
+             ทำให้สีเต็มๆ โผล่ตามช่องว่างของขอบเส้นประเป็นวงประสีสด (บั๊กเดิม 2026-08-07) */
         if(col && typeof col === 'object'){          /* แบบ 2 สี: สวอตช์แบ่งครึ่งบน/ล่างเส้นคม สะอาดเหมือนชิปสีเดียว */
           const hx = v => '#'+v.toString(16).padStart(6,'0');
-          b.style.background = 'linear-gradient('+hx(col.a)+' 0 50%, '+hx(col.b)+' 50% 100%)';
+          b.style.backgroundImage = 'linear-gradient('+hx(col.a)+' 0 50%, '+hx(col.b)+' 50% 100%)';
         }else{
-          b.style.background = '#'+col.toString(16).padStart(6,'0');
+          b.style.backgroundColor = '#'+col.toString(16).padStart(6,'0');
         }
         b.setAttribute('aria-label', row.label+' แบบที่ '+(i+1));
       }else if(row.type==='num'){
