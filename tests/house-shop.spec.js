@@ -282,7 +282,9 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
     Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /สีเสื้อ/.test(b.textContent)).click();
   });
   await page.waitForTimeout(300);
-  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);  // เปลี่ยนหมวด = กลับมาดูรายการ
+  /* เปลี่ยนหมวดแล้วพรีวิวต้อง **ไม่หาย** — เลื่อนไปโชว์ของชิ้นแรกของหมวดใหม่แทน */
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
+  expect(await page.evaluate(() => document.getElementById('house-shop-buy').textContent)).toContain('สีเสื้อ');
   await page.evaluate(() => document.querySelectorAll('#house-shop-items .hs-card')[0].click());
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);

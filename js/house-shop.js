@@ -379,7 +379,9 @@
         b.className = 'he-tab' + (c.id === shopTab ? ' active' : '');
         b.innerHTML = (c.emoji ? '<span class="he-tab-emoji">' + c.emoji + '</span>' : '')
                     + '<span>' + c.label + '</span>';
-        b.onclick = ()=>{ click(); shopTab = c.id; clearSelected(); renderTabs(); renderItems(); };
+        /* เปลี่ยนหมวด → เลือกของชิ้นแรกของหมวดใหม่ต่อทันที **ห้ามปิดพรีวิว**
+           (กรอบพรีวิวเป็นหน้าต่างลอยแล้ว รายการยังอยู่ครบ ถ้าปิดทิ้งเด็กจะงงว่าของหายไปไหน) */
+        b.onclick = ()=>{ click(); shopTab = c.id; renderTabs(); renderItems(); selectFirst(); };
         wrap.appendChild(b);
         /* แท็บขึ้นบรรทัดใหม่ได้ (ไม่เลื่อนแนวนอนแล้ว) แต่ถ้ากลุ่มยาวจนต้องเลื่อนแนวตั้ง
            ก็ยังต้องเลื่อนแท็บที่เลือกอยู่มาให้เห็น ไม่งั้นเด็กงงว่าดูหมวดไหนอยู่ */
