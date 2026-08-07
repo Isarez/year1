@@ -123,6 +123,7 @@ let hCore = false;                      /* สร้าง renderer/กล้อ
 let renderer, camera, raycaster, groundPlane;
 let scene, worldGroup, interiorGroup, creatorGroup, charGroup = null;
 let hemiLight, dirLight;
+let creatorKeyLight, creatorFillLight, creatorGlow;   /* ไฟส่องตัวละคร/สัตว์เลี้ยงบนแท่น (สว่างเฉพาะกลางคืน) */
 let houseOpen = false, rafId = null, lastT = 0;
 let hMode = 'world';                 /* 'creator' | 'world' */
 let hScene = 'out';                  /* 'out' | 'in' */
@@ -2046,6 +2047,179 @@ function buildMinimart(lot){
   return g;
 }
 
+/* ตัวโน้ตดนตรี (หัวโน้ตเอียง + ก้าน + ธง) ใช้ทั้งบนดาดฟ้าร้านและตกแต่งผนัง — sc = ตัวคูณขนาด */
+function musicNote(hex, sc){
+  const g = new THREE.Group();
+  const head = sphere(.17*sc, hex, 12); head.scale.set(1.25,.85,.55); head.rotation.z = .38; g.add(head);
+  const stem = box(.06*sc,.66*sc,.06*sc, hex,.02); stem.position.set(.19*sc,.36*sc,0); g.add(stem);
+  const flag = box(.055*sc,.34*sc,.055*sc, hex,.02); flag.rotation.z = -.62;
+  flag.position.set(.33*sc,.58*sc,0); g.add(flag);
+  return g;
+}
+/* ---------- ร้านเครื่องดนตรี (shop-music) — ล็อต 7×4 ใหญ่กว่าบ้านทั่วไป ----------
+   เดิมล็อตนี้เป็นบ้านหลังคาม่วง (home-6) เปลี่ยนเป็นร้านเมื่อ 2026-08-06 คงโทนม่วงไว้เป็นที่หมายเดิม
+   จุดที่ทำให้ "อ่านออกว่าเป็นร้าน" ไม่ใช่บ้าน: ตึก 2 ชั้นหลังคาแบน + แถบป้ายหนาคาดรอบ + กระจกโชว์
+   บานใหญ่ 2 บาน + ประตูกระจก + กันสาดลายทาง + ทางเท้าหน้าร้านเป็นลายคีย์เปียโน + กีตาร์ยักษ์กับ
+   ตัวโน้ตตั้งบนดาดฟ้า + เครื่องดนตรีจริงตั้งโชว์หน้าร้าน
+   ⚠ ของหน้าร้านห้ามวางในช่วง x ≈ +.4 ถึง +1.6 — เป็นช่องที่พี่โน้ต (npc-music, side:1) ยืนประจำ
+     กล้องไอโซมุมเดียวตายตัว ของตรงนั้นจะโดนตัว NPC บังถาวร (บทเรียนเดียวกับตู้แช่ร้านสะดวกซื้อ) */
+function buildMusicShop(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const bw = w-.6, bd = d-1.2, bh = 2.7;          /* ตื้นกว่าล็อต เหลือทางเท้าหน้าร้านไว้ตั้งเครื่องดนตรี */
+  /* เครื่องดนตรีหน้าร้านถอยออกมาสุดขอบล็อต (fz+.62) — วางชิดผนังที่ fz+.35 แล้วกล้องไอโซมุมก้มทำให้
+     กลอง/คีย์บอร์ดบังกระจกโชว์ชั้นล่าง แต่ถอยไกลกว่านี้จะล้ำเข้าไปในช่องทางเดินหน้าร้านที่เด็กเดินผ่าน */
+  const fz = bd/2, front = fz+.62;
+  const brand = lot.roof, gold = 0xffd54f, cream = 0xfffaf0, glass = 0xd5f0fb, dark = 0x3a3140;
+  const base = box(bw+.2,.26,bd+.2, 0xe6ddce,.05); base.position.y = .13; g.add(base);
+  const body = box(bw, bh, bd, lot.wall,.06); body.position.y = bh/2; g.add(body);
+  /* --- แถบป้ายหนารอบหลังคาแบน + คิ้วสองสี (ทรงเดียวกับร้านสะดวกซื้อ ให้ร้านในเมืองเป็นภาษาเดียวกัน) --- */
+  const fascia = box(bw+.24,.56,bd+.24, brand,.06); fascia.position.y = bh+.28; g.add(fascia);
+  const st1 = box(bw+.28,.11,bd+.28, cream,.03); st1.position.y = bh+.06; g.add(st1);
+  const st2 = box(bw+.28,.09,bd+.28, gold,.03);  st2.position.y = bh+.2;  g.add(st2);
+  /* ดาดฟ้าโทนม่วงเทา (ไม่ใช่ครีม) — ล็อตนี้ใหญ่ ถ้าดาดฟ้าสีครีมสว่างจะกลายเป็นแผ่นขาวผืนโตกินภาพทั้งหลัง */
+  const deck = box(bw-.14,.12,bd-.14, 0xcfc6dd,.03); deck.position.y = bh+.5; g.add(deck);
+  const beltY = 1.92;                                    /* คิ้วคั่นชั้น 1/ชั้น 2 */
+  const belt = box(bw+.12,.18,bd+.12, brand,.04); belt.position.y = beltY; g.add(belt);
+  /* --- ชั้นล่าง: กระจกโชว์ 2 บาน (มีเครื่องดนตรีตั้งอยู่ข้างใน) + ประตูกระจกกลาง --- */
+  [-1,1].forEach(sd=>{
+    const px = sd*2.0;
+    const fr = box(2.16,1.6,.14, cream,.04);  fr.position.set(px, 1.02, fz); g.add(fr);
+    const gl = box(1.96,1.4,.09, glass,.03);  gl.position.set(px, 1.02, fz+.06); g.add(gl);
+    const sill = box(2.22,.16,.24, brand,.03); sill.position.set(px, .2, fz+.06); g.add(sill);
+    if(sd<0){                                            /* บานซ้าย: กีตาร์แขวนโชว์ */
+      const gb = sphere(.26, 0xef8354, 12); gb.scale.set(1,1.15,.3); gb.position.set(px, .82, fz+.02); g.add(gb);
+      const gb2 = sphere(.19, 0xef8354, 12); gb2.scale.set(1,1.05,.3); gb2.position.set(px, 1.15, fz+.02); g.add(gb2);
+      const hole = cyl(.08,.08,.05, 0x8f6231, 12); hole.rotation.x = Math.PI/2; hole.position.set(px, .95, fz+.11); g.add(hole);
+      const nk = box(.11,.72,.08, 0xd9a86c,.02); nk.position.set(px, 1.62, fz+.02); g.add(nk);
+      const hd = box(.17,.2,.09, 0x8f6231,.02); hd.position.set(px, 2.02, fz+.02); g.add(hd);
+    }else{                                               /* บานขวา: กลองใบเล็ก + ตัวโน้ตลอย */
+      const dr = cyl(.3,.3,.36, cream, 16); dr.rotation.x = Math.PI/2; dr.position.set(px-.2, .7, fz+.02); g.add(dr);
+      const rim = torus(.3,.045, brand, 16); rim.position.set(px-.2, .7, fz+.2); g.add(rim);
+      const cy = cyl(.24,.24,.03, gold, 16); cy.rotation.x = .3; cy.position.set(px+.5, 1.12, fz+.02); g.add(cy);
+      const cySt = cyl(.03,.03,.55, 0xb8c2c8, 8); cySt.position.set(px+.5, .83, fz+.02); g.add(cySt);
+      const nt = musicNote(0xff8fb3, .8); nt.position.set(px+.42, 1.6, fz+.04); nt.rotation.z = -.15; g.add(nt);
+    }
+  });
+  const dfr = box(1.6,1.78,.14, brand,.04); dfr.position.set(0, .89, fz); g.add(dfr);
+  [-1,1].forEach(sd=>{
+    const leaf = box(.66,1.56,.09, glass,.03); leaf.position.set(sd*.36, .84, fz+.06); g.add(leaf);
+    const bar = cyl(.035,.035,.9, 0xb8c2c8, 8); bar.position.set(sd*.1, .84, fz+.12); g.add(bar);
+  });
+  const dtop = box(1.66,.16,.2, gold,.03); dtop.position.set(0, 1.84, fz+.06); g.add(dtop);
+  /* --- กันสาดลายทางม่วง-ครีมพาดหน้าร้าน (ใต้คิ้วคั่นชั้น)
+         ⚠ ตื้นแค่ .44 เท่านั้น — กล้องไอโซมองจากมุมสูง กันสาดลึกๆ จะคลุมกระจกโชว์ชั้นล่างหายทั้งแถบ
+            (ลองลึก .86 มาแล้ว หน้าร้านเหลือแต่ผ้าใบลายทาง มองไม่เห็นเครื่องดนตรีในตู้เลย) --- */
+  const nStr = 14, sw = (bw+.24)/nStr;
+  for(let i=0;i<nStr;i++){
+    const st = box(sw+.02,.09,.44, i%2 ? cream : brand,.02);
+    st.position.set(-(bw+.24)/2 + sw*(i+.5), 1.8, fz+.16); st.rotation.x = -.34; g.add(st);
+  }
+  const awEdge = box(bw+.3,.12,.1, gold,.03); awEdge.position.set(0, 1.73, fz+.35); g.add(awEdge);
+  /* --- ชั้นบน: หน้าต่างสูง 3 บาน คั่นด้วยตัวโน้ตติดผนัง --- */
+  [-2.05,0,2.05].forEach(px=>{
+    const wf = box(1.16,.78,.1, cream,.04); wf.position.set(px, 2.3, fz); g.add(wf);
+    const wg = box(.98,.62,.07, glass,.03); wg.position.set(px, 2.3, fz+.05); g.add(wg);
+    const mul = box(.07,.62,.09, cream,.02);  mul.position.set(px, 2.3, fz+.06); g.add(mul);
+  });
+  [-1.03,1.03].forEach((px,i)=>{
+    const nt = musicNote([gold,0xff8fb3][i], .62); nt.position.set(px, 2.18, fz+.05); g.add(nt);
+  });
+  /* --- ป้ายร้านบนแถบ fascia (แผ่นขาว รูปกีตาร์ 2 บรรทัดจำลองชื่อร้าน) --- */
+  const sfr = box(3.5,.46,.08, cream,.05); sfr.position.set(0, bh+.28, fz+.18); g.add(sfr);
+  const sg = signPlane(lot.icon, .4); sg.position.set(-1.24, bh+.28, fz+.24); g.add(sg);
+  [[.5,.36,1.6,0x6a4aa8],[.32,.16,1.16,0xc9b6e8]].forEach(([ox,oy,lw,c])=>{
+    const ln = box(lw,.13,.03, c,.02); ln.position.set(ox, bh+oy, fz+.24); g.add(ln);
+  });
+  /* --- ผนังด้าน +x (อีกด้านที่กล้องไอโซเห็น) — หน้าต่างชั้นบน + โน้ตวาดผนัง กันหน้าตึกด้านนี้โล่งเป็นแผ่นขาว --- */
+  [-.62,.62].forEach(pz=>{
+    const sw2 = box(.1,.72,.86, cream,.04); sw2.position.set(bw/2, 2.3, pz); g.add(sw2);
+    const sgl = box(.07,.58,.7, glass,.03); sgl.position.set(bw/2+.05, 2.3, pz); g.add(sgl);
+  });
+  [[1.35,.72,gold,.72],[.85,-.5,0xff8fb3,.58]].forEach(([ny,nz,c,s])=>{
+    const nt = musicNote(c, s); nt.rotation.y = Math.PI/2; nt.position.set(bw/2+.05, ny, nz); g.add(nt);
+  });
+  /* --- ดาดฟ้า: กีตาร์ยักษ์ (ฝั่งซ้าย) + ป้ายบิลบอร์ดตั้งพื้น (ฝั่งขวา) เป็นที่หมายมองเห็นแต่ไกล
+         ดาดฟ้าล็อต 7×4 ถ้าปล่อยโล่งจะกลายเป็นแผ่นสีเรียบผืนโตกินภาพทั้งหลัง แต่ของชิ้นเล็กๆ
+         (เคยลองช่องแสง+ลำโพงฮอร์น) มองมุมไอโซแล้วอ่านไม่ออกว่าเป็นอะไร กลายเป็นสามเหลี่ยมลอยๆ
+         จึงใช้ของชิ้นใหญ่ 2 ชิ้นแทน --- */
+  const ry = bh+.56, gux = -2.0;
+  const gBody = sphere(.5, 0xef8354, 14); gBody.scale.set(1,1.1,.3);  gBody.position.set(gux, ry+.6, 0); g.add(gBody);
+  const gBody2 = sphere(.36, 0xef8354, 14); gBody2.scale.set(1,1.05,.3); gBody2.position.set(gux, ry+1.16, 0); g.add(gBody2);
+  const gHole = cyl(.15,.15,.06, 0x8f6231, 14); gHole.rotation.x = Math.PI/2; gHole.position.set(gux, ry+.82, .16); g.add(gHole);
+  const gBrg = box(.34,.1,.09, 0x8f6231,.02); gBrg.position.set(gux, ry+.45, .16); g.add(gBrg);
+  const gNeck = box(.19,1.1,.14, 0xd9a86c,.03); gNeck.position.set(gux, ry+1.9, .02); g.add(gNeck);
+  const gHead = box(.28,.34,.16, 0x8f6231,.03); gHead.position.set(gux, ry+2.58, .02); g.add(gHead);
+  [-.05,.05].forEach(ox=>{ const strg = box(.025,1.9,.025, cream,.01); strg.position.set(gux+ox, ry+1.5, .17); g.add(strg); });
+  const bbx = 1.3, bbz = -.35;
+  [-1.2,1.2].forEach(ox=>{
+    const leg = cyl(.075,.075,.8, 0xb8c2c8, 8); leg.position.set(bbx+ox, ry+.4, bbz); g.add(leg);
+  });
+  const bbFr = box(3.2,1.3,.16, brand,.06); bbFr.position.set(bbx, ry+1.42, bbz); g.add(bbFr);
+  const bbPl = box(2.94,1.06,.1, cream,.05); bbPl.position.set(bbx, ry+1.42, bbz+.06); g.add(bbPl);
+  const bbSg = signPlane(lot.icon, .7); bbSg.position.set(bbx-.86, ry+1.42, bbz+.13); g.add(bbSg);
+  [[.42,.24,1.5,0x6a4aa8],[.28,-.06,1.1,0xc9b6e8]].forEach(([ox,oy,lw,c])=>{
+    const ln = box(lw,.16,.03, c,.02); ln.position.set(bbx+ox, ry+1.42+oy, bbz+.13); g.add(ln);
+  });
+  const bbNt = musicNote(0xff8fb3,.7); bbNt.position.set(bbx+1.16, ry+1.3, bbz+.13); g.add(bbNt);
+  /* --- ป้ายยื่นข้างอาคารฝั่ง +x (ฝั่งที่กล้องไอโซเห็นเต็มๆ) --- */
+  const bx = bw/2;
+  const arm = box(.5,.1,.1, 0xd8dee3,.03); arm.position.set(bx+.14, 2.26, .3); g.add(arm);
+  const bfr = box(.16,1.0,1.0, brand,.05);  bfr.position.set(bx+.28, 1.78, .3); g.add(bfr);
+  const bfc = box(.1,.84,.84, cream,.05);   bfc.position.set(bx+.36, 1.78, .3); g.add(bfc);
+  [1,-1].forEach(sd=>{
+    const bsg = signPlane(lot.icon, .56); bsg.rotation.y = sd*Math.PI/2;
+    bsg.position.set(bx + (sd>0 ? .43 : .21), 1.78, .3); g.add(bsg);
+  });
+  /* --- ทางเท้าหน้าร้านเป็นลายคีย์เปียโน (มองมุมไอโซเห็นเต็มผืน อ่านออกทันทีว่าร้านดนตรี) --- */
+  const apW = bw+.4, nK = 15, kw = apW/nK, apZ = fz+.72;
+  const apron = box(apW,.06,1.2, cream,.02); apron.position.set(0,.03,apZ); g.add(apron);
+  const blackPat = [1,1,0,1,1,1,0];
+  for(let i=1;i<nK;i++){
+    const kx = -apW/2 + i*kw;
+    const ln = box(.04,.02,1.14, 0xcfc7dd,.01); ln.position.set(kx,.07,apZ); g.add(ln);
+    if(blackPat[(i-1)%7]){ const bk = box(.22,.04,.66, dark,.01); bk.position.set(kx,.08,apZ-.25); g.add(bk); }
+  }
+  /* --- เครื่องดนตรีตั้งโชว์หน้าร้าน: กลองชุด + คีย์บอร์ด (ฝั่ง -x) / กีตาร์ + ตู้แอมป์ (ฝั่ง +x) --- */
+  const dx = -2.65;
+  /* ตัวกลองใหญ่เป็นสีม่วงแบรนด์ หน้ากลองครีม — ถ้าทำตัวกลองครีมทั้งใบจะจมหายไปกับพื้นลายคีย์เปียโนสีครีม
+     เหลือแต่ขอบกลองลอยเป็นวงเดียวโดดๆ (เจอมาแล้วตอนลองครั้งแรก) */
+  const bass = cyl(.44,.44,.52, brand, 18); bass.rotation.x = Math.PI/2; bass.position.set(dx,.46,front); g.add(bass);
+  const bHead = cyl(.4,.4,.04, cream, 18); bHead.rotation.x = Math.PI/2; bHead.position.set(dx,.46,front+.27); g.add(bHead);
+  const bRim = torus(.44,.055, gold, 18); bRim.position.set(dx,.46,front+.28); g.add(bRim);
+  const bLogo = musicNote(brand,.5); bLogo.position.set(dx-.06,.34,front+.31); g.add(bLogo);
+  const snare = cyl(.24,.24,.22, gold, 14); snare.position.set(dx+.72,.72,front-.1); g.add(snare);
+  const sHead = cyl(.245,.245,.04, cream, 14); sHead.position.set(dx+.72,.84,front-.1); g.add(sHead);
+  [-1,1].forEach(sd=>{ const lg = cyl(.03,.03,.62, 0xb8c2c8, 6); lg.position.set(dx+.72+sd*.16,.31,front-.1+sd*.1); g.add(lg); });
+  const cym = cyl(.3,.3,.035, gold, 18); cym.rotation.x = .32; cym.position.set(dx-.62,1.12,front-.18); g.add(cym);
+  const cySt = cyl(.035,.035,1.1, 0xb8c2c8, 8); cySt.position.set(dx-.62,.55,front-.18); g.add(cySt);
+  [-1,1].forEach(sd=>{ const stk = cyl(.028,.028,.5, 0xe8c9a0, 6); stk.rotation.x = Math.PI/2; stk.rotation.z = sd*.22;
+    stk.position.set(dx+sd*.12,.86,front+.16); g.add(stk); });
+  const kx0 = -.95;
+  const kbBody = box(1.4,.16,.44, dark,.04);   kbBody.position.set(kx0,.8,front-.02); g.add(kbBody);
+  const kbKeys = box(1.24,.07,.3, cream,.02);  kbKeys.position.set(kx0,.9,front+.04); g.add(kbKeys);
+  for(let i=0;i<7;i++){ if(!blackPat[i%7]) continue;
+    const bk = box(.07,.04,.16, dark,.01); bk.position.set(kx0-.5+i*.17,.95,front-.02); g.add(bk); }
+  [-1,1].forEach(sd=>{
+    const lg = cyl(.04,.04,.78, 0xb8c2c8, 8); lg.rotation.z = sd*.16; lg.position.set(kx0+sd*.5,.39,front-.02); g.add(lg);
+  });
+  const gx = 2.25;
+  const gsBody = sphere(.3, 0x7fc4e8, 12); gsBody.scale.set(1,1.15,.32); gsBody.rotation.z = .16; gsBody.position.set(gx,.45,front-.02); g.add(gsBody);
+  const gsB2 = sphere(.22, 0x7fc4e8, 12); gsB2.scale.set(1,1.05,.32); gsB2.rotation.z = .16; gsB2.position.set(gx+.07,.82,front-.02); g.add(gsB2);
+  const gsHole = cyl(.09,.09,.05, 0x2e6f8f, 12); gsHole.rotation.x = Math.PI/2; gsHole.position.set(gx+.02,.6,front+.08); g.add(gsHole);
+  const gsNeck = box(.12,.86,.09, 0xd9a86c,.02); gsNeck.rotation.z = .16; gsNeck.position.set(gx+.2,1.35,front-.02); g.add(gsNeck);
+  const gsHead = box(.18,.22,.1, 0x8f6231,.02); gsHead.rotation.z = .16; gsHead.position.set(gx+.28,1.83,front-.02); g.add(gsHead);
+  [-1,1].forEach(sd=>{ const lg = cyl(.03,.03,.9, 0xb8c2c8, 6); lg.rotation.x = sd*.2; lg.position.set(gx,.45,front-.02+sd*.14); g.add(lg); });
+  const amp = box(.62,.66,.5, dark,.05); amp.position.set(gx+.95,.33,front-.04); g.add(amp);
+  const ampSpk = cyl(.19,.19,.05, 0x8d84a0, 14); ampSpk.rotation.x = Math.PI/2; ampSpk.position.set(gx+.95,.3,front+.22); g.add(ampSpk);
+  const ampTop = box(.66,.1,.54, brand,.03); ampTop.position.set(gx+.95,.7,front-.04); g.add(ampTop);
+  [[-.12,gold],[.12,0xff8fb3]].forEach(([ox,c])=>{
+    const kn = cyl(.045,.045,.04, c, 10); kn.rotation.x = Math.PI/2; kn.position.set(gx+.95+ox,.63,front+.2); g.add(kn);
+  });
+  g.position.set(outWX((lot.x0+lot.x1)/2), 0, outWZ((lot.z0+lot.z1)/2));
+  return g;
+}
+
 /* ---------- คอกสัตว์เลี้ยงข้างร้าน (pen-petshop) — โล่ง ไม่มีหลังคา ----------
    รั้วคนละแบบกับรั้วไม้ฟาร์ม: เสาครีมขอบมน + ระแนงพาสเทล + ยอดเสาเป็นลูกกลมสีลูกกวาด
    ให้เข้าชุดกับรั้วโรงเรียน/ซุ้มลานน้ำพุในเมือง */
@@ -2933,6 +3107,7 @@ function buildLotBuilding(lot){
   if(lot.shopKind==='food') return buildRestaurant(lot);
   if(lot.shopKind==='pet')  return buildPetShop(lot);
   if(lot.shopKind==='mart') return buildMinimart(lot);     /* ร้านสะดวกซื้อ — ตึกหลังคาแบน ไม่ใช้ทรงบ้าน */
+  if(lot.shopKind==='music') return buildMusicShop(lot);   /* ร้านเครื่องดนตรี — ตึก 2 ชั้นหลังคาแบน */
   if(lot.kind==='mall') return buildMall(lot);
   if(lot.kind==='lab') return buildScienceLab(lot);
   if(lot.kind==='school') return buildSchoolBuilding(lot);
@@ -6350,9 +6525,19 @@ function updateShadowCam(){
    ท้องฟ้า CSS ของแอปหลัก) — instant ใช้ตอนเพิ่งเข้า view ให้ตรงธีมทันที */
 let lightLerp = null;
 function lightTargets(night){
+  /* ck/cf = ไฟส่องแท่นหน้าแต่งตัว/เลือกสัตว์เลี้ยง — กลางวันปิดสนิท (ฉากสว่างพออยู่แล้ว)
+     กลางคืนเปิดเป็นไฟสปอตอุ่นๆ ไม่งั้นเด็กมองสีเสื้อ/สีขนไม่ออกเลย */
   return night
-    ? {hi:.55, di:.5,  hc:new THREE.Color(0x8fa3d9), hg:new THREE.Color(0x39406b), dc:new THREE.Color(0xbcd0ff)}
-    : {hi:.62, di:.68, hc:new THREE.Color(0xfff6e0), hg:new THREE.Color(0xcde8b0), dc:new THREE.Color(0xffffff)};
+    ? {hi:.55, di:.5,  ck:.85, cf:.45, hc:new THREE.Color(0x8fa3d9), hg:new THREE.Color(0x39406b), dc:new THREE.Color(0xbcd0ff)}
+    : {hi:.62, di:.68, ck:0,    cf:0,  hc:new THREE.Color(0xfff6e0), hg:new THREE.Color(0xcde8b0), dc:new THREE.Color(0xffffff)};
+}
+function applyCreatorLights(ck, cf){
+  if(creatorKeyLight)  creatorKeyLight.intensity  = ck;
+  if(creatorFillLight) creatorFillLight.intensity = cf;
+  if(creatorGlow){
+    creatorGlow.visible = ck > .02;
+    creatorGlow.material.opacity = Math.min(.16, ck*.14);   /* จางๆ พอให้เห็นวงไฟ ไม่กลบสีพื้นแท่น */
+  }
 }
 function updateLights(instant){
   const to = lightTargets((typeof isNightMode==='function') && isNightMode());
@@ -6360,11 +6545,14 @@ function updateLights(instant){
   if(instant){
     hemiLight.intensity = to.hi; dirLight.intensity = to.di;
     hemiLight.color.copy(to.hc); hemiLight.groundColor.copy(to.hg); dirLight.color.copy(to.dc);
+    applyCreatorLights(to.ck, to.cf);
     lightLerp = null;
     return;
   }
   lightLerp = {k:0, dur:2,
     from:{hi:hemiLight.intensity, di:dirLight.intensity,
+          ck:creatorKeyLight ? creatorKeyLight.intensity : to.ck,
+          cf:creatorFillLight ? creatorFillLight.intensity : to.cf,
           hc:hemiLight.color.clone(), hg:hemiLight.groundColor.clone(), dc:dirLight.color.clone()},
     to};
 }
@@ -6376,6 +6564,7 @@ function updateLightLerp(dt){
   const {from, to} = lightLerp;
   hemiLight.intensity = from.hi + (to.hi-from.hi)*e;
   dirLight.intensity = from.di + (to.di-from.di)*e;
+  applyCreatorLights(from.ck + (to.ck-from.ck)*e, from.cf + (to.cf-from.cf)*e);
   hemiLight.color.lerpColors(from.hc, to.hc, e);
   hemiLight.groundColor.lerpColors(from.hg, to.hg, e);
   dirLight.color.lerpColors(from.dc, to.dc, e);
@@ -6428,8 +6617,27 @@ function initThreeFinish(){
   creatorGroup = new THREE.Group();
   const plat = new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.45,.22,24), toonMat(0x7cc25a));
   plat.position.y = -.11; plat.receiveShadow = hShadows; creatorGroup.add(plat);
+  /* ไฟส่องเวที: อยู่ในกลุ่มนี้ จึงติดเฉพาะตอนเปิดหน้าแต่งตัว/เลือกสัตว์เลี้ยง (กลุ่มซ่อน = ไฟดับเอง)
+     ความสว่างคุมด้วย lightTargets() — กลางวัน 0, กลางคืนเปิดอุ่นๆ ให้เห็นสีเสื้อ/สีขนชัด */
+  creatorKeyLight = new THREE.PointLight(0xfff1c8, 0, 18, 1.05);
+  creatorKeyLight.position.set(1.7, 3.5, 3.6);
+  creatorGroup.add(creatorKeyLight);
+  creatorFillLight = new THREE.PointLight(0xd6e6ff, 0, 16, 1.2);   /* ไฟช่วยด้านตรงข้าม กันครึ่งตัวที่ทึบเป็นเงาดำ */
+  creatorFillLight.position.set(-2.4, 1.7, 2.4);
+  creatorGroup.add(creatorFillLight);
+  /* วงแสงบนแท่น ให้เด็กเห็นว่ามี "ไฟส่อง" จริงๆ ไม่ใช่จู่ๆ ก็สว่าง */
+  creatorGlow = new THREE.Mesh(new THREE.CircleGeometry(1.05, 28),
+    new THREE.MeshBasicMaterial({color:0xfff3cc, transparent:true, opacity:0, depthWrite:false}));
+  creatorGlow.rotation.x = -Math.PI/2; creatorGlow.position.y = .015; creatorGlow.visible = false;
+  creatorGroup.add(creatorGlow);
   creatorGroup.visible = false;
   scene.add(creatorGroup);
+  /* ไฟเวทีเพิ่งถูกสร้าง — ตั้งค่าให้ตรงธีมปัจจุบันทันที (ไม่เรียก updateLights ทั้งก้อน
+     เพราะ refreshLamps() ข้างในจำสถานะกลางวัน/คืนไว้ จะทำให้โคมไฟที่สร้างทีหลังไม่ติดกลางคืน) */
+  {
+    const t0 = lightTargets((typeof isNightMode==='function') && isNightMode());
+    applyCreatorLights(t0.ck, t0.cf);
+  }
 
   /* ธีมกลางวัน/กลางคืนเปลี่ยนได้จากหน้าอื่น — เช็คผ่าน observer ตอน view เปิดอยู่ */
   new MutationObserver(()=>{ if(houseOpen) updateLights(); })
@@ -6653,6 +6861,7 @@ function finishArrive(){
     else if(a.type==='decor'){
       const g = a.group, item = a.item, act = a.act;
       if(act==='slide') startSlideRide(g, item);
+      else if(act==='pethouse') togglePetRest(g);
       else if(act==='sit' || act==='sleep') startSit(g, item, act);
       else if(act==='toggle') decorToggle(g);
       else if(act==='spin') decorSpin(g);
@@ -6700,6 +6909,7 @@ function switchScene(to){
     /* สัตว์เลี้ยงตามเข้า/ออกบ้านด้วย: ย้าย group ไปฉากใหม่แล้ววาร์ปมาข้างๆ ตัวเด็ก */
     if(hPet.group){
       petParent().add(hPet.group);
+      hPet.rest = null; hPet.sitK = 0; hPet.group.rotation.x = 0;   /* ที่นอนรออยู่หน้าบ้านสัตว์เลี้ยงเป็นอันจบ ตามเด็กเข้าฉากใหม่ */
       hPet.tile = tileNearPlayer();
       hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null; hPet.beh = null;
       hPet.group.position.copy(tileWorld(hPet.tile));
@@ -6799,6 +7009,22 @@ function openCreator(fromWorld){
 function closeCreator(){
   saveHouseData({char: creatorCfg});
   if(typeof showToast==='function') showToast('🎉', 'เก่งมาก! ตัวละครของหนูพร้อมแล้ว');
+  exitCreatorToWorld();
+  /* ครั้งแรกหลังสร้างตัวละครเสร็จ: ชวนรับเลี้ยงสัตว์ต่อเลย (มีปุ่มข้ามได้ ไม่บังคับ) */
+  const d0 = loadHouseData() || {};
+  if(!creatorState.fromWorld && !d0.pet && !d0.petPromptSeen){
+    saveHouseData({petPromptSeen:true});
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) fadeSwap(()=>openPetPicker()); }, 1200);
+  }
+}
+/* ยกเลิกการแต่งตัว (ปุ่ม ← ตอนกำลังแก้ไขตัวละคร) — ทิ้งชุดที่เพิ่งลอง กลับไปใช้ชุดที่บันทึกไว้เดิม */
+function cancelCreator(){
+  const saved = loadHouseData();
+  creatorCfg = Object.assign({}, H_DEFAULT_CHAR, (saved && saved.char) || {});
+  exitCreatorToWorld();
+  if(typeof showToast==='function') showToast('↩️', 'ยกเลิกแล้ว ตัวละครกลับเป็นชุดเดิมนะ');
+}
+function exitCreatorToWorld(){
   hMode = 'world';
   $('house-creator').hidden = true;
   $('house-rotate-wrap').hidden = true;
@@ -6813,12 +7039,6 @@ function closeCreator(){
   camTarget.copy(p);
   applyCamera();
   showHint();
-  /* ครั้งแรกหลังสร้างตัวละครเสร็จ: ชวนรับเลี้ยงสัตว์ต่อเลย (มีปุ่มข้ามได้ ไม่บังคับ) */
-  const d0 = loadHouseData() || {};
-  if(!creatorState.fromWorld && !d0.pet && !d0.petPromptSeen){
-    saveHouseData({petPromptSeen:true});
-    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) fadeSwap(()=>openPetPicker()); }, 1200);
-  }
 }
 
 function showHint(){
@@ -8007,7 +8227,8 @@ const PET_SCALE = 1.45;   /* สัตว์เลี้ยงตัวใหญ
 const PET_IDLE_EMOJI = ['❤️','⭐','🎵','😊','🦋','💤'];
 const hPet = {cfg:null, group:null, tile:null, path:[], seg:0, segT:0, segFrom:null,
               t:0, repathT:0, behT:2.5, beh:null, behK:0, happy:0, happyDur:1, spin:false,
-              sitK:0, bubbleTimer:null};
+              sitK:0, bubbleTimer:null,
+              rest:null, restT:0};   /* rest = group ของบ้านสัตว์เลี้ยงที่กำลังนอนรออยู่ (null = เดินตามเด็กปกติ) */
 
 function petTypeInfo(id){ return PET_TYPES.find(p=>p.id===id) || PET_TYPES[0]; }
 function curGridInfo(){
@@ -8187,7 +8408,7 @@ function removePetGroup(){
     disposeGroup(hPet.group);
     hPet.group = null;
   }
-  hPet.cfg = null;
+  hPet.cfg = null; hPet.rest = null; hPet.sitK = 0;
   const nameEl = $('house-pet-name'), bubEl = $('house-pet-bubble');
   if(nameEl) nameEl.hidden = true;
   if(bubEl) bubEl.classList.remove('on');
@@ -8231,6 +8452,8 @@ function petHappy(dur, spin){
 /* แตะตัวสัตว์เลี้ยง = เล่นด้วยกัน: หันหน้าเข้าหากัน กระโดดหมุนตัวดีใจ + หัวใจฟุ้ง */
 function playWithPet(){
   if(!hPet.group) return;
+  /* แตะตัวที่โผล่ครึ่งตัวอยู่ในบ้านสัตว์เลี้ยง = เรียกออกมาเดินเล่นต่อ (ไม่ต้องเดินไปแตะตัวบ้าน) */
+  if(hPet.rest){ if(typeof playClick==='function') playClick(); petLeaveHouse(); return; }
   questEvent('pet', null);
   if(typeof playClick==='function') playClick();
   hPet.path = [];
@@ -8246,9 +8469,63 @@ function playWithPet(){
   }
 }
 
+/* ---------- นอนรอในบ้านสัตว์เลี้ยง (แตะบ้านสัตว์เลี้ยง = สลับเข้า/ออก) ---------- */
+const PET_REST_IN  = ['ไปนอนรอในบ้านนะ', 'เข้าไปพักก่อนนะ', 'นอนรอแป๊บนึงนะ'];
+const PET_REST_OUT = ['ออกมาเดินเล่นกัน!', 'มาเดินเล่นด้วยกันนะ', 'ตื่นแล้ว ไปเที่ยวกัน!'];
+function pickOne(a){ return a[(Math.random()*a.length)|0]; }
+
+function togglePetRest(g){
+  if(!hPet.group){ charBubble('ยังไม่มีสัตว์เลี้ยงเลย 🐾', true); return; }
+  if(hPet.rest) petLeaveHouse(); else petEnterHouse(g);
+}
+/* พาน้องเข้าไปนอนรอ: จอดตรงประตู (ด้านหน้าโมเดล = +z ของ group) ให้ครึ่งตัวหลังจมอยู่ในบ้าน
+   ตัวบ้านเป็นกล่องทึบ ส่วนที่จมจึงถูกบังด้วย depth ของ three.js เองโดยไม่ต้องตัดโมเดล */
+function petEnterHouse(g){
+  hPet.rest = g; hPet.restT = 2.5;
+  hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
+  hPet.beh = null; hPet.happy = 0; hPet.spin = false;
+  /* กล้อง iso มองจากมุม +x/+z เสมอ → ต้องจอดน้องไว้ "ด้านที่กล้องมองเห็น" ไม่งั้นไปอยู่หลังบ้านมองไม่เห็นเลย
+     (เด็กหมุนบ้านเองได้ในโหมดตกแต่ง) เลือกด้านที่ใกล้ทางประตูจริงที่สุดใน 2 ด้านที่มองเห็น */
+  const rot = g.rotation.y, dx = Math.sin(rot), dz = Math.cos(rot);   /* ทิศประตู = +z ของโมเดล */
+  const useX = dx >= dz;
+  hPet.group.position.set(g.position.x + (useX ? .52 : 0), 0, g.position.z + (useX ? 0 : .47));
+  hPet.group.rotation.set(0, useX ? Math.PI/2 : 0, 0);
+  charBubble(pickOne(PET_REST_IN), true);
+  setTimeout(()=>{ if(hPet.group && hPet.rest && houseOpen) petBubble('💤'); }, 700);
+}
+/* เรียกออกมาเดินตามต่อ — เซ็ต tile ให้ตรงกับช่องเดินได้ที่ใกล้ประตูที่สุด path ต่อไปจะได้ไม่วาร์ป */
+function petLeaveHouse(quiet){
+  if(!hPet.rest) return;
+  hPet.rest = null;
+  const {grid,W,D} = curGridInfo();
+  const p = hPet.group.position;
+  const t = nearestWalkable(grid, W, D, Math.round(p.x + (OUT_W-1)/2), Math.round(p.z + (OUT_D-1)/2));
+  if(t) hPet.tile = {x:t.x, z:t.z};
+  hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
+  hPet.sitK = 0; hPet.beh = null; hPet.repathT = 0;
+  hPet.group.rotation.x = 0;
+  if(quiet) return;
+  charBubble(pickOne(PET_REST_OUT), true);
+  petHappy(.9, false);
+  petBubble('❤️');
+}
+/* อยู่ในบ้าน: นั่งเอนตัว หายใจขึ้นลงช้าๆ แล้วปล่อย 💤 เป็นระยะ (ไม่เดินตามเด็ก) */
+function updatePetRest(dt){
+  if(!hPet.rest.parent){ petLeaveHouse(true); return; }   /* บ้านถูกย้าย/เก็บระหว่างนอนรอ */
+  const u = hPet.group.userData.anim || {}, type = hPet.cfg.type;
+  hPet.sitK += (1 - hPet.sitK) * Math.min(1, dt*6);
+  if(type==='turtle'){ if(u.head) u.head.scale.setScalar(1 - hPet.sitK*.75); }
+  else hPet.group.rotation.x = -.42 * hPet.sitK;
+  hPet.group.position.y = hPet.sitK*.04 + Math.sin(hPet.t*1.6)*.015;
+  if(u.tail) u.tail.rotation.z = Math.sin(hPet.t*2.2)*.18;
+  hPet.restT -= dt;
+  if(hPet.restT <= 0){ hPet.restT = 6 + Math.random()*5; petBubble('💤'); }
+}
+
 function updatePet(dt){
   if(!hPet.group || hMode!=='world') return;
   hPet.t += dt;
+  if(hPet.rest){ updatePetRest(dt); return; }
   const u = hPet.group.userData.anim || {};
   const type = hPet.cfg.type;
   let moving = false;
@@ -8499,7 +8776,7 @@ function layoutCompassDial(){
   });
   compassDialDone = true;
 }
-/* ---------- ป้ายยอดเงินนกฮูกข้างเข็มทิศ ----------
+/* ---------- ป้ายยอดเงินนกฮูกท้ายแถวปุ่มบน (ต่อจากปุ่มตกแต่งบ้าน) ----------
    ตัวเลขมาจาก window.OwlCoins (js/app-core.js) — เด็กแต่ละคนมียอดของตัวเอง เริ่มที่ 0
    โชว์เฉพาะตอนเดินเล่นในโหมดบ้าน (ไม่โชว์ตอนสร้างตัวละคร/เลือกสัตว์เลี้ยง/โหมดตกแต่ง) */
 let coinShownVal = null;
@@ -8685,7 +8962,9 @@ function seedWorldDecor(data){
   /* รั้วตรงระหว่างมุม (ข้ามช่องมุม) — แนวนอนบน/ล่าง (rot 0), แนวตั้งซ้าย/ขวา (rot 1) */
   [YARD.z0, YARD.z1].forEach(fz=>{ for(let x=YARD.x0+1; x<=YARD.x1-1; x++){ if(isFenceTile(x,fz)) seed.push({id:'fence-seg', x, z:fz, rot:0, col:0}); } });
   [YARD.x0, YARD.x1].forEach(fx=>{ for(let z=YARD.z0+1; z<=YARD.z1-1; z++){ if(isFenceTile(fx,z)) seed.push({id:'fence-seg', x:fx, z, rot:1, col:0}); } });
-  seed.push({id:'pet-house', x:PET_HOUSE_TILE.x, z:PET_HOUSE_TILE.z, rot:3, col:0});
+  /* rot:0 = ประตูหันไปทาง +z ทิศเดียวกับประตูบ้านเด็ก (ทางเดินหน้าบ้านก็ทอดไป +z) และเป็นด้านที่
+     กล้อง iso มองเห็น (ของเดิม rot:3 ประตูหันหลังให้กล้อง เด็กไม่เห็นทั้งประตูและตัวที่เข้าไปนอนรอ) */
+  seed.push({id:'pet-house', x:PET_HOUSE_TILE.x, z:PET_HOUSE_TILE.z, rot:0, col:0});
   /* แผ่นทางเดินหน้าประตู (ลอดช่องประตูรั้ว) — ย้าย/ลบได้ */
   for(let i=0;i<4;i++) seed.push({id:'path', x:DOOR_TILE.x, z:DOOR_TILE.z+i, rot:0, col:0});
   decor.out = seed.concat(decor.out || []);
@@ -9243,11 +9522,14 @@ function refreshLamps(){   /* เรียกจาก updateLights — สล�
     lamp.on = night;   /* โคม/เสาไฟ: เปิดกลางคืน ปิดกลางวันอัตโนมัติ (fade เอง) */
   }); });
 }
-function charBubble(txt){
+/* say=true → เป็นประโยคไทย ไม่ใช่ emoji เดี่ยว ใส่คลาส .say ให้ย่อฟอนต์+ตัดบรรทัด ฟองจะได้ไม่ยาวล้นจอ */
+function charBubble(txt, say){
   const hb = $('house-char-bubble'); if(!hb) return;
-  hb.textContent = txt; hb.classList.add('on');
+  hb.textContent = txt;
+  hb.classList.toggle('say', !!say);
+  hb.classList.add('on');
   clearTimeout(charBubble._t);
-  charBubble._t = setTimeout(()=>hb.classList.remove('on'), 1600);
+  charBubble._t = setTimeout(()=>hb.classList.remove('on'), say ? 2200 : 1600);
 }
 
 /* ---------- loop ---------- */
@@ -9497,6 +9779,7 @@ function enterHouseGame(){
   houseOpen = true;
   $('house-char-name').textContent = activeChild.name;
   syncHouseCtrls();
+  setHouseCtrlOpen(false);        /* เข้าบ้านใหม่ทุกครั้ง เริ่มที่เฟืองพับไว้เสมอ */
   houseSyncChild();
   fadeIn();
   if(!critters.length) critterSpawnT = Math.min(critterSpawnT, 2.5);
@@ -9799,9 +10082,26 @@ const HOUSE_CTRL_PROXY = [
 function syncHouseCtrls(){
   HOUSE_CTRL_PROXY.forEach(([hid,sid])=>{
     const h = $(hid), s = $(sid);
-    if(h && s){ h.innerHTML = s.innerHTML; h.className = s.className; }
+    if(!h || !s) return;
+    const ic = h.querySelector('.hc-ic'), lb = h.querySelector('.hc-label');
+    (ic || h).innerHTML = s.innerHTML;                          /* เขียนทับเฉพาะช่องไอคอน ป้ายข้อความคงไว้ */
+    /* ป้ายข้อความคงที่เกือบทุกปุ่ม (บอกว่าปุ่มนี้คืออะไร) — มีแค่ปุ่มธีมที่ต้องสลับคำ กลางวัน/กลางคืน
+       สถานะเปิด/ปิดของเพลงกับเสียงดูจากขีดแดงทับไอคอน + ข้อความจาง ไม่ต้องเปลี่ยนคำ (คำยาวเกินปุ่มบนจอแคบ) */
+    if(lb && h.dataset.syncLabel && s.dataset.tooltip) lb.textContent = s.dataset.tooltip;
+    h.classList.toggle('muted', s.classList.contains('muted'));      /* คัดมาเฉพาะสถานะปิดเสียง — ก๊อบ className ทั้งก้อนจะลบ class ป้ายทิ้ง */
   });
 }
+/* ปุ่มเฟือง: พับ/กางแถวปุ่มควบคุม (เริ่มต้นพับไว้ มุมขวาบนจะได้เหลือแค่เฟืองปุ่มเดียว) */
+function setHouseCtrlOpen(open){
+  const list = $('house-ctrl-list'), gear = $('house-ctrl-gear');
+  if(!list || !gear) return;
+  list.hidden = !open;
+  gear.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+$('house-ctrl-gear').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  setHouseCtrlOpen($('house-ctrl-list').hidden);
+});
 
 /* ---------- ป้ายชื่อเด็ก (child chip) ในโหมดบ้าน ----------
    proxy ของ #child-chip-group ใน header เหมือนกัน — ก๊อบ emoji/ชื่อจาก chip จริง
@@ -9827,7 +10127,15 @@ window.startHouseGame = startHouseGame;
 $('house-entry-btn').addEventListener('click', startHouseGame);
 $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
 $('hq-claim').addEventListener('click', claimQuestReward);
-$('house-back').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); if(editMode){ exitEditMode(); return; } stopHouseGame(); });
+/* ปุ่มกลับ (←): ถ้าเปิดแผงอะไรค้างอยู่ = "ยกเลิก" กลับไปหน้าเกมก่อน ยังไม่ออกจากบ้าน
+   ยกเว้นตอนสร้างตัวละครครั้งแรก (ยังไม่มีตัวละคร/โลกให้กลับไป) ให้ออกจากบ้านเหมือนเดิม */
+$('house-back').addEventListener('click', ()=>{
+  if(typeof playClick==='function') playClick();
+  if(editMode){ exitEditMode(); return; }
+  if(hMode==='pet'){ fadeSwap(()=>closePetPicker(null)); return; }
+  if(hMode==='creator' && creatorState.fromWorld){ fadeSwap(()=>cancelCreator()); return; }
+  stopHouseGame();
+});
 $('house-edit-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   if(hMode!=='creator') fadeSwap(()=>openCreator(true));

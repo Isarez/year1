@@ -431,19 +431,23 @@
          ชิ้นที่ติด `userData.anim` จะถูก collectDecorAnim เก็บไปขยับใน updateDecorAnimParts (js/house.js) */
       { id:'fountain', name:'น้ำพุ', cat:'decorout', scope:'out', emoji:'⛲', fw:2, fd:2, colors:[0xb0bec5,0xd7ccc8,0x90a4ae],
         build(g,col){
-          const basin=cyl(.85,.9,.3,col,20); basin.position.y=.15; g.add(basin);
-          const lip=cyl(.9,.9,.07,shade(col,1.12),20); lip.position.y=.31; g.add(lip);
-          const water=cyl(.75,.75,.06,0x4dd0e1,20); water.position.y=.3;
-          water.userData.anim={kind:'pulse', sp:.5, amp:.02}; g.add(water);
-          const pillar=cyl(.15,.2,.5,col,14); pillar.position.y=.55; g.add(pillar);
-          const dish=cyl(.35,.32,.08,col,16); dish.position.y=.82; g.add(dish);
-          const dishW=cyl(.3,.3,.04,0x4dd0e1,16); dishW.position.y=.86; g.add(dishW);
-          const jet=cyl(.05,.09,.5,0x7fd8e8,10); jet.position.y=1.14;
-          jet.userData.anim={kind:'jet', sp:1}; g.add(jet);
-          const cap=ball(.1,0x9ae4f0,10); cap.position.y=1.42;
-          cap.userData.anim={kind:'drop', sp:1, amp:.14}; g.add(cap);
-          [[.26,0],[-.26,0],[0,.26],[0,-.26]].forEach(([x,z],i)=>{      /* หยดน้ำโปรยลงจาน */
-            const d=ball(.06,0x9ae4f0,8); d.position.set(x,1.0,z);
+          const basin=cyl(.85,.9,.34,col,20); basin.position.y=.17; g.add(basin);
+          /* ขอบอ่างเป็น "วงแหวน" ไม่ใช่แผ่นกลมทึบ — ของเดิมเป็นแผ่นปิดเต็มหน้าตัด น้ำในอ่างเลยจมหายไปทั้งอ่าง */
+          const rim=torus(.86,.07,shade(col,1.12),20); rim.rotation.x=Math.PI/2; rim.position.y=.34; g.add(rim);
+          const water=cyl(.82,.82,.06,0x4dd0e1,20); water.position.y=.35;
+          water.userData.anim={kind:'pulse', sp:.5, amp:.02, ph:0}; g.add(water);
+          const pillar=cyl(.14,.2,.5,col,14); pillar.position.y=.6; g.add(pillar);
+          const dish=cyl(.36,.3,.1,col,16); dish.position.y=.9; g.add(dish);
+          const dishRim=torus(.34,.035,shade(col,1.12),16); dishRim.rotation.x=Math.PI/2; dishRim.position.y=.95; g.add(dishRim);
+          const dishW=cyl(.3,.3,.05,0x4dd0e1,16); dishW.position.y=.955; g.add(dishW);
+          /* สายน้ำ + ลูกกลมยอดต้อง ph เท่ากัน (ph:0) ไม่งั้น collectDecorAnim() แจกเฟสให้คนละค่า
+             แล้วลูกกลมจะเด้งสวนทางกับสายน้ำ — ระยะ amp ตั้งให้ยอดสายน้ำจมอยู่ในลูกกลมตลอด */
+          const jet=cyl(.05,.09,.5,0x7fd8e8,10); jet.position.y=1.24;
+          jet.userData.anim={kind:'jet', sp:1, ph:0}; g.add(jet);
+          const cap=ball(.1,0x9ae4f0,10); cap.position.y=1.36;
+          cap.userData.anim={kind:'drop', sp:1, amp:.2, ph:0}; g.add(cap);
+          [[.5,0],[-.5,0],[0,.5],[0,-.5]].forEach(([x,z],i)=>{      /* หยดน้ำโปรยจากขอบจานลงอ่าง */
+            const d=ball(.06,0x9ae4f0,8); d.position.set(x,.66,z);
             d.userData.anim={kind:'drop', sp:1.3, amp:.22, ph:i*1.5}; g.add(d);
           });
         } },
@@ -480,7 +484,8 @@
             const rz=box(.09,.08,.5, shade(col,.98),.04); rz.position.set(0,y,.25); g.add(rz);   /* ครึ่งราวไป +z */
           });
         } },
-      { id:'pet-house', name:'บ้านสัตว์เลี้ยง', cat:'decorout', scope:'out', emoji:'🏠', colors:[0xe9bd80,0xef9a9a,0x90caf9,0xa5d6a7],
+      /* action:'pethouse' — แตะแล้วสั่งสัตว์เลี้ยงเข้าไปนอนรอในบ้าน / แตะอีกครั้งเรียกออกมาเดินตาม (js/house.js) */
+      { id:'pet-house', name:'บ้านสัตว์เลี้ยง', cat:'decorout', scope:'out', emoji:'🏠', action:'pethouse', colors:[0xe9bd80,0xef9a9a,0x90caf9,0xa5d6a7],
         build(g,col){
           const base=box(1.05,.75,.95, col, .08); base.position.y=.38; g.add(base);
           const RISE=.4, HALF=.66, DEP=1.1, roof=0xef8354;
@@ -1096,18 +1101,28 @@
             });
         } },
       { id:'bird-bath', name:'อ่างน้ำนก', cat:'decorout', scope:'out', emoji:'🕊️', colors:[0xd7ccc8,0x90a4ae,0xbcaaa4],
-        build(g,col){
-          const stand=cyl(.1,.16,.7,col,12); stand.position.y=.35; g.add(stand);
-          const base=cyl(.24,.28,.06,col,16); base.position.y=.03; g.add(base);
-          const basin=cyl(.34,.28,.12,shade(col,1.1),18); basin.position.y=.76; g.add(basin);
-          const water=cyl(.28,.28,.03,0x4dd0e1,18); water.position.y=.8;
-          water.userData.anim={kind:'pulse', sp:.8, amp:.03}; g.add(water);        /* น้ำกระเพื่อมตอนนกเล่นน้ำ */
-          const bird=ball(.08,0xffffff,10); bird.position.set(.2,.86,0);
-          bird.userData.anim={kind:'bob', sp:1.8, amp:.05}; g.add(bird);
-          const beak=cone(.03,.06,0xffca28,6); beak.rotation.x=Math.PI/2; beak.position.set(.28,.86,0);
-          beak.userData.anim={kind:'bob', sp:1.8, amp:.05}; g.add(beak);
-          const wing=ball(.06,0xf5f5f5,8); wing.scale.set(1.3,.5,.9); wing.position.set(.17,.9,.06);
-          wing.userData.anim={kind:'bob', sp:1.8, amp:.05, ph:.4}; g.add(wing);
+        build(g,col,k){
+          const base=cyl(.24,.3,.08,col,16); base.position.y=.04; g.add(base);
+          const stand=cyl(.1,.16,.68,col,12); stand.position.y=.42; g.add(stand);
+          const basin=cyl(.36,.24,.14,shade(col,1.1),18); basin.position.y=.83; g.add(basin);
+          /* ขอบอ่างเป็นวงแหวน + ผิวน้ำโผล่พ้นปากอ่าง — ของเดิมวางผิวน้ำไว้ "ข้างใน" เนื้ออ่างตัน มองไม่เห็นน้ำเลย */
+          const rim=torus(.34,.045,shade(col,1.2),18); rim.rotation.x=Math.PI/2; rim.position.y=.9; g.add(rim);
+          const water=cyl(.31,.31,.05,0x4dd0e1,18); water.position.y=.91;
+          water.userData.anim={kind:'pulse', sp:.8, amp:.03, ph:0}; g.add(water);  /* น้ำกระเพื่อมตอนนกเล่นน้ำ */
+          /* นกตัวจิ๋ว "ลงเล่นในอ่าง" — ตัวอยู่กลางอ่าง ท้องจมใต้ผิวน้ำนิดหน่อย (ของเดิมเกาะขอบอ่างที่ x=.34
+             ตัวเลยไปค้างครึ่งตัวนอกอ่างเหมือนกำลังจะตก) และเปลี่ยนเป็นโทนส้มปะการังให้ตัดกับน้ำสีฟ้าเทอร์ควอยซ์
+             ทั้งตัวอยู่ใน group เดียว แล้วขยับที่ group — ถ้าติด anim แยกทีละชิ้น collectDecorAnim()
+             จะแจกเฟสให้คนละค่า หัว/ปาก/หาง/ปีกจะเด้งสวนทางกันจนนกหลุดเป็นชิ้นๆ */
+          const bd=new k.THREE.Group(); bd.position.set(.03,.96,0); g.add(bd);
+          bd.userData.anim={kind:'bob', sp:1.8, amp:.04, ph:0};                    /* amp น้อยกว่าเดิม ตัวนกจะได้ไม่ลอยพ้นน้ำ */
+          const body=ball(.1,0xef6c5a,12); bd.add(body);
+          const head=ball(.065,0xff8f78,10); head.position.set(.07,.08,0); bd.add(head);
+          const beak=cone(.03,.07,0xffca28,6); beak.rotation.z=-Math.PI/2; beak.position.set(.14,.08,0); bd.add(beak);
+          [.05,-.05].forEach(z=>{                                                  /* ตาสองข้าง เด็กหมุนของแล้วยังเห็นหน้านกอยู่ */
+            const eye=ball(.019,0x4e342e,6); eye.position.set(.11,.105,z); bd.add(eye);
+          });
+          const tail=cone(.05,.11,0xef6c5a,6); tail.rotation.z=Math.PI/2; tail.position.set(-.11,.05,0); bd.add(tail);
+          const wing=ball(.062,0xffd5c2,8); wing.scale.set(1.25,.55,.9); wing.position.set(-.01,.02,.075); bd.add(wing);
         } },
       { id:'wheelbarrow', name:'รถเข็นสวน', cat:'decorout', scope:'out', emoji:'🛒', fw:2, fd:1, colors:[0xef5350,0x42a5f5,0x66bb6a],
         build(g,col){

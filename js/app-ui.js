@@ -34,7 +34,10 @@ const fsBtns = [$('fullscreen-toggle'), $('ar-fullscreen-toggle'), $('sci-fullsc
 function refreshFsBtn(){
   const label = document.fullscreenElement ? 'ออกจากเต็มหน้าจอ' : 'เต็มหน้าจอ';
   fsBtns.forEach(btn=>{
-    btn.innerHTML = document.fullscreenElement ? SVG_COMPRESS : SVG_EXPAND;
+    /* ปุ่มในโหมดบ้านเป็นแคปซูล "ไอคอน + ข้อความ" — เขียนทับเฉพาะช่องไอคอน ไม่งั้นป้ายข้อความหาย */
+    const ic = btn.querySelector('.hc-ic'), lb = btn.querySelector('.hc-label');
+    (ic || btn).innerHTML = document.fullscreenElement ? SVG_COMPRESS : SVG_EXPAND;
+    if(lb) lb.textContent = label;
     btn.setAttribute('aria-label', label);
     btn.dataset.tooltip = label;
   });

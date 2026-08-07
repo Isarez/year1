@@ -2333,41 +2333,71 @@
 .house-compass .hc-labels text{font-family:inherit; font-size:10px; font-weight:800;}
   body.night-mode .house-compass{background:rgba(35,42,74,.72);}
   @media (max-width:480px){ .house-compass{width:52px; height:52px; left:10px;} }
-  /* ---- ยอดเงินนกฮูก: ป้ายกลมยาวข้างเข็มทิศ (โชว์เฉพาะตอนเดินเล่นในโหมดบ้าน) ---- */
+  /* ---- ยอดเงินนกฮูก: แคปซูลท้ายแถวปุ่มบน ต่อจากปุ่มตกแต่งบ้าน (โชว์เฉพาะตอนเดินเล่นในโหมดบ้าน)
+         ทรง/พื้น/เงาชุดเดียวกับ .back-btn ในแถวเดียวกัน ต่างแค่กว้างตามตัวเลข ---- */
   .house-coins{
-    position:fixed; left:86px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:8;
-    display:flex; align-items:center; gap:7px;
-    padding:7px 15px 7px 8px; border-radius:999px;
-    background:rgba(255,255,255,.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    box-shadow:0 4px 14px rgba(70,40,10,.18);
+    flex-shrink:0; height:42px; display:flex; align-items:center; gap:6px;
+    padding:0 14px 0 7px; border-radius:999px;
+    background:var(--white); box-shadow:var(--shadow-btn);
     color:#8a5a1c; font-size:17px; font-weight:900; line-height:1;
     pointer-events:none; user-select:none; -webkit-user-select:none;
   }
   .house-coins[hidden]{display:none;}
-  .house-coins .owl-coin{width:30px; height:30px; display:block; filter:drop-shadow(0 1.5px 1.5px rgba(120,70,10,.28));}
-  body.night-mode .house-coins{background:rgba(35,42,74,.72); color:#ffd98a;}
+  .house-coins .owl-coin{width:28px; height:28px; display:block; filter:drop-shadow(0 1.5px 1.5px rgba(120,70,10,.28));}
   /* ได้/ใช้เงิน → เด้งหนึ่งครั้งให้เด็กสังเกตเห็น */
   .house-coins.coin-bump{animation:coinBump .42s ease;}
   @keyframes coinBump{
     0%{transform:scale(1);} 35%{transform:scale(1.16);} 70%{transform:scale(.97);} 100%{transform:scale(1);}
   }
   @media (max-width:480px){
-    .house-coins{left:70px; font-size:15px; padding:6px 12px 6px 7px;}
-    .house-coins .owl-coin{width:26px; height:26px;}
+    .house-coins{height:38px; font-size:15px; padding:0 11px 0 6px; gap:5px;}
+    .house-coins .owl-coin{width:24px; height:24px;}
   }
-  /* แถบปุ่มควบคุม (ธีม/เพลง/เสียง/เต็มจอ) — คอลัมน์ลอยขวาใต้แถบบน ใช้ .icon-btn ชุดเดียวกับ header */
+  /* แถบปุ่มควบคุม (ธีม/เพลง/เสียง/เต็มจอ) — คอลัมน์ลอยขวาใต้แถบบน ใช้ .icon-btn ชุดเดียวกับ header
+     ปกติพับไว้ใต้ปุ่มเฟือง #house-ctrl-gear กดเฟืองแล้วค่อยกางลงมา */
   .house-ctrl-wrap{
-    position:fixed; right:14px; top:78px; z-index:8;
-    display:flex; flex-direction:column; gap:10px; pointer-events:auto;
+    position:fixed; right:14px; top:14px; z-index:8;   /* top เท่ากับ padding ของ .house-overlay-ui → เสมอปุ่ม ← ฝั่งซ้ายพอดี */
+    display:flex; flex-direction:column; align-items:flex-end; gap:10px; pointer-events:auto;
+  }
+  /* ไม่ใช้ tooltip hover ในกลุ่มนี้ — เฟืองไม่ต้องมี ส่วนปุ่มย่อยมีข้อความในตัวปุ่มอยู่แล้ว */
+  .house-ctrl-wrap .icon-btn[data-tooltip]::after,
+  .house-ctrl-wrap .icon-btn[data-tooltip]::before{content:none;}
+  .house-ctrl-list{display:flex; flex-direction:column; gap:10px; width:186px;}
+  .house-ctrl-list[hidden]{display:none;}   /* จำเป็น: display:flex ข้างบน specificity ชนะ [hidden] ของเบราว์เซอร์ */
+  /* แคปซูลไอคอน + ข้อความ กว้างเท่ากันทุกปุ่ม ไอคอนตรงกันเป็นคอลัมน์เดียว */
+  .house-ctrl-item{
+    width:100%; height:44px; border-radius:999px; padding:0 16px 0 12px;
+    justify-content:flex-start; gap:10px; font-size:15px; font-weight:800; color:var(--ink);
+    animation:houseCtrlPop .22s ease backwards;
+  }
+  .house-ctrl-item .hc-ic{width:24px; flex-shrink:0; font-size:19px; display:flex; align-items:center; justify-content:center;}
+  .house-ctrl-item .hc-label{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .house-ctrl-item.muted .hc-label{opacity:.45;}
+  .house-ctrl-list .house-ctrl-item:nth-child(2){animation-delay:.04s;}
+  .house-ctrl-list .house-ctrl-item:nth-child(3){animation-delay:.08s;}
+  .house-ctrl-list .house-ctrl-item:nth-child(4){animation-delay:.12s;}
+  @keyframes houseCtrlPop{
+    0%{opacity:0; transform:translateY(-8px) scale(.7);}
+    100%{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .house-gear-btn .house-btn-ic{width:24px; height:24px; display:block; transition:transform .25s ease;}
+  .house-gear-btn[aria-expanded="true"] .house-btn-ic{transform:rotate(45deg);}
+  @media (max-width:480px){
+    .house-ctrl-list{width:164px;}
+    .house-ctrl-item{height:40px; font-size:14px;}
   }
   /* ป้ายชื่อเด็กในแถบบนของโหมดบ้าน — ใช้ .child-chip-group ชุดเดียวกับ header หลัก
      ต่างแค่ต้องบีบชื่อให้สั้นลง เพราะแถวนี้มีปุ่มกลม 4 ปุ่มแย่งที่อยู่แล้ว */
+  /* กันปุ่มแถวซ้ายไหลไปชนปุ่มเฟือง #house-ctrl-gear ที่ลอยอยู่มุมขวาบนแถวเดียวกัน */
+  .house-overlay-ui .quiz-top{padding-right:50px;}
   .house-child-chip{min-width:0;}
   .house-child-chip[hidden]{display:none;}
   #house-child-name{overflow:hidden; text-overflow:ellipsis; max-width:84px; display:inline-block;}
   @media (max-width:480px){
-    .house-overlay-ui .quiz-top{gap:8px;}   /* บีบช่องไฟให้ชื่อเด็กเหลือที่มากขึ้นบนจอแคบ */
-    #house-child-name{max-width:64px;}
+    /* จอแคบ: บีบช่องไฟ + ย่อปุ่มกลม ให้ทั้งแถวยังอยู่บรรทัดเดียวได้ ทั้งที่ต้องเว้นที่ให้ปุ่มเฟืองด้วย */
+    .house-overlay-ui .quiz-top{gap:6px; padding-right:46px;}
+    .house-overlay-ui .quiz-top .back-btn{width:38px; height:38px;}
+    #house-child-name{max-width:62px;}
     .house-child-chip .child-chip{padding:6px 9px 6px 7px; font-size:14px;}
     .house-child-chip .child-edit-btn{padding:6px 8px;}
   }
@@ -2679,6 +2709,11 @@
     opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
   }
   .house-char-bubble.on{opacity:1; transform:translate(-50%,-100%) scale(1);}
+  /* ฟองแบบ "พูดเป็นประโยค" (เช่น สั่งสัตว์เลี้ยงเข้าบ้าน) — ย่อฟอนต์ + ตัดบรรทัด ไม่ให้ฟองยาวล้นจอเด็ก */
+  .house-char-bubble.say{
+    font-size:15.5px; font-weight:800; line-height:1.35; color:var(--ink);
+    padding:7px 12px; border-radius:16px; text-align:center; max-width:min(230px,66vw);
+  }
 
   /* ---------- ชาวบ้าน (NPC) + กระดานภารกิจ (บ้านของหนู เฟส 8) ---------- */
   /* ฟองคำพูดของ NPC — กว้างกว่าฟองของเด็กเพราะมีทั้งชื่อและประโยคเต็ม */
