@@ -319,34 +319,63 @@
       document.body.classList.remove('house-shop-open');
     }
 
+    /* รายการแท็บหมวด — รายการที่มี `sec` คือ "หัวข้อกลุ่ม" (ไม่ใช่ปุ่ม กดไม่ได้)
+       ของเยอะจนแท็บล้นแถวเดียว จึงจัดกลุ่มให้เด็กกวาดตาหาหมวดที่ต้องการเจอเร็วขึ้น */
+    /* ชื่อแท็บสั้นลงเฉพาะในร้าน (หน้าแต่งตัวยังใช้ชื่อเต็มเหมือนเดิม)
+       — ชื่อยาวกินความกว้าง 1 แถวเต็มบนมือถือ ทำให้แถบหมวดสูงขึ้นอีกบรรทัดโดยไม่จำเป็น */
+    const TAB_SHORT = {bottom:'สีกางเกง'};
+    const FASHION_GROUPS = [
+      {sec:'💇 ผม',       keys:['hair','hairC']},
+      {sec:'👀 ดวงตา',    keys:['eyeC']},
+      {sec:'👕 เสื้อผ้า',  keys:['pattern','shirt','bottom','shoes']},
+      {sec:'🎀 ของแต่ง',  keys:['hat','glass','bag','hold']},
+    ];
     function tabsFor(){
       const cfg = SHOPS[openId];
       if(!cfg) return [];
-      if(cfg.kind === 'fashion'){
-        return H_ROWS.filter(r => FIT_PRICE[r.key])
-                     .map(r => ({id:r.key, label:r.label, emoji:''}));
-      }
-      /* ร้านเฟอร์นิเจอร์: หมวดในบ้านก่อน แล้วต่อด้วยหมวดนอกบ้าน (ป้ายกำกับ "ในบ้าน/นอกบ้าน") */
       const out = [];
-      (FURN.cats['in']  || []).forEach(c => out.push({id:'in:'  + c.id, label:c.label, emoji:c.emoji}));
-      (FURN.cats['out'] || []).forEach(c => out.push({id:'out:' + c.id, label:c.label, emoji:c.emoji}));
+      if(cfg.kind === 'fashion'){
+        FASHION_GROUPS.forEach(g=>{
+          const rows = g.keys.map(k => H_ROWS.find(r => r.key === k)).filter(r => r && FIT_PRICE[r.key]);
+          if(!rows.length) return;
+          out.push({sec:g.sec});
+          rows.forEach(r => out.push({id:r.key, label:TAB_SHORT[r.key] || r.label, emoji:''}));
+        });
+        return out;
+      }
+      /* ร้านเฟอร์นิเจอร์: กลุ่ม "ในบ้าน" ก่อน แล้วต่อด้วยกลุ่ม "นอกบ้าน" */
+      [['in','🏠 ในบ้าน'], ['out','🌳 นอกบ้าน']].forEach(([sc, label])=>{
+        const cats = FURN.cats[sc] || [];
+        if(!cats.length) return;
+        out.push({sec:label});
+        cats.forEach(c => out.push({id:sc + ':' + c.id, label:c.label, emoji:c.emoji}));
+      });
       return out;
     }
     function renderTabs(){
       const wrap = $('house-shop-tabs');
       if(!wrap) return;
       const tabs = tabsFor();
-      if(!shopTab && tabs.length) shopTab = tabs[0].id;
+      const first = tabs.find(t => t.id);
+      if(!shopTab && first) shopTab = first.id;
       wrap.innerHTML = '';
       tabs.forEach(c=>{
+        if(c.sec){                                   /* หัวข้อกลุ่ม — กินเต็มบรรทัด ดันแท็บกลุ่มถัดไปขึ้นบรรทัดใหม่ */
+          const h = document.createElement('div');
+          h.className = 'hs-tabsec';
+          h.innerHTML = '<span>' + c.sec + '</span>';
+          wrap.appendChild(h);
+          return;
+        }
         const b = document.createElement('button');
         b.className = 'he-tab' + (c.id === shopTab ? ' active' : '');
         b.innerHTML = (c.emoji ? '<span class="he-tab-emoji">' + c.emoji + '</span>' : '')
                     + '<span>' + c.label + '</span>';
         b.onclick = ()=>{ click(); shopTab = c.id; renderTabs(); renderItems(); };
         wrap.appendChild(b);
-        /* แท็บเยอะจนเลื่อนแนวนอน — เลื่อนแท็บที่เลือกอยู่มาให้เห็นเสมอ ไม่งั้นเด็กงงว่าดูหมวดไหนอยู่ */
-        if(c.id === shopTab && b.scrollIntoView) setTimeout(()=>b.scrollIntoView({block:'nearest', inline:'center'}), 0);
+        /* แท็บขึ้นบรรทัดใหม่ได้ (ไม่เลื่อนแนวนอนแล้ว) แต่ถ้ากลุ่มยาวจนต้องเลื่อนแนวตั้ง
+           ก็ยังต้องเลื่อนแท็บที่เลือกอยู่มาให้เห็น ไม่งั้นเด็กงงว่าดูหมวดไหนอยู่ */
+        if(c.id === shopTab && b.scrollIntoView) setTimeout(()=>b.scrollIntoView({block:'nearest', inline:'nearest'}), 0);
       });
     }
 

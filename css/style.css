@@ -2698,11 +2698,33 @@
   .hs-reset-btn[hidden]{display:none;}
 
   /* ---------- เฟส 1 เศรษฐกิจ: หน้าร้าน ---------- */
+  /* ร้านมีของเยอะกว่ากล่องอื่นมาก (เฟอร์นิเจอร์ 116 ชิ้น / ชุดแต่งตัวหลักร้อยแบบ)
+     จึงกินพื้นที่มากกว่าแผงสร้างตัวละคร — บนมือถือสูงขึ้น บนจอใหญ่กว้างขึ้น */
   .house-shop{z-index:8;}
+  .house-creator.house-shop{max-height:88vh; max-height:88dvh;}
   .hs-items{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:8px;
     overflow-y:auto; padding:4px 2px 2px; min-height:0;
   }
+  /* แท็บหมวดในร้าน — **ขึ้นบรรทัดใหม่ได้ ไม่เลื่อนแนวนอน**
+     ⚠ ของเดิมเลื่อนแนวนอน (`overflow-x:auto`) แล้วแถบ scrollbar ทับขอบล่างของแท็บจนอ่านไม่ออก
+       และเด็กไม่รู้ว่ายังมีหมวดซ่อนอยู่ทางขวา — ห้ามเปลี่ยนกลับเป็นเลื่อนแนวนอน
+     ถ้ากลุ่มยาวเกินจอ ให้เลื่อน "แนวตั้ง" แทน (คุ้นมือกว่าสำหรับเด็ก และไม่มีอะไรถูกบัง) */
+  .house-shop .he-tabs{
+    flex-wrap:wrap; overflow-x:visible; overflow-y:auto;
+    max-height:min(56vh, 420px); gap:8px; padding:2px 2px 4px; scrollbar-width:thin;
+    flex-shrink:0;   /* ห้ามให้ตารางสินค้าบีบแถบหมวดจนหมวดท้ายๆ ถูกตัดหาย (สินค้าเลื่อนดูได้อยู่แล้ว) */
+  }
+  .house-shop .he-tab{font-size:15px; padding:9px 14px; border-radius:16px; gap:6px;}
+  .house-shop .he-tab-emoji{font-size:19px;}
+  /* หัวข้อกลุ่มหมวด (ในบ้าน/นอกบ้าน · ผม/ตา/เสื้อผ้า/ของแต่ง) — กินเต็มบรรทัด
+     ดันแท็บของกลุ่มถัดไปขึ้นบรรทัดใหม่เสมอ กลุ่มจึงไม่ปนกัน */
+  .hs-tabsec{
+    flex:0 0 100%; margin:6px 2px 0; font-size:13.5px; font-weight:800; color:var(--ink-soft);
+    display:flex; align-items:center; gap:8px;
+  }
+  .hs-tabsec:first-child{margin-top:0;}
+  .hs-tabsec::after{content:''; flex:1; height:0; border-top:2px dashed rgba(120,90,50,.16);}
   .hs-card{
     border:3px solid rgba(0,0,0,.06); border-radius:16px; padding:8px 4px 6px;
     background:#FFF9EE; color:var(--ink); font-family:inherit; cursor:pointer; min-width:0;
@@ -2823,6 +2845,11 @@
     .house-edit-toolbar{bottom:calc(42vh + 10px); bottom:calc(42dvh + 10px);}
     .he-items{grid-template-columns:repeat(auto-fill, minmax(64px,1fr)); gap:6px;}
     .he-item-emoji{font-size:24px;}
+    /* จอแคบ: แท็บย่อลงนิดเพื่อให้ลงบรรทัดได้มากขึ้น แต่เพดานความสูงต้องพอให้เห็น **ทุกหมวดพร้อมกัน**
+       (ประเด็นหลักที่ผู้ใช้แจ้ง: หมวดถูกซ่อน เด็กไม่รู้ว่ามีอีก) ตัวสินค้าเลื่อนดูอยู่แล้วเป็นปกติ */
+    .house-shop .he-tabs{max-height:min(56vh, 420px); gap:7px;}
+    .house-shop .he-tab{font-size:14px; padding:8px 12px;}
+    .house-shop .he-tab-emoji{font-size:17px;}
   }
 
   /* จอใหญ่ (แท็บเล็ต/เดสก์ท็อป): แผงตัวเลือกย้ายไปชิดขวาเป็นการ์ดแนวตั้ง
@@ -2834,6 +2861,11 @@
       max-height:none;
     }
     .house-creator-panel{border-radius:26px; height:100%;}
+    /* ร้านค้ากว้างกว่าแผงอื่นบนจอใหญ่ — ของเยอะ ถ้าแคบเท่ากันจะได้แค่ 3 ใบต่อแถว เลื่อนยาวมาก */
+    .house-creator.house-shop{width:min(580px,58vw); max-height:none;}
+    /* จอใหญ่กล่องสูงเต็มจอ — ให้ตารางสินค้ายืดกินที่ว่างที่เหลือ ปุ่ม "ออกจากร้าน" จะได้อยู่ติดก้นกล่อง
+       ไม่ลอยค้างกลางกล่องแล้วเหลือพื้นขาวโล่งใต้ปุ่ม (บนมือถือไม่ใส่ ปล่อยให้ sheet หดตามเนื้อหา) */
+    .house-shop .hs-items{flex:1 1 auto;}
     /* ปุ่มหมุนคู่กลางพื้นที่ว่างฝั่งซ้าย (สูตรเดียวกับตำแหน่งตัวละครใน applyCamera) */
     .house-rotate-wrap{
       left:calc((100vw - min(400px,44vw) - 36px)/2); right:auto;

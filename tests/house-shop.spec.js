@@ -212,32 +212,58 @@ test('หน้าแต่งตัว: ลายเสื้อมาก่อ
 
 test('หน้าร้าน: เปิดห้างเฟอร์นิเจอร์/ห้างแฟชั่นแล้วมีสินค้าโชว์ครบ', async ({ page }) => {
   await openHouse(page);
+  /* แถบหมวดต้องเห็นครบทุกหมวดพร้อมกัน ไม่มีอันไหนถูกตัด/ถูก scrollbar บัง (ขึ้นบรรทัดใหม่ได้ ไม่เลื่อนแนวนอน) */
+  const tabState = () => page.evaluate(() => {
+    const t = document.getElementById('house-shop-tabs');
+    const box = t.getBoundingClientRect();
+    const tabs = Array.from(t.querySelectorAll('.he-tab'));
+    return {
+      tabs: tabs.length,
+      secs: t.querySelectorAll('.hs-tabsec').length,
+      clippedY: t.scrollHeight - t.clientHeight,      // 0 = ไม่มีหมวดไหนถูกตัดหาย
+      wrap: getComputedStyle(t).flexWrap,             // wrap = ขึ้นบรรทัดใหม่ ไม่เลื่อนแนวนอน
+      /* ห้ามมีแท็บล้นออกนอกกรอบทางแนวนอน (= เลื่อนแนวนอนแล้วมีหมวดซ่อนอยู่ทางขวา ซึ่งคือบั๊กเดิม)
+         แนวตั้งไม่เช็คตรงนี้ เพราะถ้าจอเตี้ยมากแถบจะเลื่อนแนวตั้งได้ ไม่มีหมวดไหนหายถาวร */
+      outsideX: tabs.filter(b => {
+        const r = b.getBoundingClientRect();
+        return r.right > box.right + 1 || r.left < box.left - 1;
+      }).length,
+    };
+  });
+
   const furn = await page.evaluate(() => {
     window.HouseShop.open('mall-furniture');
     return {
       open:  !document.getElementById('house-shop').hidden,
-      tabs:  document.querySelectorAll('#house-shop-tabs .he-tab').length,
       cards: document.querySelectorAll('#house-shop-items .hs-card').length,
       title: document.getElementById('house-shop-title').textContent,
     };
   });
   expect(furn.open).toBe(true);
-  expect(furn.tabs).toBe(10);                   // 6 หมวดในบ้าน + 4 หมวดนอกบ้าน (ยังไม่แยกไปร้านอื่นจนเฟส 2-3)
   expect(furn.cards).toBeGreaterThan(0);
+  const ft = await tabState();
+  expect(ft.tabs).toBe(10);                     // 6 หมวดในบ้าน + 4 หมวดนอกบ้าน (ยังไม่แยกไปร้านอื่นจนเฟส 2-3)
+  expect(ft.secs).toBe(2);                      // หัวข้อกลุ่ม: ในบ้าน / นอกบ้าน
+  expect(ft.wrap).toBe('wrap');
+  expect(ft.clippedY).toBe(0);                  // 10 หมวด + 2 หัวข้อ ต้องเห็นครบพร้อมกัน ไม่ถูกตัด
+  expect(ft.outsideX).toBe(0);
 
   const fash = await page.evaluate(() => {
     window.HouseShop.open('mall-fashion');
     const cards = Array.from(document.querySelectorAll('#house-shop-items .hs-card'));
     return {
-      tabs:  document.querySelectorAll('#house-shop-tabs .he-tab').length,
       cards: cards.length,
       /* ตัวเลือก "ไม่ใส่" เป็นของฟรี ต้องไม่ถูกเอามาวางขาย */
       hasFree: cards.some(c => /ไม่ใส่|ไม่ถือ|ไม่สะพาย/.test(c.textContent)),
     };
   });
-  expect(fash.tabs).toBe(11);                   // 11 แถวที่มีราคา (เพศ/ทรงตา/สีของแต่ง = ฟรี ไม่ขาย)
   expect(fash.cards).toBeGreaterThan(0);
   expect(fash.hasFree).toBe(false);
+  const st = await tabState();
+  expect(st.tabs).toBe(11);                     // 11 แถวที่มีราคา (เพศ/ทรงตา/สีของแต่ง = ฟรี ไม่ขาย)
+  expect(st.secs).toBe(4);                      // หัวข้อกลุ่ม: ผม / ดวงตา / เสื้อผ้า / ของแต่ง
+  expect(st.clippedY).toBe(0);                  // 11 หมวด + 4 หัวข้อ ต้องเห็นครบพร้อมกัน ไม่ถูกตัด
+  expect(st.outsideX).toBe(0);
 
   await page.evaluate(() => window.HouseShop.close());
   expect(await page.evaluate(() => document.getElementById('house-shop').hidden)).toBe(true);
