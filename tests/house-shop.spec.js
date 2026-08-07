@@ -259,18 +259,14 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
   expect(await page.evaluate(() => window.OwlCoins.get())).toBe(260);   // 400 - 140
   expect(await page.evaluate(() => window.HouseShop.ownsFurn('armchair'))).toBe(true);
 
-  /* ปุ่ม ← เลิกดู → ปิดพรีวิวกลับไปเลือกต่อ */
-  await page.evaluate(() => document.querySelector('#house-shop-buy .hs-buy-back').click());
-  await page.waitForTimeout(400);
-  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
-  expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(true);
-  expect(await page.evaluate(() => document.getElementById('house-prev-card').hidden)).toBe(true);
+  /* แถบซื้อไม่มีปุ่ม ← แล้ว (เอาออก 2026-08-08) — กดการ์ดใบอื่นเปลี่ยนของที่ดูได้เลย */
+  expect(await page.evaluate(() => document.querySelectorAll('#house-shop-buy .hs-buy-back').length)).toBe(0);
 
   /* ชุดแต่งตัวพรีวิวได้ทุกแถว — แบบ "มีทรง" (หมวก) */
   await page.evaluate(() => window.HouseShop.open('mall-fashion'));
   await page.waitForTimeout(300);
   await page.evaluate(() => {
-    Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /เครื่องหัว/.test(b.textContent)).click();
+    Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /หมวก/.test(b.textContent)).click();
   });
   await page.waitForTimeout(300);
   await page.evaluate(() => document.querySelectorAll('#house-shop-items .hs-card')[0].click());
@@ -316,6 +312,9 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
       icons: t.querySelectorAll('.he-tab-ic svg').length,
       clippedY: t.scrollHeight - t.clientHeight,      // 0 = ไม่มีหมวดไหนถูกตัดหาย
       wrap: getComputedStyle(t).flexWrap,             // wrap = ขึ้นบรรทัดใหม่ ไม่เลื่อนแนวนอน
+      ovfY: getComputedStyle(t).overflowY,            // ต้องเป็น visible = ไม่มี scrollbar เลื่อนหาหมวด
+      /* ปุ่ม "ออกจากร้าน" ต้องอยู่ในจอเสมอ — แถบหมวดไม่มีเพดานแล้ว ถ้ายาวเกินจะดันปุ่มตกขอบ */
+      btnIn: Math.round(document.getElementById('house-shop-close').getBoundingClientRect().bottom) <= innerHeight + 1,
       /* ห้ามมีแท็บล้นออกนอกกรอบทางแนวนอน (= เลื่อนแนวนอนแล้วมีหมวดซ่อนอยู่ทางขวา ซึ่งคือบั๊กเดิม)
          แนวตั้งไม่เช็คตรงนี้ เพราะถ้าจอเตี้ยมากแถบจะเลื่อนแนวตั้งได้ ไม่มีหมวดไหนหายถาวร */
       outsideX: tabs.filter(b => {
@@ -342,6 +341,8 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(ft.clippedY).toBe(0);                  // 10 หมวด + 2 หัวข้อ ต้องเห็นครบพร้อมกัน ไม่ถูกตัด
   expect(ft.outsideX).toBe(0);
   expect(ft.icons).toBe(ft.tabs);               // ทุกหมวดต้องมีไอคอน SVG
+  expect(ft.ovfY).toBe('visible');              // ห้ามมี scrollbar ที่แถบหมวด
+  expect(ft.btnIn).toBe(true);
 
   const fash = await page.evaluate(() => {
     window.HouseShop.open('mall-fashion');
@@ -362,6 +363,8 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(st.clippedY).toBe(0);                  // ต้องเห็นหมวดครบพร้อมกัน ไม่ต้องมี scrollbar เลื่อนหา
   expect(st.outsideX).toBe(0);
   expect(st.icons).toBe(st.tabs);               // ทุกหมวดต้องมีไอคอน SVG
+  expect(st.ovfY).toBe('visible');              // ห้ามมี scrollbar ที่แถบหมวด
+  expect(st.btnIn).toBe(true);
 
   await page.evaluate(() => window.HouseShop.close());
   expect(await page.evaluate(() => document.getElementById('house-shop').hidden)).toBe(true);

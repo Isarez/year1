@@ -359,7 +359,8 @@
     /* ชื่อแท็บสั้นลงเฉพาะในร้าน (หน้าแต่งตัวยังใช้ชื่อเต็มเหมือนเดิม)
        — ชื่อยาวกินความกว้าง 1 แถวเต็มบนมือถือ ทำให้แถบหมวดสูงขึ้นอีกบรรทัดโดยไม่จำเป็น */
     /* ชื่อแท็บใช้ชื่อ "ตัวของ" ไม่ใช่ชื่อแถว — เพราะแท็บเดียวมีทั้งแบบและสีของชิ้นนั้นอยู่ด้วยกันแล้ว */
-    const TAB_SHORT = {hair:'ผม', eyeC:'ดวงตา', pattern:'เสื้อ', bottom:'กางเกง', shoes:'รองเท้า'};
+    const TAB_SHORT = {hair:'ผม', eyeC:'ดวงตา', pattern:'เสื้อ', bottom:'กางเกง', shoes:'รองเท้า',
+                       hat:'หมวก', glass:'แว่น', bag:'เป้', hold:'ของถือ'};
     /* เครื่องแต่งชิ้นไหนมีแถวสีคู่กัน → **ไม่แยกเป็นแท็บ** แต่เอาสีไปต่อท้ายรายการในแท็บของชิ้นนั้น
        (แยกเป็นแท็บแล้วหมวดพุ่งเป็น 15 อัน ยาวเกินจอจนต้องมี scrollbar เลื่อนหาหมวด — ผู้ใช้แจ้ง 2026-08-08
         แถมซื้อหมวกกับสีหมวกคนละที่ก็ไม่เป็นธรรมชาติ) */
@@ -487,14 +488,8 @@
       if(!sel){ bar.hidden = true; bar.innerHTML = ''; return; }
       bar.hidden = false;
       bar.innerHTML = '';
-      /* ปุ่มกลับไปเลือกของอื่น — บนมือถือแถบหมวด/ตารางสินค้าถูกซ่อนตอนดูตัวอย่าง ต้องมีทางกลับเสมอ */
-      const back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'hs-buy-back';
-      back.setAttribute('aria-label', 'กลับไปเลือกของอื่น');
-      back.textContent = '←';
-      back.onclick = ()=>{ click(); clearSelected(); };
-      bar.appendChild(back);
+      /* (เคยมีปุ่ม ← กลับไปเลือกของอื่นตรงนี้ — เอาออก 2026-08-08 ตามคำขอผู้ใช้
+         ตอนนี้ตารางสินค้าโชว์อยู่ตลอดแล้ว กดการ์ดใบอื่นได้เลย ไม่ต้องมีทางกลับแยก) */
       const nm = document.createElement('span');
       nm.className = 'hs-buy-name';
       nm.textContent = sel.name;
@@ -542,6 +537,12 @@
       wrap.innerHTML = '';
       const cfg = SHOPS[openId];
       if(!cfg || !shopTab) return;
+      /* ป้ายคั่นบอกชื่อหมวดที่กำลังดู — เด็กจะได้รู้ว่าของข้างล่างนี้คือหมวดไหน */
+      const head = $('house-shop-items-head');
+      if(head){
+        const cur = tabsFor().find(t => t.id === shopTab);
+        head.innerHTML = '<span>🛍️ ' + (cur ? cur.label : 'ของในหมวดนี้') + '</span>';
+      }
       if(cfg.kind === 'fashion'){
         const row = H_ROWS.find(r => r.key === shopTab);
         if(!row) return;
