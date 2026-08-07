@@ -10378,6 +10378,9 @@ $('hq-claim').addEventListener('click', claimQuestReward);
    ยกเว้นตอนสร้างตัวละครครั้งแรก (ยังไม่มีตัวละคร/โลกให้กลับไป) ให้ออกจากบ้านเหมือนเดิม */
 $('house-back').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
+  /* อยู่ในร้าน (รวมตอนดูตัวอย่างสินค้า) → ปุ่มย้อนกลับ = ออกจากร้านก่อน ยังไม่ออกจากบ้าน
+     กดซ้ำอีกครั้งถึงจะออกจากโหมดบ้านจริงๆ (เด็กจะได้ไม่หลุดออกจากบ้านทั้งที่ตั้งใจแค่ปิดร้าน) */
+  if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }
   if(editMode){ exitEditMode(); return; }
   if(hMode==='pet'){ fadeSwap(()=>closePetPicker(null)); return; }
   if(hMode==='creator' && creatorState.fromWorld){ fadeSwap(()=>cancelCreator()); return; }

@@ -310,7 +310,9 @@
       document.body.classList.add('house-shop-open');
       renderTabs();
       renderItems();
-      renderBuyBar();
+      /* เข้าร้านปุ๊บโชว์ตัวอย่างของชิ้นแรกเลย (ไม่ต้องเจอหน้าตารางเปล่าๆ ก่อน)
+         — เด็กเห็นทันทีว่าร้านนี้ขายอะไร แล้วค่อยแตะใบอื่น/กดปุ่ม ← กลับมาดูรายการทั้งหมด */
+      selectFirst();
       return true;
     }
     function close(){
@@ -413,6 +415,7 @@
       /* เหรียญวาดด้วย CSS ไม่ใช้ emoji 🪙 — เครื่องบางรุ่นไม่มีตัวนี้ในฟอนต์ แล้วขึ้นเป็นวงกลมเทาทึบ */
       pr.innerHTML = opts.owned ? '✓ มีแล้ว' : ('<i class="hs-coin"></i>' + opts.price);
       b.appendChild(pr);
+      b._opts = opts;                 /* เก็บไว้ให้ selectFirst() เลือกได้โดยไม่ต้องยิง click จริง */
       b.onclick = ()=>{ click(); select(opts); };
       return b;
     }
@@ -427,6 +430,13 @@
       if(kit.preview && opts.preview) kit.preview(opts.preview);
       else if(kit.closePreview) kit.closePreview();
       renderItems();
+      renderBuyBar();
+    }
+    /* เลือกของชิ้นแรกในหมวดที่เปิดอยู่ (ใช้ตอนเพิ่งเข้าร้าน) — ไม่มีของก็แค่ไม่ทำอะไร */
+    function selectFirst(){
+      const wrap = $('house-shop-items');
+      const first = wrap && wrap.querySelector('.hs-card');
+      if(first && first._opts){ select(first._opts); return; }   /* ไม่ยิง click จริง จะได้ไม่มีเสียงกดซ้ำ */
       renderBuyBar();
     }
     function clearSelected(){

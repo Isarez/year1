@@ -213,7 +213,11 @@ test('หน้าแต่งตัว: ลายเสื้อมาก่อ
 test('หน้าร้าน: แตะการ์ด = ดูตัวอย่าง 3D + แถบซื้อ · การ์ดขนาดเท่ากันทุกใบ · แถวสีไม่พรีวิว', async ({ page }) => {
   await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   await page.evaluate(() => { window.OwlCoins.set(400); window.HouseShop.open('mall-furniture'); });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);
+
+  /* เข้าร้านปุ๊บต้องเจอหน้าพรีวิวของชิ้นแรกเลย ไม่ใช่ตารางเปล่าๆ */
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
+  expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(false);
 
   /* ทุกใบต้องสูงเท่ากันเป๊ะ ไม่ว่าชื่อจะสั้นหรือยาว */
   const heights = await page.evaluate(() =>
@@ -277,15 +281,16 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
   expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(false);
 
-  /* ปิดร้าน → พรีวิว/แถบซื้อต้องถูกเก็บให้หมด กลับมาเดินเล่นได้ปกติ */
-  await page.evaluate(() => window.HouseShop.close());
-  await page.waitForTimeout(400);
+  /* ปุ่มย้อนกลับซ้ายบน = ออกจากร้าน (ยังอยู่ในบ้าน) · พรีวิว/แถบซื้อต้องถูกเก็บให้หมด */
+  await page.locator('#house-back').dispatchEvent('click');
+  await page.waitForTimeout(500);
   const after = await page.evaluate(() => ({
     preview: document.body.classList.contains('house-preview'),
     bar: document.getElementById('house-shop-buy').hidden,
     shop: document.getElementById('house-shop').hidden,
+    stillHome: !document.getElementById('house-view').hidden,   // ยังไม่หลุดออกจากโหมดบ้าน
   }));
-  expect(after).toEqual({ preview: false, bar: true, shop: true });
+  expect(after).toEqual({ preview: false, bar: true, shop: true, stillHome: true });
 });
 
 test('หน้าร้าน: เปิดห้างเฟอร์นิเจอร์/ห้างแฟชั่นแล้วมีสินค้าโชว์ครบ', async ({ page }) => {
