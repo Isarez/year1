@@ -156,9 +156,9 @@
         (ผิดกติกาเหล็กข้อ 1 "ห้ามมี dead end") พอเปิดร้านที่เหลือแล้วค่อยย้ายหมวดไปตามข้อ 17.4 */
   const SHOPS = {
     'mall-furniture': {kind:'furn',   icon:'🛋️', title:'ห้างเฟอร์นิเจอร์',
-                       sub:'เลือกของไปแต่งบ้านได้เลย! กดที่ของเพื่อซื้อ แล้วไปวางในโหมดตกแต่งบ้านนะ'},
+                       sub:'แตะที่ของเพื่อดูตัวอย่างก่อนได้เลย ชอบแล้วค่อยกดซื้อ แล้วไปวางในโหมดตกแต่งบ้านนะ'},
     'mall-fashion':   {kind:'fashion', icon:'👗', title:'ห้างแฟชั่น',
-                       sub:'ซื้อชุดใหม่ให้ตัวเองได้เลย! ซื้อแล้วไปใส่ที่ปุ่มแต่งตัวนะ'},
+                       sub:'แตะที่ชุดเพื่อลองดูก่อนได้เลย ชอบแล้วค่อยกดซื้อ แล้วไปใส่ที่ปุ่มแต่งตัวนะ'},
   };
 
   window.HOUSE_SHOP = function(kit){
@@ -300,6 +300,7 @@
       if(!cfg) return false;
       openId = lotId;
       shopTab = null;
+      sel = null; selKey = null;
       const el = $('house-shop');
       if(!el) return false;
       const t = $('house-shop-title'), sb = $('house-shop-sub');
@@ -309,13 +310,18 @@
       document.body.classList.add('house-shop-open');
       renderTabs();
       renderItems();
+      renderBuyBar();
       return true;
     }
     function close(){
       if(!isOpen()) return;
       openId = null;
+      sel = null; selKey = null;
+      if(kit.closePreview) kit.closePreview();     /* ปิดพรีวิว 3D ด้วย ไม่งั้นค้างอยู่หลังปิดร้าน */
       const el = $('house-shop');
       if(el) el.hidden = true;
+      const bar = $('house-shop-buy');
+      if(bar){ bar.hidden = true; bar.innerHTML = ''; }
       document.body.classList.remove('house-shop-open');
     }
 
@@ -371,7 +377,7 @@
         b.className = 'he-tab' + (c.id === shopTab ? ' active' : '');
         b.innerHTML = (c.emoji ? '<span class="he-tab-emoji">' + c.emoji + '</span>' : '')
                     + '<span>' + c.label + '</span>';
-        b.onclick = ()=>{ click(); shopTab = c.id; renderTabs(); renderItems(); };
+        b.onclick = ()=>{ click(); shopTab = c.id; clearSelected(); renderTabs(); renderItems(); };
         wrap.appendChild(b);
         /* แท็บขึ้นบรรทัดใหม่ได้ (ไม่เลื่อนแนวนอนแล้ว) แต่ถ้ากลุ่มยาวจนต้องเลื่อนแนวตั้ง
            ก็ยังต้องเลื่อนแท็บที่เลือกอยู่มาให้เห็น ไม่งั้นเด็กงงว่าดูหมวดไหนอยู่ */
@@ -380,11 +386,13 @@
     }
 
     function hex(v){ return '#' + v.toString(16).padStart(6, '0'); }
-    /* การ์ดสินค้า 1 ใบ — ของที่ซื้อแล้วขึ้น ✓, เงินไม่พอขึ้นราคาสีจางแต่ยังเห็น (ไม่ซ่อน) */
+    /* การ์ดสินค้า 1 ใบ — ของที่ซื้อแล้วขึ้น ✓, เงินไม่พอขึ้นราคาสีจางแต่ยังเห็น (ไม่ซ่อน)
+       **แตะการ์ด = เลือกดู ไม่ใช่ซื้อทันที** (กันเด็กเผลอกดจนเงินหมด) — ซื้อที่แถบด้านล่างอีกที */
     function makeCard(opts){
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'hs-card' + (opts.owned ? ' hs-owned' : (coins() < opts.price ? ' hs-poor' : ''));
+      b.className = 'hs-card' + (opts.owned ? ' hs-owned' : (coins() < opts.price ? ' hs-poor' : ''))
+                  + (opts.key === selKey ? ' hs-sel' : '');
       const pic = document.createElement('span');
       if(opts.color != null){
         pic.className = 'hs-sw';
@@ -405,9 +413,65 @@
       /* เหรียญวาดด้วย CSS ไม่ใช้ emoji 🪙 — เครื่องบางรุ่นไม่มีตัวนี้ในฟอนต์ แล้วขึ้นเป็นวงกลมเทาทึบ */
       pr.innerHTML = opts.owned ? '✓ มีแล้ว' : ('<i class="hs-coin"></i>' + opts.price);
       b.appendChild(pr);
-      if(!opts.owned) b.onclick = opts.onBuy;
-      else b.onclick = ()=>{ click(); toast('✓', opts.name + ' มีอยู่แล้วนะ'); };
+      b.onclick = ()=>{ click(); select(opts); };
       return b;
+    }
+
+    /* ---------- เลือกสินค้า → พรีวิว 3D ฝั่งซ้าย + แถบซื้อด้านล่าง ---------- */
+    let sel = null, selKey = null;
+    /* ชุดแต่งตัวที่พรีวิวได้ = แถวที่เป็น "ทรง/แบบ" (ทรงผม ลายเสื้อ หมวก แว่น เป้ ของถือ)
+       **แถวสีไม่พรีวิว** — สวอตช์สีบนการ์ดบอกครบแล้ว เปิดโมเดลมาก็ไม่ได้อะไรเพิ่ม */
+    function previewableFit(row){ return row && row.type === 'num'; }
+    function select(opts){
+      sel = opts; selKey = opts.key;
+      if(kit.preview && opts.preview) kit.preview(opts.preview);
+      else if(kit.closePreview) kit.closePreview();
+      renderItems();
+      renderBuyBar();
+    }
+    function clearSelected(){
+      if(!sel && !selKey) return;
+      sel = null; selKey = null;
+      if(kit.closePreview) kit.closePreview();
+      renderItems();
+      renderBuyBar();
+    }
+    function renderBuyBar(){
+      const bar = $('house-shop-buy');
+      if(!bar) return;
+      if(!sel){ bar.hidden = true; bar.innerHTML = ''; return; }
+      bar.hidden = false;
+      bar.innerHTML = '';
+      /* ปุ่มกลับไปเลือกของอื่น — บนมือถือแถบหมวด/ตารางสินค้าถูกซ่อนตอนดูตัวอย่าง ต้องมีทางกลับเสมอ */
+      const back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'hs-buy-back';
+      back.setAttribute('aria-label', 'กลับไปเลือกของอื่น');
+      back.textContent = '←';
+      back.onclick = ()=>{ click(); clearSelected(); };
+      bar.appendChild(back);
+      const nm = document.createElement('span');
+      nm.className = 'hs-buy-name';
+      nm.textContent = sel.name;
+      bar.appendChild(nm);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      if(sel.owned){
+        btn.className = 'hs-buy-btn hs-buy-have';
+        btn.textContent = '✓ มีแล้ว';
+        btn.onclick = ()=>{ click(); toast('✓', sel.name + ' มีอยู่แล้วนะ'); };
+      }else{
+        const poor = coins() < sel.price;
+        btn.className = 'hs-buy-btn' + (poor ? ' hs-buy-poor' : '');
+        btn.innerHTML = 'ซื้อเลย <i class="hs-coin"></i>' + sel.price;
+        btn.onclick = ()=>{
+          click();
+          if(!sel.onBuy()) return;
+          sel.owned = true;                 /* ซื้อสำเร็จ → แถบเปลี่ยนเป็น "มีแล้ว" ทันที ไม่ต้องปิดพรีวิว */
+          renderItems(); renderBuyBar();
+        };
+      }
+      bar.appendChild(btn);
     }
 
     function renderItems(){
@@ -424,29 +488,30 @@
           const price = priceFit(row.key, i);
           if(price === 0) continue;                 /* ตัวเลือกฟรี (เช่น "ไม่ใส่") ไม่ต้องวางขาย */
           const nm = (FIT_NAMES[row.key] && FIT_NAMES[row.key][i]) || (row.label + ' ' + (i + 1));
-          const owned = ownsFit(row.key, i);
           wrap.appendChild(makeCard({
-            name: nm, price, owned,
+            key: 'fit:' + row.key + ':' + i,
+            name: nm, price, owned: ownsFit(row.key, i),
             color: row.type === 'color' ? row.colors[i] : null,
             emoji: String(i + 1),
-            onBuy: ()=>{ click(); if(buyFit(row.key, i, nm)) renderItems(); },
+            preview: previewableFit(row) ? {kind:'fit', row:row.key, i} : null,
+            onBuy: ()=> buyFit(row.key, i, nm),
           }));
         }
         return;
       }
       const parts = shopTab.split(':'), scope = parts[0], cat = parts[1];
       FURN.items.filter(it => it.scope === scope && it.cat === cat).forEach(it=>{
-        const price = priceFurn(it.id);
-        const owned = ownsFurn(it.id);
         wrap.appendChild(makeCard({
-          name: it.name, price, owned, emoji: it.emoji,
-          onBuy: ()=>{ click(); if(buyFurn(it.id)) renderItems(); },
+          key: it.id,
+          name: it.name, price: priceFurn(it.id), owned: ownsFurn(it.id), emoji: it.emoji,
+          preview: {kind:'furn', id: it.id},
+          onBuy: ()=> buyFurn(it.id),
         }));
       });
     }
 
     /* ยอดเงินเปลี่ยนจากที่อื่น (เช่นได้เหรียญจากเควสต์) ระหว่างเปิดร้านอยู่ → วาดใหม่ให้ราคาไม่ค้างจาง */
-    document.addEventListener('owlcoins', ()=>{ if(isOpen()) renderItems(); });
+    document.addEventListener('owlcoins', ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } });
 
     return {
       ECON_VER, SHOPS, TIER_PRICE, FIT_PRICE,
@@ -454,8 +519,8 @@
       priceFurn, priceFit, ownsFurn, ownsFit,
       buyFurn, buyFit,
       starterHome, starterFit, STARTER_FURN,
-      shopForLot, open, close, isOpen,
-      refresh: ()=>{ if(isOpen()) renderItems(); },
+      shopForLot, open, close, isOpen, clearSelected,
+      refresh: ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } },
     };
   };
 })();

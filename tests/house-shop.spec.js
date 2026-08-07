@@ -210,6 +210,84 @@ test('หน้าแต่งตัว: ลายเสื้อมาก่อ
   expect(r.seps).toBe(9);
 });
 
+test('หน้าร้าน: แตะการ์ด = ดูตัวอย่าง 3D + แถบซื้อ · การ์ดขนาดเท่ากันทุกใบ · แถวสีไม่พรีวิว', async ({ page }) => {
+  await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await page.evaluate(() => { window.OwlCoins.set(400); window.HouseShop.open('mall-furniture'); });
+  await page.waitForTimeout(300);
+
+  /* ทุกใบต้องสูงเท่ากันเป๊ะ ไม่ว่าชื่อจะสั้นหรือยาว */
+  const heights = await page.evaluate(() =>
+    Array.from(new Set(Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .map(e => Math.round(e.getBoundingClientRect().height)))));
+  expect(heights.length).toBe(1);
+
+  /* แตะการ์ด = เลือกดู ไม่ใช่ซื้อทันที (เงินต้องไม่ลด) */
+  const picked = await page.evaluate(() => {
+    const c = Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .find(e => /เก้าอี้นวม/.test(e.textContent));
+    c.click();
+    return null;
+  });
+  await page.waitForTimeout(500);
+  const st = await page.evaluate(() => ({
+    preview: document.body.classList.contains('house-preview'),
+    selected: document.querySelectorAll('#house-shop-items .hs-card.hs-sel').length,
+    barShown: !document.getElementById('house-shop-buy').hidden,
+    barText: document.getElementById('house-shop-buy').textContent,
+    coins: window.OwlCoins.get(),
+    owns: window.HouseShop.ownsFurn('armchair'),
+  }));
+  expect(st.preview).toBe(true);            // โมเดล 3D ขึ้นแล้ว
+  expect(st.selected).toBe(1);
+  expect(st.barShown).toBe(true);
+  expect(st.barText).toContain('เก้าอี้นวม');
+  expect(st.coins).toBe(400);               // แตะดูเฉยๆ ห้ามตัดเงิน
+  expect(st.owns).toBe(false);
+
+  /* กดปุ่มในแถบซื้อถึงจะซื้อจริง */
+  await page.evaluate(() => document.querySelector('#house-shop-buy .hs-buy-btn').click());
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.OwlCoins.get())).toBe(260);   // 400 - 140
+  expect(await page.evaluate(() => window.HouseShop.ownsFurn('armchair'))).toBe(true);
+
+  /* ปุ่ม ← เลิกดู → ปิดพรีวิวกลับไปเลือกต่อ */
+  await page.evaluate(() => document.querySelector('#house-shop-buy .hs-buy-back').click());
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
+  expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(true);
+
+  /* ชุดแต่งตัวแบบ "มีทรง" (หมวก) → พรีวิวได้ */
+  await page.evaluate(() => window.HouseShop.open('mall-fashion'));
+  await page.waitForTimeout(300);
+  await page.evaluate(() => {
+    Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /เครื่องหัว/.test(b.textContent)).click();
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.querySelectorAll('#house-shop-items .hs-card')[0].click());
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
+
+  /* แถวสี → ไม่เปิดโมเดล 3D (สวอตช์บอกครบแล้ว) แต่แถบซื้อยังต้องขึ้น */
+  await page.evaluate(() => {
+    Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /สีเสื้อ/.test(b.textContent)).click();
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.querySelectorAll('#house-shop-items .hs-card')[0].click());
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
+  expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(false);
+
+  /* ปิดร้าน → พรีวิว/แถบซื้อต้องถูกเก็บให้หมด กลับมาเดินเล่นได้ปกติ */
+  await page.evaluate(() => window.HouseShop.close());
+  await page.waitForTimeout(400);
+  const after = await page.evaluate(() => ({
+    preview: document.body.classList.contains('house-preview'),
+    bar: document.getElementById('house-shop-buy').hidden,
+    shop: document.getElementById('house-shop').hidden,
+  }));
+  expect(after).toEqual({ preview: false, bar: true, shop: true });
+});
+
 test('หน้าร้าน: เปิดห้างเฟอร์นิเจอร์/ห้างแฟชั่นแล้วมีสินค้าโชว์ครบ', async ({ page }) => {
   await openHouse(page);
   /* แถบหมวดต้องเห็นครบทุกหมวดพร้อมกัน ไม่มีอันไหนถูกตัด/ถูก scrollbar บัง (ขึ้นบรรทัดใหม่ได้ ไม่เลื่อนแนวนอน) */

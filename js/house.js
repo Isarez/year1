@@ -278,12 +278,89 @@ const SHOP = (typeof window.HOUSE_SHOP === 'function')
       load: loadHouseData, save: saveHouseData,
       childId: ()=> (activeChild ? activeChild.id : ''),
       onChange: onShopChange,
+      preview: (spec)=>openShopPreview(spec),
+      closePreview: ()=>closeShopPreview(),
     })
   : null;
 /* ซื้อของเสร็จ → กล่องเลือกของ/หน้าแต่งตัวที่เปิดค้างอยู่ต้องปลดล็อกตามทันที */
 function onShopChange(){
   if(editMode) renderEditItems();
   if(hMode === 'creator' && creatorCfg) buildCreatorRows(creatorCfg);
+}
+
+/* ---------- พรีวิวสินค้า 3D ในร้าน (แตะการ์ดสินค้า → โมเดลโผล่ที่พื้นที่ว่างฝั่งซ้าย) ----------
+   ยืมแท่นโชว์ชุดเดียวกับหน้าสร้างตัวละคร (`creatorGroup` = แท่น + ไฟส่อง) จะได้ไฟ/เงา/กล้องเหมือนกันหมด
+   - เฟอร์นิเจอร์ → สร้างโมเดลชิ้นนั้นมาวางบนแท่น (ย่อ/ขยายให้พอดีกรอบเสมอ ไม่ว่าจะกระถางจิ๋วหรือบ้านต้นไม้)
+   - ชุดแต่งตัวแบบ "มีทรง" (ทรงผม/ลายเสื้อ/หมวก/แว่น/เป้/ของถือ) → สร้างตัวละครของเด็กที่ใส่ชิ้นนั้นให้ดู
+   ⚠ **แถวสีไม่ทำพรีวิว** (สีผม/สีตา/สีเสื้อ/สีกางเกง/สีรองเท้า/สีของแต่ง) — สวอตช์สีบนการ์ดบอกครบแล้ว
+     ตัวตัดสินใจอยู่ที่ `previewableFit()` ใน js/house-shop.js */
+let shopPrevGroup = null;        /* โมเดลเฟอร์นิเจอร์ที่โชว์อยู่ (พรีวิวชุดแต่งตัวใช้ charGroup แทน) */
+function clearShopPrevGroup(){
+  if(shopPrevGroup){ scene.remove(shopPrevGroup); disposeGroup(shopPrevGroup); shopPrevGroup = null; }
+}
+/* ย่อ/ขยาย + จัดกึ่งกลางให้โมเดลพอดีกรอบพรีวิวเสมอ (ของในคลังขนาดต่างกันหลายเท่าตัว) */
+function fitPreviewModel(g, targetH){
+  const bb = new THREE.Box3().setFromObject(g);
+  if(!isFinite(bb.min.y)) return;
+  const size = new THREE.Vector3(); bb.getSize(size);
+  /* ⚠ วัดความกว้างด้วย "เส้นทแยงมุมของฐาน" (hypot x,z) ไม่ใช่ด้านที่ยาวสุด
+     — โมเดลหมุนรอบตัวเองตลอด พอหันมุม 45° ด้านที่กว้างจริงคือเส้นทแยง ถ้าคิดแค่ด้านยาวสุด
+       ของจะล้นขอบจอเป็นช่วงๆ ตอนหมุน (เจอกับโซฟา/เตียงที่ฐานเป็นสี่เหลี่ยมผืนผ้า) */
+  const wide = Math.hypot(size.x, size.z);
+  const s = targetH / Math.max(.001, Math.max(wide, size.y));
+  g.scale.setScalar(Math.max(.4, Math.min(2.6, s)));
+  const bb2 = new THREE.Box3().setFromObject(g);
+  const c = new THREE.Vector3(); bb2.getCenter(c);
+  g.position.set(-c.x, -bb2.min.y, -c.z);   /* วางก้นโมเดลแตะแท่นพอดี ไม่ลอย/ไม่จม */
+}
+function savedCharCfg(){
+  const saved = loadHouseData() || {};
+  return Object.assign({}, H_DEFAULT_CHAR, saved.char || {});
+}
+function openShopPreview(spec){
+  if(!houseOpen || editMode || hMode === 'creator' || hMode === 'pet') return false;
+  clearShopPrevGroup();
+  if(spec.kind === 'fit'){
+    const cfg = savedCharCfg();
+    cfg[spec.row] = spec.i;
+    rebuildChar(cfg);
+    charGroup.position.set(0, 0, 0);
+    charGroup.visible = true;
+  }else{
+    const item = FURN.byId[spec.id]; if(!item) return false;
+    const g = new THREE.Group();
+    const pal = item.colors || [0xcccccc];
+    try{ item.build(g, pal[0], decorKit(), null); }
+    catch(err){ console.error('preview build', spec.id, err); return false; }
+    fitPreviewModel(g, 1.9);
+    const holder = new THREE.Group();   /* หมุนที่ holder ตัวนอก โมเดลข้างในจึงหมุนรอบแกนกลางตัวเอง */
+    holder.add(g);
+    shopPrevGroup = holder;
+    scene.add(holder);
+    if(charGroup) charGroup.visible = false;
+  }
+  hMode = 'shop';
+  creatorState.rotY = 0; creatorState.rotTarget = 0; creatorState.dragging = false;
+  worldGroup.visible = false; interiorGroup.visible = false;
+  creatorGroup.visible = true;
+  document.body.classList.add('house-preview');
+  const hint = $('house-hint'); if(hint) hint.hidden = true;
+  applyCamera();
+  return true;
+}
+function closeShopPreview(){
+  if(hMode !== 'shop') return;
+  clearShopPrevGroup();
+  document.body.classList.remove('house-preview');
+  hMode = 'world';
+  creatorGroup.visible = false;
+  worldGroup.visible = (hScene === 'out'); interiorGroup.visible = (hScene === 'in');
+  rebuildChar(savedCharCfg());        /* พรีวิวชุดแต่งตัวเปลี่ยนตัวละครไป ต้องคืนชุดจริงที่บันทึกไว้ */
+  charGroup.visible = true;
+  const p = tileWorld(hChar.tile);
+  charGroup.position.copy(p);
+  charGroup.rotation.y = hChar.targetRotY;
+  applyCamera();
 }
 
 /* ---------- ตัวละคร blocky ---------- */
@@ -6493,21 +6570,25 @@ const SHADOW_HALF = 12;                 /* ครึ่งกว้างกร�
 const LIGHT_DIR = new THREE.Vector3(6,12,4).normalize();   /* ทิศแสงพระอาทิตย์ (คงที่) */
 function applyCamera(){
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-  if(hMode==='creator' || hMode==='pet'){   /* แผงสัตว์เลี้ยงใช้เฟรมกล้องเดียวกับ creator */
+  if(hMode==='creator' || hMode==='pet' || hMode==='shop'){   /* แผงสัตว์เลี้ยง/พรีวิวสินค้าใช้เฟรมกล้องเดียวกับ creator */
     if(!isMobileViewport()){
       /* จอใหญ่: แผงตัวเลือกเป็นการ์ดชิดขวา (ดู .house-creator ใน media query ≥768px)
-         → จัดตัวละครเต็มตัวกลางพื้นที่ว่างฝั่งซ้าย ด้วย frustum ซ้าย/ขวาไม่สมมาตร */
+         → จัดตัวละครเต็มตัวกลางพื้นที่ว่างฝั่งซ้าย ด้วย frustum ซ้าย/ขวาไม่สมมาตร
+         ⚠ ตัวเลขความกว้างแผงต้องตรงกับ CSS จริง ไม่งั้นโมเดลจะเยื้องไปโดนแผงบัง
+           (แผงร้านกว้างกว่าแผงอื่น — ดู `.house-creator.house-shop` ใน css/style.css) */
       const H = 4.2, W = H*aspect;
       const vw = window.innerWidth;
-      const panelW = Math.min(400, vw*.44) + 36;      /* กว้างแผง + ระยะขอบขวา/ช่องไฟ */
+      const panelW = (hMode==='shop' ? Math.min(640, vw*.56) : Math.min(400, vw*.44)) + 36;
       const vc = ((vw - panelW)/2) / vw;              /* สัดส่วนแนวนอนที่อยากให้ตัวละครอยู่ */
       camera.left = -vc*W; camera.right = (1-vc)*W;
       camera.top = 2.2; camera.bottom = camera.top - H;
     }else{
       /* มือถือ: แผงเป็น bottom sheet — พื้นที่ว่างจริงคือระหว่างแถบบน (~70px)
-         กับขอบแผง (~60vh) จัดเฟรมให้หัวจรดรองเท้าอยู่ในช่องนั้นพอดี ไม่โดนตัด/บัง */
-      const H = 6.4;
-      camera.top = 1.58; camera.bottom = camera.top - H;
+         กับขอบแผง (~60vh) จัดเฟรมให้หัวจรดรองเท้าอยู่ในช่องนั้นพอดี ไม่โดนตัด/บัง
+         โหมดพรีวิวสินค้าซ่อนแถบหมวด/ตารางสินค้า (ดู body.house-preview) sheet เหลือแค่ ~200px
+         โมเดลจึงได้พื้นที่ ~3 ใน 4 ของจอ — จัดเฟรมให้เต็มตัวอยู่ในช่องนั้นพอดี */
+      const H = hMode==='shop' ? 5.0 : 6.4;
+      camera.top = hMode==='shop' ? 2.1 : 1.58; camera.bottom = camera.top - H;
       camera.left = -H*aspect/2; camera.right = H*aspect/2;
     }
     camera.position.set(0, 2.1, 6.2); camera.lookAt(0, .75, 0);
@@ -6689,7 +6770,7 @@ function bindCanvasInput(canvas){
       pinchDist = Math.hypot(a.x-b.x, a.y-b.y);
     }
     downX = e.clientX; downY = e.clientY; downT = performance.now(); moved = false;
-    if(hMode==='creator' || hMode==='pet'){ creatorState.dragging = true; creatorState.lastX = e.clientX; }
+    if(hMode==='creator' || hMode==='pet' || hMode==='shop'){ creatorState.dragging = true; creatorState.lastX = e.clientX; }
     if(hMode==='world' && editMode){
       if(pointers.size===2){ editDragCancel(); editPan = null; }   /* เริ่ม pinch → ยกเลิกลาก/แพน */
       else {
@@ -6704,7 +6785,7 @@ function bindCanvasInput(canvas){
     if(!pointers.has(e.pointerId)) return;
     pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     if(Math.hypot(e.clientX-downX, e.clientY-downY) > 10) moved = true;
-    if((hMode==='creator' || hMode==='pet') && creatorState.dragging && pointers.size===1){
+    if((hMode==='creator' || hMode==='pet' || hMode==='shop') && creatorState.dragging && pointers.size===1){
       creatorState.rotY += (e.clientX - creatorState.lastX) * .012;
       creatorState.rotTarget = creatorState.rotY;
       creatorState.lastX = e.clientX;
@@ -6722,7 +6803,7 @@ function bindCanvasInput(canvas){
   });
   const endPointer = e=>{
     pointers.delete(e.pointerId);
-    if(hMode==='creator' || hMode==='pet') creatorState.dragging = false;
+    if(hMode==='creator' || hMode==='pet' || hMode==='shop') creatorState.dragging = false;
     if(pointers.size<2) pinchDist = 0;
     if(hMode==='world' && editMode){
       if(editDrag){
@@ -6735,6 +6816,10 @@ function bindCanvasInput(canvas){
     }
     if(hMode==='world' && !moved && pointers.size===0 && performance.now()-downT < 600){
       handleTap(e.clientX, e.clientY);
+    }
+    /* กำลังดูพรีวิวสินค้าอยู่ — แตะที่ว่างนอกแผงร้าน = เลิกดู กลับไปเดินเล่นต่อ */
+    if(hMode==='shop' && !moved && pointers.size===0 && performance.now()-downT < 600){
+      if(SHOP) SHOP.clearSelected();
     }
   };
   canvas.addEventListener('pointerup', endPointer);
@@ -8808,7 +8893,8 @@ const _nameV = new THREE.Vector3();
 const _swingV = new THREE.Vector3();   /* ตำแหน่งที่นั่งชิงช้าตอนแกว่ง (reuse) */
 function updateNameLabel(){
   const el = $('house-char-name');
-  if(!charGroup || !houseOpen || !charGroup.visible){ el.hidden = true; return; }
+  /* ตอนดูตัวอย่างสินค้าในร้านไม่ต้องมีป้ายชื่อเด็ก (กำลังดูของ ไม่ได้ดูตัวเอง แถมป้ายไปบังหมวกพอดี) */
+  if(!charGroup || !houseOpen || !charGroup.visible || hMode==='shop'){ el.hidden = true; return; }
   _nameV.set(charGroup.position.x, charGroup.position.y + 2.05, charGroup.position.z).project(camera);
   const lx = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
   const ty = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
@@ -8853,7 +8939,8 @@ let coinShownVal = null;
 function updateCoinBadge(){
   const el = $('house-coins');
   if(!el) return;
-  const show = houseOpen && hMode==='world' && !editMode && charGroup;
+  /* โชว์ตอนเดินเล่นและตอนดูพรีวิวสินค้าในร้านด้วย — เด็กต้องเห็นว่ามีเงินพอซื้อไหม */
+  const show = houseOpen && (hMode==='world' || hMode==='shop') && !editMode && charGroup;
   if(!show){ if(!el.hidden){ el.hidden = true; coinShownVal = null; } return; }
   el.hidden = false;
   const n = (window.OwlCoins ? window.OwlCoins.get() : 0);
@@ -9686,20 +9773,32 @@ function frame(t){
   updateLightLerp(dt);
   const u = charGroup && charGroup.userData;
 
-  if(hMode==='creator' || hMode==='pet'){
-    /* ไม่มี auto-rotate (ผู้ใช้ขอเอาออก) — หมุนนุ่มๆ เข้าหามุมจากปุ่ม ↺/↻ หรือหมุนตามนิ้วลากตรงๆ */
-    if(!creatorState.dragging){
-      creatorState.rotY += (creatorState.rotTarget - creatorState.rotY) * Math.min(1, dt*9);
-    }
-    if(hMode==='pet'){
-      if(petPreview){
-        petPreview.rotation.y = creatorState.rotY;
-        petPreview.position.y = Math.sin(t*.0022)*.04;   /* ลอยหายใจเบาๆ แบบเดียวกับตัวละคร */
+  if(hMode==='creator' || hMode==='pet' || hMode==='shop'){
+    /* ไม่มี auto-rotate (ผู้ใช้ขอเอาออก) — หมุนนุ่มๆ เข้าหามุมจากปุ่ม ↺/↻ หรือหมุนตามนิ้วลากตรงๆ
+       **ยกเว้นพรีวิวสินค้าในร้าน** ที่หมุนเองช้าๆ ให้เห็นรอบด้าน (เด็กแค่ดู ไม่ต้องลากเอง) */
+    if(hMode==='shop'){
+      if(!creatorState.dragging){ creatorState.rotY += dt*.7; creatorState.rotTarget = creatorState.rotY; }
+      if(shopPrevGroup){
+        shopPrevGroup.rotation.y = creatorState.rotY;
+        shopPrevGroup.position.y = Math.sin(t*.0022)*.03;   /* ลอยขึ้นลงเบาๆ ให้ดูมีชีวิต */
+      }else if(charGroup){
+        charGroup.rotation.y = creatorState.rotY;
+        if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03; u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03; }
       }
-    }else if(charGroup){
-      charGroup.rotation.y = creatorState.rotY;
-      /* ท่ายืนหายใจเบาๆ ให้ดูมีชีวิต */
-      if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03; u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03; }
+    }else{
+      if(!creatorState.dragging){
+        creatorState.rotY += (creatorState.rotTarget - creatorState.rotY) * Math.min(1, dt*9);
+      }
+      if(hMode==='pet'){
+        if(petPreview){
+          petPreview.rotation.y = creatorState.rotY;
+          petPreview.position.y = Math.sin(t*.0022)*.04;   /* ลอยหายใจเบาๆ แบบเดียวกับตัวละคร */
+        }
+      }else if(charGroup){
+        charGroup.rotation.y = creatorState.rotY;
+        /* ท่ายืนหายใจเบาๆ ให้ดูมีชีวิต */
+        if(u){ u.rig.position.y = Math.sin(t*.0022)*.02; u.arms[0].rotation.z = -.16-Math.sin(t*.0022)*.03; u.arms[1].rotation.z = .16+Math.sin(t*.0022)*.03; }
+      }
     }
   }else if(charGroup){
     const gettingUp = hChar.getUpT0 && (performance.now() - hChar.getUpT0) < hChar.getUpDur;

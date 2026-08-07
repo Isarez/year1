@@ -2702,6 +2702,13 @@
      จึงกินพื้นที่มากกว่าแผงสร้างตัวละคร — บนมือถือสูงขึ้น บนจอใหญ่กว้างขึ้น */
   .house-shop{z-index:8;}
   .house-creator.house-shop{max-height:88vh; max-height:88dvh;}
+  /* กำลังดูตัวอย่าง 3D อยู่ —  บนมือถือกล่องเป็น bottom sheet เต็มความกว้าง ไม่มีที่ว่างข้างๆ
+     จึงยุบเหลือ "โหมดดูของชิ้นเดียว": ซ่อนแถบหมวด+ตารางสินค้า เหลือชื่อของ + ปุ่มซื้อ + ปุ่มกลับ
+     ⇒ โมเดลได้พื้นที่ ~3 ใน 4 ของจอ เห็นเต็มตัวจริงๆ (จอใหญ่ไม่ต้องยุบ กล่องอยู่ชิดขวาอยู่แล้ว) */
+  body.house-preview .house-creator.house-shop{max-height:none;}
+  body.house-preview .house-shop .he-tabs,
+  body.house-preview .house-shop .hs-items,
+  body.house-preview .house-shop .house-creator-sub{display:none;}
   .hs-items{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:8px;
     overflow-y:auto; padding:4px 2px 2px; min-height:0;
@@ -2725,17 +2732,26 @@
   }
   .hs-tabsec:first-child{margin-top:0;}
   .hs-tabsec::after{content:''; flex:1; height:0; border-top:2px dashed rgba(120,90,50,.16);}
+  /* ทุกใบขนาดเท่ากันเป๊ะ — ความสูงคงที่ + ชื่อยาวตัดที่ 2 บรรทัด
+     (ปล่อยให้สูงตามเนื้อหาแล้วการ์ดชื่อยาว/สั้นจะสูงไม่เท่ากัน ตารางดูรกทันที) */
   .hs-card{
     border:3px solid rgba(0,0,0,.06); border-radius:16px; padding:8px 4px 6px;
     background:#FFF9EE; color:var(--ink); font-family:inherit; cursor:pointer; min-width:0;
-    display:flex; flex-direction:column; align-items:center; gap:4px;
-    transition:transform .1s ease, border-color .12s ease;
+    height:112px; box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:2px;
+    transition:transform .1s ease, border-color .12s ease, box-shadow .12s ease;
   }
   .hs-card:active{transform:scale(.92);}
   .hs-card:hover{border-color:#FFCF7A;}
-  .hs-emoji{font-size:28px; line-height:1;}
-  .hs-sw{width:34px; height:34px; border-radius:11px; border:2px solid rgba(0,0,0,.12); display:block;}
-  .hs-name{font-size:11.5px; font-weight:800; text-align:center; line-height:1.15;}
+  /* ใบที่กำลังเลือกดูตัวอย่างอยู่ */
+  .hs-card.hs-sel{border-color:#33B7EE; box-shadow:0 0 0 3px rgba(51,183,238,.25);}
+  .hs-emoji{font-size:28px; line-height:1; flex:0 0 auto;}
+  .hs-sw{width:34px; height:34px; border-radius:11px; border:2px solid rgba(0,0,0,.12); display:block; flex:0 0 auto;}
+  .hs-name{
+    font-size:11.5px; font-weight:800; text-align:center; line-height:1.15;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; width:100%; word-break:break-word;
+  }
   .hs-price{font-size:12px; font-weight:800; color:#C98B2E; line-height:1; display:inline-flex; align-items:center; gap:4px;}
   /* เหรียญนกฮูกจิ๋วข้างราคา — วาดด้วย CSS ล้วน (ไม่ใช้ emoji 🪙 เพราะบางเครื่องไม่มีในฟอนต์
      แล้วจะขึ้นเป็นวงกลมเทาทึบ) โทนทองชุดเดียวกับป้ายยอดเงินบนหัวจอ */
@@ -2752,6 +2768,34 @@
   .hs-card.hs-poor .hs-sw{opacity:.35;}
   .hs-card.hs-poor .hs-name{color:#B3A491;}
   .hs-close-btn{background:linear-gradient(135deg,#FFB74D,#F59A2E);}
+  /* แถบซื้อท้ายกล่อง — โผล่เมื่อเลือกสินค้าแล้ว (แตะการ์ด = ดูตัวอย่าง ไม่ใช่ซื้อทันที
+     กันเด็กเผลอกดรัวจนเงินหมดโดยไม่ตั้งใจ และได้เห็นของจริงก่อนตัดสินใจ) */
+  .hs-buy{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px; margin-top:2px;
+    background:#FFF3DE; border:2px solid #F3D9AC; border-radius:18px; padding:8px 10px 8px 14px;
+  }
+  .hs-buy[hidden]{display:none;}
+  .hs-buy-name{
+    flex:1 1 auto; min-width:0; font-size:15px; font-weight:800; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  /* ปุ่มกลับไปเลือกของอื่น — สำคัญมากบนมือถือ เพราะตอนดูตัวอย่างตารางสินค้าถูกซ่อนไว้ */
+  .hs-buy-back{
+    flex:0 0 auto; width:38px; height:38px; border-radius:50%; border:none; cursor:pointer;
+    background:#F1E7D6; color:var(--ink-soft); font-family:inherit; font-size:19px; font-weight:800;
+    display:inline-flex; align-items:center; justify-content:center; transition:transform .12s ease;
+  }
+  .hs-buy-back:active{transform:scale(.9);}
+  .hs-buy-btn{
+    flex:0 0 auto; border:none; border-radius:999px; padding:10px 18px;
+    background:linear-gradient(135deg,#66BB6A,#43A047); color:#fff; font-family:inherit;
+    font-size:15.5px; font-weight:800; cursor:pointer; box-shadow:var(--shadow-btn);
+    display:inline-flex; align-items:center; gap:6px; transition:transform .12s ease;
+  }
+  .hs-buy-btn:active{transform:scale(.94);}
+  .hs-buy-btn .hs-coin{width:14px; height:14px;}
+  .hs-buy-btn.hs-buy-poor{background:linear-gradient(135deg,#CBBFA9,#AFA28A);}
+  .hs-buy-btn.hs-buy-have{background:linear-gradient(135deg,#A5D6A7,#7CBF80); color:#2F5C33;}
 
   /* แถบเครื่องมือชิ้นที่เลือก (ลอยเหนือกล่อง panel) */
   .house-edit-toolbar{
@@ -2862,7 +2906,11 @@
     }
     .house-creator-panel{border-radius:26px; height:100%;}
     /* ร้านค้ากว้างกว่าแผงอื่นบนจอใหญ่ — ของเยอะ ถ้าแคบเท่ากันจะได้แค่ 3 ใบต่อแถว เลื่อนยาวมาก */
-    .house-creator.house-shop{width:min(580px,58vw); max-height:none;}
+    .house-creator.house-shop{width:min(640px,56vw); max-height:none;}
+    /* จอใหญ่: กล่องอยู่ชิดขวา โมเดลโชว์ฝั่งซ้าย — ไม่ต้องยุบอะไร เลือกของต่อได้ระหว่างดูตัวอย่าง */
+    body.house-preview .house-shop .he-tabs{display:flex;}
+    body.house-preview .house-shop .hs-items{display:grid;}
+    body.house-preview .house-shop .house-creator-sub{display:block;}
     /* จอใหญ่กล่องสูงเต็มจอ — ให้ตารางสินค้ายืดกินที่ว่างที่เหลือ ปุ่ม "ออกจากร้าน" จะได้อยู่ติดก้นกล่อง
        ไม่ลอยค้างกลางกล่องแล้วเหลือพื้นขาวโล่งใต้ปุ่ม (บนมือถือไม่ใส่ ปล่อยให้ sheet หดตามเนื้อหา) */
     .house-shop .hs-items{flex:1 1 auto;}
