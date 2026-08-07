@@ -210,7 +210,7 @@ test('หน้าแต่งตัว: ลายเสื้อมาก่อ
   expect(r.seps).toBe(9);
 });
 
-test('หน้าร้าน: แตะการ์ด = ดูตัวอย่าง 3D + แถบซื้อ · การ์ดขนาดเท่ากันทุกใบ · แถวสีไม่พรีวิว', async ({ page }) => {
+test('หน้าร้าน: แตะการ์ด = ดูตัวอย่าง 3D + แถบซื้อ · การ์ดขนาดเท่ากันทุกใบ · พรีวิวได้ทุกแบบรวมสี', async ({ page }) => {
   await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   await page.evaluate(() => { window.OwlCoins.set(400); window.HouseShop.open('mall-furniture'); });
   await page.waitForTimeout(500);
@@ -260,7 +260,7 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
   expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(true);
 
-  /* ชุดแต่งตัวแบบ "มีทรง" (หมวก) → พรีวิวได้ */
+  /* ชุดแต่งตัวพรีวิวได้ทุกแถว — แบบ "มีทรง" (หมวก) */
   await page.evaluate(() => window.HouseShop.open('mall-fashion'));
   await page.waitForTimeout(300);
   await page.evaluate(() => {
@@ -271,14 +271,15 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
 
-  /* แถวสี → ไม่เปิดโมเดล 3D (สวอตช์บอกครบแล้ว) แต่แถบซื้อยังต้องขึ้น */
+  /* ...และแถวสีก็พรีวิวได้เหมือนกัน (เห็นสีจริงบนตัวละคร ไม่ใช่แค่สวอตช์เล็กๆ) */
   await page.evaluate(() => {
     Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).find(b => /สีเสื้อ/.test(b.textContent)).click();
   });
   await page.waitForTimeout(300);
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);  // เปลี่ยนหมวด = กลับมาดูรายการ
   await page.evaluate(() => document.querySelectorAll('#house-shop-items .hs-card')[0].click());
   await page.waitForTimeout(500);
-  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(false);
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview'))).toBe(true);
   expect(await page.evaluate(() => document.getElementById('house-shop-buy').hidden)).toBe(false);
 
   /* ปุ่มย้อนกลับซ้ายบน = ออกจากร้าน (ยังอยู่ในบ้าน) · พรีวิว/แถบซื้อต้องถูกเก็บให้หมด */
