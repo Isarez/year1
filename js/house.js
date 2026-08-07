@@ -167,8 +167,12 @@ function loadHouseData(){
   if(!activeChild) return null;
   let d = null;
   try{ d = JSON.parse(localStorage.getItem(HOUSE_KEY(activeChild.id)) || 'null'); }catch(e){ return null; }
-  if(d && (d.mapV || 1) < MAP_V){
-    d = migrateHouseMap(d);
+  let dirty = false;
+  if(d && (d.mapV || 1) < MAP_V){ d = migrateHouseMap(d); dirty = true; }
+  /* เฟส 1 เศรษฐกิจ: ของที่เด็กวางไว้/ใส่อยู่แล้วต้องนับเป็น "ซื้อแล้ว" ทั้งหมด ห้ามหายหลังอัปเดต
+     (ทำครั้งเดียวต่อเด็ก แล้วปั๊ม econVer — ครั้งถัดๆ ไป SHOP.migrate คืน false ทันที) */
+  if(d && SHOP && SHOP.migrate(d)) dirty = true;
+  if(dirty){
     try{ localStorage.setItem(HOUSE_KEY(activeChild.id), JSON.stringify(d)); }catch(e){}
   }
   return d;
@@ -257,6 +261,22 @@ let hShadows = false;
 const FURN = (typeof window.HOUSE_FURNITURE === 'function')
   ? window.HOUSE_FURNITURE({THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat, shade:petShade})
   : {items:[], byId:{}, cats:{in:[], out:[]}};
+
+/* ร้านค้า/เศรษฐกิจเฟส 1 (js/house-shop.js โหลดก่อนไฟล์นี้) — ตารางราคา + คลังสิทธิ์ + migration + หน้าร้าน
+   ไฟล์นั้นไม่แตะ localStorage เอง ใช้ load/save ที่ส่งไปให้ตรงนี้ (ข้อมูลจึงอยู่ก้อนเดียวกับบ้าน export ตามไปเอง) */
+const SHOP = (typeof window.HOUSE_SHOP === 'function')
+  ? window.HOUSE_SHOP({
+      FURN, H_ROWS, H_DEFAULT_CHAR,
+      load: loadHouseData, save: saveHouseData,
+      childId: ()=> (activeChild ? activeChild.id : ''),
+      onChange: onShopChange,
+    })
+  : null;
+/* ซื้อของเสร็จ → กล่องเลือกของ/หน้าแต่งตัวที่เปิดค้างอยู่ต้องปลดล็อกตามทันที */
+function onShopChange(){
+  if(editMode) renderEditItems();
+  if(hMode === 'creator' && creatorCfg) buildCreatorRows(creatorCfg);
+}
 
 /* ---------- ตัวละคร blocky ---------- */
 /* คืนหน่วยความจำ GPU ให้ครบทั้ง geometry + material + texture
@@ -6762,6 +6782,7 @@ function ndcFromClient(cx, cy){
 
 function handleTap(cx, cy){
   if(questPanelOpen()){ closeQuestBoard(); return; }   /* แผงภารกิจเปิดอยู่ → แตะจอ = ปิดแผงก่อน */
+  if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }   /* หน้าร้านเปิดอยู่ → แตะนอกกล่อง = ออกจากร้าน */
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
   if(hScene==='out'){
     /* ยิง ray ใส่ของทั้งฉากแล้วไล่หา tag ที่ ancestor: สัตว์ > บ้าน > ของตกแต่ง > ฉากตายตัว
@@ -6968,8 +6989,16 @@ function buildCreatorRows(cfg){
       }
       else{ b.textContent = row.options[i]; }
       if(cfg[row.key]===i) b.classList.add('active');
+      /* เฟส 1: ชุดที่ยังไม่ได้ซื้อโชว์เป็นชิปจางมีแม่กุญแจ (ไม่ซ่อน) แตะแล้วบอกราคา + ที่ซื้อ */
+      const locked = SHOP ? !SHOP.ownsFit(row.key, i) : false;
+      if(locked) b.classList.add('house-chip-lock');
       b.addEventListener('click', ()=>{
         if(typeof playClick==='function') playClick();
+        if(locked){
+          if(typeof showToast==='function')
+            showToast('👗', 'แบบนี้ยังไม่มีนะ ราคา '+SHOP.priceFit(row.key, i)+' เหรียญ ไปซื้อได้ที่ห้างแฟชั่นในเมือง!');
+          return;
+        }
         cfg[row.key] = i;
         chips.querySelectorAll('.house-chip').forEach(c=>c.classList.remove('active'));
         b.classList.add('active');
@@ -6984,6 +7013,7 @@ function buildCreatorRows(cfg){
 
 let creatorCfg = null;
 function openCreator(fromWorld){
+  if(SHOP) SHOP.close();          /* เปิดหน้าแต่งตัวทับหน้าร้านไม่ได้ (กล่อง bottom-sheet ซ้อนกัน) */
   hMode = 'creator';
   creatorState.fromWorld = fromWorld;
   creatorState.rotY = 0; creatorState.rotTarget = 0;
@@ -7130,6 +7160,9 @@ function greetLot(a){
   const p = a.pos;
   for(let i=0; i<4; i++) spawnParticle(p.x+(Math.random()-.5)*1.2, 1.4+Math.random()*.4, p.z+1, 0xfff1a8);
   if(typeof playClick==='function') playClick();
+  /* ล็อตที่เป็นร้านเปิดขายแล้ว (เฟส 1: ห้างเฟอร์นิเจอร์/ห้างแฟชั่น) — เดินมาถึงหน้าร้านแล้วเปิดร้านเลย
+     ไม่ต้องรอทักพนักงานก่อน (เด็กแตะตัวตึกก็ควรเข้าร้านได้) */
+  if(SHOP && SHOP.shopForLot(a.lot.id)){ SHOP.open(a.lot.id); return; }
   const now = performance.now();
   if(now - lotToastAt < 2500) return;
   lotToastAt = now;
@@ -7209,6 +7242,9 @@ function talkToNpc(n){
   questEvent('talk', d.id);
   if(d.job === 'vendor') questEvent('vendor', d.id);
   if(d.board && QUEST_ENABLED) setTimeout(()=>{ if(!questPanelOpen()) openQuestBoard(); }, 700);
+  /* พนักงานที่ดูแลร้าน (ธง `shop` ใน NPC_DEFS) — ทักทายเสร็จแล้วเปิดหน้าร้านให้เลย
+     หน่วงไว้ให้อ่านฟองคำพูดทันก่อน แล้วค่อยเลื่อนกล่องร้านขึ้นมา */
+  if(d.shop && SHOP) setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) SHOP.open(d.shop); }, 900);
 }
 function updateNpcLabels(){
   const el = $('house-npc-bubble'); if(!el) return;
@@ -8682,6 +8718,7 @@ function buildPetChips(){
 }
 function openPetPicker(){
   if(editMode) return;   /* กันแผงสัตว์เลี้ยงเด้งทับตอนกำลังตกแต่ง */
+  if(SHOP) SHOP.close();
   hMode = 'pet';
   creatorState.rotY = 0; creatorState.rotTarget = 0;
   const data = loadHouseData() || {};
@@ -8968,8 +9005,47 @@ function seedWorldDecor(data){
   /* แผ่นทางเดินหน้าประตู (ลอดช่องประตูรั้ว) — ย้าย/ลบได้ */
   for(let i=0;i<4;i++) seed.push({id:'path', x:DOOR_TILE.x, z:DOOR_TILE.z+i, rot:0, col:0});
   decor.out = seed.concat(decor.out || []);
-  decor.in = decor.in || [];
+  /* เฟส 1: บ้านมาพร้อม "ชุดเฟอร์นิเจอร์มาตรฐาน" วางให้เรียบร้อยตั้งแต่เปิดครั้งแรก
+     (เปิดบ้านครั้งแรกต้องเจอบ้านที่อยู่ได้จริง ไม่ใช่ห้องโล่ง) — ย้าย/หมุน/ลบได้ตามปกติ
+     ลบแล้วไม่ได้เงินคืน แต่ยังมีสิทธิ์ หยิบกลับมาวางฟรีได้เสมอ
+     ⚠ ทำเฉพาะบ้านที่ยังไม่เคย seed เท่านั้น — บ้านของเด็กที่เล่นอยู่แล้วห้ามถูกจัดใหม่ทับ */
+  decor.in = starterHomeRecs().concat(decor.in || []);
   saveHouseData({decor, worldSeeded:true});
+}
+/* ชุดเฟอร์นิเจอร์มาตรฐาน 8 ชิ้น พร้อมตรวจว่าวางลงจริงได้ทุกชิ้น
+   (พิกัดใน js/house-shop.js ผูกกับผังห้องปัจจุบัน — ถ้าวันหลังขยับกำแพง/ประตู
+    ชิ้นที่วางไม่ลงจะถูกย้ายไปช่องว่างที่ใกล้ที่สุดแทนที่จะหายไปเฉยๆ) */
+function starterHomeRecs(){
+  if(!SHOP) return [];
+  const placed = [];
+  SHOP.starterHome().forEach(r=>{
+    const item = FURN.byId[r.id]; if(!item) return;
+    let x = r.x, z = r.z;
+    if(inGridBase && !decorCanPlaceAmong('in', item, {x, z}, r.rot, placed)){
+      const alt = findFreeAnchorAmong('in', item, r.rot, placed);
+      if(!alt) return;
+      x = alt.x; z = alt.z;
+    }
+    placed.push({id:r.id, x, z, rot:r.rot, col:r.col});
+  });
+  return placed;
+}
+/* เวอร์ชันของ decorCanPlace/findFreeAnchor ที่นับชิ้นในลิสต์ที่กำลังจะวางด้วย
+   (ตอน seed ยังไม่มี decorGroups ให้เทียบ ต้องกันชิ้นในชุดเดียวกันทับกันเอง) */
+function decorCanPlaceAmong(sc, item, anchor, rot, others){
+  if(!decorCanPlace(sc, item, anchor, rot)) return false;
+  const tiles = footTiles(item, anchor, rot);
+  return !others.some(o=>{
+    const oi = FURN.byId[o.id]; if(!oi || oi.block===false || item.block===false) return false;
+    return footTiles(oi, {x:o.x, z:o.z}, o.rot).some(b=>tiles.some(a=>a.x===b.x && a.z===b.z));
+  });
+}
+function findFreeAnchorAmong(sc, item, rot, others){
+  const W = sc==='out' ? OUT_W : IN_W, D = sc==='out' ? OUT_D : IN_D;
+  for(let z=0; z<D; z++) for(let x=0; x<W; x++){
+    if(decorCanPlaceAmong(sc, item, {x, z}, rot, others)) return {x, z};
+  }
+  return null;
 }
 function loadDecorForChild(){
   lampAll = []; _lampsNight = null;   /* ล้าง ref ไฟเก่าก่อนสร้างของเด็กคนใหม่ */
@@ -9059,6 +9135,7 @@ function homeZoneToast(){
 function enterEditMode(){
   if(hMode!=='world' || !houseOpen) return;
   if(sitState) endSit();
+  if(SHOP) SHOP.close();          /* กดตกแต่งบ้านทั้งที่ยืนอยู่ในร้าน → ปิดหน้าร้านก่อน */
   editMode = true;
   document.body.classList.add('house-edit');
   /* ซ่อนตัวละคร + สัตว์เลี้ยง + ป้ายชื่อ ระหว่างตกแต่ง (ไม่ให้บังของ/สับสน) */
@@ -9114,12 +9191,46 @@ function renderEditItems(){
   wrap.innerHTML = '';
   FURN.items.filter(it=>it.scope===hScene && it.cat===editCat).forEach(it=>{
     const b = document.createElement('button');
-    b.className = 'he-item';
-    b.innerHTML = '<span class="he-item-emoji">'+it.emoji+'</span><span class="he-item-name">'+it.name+'</span>';
-    b.onclick = ()=>addDecorItem(it.id);
+    /* เฟส 1: ของที่ยังไม่ได้ซื้อ **ยังโชว์อยู่** (สีจาง + ป้ายราคา) ไม่ซ่อน — ให้เด็กเห็นเป้าหมาย
+       แตะแล้วบอกว่าไปซื้อได้ที่ไหน ไม่ใช่เงียบเฉยจนนึกว่าแอปเสีย */
+    const locked = SHOP ? !SHOP.ownsFurn(it.id) : false;
+    b.className = 'he-item' + (locked ? ' he-locked' : '');
+    b.innerHTML = '<span class="he-item-emoji">'+it.emoji+'</span><span class="he-item-name">'+it.name+'</span>'
+                + (locked ? '<span class="he-item-price"><i class="hs-coin"></i>'+SHOP.priceFurn(it.id)+'</span>' : '');
+    b.onclick = locked
+      ? ()=>{ if(typeof playClick==='function') playClick();
+              if(typeof showToast==='function') showToast('🛋️', it.name+' ยังไม่มีนะ ไปซื้อได้ที่ห้างเฟอร์นิเจอร์ในเมือง!'); }
+      : ()=>addDecorItem(it.id);
     wrap.appendChild(b);
   });
+  const rb = $('house-reset-home');
+  if(rb) rb.hidden = (hScene !== 'in');   /* ปุ่มจัดบ้านกลับแบบเดิม โชว์เฉพาะตอนตกแต่งในบ้าน */
   positionToolbar();   /* จำนวนของต่อหมวดต่างกัน → panel สูงเปลี่ยน → เลื่อน toolbar ตาม */
+}
+/* ปุ่ม "จัดบ้านกลับแบบเดิม" — วางชุดเฟอร์นิเจอร์มาตรฐานที่หายไปกลับเข้าที่เดิม
+   **ไม่ลบของที่เด็กจัดเอง** (กติกาเหล็ก: ห้ามทำข้อมูลเด็กหาย) ชิ้นไหนยังมีอยู่ก็ปล่อยไว้ที่เดิม */
+function resetHomeSet(){
+  if(typeof playClick==='function') playClick();
+  if(!SHOP || hScene!=='in') return;
+  const have = new Set(decorGroups.in.map(g=>g.userData.deco.rec.id));
+  let added = 0;
+  SHOP.starterHome().forEach(r=>{
+    if(have.has(r.id)) return;
+    const item = FURN.byId[r.id]; if(!item) return;
+    const spot = decorCanPlace('in', item, {x:r.x, z:r.z}, r.rot) ? {x:r.x, z:r.z} : findFreeAnchor('in', item, r.rot);
+    if(!spot) return;
+    const rec = {id:r.id, x:spot.x, z:spot.z, rot:r.rot, col:r.col};
+    const g = buildDecorGroup('in', rec);
+    if(!g) return;
+    interiorGroup.add(g); decorGroups.in.push(g);
+    added++;
+  });
+  if(added){
+    rebuildDecorGrid('in'); saveDecor();
+    if(typeof showToast==='function') showToast('🏡','จัดของกลับให้แล้ว '+added+' ชิ้น');
+  }else{
+    if(typeof showToast==='function') showToast('✓','ของชุดเริ่มต้นอยู่ครบแล้วนะ');
+  }
 }
 /* ความสูงที่วางซ้อน: ชิ้น stack (เช่นโคมไฟตั้งโต๊ะ) ยกขึ้นไปนั่งบนผิวของที่มี top อยู่ใต้ */
 function decorYOffset(sc, item, anchor, rot, ignoreRec){
@@ -9841,6 +9952,7 @@ function stopHouseGame(){
   if(sitState) endSit();
   houseOpen = false;
   closeQuestBoard();
+  if(SHOP) SHOP.close();
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.remove('house-open');
   $('house-char-name').hidden = true;
@@ -10124,6 +10236,9 @@ window.houseSyncChild = houseSyncChild;
 /* app.js โหลดไฟล์นี้แบบ lazy ตอนกดเข้าบ้านครั้งแรก จึง expose ให้เรียกจากภายนอกได้
    และผูก listener ของตัวเองไว้สำหรับการกดครั้งต่อๆ ไป */
 window.startHouseGame = startHouseGame;
+/* ร้านค้า/คลังสิทธิ์ — เปิดออกมาให้ไฟล์อื่นเรียกได้ (เฟส 2 เควสต์จะจ่ายเหรียญ/เช็คสิทธิ์ผ่านตัวนี้)
+   และให้ชุดเทสเปิดหน้าร้านตรงๆ ได้โดยไม่ต้องพาเด็กเดินข้ามเมืองไปหน้าห้างก่อน */
+window.HouseShop = SHOP;
 $('house-entry-btn').addEventListener('click', startHouseGame);
 $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
 $('hq-claim').addEventListener('click', claimQuestReward);
@@ -10156,6 +10271,9 @@ $('house-compass').addEventListener('click', compassGoHome);
 $('house-edit-done').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); exitEditMode(); });
 $('house-edit-rotate').addEventListener('click', rotateSel);
 $('house-edit-delete').addEventListener('click', deleteSel);
+{ const rb = $('house-reset-home'); if(rb) rb.addEventListener('click', resetHomeSet); }
+{ const sc = $('house-shop-close');
+  if(sc) sc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); if(SHOP) SHOP.close(); }); }
 $('house-done-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   fadeSwap(()=>closeCreator());

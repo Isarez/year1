@@ -2445,6 +2445,19 @@
   .house-chip-color{padding:0; width:42px;}
   /* ชิป "ไม่ใส่" ของแถวเครื่องแต่งตัว (หมวก/แว่น/เป้/ของถือ) — สีจางกว่าชิปแบบอื่นให้รู้ว่าเป็นตัวเลือกถอดออก */
   .house-chip-none{background:#EDE4D6; color:#A08E77;}
+  /* เฟส 1 เศรษฐกิจ: แบบที่ยังไม่ได้ซื้อ — จางลง ขอบเส้นประ มีแม่กุญแจมุมบนขวา (ยังเห็นสี/เลขได้)
+     แตะแล้วบอกราคา + ที่ซื้อ ไม่ใช่เงียบเฉยจนเด็กนึกว่าแอปเสีย */
+  /* ⚠ ห้ามใช้ opacity กับตัวชิปตรงๆ — แม่กุญแจเป็น ::after ของชิปเอง จะจางตามไปด้วยจนมองไม่ออก
+     ใช้ ::before เป็นแผ่นฝ้าคลุมสี/ตัวเลขแทน แล้ว ::after ลอยอยู่บนสุดแบบเต็มสี */
+  .house-chip.house-chip-lock{position:relative; border-style:dashed; border-color:rgba(0,0,0,.12);}
+  .house-chip.house-chip-lock::before{
+    content:''; position:absolute; inset:0; border-radius:inherit; background:rgba(246,239,227,.68);
+  }
+  .house-chip.house-chip-lock::after{
+    content:'🔒'; position:absolute; top:-6px; right:-5px; font-size:11px; line-height:16px;
+    width:16px; height:16px; border-radius:50%; background:#fff; text-align:center;
+    box-shadow:0 1px 3px rgba(70,40,10,.3);
+  }
   .house-done-btn{
     border:none; border-radius:999px; padding:13px 22px; margin-top:2px;
     background:linear-gradient(135deg,#66BB6A,#43A047); color:#fff;
@@ -2658,6 +2671,54 @@
   .he-item:hover{border-color:#FFCF7A;}
   .he-item-emoji{font-size:28px; line-height:1;}
   .he-item-name{font-size:11.5px; font-weight:800; text-align:center; line-height:1.15;}
+  /* เฟส 1 เศรษฐกิจ: ของที่ยังไม่ได้ซื้อ — จางลงแต่ยังเห็นชัด (ให้เด็กเห็นเป้าหมาย) พร้อมป้ายราคา */
+  .he-item.he-locked{background:#F1EADF; border-style:dashed; border-color:rgba(0,0,0,.12);}
+  .he-item.he-locked .he-item-emoji{filter:grayscale(.75); opacity:.55;}
+  .he-item.he-locked .he-item-name{color:#A08E77;}
+  .he-item-price{font-size:11px; font-weight:800; color:#C98B2E; line-height:1;
+                 display:inline-flex; align-items:center; gap:3px;}
+  /* ปุ่มจัดบ้านกลับแบบเดิม (ท้ายกล่องเลือกของ เฉพาะตอนตกแต่งในบ้าน) */
+  .hs-reset-btn{
+    flex:0 0 auto; align-self:center; border:none; border-radius:999px; padding:8px 16px;
+    background:#F1E7D6; color:var(--ink-soft); font-family:inherit;
+    font-size:13.5px; font-weight:800; cursor:pointer; transition:transform .12s ease;
+  }
+  .hs-reset-btn:active{transform:scale(.94);}
+  .hs-reset-btn[hidden]{display:none;}
+
+  /* ---------- เฟส 1 เศรษฐกิจ: หน้าร้าน ---------- */
+  .house-shop{z-index:8;}
+  .hs-items{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:8px;
+    overflow-y:auto; padding:4px 2px 2px; min-height:0;
+  }
+  .hs-card{
+    border:3px solid rgba(0,0,0,.06); border-radius:16px; padding:8px 4px 6px;
+    background:#FFF9EE; color:var(--ink); font-family:inherit; cursor:pointer; min-width:0;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    transition:transform .1s ease, border-color .12s ease;
+  }
+  .hs-card:active{transform:scale(.92);}
+  .hs-card:hover{border-color:#FFCF7A;}
+  .hs-emoji{font-size:28px; line-height:1;}
+  .hs-sw{width:34px; height:34px; border-radius:11px; border:2px solid rgba(0,0,0,.12); display:block;}
+  .hs-name{font-size:11.5px; font-weight:800; text-align:center; line-height:1.15;}
+  .hs-price{font-size:12px; font-weight:800; color:#C98B2E; line-height:1; display:inline-flex; align-items:center; gap:4px;}
+  /* เหรียญนกฮูกจิ๋วข้างราคา — วาดด้วย CSS ล้วน (ไม่ใช้ emoji 🪙 เพราะบางเครื่องไม่มีในฟอนต์
+     แล้วจะขึ้นเป็นวงกลมเทาทึบ) โทนทองชุดเดียวกับป้ายยอดเงินบนหัวจอ */
+  .hs-coin{
+    flex:0 0 auto; width:12px; height:12px; border-radius:50%; display:inline-block;
+    background:linear-gradient(135deg,#FFE486,#FFC44D 55%,#F0A02F);
+    border:1.5px solid #D98B28; box-sizing:border-box;
+  }
+  /* ซื้อแล้ว = เขียวมีเครื่องหมายถูก · เงินไม่พอ = จางแต่ไม่ซ่อน เด็กจะได้เห็นว่าต้องเก็บเงินอีกเท่าไหร่ */
+  .hs-card.hs-owned{background:#EAF9EC; border-color:#A5D6A7;}
+  .hs-card.hs-owned .hs-price{color:#3B8F45;}
+  .hs-card.hs-poor{background:#F1EADF; border-style:dashed;}
+  .hs-card.hs-poor .hs-emoji{filter:grayscale(.7); opacity:.6;}
+  .hs-card.hs-poor .hs-sw{opacity:.55;}
+  .hs-card.hs-poor .hs-name{color:#A08E77;}
+  .hs-close-btn{background:linear-gradient(135deg,#FFB74D,#F59A2E);}
 
   /* แถบเครื่องมือชิ้นที่เลือก (ลอยเหนือกล่อง panel) */
   .house-edit-toolbar{
