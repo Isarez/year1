@@ -5,8 +5,9 @@ const { test, expect } = require('@playwright/test');
      1) ทุกวันต้องมี NPC ติดป้าย "!" และกระดาน 5 ชุด — ไม่งั้นเด็กไม่มีที่หาเงิน (เฟส 1 ล็อกของไว้หมดแล้ว)
      2) โจทย์ต้องคงที่ต่อ (เด็ก + วัน + คนออกโจทย์) — เปิดใหม่กี่ครั้งก็ได้ข้อเดิม กัน reroll หาข้อง่าย
      3) **ห้ามลงโทษเด็ก** ตอบผิดกี่ครั้งก็ยังจบเควสต์ได้ ได้เหรียญเสมอ เงินไม่เคยลด
-     4) เงินต้องเพิ่มผ่าน window.OwlCoins เท่านั้น และค่าตอบแทนอยู่ในช่วงที่ผู้ใช้ล็อกไว้
-        (เควสต์ NPC 20-50 🪙 · กระดาน 40-80 🪙 · โบนัสครบ 5 ชุด +100)
+     4) เงินต้องเพิ่มผ่าน window.OwlCoins เท่านั้น และค่าตอบแทนอยู่ในช่วงที่จูนไว้
+        (จูนลง ~3 เท่าเมื่อ 2026-08-08 กันเงินเฟ้อ: เควสต์ NPC 6-17 🪙 · กระดาน 10-28 🪙 · โบนัสครบ 5 ชุด +35)
+        **เทสนี้คือตัวคุมไม่ให้ใครปรับรางวัลขึ้นกลับโดยไม่ตั้งใจ** — เศรษฐกิจทั้งเกมผูกกับตัวเลขชุดนี้
      5) ประตูเช็คความพร้อมต้องไม่โผล่มาเงียบๆ — ต้องครบเกณฑ์ก่อน แล้วเด็กกดรับเอง */
 
 const CHILD = { id: 'quest-test', name: 'เทสเควสต์', emoji: '🎯', birthDate: '2018-01-15', grade: 'p2' };
@@ -123,8 +124,8 @@ test('เล่นเควสต์ NPC จนจบ: ได้เหรีย�
     return q.finish(run);
   }, npcId);
   expect(res.stars).toBe(3);
-  expect(res.coins).toBeGreaterThanOrEqual(20);
-  expect(res.coins).toBeLessThanOrEqual(50);
+  expect(res.coins).toBeGreaterThanOrEqual(6);
+  expect(res.coins).toBeLessThanOrEqual(17);
 
   await page.evaluate(c => window.OwlCoins.add(c), res.coins);
   expect(await coins(page)).toBe(res.coins);
@@ -166,7 +167,7 @@ test('ตอบผิดไม่มีบทลงโทษ: ผิดรัว
   expect(await coins(page)).toBe(120);         // ยอดเงินเดิมต้องไม่ถูกหักแม้แต่เหรียญเดียว
 });
 
-test('กระดานเควสต์: 5 ชุดแยกโควตาจาก NPC · ทำครบได้โบนัส 100 🪙 · ค่าตอบแทน 40-80', async ({ page }) => {
+test('กระดานเควสต์: 5 ชุดแยกโควตาจาก NPC · ทำครบได้โบนัส 35 🪙 · ค่าตอบแทน 10-28', async ({ page }) => {
   await openHouse(page);
   await page.evaluate(() => window.HouseQuestUI.board());
   await expect(page.locator('#house-quest')).toBeVisible();
@@ -183,7 +184,7 @@ test('กระดานเควสต์: 5 ชุดแยกโควตา�
     return { got, ready: q.boardBonusReady(), left: q.boardLeft(),
              npcOpen: q.openNpcCount(), npcPerDay: q.NPC_PER_DAY };
   });
-  out.got.forEach(c => { expect(c).toBeGreaterThanOrEqual(40); expect(c).toBeLessThanOrEqual(80); });
+  out.got.forEach(c => { expect(c).toBeGreaterThanOrEqual(10); expect(c).toBeLessThanOrEqual(28); });
   expect(out.left).toBe(0);
   expect(out.ready).toBe(true);
   expect(out.npcOpen).toBe(out.npcPerDay);     // โควตา NPC ต้องไม่ถูกกระดานกิน
@@ -193,7 +194,7 @@ test('กระดานเควสต์: 5 ชุดแยกโควตา�
   await expect(page.locator('#hq-claim')).toBeVisible();
   await page.locator('#hq-claim').click();
   await page.waitForTimeout(300);
-  expect(await coins(page) - before).toBe(100);
+  expect(await coins(page) - before).toBe(35);
   await expect(page.locator('#hq-claim')).toBeHidden();   // รับได้ครั้งเดียว
 });
 
@@ -246,7 +247,7 @@ test('เพดานเหรียญต่อวัน: เกินเพด
   expect(out.earned).toBe(out.cap);
 });
 
-test('ค่าตอบแทนอยู่ในช่วงที่ล็อกไว้ทุกระดับชั้น (NPC 20-50 · กระดาน 40-80)', async ({ page }) => {
+test('ค่าตอบแทนอยู่ในช่วงที่จูนไว้ทุกระดับชั้น (NPC 6-17 · กระดาน 10-28) + รายได้ต่อวันไม่เฟ้อ', async ({ page }) => {
   await openHouse(page);
   const table = await page.evaluate(() => {
     const q = window.HouseQuests, out = [];
@@ -256,11 +257,22 @@ test('ค่าตอบแทนอยู่ในช่วงที่ล็�
     return out;
   });
   table.forEach(r => {
-    expect(r.npc).toBeGreaterThanOrEqual(18);
-    expect(r.npc).toBeLessThanOrEqual(50);
-    expect(r.board).toBeGreaterThanOrEqual(28);
-    expect(r.board).toBeLessThanOrEqual(80);
+    expect(r.npc).toBeGreaterThanOrEqual(6);
+    expect(r.npc).toBeLessThanOrEqual(17);
+    expect(r.board).toBeGreaterThanOrEqual(10);
+    expect(r.board).toBeLessThanOrEqual(28);
   });
+  /* รายได้สูงสุดต่อวัน (ทุกงาน ⭐⭐⭐) ต้องไม่เกิน 320 🪙 — ของแพงสุดในร้าน 300 🪙
+     ⇒ ของชิ้นใหญ่ต้องใช้เวลาเก็บอย่างน้อย ~1 วันเสมอ ไม่ใช่เล่นแป๊บเดียวก็ซื้อได้ */
+  const perDay = await page.evaluate(() => {
+    const q = window.HouseQuests, out = [];
+    for (let tier = 1; tier <= 6; tier++)
+      out.push(q.coinsFor('A', 3, tier, false) * q.NPC_PER_DAY
+             + q.coinsFor('board', 3, tier, false) * q.BOARD_N + q.BOARD_BONUS);
+    return out;
+  });
+  perDay.forEach(v => expect(v).toBeLessThanOrEqual(320));
+  expect(Math.max.apply(null, perDay)).toBeGreaterThan(150);   // แต่ก็ต้องไม่น้อยจนเล่นทั้งวันแล้วซื้ออะไรไม่ได้
   /* โจทย์ท้าทายต้องได้มากกว่าโจทย์ปกติเสมอ (แรงจูงใจให้ลองของยาก) */
   const chal = await page.evaluate(() => ({
     plain: window.HouseQuests.coinsFor('A', 3, 2, false),
