@@ -117,6 +117,9 @@
     [/^npc-headman|^npc-mayor/,      'town',   ['social','thai']],
   ];
   function themeOf(def){
+    /* หน้า "คลังคำถาม" ส่งธีมมาตรงๆ เพื่อบังคับให้ได้ชุดของที่ต้องการดู (NPC จริงไม่มีฟิลด์นี้) */
+    if(def && def.themeKey && ITEM_SETS[def.themeKey])
+      return {items:def.themeKey, subj:def.subjKey || ['math']};
     const id = def && def.id || '';
     for(let i=0; i<NPC_THEMES.length; i++)
       if(NPC_THEMES[i][0].test(id)) return {items:NPC_THEMES[i][1], subj:NPC_THEMES[i][2]};
@@ -258,6 +261,35 @@
       return out;
     }
 
+    /* แปลงโจทย์ 1 ข้อจากคลัง CATS → รูปแบบที่หน้าจอเควสต์วาดได้
+       ⚠ ส่งรูปแบบโจทย์ครบทุกชนิดที่คลัง CATS ใช้จริง ไม่ยุบเป็นข้อความ:
+         img     = โจทย์ภาพล้วน (หมวดเชาว์ iq1-iq4 · q.q เป็นค่าว่าง)
+         pattern = แถวการ์ดอิโมจิ + ช่อง ? (หมวดเติมแพทเทิร์น)
+       ถ้าลืมชนิดใดชนิดหนึ่ง เด็กจะเจอการ์ดเปล่าๆ ตอบไม่ได้ (เคยพลาดกับ img มาแล้ว 2026-08-08) */
+    function normQuiz(rng, q){
+      /* สลับตำแหน่งตัวเลือก — คลังต้นฉบับเฉลยอยู่ index 0 เกือบทุกข้อ ถ้าไม่สลับเด็กกดปุ่มแรกรัวๆ ก็ผ่าน
+         **ยกเว้นโจทย์ภาพ** (หมวดเชาว์) ที่ตัวเลือกเป็นตัวอักษร ก/ข/ค ซึ่งอ้างถึงช่องในรูป
+         ต้องเรียงตามเดิมเสมอ ไม่งั้นเด็กเห็นปุ่ม "ค ก ข" แล้วสับสนกับรูป (เฉลยกระจายอยู่แล้วในคลัง) */
+      const idx = q.img ? q.choices.map((_, i) => i)
+                        : shuffled(rng, q.choices.map((_, i) => i));
+      return {
+        q: q.q || '',
+        emoji: q.emoji || '',
+        img: q.img || '',
+        pattern: q.pattern || null,
+        choices: idx.map(i => q.choices[i]),
+        correct: idx.indexOf(q.correct),
+        explain: q.explain || '',
+      };
+    }
+    /* ชนิดหน้าตาโจทย์ — หน้าคลังคำถามใช้แยกคอลัมน์ให้เห็นว่าข้อไหนวาดด้วยเส้นทางไหน */
+    function quizKind(q){
+      if(q.img) return 'img';
+      if(q.pattern) return 'pattern';
+      if(q.emoji) return 'emoji';
+      return 'text';
+    }
+
     /* ================= กลไกเควสต์ (mechanic) ================= */
     /* แต่ละกลไกมี gen(rng, diff, def, gid) → คืนอาเรย์ข้อ [{q, emoji, show, choices, correct, explain}]
        เฟส 2 มี 2 แบบ · เฟส 5-7 ค่อยเติมที่ตารางนี้ที่เดียว (house.js ไม่ต้องแก้) */
@@ -276,26 +308,7 @@
           let bank = [];
           cats.forEach(c => { bank = bank.concat(c.questions); });
           const qs = pickMany(rng, bank, Math.min(diff.qN, bank.length));
-          return qs.map(q => {
-            /* สลับตำแหน่งตัวเลือก — คลังต้นฉบับเฉลยอยู่ index 0 เกือบทุกข้อ ถ้าไม่สลับเด็กกดปุ่มแรกรัวๆ ก็ผ่าน
-               **ยกเว้นโจทย์ภาพ** (หมวดเชาว์) ที่ตัวเลือกเป็นตัวอักษร ก/ข/ค ซึ่งอ้างถึงช่องในรูป
-               ต้องเรียงตามเดิมเสมอ ไม่งั้นเด็กเห็นปุ่ม "ค ก ข" แล้วสับสนกับรูป (เฉลยกระจายอยู่แล้วในคลัง) */
-            const idx = q.img ? q.choices.map((_, i) => i)
-                              : shuffled(rng, q.choices.map((_, i) => i));
-            /* ⚠ ส่งรูปแบบโจทย์ครบทุกชนิดที่คลัง CATS ใช้จริง ไม่ยุบเป็นข้อความ:
-                 img     = โจทย์ภาพล้วน (หมวดเชาว์ iq1-iq4 ทั้ง 60 ข้อ · q.q เป็นค่าว่าง)
-                 pattern = แถวการ์ดอิโมจิ + ช่อง ? (หมวดเติมแพทเทิร์น)
-               ถ้าลืมชนิดใดชนิดหนึ่ง เด็กจะเจอการ์ดเปล่าๆ ตอบไม่ได้ (เคยพลาดกับ img มาแล้ว 2026-08-08) */
-            return {
-              q: q.q || '',
-              emoji: q.emoji || '',
-              img: q.img || '',
-              pattern: q.pattern || null,
-              choices: idx.map(i => q.choices[i]),
-              correct: idx.indexOf(q.correct),
-              explain: q.explain || '',
-            };
-          });
+          return qs.map(q => normQuiz(rng, q));
         },
       },
       /* ---- นับของ: สร้างโจทย์เองทั้งหมด ไม่ง้อคลัง (จึงเป็นตัวสำรองกันทางตันด้วย) ---- */
@@ -487,6 +500,96 @@
       return rngFrom(fnv(childId() + '|' + s.d + '|' + key + '|chal'))() < CHAL_RATE;
     }
 
+    /* ================= คลังคำถาม (หน้าเทส · js/house-qbrowse.js) =================
+       โจทย์ในเกมสุ่มทั้งหมด เปิดเล่นเองยังไงก็ไม่รู้ว่าคลังมีอะไรบ้าง หน้านี้จึงกาง "ของจริง" ออกมาเป็นตาราง
+       ⚠ ทุกอย่างในบล็อกนี้เป็น **อ่านอย่างเดียว** ห้ามแตะ state/persist เด็ดขาด
+         (เล่นในหน้าเทสต้องไม่ได้เหรียญ ไม่กินโควตาวันนี้ ไม่ทำสถิติประตูความพร้อมเพี้ยน) */
+
+    /* ทุกข้อของ mechanic `quiz` ในระดับชั้นนั้น เรียงตามหมวด (ไม่สลับตัวเลือก — ตารางต้องโชว์เฉลยจริง) */
+    function catalogQuiz(gid){
+      const out = [];
+      quizCats(gid).forEach(c=>{
+        const subj = catSubject(c);
+        c.questions.forEach((q, i)=>{
+          out.push({
+            catId:c.id, catName:c.name || c.id, catEmoji:c.emoji || '❓', subj:subj,
+            i:i, kind:quizKind(q),
+            q:q.q || '', emoji:q.emoji || '', img:q.img || '', pattern:q.pattern || null,
+            nCh:(q.choices || []).length,
+            answer:(q.choices || [])[q.correct],
+          });
+        });
+      });
+      return out;
+    }
+    /* หมวดของระดับชั้นนั้น + จำนวนข้อ (ไว้ทำแถบกรองหมวด) */
+    function catalogCats(gid){
+      return quizCats(gid).map(c => ({
+        id:c.id, name:c.name || c.id, emoji:c.emoji || '❓',
+        subj:catSubject(c), n:c.questions.length,
+      }));
+    }
+    /* `count` สร้างโจทย์เองไม่มีคลังตายตัว ⇒ กางเป็น "ธีมของ" แทน พร้อมตัวอย่างที่สุ่มได้จริง 1 ข้อ */
+    function catalogCount(gid){
+      const diff = difficulty(gid);
+      const byTheme = {};
+      Object.keys(ITEM_SETS).forEach(k=>{ byTheme[k] = []; });
+      npcDefs.forEach(d=>{
+        const t = themeOf(d).items;
+        if(byTheme[t]) byTheme[t].push(d.name || d.id);
+      });
+      return Object.keys(ITEM_SETS).map(k=>{
+        const rng = rngFrom(fnv('cat|' + gid + '|' + k));
+        const s = MECHS.count.gen(rng, diff, {id:'', job:'', themeKey:k}, gid)[0] || {};
+        return {
+          theme:k, items:ITEM_SETS[k], npcs:byTheme[k] || [],
+          kinds:diff.kinds, countMax:diff.countMax, qN:diff.qN,
+          sample:{show:s.show || '', q:s.q || '', answer:(s.choices || [])[s.correct]},
+        };
+      });
+    }
+    /* แบบคำถามที่ `count` สุ่มได้ในชั้นนั้น (ดูโค้ด MECHS.count.gen — ต้องแก้คู่กันถ้าเพิ่มแบบใหม่) */
+    function countKinds(gid){
+      const diff = difficulty(gid);
+      const out = ['นับของชนิดเดียว'];
+      if(diff.kinds > 1) out.push('รวมทั้งหมดกี่ชิ้น');
+      if(diff.tier >= 5) out.push('มากกว่ากันกี่ชิ้น');
+      return out;
+    }
+    const ALL_SUBJ = ['math','thai','eng','iq','sci','social','art','misc'];
+    /* รอบเล่นแบบทดสอบ — โครงเดียวกับ buildRun เป๊ะๆ (จะได้เทสเส้นทางวาดจริง) แต่ spec.test = true
+       ⇒ js/house.js จะไม่จ่ายเหรียญ ไม่เรียก QUESTS.finish() และไม่แตะ state ใดๆ
+       opt = {mech, gid, catId, qIdx, theme, title, seed}
+         catId + qIdx → เล่นข้อนั้นข้อเดียว · catId อย่างเดียว → สุ่ม qN ข้อจากหมวดนั้น
+         theme (count) → บังคับชุดของตามธีม · ไม่ระบุอะไรเลย → สุ่มเหมือนเควสต์จริง */
+    function testRun(opt){
+      opt = opt || {};
+      const gid  = opt.gid || gradeId();
+      const mech = MECHS[opt.mech] ? opt.mech : 'quiz';
+      const diff = difficulty(gid);
+      const seed = (opt.seed == null) ? ((Math.random() * 1e9) | 0) : opt.seed;
+      const rng  = rngFrom(fnv(['t', gid, mech, opt.catId || '', opt.qIdx == null ? '' : opt.qIdx,
+                                opt.theme || '', seed].join('|')));
+      const def  = {id:'', job:'villager',
+                    themeKey: ITEM_SETS[opt.theme] ? opt.theme : 'town',
+                    subjKey: ALL_SUBJ};
+      let items = null;
+      if(opt.catId){
+        const c = quizCats(gid).filter(x => x.id === opt.catId)[0];
+        if(c && c.questions.length){
+          items = (opt.qIdx == null)
+            ? pickMany(rng, c.questions, Math.min(diff.qN, c.questions.length)).map(q => normQuiz(rng, q))
+            : (c.questions[opt.qIdx] ? [normQuiz(rng, c.questions[opt.qIdx])] : null);
+        }
+      }
+      if(!items || !items.length) items = MECHS[mech].gen(rng, diff, def, gid);
+      if(!items || !items.length) items = MECHS.count.gen(rng, diff, def, gid);
+      const spec = {src:'test', key:'test', npc:'', mech:mech, fam:'A', chal:false,
+                    test:true, title: opt.title || '🧪 ทดสอบคำถาม'};
+      return {spec, def, gid, chal:false, diff, items, idx:0, wrong:0, missed:{}, over:false,
+              test:true, opt:opt};
+    }
+
     /* ---------- สถานะของ NPC สำหรับป้ายเหนือหัว ---------- */
     function npcStatus(npcId){
       const s = state();
@@ -504,6 +607,9 @@
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
       specForNpc, specForBoard, buildRun, answer, starsOf, coinsFor, finish,
+      /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
+      catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
+      ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */
       boardBonusReady, boardClaim, boardLeft,
       chalReady, chalAsked, chalAccept, chalAccuracy, rollChal,
       npcStatus, openNpcCount,

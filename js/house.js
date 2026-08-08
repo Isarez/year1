@@ -7655,10 +7655,13 @@ function awardCoins(n){
 /* ---------- หน้าจอเล่นเควสต์ (การ์ดครีมมนๆ ลอยกลางจอ ยังเห็นเมืองข้างหลัง) ---------- */
 let qRun = null;                 /* รอบเล่นปัจจุบัน (null = ไม่ได้เล่นอยู่) */
 let qLock = false;               /* กันกดรัวระหว่างเอฟเฟกต์เฉลย */
+let qzOnClose = null;            /* งานที่ต้องทำตอนปิดการ์ด (หน้าคลังคำถามใช้กลับเข้าตารางของตัวเอง) */
 function questPlayOpen(){ const el = $('house-qz'); return !!el && !el.hidden; }
 function closeQuestPanel(){
   const el = $('house-qz'); if(el) el.hidden = true;
   qRun = null; qLock = false;
+  const cb = qzOnClose; qzOnClose = null;
+  if(cb) cb();
 }
 function qzShow(){
   const el = $('house-qz'); if(el) el.hidden = false;
@@ -7666,7 +7669,9 @@ function qzShow(){
 function qzStage(){ const el = $('hqz-stage'); if(el) el.innerHTML = ''; return el; }
 function qzHead(spec, sub){
   const who = $('hqz-who');
-  if(who) who.textContent = questIcon(spec) + ' ' + (npcDefById(spec.npc) ? npcDefById(spec.npc).name : 'กระดานเควสต์');
+  /* spec.title มีเฉพาะรอบทดสอบจากหน้าคลังคำถาม (ไม่มี NPC เจ้าของงาน) */
+  if(who) who.textContent = spec.title ||
+    (questIcon(spec) + ' ' + (npcDefById(spec.npc) ? npcDefById(spec.npc).name : 'กระดานเควสต์'));
   const s = $('hqz-sub');
   if(s) s.textContent = sub || '';
 }
@@ -7681,6 +7686,7 @@ function qzBtn(label, cls, fn){
 function offerQuest(spec){
   if(!QUESTS || !spec || spec.done) return;
   if(hMode !== 'world' || editMode) return;   /* กำลังแต่งตัว/เลือกสัตว์/ตกแต่งบ้านอยู่ → ไม่เด้งงานทับ */
+  if(window.HouseQB && window.HouseQB.isOpen()) return;   /* เปิดหน้าคลังคำถามอยู่ → ไม่เด้งงานจริงทับหน้าเทส */
   closeQuestBoard();
   const d = npcDefById(spec.npc);
   qzShow();
@@ -7809,8 +7815,48 @@ function answerQuest(i, btn){
     else renderQuestStep();
   }, 480);
 }
+/* รอบทดสอบจากหน้าคลังคำถาม — ใช้เส้นทางวาด/ตอบเดียวกับของจริงทุกอย่าง
+   ต่างกันแค่ตอนจบ: **ไม่จ่ายเหรียญ ไม่เรียก QUESTS.finish() ไม่แตะ state** (จะได้เทสกี่รอบก็ได้) */
+function finishTestQuest(run){
+  qRun = null;
+  const stars = QUESTS.starsOf(run);
+  qzHead(run.spec, 'จบชุดทดสอบแล้ว');
+  const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
+  const st = qzStage(); if(!st) return;
+  const sEl = document.createElement('div');
+  sEl.className = 'hqz-stars';
+  sEl.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  const gain = document.createElement('div');
+  gain.className = 'hqz-gain';
+  gain.textContent = run.items.length + ' ข้อ · ตอบผิด ' + run.wrong + ' ข้อ';
+  const tag = document.createElement('div');
+  tag.className = 'hqz-chal';
+  tag.textContent = '🧪 โหมดทดสอบ — ไม่ได้เหรียญ ไม่นับเป็นเควสต์ของวันนี้';
+  st.appendChild(sEl); st.appendChild(gain); st.appendChild(tag);
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn('สุ่มใหม่ 🔁', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    playTestRun(run.opt);                       /* ไม่ส่ง onClose → ตัวเดิมยังอยู่ กลับไปตารางได้เหมือนเดิม */
+  }));
+  row.appendChild(qzBtn('กลับไปที่ตาราง', 'hqz-no', ()=>{
+    if(typeof playClick==='function') playClick();
+    closeQuestPanel();
+  }));
+  st.appendChild(row);
+  if(typeof playCongrats==='function') playCongrats();
+}
+/* เปิดรอบทดสอบ — onClose ปล่อยว่างไว้ = คงตัวเดิม (ใช้ตอนกด "สุ่มใหม่") */
+function playTestRun(opt, onClose){
+  if(!QUESTS) return;
+  if(onClose !== undefined) qzOnClose = onClose;
+  qRun = QUESTS.testRun(opt);
+  qLock = false;
+  qzShow();
+  renderQuestStep();
+}
 function finishQuest(){
   if(!qRun) return;
+  if(qRun.spec && qRun.spec.test){ finishTestQuest(qRun); return; }
   const run = qRun, res = QUESTS.finish(run);
   qRun = null;
   awardCoins(res.coins);
@@ -10467,8 +10513,10 @@ function stopHouseGame(){
   if(editMode) exitEditMode();
   if(sitState) endSit();
   houseOpen = false;
+  qzOnClose = null;              /* ออกจากบ้านแล้ว ห้ามให้หน้าคลังคำถามเด้งกลับมาทับหน้าหลัก */
   closeQuestBoard();
   closeQuestPanel();
+  if(window.HouseQB) window.HouseQB.close();
   if(SHOP) SHOP.close();
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.remove('house-open');
@@ -10731,6 +10779,15 @@ $('house-ctrl-gear').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   setHouseCtrlOpen($('house-ctrl-list').hidden);
 });
+/* ปุ่ม "คลังคำถาม" ในเมนูเฟือง — หน้าเทสรวมโจทย์ทั้งหมดของโหมดบ้าน (js/house-qbrowse.js) */
+{ const qb = $('house-qb-btn');
+  if(qb) qb.addEventListener('click', ()=>{
+    if(typeof playClick==='function') playClick();
+    setHouseCtrlOpen(false);
+    if(window.HouseQB) window.HouseQB.open();
+    else if(typeof showToast==='function') showToast('📚', 'คลังคำถามยังโหลดไม่เสร็จ ลองอีกครั้งนะ');
+  });
+}
 
 /* ---------- ป้ายชื่อเด็ก (child chip) ในโหมดบ้าน ----------
    proxy ของ #child-chip-group ใน header เหมือนกัน — ก๊อบ emoji/ชื่อจาก chip จริง
@@ -10767,6 +10824,8 @@ window.HouseQuestUI = {
   setRun:r => { qRun = r; qLock = false; qzShow(); renderQuestStep(); },
   marks: () => npcMarks.map(m => ({id:m.n.def.id, open:m.open.visible, done:m.done.visible})),
   close: () => { closeQuestPanel(); closeQuestBoard(); },
+  /* หน้าคลังคำถาม (js/house-qbrowse.js) เรียกตัวนี้เพื่อเล่นโจทย์แบบทดสอบด้วยเส้นทางวาดจริง */
+  playTest: (opt, onClose) => playTestRun(opt, onClose),
 };
 $('house-entry-btn').addEventListener('click', startHouseGame);
 $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
@@ -10781,6 +10840,7 @@ $('house-back').addEventListener('click', ()=>{
      กดซ้ำอีกครั้งถึงจะออกจากโหมดบ้านจริงๆ (เด็กจะได้ไม่หลุดออกจากบ้านทั้งที่ตั้งใจแค่ปิดร้าน) */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }
   if(questPlayOpen()){ closeQuestPanel(); return; }    /* กำลังเล่นเควสต์ → ปุ่มย้อนกลับ = เลิกเล่นรอบนี้ (ทำใหม่ได้ ไม่เสียอะไร) */
+  if(window.HouseQB && window.HouseQB.isOpen()){ window.HouseQB.close(); return; }
   if(questPanelOpen()){ closeQuestBoard(); return; }
   if(editMode){ exitEditMode(); return; }
   if(hMode==='pet'){ fadeSwap(()=>closePetPicker(null)); return; }

@@ -3006,6 +3006,65 @@
   .hqz-close-btn{align-self:center; margin-top:2px;}
   body.night-mode .hqz-line, body.night-mode .hqz-show{background:#FFF6E6; color:#4A3520;}
 
+  /* ---------- คลังคำถาม (หน้าเทส · js/house-qbrowse.js) ----------
+     เป็นหน้า "ดูของทั้งคลัง" จึงต้องสูงและกว้างกว่าแผงอื่นๆ ตัวหนังสือเล็กกว่าปกติได้
+     (คนอ่านคือผู้ใหญ่ที่กำลังเทส ไม่ใช่เด็ก 5 ขวบ) แต่ยังใช้สี/ความมนชุดเดียวกับทั้งแอป */
+  .house-creator.house-qb{max-height:92vh; max-height:92dvh; width:min(920px,100vw);}
+  .house-qb .hqb-panel{gap:7px;}
+  .hqb-tabs{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; flex:0 0 auto;}
+  .hqb-tabs[hidden]{display:none;}
+  /* แถบหมวดยาวสุด (ถึง 24 หมวด) — สูงพอดี 2 แถวแล้วเลื่อนดูในตัวเอง ไม่ให้ดันตารางตกจอ
+     (ตั้งเป็นทวีคูณของความสูงชิป ไม่งั้นจะเห็นแถวถูกตัดครึ่งดูเหมือนหน้าเพี้ยน) */
+  .hqb-cats{max-height:74px; overflow-y:auto; padding:1px;}
+  .hqb-chip{
+    font-family:inherit; font-size:13px; font-weight:800; color:var(--ink); cursor:pointer;
+    background:#F6EFE3; border:2px solid rgba(0,0,0,.08); border-radius:999px; padding:6px 12px;
+    transition:transform .12s ease, background .15s ease, border-color .15s ease;
+  }
+  .hqb-chip:active{transform:scale(.94);}
+  .hqb-chip.on{background:#FFE0B8; border-color:#E59A5B; color:#8A4B1E;}
+  .hqb-mechs .hqb-chip{font-size:15px; padding:8px 18px;}
+  .hqb-sum{font-size:12.5px; font-weight:700; color:var(--ink-soft); text-align:center; line-height:1.4;}
+  .hqb-tablewrap{flex:1 1 auto; min-height:0; overflow:auto; border-radius:16px; background:#FFFDF7;}
+  .hqb-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .hqb-table th{
+    position:sticky; top:0; z-index:1;
+    background:#F3E3C8; color:#7A5230; font-weight:800; font-size:12.5px;
+    text-align:left; padding:7px 8px; white-space:nowrap;
+  }
+  .hqb-table td{padding:6px 8px; border-top:1px solid rgba(120,90,50,.12); color:var(--ink); vertical-align:top;}
+  .hqb-row:nth-child(even) td{background:rgba(246,239,227,.5);}
+  .hqb-grp td{background:#FFF1D8; font-weight:900; color:#8A4B1E; font-size:13.5px;}
+  .hqb-n{color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .hqb-cat, .hqb-subj, .hqb-kind{white-space:nowrap;}
+  .hqb-subj, .hqb-kind{color:var(--ink-soft); font-weight:700;}
+  .hqb-q{font-weight:700; min-width:180px;}
+  .hqb-ans{font-weight:800; color:#4E8C46; white-space:nowrap;}
+  .hqb-items{font-size:16px; letter-spacing:2px; white-space:nowrap;}
+  .hqb-npc{color:var(--ink-soft); font-weight:700; max-width:220px;}
+  .hqb-go{width:44px;}
+  .hqb-play{
+    font-family:inherit; font-size:14px; font-weight:900; color:#fff; cursor:pointer;
+    background:linear-gradient(180deg,#8FD07B,#5FAF52); border:none; border-radius:999px;
+    padding:5px 12px; box-shadow:0 2px 0 rgba(0,0,0,.13);
+  }
+  .hqb-play:active{transform:translateY(1px); box-shadow:none;}
+  .hqb-empty{padding:18px; text-align:center; font-size:14px; font-weight:700; color:var(--ink-soft);}
+  .hqb-foot{display:flex; gap:10px; align-items:center; justify-content:center; flex:0 0 auto; flex-wrap:wrap;}
+  .hqb-play-all{margin:0; font-size:15px; padding:10px 20px;}
+  @media (max-width:560px){
+    /* จอแคบ: ตัดคอลัมน์รองทิ้ง เหลือ "โจทย์ + เฉลย + ปุ่มเล่น" ที่จำเป็นจริงๆ
+       ซ่อนด้วย class เดียวกับที่หัวตารางใช้ ⇒ th กับ td ของคอลัมน์นั้นหายพร้อมกันเสมอ ไม่เหลื่อม */
+    .hqb-table .hqb-cat, .hqb-table .hqb-subj, .hqb-table .hqb-npc{display:none;}
+    /* บีบที่เหลือให้พอดีจอแคบ — ตารางต้องไม่ต้องเลื่อนซ้าย-ขวาถึงจะเห็นเฉลย */
+    .hqb-table{font-size:12px;}
+    .hqb-table th, .hqb-table td{padding:5px 5px;}
+    .hqb-q{min-width:0;}
+    .hqb-ans{white-space:normal;}
+    .hqb-items{font-size:14px; letter-spacing:0;}
+    .hqb-chip{font-size:12px; padding:5px 10px;}
+  }
+
   @media (max-width:480px){
     .house-edit-panel{max-height:42vh; max-height:42dvh;}
     .house-edit-toolbar{bottom:calc(42vh + 10px); bottom:calc(42dvh + 10px);}
