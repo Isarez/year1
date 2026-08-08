@@ -2965,8 +2965,22 @@
     font-size:30px; line-height:1.5; letter-spacing:5px; text-align:center; word-break:break-word;
     background:#FFF6E6; border-radius:18px; padding:12px 10px; max-height:34vh; overflow-y:auto;
   }
+  /* โจทย์ภาพล้วน (หมวดเชาว์) — ต้องเห็นทั้งรูปโดยไม่ดันการ์ดจนปุ่มตัวเลือกตกจอ */
+  .hqz-img{
+    display:block; margin:0 auto; max-width:100%; max-height:38vh; max-height:38dvh;
+    border-radius:16px; background:#fff;
+  }
+  /* แถวเติมแพทเทิร์นในการ์ดเควสต์: การ์ดแคบกว่าหน้าหลัก จึงย่อลงนิดให้ลงบรรทัดเดียว */
+  .house-qz .pattern-row{margin:0; gap:8px;}
+  .house-qz .pat-tile{min-width:52px; height:52px; font-size:30px; border-radius:14px; padding:0 7px;
+                      background:#FFE9C7;}
+  .house-qz .pat-tile.pat-multi{font-size:19px; letter-spacing:-2px;}
+  .house-qz .pat-tile.pat-missing{background:#FFFDF7; border:3px dashed #E59A5B; color:#E07A3F; font-size:27px;}
+  .hqz-choice.hqz-ch-emoji{font-size:34px; line-height:1.15;}
+  .hqz-choice.hqz-ch-multi{font-size:21px; letter-spacing:-2px;}
   .hqz-q{font-size:19px; font-weight:900; color:var(--ink); text-align:center; line-height:1.4;}
   .hqz-choices{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+  .hqz-choices.hqz-ch3{grid-template-columns:repeat(3,minmax(0,1fr));}
   .hqz-choice{
     font-family:inherit; font-size:17px; font-weight:800; color:var(--ink); cursor:pointer;
     background:#FFFDF7; border:3px solid #F0C58A; border-radius:18px; padding:14px 10px; min-height:58px;

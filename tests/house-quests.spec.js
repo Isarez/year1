@@ -318,6 +318,73 @@ test('โจทย์เข้ากับระดับชั้นและ�
   expect(Object.keys(spread).length).toBeGreaterThan(1);
 });
 
+/* หมวดเชาว์ iq1-iq4 (ระดับเตรียม ป.1) เป็นโจทย์ **ภาพล้วน** ทั้ง 60 ข้อ — q.q เป็นค่าว่าง รูปคือโจทย์ทั้งหมด
+   ถ้าหน้าจอเควสต์ไม่วาด <img> เด็กจะเจอการ์ดเปล่าๆ ตอบไม่ได้เลย (บั๊กจริงที่ผู้ใช้เจอ 2026-08-08)
+   หมวดเติมแพทเทิร์นก็เหมือนกัน — โจทย์อยู่ในอาเรย์ q.pattern ไม่ใช่ข้อความ */
+test('โจทย์ภาพ (หมวดเชาว์) กับโจทย์แพทเทิร์น: ต้องส่งรูป/การ์ดผ่านมาถึงหน้าจอจริง', async ({ page }) => {
+  await openHouse(page);
+  const out = await page.evaluate(() => {
+    const q = window.HouseQuests;
+    const cats = q.quizCats('prep-p1');
+    const iq = cats.filter(c => /^iq/.test(c.id));
+    const withImg = [], withPat = [];
+    cats.forEach(c => c.questions.forEach(x => {
+      if (x.img) withImg.push(x); if (x.pattern) withPat.push(x);
+    }));
+    return { iqCats: iq.length, img: withImg.length, pat: withPat.length,
+             sampleImg: withImg[0] || null, samplePat: withPat[0] || null };
+  });
+  expect(out.iqCats).toBe(4);
+  expect(out.img).toBeGreaterThan(50);          // 60 ข้อในคลัง — ถ้าหายไปแปลว่าคลังเปลี่ยน ต้องรู้ตัว
+  expect(out.pat).toBeGreaterThan(20);
+
+  /* engine ต้องแนบ img / pattern มาให้ครบ ไม่ยุบเป็นข้อความ */
+  const carried = await page.evaluate(() => {
+    const q = window.HouseQuests, out = { img: 0, pat: 0, shuffledImg: 0, tries: 0 };
+    /* ยิงหลายรอบให้เจอทั้งข้อภาพและข้อแพทเทิร์น (สุ่มจากคลังของชั้นเตรียม ป.1) */
+    for (let k = 0; k < 60; k++) {
+      const run = q.buildRun({ src: 'npc', key: 'imgtest' + k, npc: 'npc-teacher', mech: 'quiz', fam: 'A', chal: false });
+      run.gid = 'prep-p1';
+      const r2 = q.MECHS.quiz.gen((s => { let h = s; return () => (h = (h * 1103515245 + 12345) >>> 0) / 4294967296; })(k + 1),
+                                  q.difficulty('prep-p1'), { id: 'npc-teacher', job: 'teacher' }, 'prep-p1');
+      r2.forEach(it => {
+        out.tries++;
+        if (it.img) { out.img++; if (it.choices.join('') !== 'กขค') out.shuffledImg++; }
+        if (it.pattern) { out.pat++; if (!Array.isArray(it.pattern)) out.shuffledImg++; }
+      });
+    }
+    return out;
+  });
+  expect(carried.tries).toBeGreaterThan(100);
+  expect(carried.img).toBeGreaterThan(0);        // ต้องหยิบโจทย์ภาพมาเจอบ้าง
+  expect(carried.shuffledImg).toBe(0);           // ตัวเลือก ก/ข/ค ของโจทย์ภาพห้ามสลับ (อ้างถึงช่องในรูป)
+
+  /* วาดจริงบนหน้าจอ: ต้องมี <img> โผล่ + มีข้อความบอกให้ดูรูป (เพราะ q.q ว่าง) */
+  const shown = await page.evaluate(() => {
+    const q = window.HouseQuests;
+    const cats = q.quizCats('prep-p1');
+    let img = null;
+    cats.forEach(c => c.questions.forEach(x => { if (x.img && !img) img = x; }));
+    window.HouseQuestUI.close();
+    /* ยัดโจทย์ภาพเข้ารอบเล่นตรงๆ แล้วสั่งวาด (เร็วกว่าสุ่มจนกว่าจะเจอ) */
+    const run = q.buildRun({ src: 'npc', key: 'shot', npc: 'npc-teacher', mech: 'quiz', fam: 'A', chal: false });
+    run.items = [{ q: '', emoji: '', img: img.img, pattern: null,
+                   choices: img.choices.slice(), correct: img.correct, explain: '' }];
+    window.HouseQuestUI.setRun(run);
+    return img.img;
+  });
+  await expect(page.locator('#hqz-stage img.hqz-img')).toBeVisible();
+  await expect(page.locator('#hqz-stage img.hqz-img')).toHaveAttribute('src', shown);
+  await expect(page.locator('#hqz-q, .hqz-q')).toContainText('ดูรูป');
+  await expect(page.locator('.hqz-choice')).toHaveCount(3);
+  /* รูปต้องโหลดขึ้นจริง ไม่ใช่ไอคอนรูปแตก */
+  const ok = await page.evaluate(() => {
+    const im = document.querySelector('#hqz-stage img.hqz-img');
+    return im && im.complete && im.naturalWidth > 0;
+  });
+  expect(ok).toBe(true);
+});
+
 test('โจทย์นับของ: สร้างเองได้โดยไม่ง้อคลังคำถาม และคำตอบตรงกับของที่โชว์จริง', async ({ page }) => {
   await openHouse(page);
   const out = await page.evaluate(() => {

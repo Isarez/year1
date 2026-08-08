@@ -277,11 +277,20 @@
           cats.forEach(c => { bank = bank.concat(c.questions); });
           const qs = pickMany(rng, bank, Math.min(diff.qN, bank.length));
           return qs.map(q => {
-            /* สลับตำแหน่งตัวเลือก — คลังต้นฉบับเฉลยอยู่ index 0 เกือบทุกข้อ ถ้าไม่สลับเด็กกดปุ่มแรกรัวๆ ก็ผ่าน */
-            const idx = shuffled(rng, q.choices.map((_, i) => i));
+            /* สลับตำแหน่งตัวเลือก — คลังต้นฉบับเฉลยอยู่ index 0 เกือบทุกข้อ ถ้าไม่สลับเด็กกดปุ่มแรกรัวๆ ก็ผ่าน
+               **ยกเว้นโจทย์ภาพ** (หมวดเชาว์) ที่ตัวเลือกเป็นตัวอักษร ก/ข/ค ซึ่งอ้างถึงช่องในรูป
+               ต้องเรียงตามเดิมเสมอ ไม่งั้นเด็กเห็นปุ่ม "ค ก ข" แล้วสับสนกับรูป (เฉลยกระจายอยู่แล้วในคลัง) */
+            const idx = q.img ? q.choices.map((_, i) => i)
+                              : shuffled(rng, q.choices.map((_, i) => i));
+            /* ⚠ ส่งรูปแบบโจทย์ครบทุกชนิดที่คลัง CATS ใช้จริง ไม่ยุบเป็นข้อความ:
+                 img     = โจทย์ภาพล้วน (หมวดเชาว์ iq1-iq4 ทั้ง 60 ข้อ · q.q เป็นค่าว่าง)
+                 pattern = แถวการ์ดอิโมจิ + ช่อง ? (หมวดเติมแพทเทิร์น)
+               ถ้าลืมชนิดใดชนิดหนึ่ง เด็กจะเจอการ์ดเปล่าๆ ตอบไม่ได้ (เคยพลาดกับ img มาแล้ว 2026-08-08) */
             return {
-              q: q.pattern ? q.pattern.join('  ') + '  ❓' : q.q,
+              q: q.q || '',
               emoji: q.emoji || '',
+              img: q.img || '',
+              pattern: q.pattern || null,
               choices: idx.map(i => q.choices[i]),
               correct: idx.indexOf(q.correct),
               explain: q.explain || '',

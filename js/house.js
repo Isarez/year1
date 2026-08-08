@@ -7743,9 +7743,25 @@ function renderQuestStep(){
   }
   const st = qzStage(); if(!st) return;
   const it = qRun.items[qRun.idx];
+  /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
     st.appendChild(sh);
+  }else if(it.img){                              /* โจทย์ภาพล้วน — หมวดเชาว์ iq1-iq4 (q.q เป็นค่าว่าง รูปคือโจทย์ทั้งหมด) */
+    const im = document.createElement('img');
+    im.className = 'hqz-img'; im.src = it.img; im.alt = 'โจทย์เชาว์ปัญญา';
+    st.appendChild(im);
+  }else if(it.pattern){                          /* เติมแพทเทิร์น: การ์ดอิโมจิ + ช่อง ? (ใช้ class ชุดเดียวกับหน้าหลัก) */
+    const row = document.createElement('div'); row.className = 'pattern-row';
+    it.pattern.forEach(p=>{
+      const t = document.createElement('span');
+      t.className = 'pat-tile' + (Array.from(p).length > 1 ? ' pat-multi' : '');
+      t.textContent = p; row.appendChild(t);
+    });
+    const miss = document.createElement('span');
+    miss.className = 'pat-tile pat-missing'; miss.textContent = '?';
+    row.appendChild(miss);
+    st.appendChild(row);
   }else if(it.emoji){
     const em = document.createElement('div'); em.className = 'hqz-emoji';
     /* บังคับให้วาดเป็นอิโมจิสี — สัญลักษณ์อย่าง ✖ ✔ ➕ ถ้าไม่เติม VS16 เบราว์เซอร์วาดเป็นตัวอักษรดำทึบ
@@ -7754,12 +7770,20 @@ function renderQuestStep(){
                      ? it.emoji + '\uFE0F' : it.emoji;
     st.appendChild(em);
   }
-  const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = it.q;
-  st.appendChild(q);
-  const wrap = document.createElement('div'); wrap.className = 'hqz-choices';
+  /* โจทย์ภาพไม่มีข้อความ (q.q ว่าง) — ใส่คำสั่งสั้นๆ แทน ไม่งั้นเด็กเห็นแค่รูปเปล่าๆ ไม่รู้ว่าต้องทำอะไร */
+  const qText = it.q || (it.img ? 'ดูรูปแล้วเลือกข้อที่ถูกต้อง' : (it.pattern ? 'ช่อง ? ควรเป็นอะไร?' : ''));
+  if(qText){
+    const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = qText;
+    st.appendChild(q);
+  }
+  /* ตัวเลือกที่เป็นอิโมจิ (เติมแพทเทิร์น) ต้องตัวใหญ่กว่าตัวเลือกข้อความ ไม่งั้นเด็กมองไม่ออกว่าเป็นรูปอะไร */
+  /* 3 ตัวเลือกสั้นๆ (ก/ข/ค ของโจทย์ภาพ) วางเรียงแถวเดียว 3 ช่อง ไม่ใช่ 2+1 ที่ดูเบี้ยว */
+  const wrap = document.createElement('div');
+  wrap.className = 'hqz-choices' + (it.choices.length === 3 ? ' hqz-ch3' : '');
   it.choices.forEach((c, i)=>{
     const b = document.createElement('button');
-    b.className = 'hqz-choice';
+    b.className = 'hqz-choice'
+      + (it.pattern ? (Array.from(c).length > 1 ? ' hqz-ch-emoji hqz-ch-multi' : ' hqz-ch-emoji') : '');
     b.textContent = c;
     b.addEventListener('click', ()=>answerQuest(i, b));
     wrap.appendChild(b);
@@ -10740,6 +10764,7 @@ window.HouseQuestUI = {
   offer: id => { const s = QUESTS && QUESTS.specForNpc(id); if(s) offerQuest(s); },
   board: () => openQuestBoard(),
   run:   () => qRun,
+  setRun:r => { qRun = r; qLock = false; qzShow(); renderQuestStep(); },
   marks: () => npcMarks.map(m => ({id:m.n.def.id, open:m.open.visible, done:m.done.visible})),
   close: () => { closeQuestPanel(); closeQuestBoard(); },
 };
