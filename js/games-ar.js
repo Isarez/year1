@@ -718,6 +718,7 @@ function loadHouseMode(curtain){
     .then(()=>{ step(.12, 'โหลดเครื่องมือสร้างเมือง…'); return loadScriptOnce('js/house-map.js'+v); })
     .then(()=>loadScriptOnce('js/house-furniture.js'+v))
     .then(()=>loadScriptOnce('js/house-shop.js'+v))
+    .then(()=>loadScriptOnce('js/house-quests.js'+v))
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
     .then(()=>{ step(.20, 'กำลังปลุกเมืองให้ตื่น…'); })
     .catch(err=>{ housePromise = null; throw err; });

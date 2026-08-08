@@ -291,7 +291,7 @@
 <div class="wrap">
 
   <header class="masthead">
-    <p class="eyebrow">แผนแม่บท &mdash; เฟส 1 เสร็จแล้ว (2026-08-07) เฟสถัดไปคือเฟส 2 · branch feature/house-owl</p>
+    <p class="eyebrow">แผนแม่บท &mdash; เฟส 1 + 2 เสร็จแล้ว (2026-08-07 / 2026-08-08) เฟสถัดไปคือเฟส 3 · branch feature/house-owl</p>
     <h1>ระบบเควสต์ เศรษฐกิจ และสัตว์เลี้ยง ในโหมด &ldquo;บ้านของหนู&rdquo;</h1>
     <p class="lede">
       เปลี่ยนเมือง 3D ที่มี NPC 68 ตัวจาก &ldquo;ฉากให้เดินเล่น&rdquo; เป็นเมืองที่มีงานทำ มีเงิน
@@ -1349,7 +1349,7 @@
 
       <section id="s15">
         <div class="sec-head"><span class="sec-num mono">25</span><h2>สถานะการตัดสินใจ &mdash; ปิดครบแล้ว</h2></div>
-        <p class="sec-sub">แผนนี้อนุมัติแล้ว &mdash; เฟส 1 ทำเสร็จแล้ว เหลือรอสัญญาณว่าจะเริ่มเฟส 2 เมื่อไหร่</p>
+        <p class="sec-sub">แผนนี้อนุมัติแล้ว &mdash; เฟส 1 กับเฟส 2 ทำเสร็จแล้ว เหลือรอสัญญาณว่าจะเริ่มเฟส 3 เมื่อไหร่ (รายละเอียดที่เฟส 2 ทำต่างจากแผน ดูหัวข้อ 32.5 ในไฟล์ QUEST-DESIGN.md)</p>
         <div class="scroll">
           <table>
             <thead><tr><th>หัวข้อ</th><th>ที่ตกลง</th></tr></thead>
@@ -1377,17 +1377,17 @@
           <li>
             <span class="box" aria-hidden="true"></span>
             <span>
-              <b>เริ่มเฟส 2 เมื่อไหร่</b>
-              <span>quest engine + <code>quiz</code> ครบ 57 NPC + กระดาน 5 ชุด/วัน + ประตูเช็คความพร้อม &mdash; รอสัญญาณ</span>
+              <b>เฟส 2 &mdash; เสร็จแล้ว 2026-08-08</b>
+              <span>quest engine + <code>quiz</code>/<code>count</code> ครบทุก NPC ที่มีบทงาน + กระดาน 5 ชุด/วัน + ประตูเช็คความพร้อม (<code>js/house-quests.js</code>) &middot; เฟสถัดไปคือเฟส 3 (สัตว์เลี้ยง)</span>
             </span>
           </li>
         </ul>
-        <div class="note risk">
-          <p class="note-h">⚠️ เฟส 1 อย่างเดียวยังไม่มีที่หาเงิน</p>
+        <div class="note ok">
+          <p class="note-h">✅ วงจรเศรษฐกิจปิดครบแล้วตั้งแต่เฟส 2</p>
           <p>
-            ของทุกอย่างถูกล็อกให้ต้องซื้อแล้ว แต่แหล่งรายได้ (เควสต์) อยู่ในเฟส 2
-            ⇒ <strong>ห้าม merge เฟส 1 ขึ้น production เดี่ยวๆ ถ้าจะเปิดโหมดบ้านให้เด็กเล่นจริง</strong> ต้องรอเฟส 2 คู่กันเสมอ
-            (ถ้ายังคง <code>HOUSE_FEATURE_OFF</code> ไว้เหมือนเดิม merge ได้ตามปกติ ไม่กระทบเด็ก)
+            เด็กหาเงินได้จริงจากเควสต์ NPC 8 คน/วัน + กระดาน 5 ชุด/วัน แล้วเอาไปซื้อของในร้านได้
+            ⇒ ตั้งแต่นี้ merge ขึ้น production แล้ว<strong>เปิดให้เด็กเล่นได้จริง</strong>
+            (ยังต้อง<strong>ถามผู้ใช้ก่อนทุกครั้ง</strong>ว่าจะเปิดหรือคง <code>HOUSE_FEATURE_OFF</code> ไว้ ตามกติกาเหล็กข้อ 7)
           </p>
         </div>
         <div class="note ok">

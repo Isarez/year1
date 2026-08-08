@@ -282,6 +282,20 @@ const SHOP = (typeof window.HOUSE_SHOP === 'function')
       closePreview: ()=>closeShopPreview(),
     })
   : null;
+/* เครื่องยนต์เควสต์เฟส 2 (js/house-quests.js โหลดก่อนไฟล์นี้) — กลไก/สุ่มรายวัน/รางวัล/ประตูความพร้อม
+   ไฟล์นั้นไม่แตะ DOM/WebGL เลย ป้าย "!" กับหน้าจอเล่นอยู่ในไฟล์นี้ทั้งหมด
+   ⚠ เงินจ่ายผ่าน window.OwlCoins ที่ awardQuest() จุดเดียวเท่านั้น (กติกาเหล็กข้อ 5) */
+const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
+  ? window.HOUSE_QUESTS({
+      load: loadHouseData, save: saveHouseData,
+      childId: ()=> (activeChild ? activeChild.id : ''),
+      gradeId: ()=> (activeChild && activeChild.grade) ? activeChild.grade
+                  : (typeof resolveGradeForChild==='function' ? resolveGradeForChild(activeChild) : 'prep-p1'),
+      npcDefs: NPC_DEFS,
+      dayKey: ()=> questDayKey(),
+    })
+  : null;
+
 /* ซื้อของเสร็จ → กล่องเลือกของ/หน้าแต่งตัวที่เปิดค้างอยู่ต้องปลดล็อกตามทันที */
 function onShopChange(){
   if(editMode) renderEditItems();
@@ -7189,7 +7203,8 @@ function wearsAcc(cfg, key){
 
 let creatorCfg = null;
 function openCreator(fromWorld){
-  if(SHOP) SHOP.close();          /* เปิดหน้าแต่งตัวทับหน้าร้านไม่ได้ (กล่อง bottom-sheet ซ้อนกัน) */
+  if(SHOP) SHOP.close();
+  closeQuestPanel(); closeQuestBoard();          /* เปิดหน้าแต่งตัวทับหน้าร้านไม่ได้ (กล่อง bottom-sheet ซ้อนกัน) */
   hMode = 'creator';
   creatorState.fromWorld = fromWorld;
   creatorState.rotY = 0; creatorState.rotTarget = 0;
@@ -7417,7 +7432,14 @@ function talkToNpc(n){
   n.hold = Math.max(0, (npcTalk.until - performance.now())/1000) + .4;
   questEvent('talk', d.id);
   if(d.job === 'vendor') questEvent('vendor', d.id);
-  if(d.board && QUEST_ENABLED) setTimeout(()=>{ if(!questPanelOpen()) openQuestBoard(); }, 700);
+  if(d.board) setTimeout(()=>{ if(!questPanelOpen() && !questPlayOpen()) openQuestBoard(); }, 700);
+  /* งานวันนี้ของคนนี้ (ป้าย "!" เหนือหัว) — ทักทายจบแล้วยื่นงานให้เด็กกดรับเอง
+     ถ้ามีงานค้างอยู่ จะยังไม่เปิดหน้าร้านให้ (กล่องซ้อนกันแล้วเด็กงง) คุยอีกรอบหลังทำงานเสร็จค่อยเปิดร้าน */
+  const spec = QUESTS ? QUESTS.specForNpc(d.id) : null;
+  if(spec && !spec.done){
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 900);
+    return;
+  }
   /* พนักงานที่ดูแลร้าน (ธง `shop` ใน NPC_DEFS) — ทักทายเสร็จแล้วเปิดหน้าร้านให้เลย
      หน่วงไว้ให้อ่านฟองคำพูดทันก่อน แล้วค่อยเลื่อนกล่องร้านขึ้นมา */
   if(d.shop && SHOP) setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) SHOP.open(d.shop); }, 900);
@@ -7541,48 +7563,72 @@ function checkQuestZone(dt){
   questZonesAt(x, z).forEach(zn => questEvent('zone', zn));
 }
 function questPanelOpen(){ const el = $('house-quest'); return !!el && !el.hidden; }
+
+/* ============================================================
+   เฟส 2 — กระดานเควสต์ 5 ชุด/วัน + หน้าจอเล่นเควสต์
+   โควตากระดานแยกจากเควสต์ NPC เด็ดขาด (ข้อ 19) ⇒ ทำกระดานครบแล้วยังเดินคุย NPC ต่อได้
+   ============================================================ */
+function npcDefById(id){ return NPC_DEFS.find(d => d.id === id) || null; }
+/* ชื่อเรียกเควสต์ให้เด็กอ่าน — บอกว่า "ทำอะไร ให้ใคร" ไม่ใช้ศัพท์เทคนิค */
+function questTitle(spec){
+  const d = npcDefById(spec.npc);
+  const who = d ? d.name : 'ชาวเมือง';
+  return (spec.mech === 'count' ? 'นับของให้' : 'ตอบคำถามให้') + who;
+}
+function questIcon(spec){
+  const d = npcDefById(spec.npc);
+  return (d && d.icon) || (spec.mech === 'count' ? '🔢' : '❓');
+}
 function renderQuestList(){
-  const list = $('hq-list'); if(!list || !quest) return;
+  const list = $('hq-list');
+  if(!list || !QUESTS) return;
+  const st = QUESTS.state();
   list.innerHTML = '';
-  quest.ids.forEach(id=>{
-    const q = QUEST_BY_ID[id]; if(!q) return;
-    const done = questDone(id);
-    const row = document.createElement('div');
-    row.className = 'hq-row' + (done ? ' done' : '');
-    const ic = document.createElement('span'); ic.className = 'hq-ic'; ic.textContent = done ? '✅' : q.icon;
-    const tx = document.createElement('span'); tx.className = 'hq-txt'; tx.textContent = q.text;
+  for(let i=0; i<QUESTS.BOARD_N; i++){
+    const spec = QUESTS.specForBoard(i);
+    if(!spec) continue;
+    const row = document.createElement(spec.done ? 'div' : 'button');
+    row.className = 'hq-row' + (spec.done ? ' done' : ' hq-go');
+    const ic = document.createElement('span'); ic.className = 'hq-ic';
+    ic.textContent = spec.done ? '✅' : questIcon(spec);
+    const tx = document.createElement('span'); tx.className = 'hq-txt'; tx.textContent = questTitle(spec);
     const pg = document.createElement('span'); pg.className = 'hq-prog';
-    pg.textContent = Math.min(quest.prog[id]|0, q.goal) + '/' + q.goal;
+    pg.textContent = spec.done ? 'เสร็จ' : 'เล่นเลย';
     row.appendChild(ic); row.appendChild(tx); row.appendChild(pg);
+    if(!spec.done) row.addEventListener('click', ()=>{ closeQuestBoard(); startQuest(spec); });
     list.appendChild(row);
-  });
+  }
+  const left = QUESTS.boardLeft();
   const sub = $('hq-sub');
-  if(sub) sub.textContent = quest.claimed
-    ? 'วันนี้ทำภารกิจครบแล้ว เก่งมาก! พรุ่งนี้มีภารกิจใหม่มาอีกนะ'
-    : (questAllDone() ? 'ครบทุกข้อแล้ว! กดรับดาวรางวัลได้เลย'
-                      : 'ทำให้ครบทั้ง 3 อย่างวันนี้ แล้วกลับมารับดาวที่กระดานนะ');
+  if(sub) sub.textContent = st.board.claimed
+    ? 'วันนี้ทำครบทุกชุดแล้ว เก่งมาก! พรุ่งนี้มีงานใหม่มาอีกนะ'
+    : (QUESTS.boardBonusReady() ? 'ครบ 5 ชุดแล้ว! กดรับโบนัสได้เลย'
+                                : 'เหลืออีก ' + left + ' ชุด ทำครบทั้ง 5 ชุดวันนี้ได้โบนัสพิเศษนะ');
   const btn = $('hq-claim');
-  if(btn) btn.hidden = !(questAllDone() && !quest.claimed);
-  const st = $('hq-stars');
-  if(st) st.textContent = '⭐ ดาวสะสม ' + (quest.stars|0) + ' ดวง';
+  if(btn){
+    btn.hidden = !QUESTS.boardBonusReady();
+    btn.textContent = 'รับโบนัสครบ 5 ชุด +' + QUESTS.BOARD_BONUS + ' 🪙';
+  }
+  const stEl = $('hq-stars');
+  if(stEl) stEl.textContent = '⭐ ดาวสะสม ' + (st.stars|0) + ' ดวง';
 }
 function openQuestBoard(){
-  if(!QUEST_ENABLED){                                  /* ยังไม่เปิดภารกิจ → บอกให้รอก่อน ไม่เปิดแผง */
+  if(!QUESTS){
     if(typeof playClick==='function') playClick();
     if(typeof showToast==='function') showToast('📜', 'กระดานยังว่างอยู่ เร็วๆ นี้จะมีภารกิจสนุกๆ มาให้ทำนะ!');
     return;
   }
-  if(!quest) initQuest();
+  closeQuestPanel();
   renderQuestList();
   const el = $('house-quest'); if(el) el.hidden = false;
   if(typeof playClick==='function') playClick();
 }
 function closeQuestBoard(){ const el = $('house-quest'); if(el) el.hidden = true; }
+/* โบนัสทำกระดานครบ 5 ชุด (+100 🪙) — ไม่มีบทลงโทษถ้าวันก่อนทำไม่ครบ */
 function claimQuestReward(){
-  if(!quest || quest.claimed || !questAllDone()) return;
-  quest.claimed = true;
-  quest.stars = (quest.stars|0) + 1;
-  saveQuest();
+  if(!QUESTS || !QUESTS.boardBonusReady()) return;
+  const coins = QUESTS.boardClaim();
+  awardCoins(coins);
   renderQuestList();
   refreshQuestMark();
   if(questBoardObj) for(let i=0; i<14; i++)
@@ -7592,7 +7638,189 @@ function claimQuestReward(){
   if(typeof playCongrats==='function') playCongrats();
   else if(typeof playClick==='function') playClick();
   charBubble('⭐');
-  if(typeof showToast==='function') showToast('⭐', 'เก่งมาก! ได้ดาวจากภารกิจวันนี้ 1 ดวง');
+  if(typeof showToast==='function') showToast('⭐', 'เก่งมาก! ทำครบทั้ง 5 ชุด ได้โบนัส ' + coins + ' เหรียญ');
+}
+
+/* ---------- จ่ายเหรียญ: จุดเดียวในโหมดบ้านที่แตะ window.OwlCoins (กติกาเหล็กข้อ 5) ---------- */
+function awardCoins(n){
+  n = Math.max(0, Math.round(Number(n) || 0));
+  if(!n) return 0;
+  if(window.OwlCoins) window.OwlCoins.add(n);
+  if(charGroup) for(let i=0; i<9; i++)
+    spawnParticle(charGroup.position.x + (Math.random()-.5)*1.1, 1.5 + Math.random()*1.3,
+                  charGroup.position.z + (Math.random()-.5)*.8, i%2 ? 0xffd54f : 0xfff1a8);
+  return n;
+}
+
+/* ---------- หน้าจอเล่นเควสต์ (การ์ดครีมมนๆ ลอยกลางจอ ยังเห็นเมืองข้างหลัง) ---------- */
+let qRun = null;                 /* รอบเล่นปัจจุบัน (null = ไม่ได้เล่นอยู่) */
+let qLock = false;               /* กันกดรัวระหว่างเอฟเฟกต์เฉลย */
+function questPlayOpen(){ const el = $('house-qz'); return !!el && !el.hidden; }
+function closeQuestPanel(){
+  const el = $('house-qz'); if(el) el.hidden = true;
+  qRun = null; qLock = false;
+}
+function qzShow(){
+  const el = $('house-qz'); if(el) el.hidden = false;
+}
+function qzStage(){ const el = $('hqz-stage'); if(el) el.innerHTML = ''; return el; }
+function qzHead(spec, sub){
+  const who = $('hqz-who');
+  if(who) who.textContent = questIcon(spec) + ' ' + (npcDefById(spec.npc) ? npcDefById(spec.npc).name : 'กระดานเควสต์');
+  const s = $('hqz-sub');
+  if(s) s.textContent = sub || '';
+}
+function qzBtn(label, cls, fn){
+  const b = document.createElement('button');
+  b.className = 'hqz-btn ' + (cls || '');
+  b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+/* 1) การ์ดชวนรับงาน — เด็กต้องกดรับเอง ไม่ลากเข้าเกมเงียบๆ */
+function offerQuest(spec){
+  if(!QUESTS || !spec || spec.done) return;
+  if(hMode !== 'world' || editMode) return;   /* กำลังแต่งตัว/เลือกสัตว์/ตกแต่งบ้านอยู่ → ไม่เด้งงานทับ */
+  closeQuestBoard();
+  const d = npcDefById(spec.npc);
+  qzShow();
+  qzHead(spec, spec.src === 'board' ? 'งานจากกระดานเควสต์' : 'งานวันนี้');
+  const st = qzStage(); if(!st) return;
+  const line = document.createElement('div');
+  line.className = 'hqz-line';
+  line.textContent = (d && d.quest) ? d.quest : 'มาช่วยทำงานให้หน่อยได้ไหมจ๊ะ';
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn('รับงาน! 💪', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); startQuest(spec); }));
+  row.appendChild(qzBtn('ไว้ก่อน', 'hqz-no', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
+  st.appendChild(line); st.appendChild(row);
+  if(typeof playClick==='function') playClick();
+}
+/* 2) ประตูเช็คความพร้อม — ถามก่อนทุกครั้ง ไม่โผล่มาเงียบๆ (ข้อ 24) */
+function offerChallenge(then){
+  qzShow();
+  const who = $('hqz-who'); if(who) who.textContent = '🌟 ท้าทายไหม?';
+  const s = $('hqz-sub'); if(s) s.textContent = 'หนูเก่งขึ้นมากเลย!';
+  const st = qzStage(); if(!st) return;
+  const line = document.createElement('div');
+  line.className = 'hqz-line';
+  line.textContent = 'อยากลองข้อที่ยากขึ้นอีกนิดไหม? ถ้ายังไม่พร้อมก็ไม่เป็นไรเลยนะ ทำข้อเดิมต่อได้';
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn('ลองเลย! 🌟', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    QUESTS.chalAccept(true);
+    if(typeof showToast==='function') showToast('🌟', 'เปิดโจทย์ท้าทายแล้ว! ได้เหรียญมากขึ้นด้วยนะ');
+    then();
+  }));
+  row.appendChild(qzBtn('ยังไม่พร้อม', 'hqz-no', ()=>{
+    if(typeof playClick==='function') playClick();
+    QUESTS.chalAccept(false);
+    then();
+  }));
+  st.appendChild(line); st.appendChild(row);
+}
+/* 3) เริ่มเล่นจริง */
+function startQuest(spec){
+  if(!QUESTS || !spec) return;
+  if(QUESTS.chalReady()){ offerChallenge(()=>startQuest(spec)); return; }
+  qRun = QUESTS.buildRun(spec);
+  qLock = false;
+  qzShow();
+  renderQuestStep();
+}
+function renderQuestStep(){
+  if(!qRun) return;
+  const spec = qRun.spec;
+  qzHead(spec, (qRun.chal ? '🌟 โจทย์ท้าทาย · ' : '') + 'ข้อ ' + (qRun.idx+1) + ' จาก ' + qRun.items.length);
+  /* จุดบอกความคืบหน้าด้านบน */
+  const dots = $('hqz-dots');
+  if(dots){
+    dots.innerHTML = '';
+    for(let i=0; i<qRun.items.length; i++){
+      const b = document.createElement('i');
+      b.className = 'hqz-dot' + (i < qRun.idx ? ' on' : (i === qRun.idx ? ' now' : ''));
+      dots.appendChild(b);
+    }
+  }
+  const st = qzStage(); if(!st) return;
+  const it = qRun.items[qRun.idx];
+  if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
+    const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
+    st.appendChild(sh);
+  }else if(it.emoji){
+    const em = document.createElement('div'); em.className = 'hqz-emoji';
+    /* บังคับให้วาดเป็นอิโมจิสี — สัญลักษณ์อย่าง ✖ ✔ ➕ ถ้าไม่เติม VS16 เบราว์เซอร์วาดเป็นตัวอักษรดำทึบ
+       ดูแข็งไม่เข้ากับธีมเด็ก 5 ขวบ (เติมกับอิโมจิที่สีอยู่แล้วไม่มีผลอะไร) */
+    em.textContent = (Array.from(it.emoji).length === 1 && it.emoji.indexOf('\uFE0F') < 0)
+                     ? it.emoji + '\uFE0F' : it.emoji;
+    st.appendChild(em);
+  }
+  const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = it.q;
+  st.appendChild(q);
+  const wrap = document.createElement('div'); wrap.className = 'hqz-choices';
+  it.choices.forEach((c, i)=>{
+    const b = document.createElement('button');
+    b.className = 'hqz-choice';
+    b.textContent = c;
+    b.addEventListener('click', ()=>answerQuest(i, b));
+    wrap.appendChild(b);
+  });
+  st.appendChild(wrap);
+}
+function answerQuest(i, btn){
+  if(!qRun || qLock) return;
+  const r = QUESTS.answer(qRun, i);
+  if(!r.ok){
+    /* ตอบผิด = ไม่มีคำว่าแพ้ แค่สั่นแล้วลองใหม่ได้ไม่จำกัด (กติกาเหล็กข้อ 2) */
+    btn.classList.add('wrong');
+    if(typeof playWrong==='function') playWrong();
+    setTimeout(()=>btn.classList.remove('wrong'), 620);
+    return;
+  }
+  qLock = true;
+  btn.classList.add('right');
+  if(typeof playCorrect==='function') playCorrect();
+  setTimeout(()=>{
+    qLock = false;
+    if(r.done) finishQuest();
+    else renderQuestStep();
+  }, 480);
+}
+function finishQuest(){
+  if(!qRun) return;
+  const run = qRun, res = QUESTS.finish(run);
+  qRun = null;
+  awardCoins(res.coins);
+  refreshNpcMarks();
+  refreshQuestMark();
+  qzHead(run.spec, 'เก่งมาก!');
+  const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
+  const st = qzStage(); if(!st) return;
+  const stars = document.createElement('div');
+  stars.className = 'hqz-stars';
+  stars.textContent = '⭐'.repeat(res.stars) + '☆'.repeat(3 - res.stars);
+  const gain = document.createElement('div');
+  gain.className = 'hqz-gain';
+  gain.textContent = '+ ' + res.coins + ' เหรียญนกฮูก';
+  st.appendChild(stars); st.appendChild(gain);
+  if(res.chal){
+    const tag = document.createElement('div'); tag.className = 'hqz-chal';
+    tag.textContent = '🌟 โจทย์ท้าทาย ได้เหรียญเพิ่มพิเศษ';
+    st.appendChild(tag);
+  }
+  if(run.spec.src === 'board' && res.boardBonus){
+    const tag = document.createElement('div'); tag.className = 'hqz-chal';
+    tag.textContent = '📋 ครบ 5 ชุดแล้ว! ไปกดรับโบนัสที่กระดานได้เลย';
+    st.appendChild(tag);
+  }
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn('เยี่ยม!', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
+  st.appendChild(row);
+  if(typeof playCongrats==='function') playCongrats();
+  charBubble('🪙');
+  for(let i=0; i<12; i++)
+    spawnParticle(charGroup.position.x + (Math.random()-.5)*1.6, 1.6 + Math.random()*1.6,
+                  charGroup.position.z + (Math.random()-.5)*1.2,
+                  [0xffd54f, 0xff8fb3, 0x7fc4e8, 0xfff1a8][i%4]);
 }
 function updateFx(now, dt){
   for(let i=fxList.length-1; i>=0; i--){
@@ -8127,10 +8355,84 @@ function spawnNpcs(){
   questMarkObj.userData.hBoard = true;
   worldGroup.add(questMarkObj);
   refreshQuestMark();
+  buildNpcMarks();
 }
-/* ดาวเหนือกระดาน: โชว์เมื่อยังมีภารกิจวันนี้ค้างอยู่ / ซ่อนเมื่อรับดาวไปแล้ว */
+/* ดาวเหนือกระดาน: โชว์เมื่อกระดานยังมีงานค้างวันนี้ (เฟส 2 = กระดาน 5 ชุด/วัน) */
 function refreshQuestMark(){
-  if(questMarkObj) questMarkObj.visible = QUEST_ENABLED && !questAllClaimed();
+  if(!questMarkObj) return;
+  questMarkObj.visible = !!QUESTS && (QUESTS.boardLeft() > 0 || QUESTS.boardBonusReady());
+}
+
+/* ---------- ป้าย "!" / "✓" ลอยเหนือหัว NPC ที่มีงานวันนี้ (ข้อ 10 ของแผนแม่บท) ----------
+   วันหนึ่งมีแค่ ~8 คนที่มีงาน (ข้อ 7) เด็กจึงต้องเดินสำรวจว่าวันนี้ใครติดป้าย
+   ทำเป็นแผ่นภาพวาดจาก canvas เอง (ไม่ยัดเข้า SIGN_ICONS atlas ที่เต็มพอดี 5×5 อยู่แล้ว)
+   วัสดุใช้ร่วมกันทุกป้าย → เพิ่มแค่ draw call ละใบ ไม่กระทบเฟรมเรต */
+const npcMarkMats = {};
+function npcMarkMat(kind){
+  if(npcMarkMats[kind]) return npcMarkMats[kind];
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 128;
+  const c = cv.getContext('2d');
+  const gold = kind === 'done' ? '#8fd18f' : '#ffc73a';
+  const edge = kind === 'done' ? '#4f9e5a' : '#e09400';
+  c.beginPath(); c.arc(64, 64, 52, 0, Math.PI*2);
+  c.fillStyle = gold; c.fill();
+  c.lineWidth = 9; c.strokeStyle = edge; c.stroke();
+  c.strokeStyle = '#fffdf5'; c.lineCap = 'round'; c.lineJoin = 'round';
+  if(kind === 'done'){
+    c.lineWidth = 14;
+    c.beginPath(); c.moveTo(40, 66); c.lineTo(57, 84); c.lineTo(90, 44); c.stroke();
+  }else{
+    c.lineWidth = 16;
+    c.beginPath(); c.moveTo(64, 34); c.lineTo(64, 74); c.stroke();
+    c.beginPath(); c.arc(64, 94, 8.5, 0, Math.PI*2); c.fillStyle = '#fffdf5'; c.fill();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.minFilter = THREE.LinearFilter;
+  npcMarkMats[kind] = new THREE.MeshBasicMaterial({map:tex, transparent:true, alphaTest:.25, depthWrite:false});
+  return npcMarkMats[kind];
+}
+let npcMarks = [];                     /* [{n, open, done}] — ป้าย 2 ใบต่อคน สลับโชว์ตามสถานะ */
+const NPC_MARK_GEO = { g:null };
+function buildNpcMarks(){
+  npcMarks.forEach(m=>{ worldGroup.remove(m.open); worldGroup.remove(m.done); });
+  npcMarks = [];
+  if(!QUESTS) return;
+  if(!NPC_MARK_GEO.g) NPC_MARK_GEO.g = new THREE.PlaneGeometry(.74, .74);
+  QUESTS.state().npcIds.forEach(id=>{
+    const n = npcs.find(k => k.def.id === id);
+    if(!n) return;
+    const open = new THREE.Mesh(NPC_MARK_GEO.g, npcMarkMat('open'));
+    const done = new THREE.Mesh(NPC_MARK_GEO.g, npcMarkMat('done'));
+    open.renderOrder = done.renderOrder = 5;
+    worldGroup.add(open); worldGroup.add(done);
+    npcMarks.push({n, open, done, ph: Math.random()*6.28});
+  });
+  refreshNpcMarks();
+}
+/* เรียกทุกครั้งที่สถานะเควสต์เปลี่ยน (ทำเสร็จ/ขึ้นวันใหม่) */
+function refreshNpcMarks(){
+  if(!QUESTS) return;
+  npcMarks.forEach(m=>{
+    const st = QUESTS.npcStatus(m.n.def.id);
+    m.open.visible = st === 'open';
+    m.done.visible = st === 'done';
+  });
+}
+/* ป้ายลอยเหนือหัวเจ้าของ หันเข้าหากล้องเสมอ + เด้งขึ้นลงเบาๆ ให้สะดุดตาจากไกล */
+function updateNpcMarks(t){
+  if(!npcMarks.length) return;
+  const show = hScene === 'out' && !editMode;
+  for(let i=0; i<npcMarks.length; i++){
+    const m = npcMarks[i], g = m.n.g;
+    const y = 2.9 + Math.sin(t*.003 + m.ph)*.1;   /* สูงพ้นหัว/หลังคารถเข็น มองเห็นจากอีกฝั่งถนน */
+    m.open.position.set(g.position.x, y, g.position.z);
+    m.done.position.set(g.position.x, y, g.position.z);
+    m.open.rotation.copy(camera.rotation);
+    m.done.rotation.copy(camera.rotation);
+    if(!show){ m.open.visible = false; m.done.visible = false; }
+  }
+  if(show) refreshNpcMarks();
 }
 /* ขยับ NPC เข้าหาเป้าหมาย n.to พร้อมหันหน้าตามทางเดิน — คืนค่า true ถ้ายังเดินอยู่ */
 function stepNpcTo(n, dt){
@@ -8895,6 +9197,7 @@ function buildPetChips(){
 function openPetPicker(){
   if(editMode) return;   /* กันแผงสัตว์เลี้ยงเด้งทับตอนกำลังตกแต่ง */
   if(SHOP) SHOP.close();
+  closeQuestPanel(); closeQuestBoard();
   hMode = 'pet';
   creatorState.rotY = 0; creatorState.rotTarget = 0;
   const data = loadHouseData() || {};
@@ -9312,6 +9615,7 @@ function enterEditMode(){
   if(hMode!=='world' || !houseOpen) return;
   if(sitState) endSit();
   if(SHOP) SHOP.close();          /* กดตกแต่งบ้านทั้งที่ยืนอยู่ในร้าน → ปิดหน้าร้านก่อน */
+  closeQuestPanel(); closeQuestBoard();
   editMode = true;
   document.body.classList.add('house-edit');
   /* ซ่อนตัวละคร + สัตว์เลี้ยง + ป้ายชื่อ ระหว่างตกแต่ง (ไม่ให้บังของ/สับสน) */
@@ -9972,6 +10276,7 @@ function frame(t){
 
 
     checkQuestZone(dt);
+    updateNpcMarks(t);
     updateFx(t, dt);
     updatePet(dt);
   }
@@ -10081,7 +10386,11 @@ function enterHouseGame(){
   /* บ้านผูกกับเด็กที่เลือกเสมอ — สลับเด็กแล้วต้องโหลดตัวละคร/ตำแหน่งของคนใหม่ */
   const childChanged = loadedChildId !== activeChild.id;
   loadedChildId = activeChild.id;
-  initQuest(); refreshQuestMark(); renderQuestList();   /* ภารกิจประจำวันของเด็กคนนี้ (สุ่มใหม่ทุกวัน) */
+  initQuest();
+  /* เควสต์วันนี้ของเด็กคนนี้ (สุ่มใหม่ทุกวัน) — โหลดใหม่ทุกครั้งที่เข้าบ้าน เผื่อข้ามเที่ยงคืนระหว่างเล่น */
+  if(QUESTS){ QUESTS.reset(); buildNpcMarks(); }
+  refreshQuestMark(); renderQuestList();
+  closeQuestPanel();
   if(childChanged){
     hScene = 'out';
     worldGroup.visible = true; interiorGroup.visible = false;
@@ -10135,6 +10444,7 @@ function stopHouseGame(){
   if(sitState) endSit();
   houseOpen = false;
   closeQuestBoard();
+  closeQuestPanel();
   if(SHOP) SHOP.close();
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.remove('house-open');
@@ -10422,9 +10732,22 @@ window.startHouseGame = startHouseGame;
 /* ร้านค้า/คลังสิทธิ์ — เปิดออกมาให้ไฟล์อื่นเรียกได้ (เฟส 2 เควสต์จะจ่ายเหรียญ/เช็คสิทธิ์ผ่านตัวนี้)
    และให้ชุดเทสเปิดหน้าร้านตรงๆ ได้โดยไม่ต้องพาเด็กเดินข้ามเมืองไปหน้าห้างก่อน */
 window.HouseShop = SHOP;
+window.HouseQuests = QUESTS;      /* ให้ชุดเทส/เฟสถัดไปเรียกดูสถานะเควสต์ได้ตรงๆ */
+/* จุดต่อสำหรับชุดเทส Playwright — เรียกหน้าจอเควสต์ได้โดยไม่ต้องคลิกตัว NPC ในฉาก 3D
+   (คลิกจริงต้องเดินเข้าไปหาให้ถึงก่อน ทำในเทสไม่ไหว) โค้ดเกมจริงไม่ได้ใช้ตัวนี้เลย */
+window.HouseQuestUI = {
+  talk:  id => { const n = npcs.find(k => k.def.id === id); if(n) talkToNpc(n); },
+  offer: id => { const s = QUESTS && QUESTS.specForNpc(id); if(s) offerQuest(s); },
+  board: () => openQuestBoard(),
+  run:   () => qRun,
+  marks: () => npcMarks.map(m => ({id:m.n.def.id, open:m.open.visible, done:m.done.visible})),
+  close: () => { closeQuestPanel(); closeQuestBoard(); },
+};
 $('house-entry-btn').addEventListener('click', startHouseGame);
 $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
 $('hq-claim').addEventListener('click', claimQuestReward);
+{ const qc = $('hqz-close');
+  if(qc) qc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }); }
 /* ปุ่มกลับ (←): ถ้าเปิดแผงอะไรค้างอยู่ = "ยกเลิก" กลับไปหน้าเกมก่อน ยังไม่ออกจากบ้าน
    ยกเว้นตอนสร้างตัวละครครั้งแรก (ยังไม่มีตัวละคร/โลกให้กลับไป) ให้ออกจากบ้านเหมือนเดิม */
 $('house-back').addEventListener('click', ()=>{
@@ -10432,6 +10755,8 @@ $('house-back').addEventListener('click', ()=>{
   /* อยู่ในร้าน (รวมตอนดูตัวอย่างสินค้า) → ปุ่มย้อนกลับ = ออกจากร้านก่อน ยังไม่ออกจากบ้าน
      กดซ้ำอีกครั้งถึงจะออกจากโหมดบ้านจริงๆ (เด็กจะได้ไม่หลุดออกจากบ้านทั้งที่ตั้งใจแค่ปิดร้าน) */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }
+  if(questPlayOpen()){ closeQuestPanel(); return; }    /* กำลังเล่นเควสต์ → ปุ่มย้อนกลับ = เลิกเล่นรอบนี้ (ทำใหม่ได้ ไม่เสียอะไร) */
+  if(questPanelOpen()){ closeQuestBoard(); return; }
   if(editMode){ exitEditMode(); return; }
   if(hMode==='pet'){ fadeSwap(()=>closePetPicker(null)); return; }
   if(hMode==='creator' && creatorState.fromWorld){ fadeSwap(()=>cancelCreator()); return; }

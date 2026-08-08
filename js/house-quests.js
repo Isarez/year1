@@ -1,0 +1,498 @@
+/* ============================================================
+   บ้านของหนู — เครื่องยนต์เควสต์ (เฟส 2 ของแผนแม่บท QUEST-DESIGN.md)
+
+   ไฟล์นี้ประกาศ global HOUSE_QUESTS(kit) คืน API ให้ js/house.js เรียกใช้
+   (โหลดหลัง house-shop.js ก่อน house.js — **ไม่แตะ THREE/WebGL และไม่แตะ DOM เลย**
+    เป็น catalog + ตัวสุ่ม + ตัวคิดรางวัลล้วนๆ หน้าตา/ป้าย "!" อยู่ใน house.js ทั้งหมด
+    จึงเทสได้ง่ายเหมือน house-furniture.js)
+
+   หน้าที่ 5 อย่าง:
+     1) กลไกเควสต์ (mechanic) — เฟส 2 มี 2 แบบ: `quiz` (ดึงคำถามจริงจาก CATS ตามระดับชั้น)
+        และ `count` (นับของตามธีมร้าน) · เฟสถัดๆ ไปเติมได้ที่ MECHS ตัวเดียว
+     2) สุ่มรายวันแบบ seeded — เด็กคนเดิม + วันเดิม = โจทย์เดิมเสมอ (กด reroll ไม่ได้)
+     3) กระดานเควสต์ 5 ชุด/วัน โควตาแยกจาก NPC เด็ดขาด + โบนัสครบ 100 🪙
+     4) สูตรรางวัล ดาว → เหรียญ (ข้อ 6 + ข้อ 19 ของแผนแม่บท)
+     5) ประตูเช็คความพร้อม (ข้อ 24) — โจทย์สูงกว่าชั้น 1 ระดับ ต้องผ่านเกณฑ์ + เด็กกดรับเอง
+
+   ⚠ กติกาเหล็กจาก QUEST-DESIGN.md ที่ผูกกับไฟล์นี้:
+     - **เงินต้องผ่าน `window.OwlCoins` เท่านั้น** ไฟล์นี้แค่ "คิดว่าได้กี่เหรียญ" แล้วคืนตัวเลข
+       คนที่เรียก `OwlCoins.add()` จริงคือ js/house.js จุดเดียว
+     - **ห้ามลงโทษเด็ก** ตอบผิดกี่ครั้งก็ได้ ไม่มีเวลาจับ ไม่มีการหักดาว/หักเงิน
+       ตอบผิด = แค่ดาวลดลง (ต่ำสุด 1 ดาว ได้เงินเสมอ)
+     - **ห้ามมี dead end** ทุกเควสต์เล่นจบได้เสมอ ถ้าคลังคำถามของชั้นนั้นว่าง จะถอยไปใช้ `count`
+       ที่สร้างโจทย์เองได้โดยไม่ง้อ CATS
+     - ข้อมูลเก็บใน house save ก้อนเดิม (`data.q2`) ผ่าน kit.load/kit.save → export/import ตามไปเอง
+   ============================================================ */
+(function(){
+  'use strict';
+
+  /* ---------- สูตรรางวัล (ข้อ 6 + ข้อ 19 ของแผนแม่บท) ----------
+     เหรียญ = base(ตระกูลเควสต์) × mulStar × mulTier
+     ตัวเลข base ปรับให้ผลลัพธ์จริงตกในช่วงที่ผู้ใช้ล็อกไว้ในข้อ 19
+       เควสต์ NPC 20-50 🪙 · กระดาน 40-80 🪙 (โบนัสครบ 5 ชุด +100)
+     A = งานในร้าน · B = งานเดินโลก (เฟส 7) · C = งานสร้างสรรค์ (เฟส 7) · board = กระดาน */
+  const FAM_BASE   = { A:18, B:24, C:20, board:28 };
+  const STAR_MUL   = [0, 1.0, 1.5, 2.0];        /* index = จำนวนดาว */
+  const CHAL_MUL   = 1.5;                        /* โจทย์ท้าทาย (สูงกว่าชั้น 1 ระดับ) ได้เหรียญ ×1.5 */
+  const DAY_CAP    = 900;                        /* เพดานเหรียญต่อวัน — กันฟาร์ม + เผื่อจูนราคาทีหลัง */
+  const NPC_PER_DAY = 8;                         /* วันนี้มีกี่ NPC ที่ติดป้าย "!" (ข้อ 7: 5-8 ร้าน/วัน) */
+  const BOARD_N     = 5;                         /* กระดาน 5 ชุด/วัน (ข้อ 19) */
+  const BOARD_BONUS = 100;                       /* ทำครบ 5 ชุด → โบนัส */
+
+  /* ---------- ประตูเช็คความพร้อม (ข้อ 24) ---------- */
+  const CHAL_NEED = 12;    /* ต้องทำเควสต์ระดับตัวเองสำเร็จครบกี่ชุดก่อนถูกถาม */
+  const CHAL_ACC  = 0.7;   /* ความแม่น 10 ชุดล่าสุด (ดาวที่ได้ / ดาวเต็ม) */
+  const CHAL_KEEP = 10;    /* เก็บผลย้อนหลังกี่ชุดไว้คิดความแม่น */
+  const CHAL_MISS = 3;     /* พลาดโจทย์ท้าทายกี่ชุดติด ⇒ ปิดชั่วคราว (ไม่หักอะไรทั้งสิ้น) */
+  const CHAL_RATE = 0.25;  /* เปิดประตูแล้วผสมโจทย์ท้าทายกี่ % (ข้อ 24 ระบุ ~20%) */
+
+  /* ---------- ตัวสุ่มแบบ seeded (ต้นแบบเดียวกับ pickDailyQuests ใน house.js) ----------
+     FNV-1a หา seed จากสตริง แล้วเดินด้วย LCG — เด็กคนเดิม+วันเดิม+คีย์เดิม ได้ลำดับเดิมเสมอ */
+  function fnv(s){
+    let h = 2166136261;
+    s = String(s);
+    for(let i=0; i<s.length; i++){ h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+    return h >>> 0;
+  }
+  function rngFrom(seed){
+    let h = (seed >>> 0) || 1;
+    return function(){ h = (h * 1103515245 + 12345) >>> 0; return h / 4294967296; };
+  }
+  function pick(rng, arr){ return arr[(rng() * arr.length) | 0]; }
+  function pickMany(rng, arr, n){
+    const pool = arr.slice(), out = [];
+    while(out.length < n && pool.length) out.push(pool.splice((rng()*pool.length)|0, 1)[0]);
+    return out;
+  }
+  function shuffled(rng, arr){
+    const a = arr.slice();
+    for(let i=a.length-1; i>0; i--){ const j = (rng()*(i+1))|0; const t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* ---------- ธีมของของในโจทย์นับ (mechanic `count`) ----------
+     เลือกชุดตามร้าน/อาชีพของ NPC เพื่อให้โจทย์ "เข้ากับร้าน" ตามโจทย์ตั้งต้นข้อ 0 */
+  const ITEM_SETS = {
+    fruit:  ['🍉','🍎','🍌','🍇','🍓','🍊'],
+    snack:  ['🍬','🍪','🍩','🧁','🍿','🍫'],
+    food:   ['🍜','🍚','🥟','🍢','🌭','🥞'],
+    ice:    ['🍦','🍧','🍨','🥤','🧋','🍮'],
+    toy:    ['🪀','🧸','🎈','🎁','🪁','🎲'],
+    animal: ['🐶','🐱','🐰','🐥','🐢','🐹'],
+    farm:   ['🐄','🐓','🐷','🌽','🥕','🥬'],
+    plant:  ['🌻','🌷','🌵','🍀','🌳','🍄'],
+    sea:    ['🐚','🐠','🦀','🐬','🏖️','⛵'],
+    tool:   ['🔨','🪚','📏','🔧','🪣','🧰'],
+    book:   ['📕','📗','📘','✏️','📐','🎒'],
+    music:  ['🎸','🥁','🎹','🎺','🎻','🎤'],
+    lab:    ['🧪','🔬','🧲','🔭','⚗️','🧫'],
+    home:   ['🛋️','🪑','🛏️','🪟','🕰️','🖼️'],
+    dress:  ['👗','👕','👒','👜','👟','🧦'],
+    town:   ['🎈','⚽','🎪','🌈','🎨','🪁'],
+  };
+  /* ชุดของ + วิชาที่ NPC คนนี้ชอบออกโจทย์ — ไล่จากเฉพาะเจาะจงไปกว้าง เจอตัวแรกที่ตรงแล้วหยุด */
+  const NPC_THEMES = [
+    [/^npc-lab/,                     'lab',    ['sci','iq']],
+    [/^npc-teacher|^npc-stu|^npc-student/, 'book', ['thai','eng','iq']],
+    [/^npc-doctor|^npc-nurse/,       'lab',    ['sci','social']],
+    [/^npc-police/,                  'town',   ['social','iq']],
+    [/^npc-music/,                   'music',  ['art']],
+    [/^npc-mall-fash/,               'dress',  ['art','iq']],
+    [/^npc-mall-furn/,               'home',   ['math','iq']],
+    [/^npc-beach|^npc-fisher/,       'sea',    ['sci','math']],
+    [/^npc-farm|^npc-cowboy/,        'farm',   ['sci','math']],
+    [/^npc-camp/,                    'plant',  ['sci','social']],
+    [/^npc-carpenter|^npc-hut/,      'tool',   ['math','iq']],
+    [/^npc-pet/,                     'animal', ['sci','math']],
+    [/^npc-mart/,                    'snack',  ['math']],
+    [/^npc-food|^npc-mk-(noodle|meatball|sausage|tokyo)/, 'food', ['math']],
+    [/^npc-ice|^npc-mk-(ice|shave|smoothie)/, 'ice',  ['math']],
+    [/^npc-mk-toy|^npc-clown|^npc-play/, 'toy', ['iq','art']],
+    [/^npc-cart-fruit|^npc-mk-fruit/, 'fruit', ['math']],
+    [/^npc-headman|^npc-mayor/,      'town',   ['social','thai']],
+  ];
+  function themeOf(def){
+    const id = def && def.id || '';
+    for(let i=0; i<NPC_THEMES.length; i++)
+      if(NPC_THEMES[i][0].test(id)) return {items:NPC_THEMES[i][1], subj:NPC_THEMES[i][2]};
+    const job = def && def.job;
+    if(job === 'vendor') return {items:'snack', subj:['math']};
+    if(job === 'farmer') return {items:'farm',  subj:['sci','math']};
+    if(job === 'fisher') return {items:'sea',   subj:['sci','math']};
+    if(job === 'teacher')return {items:'book',  subj:['thai','eng']};
+    if(job === 'kid')    return {items:'toy',   subj:['iq','art']};
+    return {items:'town', subj:['misc','iq','thai']};
+  }
+
+  /* ---------- จับหมวดใน CATS เข้าวิชา (ใช้เลือกคำถามให้เข้าธีมร้าน) ----------
+     id หมวดของระดับเตรียม ป.1 ไม่มี prefix (math/thai/english/iq1…) ส่วน ป.1-6 มี prefix (p3-math2…)
+     จึงจับด้วยคำในชื่อ id แทนการไล่รายชื่อทีละหมวด (เพิ่มหมวดใหม่แล้วไม่ต้องมาแก้ที่นี่) */
+  function catSubject(c){
+    const id = c.id || '';
+    if(/math|money|fraction|number/.test(id))            return 'math';
+    if(/thai/.test(id))                                  return 'thai';
+    if(/eng/.test(id))                                   return 'eng';
+    if(/iq|pattern|logic|ef\b/.test(id))                 return 'iq';
+    if(/sci|nature|animal|world|health|body/.test(id))   return 'sci';
+    if(/manner|emotion|behavior|social|safety|money/.test(id)) return 'social';
+    if(/music|art|day|clock|time/.test(id))              return 'art';
+    return 'misc';
+  }
+
+  window.HOUSE_QUESTS = function(kit){
+    kit = kit || {};
+    const load    = kit.load    || function(){ return {}; };
+    const save    = kit.save    || function(){};
+    const childId = kit.childId || function(){ return '-'; };
+    const gradeId = kit.gradeId || function(){ return 'prep-p1'; };
+    const dayKey  = kit.dayKey  || function(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+    const npcDefs = kit.npcDefs || [];
+    const defById = {};
+    npcDefs.forEach(d=>{ defById[d.id] = d; });
+
+    /* ================= คลังคำถามจาก CATS ================= */
+    const GR = (typeof GRADES !== 'undefined') ? GRADES : [{id:'prep-p1'}];
+    function gradeIndex(gid){ const i = GR.findIndex(g=>g.id===gid); return i < 0 ? 0 : i; }
+    function gradeAt(i){ return (GR[Math.max(0, Math.min(GR.length-1, i))] || GR[0]).id; }
+    /* หมวดควิซ (มีคลัง questions + ไม่ใช่เกมกลไกอื่น) ของระดับชั้นนั้น */
+    const quizCache = {};
+    function quizCats(gid){
+      if(quizCache[gid]) return quizCache[gid];
+      let out = [];
+      if(typeof CATS !== 'undefined')
+        out = CATS.filter(c => (c.grade || 'prep-p1') === gid
+                            && !c.mode && !c.type
+                            && c.questions && c.questions.length);
+      quizCache[gid] = out;
+      return out;
+    }
+
+    /* ================= ระดับความยาก (ข้อ 5) ================= */
+    function difficulty(gid){
+      const tier = Math.max(1, gradeIndex(gid || gradeId()));   /* เตรียม ป.1 กับ ป.1 = tier 1 */
+      return {
+        tier: tier,
+        qN:      tier <= 2 ? 3 : (tier <= 4 ? 4 : 5),  /* จำนวนข้อต่อเควสต์ (เด็กเล็กสั้นกว่า) */
+        countMax:tier <= 2 ? 9 : (tier <= 4 ? 15 : 24),/* จำนวนของสูงสุดในโจทย์นับ */
+        kinds:   tier <= 2 ? 1 : (tier <= 4 ? 2 : 3),  /* ของกี่ชนิดปนกันในโจทย์นับ */
+        hints:   tier <= 2,                            /* ป.1-2 มีคำใบ้/ตัวช่วย */
+        mulTier: 1 + (tier - 1) * 0.08,                /* ป.1 = 1.0 → ป.6 = 1.4 */
+      };
+    }
+
+    /* ================= state ใน house save (data.q2) ================= */
+    let S = null;
+    function blank(){
+      return { d:'', npcIds:[], npc:{}, board:{q:[], done:[], claimed:false},
+               earned:0, stars:0, total:0,
+               chal:{done:{}, recent:[], on:false, miss:0, ask:''} };
+    }
+    function persist(){
+      if(!S) return;
+      save({q2:{ d:S.d, npcIds:S.npcIds, npc:S.npc, board:S.board,
+                 earned:S.earned, stars:S.stars, total:S.total, chal:S.chal }});
+    }
+    /* โหลด state + รีเซ็ตส่วน "รายวัน" เมื่อขึ้นวันใหม่
+       ⚠ ของที่ต้องอยู่ข้ามวัน: stars (ดาวสะสม) · total · chal ทั้งก้อน — ห้ามรีเซ็ต */
+    function sync(){
+      const data = load() || {};
+      const raw = data.q2 || {};
+      const day = dayKey();
+      S = blank();
+      S.stars = raw.stars | 0;
+      S.total = raw.total | 0;
+      if(raw.chal){
+        S.chal.done   = raw.chal.done || {};
+        S.chal.recent = (raw.chal.recent || []).slice(-CHAL_KEEP);
+        S.chal.on     = !!raw.chal.on;
+        S.chal.miss   = raw.chal.miss | 0;
+        S.chal.ask    = raw.chal.ask || '';
+      }
+      if(raw.d === day){
+        S.d      = day;
+        S.npcIds = (raw.npcIds || []).filter(id => defById[id]);
+        S.npc    = raw.npc || {};
+        S.board  = raw.board || {q:[], done:[], claimed:false};
+        S.board.q      = S.board.q || [];
+        S.board.done   = S.board.done || [];
+        S.board.claimed= !!S.board.claimed;
+        S.earned = raw.earned | 0;
+      }
+      if(S.d !== day || !S.npcIds.length){       /* วันใหม่ (หรือ save เก่ายังไม่มีข้อมูล) → สุ่มชุดใหม่ */
+        S.d      = day;
+        S.npcIds = rollNpcs(day);
+        S.npc    = {};
+        S.board  = {q: rollBoard(day), done:[], claimed:false};
+        S.earned = 0;
+        persist();
+      }
+      if(!S.board.q.length){ S.board.q = rollBoard(day); persist(); }
+      return S;
+    }
+    function state(){ return S || sync(); }
+    function reset(){ S = null; quizCache.__ = 0; return sync(); }   /* สลับเด็ก → โหลดใหม่ทั้งก้อน */
+
+    /* ================= สุ่มว่าวันนี้ใครมีงาน ================= */
+    /* NPC ที่รับงานได้ = ทุกคนที่มีบท `quest:` ในผัง (มาสคอตนกฮูก/คนที่ไม่มีบทงาน ไม่นับ)
+       ⇒ ทุกคนในกลุ่มนี้เล่นได้ทันทีตั้งแต่วันแรกด้วย mechanic `quiz` ตามข้อ 15.1 */
+    function questableIds(){
+      return npcDefs.filter(d => d.quest && !d.mascot).map(d => d.id);
+    }
+    function rollNpcs(day){
+      const rng = rngFrom(fnv(childId() + '|' + day + '|npcs'));
+      return pickMany(rng, questableIds(), NPC_PER_DAY);
+    }
+    /* กระดาน 5 ชุด/วัน — โควตาแยกจาก NPC เด็ดขาด (ข้อ 19) */
+    function rollBoard(day){
+      const rng = rngFrom(fnv(childId() + '|' + day + '|board'));
+      const ids = questableIds();
+      const out = [];
+      for(let i=0; i<BOARD_N; i++){
+        out.push({ m: rng() < .35 ? 'count' : 'quiz', npc: ids.length ? pick(rng, ids) : '' });
+      }
+      return out;
+    }
+
+    /* ================= กลไกเควสต์ (mechanic) ================= */
+    /* แต่ละกลไกมี gen(rng, diff, def, gid) → คืนอาเรย์ข้อ [{q, emoji, show, choices, correct, explain}]
+       เฟส 2 มี 2 แบบ · เฟส 5-7 ค่อยเติมที่ตารางนี้ที่เดียว (house.js ไม่ต้องแก้) */
+    const MECHS = {
+      /* ---- ตอบคำถาม: ดึงโจทย์จริงจาก CATS ตามระดับชั้น + เอียงไปทางวิชาที่เข้ากับร้าน ---- */
+      quiz: {
+        id:'quiz', name:'ตอบคำถาม', fam:'A',
+        gen(rng, diff, def, gid){
+          const all = quizCats(gid);
+          if(!all.length) return MECHS.count.gen(rng, diff, def, gid);   /* กันทางตัน: ไม่มีคลัง → ใช้โจทย์นับแทน */
+          const want = themeOf(def).subj;
+          const fit  = all.filter(c => want.indexOf(catSubject(c)) >= 0);
+          const pool = fit.length ? fit : all;
+          /* รวมคำถามจาก 2-3 หมวดที่เข้าธีม แล้วสุ่มมา qN ข้อ (ไม่ซ้ำข้อ) */
+          const cats = pickMany(rng, pool, Math.min(3, pool.length));
+          let bank = [];
+          cats.forEach(c => { bank = bank.concat(c.questions); });
+          const qs = pickMany(rng, bank, Math.min(diff.qN, bank.length));
+          return qs.map(q => {
+            /* สลับตำแหน่งตัวเลือก — คลังต้นฉบับเฉลยอยู่ index 0 เกือบทุกข้อ ถ้าไม่สลับเด็กกดปุ่มแรกรัวๆ ก็ผ่าน */
+            const idx = shuffled(rng, q.choices.map((_, i) => i));
+            return {
+              q: q.pattern ? q.pattern.join('  ') + '  ❓' : q.q,
+              emoji: q.emoji || '',
+              choices: idx.map(i => q.choices[i]),
+              correct: idx.indexOf(q.correct),
+              explain: q.explain || '',
+            };
+          });
+        },
+      },
+      /* ---- นับของ: สร้างโจทย์เองทั้งหมด ไม่ง้อคลัง (จึงเป็นตัวสำรองกันทางตันด้วย) ---- */
+      count: {
+        id:'count', name:'นับของ', fam:'A',
+        gen(rng, diff, def){
+          const set = ITEM_SETS[themeOf(def).items] || ITEM_SETS.town;
+          const out = [];
+          for(let k=0; k<diff.qN; k++){
+            const kinds = pickMany(rng, set, diff.kinds);
+            const nums  = kinds.map(() => 2 + ((rng() * (diff.countMax - 2)) | 0));
+            let cells = [];
+            kinds.forEach((e, i) => { for(let j=0; j<nums[i]; j++) cells.push(e); });
+            cells = shuffled(rng, cells);
+            let qText, ans;
+            if(diff.kinds === 1 || rng() < .55){                 /* นับของชนิดเดียว */
+              const t = (rng() * kinds.length) | 0;
+              qText = 'มี ' + kinds[t] + ' กี่ชิ้น?';
+              ans = nums[t];
+            }else if(diff.tier >= 5 && rng() < .5){              /* ต่างกันกี่ชิ้น (ป.5-6) */
+              let a = 0, b = 1;
+              if(nums[b] > nums[a]){ const t=a; a=b; b=t; }
+              qText = 'มี ' + kinds[a] + ' มากกว่า ' + kinds[b] + ' อยู่กี่ชิ้น?';
+              ans = nums[a] - nums[b];
+            }else{                                               /* รวมทั้งหมดกี่ชิ้น */
+              qText = 'รวมทั้งหมดกี่ชิ้น?';
+              ans = nums.reduce((s, n) => s + n, 0);
+            }
+            /* ตัวเลือก 4 ตัว: คำตอบจริง + ตัวลวงที่ห่างไม่เกิน 3 (เด็กต้องนับจริง ไม่ใช่เดาจากขนาดตัวเลข) */
+            const opts = [ans];
+            let guard = 0;
+            while(opts.length < 4 && guard++ < 60){
+              const v = ans + (((rng() * 7) | 0) - 3);
+              if(v >= 0 && opts.indexOf(v) < 0) opts.push(v);
+            }
+            while(opts.length < 4) opts.push(ans + opts.length);
+            const order = shuffled(rng, opts);
+            out.push({ q: qText, emoji:'', show: cells.join(''),
+                       choices: order.map(String), correct: order.indexOf(ans),
+                       explain: 'นับได้ ' + ans + ' ชิ้นพอดี' });
+          }
+          return out;
+        },
+      },
+    };
+    const MECH_IDS = Object.keys(MECHS);
+
+    /* ================= สร้างชุดโจทย์ 1 เควสต์ ================= */
+    /* spec = {src:'npc'|'board', key, npc, mech, fam, chal} — เปิดกี่ครั้งก็ได้ชุดเดิม (seed คงที่) */
+    function specForNpc(npcId){
+      const s = state();
+      if(s.npcIds.indexOf(npcId) < 0) return null;
+      const rec = s.npc[npcId] || {};
+      const rng = rngFrom(fnv(childId() + '|' + s.d + '|' + npcId));
+      const mech = rec.m || (rng() < .35 ? 'count' : 'quiz');
+      const done = rec.st === 'done';
+      return { src:'npc', key:npcId, npc:npcId, mech: MECHS[mech] ? mech : 'quiz',
+               fam:'A', chal: done ? !!rec.chal : rollChal(npcId),
+               done: done, stars: rec.stars | 0 };
+    }
+    function specForBoard(i){
+      const s = state();
+      const b = s.board.q[i];
+      if(!b) return null;
+      const done = s.board.done.indexOf(i) >= 0;
+      return { src:'board', key:'b' + i, idx:i, npc:b.npc, mech: MECHS[b.m] ? b.m : 'quiz',
+               fam:'board', chal: done ? false : rollChal('b' + i), done: done };
+    }
+    /* สร้าง "รอบเล่น" จริง — โจทย์ผูกกับ seed ของเควสต์ ⇒ ปิดแล้วเปิดใหม่ได้โจทย์เดิม ไม่ใช่สุ่มใหม่ */
+    function buildRun(spec){
+      const s = state();
+      const own = gradeId();
+      /* โจทย์ท้าทาย = ระดับชั้นถัดไป (ข้อ 24) — เลือกเฉพาะตอนประตูเปิดแล้วและสุ่มติด */
+      const chal = spec.chal && gradeIndex(own) < GR.length - 1;
+      const gid  = chal ? gradeAt(gradeIndex(own) + 1) : own;
+      const diff = difficulty(gid);
+      const def  = defById[spec.npc] || {id:spec.npc || '', job:'villager'};
+      const rng  = rngFrom(fnv(childId() + '|' + s.d + '|' + spec.key + '|run'));
+      let items  = MECHS[spec.mech].gen(rng, diff, def, gid);
+      if(!items || !items.length) items = MECHS.count.gen(rng, diff, def, gid);
+      return { spec, def, gid, chal, diff, items, idx:0, wrong:0, missed:{}, over:false };
+    }
+    /* ตอบ 1 ครั้ง — คืน {ok, done} · ตอบผิดไม่มีบทลงโทษ แค่ให้ลองใหม่ (ดาวลดลงเท่านั้น) */
+    function answer(run, i){
+      if(run.over) return {ok:true, done:true};
+      const q = run.items[run.idx];
+      const ok = i === q.correct;
+      if(!ok){
+        if(!run.missed[run.idx]){ run.missed[run.idx] = 1; run.wrong++; }   /* ข้อเดียวผิดซ้ำ นับครั้งเดียว */
+        return {ok:false, done:false};
+      }
+      run.idx++;
+      if(run.idx >= run.items.length){ run.over = true; return {ok:true, done:true}; }
+      return {ok:true, done:false};
+    }
+    function starsOf(run){
+      if(run.wrong === 0) return 3;
+      if(run.wrong <= 2)  return 2;
+      return 1;                     /* ผิดเยอะแค่ไหนก็ยังได้ 1 ดาว + เงิน — ห้ามลงโทษเด็ก */
+    }
+    function coinsFor(fam, stars, tier, chal){
+      const base = FAM_BASE[fam] || FAM_BASE.A;
+      const v = base * (STAR_MUL[stars] || 1) * (1 + (tier - 1) * 0.08) * (chal ? CHAL_MUL : 1);
+      return Math.max(1, Math.round(v));
+    }
+
+    /* ---------- ปิดเควสต์ + คิดรางวัล (ผู้เรียกเป็นคนจ่ายเงินผ่าน OwlCoins) ---------- */
+    function finish(run){
+      const s = state();
+      const stars = starsOf(run);
+      let coins = coinsFor(run.spec.fam, stars, run.diff.tier, run.chal);
+      /* เพดานเหรียญต่อวัน — ตัดที่เพดานแต่ไม่เคยติดลบ และไม่บอกเด็กว่า "หมดโควตา" แบบดุๆ */
+      const room = Math.max(0, DAY_CAP - (s.earned | 0));
+      const capped = coins > room;
+      if(capped) coins = room;
+      s.earned = (s.earned | 0) + coins;
+      s.stars  = (s.stars | 0) + stars;
+      s.total  = (s.total | 0) + 1;
+
+      if(run.spec.src === 'npc'){
+        s.npc[run.spec.key] = {m:run.spec.mech, st:'done', stars:stars, chal:!!run.chal};
+      }else if(run.spec.src === 'board'){
+        if(s.board.done.indexOf(run.spec.idx) < 0) s.board.done.push(run.spec.idx);
+      }
+
+      /* ---------- ประตูเช็คความพร้อม: เก็บสถิติ ---------- */
+      const own = gradeId();
+      if(run.chal){
+        if(stars <= 1){ s.chal.miss = (s.chal.miss | 0) + 1; }
+        else s.chal.miss = 0;
+        if(s.chal.miss >= CHAL_MISS){    /* พลาด 3 ชุดติด → พักไว้ก่อน ไม่หักเงิน ไม่หักดาว */
+          s.chal.on = false; s.chal.miss = 0; s.chal.ask = '';
+        }
+      }else{
+        s.chal.done[own] = (s.chal.done[own] | 0) + 1;
+        s.chal.recent.push(stars);
+        if(s.chal.recent.length > CHAL_KEEP) s.chal.recent = s.chal.recent.slice(-CHAL_KEEP);
+      }
+      persist();
+      return {stars, coins, capped, chal:!!run.chal,
+              boardLeft: BOARD_N - s.board.done.length,
+              boardBonus: boardBonusReady()};
+    }
+
+    /* ---------- กระดาน: โบนัสครบ 5 ชุด ---------- */
+    function boardBonusReady(){ const s = state(); return s.board.done.length >= BOARD_N && !s.board.claimed; }
+    function boardClaim(){
+      const s = state();
+      if(!boardBonusReady()) return 0;
+      s.board.claimed = true;
+      const room = Math.max(0, DAY_CAP - (s.earned | 0));
+      const coins = Math.min(BOARD_BONUS, room);
+      s.earned = (s.earned | 0) + coins;
+      s.stars  = (s.stars | 0) + 1;
+      persist();
+      return coins;
+    }
+
+    /* ---------- ประตูเช็คความพร้อม (ข้อ 24) ---------- */
+    function chalAccuracy(){
+      const r = state().chal.recent;
+      if(!r.length) return 0;
+      return r.reduce((a, b) => a + b, 0) / (r.length * 3);
+    }
+    /* ถึงเวลาชวนหรือยัง — ครบ 3 เงื่อนไข: ปริมาณ · คุณภาพ · ยังมีชั้นถัดไปให้ท้าทาย
+       (ความสมัครใจคือปุ่ม "ลองเลย/ยังไม่พร้อม" ที่ house.js เป็นคนแสดง) */
+    function chalReady(){
+      const s = state();
+      if(s.chal.on) return false;
+      if(s.chal.ask === s.d) return false;                       /* ถามไปแล้ววันนี้ ไม่ตื๊อ */
+      if(gradeIndex(gradeId()) >= GR.length - 1) return false;    /* ป.6 ไม่มีชั้นถัดไป */
+      if((s.chal.done[gradeId()] | 0) < CHAL_NEED) return false;
+      if(s.chal.recent.length < CHAL_KEEP) return false;
+      return chalAccuracy() >= CHAL_ACC;
+    }
+    function chalAsked(){ const s = state(); s.chal.ask = s.d; persist(); }
+    function chalAccept(yes){
+      const s = state();
+      s.chal.ask = s.d;
+      if(yes){ s.chal.on = true; s.chal.miss = 0; }
+      persist();
+      return s.chal.on;
+    }
+    /* เควสต์ถัดไปควรเป็นโจทย์ท้าทายไหม — สุ่มด้วย seed คงที่ต่อเควสต์ (เปิดซ้ำไม่เปลี่ยนใจ) */
+    function rollChal(key){
+      const s = state();
+      if(!s.chal.on) return false;
+      if(gradeIndex(gradeId()) >= GR.length - 1) return false;
+      return rngFrom(fnv(childId() + '|' + s.d + '|' + key + '|chal'))() < CHAL_RATE;
+    }
+
+    /* ---------- สถานะของ NPC สำหรับป้ายเหนือหัว ---------- */
+    function npcStatus(npcId){
+      const s = state();
+      if(s.npcIds.indexOf(npcId) < 0) return 'none';
+      const r = s.npc[npcId];
+      return (r && r.st === 'done') ? 'done' : 'open';
+    }
+    function openNpcCount(){ return state().npcIds.filter(id => npcStatus(id) === 'open').length; }
+    function boardLeft(){ const s = state(); return BOARD_N - s.board.done.length; }
+
+    return {
+      /* ค่าคงที่ให้ UI/เทสอ้างอิงได้ ไม่ต้องเดาเลข */
+      DAY_CAP, NPC_PER_DAY, BOARD_N, BOARD_BONUS, FAM_BASE, STAR_MUL,
+      CHAL_NEED, CHAL_ACC, CHAL_KEEP, CHAL_MISS, CHAL_RATE, CHAL_MUL,
+      MECHS, MECH_IDS, ITEM_SETS,
+      sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
+      specForNpc, specForBoard, buildRun, answer, starsOf, coinsFor, finish,
+      boardBonusReady, boardClaim, boardLeft,
+      chalReady, chalAsked, chalAccept, chalAccuracy, rollChal,
+      npcStatus, openNpcCount,
+    };
+  };
+})();

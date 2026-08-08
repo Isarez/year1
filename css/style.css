@@ -2930,6 +2930,67 @@
   .hq-row.done .hq-prog{background:#66BB6A;}
   .hq-stars{text-align:center; font-size:15px; font-weight:800; color:#E07A3F;}
   .hq-close-btn{align-self:center; margin-top:4px;}
+  /* กระดานโชว์ 5 ชุด/วัน — ต้องสูงพอให้เห็นทุกช่องพร้อมกัน ไม่งั้นเด็กไม่รู้ว่ามีงานเหลืออีก */
+  .house-creator.house-quest{max-height:74vh; max-height:74dvh;}
+  /* แถวกระดานที่ยังเล่นได้ = ปุ่มจริง (เฟส 2) กดแล้วเข้าเล่นเลย ไม่ต้องเดินไปหาใคร */
+  button.hq-row{width:100%; font-family:inherit; cursor:pointer; text-align:left; border:3px solid #F0C58A;}
+  button.hq-row:active{transform:scale(.97);}
+  .hq-row.hq-go .hq-prog{background:#7C9BE8;}
+
+  /* ---------- หน้าจอเล่นเควสต์ (บ้านของหนู เฟส 2) ----------
+     การ์ดครีมมนๆ ลอยกลางจอ **ไม่เต็มจอ** — เด็กยังเห็นเมือง/ร้านข้างหลัง รู้สึกว่ายืนอยู่ในร้านจริง
+     (ข้อ 10 ของ QUEST-DESIGN.md — ห้ามเปลี่ยนเป็นหน้าเต็มจอโดยไม่ถามผู้ใช้ก่อน) */
+  .house-qz{
+    top:50%; bottom:auto; transform:translate(-50%,-50%);
+    width:min(520px,94vw); max-height:86vh; max-height:86dvh;
+  }
+  .house-qz .hqz-panel{
+    border-radius:26px; gap:10px;
+    padding:16px 18px 14px;
+    box-shadow:0 10px 30px rgba(70,40,10,.24);
+  }
+  .hqz-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .hqz-who{font-size:19px; font-weight:900; color:var(--ink); line-height:1.2;}
+  .hqz-dots{display:flex; gap:6px; flex:0 0 auto;}
+  .hqz-dot{width:11px; height:11px; border-radius:50%; background:#E8DCC6; display:block;}
+  .hqz-dot.on{background:#66BB6A;}
+  .hqz-dot.now{background:#F0A14B; transform:scale(1.25);}
+  .hqz-sub{font-size:14px; font-weight:800; color:var(--ink-soft); text-align:center;}
+  .hqz-stage{display:flex; flex-direction:column; gap:12px; align-items:stretch; min-height:0; overflow-y:auto;}
+  .hqz-line{font-size:17px; font-weight:800; color:var(--ink); line-height:1.45; text-align:center;
+            background:#FFF6E6; border-radius:18px; padding:14px 16px;}
+  .hqz-emoji{font-size:48px; text-align:center; line-height:1;}
+  /* แถวของให้เด็กนับ — ตัวใหญ่ เว้นห่างพอให้นับทีละชิ้นได้จริง */
+  .hqz-show{
+    font-size:30px; line-height:1.5; letter-spacing:5px; text-align:center; word-break:break-word;
+    background:#FFF6E6; border-radius:18px; padding:12px 10px; max-height:34vh; overflow-y:auto;
+  }
+  .hqz-q{font-size:19px; font-weight:900; color:var(--ink); text-align:center; line-height:1.4;}
+  .hqz-choices{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+  .hqz-choice{
+    font-family:inherit; font-size:17px; font-weight:800; color:var(--ink); cursor:pointer;
+    background:#FFFDF7; border:3px solid #F0C58A; border-radius:18px; padding:14px 10px; min-height:58px;
+    transition:transform .12s ease, background .2s ease, border-color .2s ease;
+  }
+  .hqz-choice:active{transform:scale(.96);}
+  .hqz-choice.right{background:#CFEFC6; border-color:#66BB6A;}
+  .hqz-choice.wrong{background:#FBE0DA; border-color:#EF8E7A; animation:hqzShake .48s ease;}
+  @keyframes hqzShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  .hqz-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  .hqz-btn{
+    font-family:inherit; font-size:17px; font-weight:900; cursor:pointer; color:#fff;
+    border:none; border-radius:999px; padding:13px 26px; min-width:132px;
+    box-shadow:0 4px 0 rgba(0,0,0,.13);
+  }
+  .hqz-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.13);}
+  .hqz-yes{background:linear-gradient(180deg,#8FD07B,#5FAF52);}
+  .hqz-no{background:linear-gradient(180deg,#E8D9BE,#CDB794); color:#6B4A2B;}
+  .hqz-stars{font-size:44px; text-align:center; line-height:1.1; letter-spacing:4px;}
+  .hqz-gain{font-size:22px; font-weight:900; text-align:center; color:#E07A3F;}
+  .hqz-chal{font-size:14.5px; font-weight:800; text-align:center; color:#6B4A2B;
+            background:#FFF1CF; border-radius:14px; padding:8px 12px;}
+  .hqz-close-btn{align-self:center; margin-top:2px;}
+  body.night-mode .hqz-line, body.night-mode .hqz-show{background:#FFF6E6; color:#4A3520;}
 
   @media (max-width:480px){
     .house-edit-panel{max-height:42vh; max-height:42dvh;}
@@ -2962,6 +3023,13 @@
       max-height:none;
     }
     .house-creator-panel{border-radius:26px; height:100%;}
+    /* หน้าจอเควสต์เป็น "การ์ดลอยกลางจอ" ไม่ใช่แผงชิดขวาเต็มความสูงเหมือนแผงอื่น
+       (เด็กกำลังตอบโจทย์ ต้องอยู่กลางสายตา + สูงเท่าเนื้อหาเท่านั้น ไม่ยืดเต็มจอจนโล่ง) */
+    .house-creator.house-qz{
+      left:50%; right:auto; transform:translate(-50%,-50%);
+      top:50%; bottom:auto; width:min(560px,64vw); max-height:84vh;
+    }
+    .house-qz .hqz-panel{height:auto;}
     /* ร้านค้ากว้างกว่าแผงอื่นบนจอใหญ่ — ของเยอะ ถ้าแคบเท่ากันจะได้แค่ 3 ใบต่อแถว เลื่อนยาวมาก */
     .house-creator.house-shop{width:min(640px,56vw); max-height:none;}
     /* จอใหญ่: กรอบพรีวิวลอย "ข้างซ้าย" ของกล่องร้านพอดี — ไม่ต้องยุบอะไรทั้งนั้น

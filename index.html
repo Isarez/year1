@@ -972,12 +972,25 @@
   <div class="house-npc-bubble" id="house-npc-bubble"></div>
   <div class="house-creator house-quest" id="house-quest" hidden>
     <div class="house-creator-panel">
-      <div class="house-creator-title">📋 ภารกิจประจำวัน</div>
-      <div class="house-creator-sub" id="hq-sub">ทำให้ครบทั้ง 3 อย่างวันนี้ แล้วกลับมารับดาวที่กระดานนะ</div>
+      <div class="house-creator-title">📋 กระดานเควสต์วันนี้</div>
+      <div class="house-creator-sub" id="hq-sub">เลือกงานที่อยากทำได้เลย ทำครบทั้ง 5 ชุดวันนี้ได้โบนัสพิเศษ</div>
       <div class="hq-list" id="hq-list"></div>
       <div class="hq-stars" id="hq-stars">⭐ ดาวสะสม 0 ดวง</div>
       <button class="house-done-btn" id="hq-claim" hidden>รับดาวรางวัล ⭐</button>
       <button class="house-pet-alt-btn hq-close-btn" id="hq-close">ปิดกระดาน</button>
+    </div>
+  </div>
+  <!-- หน้าจอเล่นเควสต์ (เฟส 2) — การ์ดครีมลอยกลางจอ ยังเห็นเมือง 3D ข้างหลัง
+       เนื้อในของ #hqz-stage สร้างด้วย JS ทั้งหมด (การ์ดชวนรับงาน / โจทย์ / หน้าสรุปดาว) -->
+  <div class="house-creator house-qz" id="house-qz" hidden>
+    <div class="house-creator-panel hqz-panel">
+      <div class="hqz-top">
+        <div class="hqz-who" id="hqz-who"></div>
+        <div class="hqz-dots" id="hqz-dots"></div>
+      </div>
+      <div class="hqz-sub" id="hqz-sub"></div>
+      <div class="hqz-stage" id="hqz-stage"></div>
+      <button class="house-pet-alt-btn hqz-close-btn" id="hqz-close">ปิด</button>
     </div>
   </div>
   <div class="house-creator" id="house-creator" hidden>
