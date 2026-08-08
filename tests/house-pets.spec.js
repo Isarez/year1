@@ -1,0 +1,188 @@
+const { test, expect } = require('@playwright/test');
+
+/* โหมด "บ้านของหนู" เฟส 3A — ร้านสัตว์เลี้ยง (js/house-shop.js + จุดต่อใน js/house.js)
+   สิ่งที่ต้องไม่พังเด็ดขาด:
+     1) **เด็กที่เลี้ยงสัตว์อยู่ก่อนแล้วต้องไม่เสียเพื่อนตัวน้อย** — เมื่อก่อนสัตว์แจกฟรี พอเปิดร้าน
+        ถ้าไม่แจกสิทธิ์ย้อนหลัง สัตว์ของเขาจะกลายเป็นล็อกทันที (ผิดกติกาเหล็กข้อ 3)
+     2) ราคาต้องตรงตารางข้อ 17.1 ของแผนแม่บท — **เทสนี้คือตัวคุมไม่ให้ใครลดราคาโดยไม่ตั้งใจ**
+        สัตว์คือ money sink ก้อนใหญ่ที่สุดของเกม ถ้าถูกลงเด็กได้ครบเร็วแล้วเบื่อ
+     3) เงินต้องตัดผ่าน window.OwlCoins เท่านั้น และเงินไม่พอต้องซื้อไม่ได้
+     4) ไม่มีสัตว์ = ไม่มีบ้านสัตว์ (ข้อ 18.1) · ปล่อยคืนแล้วบ้านหาย แต่สิทธิ์ยังอยู่ (รับกลับมาเลี้ยงฟรี)
+     5) ห้ามมี dead end — ตัวที่ยังไม่ได้ซื้อยัง "เห็นอยู่" พร้อมราคา ไม่ใช่หายไปเฉยๆ */
+
+const CHILD = { id: 'pet-test', name: 'เทสสัตว์', emoji: '🐾', birthDate: '2018-01-15', grade: 'p2' };
+const HKEY = 'p1quiz_house_' + CHILD.id;
+const PKEY = 'p1quiz_progress_' + CHILD.id;
+const CHAR = { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 };
+/* มีบ้านอยู่แล้ว → ข้ามหน้าสร้างตัวละคร เข้าเมืองได้เลย */
+const SEED = { v: 1, mapV: 3, char: CHAR };
+
+async function openHouse(page, seedHouse, coins) {
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e)));
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.addInitScript(([child, hkey, seed, pkey, c]) => {
+    localStorage.setItem('p1quiz_children', JSON.stringify([child]));
+    localStorage.setItem('p1quiz_active_child', child.id);
+    localStorage.setItem('p1quiz_music', 'off');
+    localStorage.setItem(hkey, JSON.stringify(seed));
+    if (c != null) localStorage.setItem(pkey, JSON.stringify({ coins: c }));
+  }, [CHILD, HKEY, seedHouse || SEED, PKEY, coins == null ? null : coins]);
+  await page.goto('/');
+  await page.locator('#child-select-view .child-card').first().click();
+  await page.locator('#house-entry-btn').dispatchEvent('click');
+  await page.waitForFunction(() => !document.getElementById('house-view').hidden, null, { timeout: 30000 });
+  await page.waitForFunction(() => !!window.HouseShop, null, { timeout: 30000 });
+  await page.waitForTimeout(1100);
+  return errors;
+}
+const readHouse = page => page.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), HKEY);
+const coinsOf = page => page.evaluate(() => window.OwlCoins.get());
+const petHouses = d => ((d.decor && d.decor.out) || []).filter(r => r.id === 'pet-house').length;
+
+test('ราคาสัตว์ + สีขน ตรงตารางข้อ 17.1 (ตัวคุมไม่ให้ลดราคาโดยไม่ตั้งใจ)', async ({ page }) => {
+  const errors = await openHouse(page);
+  const p = await page.evaluate(() => ({
+    price: window.HouseShop.PET_PRICE,
+    color: window.HouseShop.PET_COLOR_PRICE,
+    groups: window.HouseShop.PET_GROUPS.map(g => g.ids.length),
+    types: window.HouseShop.petTypes().map(t => t.id),
+  }));
+  expect(p.color).toBe(100);
+  expect(p.price).toEqual({
+    dog: 250, cat: 250, rabbit: 250, chick: 250,
+    hamster: 450, turtle: 450, frog: 450, pig: 450,
+    sheep: 800, penguin: 800,
+    panda: 1500, unicorn: 1500,
+  });
+  /* สัตว์ทุกชนิดในเกมต้องมีราคา ไม่งั้นจะมีตัวที่ซื้อไม่ได้เลย = dead end */
+  p.types.forEach(t => expect(p.price[t], 'ราคาของ ' + t).toBeGreaterThan(0));
+  expect(p.groups.reduce((a, b) => a + b, 0)).toBe(p.types.length);
+  expect(errors).toEqual([]);
+});
+
+test('เด็กใหม่: ยังไม่มีสัตว์ ⇒ ไม่มีบ้านสัตว์ในสนาม + หน้าเลือกสัตว์ล็อกทุกตัวแต่ยังเห็นราคา', async ({ page }) => {
+  const errors = await openHouse(page, null, 0);
+  const d = await readHouse(page);
+  expect(d.econVer).toBe(4);
+  expect(petHouses(d), 'เด็กใหม่ต้องยังไม่มีบ้านสัตว์ (ข้อ 18.1)').toBe(0);
+  expect(d.pet == null).toBe(true);
+
+  await page.locator('#house-pet-btn').dispatchEvent('click');
+  await page.waitForTimeout(1000);
+  const n = await page.evaluate(() => window.HouseShop.petTypes().length);
+  await expect(page.locator('#house-pet-chips .house-pet-chip')).toHaveCount(n);
+  /* ห้ามซ่อนตัวที่ยังซื้อไม่ได้ — ต้องเห็นครบพร้อมป้ายราคา (กติกาเหล็กข้อ 1: ไม่มี dead end) */
+  await expect(page.locator('#house-pet-chips .house-pet-chip.locked')).toHaveCount(n);
+  await expect(page.locator('#house-pet-chips .house-pet-chip-lock')).toHaveCount(n);
+  expect(await page.locator('#house-pet-done').isHidden(), 'ยังไม่มีสัตว์ ⇒ ปุ่มรับเลี้ยงต้องซ่อน').toBe(true);
+  await expect(page.locator('#house-pet-sub')).toContainText('ร้านสัตว์เลี้ยง');
+  expect(errors).toEqual([]);
+});
+
+test('migration: เด็กที่เลี้ยงสัตว์อยู่ก่อนเปิดร้าน ต้องได้ชนิด+สีนั้นฟรี และสัตว์/บ้านสัตว์ต้องไม่หาย', async ({ page }) => {
+  /* สภาพก่อนเฟส 3A: econVer 3 · เลือกแพนด้าสีที่ 2 มาฟรี · บ้านสัตว์ถูก seed ไว้ในสนาม */
+  const legacy = {
+    v: 1, mapV: 3, econVer: 3, worldSeeded: true, char: CHAR,
+    pet: { type: 'panda', name: 'ไผ่หวาน', color: 1 },
+    decor: { out: [{ id: 'pet-house', x: 3, z: 3, rot: 0, col: 0 }], in: [] },
+    unlocked: [],
+  };
+  const errors = await openHouse(page, legacy, 0);
+  const d = await readHouse(page);
+  expect(d.econVer).toBe(4);
+  expect(d.pet).toEqual({ type: 'panda', name: 'ไผ่หวาน', color: 1 });
+  expect(petHouses(d), 'บ้านสัตว์ที่วางอยู่แล้วห้ามหาย').toBe(1);
+
+  const own = await page.evaluate(() => ({
+    panda: window.HouseShop.ownsPet('panda'),
+    col0: window.HouseShop.ownsPetColor('panda', 0),
+    col1: window.HouseShop.ownsPetColor('panda', 1),
+    dog: window.HouseShop.ownsPet('dog'),
+  }));
+  expect(own.panda, 'แพนด้าที่เลี้ยงอยู่ต้องได้ฟรี (กติกาเหล็กข้อ 3)').toBe(true);
+  expect(own.col0).toBe(true);
+  expect(own.col1, 'สีที่ใช้อยู่ต้องได้ฟรีด้วย').toBe(true);
+  expect(own.dog, 'ตัวที่ไม่เคยเลี้ยงต้องยังต้องซื้อ').toBe(false);
+
+  /* เงิน 0 แต่ยังเปิดหน้าเลือกสัตว์แล้วกดบันทึกแพนด้าตัวเดิมได้ ไม่ติดตัน */
+  await page.locator('#house-pet-btn').dispatchEvent('click');
+  await page.waitForTimeout(1000);
+  expect(await page.locator('#house-pet-done').isHidden()).toBe(false);
+  await expect(page.locator('#house-pet-chips .house-pet-chip.active')).toContainText('แพนด้า');
+  expect(errors).toEqual([]);
+});
+
+test('ซื้อสัตว์: ตัดเงินผ่าน OwlCoins · เงินไม่พอซื้อไม่ได้ · ซื้อแล้วพาไปตั้งชื่อรับเลี้ยงต่อ', async ({ page }) => {
+  const errors = await openHouse(page, null, 300);
+  expect(await coinsOf(page)).toBe(300);
+
+  await page.evaluate(() => window.HouseShop.open('shop-pet'));
+  await page.waitForTimeout(700);
+  await expect(page.locator('#house-shop-tabs .he-tab')).toHaveCount(4);
+
+  /* เงิน 300 ซื้อแพนด้า 1,500 ไม่ได้ */
+  const rich = await page.evaluate(() => window.HouseShop.buyPet('panda'));
+  expect(rich).toBe(false);
+  expect(await coinsOf(page)).toBe(300);
+  expect(await page.evaluate(() => window.HouseShop.ownsPet('panda'))).toBe(false);
+
+  /* ซื้อหมาน้อย 250 ผ่านการ์ดจริงในร้าน */
+  await page.evaluate(() => {
+    const c = Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .find(b => b.textContent.includes('หมาน้อย'));
+    c.click();
+  });
+  await page.waitForTimeout(300);
+  await page.locator('#house-shop-buy .hs-buy-btn').click();
+  await page.waitForTimeout(2200);
+  expect(await coinsOf(page)).toBe(50);
+  expect(await page.evaluate(() => window.HouseShop.ownsPet('dog'))).toBe(true);
+  /* สีแรกต้องแถมมากับตัว ไม่งั้นซื้อสัตว์แล้วไม่มีสีให้ใช้ */
+  expect(await page.evaluate(() => window.HouseShop.ownsPetColor('dog', 0))).toBe(true);
+  expect(await page.evaluate(() => window.HouseShop.ownsPetColor('dog', 1))).toBe(false);
+  /* ซื้อแล้วต้องพาไปหน้าตั้งชื่อทันที (เด็ก 5 ขวบไม่ควรต้องเดาว่าต้องกดปุ่มไหนต่อ) */
+  expect(await page.locator('#house-pet-picker').isHidden()).toBe(false);
+  await expect(page.locator('#house-pet-chips .house-pet-chip.active')).toContainText('หมาน้อย');
+  expect(errors).toEqual([]);
+});
+
+test('บ้านสัตว์ตามเงื่อนไข: รับเลี้ยง → บ้านโผล่ · ปล่อยคืน → บ้านหาย แต่สิทธิ์ยังอยู่ (รับกลับมาฟรี)', async ({ page }) => {
+  const errors = await openHouse(page, null, 300);
+  await page.evaluate(() => window.HouseShop.buyPet('dog'));
+  await page.waitForTimeout(2200);
+  await page.locator('#house-pet-done').dispatchEvent('click');
+  await page.waitForTimeout(1500);
+
+  let d = await readHouse(page);
+  expect(d.pet.type).toBe('dog');
+  expect(petHouses(d), 'รับเลี้ยงแล้วต้องมีบ้านสัตว์ 1 หลัง').toBe(1);
+
+  await page.locator('#house-pet-btn').dispatchEvent('click');
+  await page.waitForTimeout(1000);
+  await page.locator('#house-pet-remove').dispatchEvent('click');
+  await page.waitForTimeout(1500);
+
+  d = await readHouse(page);
+  expect(d.pet == null).toBe(true);
+  expect(petHouses(d), 'ปล่อยคืนแล้วบ้านสัตว์ต้องหายไปด้วย (ข้อ 18.1)').toBe(0);
+  /* สิทธิ์ยังอยู่ ⇒ รับกลับมาเลี้ยงใหม่ได้ฟรี ไม่ต้องจ่ายอีกรอบ (กันเด็กเสียดายจนไม่กล้าลองตัวอื่น) */
+  expect(await page.evaluate(() => window.HouseShop.ownsPet('dog'))).toBe(true);
+  expect(await coinsOf(page)).toBe(50);
+  expect(errors).toEqual([]);
+});
+
+test('สีขน: ซื้อสีของสัตว์ที่ยังไม่มีไม่ได้ · มีแล้วซื้อได้และตัดเงิน 100', async ({ page }) => {
+  const errors = await openHouse(page, null, 400);
+  expect(await page.evaluate(() => window.HouseShop.buyPetColor('cat', 1)),
+    'ยังไม่มีแมว ห้ามให้ซื้อสีแมว (ซื้อไปก็ใช้ไม่ได้)').toBe(false);
+  expect(await coinsOf(page)).toBe(400);
+
+  await page.evaluate(() => window.HouseShop.buyPet('dog'));
+  await page.waitForTimeout(2200);
+  expect(await coinsOf(page)).toBe(150);
+  expect(await page.evaluate(() => window.HouseShop.buyPetColor('dog', 1))).toBe(true);
+  expect(await coinsOf(page)).toBe(50);
+  expect(await page.evaluate(() => window.HouseShop.ownsPetColor('dog', 1))).toBe(true);
+  expect(errors).toEqual([]);
+});

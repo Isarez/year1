@@ -35,7 +35,8 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
   const errors = await openHouse(page);
   expect(errors).toEqual([]);
   const d = await readHouse(page);
-  expect(d.econVer).toBe(3);
+  /* ผูกกับค่าปัจจุบันของ SHOP ไม่ฝังเลขไว้ — ปั๊ม ECON_VER รอบหน้าจะได้ไม่ต้องมาไล่แก้เทส */
+  expect(d.econVer).toBe(await page.evaluate(() => window.HouseShop.ECON_VER));
 
   /* 9 ชิ้นในบ้าน (ห้องนอน 2 · นั่งเล่น 3 · ครัว 3 · น้ำ 1) — ตามข้อ 26 ของแผนแม่บท + เตา */
   const inIds = (d.decor.in || []).map(r => r.id);
@@ -94,7 +95,8 @@ test('migration: ของที่เด็กวางไว้/ใส่อ�
   const errors = await openHouse(page, legacy);
   expect(errors).toEqual([]);
   const d = await readHouse(page);
-  expect(d.econVer).toBe(3);
+  /* ผูกกับค่าปัจจุบันของ SHOP ไม่ฝังเลขไว้ — ปั๊ม ECON_VER รอบหน้าจะได้ไม่ต้องมาไล่แก้เทส */
+  expect(d.econVer).toBe(await page.evaluate(() => window.HouseShop.ECON_VER));
 
   /* ของที่วางอยู่ = ซื้อแล้ว */
   ['piano', 'trampoline'].forEach(id => expect(d.unlocked).toContain(id));

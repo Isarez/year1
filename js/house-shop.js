@@ -153,7 +153,27 @@
     hatC:[0,1,2], glassC:[0,1,2], bagC:[0,1,2], holdC:[0,1,2],
   };
 
+  /* ---------- ราคาสัตว์เลี้ยง (ข้อ 17.1 ของแผนแม่บท — เฟส 3A) ----------
+     ไล่ตามความ "หายาก" ให้เด็กมีอะไรให้ตั้งเป้าออมเงิน (รายได้เต็มที่วันละ ~130-310 🪙):
+       เริ่มต้น 250 ≈ 1 วัน · กลาง 450 ≈ 2 วัน · พิเศษ 800 ≈ 3-4 วัน · หายาก 1,500 ≈ 1 สัปดาห์
+     ⚠️ **ห้ามลดราคาลงโดยไม่ถามผู้ใช้** — สัตว์คือ money sink ก้อนใหญ่ที่สุดของเกม ถ้าถูกไปเด็กได้ครบเร็วแล้วเบื่อ */
+  const PET_PRICE = {
+    dog:250, cat:250, rabbit:250, chick:250,          /* เริ่มต้น */
+    hamster:450, turtle:450, frog:450, pig:450,       /* กลาง */
+    sheep:800, penguin:800,                           /* พิเศษ */
+    panda:1500, unicorn:1500,                         /* หายาก */
+  };
+  const PET_COLOR_PRICE = 100;   /* สีขนเพิ่มเติม — สีแรกแถมมากับตัวสัตว์ตอนซื้อ */
+  /* จัดกลุ่มเป็นแท็บในร้าน (ราคาเดียวกันอยู่ด้วยกัน เด็กเทียบง่าย + แท็บไม่ยาวเกินจอ) */
+  const PET_GROUPS = [
+    {id:'start', label:'เริ่มต้น', emoji:'🌱', ids:['dog','cat','rabbit','chick']},
+    {id:'mid',   label:'กลาง',    emoji:'⭐', ids:['hamster','turtle','frog','pig']},
+    {id:'rare',  label:'พิเศษ',   emoji:'💎', ids:['sheep','penguin']},
+    {id:'epic',  label:'หายาก',   emoji:'👑', ids:['panda','unicorn']},
+  ];
+
   /* 2 = เริ่มระบบเศรษฐกิจ · 3 = เปิดขายสีของเครื่องแต่ง (2026-08-07)
+     4 = เฟส 3A เปิดร้านสัตว์เลี้ยง (2026-08-08) — สัตว์ที่เด็กเลี้ยงอยู่ก่อนแล้วต้องได้ฟรีถาวร
      ⚠ ต้องปั๊มเลขทุกครั้งที่ "เพิ่มแถวที่มีราคา" — migrate() จะได้รันซ้ำแล้วแจกสิทธิ์ของแถวใหม่
        ให้เด็กที่ใส่สีนั้นอยู่ก่อนแล้ว ไม่งั้นชุดที่ใส่อยู่จะกลายเป็นล็อกทันที (ผิดกติกาเหล็กข้อ 3) */
   /* ---------- ไอคอน SVG ประจำหมวดเฟอร์นิเจอร์ (10 หมวด) ----------
@@ -173,7 +193,7 @@
     decorout:'<svg viewBox="0 0 24 24"><path d="M6 20h12l-1-3.2H7z" fill="#BFD8E6" stroke="#4A7E9E" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 16.8V12h6v4.8z" fill="#D8ECF5" stroke="#4A7E9E" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 12V7.4" stroke="#4A7E9E" stroke-width="1.7" stroke-linecap="round"/><path d="M12 4.2c1.6 1.4 2.4 2.4 2.4 3.2a2.4 2.4 0 0 1-4.8 0c0-.8.8-1.8 2.4-3.2z" fill="#7FC7EC" stroke="#3A93C4" stroke-width="1.4"/></svg>',
   };
 
-  const ECON_VER = 3;
+  const ECON_VER = 4;
 
   /* ---------- ผังร้าน ----------
      เฟส 1 เปิด 2 ร้าน: ห้างเฟอร์นิเจอร์ (ของตกแต่งทั้งหมด) + ห้างแฟชั่น (ชุดแต่งตัวทั้งหมด)
@@ -185,6 +205,9 @@
                        sub:'แตะที่ของเพื่อดูตัวอย่างก่อนได้เลย ชอบแล้วค่อยกดซื้อ แล้วไปวางในโหมดตกแต่งบ้านนะ'},
     'mall-fashion':   {kind:'fashion', icon:'👗', title:'ห้างแฟชั่น',
                        sub:'แตะที่ชุดเพื่อลองดูก่อนได้เลย ชอบแล้วค่อยกดซื้อ แล้วไปใส่ที่ปุ่มแต่งตัวนะ'},
+    /* เฟส 3A — ล็อต shop-pet มีอยู่ในแผนที่อยู่แล้ว (js/house-map.js) แค่ผูกร้านเข้าไป */
+    'shop-pet':       {kind:'pet', icon:'🐾', title:'ร้านสัตว์เลี้ยง',
+                       sub:'แตะที่เพื่อนตัวน้อยเพื่อดูตัวจริงก่อนได้เลย ซื้อแล้วตั้งชื่อรับมาเลี้ยงได้ทันที'},
   };
 
   window.HOUSE_SHOP = function(kit){
@@ -195,6 +218,11 @@
     const load   = kit.load, save = kit.save;
     const onChange = kit.onChange || function(){};
 
+    /* คลังชนิดสัตว์อยู่ใน js/house.js ซึ่งโหลด **หลัง** ไฟล์นี้ ⇒ ต้องรับเป็นฟังก์ชัน (เรียกตอนใช้จริง)
+       ถ้ารับเป็นค่าตรงๆ จะชน TDZ ของ const PET_TYPES ตอนสร้าง SHOP */
+    const petTypes = kit.petTypes || function(){ return []; };
+    const petInfo  = t => petTypes().filter(p => p.id === t)[0] || null;
+
     const $ = id => document.getElementById(id);
     const click = () => { if(typeof playClick === 'function') playClick(); };
     const toast = (ic, msg) => { if(typeof showToast === 'function') showToast(ic, msg); };
@@ -203,10 +231,13 @@
     /* ---------- คลังสิทธิ์ ----------
        เก็บเป็นอาเรย์ string ก้อนเดียวใน house save (`data.unlocked`)
        เฟอร์นิเจอร์ = id ตรงๆ ('sofa') · ชุดแต่งตัว = 'fit:<แถว>:<index>' ('fit:hat:3')
+       สัตว์เลี้ยง = 'pet:<ชนิด>' ('pet:dog') · สีขนสัตว์ = 'pet:<ชนิด>:<index>' ('pet:dog:2')
        cache ไว้ใน Set เพราะตอนวาดกล่องเลือกของถูกถามทีละชิ้นเป็นร้อยครั้ง — ล้าง cache เมื่อ
        เปลี่ยนเด็ก (kit.childId เปลี่ยน) หรือมีการซื้อ/migrate (invalidate) */
     let ownSet = null, ownFor = null;
     function fitKey(row, i){ return 'fit:' + row + ':' + i; }
+    function petKey(type){ return 'pet:' + type; }
+    function petColKey(type, i){ return 'pet:' + type + ':' + i; }
     function ensureSet(){
       const cid = kit.childId ? kit.childId() : '';
       if(!ownSet || ownFor !== cid){
@@ -247,6 +278,38 @@
     function ownsFit(row, i){
       if(priceFit(row, i) === 0) return true;      /* ของฟรีถือว่ามีสิทธิ์เสมอ ไม่ต้องจดลง save */
       return ensureSet().has(fitKey(row, i));
+    }
+    /* ---------- สัตว์เลี้ยง (เฟส 3A) ----------
+       ⚠ **ซื้อครั้งเดียวเป็นของถาวร** เหมือนเฟอร์นิเจอร์/ชุดแต่งตัว — ปล่อยคืนแล้วรับกลับมาเลี้ยงใหม่ฟรี
+       (แผนข้อ 23 เขียนไว้ว่า "ซื้อซ้ำจ่ายครึ่งเดียว" แต่พอสิทธิ์เก็บถาวรใน `unlocked` แล้ว "ฟรี" ใจดีกว่า
+        และตรงเจตนาเดิมกว่า = กันเด็กเสียดายจนไม่กล้าลองสัตว์ตัวอื่น · จดไว้ในข้อ 35.5 ของแผนแม่บท) */
+    function pricePet(type){ return PET_PRICE[type] || 0; }
+    function ownsPet(type){ return ensureSet().has(petKey(type)); }
+    /* สีแรก (index 0) ติดมากับตัวสัตว์เสมอ — ซื้อสัตว์แล้วต้องมีสีให้ใช้อย่างน้อย 1 สี */
+    function ownsPetColor(type, i){
+      return (i | 0) === 0 ? ownsPet(type) : ensureSet().has(petColKey(type, i));
+    }
+    function buyPet(type){
+      const info = petInfo(type);
+      if(!info || ownsPet(type)) return false;
+      const ok = buy(petKey(type), pricePet(type), info.label);
+      if(ok){
+        grant([petColKey(type, 0)]);
+        /* ซื้อแล้วพาไปตั้งชื่อ+รับเลี้ยงต่อทันที — เด็ก 5 ขวบไม่ควรต้องเดาว่าต้องไปกดปุ่มไหนต่อ
+           (หน่วงไว้ให้ toast "ได้ ... แล้ว!" ขึ้นก่อน แล้วค่อยสลับฉาก) */
+        if(kit.onPetBought) setTimeout(()=>kit.onPetBought(type), 700);
+      }
+      return ok;
+    }
+    function buyPetColor(type, i){
+      const info = petInfo(type);
+      if(!info || ownsPetColor(type, i)) return false;
+      if(!ownsPet(type)){                         /* กันซื้อสีของสัตว์ที่ยังไม่มี (ซื้อไปก็ใช้ไม่ได้) */
+        toast('🐾', 'ต้องรับ' + info.label + 'มาเลี้ยงก่อนถึงจะเลือกสีได้นะ');
+        return false;
+      }
+      const col = info.colors[i];
+      return buy(petColKey(type, i), PET_COLOR_PRICE, 'สี' + ((col && col.n) || (i + 1)) + 'ของ' + info.label);
     }
 
     /* ---------- ซื้อ ---------- */
@@ -308,6 +371,14 @@
       /* 3) บวกชุดเริ่มต้นให้ทุกคน (เด็กเก่าที่ยังไม่มีของพวกนี้ก็ได้ไปด้วย ไม่มีใครเสียเปรียบ) */
       STARTER_FURN.forEach(id=>s.add(id));
       starterFit().forEach(k=>s.add(k));
+      /* 4) เฟส 3A: สัตว์ที่เด็กเลี้ยงอยู่ **ก่อน** เปิดร้าน = ได้ฟรีถาวรทั้งชนิดและสีที่ใช้อยู่
+         (เมื่อก่อนเลือกสัตว์ได้ฟรี ถ้าไม่แจกสิทธิ์ตรงนี้ เพื่อนตัวน้อยของเด็กจะกลายเป็นล็อกทันที
+          = ผิดกติกาเหล็กข้อ 3 "ห้ามทำข้อมูลเก่าหาย" · **ห้ามลบบล็อกนี้แม้จะดูเหมือนโค้ดตายในอนาคต**) */
+      if(d.pet && d.pet.type){
+        s.add(petKey(d.pet.type));
+        s.add(petColKey(d.pet.type, 0));
+        s.add(petColKey(d.pet.type, d.pet.color | 0));
+      }
       d.unlocked = Array.from(s);
       d.econVer = ECON_VER;
       invalidate();
@@ -379,6 +450,14 @@
           if(!rows.length) return;
           out.push({sec:g.sec});
           rows.forEach(r => out.push({id:r.key, label:TAB_SHORT[r.key] || r.label, svg:ICONS[r.key] || ''}));
+        });
+        return out;
+      }
+      /* ร้านสัตว์เลี้ยง: แท็บตามกลุ่มราคา (สีขนของสัตว์แต่ละตัวไปต่อท้ายในแท็บเดียวกัน ไม่แยกหมวด
+         ตามกติกา "ตัวของ + สีของมัน อยู่แท็บเดียวกัน" ข้อ 17.4) */
+      if(cfg.kind === 'pet'){
+        PET_GROUPS.forEach(g=>{
+          out.push({id:'petg:' + g.id, label:g.label, emoji:g.emoji});
         });
         return out;
       }
@@ -560,6 +639,41 @@
         }
         return;
       }
+      if(cfg.kind === 'pet'){
+        const g = PET_GROUPS.filter(x => 'petg:' + x.id === shopTab)[0];
+        if(!g) return;
+        g.ids.forEach(type=>{
+          const info = petInfo(type);
+          if(!info) return;
+          wrap.appendChild(makeCard({
+            key: petKey(type),
+            name: info.label, price: pricePet(type), owned: ownsPet(type), emoji: info.emoji,
+            preview: {kind:'pet', type, color:0},
+            onBuy: ()=> buyPet(type),
+          }));
+        });
+        /* สีขน — โชว์เฉพาะสัตว์ที่ "มีแล้ว" เท่านั้น (ซื้อสีของสัตว์ที่ยังไม่มีก็ใช้ไม่ได้ ยิ่งทำให้เด็กงง)
+           ⇒ แท็บของเด็กใหม่จะสั้นๆ แค่การ์ดสัตว์ แล้วค่อยยาวขึ้นเมื่อเริ่มมีเพื่อนตัวน้อย */
+        g.ids.filter(t => ownsPet(t)).forEach(type=>{
+          const info = petInfo(type);
+          const cols = (info && info.colors) || [];
+          if(cols.length < 2) return;
+          const h = document.createElement('div');
+          h.className = 'hs-subsec';
+          h.innerHTML = '<span>🎨 สีขนของ' + info.label + '</span>';
+          wrap.appendChild(h);
+          cols.forEach((col, i)=>{
+            wrap.appendChild(makeCard({
+              key: petColKey(type, i),
+              name: col.n, price: PET_COLOR_PRICE, owned: ownsPetColor(type, i),
+              color: col.c,
+              preview: {kind:'pet', type, color:i},
+              onBuy: ()=> buyPetColor(type, i),
+            }));
+          });
+        });
+        return;
+      }
       const parts = shopTab.split(':'), scope = parts[0], cat = parts[1];
       FURN.items.filter(it => it.scope === scope && it.cat === cat).forEach(it=>{
         wrap.appendChild(makeCard({
@@ -579,6 +693,10 @@
       migrate, invalidate,
       priceFurn, priceFit, ownsFurn, ownsFit,
       buyFurn, buyFit,
+      /* สัตว์เลี้ยง (เฟส 3A) — house.js ใช้ล็อกหน้าเลือกสัตว์ + เทสเรียกตรวจสิทธิ์ */
+      PET_PRICE, PET_COLOR_PRICE, PET_GROUPS,
+      pricePet, ownsPet, ownsPetColor, buyPet, buyPetColor,
+      petTypes,        /* PET_TYPES อยู่ใน IIFE ของ house.js — ทางเดียวที่เทสมองเห็นคือผ่านตรงนี้ */
       starterHome, starterFit, STARTER_FURN,
       shopForLot, open, close, isOpen, clearSelected,
       refresh: ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } },

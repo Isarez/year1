@@ -280,6 +280,9 @@ const SHOP = (typeof window.HOUSE_SHOP === 'function')
       onChange: onShopChange,
       preview: (spec)=>openShopPreview(spec),
       closePreview: ()=>closeShopPreview(),
+      /* PET_TYPES ประกาศอยู่ท้ายไฟล์นี้ (หลังบรรทัดนี้มาก) — ต้องส่งเป็นฟังก์ชัน ไม่งั้นชน TDZ */
+      petTypes: ()=>PET_TYPES,
+      onPetBought: (type)=>petBoughtFlow(type),
     })
   : null;
 /* เครื่องยนต์เควสต์เฟส 2 (js/house-quests.js โหลดก่อนไฟล์นี้) — กลไก/สุ่มรายวัน/รางวัล/ประตูความพร้อม
@@ -366,6 +369,11 @@ function openShopPreview(spec){
     cfg[spec.row] = spec.i;
     g = buildCharacter(cfg);          /* ตัวละครแยกก้อนของตัวเอง ไม่แตะ charGroup ที่เดินอยู่ในเมือง */
     fitPreviewModel(g, 2.0);
+  }else if(spec.kind === 'pet'){      /* เฟส 3A: ดูตัวจริงของเพื่อนตัวน้อยก่อนซื้อ */
+    g = buildPet(spec.type, spec.color | 0);
+    /* ใช้เป้าหมายเท่าเฟอร์นิเจอร์ — เพดาน scale ใน fitPreviewModel จะทำให้ตัวจิ๋ว (ลูกเจี๊ยบ)
+       ดูเล็กกว่าตัวใหญ่ (แพนด้า) จริงๆ ซึ่งเป็นผลพลอยได้ที่ดี ไม่ใช่บั๊ก */
+    fitPreviewModel(g, 1.9);
   }else{
     const item = FURN.byId[spec.id]; if(!item) return false;
     g = new THREE.Group();
@@ -7231,11 +7239,16 @@ function closeCreator(){
   saveHouseData({char: creatorCfg});
   if(typeof showToast==='function') showToast('🎉', 'เก่งมาก! ตัวละครของหนูพร้อมแล้ว');
   exitCreatorToWorld();
-  /* ครั้งแรกหลังสร้างตัวละครเสร็จ: ชวนรับเลี้ยงสัตว์ต่อเลย (มีปุ่มข้ามได้ ไม่บังคับ) */
+  /* ครั้งแรกหลังสร้างตัวละครเสร็จ: บอกทางไปหาเพื่อนตัวน้อย
+     ⚠ เฟส 3A เปลี่ยนจาก "เปิดหน้าเลือกสัตว์ให้เลย" เป็นแค่บอกทาง — เพราะสัตว์ต้องซื้อแล้ว
+       เด็กใหม่มี 0 เหรียญ ถ้าเด้งหน้าเลือกสัตว์ที่ล็อกทั้งหน้าให้ดู = เจอทางตันตั้งแต่นาทีแรก */
   const d0 = loadHouseData() || {};
   if(!creatorState.fromWorld && !d0.pet && !d0.petPromptSeen){
     saveHouseData({petPromptSeen:true});
-    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) fadeSwap(()=>openPetPicker()); }, 1200);
+    setTimeout(()=>{
+      if(houseOpen && hMode==='world' && !editMode && typeof showToast==='function')
+        showToast('🐾', 'อยากมีเพื่อนตัวน้อยไหม? ทำภารกิจเก็บเหรียญแล้วไปเลือกซื้อที่ร้านสัตว์เลี้ยงกลางเมืองได้เลย!');
+    }, 1400);
   }
 }
 /* ยกเลิกการแต่งตัว (ปุ่ม ← ตอนกำลังแก้ไขตัวละคร) — ทิ้งชุดที่เพิ่งลอง กลับไปใช้ชุดที่บันทึกไว้เดิม */
@@ -7351,7 +7364,8 @@ function greetLot(a){
   const p = a.pos;
   for(let i=0; i<4; i++) spawnParticle(p.x+(Math.random()-.5)*1.2, 1.4+Math.random()*.4, p.z+1, 0xfff1a8);
   if(typeof playClick==='function') playClick();
-  /* ล็อตที่เป็นร้านเปิดขายแล้ว (เฟส 1: ห้างเฟอร์นิเจอร์/ห้างแฟชั่น) — เดินมาถึงหน้าร้านแล้วเปิดร้านเลย
+  /* ล็อตที่เป็นร้านเปิดขายแล้ว (เฟส 1: ห้างเฟอร์นิเจอร์/ห้างแฟชั่น · เฟส 3A: ร้านสัตว์เลี้ยง)
+     — เดินมาถึงหน้าร้านแล้วเปิดร้านเลย
      ไม่ต้องรอทักพนักงานก่อน (เด็กแตะตัวตึกก็ควรเข้าร้านได้) */
   if(SHOP && SHOP.shopForLot(a.lot.id)){ SHOP.open(a.lot.id); return; }
   const now = performance.now();
@@ -9224,17 +9238,40 @@ function rebuildPetPreview(){
   petPreview.rotation.y = creatorState.rotY;
   scene.add(petPreview);
 }
+/* ---------- สิทธิ์สัตว์เลี้ยง (เฟส 3A) ----------
+   ก่อนเฟส 3 สัตว์ทุกตัวเลือกได้ฟรี ตอนนี้ต้องซื้อจากร้านสัตว์เลี้ยงก่อน
+   ⚠ ถ้าไม่มี SHOP (โหลดไม่สำเร็จ) ให้ถือว่า "มีสิทธิ์ทุกตัว" — ห้ามให้เด็กเข้าไม่ถึงเพื่อนตัวน้อยเพราะไฟล์ร้านพัง */
+function petOwned(type){ return !SHOP || SHOP.ownsPet(type); }
+function petColorOwned(type, i){ return !SHOP || SHOP.ownsPetColor(type, i); }
+function petPriceOf(type){ return SHOP ? SHOP.pricePet(type) : 0; }
+function anyPetOwned(){ return PET_TYPES.some(p => petOwned(p.id)); }
+/* ตัวที่จะให้หน้าเลือกสัตว์เปิดมาชี้ไว้ — ของที่มีอยู่แล้วก่อน ไม่งั้นเอาตัวแรกที่ซื้อไว้ */
+function firstOwnedPet(){
+  const p = PET_TYPES.filter(x => petOwned(x.id))[0];
+  return p ? p.id : 'dog';
+}
+function toShopForPet(info){
+  if(typeof showToast==='function')
+    showToast('🐾', 'ยังไม่มี' + info.label + ' ไปซื้อที่ร้านสัตว์เลี้ยง 🐾 กลางเมืองก่อนนะ (' + petPriceOf(info.id) + ' เหรียญ)');
+}
 function buildPetColorChips(){
   const wrap = $('house-pet-colors');
   wrap.innerHTML = '';
-  petTypeInfo(petPickerType).colors.forEach((col,i)=>{
+  const info = petTypeInfo(petPickerType);
+  info.colors.forEach((col,i)=>{
+    const own = petColorOwned(petPickerType, i);
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'house-chip house-chip-color' + (i===petPickerColor ? ' active' : '');
+    b.className = 'house-chip house-chip-color' + (i===petPickerColor ? ' active' : '') + (own ? '' : ' locked');
     b.style.background = '#'+col.c.toString(16).padStart(6,'0');
-    b.setAttribute('aria-label', 'สี'+col.n);
+    b.setAttribute('aria-label', 'สี'+col.n + (own ? '' : ' (ยังไม่มี)'));
     b.addEventListener('click', ()=>{
       if(typeof playClick==='function') playClick();
+      if(!own){
+        if(typeof showToast==='function')
+          showToast('🎨', 'สี' + col.n + 'ซื้อได้ที่ร้านสัตว์เลี้ยงนะ (' + (SHOP ? SHOP.PET_COLOR_PRICE : 100) + ' เหรียญ)');
+        return;
+      }
       petPickerColor = i;
       wrap.querySelectorAll('.house-chip').forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
@@ -9247,12 +9284,18 @@ function buildPetChips(){
   const wrap = $('house-pet-chips');
   wrap.innerHTML = '';
   PET_TYPES.forEach(p=>{
+    const own = petOwned(p.id);
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'house-chip house-pet-chip' + (p.id===petPickerType ? ' active' : '');
-    b.innerHTML = '<span class="house-pet-chip-emoji">'+p.emoji+'</span><span class="house-pet-chip-name">'+p.label+'</span>';
+    b.className = 'house-chip house-pet-chip' + (p.id===petPickerType ? ' active' : '') + (own ? '' : ' locked');
+    /* ตัวที่ยังไม่มี **ยังโชว์อยู่** (ไม่ซ่อน) พร้อมราคา — ให้เด็กเห็นเป้าหมายว่าเก็บเงินไว้ซื้ออะไรได้บ้าง
+       (กติกาเดียวกับของในร้าน ข้อ 17.4: ของที่ซื้อไม่ไหวขึ้นราคาจางๆ ไม่ใช่หายไป) */
+    b.innerHTML = '<span class="house-pet-chip-emoji">'+p.emoji+'</span>'
+                + '<span class="house-pet-chip-name">'+p.label+'</span>'
+                + (own ? '' : '<span class="house-pet-chip-lock">🔒 '+petPriceOf(p.id)+'</span>');
     b.addEventListener('click', ()=>{
       if(typeof playClick==='function') playClick();
+      if(!own){ toShopForPet(p); return; }
       petPickerType = p.id;
       petPickerColor = 0;                 /* เปลี่ยนชนิด = กลับสีดั้งเดิมของชนิดนั้น */
       wrap.querySelectorAll('.house-chip').forEach(c=>c.classList.remove('active'));
@@ -9260,19 +9303,38 @@ function buildPetChips(){
       if(!petNameDirty) $('house-pet-name-input').value = p.def;
       buildPetColorChips();
       rebuildPetPreview();
+      refreshPetPickerFoot();
     });
     wrap.appendChild(b);
   });
 }
-function openPetPicker(){
+/* ปุ่ม "รับเลี้ยง" + ข้อความชวน — ต่างกันระหว่าง "ยังไม่มีสัตว์เลย" กับ "มีให้เลือกแล้ว" */
+function refreshPetPickerFoot(){
+  const done = $('house-pet-done'), sub = $('house-pet-sub');
+  const has = anyPetOwned(), data = loadHouseData() || {};
+  if(done){
+    done.hidden = !has;
+    done.textContent = data.pet ? 'บันทึกเลย 💕' : 'รับเลี้ยงเลย 💕';
+  }
+  if(sub) sub.textContent = has
+    ? 'เลือกเพื่อนตัวน้อยมาอยู่ด้วยกัน หมุนดูได้ แล้วตั้งชื่อให้ด้วยนะ'
+    : 'ยังไม่มีเพื่อนตัวน้อยเลย — ไปเลือกซื้อที่ร้านสัตว์เลี้ยง 🐾 กลางเมืองก่อนนะ';
+}
+function openPetPicker(wantType){
   if(editMode) return;   /* กันแผงสัตว์เลี้ยงเด้งทับตอนกำลังตกแต่ง */
   if(SHOP) SHOP.close();
+  if(window.HouseQB) window.HouseQB.close();
   closeQuestPanel(); closeQuestBoard();
   hMode = 'pet';
   creatorState.rotY = 0; creatorState.rotTarget = 0;
   const data = loadHouseData() || {};
-  petPickerType = (data.pet && data.pet.type) || 'dog';
-  petPickerColor = (data.pet && data.pet.color) || 0;   /* save เก่าไม่มี color = 0 (สีดั้งเดิม) */
+  /* wantType = เพิ่งซื้อตัวนี้มาจากร้าน ให้เปิดมาชี้ตัวนั้นเลย
+     ไม่งั้นใช้ตัวที่เลี้ยงอยู่ · ถ้าตัวที่เลี้ยงอยู่ไม่มีสิทธิ์แล้วก็ถอยไปตัวแรกที่ซื้อไว้ */
+  const cur = (data.pet && data.pet.type) || '';
+  petPickerType = (wantType && petOwned(wantType)) ? wantType
+                : (cur && petOwned(cur)) ? cur : firstOwnedPet();
+  petPickerColor = (cur === petPickerType && data.pet) ? (data.pet.color || 0) : 0;
+  if(!petColorOwned(petPickerType, petPickerColor)) petPickerColor = 0;
   petNameDirty = !!data.pet;              /* มีชื่อเดิมอยู่ = อย่าเขียนทับตอนสลับชนิด */
   $('house-pet-name-input').value = data.pet ? data.pet.name : petTypeInfo(petPickerType).def;
   $('house-pet-picker').hidden = false;
@@ -9281,21 +9343,31 @@ function openPetPicker(){
   $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true; $('house-child-chip').hidden = true;
   $('house-hint').hidden = true;
   $('house-pet-remove').hidden = !data.pet;
-  $('house-pet-done').textContent = data.pet ? 'บันทึกเลย 💕' : 'รับเลี้ยงเลย 💕';
   worldGroup.visible = false; interiorGroup.visible = false;
   creatorGroup.visible = true;
   if(charGroup) charGroup.visible = false;
   buildPetChips();
   buildPetColorChips();
+  refreshPetPickerFoot();
   rebuildPetPreview();
   applyCamera();
 }
+/* ซื้อสัตว์จากร้านสำเร็จ → ปิดร้าน แล้วพาไปตั้งชื่อ/รับเลี้ยงตัวนั้นต่อทันที (ข้อ 18.1) */
+function petBoughtFlow(type){
+  if(!houseOpen || editMode) return;
+  if(SHOP) SHOP.close();
+  if(hMode === 'world') fadeSwap(()=>openPetPicker(type));
+}
 function closePetPicker(kind){
+  /* กันรับเลี้ยงตัวที่ยังไม่ได้ซื้อ (เช่นกดปุ่มรัวๆ ตอนหน้ากำลังเปลี่ยน) — ถอยเป็น "แค่ปิดหน้า" */
+  if(kind==='adopt' && !petOwned(petPickerType)) kind = null;
   if(kind==='adopt'){
     const name = ($('house-pet-name-input').value || '').trim().slice(0,14) || petTypeInfo(petPickerType).def;
     saveHouseData({pet:{type:petPickerType, name, color:petPickerColor}});
+    syncPetHouse(true);           /* มีสัตว์แล้ว → บ้านสัตว์โผล่ที่ช่องที่จองไว้ (ข้อ 18.1) */
   }else if(kind==='remove'){
     saveHouseData({pet:null});
+    syncPetHouse(false);          /* ปล่อยเพื่อนตัวน้อยคืน → บ้านสัตว์หายไปด้วย */
   }
   hMode = 'world';
   $('house-pet-picker').hidden = true;
@@ -9550,7 +9622,9 @@ function seedWorldDecor(data){
   [YARD.x0, YARD.x1].forEach(fx=>{ for(let z=YARD.z0+1; z<=YARD.z1-1; z++){ if(isFenceTile(fx,z)) seed.push({id:'fence-seg', x:fx, z, rot:1, col:0}); } });
   /* rot:0 = ประตูหันไปทาง +z ทิศเดียวกับประตูบ้านเด็ก (ทางเดินหน้าบ้านก็ทอดไป +z) และเป็นด้านที่
      กล้อง iso มองเห็น (ของเดิม rot:3 ประตูหันหลังให้กล้อง เด็กไม่เห็นทั้งประตูและตัวที่เข้าไปนอนรอ) */
-  seed.push({id:'pet-house', x:PET_HOUSE_TILE.x, z:PET_HOUSE_TILE.z, rot:0, col:0});
+  /* ⚠ เฟส 3A: **ไม่ seed บ้านสัตว์ให้ทุกคนแล้ว** (ข้อ 18.1 — ไม่มีสัตว์ = ไม่มีบ้านสัตว์)
+     บ้านจะไปโผล่ตอนรับเลี้ยงตัวแรกผ่าน syncPetHouse() แทน · ช่อง PET_HOUSE_TILE ยังจองไว้เหมือนเดิม
+     (ต้นไม้/รั้วไม่ลงช่องนี้) จะได้มีที่ว่างรออยู่จริงตอนสัตว์มา */
   /* แผ่นทางเดินหน้าประตู (ลอดช่องประตูรั้ว) — ย้าย/ลบได้ */
   for(let i=0;i<4;i++) seed.push({id:'path', x:DOOR_TILE.x, z:DOOR_TILE.z+i, rot:0, col:0});
   decor.out = seed.concat(decor.out || []);
@@ -9595,6 +9669,30 @@ function findFreeAnchorAmong(sc, item, rot, others){
     if(decorCanPlaceAmong(sc, item, {x, z}, rot, others)) return {x, z};
   }
   return null;
+}
+/* ---------- บ้านสัตว์เลี้ยงตามเงื่อนไข (ข้อ 18.1 ของแผนแม่บท — เฟส 3A) ----------
+   มีสัตว์ = มีบ้านสัตว์ · ปล่อยสัตว์คืน = บ้านหายไปด้วย (ย้ายที่ได้ในโหมดตกแต่ง แต่ลบเองไม่ได้)
+   ⚠ ตอน "มี" จะวางที่ PET_HOUSE_TILE ก่อน ถ้าช่องนั้นถูกของอื่นยึดไปแล้ว (เด็กย้ายของมาทับ)
+     ค่อยหาช่องว่างใกล้ๆ แทน — ห้ามล้มเงียบ ไม่งั้นเด็กซื้อสัตว์แล้วบ้านไม่มา */
+function syncPetHouse(want){
+  const data = loadHouseData() || {};
+  const decor = data.decor || {out:[], in:[]};
+  const list = decor.out || [];
+  const at = list.findIndex(r => r && r.id === 'pet-house');
+  if(want && at < 0){
+    const item = FURN.byId['pet-house'];
+    if(!item) return;
+    let a = PET_HOUSE_TILE;
+    if(!decorCanPlace('out', item, a, 0)) a = findFreeAnchor('out', item, 0) || PET_HOUSE_TILE;
+    list.push({id:'pet-house', x:a.x, z:a.z, rot:0, col:0});
+  }else if(!want && at >= 0){
+    list.splice(at, 1);
+  }else{
+    return;                                  /* ตรงกับที่ต้องการอยู่แล้ว ไม่ต้องเขียน save ซ้ำ */
+  }
+  decor.out = list;
+  saveHouseData({decor});
+  if(houseOpen) loadDecorForChild();          /* วาดฉากนอกบ้านใหม่ให้เห็นผลทันที */
 }
 function loadDecorForChild(){
   lampAll = []; _lampsNight = null;   /* ล้าง ref ไฟเก่าก่อนสร้างของเด็กคนใหม่ */
@@ -9924,6 +10022,15 @@ function deleteSel(){
   if(!editSel) return;
   if(typeof playClick==='function') playClick();
   const deco = editSel.userData.deco, sc = deco.scene;
+  /* บ้านสัตว์ผูกกับ "มีสัตว์อยู่ไหม" (ข้อ 18.1) — ย้ายที่ได้ แต่ลบเองไม่ได้
+     ไม่งั้นเด็กลบทิ้งแล้วเพื่อนตัวน้อยไม่มีที่นอน และหยิบกลับมาวางเองไม่ได้ */
+  if(deco.rec && deco.rec.id === 'pet-house'){
+    const d = loadHouseData() || {};
+    if(d.pet){
+      if(typeof showToast==='function') showToast('🐾', 'บ้านของ' + d.pet.name + 'ลบไม่ได้นะ แต่ลากย้ายที่ได้');
+      return;
+    }
+  }
   const idx = decorGroups[sc].indexOf(editSel);
   editSel.parent.remove(editSel); disposeGroup(editSel);
   if(idx>=0) decorGroups[sc].splice(idx,1);

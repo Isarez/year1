@@ -2484,6 +2484,15 @@
 .house-chip.house-pet-chip{flex-direction:column; gap:2px; height:auto; min-width:0; padding:8px 4px;}
 .house-pet-chip-emoji{font-size:26px; line-height:1;}
 .house-pet-chip-name{font-size:12.5px; font-weight:800;}
+/* เฟส 3A: ตัวที่ยังไม่ได้ซื้อ **ยังโชว์อยู่** แค่จางลง + ติดป้ายราคา ให้เด็กเห็นเป้าหมายว่าเก็บเงินไว้ซื้ออะไร
+   (กติกาเดียวกับของในร้าน ข้อ 17.4 — ของที่ซื้อไม่ไหวห้ามซ่อน) */
+.house-chip.house-pet-chip.locked{opacity:.6; filter:grayscale(.55);}
+.house-pet-chip-lock{
+  font-size:11px; font-weight:900; color:#8A5A2B; white-space:nowrap;
+  background:#FFE0B8; border-radius:999px; padding:1px 7px; margin-top:1px;
+}
+/* สีขนที่ยังไม่ได้ซื้อ — ยังเห็นว่าเป็นสีอะไร แต่รู้ว่ากดใช้ไม่ได้ */
+.house-chip.house-chip-color.locked{opacity:.42;}
 .house-pet-name-input{
   width:100%; box-sizing:border-box; border:3px solid rgba(0,0,0,.08); border-radius:14px;
   background:#FFF9EE; color:var(--ink); font-family:inherit;
