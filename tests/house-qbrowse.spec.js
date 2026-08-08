@@ -13,7 +13,7 @@ const HKEY = 'p1quiz_house_' + CHILD.id;
 /* มีบ้านอยู่แล้ว → ข้ามหน้าสร้างตัวละคร/เลือกสัตว์เลี้ยง เข้าเมืองได้เลย */
 const SEED = { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
 
-async function openBrowser(page) {
+async function enterHouse(page) {
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
@@ -29,14 +29,32 @@ async function openBrowser(page) {
   await page.waitForFunction(() => !document.getElementById('house-view').hidden, null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HouseQB && !!window.HouseQuests, null, { timeout: 30000 });
   await page.waitForTimeout(900);
-  /* เปิดผ่านปุ่มจริงในเมนูเฟือง (ไม่เรียก API ตรงๆ — จะได้เทสว่าปุ่มยังผูกอยู่) */
+  /* QB_FEATURE_OFF = false (ค่าที่ใช้ตอน merge ขึ้น main/production) → ข้ามทั้งชุด เทสยังเขียวครบ */
+  const enabled = await page.evaluate(() => !!(window.HouseQB && window.HouseQB.enabled));
+  test.skip(!enabled, 'หน้าคลังคำถามถูกปิดไว้ (QB_FEATURE_OFF) — เป็นค่าปกติของ production');
+  return errors;
+}
+/* เปิดผ่านปุ่มจริงในเมนูเฟือง (ไม่เรียก API ตรงๆ — จะได้เทสว่าปุ่มยังผูกอยู่)
+   หมายเหตุ: กดปุ่มแล้วเมนูเฟืองจะพับเก็บเอง ⇒ เช็คว่าปุ่ม "มองเห็นได้" ต้องเช็คก่อนกด */
+async function openBrowser(page) {
+  const errors = await enterHouse(page);
   await page.locator('#house-ctrl-gear').dispatchEvent('click');
+  await page.waitForTimeout(200);
   await page.locator('#house-qb-btn').dispatchEvent('click');
   await page.waitForFunction(() => !document.getElementById('house-qb').hidden, null, { timeout: 15000 });
   return errors;
 }
 const readHouse = page => page.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), HKEY);
 const coins = page => page.evaluate(() => window.OwlCoins.get());
+
+test('สวิตช์ QB_FEATURE_OFF เปิดอยู่: ปุ่ม 📚 ต้องมองเห็นจริงในเมนูเฟือง (ไม่ใช่แค่มี element)', async ({ page }) => {
+  const errors = await enterHouse(page);
+  expect(await page.locator('#house-qb-btn').isVisible()).toBe(false);   /* เมนูยังพับอยู่ */
+  await page.locator('#house-ctrl-gear').dispatchEvent('click');
+  await page.waitForTimeout(250);
+  expect(await page.locator('#house-qb-btn').isVisible()).toBe(true);
+  expect(errors).toEqual([]);
+});
 
 test('เปิดจากเมนูเฟือง: มีแท็บครบทุกระดับชั้น + 2 กลไก และเปิดมาที่ชั้นของเด็กคนนี้', async ({ page }) => {
   const errors = await openBrowser(page);

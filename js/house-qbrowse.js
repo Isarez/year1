@@ -17,6 +17,19 @@
 (function(){
   'use strict';
 
+  /* ============================================================
+     🔒 QB_FEATURE_OFF — สวิตช์เปิด/ปิดหน้านี้ **จุดเดียวในทั้งโปรเจค**
+
+     `true`  = เห็นปุ่ม 📚 ในเมนูเฟือง (ใช้บน branch `feature/house-owl` ระหว่างพัฒนา/เทสทั้ง 9 เฟส)
+     `false` = ซ่อนปุ่ม + เปิดหน้านี้ไม่ได้เลย (**ค่าที่ต้องใช้ทุกครั้งที่ merge ขึ้น `main`/deploy จริง**)
+
+     ⚠️ **ก่อน merge เข้า `main` ทุกครั้งต้องตั้งเป็น `false`** — นี่คือเครื่องมือเทส ไม่ใช่ของให้เด็กเล่น
+     ปิดที่นี่ที่เดียวพอ ไม่ต้องไปแก้ index.html/CSS (ใช้ inline style ซ่อนปุ่ม จึงไม่ติดกับดัก
+     specificity แบบ `.house-entry-btn[hidden]` ที่เคยเจอมาแล้ว) แล้วเทสชุด
+     `tests/house-qbrowse.spec.js` จะข้ามตัวเองอัตโนมัติ เทสยังเขียวครบเหมือนเดิม
+     ============================================================ */
+  const QB_ENABLED = true;
+
   const $ = id => document.getElementById(id);
 
   /* แท็บกลไก — เพิ่ม mechanic ใหม่ในเฟส 5-7 แล้วมาต่อแถวนี้ */
@@ -211,6 +224,7 @@
 
   /* ---------- เปิด/ปิด ---------- */
   function open(){
+    if(!QB_ENABLED) return;
     const q = Q();
     if(!q){
       if(typeof showToast === 'function') showToast('📚', 'คลังคำถามยังไม่พร้อม ลองเข้าบ้านใหม่อีกครั้งนะ');
@@ -244,5 +258,12 @@
     }
   });
 
-  window.HouseQB = {open, close, isOpen, render};
+  /* ปิดอยู่ → ซ่อนปุ่มในเมนูเฟืองทิ้งไปเลย (inline style ชนะ .icon-btn{display:inline-flex} เสมอ
+     ไม่ต้องพึ่ง CSS rule เพิ่ม จึงลืมไม่ได้และปิดไม่ครึ่งๆ กลางๆ) */
+  if(!QB_ENABLED){
+    const b = $('house-qb-btn');
+    if(b) b.style.display = 'none';
+  }
+
+  window.HouseQB = {open, close, isOpen, render, enabled:QB_ENABLED};
 })();
