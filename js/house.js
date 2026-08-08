@@ -27,13 +27,13 @@ const {
   sz, sRect, sTile, sList, s2z, s2Rect,
   s2Tile, s2List, RIVER_X, BRIDGE_Z, BRIDGE2_Z, FARM_BRIDGE_Z,
   BRIDGES, HOUSE_FOOT, DOOR_TILE, SPAWN_TILE, TREES, FLOWERS,
-  YARD, GATE_TILE, PET_HOUSE_TILE, HOUSE_VIEW, HOME_ZONE, HOME_EDGE_Z,
+  YARD, GATE_TILE, GATE_TILES, PET_HOUSE_TILE, HOUSE_VIEW, HOME_ZONE, HOME_EDGE_Z,
   HOME_EXIT_X, VILLAGE_X0, VILLAGE_ROADS, VILLAGE2_ROADS, PLAZA, FOUNTAIN,
   VILLAGE_LOTS, LOT_BY_ID, WILD_GROVES, WILD_BUSHES, WILD_MUSHROOMS, POND,
   CANAL_Z, CANAL_X0, CANAL_X1, CANAL_BRIDGE_X, FARM_PLOTS, FARM_TRAIL,
   SEA_X0, SEA_SLOPE, SEA_MAX_Z, SEA_BASE_Z, BEACH_W, PALM_SPOTS,
   BOAT_SPOTS, BEACH_RACKS, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
-  SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN,
+  SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN, POT_SPOTS,
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
   POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
@@ -61,7 +61,7 @@ function isSceneryPropTile(x, z){
       || (x===SCHOOL_FLAG.x && z===SCHOOL_FLAG.z) || isSchoolFenceTile(x, z)
       || (x>=STAGE.x0 && x<=STAGE.x1 && z>=STAGE.z0 && z<=STAGE.z1)
       || isLampTile(x, z) || isHedgeTile(x, z)   /* เสาไฟ/แนวพุ่มไม้จองช่องไว้ ของฉากสุ่มห้ามงอกทับ */
-      || hit(CAMP_PROPS) || (x===CAMP_FIRE.x && z===CAMP_FIRE.z);
+      || hit(CAMP_PROPS) || hit(POT_SPOTS) || (x===CAMP_FIRE.x && z===CAMP_FIRE.z);
 }
 
 /* ---------- ที่นั่งของฉากตายตัว (ม้านั่ง + เก้าอี้ผ้าใบชายหาด) ----------
@@ -161,13 +161,24 @@ const creatorState = {dragging:false, lastX:0, rotY:0, rotTarget:0, fromWorld:fa
 
 /* ---------- data ---------- */
 /* เวอร์ชันแผนที่: 2 = ขยายทิศเหนือ/ตะวันออก (เลื่อน +NPAD/+EPAD), 3 = ขยายทิศตะวันออกอีกชั้น (เลื่อน +EPAD2)
+   4 = ย่อกรอบบริเวณบ้านเหลือ x13-25/z27-38 + ย้ายรั้วไปล้อมกรอบทั้งผืน (2026-08-09)
    ของตกแต่งนอกบ้านที่เด็กวางไว้เก็บเป็น "พิกัดช่อง" → ต้องเลื่อนตามครั้งเดียว ไม่งั้นของจะย้ายที่เอง */
-const MAP_V = 3;
+const MAP_V = 4;
 function migrateHouseMap(d){
   const from = d.mapV || 1;
   const dx = from < 2 ? NPAD : 0;
   const dz = (from < 2 ? EPAD : 0) + (from < 3 ? EPAD2 : 0);
   if(d.decor && Array.isArray(d.decor.out)) d.decor.out.forEach(r=>{ r.x += dx; r.z += dz; });
+  /* mapV 4: รั้วเป็น decor ที่ seed ครั้งเดียวต่อเด็ก → เด็กที่เล่นอยู่แล้วจะค้างรั้วแนวเก่า (ล้อมแค่สนามรอบบ้าน)
+     ⇒ ทิ้งรั้วเก่าทั้งแถวแล้ววางรั้วแนวใหม่ให้ + ดึงของที่ตกนอกกรอบบ้านที่ย่อลงกลับเข้ากรอบ
+     (ถ้าปล่อยไว้ ของชิ้นนั้นจะกลายเป็นของที่เด็กย้าย/ลบไม่ได้ เพราะ decorCanPlace ห้ามแตะนอกกรอบ) */
+  if(from < 4 && d.decor && Array.isArray(d.decor.out)){
+    const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));   /* ดึงเข้า "ในรั้ว" (เว้นแถวรั้วไว้ 1 ช่องทุกด้าน) */
+    d.decor.out = d.decor.out
+      .filter(r => r.id !== 'fence-seg' && r.id !== 'fence-corner')
+      .map(r => { r.x = cl(r.x, HOME_ZONE.x0+1, HOME_ZONE.x1-1); r.z = cl(r.z, HOME_ZONE.z0+1, HOME_ZONE.z1-1); return r; });
+    d.decor.out = fenceSeedRecs().concat(d.decor.out);
+  }
   d.mapV = MAP_V;                       /* ของในบ้านไม่ต้องเลื่อน (กริดในบ้านไม่เปลี่ยน) */
   return d;
 }
@@ -1239,9 +1250,21 @@ function outWZ(gz){ return gz - (OUT_D-1)/2; }
 function inBox(b, x, z, m){ m = m || 0; return x>=b.x0-m && x<=b.x1+m && z>=b.z0-m && z<=b.z1+m; }
 /* ทางเดินดินฝั่งบ้าน: ออกจากขอบบริเวณบ้านด้านใต้ (HOME_EXIT_X) ลงใต้แล้ววิ่งไปหัวสะพานใต้
    ให้เด็กมองเห็นว่าเดินทางนี้ไปชุมชนได้อีกทาง ไม่ต้องเดาว่าป่าทึบไปต่อได้ไหม */
+/* ⚠ เพิ่มทางเดินรอบบริเวณบ้าน 3 เส้นเมื่อ 2026-08-09 ตามคำขอผู้ใช้ (พร้อมกับย่อกรอบบ้านเหลือ x13-25/z27-38
+   แล้วเอารั้วไปล้อมกรอบทั้งผืน) — ทั้ง 3 เส้นต่อกันเป็นทางเดินเลียบรั้วบ้านฝั่งตะวันออก+ใต้:
+     A. x19-27 / z40-41  ทางเดินขวางใต้บ้าน — ต่อกับทางเดินดินเดิม (x19-20) ที่ทอดลงไปหาสะพานใต้
+                          และตรงกับช่องรั้ว x19-20/z38 ที่เปิดไว้
+     B. x26-27 / z25-39  ทางเดินเลียบรั้วฝั่งตะวันออก — ผ่านหน้าช่องรั้ว x25/z35-36 แล้วต่อขึ้นไปหาหัวสะพานเหนือ
+     C. x21-25 / z25-26  ทางเดินขวางเหนือบ้าน — เชื่อม B เข้ากับทางเดินดินไปฟาร์ม (FARM_TRAIL x19-20)
+   ⇒ เดินออกจากบ้านไปได้ครบทั้ง 3 ทาง (ฟาร์ม / สะพานเหนือเข้าเมือง / สะพานใต้ไปชุมชนที่ 2) โดยไม่ต้องลุยป่า
+   ของฉากที่เคยอยู่บนแนวนี้ถูกเอาออกไปแล้ว (ดอกไม้ 27,30 · แนวพุ่ม 27,25 · ต้นไม้ seed นอกกรอบบ้าน)
+   ส่วนต้นไม้ป่าไม่ต้องไล่เอง — wildPlantable ตัดช่องถนนทิ้งอยู่แล้ว */
 const HOME_TRAIL = [
   {x0:HOME_EXIT_X[0], x1:HOME_EXIT_X[1], z0:HOME_EDGE_Z, z1:BRIDGE2_Z[1]},
   {x0:HOME_EXIT_X[0], x1:RIVER_X[0]-1, z0:BRIDGE2_Z[0], z1:BRIDGE2_Z[1]},
+  {x0:HOME_EXIT_X[0], x1:RIVER_X[0]-1, z0:HOME_ZONE.z1+2, z1:HOME_ZONE.z1+3},   /* A */
+  {x0:HOME_ZONE.x1+1, x1:RIVER_X[0]-1, z0:HOME_ZONE.z0-2, z1:HOME_ZONE.z1+1},   /* B */
+  {x0:HOME_ZONE.x1-4, x1:HOME_ZONE.x1, z0:HOME_ZONE.z0-2, z1:HOME_ZONE.z0-1},   /* C */
 ];
 function isVillageRoadTile(x, z){
   if(inBox(FARM_TRAIL, x, z)) return true;                 /* ทางเดินดินเข้าฟาร์มทิศตะวันออก */
@@ -1358,7 +1381,10 @@ let wildLayoutCache = null;
 const WILD_BAN = new Set(['54,22', '11,19', '3,31', '4,31', '5,31', '7,29', '6,32', '3,35', '4,35', '5,39', '5,40', '8,49', '9,49', '34,61', '35,60',
   /* ทุ่งโล่งฝั่งตะวันออกของตึกแล็บ — ถอนต้นสน 2 ต้น (26,47 / 27,47) กับพุ่มเล็ก (27,48) ออกตามคำขอผู้ใช้
      (2026-08-03) เปิดที่ให้แนวพุ่มไม้จัดสวน x27 กับทุ่งทานตะวัน x25-26 ลงแทน */
-  '26,47', '27,47', '27,48']);
+  '26,47', '27,47', '27,48',
+  /* ผู้ใช้ชี้เองว่า 2 ต้นนี้เกะกะ (2026-08-09) — 27,42 คือหัวมุมต่อกับทางเดินใหม่ x19-27/z40-41
+     (แนวพุ่ม x27 ถอยไปเริ่ม z43 แล้ว) · 17,45 คือต้นที่ยืนอยู่กลางทุ่งใต้บริเวณบ้าน */
+  '27,42', '17,45']);
 /* ---------- ต้นไม้ในชุมชน ----------
    กติกาป่า (wildPlantable แบบ tall) เว้นถนน 3 ช่อง + อาคาร 4 ช่อง → ในชุมชนแทบไม่เหลือช่องเลย ชุมชนจึงโล่งไม่มีต้นไม้
    ชุดกติกานี้ผ่อนให้เหลือ ถนน/ลาน 2 ช่อง + อาคาร 2 ช่อง + ใบไม้ล้ำบนจอสั้นลงเหลือ 2 ช่อง
@@ -1644,6 +1670,16 @@ function flushMergedParts(parts, group){
 /* รวมชิ้นส่วนภายในกลุ่มเฟอร์นิเจอร์/ของตกแต่ง 1 ชิ้นให้เหลือ mesh เดียว (พิกัด local เดิม)
    → ยังลาก/หมุน/ยกได้ตามปกติ แค่วาดครั้งเดียวแทนหลายสิบครั้ง (รั้ว/ต้นไม้ชิ้นละ 6 mesh)
    เรียกก่อนตั้งตำแหน่งกลุ่ม (ตอน matrix ยังเป็น identity) เท่านั้น */
+/* ล้างค่าชั่วคราวที่ใช้ระหว่างประกอบร่างตัวละครออกจาก userData ของลูกทุกตัว
+   (`_hairTop`/`_hairW` ที่ hairShell จดไว้ให้หมวก/หน้าม้าอ้างอิง) — ต้องเรียกก่อน mergeDecorGroup เสมอ
+   เพราะตัว merge ยกเลิกทั้งก้อนทันทีที่เจอ userData บนลูก (กติกาเดิม: กันไปโดนบานพับ/หลอดไฟ/จุดหมุน) */
+function clearBuildScratch(g){
+  g.traverse(o=>{
+    if(o.userData && o.userData._hairTop !== undefined){
+      delete o.userData._hairTop; delete o.userData._hairW;
+    }
+  });
+}
 function mergeDecorGroup(g){
   let ok = true, meshes = 0;
   g.traverse(o=>{
@@ -2105,6 +2141,183 @@ function buildPetShop(lot){
       fl.position.set(sd*.7+ox,.48,fz+.5+oz); b.add(fl);
     });
   });
+  g.position.set(outWX(cx), 0, outWZ(cz));
+  return g;
+}
+
+/* ---------- ร้านต้นไม้/สวน — ล็อต shop-garden (เพิ่ม 2026-08-08) ----------
+   ตั้งบนลานโล่งกลางป่าที่กระท่อมช่างไม้ขยับออกไป จึงทำเป็น **เรือนเพาะชำ** ไม่ใช่ตึกร้าน:
+     - ฐานไม้เตี้ย + เสาโครงเขียว + ผนังกระจกใส (เห็นทะลุเป็นเรือนกระจก ไม่ใช่บ้านทึบ)
+     - หลังคาจั่วโปร่ง + แถบกระจกพาดตามผืนลาด 2 ฝั่ง
+     - หน้าร้าน: ชั้นวางกระถางดอกไม้ 2 ชั้น · ซุ้มไม้เลื้อยคร่อมทางเข้า · ถังรดน้ำ · ถุงดิน · พลั่ว
+   สันหลังคาเป็นดอกไม้ยักษ์จาก addShopEmblem('flower') */
+function buildGardenShop(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const cx = (lot.x0+lot.x1)/2, cz = (lot.z0+lot.z1)/2;
+  const bw = w-.7, bd = d-1.15, bh = 1.85;
+  const b = new THREE.Group(); b.position.z = -.45; g.add(b);   /* ถอยตัวเรือนไปหลังล็อต เหลือลานหน้าร้าน */
+  const GLASS = 0xd7eef0, FRAME = 0x5aa85c;
+  const body = box(bw, bh, bd, GLASS, .04); body.position.y = bh/2; b.add(body);
+  const base = box(bw+.1, .46, bd+.1, 0xb98a5a, .05); base.position.y = .23; b.add(base);   /* ฐานไม้กันดิน */
+  /* เสาโครงเรือนกระจก — แนวตั้ง 4 ต้นที่มุม + คานคาดกลางผนัง ให้อ่านออกว่าเป็นโครงไม่ใช่กล่องใส */
+  [-1,1].forEach(sx=>[-1,1].forEach(sz=>{
+    const ps = box(.11, bh, .11, FRAME, .02); ps.position.set(sx*bw/2, bh/2, sz*bd/2); b.add(ps);
+  }));
+  [1.02, bh-.06].forEach(y=>{
+    const rail = box(bw+.06, .09, bd+.06, FRAME, .03); rail.position.y = y; b.add(rail);
+  });
+  addRoofGable(b, bw, bd, bh, FRAME, GLASS, 1.0);
+  /* แถบกระจกพาดผืนหลังคา 2 ฝั่ง — ทำให้หลังคาอ่านเป็น "หลังคากระจก" ไม่ใช่กระเบื้องทึบ */
+  [-1,1].forEach(sd=>{
+    for(let i=0;i<3;i++){
+      const pane = box(.5,.05,bd*.92, GLASS,.02);
+      pane.rotation.z = sd*.72;
+      pane.position.set(sd*(bw*.13 + i*bw*.15), bh + .78 - i*.26, 0); b.add(pane);
+    }
+  });
+  const fz = bd/2;
+  addDoor(b, bd, 0x8f6231);
+  /* ---- ซุ้มไม้เลื้อย ----
+     ⚠ **ย้ายจากหน้าร้าน (คร่อมทางเข้า) มาไว้ "ด้านข้าง" เมื่อ 2026-08-09 ตามคำขอผู้ใช้**
+     เลือกข้าง +x เพราะกล้องไอโซมองจาก (+x,+z) ⇒ เป็นด้านข้างที่เด็กมองเห็น (ข้าง -x จะไปซ่อนหลังตัวเรือน)
+     หันซุ้มกลับ 90° (คร่อมตามแกน z) แล้ววางที่ ax=1.98 ซึ่งยัง **อยู่ในกรอบล็อต** (ครึ่งล็อต = 2.0)
+     จึงไม่ยื่นไปตั้งคร่อมช่องเดินได้ x26 · ตอนนี้หน้าร้านโล่ง เห็นประตูกับป้ายร้านเต็มๆ */
+  const ax = 1.98, az = fz*.35;
+  [-1,1].forEach(sd=>{
+    const post = cyl(.07,.07,1.5,0xb98a5a,8); post.position.set(ax,.75,az+sd*.72); b.add(post);
+  });
+  const arch = torus(.72,.07,0xb98a5a,16); arch.rotation.y = Math.PI/2; arch.position.set(ax,1.5,az); b.add(arch);
+  for(let i=0;i<7;i++){                                        /* ดอกไม้เลื้อยเกาะซุ้ม */
+    const a = Math.PI*(i/6);
+    const fl = sphere(.085,[0xff8fb3,0xffd54f,0xfffaf0,0xb388ff][i%4],8);
+    fl.position.set(ax, 1.5+Math.sin(a)*.72, az+Math.cos(a)*.72); b.add(fl);
+    const lf = sphere(.06,0x8fd694,7); lf.scale.set(1,.6,1.4);
+    lf.position.set(ax-.02, 1.5+Math.sin(a+.22)*.72, az+Math.cos(a+.22)*.72); b.add(lf);
+  }
+  /* ---- ชั้นวางกระถาง 2 ชั้น ขนาบทางเข้าซ้าย-ขวา ---- */
+  [-1,1].forEach(sd=>{
+    const rx = sd*(bw*.36);
+    const leg = box(1.24,.09,.46,0xb98a5a,.03);
+    [.34,.72].forEach((y,li)=>{
+      const shelf = leg.clone(); shelf.position.set(rx, y, fz+.42); b.add(shelf);
+      for(let i=0;i<3;i++){
+        const px = rx - .42 + i*.42, py = y + .17;
+        const pot = cyl(.13,.1,.19,[0xef8354,0xe0715c,0xd98b5a][i],10); pot.position.set(px, py, fz+.42); b.add(pot);
+        const bush = sphere(.14,0x8fd694,9); bush.scale.y = .82; bush.position.set(px, py+.2, fz+.42); b.add(bush);
+        const fl = sphere(.07,[0xff8fb3,0xffd54f,0xb388ff,0xfffaf0][(i+li+(sd>0?1:0))%4],8);
+        fl.position.set(px, py+.32, fz+.42); b.add(fl);
+      }
+    });
+    [-1,1].forEach(s2=>{ const lg = cyl(.045,.045,.72,0xb98a5a,6); lg.position.set(rx+s2*.55,.36,fz+.42); b.add(lg); });
+  });
+  /* ---- ของช่างสวนบนลานหน้าร้าน: ถังรดน้ำ · ถุงดิน · พลั่ว · กระถางต้นไม้ใหญ่ ---- */
+  const fx = fz + 1.62;                                        /* ของช่างสวนวางออกมาบนลานหน้าร้าน (เดิมอ้างอิงว่า "เลยซุ้ม" — ซุ้มย้ายไปข้างร้านแล้ว) */
+  const can = cyl(.19,.16,.28,0x6fbf73,12); can.position.set(-bw*.42,.14,fx); b.add(can);
+  const spout = cyl(.045,.045,.42,0x6fbf73,8); spout.rotation.z = -.9; spout.position.set(-bw*.42-.24,.26,fx); b.add(spout);
+  const canH = torus(.09,.022,0x4f9c58,10); canH.position.set(-bw*.42,.32,fx); b.add(canH);
+  const sack = box(.34,.3,.28,0x8d6e63,.08); sack.position.set(-bw*.42+.6,.15,fx); b.add(sack);
+  const soil = sphere(.14,0x5d4b41,9); soil.scale.y = .5; soil.position.set(-bw*.42+.6,.31,fx); b.add(soil);
+  const hnd = cyl(.035,.035,.92,0xc98d4e,6); hnd.rotation.z = .3; hnd.position.set(bw*.3,.46,fx); b.add(hnd);
+  const blade = box(.17,.22,.05,0x9fb0b8,.03); blade.rotation.z = .3; blade.position.set(bw*.3-.14,.06,fx); b.add(blade);
+  [-1,1].forEach(sd=>{                                          /* กระถางต้นไม้ใหญ่ 2 ใบขนาบทางเข้า */
+    const pot = cyl(.24,.19,.34,0xd98b5a,12); pot.position.set(sd*1.24,.17,fz+.6); b.add(pot);
+    const tr = cyl(.06,.07,.5,0x8d6e63,8); tr.position.set(sd*1.24,.58,fz+.6); b.add(tr);
+    [[0,.92,.3],[-.2,.8,.22],[.2,.82,.22]].forEach(([ox,oy,r])=>{
+      const lf = sphere(r,0x6fbf73,10); lf.scale.y = .82; lf.position.set(sd*1.24+ox,oy,fz+.6); b.add(lf);
+    });
+  });
+  /* ป้ายร้านห้อยใต้ชายคาเหนือประตู (แบบเดียวกับร้านสัตว์เลี้ยง — บนหน้าจั่วจะโดนชายคาบัง) */
+  const sfr = box(1.26,.72,.1,0xfffaf0,.05); sfr.position.set(0, 1.24, fz+.06); b.add(sfr);
+  const sfb = box(1.36,.14,.12,FRAME,.04);   sfb.position.set(0, 1.66, fz+.06); b.add(sfb);
+  const sg = signPlane(lot.icon, .58); sg.position.set(0, 1.24, fz+.13); b.add(sg);
+  addShopEmblem(b, 'flower', bh);
+  g.position.set(outWX(cx), 0, outWZ(cz));
+  return g;
+}
+
+/* ---------- ร้านของเล่น — ล็อต shop-toy (เพิ่ม 2026-08-08) ----------
+   ตั้งริมทางเดินหน้าตลาด ทางที่เด็กผ่านบ่อยสุด จึงทำให้ "สดใสสุดในแถว":
+     - ตึกหลังคาแบน + กันสาดลายทางสีรุ้งเต็มหน้าร้าน
+     - กระจกโชว์บานใหญ่ 2 บาน มีของเล่นตั้งโชว์ข้างใน (ตัวต่อ · ลูกบอล · กังหันลม)
+     - ลูกโป่ง 3 ลูกผูกเสาหน้าร้าน + ม้าโยกกับกล่องของเล่นบนทางเท้า
+   สันหลังคาเป็นตุ๊กตาหมียักษ์จาก addShopEmblem('toy') */
+function buildToyShop(lot){
+  const g = new THREE.Group();
+  const w = lot.x1-lot.x0+1, d = lot.z1-lot.z0+1;
+  const cx = (lot.x0+lot.x1)/2, cz = (lot.z0+lot.z1)/2;
+  const bw = w-.5, bd = d-2.2, bh = 2.05;         /* ตื้นกว่าล็อต 2 ช่อง → เหลือทางเท้าหน้าร้านวางของเล่น */
+  /* เลื่อนตัวอาคารมาชิดหน้าล็อตมากขึ้นเมื่อ 2026-08-09 (เดิม -.85) ตามคำขอผู้ใช้ —
+     เดิมเหลือแถบหญ้าหน้าร้านกว้างจนดูเหมือนร้านตั้งอยู่ห่างจากลานทางเดิน */
+  const b = new THREE.Group(); b.position.z = -.35; g.add(b);
+  const body = box(bw, bh, bd, lot.wall, .05); body.position.y = bh/2; b.add(body);
+  /* หลังคาแบน + แถบป้ายหนาคาดรอบ (สัญลักษณ์ร้านค้า ไม่ใช่บ้าน)
+     ⚠ ดาดฟ้าต้อง **ไม่ใช่สีขาว** — กล้องไอโซมองลงมาเห็นผืนนี้เต็มๆ ขาวโล้นแล้วอ่านเป็นแผ่นเปล่าใหญ่ๆ
+       ใช้สีหลังคาของร้าน + วางตัวต่อสีสดบนดาดฟ้าคู่กับหมี ให้อ่านเป็น "ร้านของเล่น" ตั้งแต่มองไกลๆ */
+  const slab = box(bw+.24, .16, bd+.24, lot.roof, .04); slab.position.y = bh+.08; b.add(slab);
+  const rim  = box(bw+.34, .1, bd+.34, 0xfdfbf5, .03); rim.position.y = bh+.01; b.add(rim);
+  const fascia = box(bw+.16, .5, bd+.16, lot.roof, .05); fascia.position.y = bh-.18; b.add(fascia);
+  const fstripe = box(bw+.2, .1, bd+.2, 0xfdfbf5, .03); fstripe.position.y = bh-.4; b.add(fstripe);
+  [[-1.1,-.5,0xef5f5f],[-.55,.45,0xffd54f],[1.15,-.35,0x8fd694]].forEach(([ox,oz,c])=>{
+    const cb = box(.42,.42,.42,c,.06); cb.position.set(ox, bh+.37, oz); b.add(cb);   /* ตัวต่อยักษ์บนดาดฟ้า */
+  });
+  const fz = bd/2;
+  /* ---- กระจกโชว์ 2 บาน ขนาบประตูกลาง ---- */
+  addDoor(b, bd, 0xef8354);
+  [-1,1].forEach(sd=>{
+    const px = sd*bw*.29;
+    const fr = box(1.42,1.3,.1,0xfffaf0,.05); fr.position.set(px, 1.06, fz+.02); b.add(fr);
+    const gl = box(1.22,1.12,.08,0xbfe8f7,.03); gl.position.set(px, 1.06, fz+.06); b.add(gl);
+    const sill = box(1.48,.12,.24,lot.roof,.03); sill.position.set(px, .42, fz+.1); b.add(sill);
+    if(sd < 0){                                   /* บานซ้าย: ตัวต่อไม้ 3 ชั้นสีสด */
+      [[0,.62,0xef5f5f],[-.16,.82,0xffd54f],[.14,.82,0x7fc4e8],[0,1.02,0x8fd694]].forEach(([ox,y,c])=>{
+        const cb = box(.26,.26,.2,c,.04); cb.position.set(px+ox, y, fz+.14); b.add(cb);
+      });
+      const ball = sphere(.19,0xff8fb3,12); ball.position.set(px+.42,.66,fz+.16); b.add(ball);
+    }else{                                        /* บานขวา: กังหันลม + ลูกข่าง */
+      const st = cyl(.03,.03,.72,0xfffaf0,6); st.position.set(px-.1,.82,fz+.14); b.add(st);
+      for(let i=0;i<4;i++){
+        const pt = box(.28,.16,.03,[0xff8fb3,0xffd54f,0x7fc4e8,0x8fd694][i],.02);
+        pt.rotation.z = i*Math.PI/2 + .35;
+        pt.position.set(px-.1 + Math.cos(i*Math.PI/2+.35)*.17, 1.18 + Math.sin(i*Math.PI/2+.35)*.17, fz+.16); b.add(pt);
+      }
+      const top = cone(.17,.26,0xb388ff,10); top.rotation.x = Math.PI; top.position.set(px+.34,.62,fz+.16); b.add(top);
+      const tip = cyl(.02,.02,.12,0xfffaf0,6); tip.position.set(px+.34,.79,fz+.16); b.add(tip);
+    }
+  });
+  /* ---- กันสาดลายทางสีรุ้งเต็มหน้าร้าน ---- */
+  const RB = [0xef5f5f,0xffa44f,0xffd54f,0x8fd694,0x7fc4e8,0xb388ff];
+  const n = 12, sw = (bw+.1)/n;
+  for(let i=0;i<n;i++){
+    const st = box(sw, .08, .82, RB[i%RB.length], .02);
+    st.position.set(-(bw+.1)/2 + sw*(i+.5), 1.92, fz+.36); st.rotation.x = -.34; b.add(st);
+  }
+  /* ---- ป้ายร้านบนแถบ fascia ---- */
+  const sfr = box(1.3,.62,.08,0xfffaf0,.05); sfr.position.set(0, bh-.14, fz+.12); b.add(sfr);
+  const sg = signPlane(lot.icon, .54); sg.position.set(0, bh-.14, fz+.18); b.add(sg);
+  /* ---- ลูกโป่ง 3 ลูกผูกเสาหน้าร้าน ---- */
+  const bpx = -bw*.5 - .12;
+  const pole = cyl(.05,.05,1.5,0xfffaf0,8); pole.position.set(bpx,.75,fz+.7); b.add(pole);
+  [[0xef5f5f,-.24,1.98,.62],[0xffd54f,.02,2.16,.7],[0x7fc4e8,.26,1.94,.66]].forEach(([c,ox,y,oz])=>{
+    const th = cyl(.012,.012,.7,0xf7f3ee,4); th.position.set(bpx+ox*.5, y-.52, fz+oz); b.add(th);
+    const bl = sphere(.19,c,12); bl.scale.y = 1.18; bl.position.set(bpx+ox, y, fz+oz); b.add(bl);
+    const kn = cone(.05,.09,c,6); kn.position.set(bpx+ox, y-.24, fz+oz); b.add(kn);
+  });
+  /* ---- ของบนทางเท้า: ม้าโยก + กล่องของเล่นเปิดฝา ---- */
+  const hx = bw*.34, hz = fz + 1.05;
+  const rock = box(.62,.09,.24,0xef8354,.04); rock.position.set(hx,.13,hz); rock.rotation.z = .06; b.add(rock);
+  const hbody = box(.44,.3,.2,0xffd54f,.07); hbody.position.set(hx,.42,hz); b.add(hbody);
+  const hhead = box(.24,.26,.18,0xffd54f,.06); hhead.position.set(hx+.24,.66,hz); b.add(hhead);
+  const hear = cone(.05,.1,0xef8354,6); hear.position.set(hx+.2,.82,hz); b.add(hear);
+  const hey = sphere(.03,0x3a2f28,8); hey.position.set(hx+.3,.68,hz+.09); b.add(hey);
+  const mane = box(.08,.24,.16,0xef5f5f,.04); mane.position.set(hx+.12,.66,hz); b.add(mane);
+  const bx = -bw*.14, bz = fz + 1.08;
+  const boxb = box(.52,.34,.4,0x7fc4e8,.05); boxb.position.set(bx,.17,bz); b.add(boxb);
+  const lid = box(.54,.07,.42,0x5aa9e6,.03); lid.rotation.x = -.7; lid.position.set(bx,.44,bz-.2); b.add(lid);
+  [[0xff8fb3,-.12,.42],[0xffd54f,.06,.46],[0x8fd694,.16,.4]].forEach(([c,ox,y])=>{
+    const tb = sphere(.1,c,9); tb.position.set(bx+ox,y,bz+.04); b.add(tb);
+  });
+  addShopEmblem(b, 'toy', bh - .45);   /* หลังคาแบน → ลดความสูงให้ฐานหมีไปตกบนขอบ fascia พอดี (แบบ minimart) */
   g.position.set(outWX(cx), 0, outWZ(cz));
   return g;
 }
@@ -3298,6 +3511,8 @@ function buildLotBuilding(lot){
   if(lot.shopKind==='pet')  return buildPetShop(lot);
   if(lot.shopKind==='mart') return buildMinimart(lot);     /* ร้านสะดวกซื้อ — ตึกหลังคาแบน ไม่ใช้ทรงบ้าน */
   if(lot.shopKind==='music') return buildMusicShop(lot);   /* ร้านเครื่องดนตรี — ตึก 2 ชั้นหลังคาแบน */
+  if(lot.shopKind==='garden') return buildGardenShop(lot); /* ร้านต้นไม้ — เรือนกระจกเพาะชำ */
+  if(lot.shopKind==='toy')   return buildToyShop(lot);     /* ร้านของเล่น — ตึกหลังคาแบน กันสาดสีรุ้ง */
   if(lot.kind==='mall') return buildMall(lot);
   if(lot.kind==='lab') return buildScienceLab(lot);
   if(lot.kind==='school') return buildSchoolBuilding(lot);
@@ -4145,6 +4360,24 @@ function flowerTiles(){
    กระบะไม้เตี้ยๆ + ดินนูน + ดอกไม้กลีบมนหลากสี (ทรงเดียวกับดอกไม้เล็กในทุ่ง แต่จัดเป็นแปลงให้ดูเป็นสวน)
    สุ่มตำแหน่ง/สีดอกด้วยเลขสุ่มของตัวเอง (ไม่ใช้ rnd ของ wildLayout) แปลงเดิมจะได้หน้าตาเหมือนเดิมทุกครั้ง */
 const BED_PETAL_COLORS = [0xff8fb3, 0xffd54f, 0xb388ff, 0xff8a65, 0x9be7ff, 0xfff0f5];
+/* กระถางต้นไม้ตั้งพื้น (POT_SPOTS) — กระถางดินเผาปากบาน + พุ่มใบ 3 ก้อน + ดอกไม้แซม
+   สี/ทรงสุ่มจากพิกัดช่อง จึงคงที่ทุกครั้งที่เข้าเกม (ไม่กระโดดไปมา) และกระถางแต่ละใบไม่เหมือนกันเป๊ะ */
+function buildPotPlant(x, z){
+  const g = new THREE.Group();
+  const k = (x*7 + z*13) % 4;
+  const potC = [0xd98b5a, 0xef8354, 0xe0715c, 0xc98d4e][k];
+  const flC  = [0xff8fb3, 0xffd54f, 0xb388ff, 0xfffaf0][(x + z) % 4];
+  const pot = cyl(.3,.22,.42, potC, 12); pot.position.y = .21; g.add(pot);
+  const rim = cyl(.33,.33,.09, potC, 12); rim.position.y = .4;  g.add(rim);
+  const soil= cyl(.27,.27,.05, 0x5d4b41, 12); soil.position.y = .44; g.add(soil);
+  [[0,.68,.28],[-.19,.58,.2],[.19,.6,.2]].forEach(([ox,oy,r])=>{
+    const lf = sphere(r, 0x6fbf73, 10); lf.scale.y = .84; lf.position.set(ox, oy, 0); g.add(lf);
+  });
+  [[-.12,.78,.05],[.14,.74,.11],[0,.9,-.08]].forEach(([ox,oy,oz])=>{
+    const fl = sphere(.075, flC, 8); fl.position.set(ox, oy, oz); g.add(fl);
+  });
+  return g;
+}
 function buildFlowerBed(b, seed){
   const g = new THREE.Group();
   const w = b.x1 - b.x0 + 1, d = b.z1 - b.z0 + 1;
@@ -4567,7 +4800,7 @@ function buildCart(kind){
   const tone = {fruit:0xef8354, ice:0x7fc4e8, noodle:0xe4574a, balloon:0xb388ff,
                 meatball:0xe4574a, sausage:0xef8354, tokyo:0xffc857, snack:0x5aa9e6,
                 smoothie:0xb388ff, popcorn:0xe36f5c, cotton:0xef8fa5, toy:0x6fbf73,
-                milk:0x9ad9f0, shave:0xffd54f}[kind] || 0xef8354;
+                milk:0x9ad9f0, shave:0xffd54f, magic:0x7e57c2}[kind] || 0xef8354;
   const body = box(1.15,.5,.72,0xf3e7d6,.06); body.position.y = .55; g.add(body);
   const trim = box(1.2,.12,.78,tone,.04); trim.position.y = .78; g.add(trim);
   const base = box(1.0,.1,.6,0xc98d4e,.03); base.position.y = .3; g.add(base);
@@ -4701,6 +4934,23 @@ function buildCart(kind){
     [[.44,-.14,0xe4574a],[.5,.04,0x8fd694],[.44,.2,0xffd54f]].forEach(([ox,oz,c])=>{   /* ขวดน้ำหวาน */
       const bo = cyl(.05,.055,.22, c,8); bo.position.set(ox,.95,oz); g.add(bo);
       const cp = cyl(.03,.03,.05, 0xfffaf0,6); cp.position.set(ox,1.09,oz); g.add(cp);
+    });
+  }else if(kind==='magic'){                            /* รถเข็นนักมายากล — หมวกทรงสูงมีกระต่ายโผล่ + ไม้กายสิทธิ์ + ไพ่ + ดาว
+                                                          (เพิ่ม 2026-08-09 พร้อม npc-magician ที่ลานหน้าร้านของเล่น) */
+    const brim = cyl(.28,.28,.05, 0x3a3540,14); brim.position.set(-.3,.86,0); g.add(brim);
+    const crown= cyl(.19,.19,.34, 0x3a3540,14); crown.position.set(-.3,1.05,0); g.add(crown);
+    const band = cyl(.2,.2,.08, 0xb388ff,14);   band.position.set(-.3,.93,0); g.add(band);
+    const rb   = sphere(.11,0xfbf7f0,10); rb.position.set(-.3,1.28,0); g.add(rb);            /* หัวกระต่ายโผล่ปากหมวก */
+    [-1,1].forEach(s=>{ const er = cyl(.035,.045,.2, 0xfbf7f0,8); er.position.set(-.3+s*.07,1.44,0); g.add(er); });
+    [-1,1].forEach(s=>{ const ey = sphere(.02,0x3a3540,6); ey.position.set(-.3+s*.045,1.3,.1); g.add(ey); });
+    const wand = cyl(.022,.022,.36, 0x3a3540,6); wand.rotation.z = -.55; wand.position.set(.12,1.06,-.06); g.add(wand);
+    const wtip = cyl(.028,.028,.07, 0xfbf7f0,6); wtip.rotation.z = -.55; wtip.position.set(.2,1.19,-.06); g.add(wtip);
+    [[.3,-.1,0xe4574a],[.4,.06,0xfbf7f0]].forEach(([ox,oz,c])=>{                             /* ไพ่วางเรียงบนรถ */
+      const cd = box(.16,.02,.12, c,.01); cd.rotation.y = (ox-.3)*3; cd.position.set(ox,.92,oz); g.add(cd);
+    });
+    [[.06,1.4,.11],[.36,1.34,.085],[.24,1.5,.07]].forEach(([ox,oy,r])=>{                     /* ดาววิบวับลอยเหนือรถ */
+      const stq = box(r,r,.03, 0xffd54f,.01); stq.rotation.z = .78; stq.position.set(ox,oy,.06); g.add(stq);
+      const st2 = box(r,r,.03, 0xffd54f,.01); st2.position.set(ox,oy,.06); g.add(st2);
     });
   }else{                                               /* รถเข็นลูกโป่ง */
     const str = cyl(.03,.03,.7,0xf7f3ee,6); str.position.set(.3,1.5,0); g.add(str);
@@ -5571,7 +5821,21 @@ function buildVillager(lk, animated){
   } else if(P === 'bowl'){
     const bw = cyl(.16,.09,.14,0xfbf7f0,10); bw.position.set(.36,.66,.12); hold.add(bw);
     const nd = sphere(.12,0xe8b46a,8); nd.scale.y = .5; nd.position.set(.36,.73,.12); hold.add(nd);
+  } else if(P === 'wand'){                                 /* ไม้กายสิทธิ์ปลายขาว + ดาวเล็กที่ปลาย (พี่มายากล) */
+    const wd = cyl(.024,.024,.34,0x3a3540,6); wd.rotation.z = -.5; wd.position.set(.36,.74,.12); hold.add(wd);
+    const tp = cyl(.03,.03,.08,0xfbf7f0,6);  tp.rotation.z = -.5; tp.position.set(.28,.9,.12); hold.add(tp);
+    [0,1].forEach(i=>{ const st = box(.1,.1,.025,0xffd54f,.01); st.rotation.z = i ? .78 : 0;
+      st.position.set(.25,.96,.12); hold.add(st); });
   }
+  /* ⚠ ต้องล้าง "ค่าชั่วคราวตอนสร้าง" ทิ้งก่อน merge เสมอ —
+     hairShell/addHatHair จด `_hairTop`/`_hairW` ไว้บน head.userData ให้หน้าม้ากับหมวกอ้างอิงตอนประกอบร่าง
+     แต่ `mergeDecorGroup()` **ยกเลิกการรวมทันทีที่เจอ userData บนลูกตัวใดตัวหนึ่ง** (กันไปโดนบานพับ/หลอดไฟ)
+     ⇒ ที่ผ่านมา NPC ที่มีผม (คือเกือบทุกคน) ไม่เคยถูก merge เลย กลายเป็นคนละ ~27-42 draw call
+       ทั้งที่คอมเมนต์ในโค้ดเขียนว่ารวมเหลือคนละ 1 — เจอตอนไล่หาเหตุเฟรมเรตตกที่ตลาด 2026-08-09
+     **ห้ามเอาบรรทัดนี้ออก และถ้าเพิ่มค่าชั่วคราวใหม่ตอนสร้างตัวละคร ต้องมาล้างที่นี่ด้วย**
+     ⚠ ต้องล้างที่ `core` ไม่ใช่ `g` — ตรงจุดนี้ core ยังไม่ถูก add เข้า b/g (เพิ่งไปต่อในบล็อกข้างล่าง)
+       traverse จาก g จะไปไม่ถึงหัวเลย (พลาดมาแล้วรอบแรก) */
+  clearBuildScratch(core);
   if(animated){
     /* merge ทีละกลุ่มตอน matrix ยังเป็น identity → พิกัดที่ bake คือพิกัดภายในกลุ่มนั้นล้วนๆ
        แล้วค่อยตั้งตำแหน่งจุดหมุน (สะโพก/ไหล่) ทีหลัง — แขนขาจึงยังหมุนได้ทั้งที่รวม mesh แล้ว */
@@ -6012,6 +6276,11 @@ function buildStaticScenery(){
     pr.rotation.y = ((x*5+z*3)%4) * Math.PI/2;
     mergeCollectFx(pr, parts, chunkKeyOf(x, z));
   });
+  POT_SPOTS.forEach(([x,z])=>{                       /* กระถางต้นไม้ตั้งพื้นตามซอกข้างร้าน */
+    const pt = buildPotPlant(x, z);
+    pt.position.set(outWX(x), 0, outWZ(z));
+    mergeCollectFx(pt, parts, chunkKeyOf(x, z));
+  });
   /* ท่าไม้ + คนตกปลาริมบ่อ (ฝั่งบ้านเด็ก) + เป็ดลอยน้ำ — rot 2 = ยื่น/หันไปทางทิศเหนือ (-x) */
   const pier = buildPier(POND_PIER.len);
   pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
@@ -6189,7 +6458,7 @@ function buildOutGrid(noWild){
     if(grid[z][x]===0 && (isPenFenceTile(x, z) || isSchoolFenceTile(x, z) || inBox(STAGE, x, z) || inFlowerBed(x, z)
        || inPool(x, z))) grid[z][x] = 3;
   if(grid[SCHOOL_FLAG.z] && grid[SCHOOL_FLAG.z][SCHOOL_FLAG.x]===0) grid[SCHOOL_FLAG.z][SCHOOL_FLAG.x] = 3;   /* เสาธงหน้าโรงเรียน */
-  FARM_PROPS.concat(BANNER_POLES, BENCH_SPOTS, CART_SPOTS, CARPENTER_PROPS, POOL_PROPS, PET_PEN_PROPS)
+  FARM_PROPS.concat(BANNER_POLES, BENCH_SPOTS, CART_SPOTS, CARPENTER_PROPS, POOL_PROPS, PET_PEN_PROPS, POT_SPOTS)
     .forEach(([x,z])=>{ if(grid[z] && grid[z][x]===0) grid[z][x] = 3; });
   /* ป้ายเมนูสามเหลี่ยมหน้าร้านอาหาร: ตัวป้ายตั้งพื้นเต็มช่อง ต้องบล็อกด้วย ไม่งั้นเดินทะลุป้ายได้ */
   if(grid[FOOD_SIGN.z] && grid[FOOD_SIGN.z][FOOD_SIGN.x]===0) grid[FOOD_SIGN.z][FOOD_SIGN.x] = 3;
@@ -6635,7 +6904,9 @@ function findPath(grid, W, D, from, to, avoid){
     for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const nx=c.x+dx, nz=c.z+dz, k=nz*W+nx;
       if(!isWalk(grid,W,D,nx,nz) || seen.has(k)) continue;
-      if(avoid && nx===avoid.x && nz===avoid.z) continue;
+      /* avoid = ช่องที่ห้ามเดินผ่าน — ส่งเป็นช่องเดียว {x,z} หรือฟังก์ชัน (x,z)=>bool ก็ได้
+         (ชาวบ้านส่งฟังก์ชันมากันไม่ให้เดินเข้าบริเวณบ้านเด็ก ดู npcNoHome) */
+      if(avoid && (typeof avoid === 'function' ? avoid(nx, nz) : (nx===avoid.x && nz===avoid.z))) continue;
       seen.add(k); prev.set(k,c);
       if(nx===to.x && nz===to.z){
         const path = [{x:nx,z:nz}];
@@ -6926,6 +7197,12 @@ function tapStaticScene(pt){
   const gx = Math.round(pt.x + (OUT_W-1)/2), gz = Math.round(pt.z + (OUT_D-1)/2);
   if(gx<0 || gz<0 || gx>=OUT_W || gz>=OUT_D) return;
   if(shakeTreeLeaves(gx, gz)) return;               /* แตะโดนต้นไม้/พุ่ม → ใบไม้ร่วง (ไม่ต้องเดินไป) */
+  /* ⚠ ต้องเช็ค "ช่องนี้เป็นที่นั่ง" **ก่อน** บล็อกถนน/ลานข้างล่างเสมอ (แก้เมื่อ 2026-08-09)
+     ม้านั่งในเมืองเกือบทุกตัวตั้งอยู่บนลานน้ำพุ/ลานกิจกรรม/ริมถนน ⇒ ช่องของมันเข้าเงื่อนไข
+     isVillageRoadTile/isPlazaTile ด้วย พอบล็อกนั้น return ทิ้งก่อน โค้ด seatNear ข้างล่างจึงไม่เคยถูกเรียก
+     ผลคือ **แตะม้านั่งในเมืองแล้วเด็กเดินไปเฉยๆ นั่งไม่ได้เลย** (ม้านั่งในสวน/ริมทุ่งที่อยู่บนหญ้ายังนั่งได้ปกติ) */
+  const seatHere = seatMap.get(gx + ',' + gz);
+  if(seatHere){ sitOnSeat(seatHere); return; }
   /* ทางเดินในทุ่ง/ถนน/ลาน = พื้นธรรมดา — เดินไปเฉยๆ ไม่มีเสียง ไม่หันหน้าเข้าหา
      (ถนนในเมืองเป็น instanced mesh ที่ไม่มี tag จึงเป็นแบบนี้อยู่แล้ว แต่ทางเดินในทุ่งถูก merge
       รวมกับฉากตายตัว เลยไปเข้าเงื่อนไข "แตะพุ่มหญ้า" ทำให้มีเสียงและเด็กหันหน้าเข้าหา) */
@@ -8415,6 +8692,7 @@ function spawnNpcs(){
       const x0 = full ? 0 : d.roam.x0, x1 = full ? OUT_W-1 : d.roam.x1;
       for(let z=z0; z<=z1; z++) for(let x=x0; x<=x1; x++)
         if(isWalk(outGrid, OUT_W, OUT_D, x, z)
+           && !inHomeZone(x, z)                                /* ห้ามเข้าบริเวณบ้านเด็ก (ดู npcNoHome) */
            && !(d.roam.nearShop && isVillageRoadTile(x, z))    /* แม่ค้าเดินอยู่หน้าร้าน ไม่ลงไปกลางถนน */
            && !(d.roam.town && !isVillageRoadTile(x, z) && !isPlazaTile(x, z)))
           n.tiles.push({x, z});
@@ -8548,6 +8826,7 @@ function npcNudge(n, dx, dz){
   }
   const gx = Math.round(x + (OUT_W-1)/2), gz = Math.round(z + (OUT_D-1)/2);
   if(!isWalk(outGrid, OUT_W, OUT_D, gx, gz)) return false;
+  if(inHomeZone(gx, gz)) return false;                       /* ห้ามถูกดันเข้าไปในบริเวณบ้านเด็ก */
   n.g.position.x = x; n.g.position.z = z;
   return true;
 }
@@ -8580,13 +8859,19 @@ function separateNpcs(dt){
 /* ช่องเดินได้ที่ใกล้ที่สุดจากพิกัดที่ให้มา (ถ้าช่องนั้นเดินได้อยู่แล้วก็คืนช่องเดิม)
    ใช้กับทั้งช่องที่ชาวบ้านยืนอยู่และช่องปลายทาง — เผื่อช่องนั้นโดนของฉาก/เสาไฟ/ต้นไม้บล็อกทีหลัง
    ถ้าไม่มีตัวช่วยนี้ findPath จะคืนค่าว่างซ้ำๆ ชาวบ้านจะยืนนิ่งนานผิดปกติเหมือนติดค้าง */
+/* ⚠ **ชาวบ้านห้ามเดินเข้าบริเวณบ้านเด็ก** (คำขอผู้ใช้ 2026-08-09) — บ้านของเด็กเป็นพื้นที่ส่วนตัว
+   กันไว้ 4 จุดให้ครบ ไม่งั้นยังหลุดเข้าไปได้ทางใดทางหนึ่ง: กรอบเดินเล่น (n.tiles) · ปลายทาง (npcWalkTile)
+   · เส้นทางที่เดินผ่าน (findPath avoid) · การถูกดันตอนเบียดกัน (npcNudge)
+   เช็คจาก inHomeZone อย่างเดียว จึงเลื่อนตามกรอบบ้านเองอัตโนมัติถ้าวันหลังย่อ/ขยายกรอบอีก */
+const npcNoHome = (x, z) => inHomeZone(x, z);
 function npcWalkTile(x, z, r){
-  if(isWalk(outGrid, OUT_W, OUT_D, x, z)) return {x, z};
+  const ok = (px, pz) => isWalk(outGrid, OUT_W, OUT_D, px, pz) && !inHomeZone(px, pz);
+  if(ok(x, z)) return {x, z};
   const R = r || 3;
   for(let d=1; d<=R; d++)
     for(let dz=-d; dz<=d; dz++) for(let dx=-d; dx<=d; dx++){
       if(Math.max(Math.abs(dx), Math.abs(dz)) !== d) continue;
-      if(isWalk(outGrid, OUT_W, OUT_D, x+dx, z+dz)) return {x: x+dx, z: z+dz};
+      if(ok(x+dx, z+dz)) return {x: x+dx, z: z+dz};
     }
   return null;
 }
@@ -8606,7 +8891,7 @@ function updateNpcs(dt, t){
         if(n.wait <= 0){
           const cur = npcWalkTile(Math.round(g.position.x + (OUT_W-1)/2), Math.round(g.position.z + (OUT_D-1)/2));
           const dst = npcWalkTile(n.route[n.rIdx][0], n.route[n.rIdx][1]);
-          n.path = (cur && dst) ? (findPath(outGrid, OUT_W, OUT_D, cur, dst) || []) : [];
+          n.path = (cur && dst) ? (findPath(outGrid, OUT_W, OUT_D, cur, dst, npcNoHome) || []) : [];
           n.rIdx = (n.rIdx + 1) % n.route.length;
           if(!n.path.length) n.wait = 2 + Math.random()*3;   /* ไปต่อไม่ได้ → พักแล้วลองจุดถัดไป */
         }
@@ -8629,7 +8914,7 @@ function updateNpcs(dt, t){
           let spot = n.tiles[(Math.random()*n.tiles.length)|0];
           for(let a=0; a<4 && cur && spot.x===cur.x && spot.z===cur.z; a++) spot = n.tiles[(Math.random()*n.tiles.length)|0];
           const tl = npcWalkTile(spot.x, spot.z);
-          n.path = (cur && tl) ? (findPath(outGrid, OUT_W, OUT_D, cur, tl) || []) : [];
+          n.path = (cur && tl) ? (findPath(outGrid, OUT_W, OUT_D, cur, tl, npcNoHome) || []) : [];
           n.wait = n.path.length ? 0 : .6 + Math.random()*1.5;   /* ไปช่องนั้นไม่ได้ → พักแล้วสุ่มช่องใหม่ */
         }
       }
@@ -9603,23 +9888,32 @@ function saveDecor(){
     in:  decorGroups.in.map(g=>g.userData.deco.rec),
   }});
 }
+/* แถวรั้วรอบบริเวณบ้าน (คำนวณจาก YARD/GATE_TILES ทุกครั้ง) — ใช้ทั้งตอน seed เด็กใหม่
+   และตอน migrate เด็กเก่าให้ได้รั้วแนวใหม่ (ดู migrateHouseMap ข้อ mapV 4) */
+function fenceSeedRecs(){
+  const out = [];
+  /* มุมรั้ว 4 มุม (L หมุนตามมุม: บนซ้าย=0, ล่างซ้าย=1, ล่างขวา=2, บนขวา=3) */
+  out.push({id:'fence-corner', x:YARD.x0, z:YARD.z0, rot:0, col:0});
+  out.push({id:'fence-corner', x:YARD.x0, z:YARD.z1, rot:1, col:0});
+  out.push({id:'fence-corner', x:YARD.x1, z:YARD.z1, rot:2, col:0});
+  out.push({id:'fence-corner', x:YARD.x1, z:YARD.z0, rot:3, col:0});
+  /* รั้วตรงระหว่างมุม (ข้ามช่องมุม) — แนวนอนบน/ล่าง (rot 0), แนวตั้งซ้าย/ขวา (rot 1) */
+  [YARD.z0, YARD.z1].forEach(fz=>{ for(let x=YARD.x0+1; x<=YARD.x1-1; x++){ if(isFenceTile(x,fz)) out.push({id:'fence-seg', x, z:fz, rot:0, col:0}); } });
+  [YARD.x0, YARD.x1].forEach(fx=>{ for(let z=YARD.z0+1; z<=YARD.z1-1; z++){ if(isFenceTile(fx,z)) out.push({id:'fence-seg', x:fx, z, rot:1, col:0}); } });
+  return out;
+}
 /* seed ต้นไม้/รั้ว/บ้านสัตว์เลี้ยงเริ่มต้นเป็น decor ที่ย้าย/ลบได้ (ครั้งเดียวต่อเด็ก, ตำแหน่งเดิมเป๊ะ) */
 function seedWorldDecor(data){
   data = data || {};
   const decor = data.decor || {out:[], in:[]};
   const seed = [];
   /* กรองต้นไม้ที่ทับตัวบ้าน/รั้วสนาม/แถบหน้าบ้าน ออกก่อน seed (เด็กย้ายมาวางเองทีหลังได้ตามใจ) */
-  TREES.filter(([x,z]) => !inBox(HOUSE_VIEW, x, z) && !isFenceTile(x, z) &&
+  /* ⚠ ต้องกรอง inHomeZone ด้วย — กรอบบริเวณบ้านย่อลงเมื่อ 2026-08-09 ต้นไม้ seed บางต้นเลยตกนอกกรอบ
+     ถ้าปล่อยไว้ เด็กจะเจอต้นไม้ที่ "ขยับ/ลบไม่ได้" เพราะอยู่นอกกรอบตกแต่ง (ช่องที่ว่างลงเป็นป่าปกติแทน) */
+  TREES.filter(([x,z]) => inHomeZone(x, z) && !inBox(HOUSE_VIEW, x, z) && !isFenceTile(x, z) &&
                           !inBox(HOUSE_FOOT, x, z) && !(x===PET_HOUSE_TILE.x && z===PET_HOUSE_TILE.z))
        .forEach(([x,z])=>{ seed.push({id:'tree', x, z, rot:(x*7+z*13)%4, col:(x+z)%4}); });
-  /* มุมรั้ว 4 มุม (L หมุนตามมุม: บนซ้าย=0, ล่างซ้าย=1, ล่างขวา=2, บนขวา=3) */
-  seed.push({id:'fence-corner', x:YARD.x0, z:YARD.z0, rot:0, col:0});
-  seed.push({id:'fence-corner', x:YARD.x0, z:YARD.z1, rot:1, col:0});
-  seed.push({id:'fence-corner', x:YARD.x1, z:YARD.z1, rot:2, col:0});
-  seed.push({id:'fence-corner', x:YARD.x1, z:YARD.z0, rot:3, col:0});
-  /* รั้วตรงระหว่างมุม (ข้ามช่องมุม) — แนวนอนบน/ล่าง (rot 0), แนวตั้งซ้าย/ขวา (rot 1) */
-  [YARD.z0, YARD.z1].forEach(fz=>{ for(let x=YARD.x0+1; x<=YARD.x1-1; x++){ if(isFenceTile(x,fz)) seed.push({id:'fence-seg', x, z:fz, rot:0, col:0}); } });
-  [YARD.x0, YARD.x1].forEach(fx=>{ for(let z=YARD.z0+1; z<=YARD.z1-1; z++){ if(isFenceTile(fx,z)) seed.push({id:'fence-seg', x:fx, z, rot:1, col:0}); } });
+  fenceSeedRecs().forEach(r=>seed.push(r));
   /* rot:0 = ประตูหันไปทาง +z ทิศเดียวกับประตูบ้านเด็ก (ทางเดินหน้าบ้านก็ทอดไป +z) และเป็นด้านที่
      กล้อง iso มองเห็น (ของเดิม rot:3 ประตูหันหลังให้กล้อง เด็กไม่เห็นทั้งประตูและตัวที่เข้าไปนอนรอ) */
   /* ⚠ เฟส 3A: **ไม่ seed บ้านสัตว์ให้ทุกคนแล้ว** (ข้อ 18.1 — ไม่มีสัตว์ = ไม่มีบ้านสัตว์)
@@ -11016,5 +11310,12 @@ $('house-rot-right').addEventListener('click', ()=>{
 /* หน้าหลักเปิดค้างอยู่แล้วตอนไฟล์นี้โหลดเสร็จ (เช่น reload กลางเซสชัน) → โชว์เพื่อนซี้เลย
    กรณีปกติ (เลือกโปรไฟล์เด็กก่อน) renderHome ใน app.js จะเรียกให้เอง */
 if(!homeView.hidden) houseBuddyRefresh();
-/* DEBUG-TEMP */ window.__houseDbg = {tp:(x,z)=>{ charGroup.position.set(outWX(x),0,outWZ(z)); }, grid:()=>outGrid};
+/* DEBUG-TEMP */ window.__houseDbg = {
+  tp:(x,z)=>{ charGroup.position.set(outWX(x),0,outWZ(z));
+              hChar.tile.x = x; hChar.tile.z = z; hChar.path = []; hChar.walking = false; },
+  grid:()=>outGrid,
+  npcTiles:()=>npcs.filter(n=>(n.tiles||[]).some(t=>inHomeZone(t.x,t.z))).map(n=>n.def.id),
+  /* จำลอง "แตะฉากตรงช่องนี้" ผ่านทางเดินโค้ดจริงทั้งเส้น (ใช้เทสว่าม้านั่งในเมืองนั่งได้จริงไหม) */
+  tapScene:(x,z)=>tapStaticScene(new THREE.Vector3(outWX(x),0,outWZ(z))),
+  sitting:()=>!!sitState, tile:()=>({x:hChar.tile.x, z:hChar.tile.z})};
 })();

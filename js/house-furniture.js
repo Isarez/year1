@@ -395,7 +395,9 @@
       { id:'trampoline', name:'แทรมโพลีน', cat:'play', scope:'out', emoji:'🤸', fw:2, fd:2, colors:[0x42a5f5,0x66bb6a,0xef5350],
         action:'bounce',
         build(g,col){
-          const ring=torus(.75,.08,col,20); ring.position.y=.5; g.add(ring);
+          /* ⚠ torus() คืนวงที่ "ตั้งฉาก" (TorusGeometry อยู่บนระนาบ XY) ⇒ ห่วงที่ต้องวางแบน
+             ต้อง rotation.x=Math.PI/2 เสมอ — เดิมลืมใส่ ขอบแทรมโพลีนเลยตั้งขึ้นเหมือนล้อรถคาเบาะ */
+          const ring=torus(.75,.08,col,20); ring.rotation.x=Math.PI/2; ring.position.y=.5; g.add(ring);
           const mat_=cyl(.7,.7,.04,0x37474f,24); mat_.position.y=.5; g.add(mat_);
           for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const L=cyl(.04,.04,.5,shade(col,.8),8); L.position.set(Math.cos(a)*.7,.25,Math.sin(a)*.7); g.add(L); }
         } },
@@ -510,7 +512,7 @@
         build(g,col){
           const water=cyl(.85,.85,.06,col,24); water.position.y=.03;
           water.userData.anim={kind:'pulse', sp:.45, amp:.015}; g.add(water);   /* ผิวน้ำกระเพื่อมช้าๆ */
-          const rim=torus(.85,.07,0x9e9e9e,24); rim.position.y=.05; g.add(rim);
+          const rim=torus(.85,.07,0x9e9e9e,24); rim.rotation.x=Math.PI/2; rim.position.y=.05; g.add(rim);   /* ขอบบ่อวางแบน (ลืม rotation.x เหมือนแทรมโพลีน) */
           const lily=cyl(.14,.14,.02,0x66bb6a,10); lily.position.set(.3,.07,.2);
           lily.userData.anim={kind:'bob', sp:.7, amp:.03}; g.add(lily);
           const flower=ball(.06,0xf48fb1,8); flower.position.set(.3,.1,.2);

@@ -337,10 +337,12 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(furn.open).toBe(true);
   expect(furn.cards).toBeGreaterThan(0);
   const ft = await tabState();
-  expect(ft.tabs).toBe(10);                     // 6 หมวดในบ้าน + 4 หมวดนอกบ้าน (ยังไม่แยกไปร้านอื่นจนเฟส 2-3)
-  expect(ft.secs).toBe(2);                      // หัวข้อกลุ่ม: ในบ้าน / นอกบ้าน
+  /* 6 หมวดในบ้านล้วน — ของนอกบ้านย้ายไปร้านต้นไม้/ร้านของเล่นแล้วเมื่อ 2026-08-08 (ข้อ 17.4)
+     กลุ่มเดียวจึงไม่ต้องมีหัวข้อกลุ่มคั่น */
+  expect(ft.tabs).toBe(6);
+  expect(ft.secs).toBe(0);
   expect(ft.wrap).toBe('wrap');
-  expect(ft.clippedY).toBe(0);                  // 10 หมวด + 2 หัวข้อ ต้องเห็นครบพร้อมกัน ไม่ถูกตัด
+  expect(ft.clippedY).toBe(0);                  // ต้องเห็นหมวดครบพร้อมกัน ไม่ถูกตัด
   expect(ft.outsideX).toBe(0);
   expect(ft.icons).toBe(ft.tabs);               // ทุกหมวดต้องมีไอคอน SVG
   expect(ft.ovfY).toBe('visible');              // ห้ามมี scrollbar ที่แถบหมวด
@@ -370,4 +372,111 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
 
   await page.evaluate(() => window.HouseShop.close());
   expect(await page.evaluate(() => document.getElementById('house-shop').hidden)).toBe(true);
+});
+
+/* ---------- ร้านใหม่ 2 ร้าน + ย้ายหมวดของนอกบ้าน (2026-08-08 · ข้อ 17.4 ของ QUEST-DESIGN.md) ----------
+   ของนอกบ้านเคยขายรวมอยู่ในห้างเฟอร์นิเจอร์ ย้ายมาร้านต้นไม้/ร้านของเล่นแล้ว
+   ⚠ จุดที่พังแล้วเจ็บที่สุด = **มีหมวดตกหล่นไม่มีร้านไหนขาย** เด็กจะซื้อของหมวดนั้นไม่ได้ตลอดกาล
+     (ผิดกติกาเหล็กข้อ 1 "ห้ามมี dead end") — เทสข้อแรกคือตัวดักเรื่องนี้ */
+test('ทุกหมวดเฟอร์นิเจอร์ต้องมีร้านขายเสมอ ห้ามมีหมวดที่ตกหล่น', async ({ page }) => {
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  const r = await page.evaluate(() => {
+    const S = window.HouseShop;
+    const sold = new Set();
+    Object.keys(S.SHOPS).forEach(id => {
+      (S.SHOPS[id].groups || []).forEach(([sc, label, only]) => {
+        S.open(id);
+        Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).forEach(() => {});
+        (only || []).forEach(c => sold.add(sc + ':' + c));
+        if (!only) sold.add(sc + ':*');
+        S.close();
+      });
+    });
+    return { sold: Array.from(sold) };
+  });
+  /* หมวดทั้งหมดที่มีของจริงในคลัง */
+  const all = await page.evaluate(() => {
+    const seen = {};
+    /* อ่านจากการ์ดที่ร้านวาดจริงทุกร้าน — ไม่ต้องพึ่ง FURN ที่อยู่ใน IIFE ของ house.js */
+    const S = window.HouseShop, out = {};
+    Object.keys(S.SHOPS).forEach(id => {
+      S.open(id);
+      Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).forEach(t => {
+        t.click();
+        out[id] = (out[id] || 0) + document.querySelectorAll('#house-shop-items .hs-card').length;
+      });
+      S.close();
+    });
+    return out;
+  });
+  /* ร้านที่ขายเฟอร์นิเจอร์ทุกร้านต้องมีของจริงอย่างน้อย 1 ชิ้น (ร้านว่าง = หมวดตกหล่น) */
+  ['mall-furniture', 'shop-garden', 'shop-toy'].forEach(id => {
+    expect(all[id], 'ร้าน ' + id + ' ต้องมีสินค้า').toBeGreaterThan(0);
+  });
+  expect(r.sold).toContain('out:garden');
+  expect(r.sold).toContain('out:seatout');
+  expect(r.sold).toContain('out:decorout');
+  expect(r.sold).toContain('out:play');
+  expect(errors).toEqual([]);
+});
+
+test('ร้านต้นไม้/ร้านของเล่น: เปิดได้ มีหมวดถูกต้อง และห้างเฟอร์นิเจอร์ไม่มีของนอกบ้านแล้ว', async ({ page }) => {
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  const shopTabs = id => page.evaluate(i => {
+    window.HouseShop.open(i);
+    const t = Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).map(b => b.textContent.trim());
+    const n = document.querySelectorAll('#house-shop-items .hs-card').length;
+    window.HouseShop.close();
+    return { t, n };
+  }, id);
+
+  const furn = await shopTabs('mall-furniture');
+  expect(furn.t).toEqual(['ที่นั่ง', 'โต๊ะ', 'ห้องนอน', 'ครัว', 'ห้องน้ำ', 'ตกแต่ง']);   // ในบ้านล้วน
+  expect(furn.t).not.toContain('เครื่องเล่น');
+  expect(furn.t).not.toContain('ตกแต่งสวน');
+
+  const gd = await shopTabs('shop-garden');
+  expect(gd.t).toEqual(['ต้นไม้', 'ที่นั่ง', 'ตกแต่งสวน']);
+  expect(gd.n).toBeGreaterThan(0);
+
+  const toy = await shopTabs('shop-toy');
+  expect(toy.t).toEqual(['เครื่องเล่น']);
+  expect(toy.n).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
+
+test('ผังเมือง: ล็อตที่ย้าย/เพิ่มใหม่ ต้องมีช่องหน้าประตูเดินได้จริง ไม่มีตึกทับกัน', async ({ page }) => {
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  const r = await page.evaluate(() => {
+    const M = window.HOUSE_MAP({ inBox: (b, x, z) => !!b && x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 });
+    const g = window.__houseDbg.grid();
+    const lots = M.VILLAGE_LOTS;
+    const at = id => lots.filter(l => l.id === id)[0];
+    const door = l => l.face === 'x'
+      ? { x: l.x1 + 1, z: Math.round((l.z0 + l.z1) / 2) }
+      : { x: Math.round((l.x0 + l.x1) / 2), z: l.z1 + 1 };
+    const walk = (x, z) => { const v = (g[z] || [])[x]; return v === 0 || v === 2; };
+    /* ล็อตทับกันเองไหม (เช็คทุกคู่) */
+    let overlap = null;
+    for (let i = 0; i < lots.length && !overlap; i++) for (let j = i + 1; j < lots.length; j++) {
+      const a = lots[i], b = lots[j];
+      if (a.x0 <= b.x1 && b.x0 <= a.x1 && a.z0 <= b.z1 && b.z0 <= a.z1) { overlap = a.id + ' ทับ ' + b.id; break; }
+    }
+    const ids = ['carpenter-hut', 'shop-garden', 'shop-toy', 'mall-fashion', 'mall-furniture'];
+    return {
+      overlap,
+      lots: ids.map(id => { const l = at(id); return l ? { id, box: [l.x0, l.x1, l.z0, l.z1], face: l.face || 'z', doorWalk: walk(door(l).x, door(l).z) } : { id, missing: true }; }),
+    };
+  });
+  expect(r.overlap, 'ล็อตอาคารห้ามทับกัน').toBeNull();
+  r.lots.forEach(l => {
+    expect(l.missing, 'ล็อต ' + l.id + ' ต้องมีอยู่').toBeFalsy();
+    expect(l.doorWalk, 'ช่องหน้าประตูของ ' + l.id + ' ต้องเดินได้').toBe(true);
+  });
+  /* ห้างทั้งสองหลังต้องหันหน้าทางเดียวกัน (ผู้ใช้สั่งเมื่อ 2026-08-08) */
+  const fash = r.lots.filter(l => l.id === 'mall-fashion')[0];
+  const furn = r.lots.filter(l => l.id === 'mall-furniture')[0];
+  expect(fash.face).toBe('x');
+  expect(fash.face).toBe(furn.face);
+  expect(errors).toEqual([]);
 });
