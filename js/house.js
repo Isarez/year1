@@ -22,7 +22,7 @@ if(typeof HOUSE_MAP !== 'function') return;   /* แผนที่โหลด�
 const {
   H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
   H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
-  H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_ROWS, H_ROW_ICONS, NPAD,
+  H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_DEFAULT_PARENT_DAD, H_DEFAULT_PARENT_MOM, H_ROWS, H_ROW_ICONS, NPAD,
   EPAD, EPAD2, EPAD_ALL, OUT_W, OUT_D, sx,
   sz, sRect, sTile, sList, s2z, s2Rect,
   s2Tile, s2List, RIVER_X, BRIDGE_Z, BRIDGE2_Z, FARM_BRIDGE_Z,
@@ -312,6 +312,13 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
   : null;
 /* การดูแลสัตว์เลี้ยงเฟส 3B (js/house-pet-care.js โหลดก่อนไฟล์นี้) — ความหิว/อาหาร/ป่วย/ค่ารักษา
    ไฟล์นั้นไม่แตะ DOM/WebGL เช่นกัน · ชามอาหาร แถบหัวใจ การ์ดคุณหมอ อยู่ในไฟล์นี้ทั้งหมด */
+/* พ่อ-แม่ในบ้านเฟส 4A (js/house-family.js) — ชื่อ/หน้าตา/บทพูด · ไม่แตะ DOM/WebGL เช่นกัน */
+const FAMILY = (typeof window.HOUSE_FAMILY === 'function')
+  ? window.HOUSE_FAMILY({
+      load: loadHouseData, save: saveHouseData,
+      defaults: {dad: H_DEFAULT_PARENT_DAD, mom: H_DEFAULT_PARENT_MOM},
+    })
+  : null;
 const PETCARE = (typeof window.HOUSE_PET_CARE === 'function')
   ? window.HOUSE_PET_CARE({
       load: loadHouseData, save: saveHouseData,
@@ -560,7 +567,9 @@ function addHair(head, girl, style, hex){
       case 0: /* แสกข้าง (หน้าม้าเฉียงข้าง) */
         hairCap(head,c,{h:.47,y:.19,rz:.17,fx:-.04}); break;
       case 1: /* สไปก์ตั้ง (หน้าม้าเตี้ย + หนามบน) */
-        hairCap(head,c,{h:.4,y:.2,d:.68,drop:.16});
+        /* ⚠ ความลึก d ปล่อยเป็นค่าปริยาย (.78) ให้ **ท้ายทอยยาวเท่าเบอร์ 1** (ผู้ใช้แจ้ง 2026-08-09
+           ว่าเบอร์ 2 ด้านหลังสั้นกว่าเบอร์ 1) — หน้าผมยึดที่ z=.31 เสมอ เพิ่ม d จึงยืดเฉพาะด้านหลัง */
+        hairCap(head,c,{h:.4,y:.2,drop:.16});
         [[-.2,.03],[0,-.04],[.2,.03],[-.1,-.2],[.1,-.2]].forEach(p=>hairSpike(head,c,p[0],.46,p[1])); break;
       case 2: /* บ๊อบเด็ก/หน้าม้าเต็ม */
         hairCap(head,c,{h:.5,y:.16,d:.76,w:.82,drop:.12}); break;
@@ -7177,14 +7186,20 @@ function bindCanvasInput(canvas){
     hoverTalk = on;
     canvas.classList.toggle('house-talk-hover', on);
   }
+  /* ตัวที่ "คุยได้" = ชาวบ้านในเมือง (ฉากนอก) + พ่อแม่ในบ้าน (ฉากใน) */
+  function talkTargets(){
+    if(hScene === 'in') return Object.keys(parentObjs).map(w=>parentObjs[w].g).filter(Boolean);
+    return npcs.map(n=>n.g);
+  }
   function npcUnderPointer(cx, cy){
-    if(!npcs.length) return false;
+    const gs = talkTargets();
+    if(!gs.length) return false;
     raycaster.setFromCamera(ndcFromClient(cx, cy), camera);
-    return raycaster.intersectObjects(npcs.map(n=>n.g), true).length > 0;
+    return raycaster.intersectObjects(gs, true).length > 0;
   }
   function hoverCheck(){
     hoverT = performance.now();
-    setTalkHover(houseOpen && hMode === 'world' && !editMode && hScene === 'out'
+    setTalkHover(houseOpen && hMode === 'world' && !editMode
                  && npcUnderPointer(hoverX, hoverY));
   }
   canvas.addEventListener('pointermove', e=>{
@@ -7277,7 +7292,15 @@ function ndcFromClient(cx, cy){
 }
 
 function handleTap(cx, cy){
+  /* ---- แตะพื้นที่นอกกล่อง = ปิดกล่องที่เปิดอยู่ (ผู้ใช้สั่ง 2026-08-09) ----
+     กล่องพวกนี้เป็น "การ์ดลอย" ไม่ได้คลุมทั้งจอ ⇒ แตะนอกกล่องจะตกมาถึง canvas เสมอ
+     จัดการที่นี่จุดเดียวได้เลย ไม่ต้องทำ backdrop ให้แต่ละกล่อง (และไม่บังโลก 3D ด้วย)
+     ⚠ ต้อง `return` ทุกกรณี ไม่งั้นเด็กปิดกล่องแล้วตัวละครเดินตามไปด้วยในคลิกเดียว */
   if(questPanelOpen()){ closeQuestBoard(); return; }   /* แผงภารกิจเปิดอยู่ → แตะจอ = ปิดแผงก่อน */
+  if(questSummaryOpen()){ closeQuestSummary(); return; }
+  if(window.HouseDev && window.HouseDev.isOpen()){ window.HouseDev.close(); return; }
+  if(window.HouseQB && window.HouseQB.isOpen()){ window.HouseQB.close(); return; }
+  if(questPlayOpen()){ closeQuestPanel(); return; }    /* การ์ดเควสต์/การ์ดคุยพ่อแม่ */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }   /* หน้าร้านเปิดอยู่ → แตะนอกกล่อง = ออกจากร้าน */
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
   if(hScene==='out'){
@@ -7305,6 +7328,15 @@ function handleTap(cx, cy){
     }
   }else{
     if(hPet.group && raycaster.intersectObject(hPet.group, true).length){ playWithPet(); return; }
+    /* พ่อ-แม่ (เฟส 4A) — เช็คก่อนของตกแต่ง เพราะยืนอยู่บนพื้นห้องที่มีเฟอร์นิเจอร์รอบตัว */
+    { const gs = Object.keys(parentObjs).map(w=>parentObjs[w].g).filter(Boolean);
+      if(gs.length){
+        const ph = raycaster.intersectObjects(gs, true);
+        if(ph.length){
+          let o = ph[0].object;
+          while(o){ if(o.userData && o.userData.hParent){ walkToParent(o.userData.hParent); return; } o = o.parent; }
+        }
+      } }
     const dg = pickDecorGroup();
     if(dg){ decorInteract(dg); return; }
     if(interiorDoorMesh && raycaster.intersectObject(interiorDoorMesh, false).length){
@@ -7373,6 +7405,7 @@ function finishArrive(){
     if(a.type==='wild') rustleWild(a);
     else if(a.type==='lot') greetLot(a);
     else if(a.type==='npc'){ const n = npcs.find(k=>k.def.id===a.npc); if(n) talkToNpc(n); }
+    else if(a.type==='parent'){ tapParent(a.who); }
     else if(a.type==='board') openQuestBoard();
     else if(a.type==='play') playAtItem(a.idx);
     else if(a.type==='decor'){
@@ -7417,7 +7450,7 @@ function switchScene(to){
     hScene = to;
     worldGroup.visible = (to==='out');
     interiorGroup.visible = (to==='in');
-    if(to==='in'){ hChar.tile = {x:IN_DOOR_TILE.x, z:IN_DOOR_TILE.z+1}; hChar.targetRotY = Math.PI/4; }
+    if(to==='in'){ hChar.tile = {x:IN_DOOR_TILE.x, z:IN_DOOR_TILE.z+1}; hChar.targetRotY = Math.PI/4; buildParents(); }
     else{ hChar.tile = {x:DOOR_TILE.x, z:DOOR_TILE.z+1}; hChar.targetRotY = Math.PI/4; }
     hChar.path = []; hChar.walking = false;
     const p = tileWorld(hChar.tile);
@@ -7438,7 +7471,9 @@ function switchScene(to){
 }
 
 /* ---------- โหมดสร้างตัวละคร ---------- */
+let charCfgNow = null;      /* หน้าตาที่ใช้สร้างตัวเด็กในฉากล่าสุด (ชุดเทสตรวจว่าไม่โดนของพ่อแม่ทับ) */
 function rebuildChar(cfg){
+  charCfgNow = cfg;
   const oldRot = charGroup ? charGroup.rotation.y : 0;
   const oldPos = charGroup ? charGroup.position.clone() : null;
   if(charGroup){ scene.remove(charGroup); disposeGroup(charGroup); }
@@ -7459,6 +7494,9 @@ function buildCreatorRows(cfg){
     /* แถวสีของเครื่องแต่ง (ธง needs) — ซ่อนทั้งแถวถ้ายังไม่ได้ใส่ชิ้นนั้น หรือยังไม่มีชิ้นนั้น
        (เลือกสีหมวกทั้งที่ไม่ได้ใส่หมวกไม่มีความหมาย พอเลือกใส่แล้วแถวสีจะโผล่มาเอง) */
     if(row.needs && !wearsAcc(cfg, row.needs)) return;
+    /* ⚠ แต่งตัวให้พ่อ/แม่ = **ปิดแถวเลือกเพศ** (ผู้ใช้สั่ง 2026-08-09) — เพศถูกกำหนดจากแท็บพ่อ/แม่แล้ว
+       ถ้าปล่อยให้เลือกได้ เด็กจะสลับ "คุณแม่" เป็นเด็กชายได้ ซึ่งขัดกับแท็บที่เลือกอยู่ */
+    if(row.key === 'gender' && creatorWho !== 'child') return;
     /* เส้นคั่นกลุ่ม (ธง sec ใน H_ROWS) — แยกให้เห็นว่าแถวสีไหนเป็นของชิ้นไหน */
     if(row.sec && ri > 0){
       const sep = document.createElement('div');
@@ -7532,15 +7570,32 @@ function wearsAcc(cfg, key){
   return SHOP ? SHOP.ownsFit(key, v) : true;
 }
 
+/* เก็บฟองคำพูด/ป้ายลอยทั้งหมดทิ้งทันที — เรียกก่อนสลับไปหน้าที่ไม่ใช่ฉากเมือง
+   (ไม่งั้นฟองที่ค้างอยู่จะลอยทับหน้าแต่งตัว/หน้าเลือกสัตว์ก่อนจะหมดเวลาเอง) */
+function clearFloatLabels(){
+  parentTalk = null; npcTalk = null;
+  ['house-npc-bubble','house-char-bubble','house-pet-bubble'].forEach(id=>{
+    const el = $(id); if(el) el.classList.remove('on');
+  });
+  const nm = $('house-char-name'); if(nm) nm.hidden = true;
+  const pn = $('house-pet-name');  if(pn) pn.hidden = true;
+}
 let creatorCfg = null;
-function openCreator(fromWorld){
+/* 'child' = แต่งตัวเด็กเอง · 'dad'/'mom' = แต่งตัวให้พ่อแม่ (เฟส 4A ใช้หน้าเดียวกันทั้งหมด)
+   ⚠ ตัวแปรนี้ต้องถูกตั้งทุกครั้งที่เปิดหน้าแต่งตัว ไม่งั้นกดบันทึกแล้วเขียนทับตัวละครผิดคน */
+let creatorWho = 'child';
+function openCreator(fromWorld, who){
   if(SHOP) SHOP.close();
   closeQuestPanel(); closeQuestBoard();          /* เปิดหน้าแต่งตัวทับหน้าร้านไม่ได้ (กล่อง bottom-sheet ซ้อนกัน) */
   hMode = 'creator';
   creatorState.fromWorld = fromWorld;
   creatorState.rotY = 0; creatorState.rotTarget = 0;
+  clearFloatLabels();
+  creatorWho = (who === 'dad' || who === 'mom') ? who : 'child';
   const saved = loadHouseData();
-  creatorCfg = Object.assign({}, H_DEFAULT_CHAR, (saved && saved.char) || {});
+  creatorCfg = creatorWho === 'child'
+    ? Object.assign({}, H_DEFAULT_CHAR, (saved && saved.char) || {})
+    : Object.assign({}, FAMILY.one(creatorWho).char, {gender: creatorWho === 'mom' ? 1 : 0});
   $('house-creator').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
@@ -7549,7 +7604,15 @@ function openCreator(fromWorld){
   /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (เสื้อ = ชุดเดียวกับปุ่มแต่งตัว #house-edit-btn, หน้าเด็ก = ชุด row "หนูเป็น...") */
   const _icChild = '<svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg>';
   const _icDress = '<svg class="house-title-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 3.6L4 6.2L5.9 10.6L8.2 9.6L8.2 20L15.8 20L15.8 9.6L18.1 10.6L20 6.2L14.8 3.6Q12 7.2 9.2 3.6Z" fill="#FFD6E8"/><path d="M12 15.9c-1.8-1.3-2.6-2.1-2.6-3.1 0-.8.65-1.4 1.4-1.4.5 0 .9.25 1.2.65.3-.4.7-.65 1.2-.65.75 0 1.4.6 1.4 1.4 0 1-.8 1.8-2.6 3.1z" fill="#C0527A" stroke="none"/></svg>';
-  $('house-creator-title').innerHTML = fromWorld ? (_icDress + ' แก้ไขตัวละครของหนู') : (_icChild + ' สร้างตัวละครของหนู');
+  const _par = creatorWho !== 'child' ? FAMILY.one(creatorWho) : null;
+  renderCreatorTabs();
+  $('house-creator-title').innerHTML = _par ? (_icDress + ' แต่งตัวให้' + _par.name)
+                                    : fromWorld ? (_icDress + ' แก้ไขตัวละครของหนู')
+                                                : (_icChild + ' สร้างตัวละครของหนู');
+  /* แถวตั้งชื่อ — โผล่เฉพาะตอนแต่งตัวให้พ่อแม่ (ชื่อเด็กแก้ที่ป้ายชื่อบนหัวจออยู่แล้ว) */
+  { const nw = $('house-creator-name-row'), ni = $('house-creator-name');
+    if(nw) nw.hidden = !_par;
+    if(ni && _par) ni.value = _par.name; }
   worldGroup.visible = false; interiorGroup.visible = false;
   creatorGroup.visible = true;
   rebuildChar(creatorCfg);
@@ -7558,7 +7621,51 @@ function openCreator(fromWorld){
   buildCreatorRows(creatorCfg);   /* สร้างแถวตัวเลือกใหม่ทุกครั้ง ให้ปุ่ม active ตรง cfg ปัจจุบัน */
   applyCamera();
 }
+/* แท็บ 👨 คุณพ่อ / 👩 คุณแม่ ในหน้าแต่งตัว — โผล่เฉพาะตอนแต่งตัวให้พ่อแม่
+   สลับแท็บ = บันทึกของคนเดิมก่อน แล้วโหลดของอีกคนมาแทน (ไม่งั้นที่แต่งค้างไว้หาย) */
+function renderCreatorTabs(){
+  const wrap = $('house-creator-tabs');
+  if(!wrap) return;
+  wrap.hidden = (creatorWho === 'child');
+  if(wrap.hidden) return;
+  wrap.innerHTML = '';
+  FAMILY.WHO.forEach(w=>{
+    const p = FAMILY.one(w);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'he-tab' + (w === creatorWho ? ' active' : '');
+    b.innerHTML = '<span class="he-tab-emoji">' + p.icon + '</span><span>' + p.name + '</span>';
+    b.onclick = ()=>{
+      if(w === creatorWho) return;
+      if(typeof playClick==='function') playClick();
+      const nm = $('house-creator-name');
+      FAMILY.setParent(creatorWho, {name: nm ? nm.value : '', char: creatorCfg});   /* เก็บของคนเดิมไว้ก่อน */
+      creatorWho = w;
+      creatorCfg = Object.assign({}, FAMILY.one(w).char, {gender: w === 'mom' ? 1 : 0});
+      const p2 = FAMILY.one(w);
+      if(nm) nm.value = p2.name;
+      const ttl = $('house-creator-title');
+      if(ttl) ttl.textContent = '✏️ แต่งตัวให้' + p2.name;
+      renderCreatorTabs();
+      buildCreatorRows(creatorCfg);
+      rebuildChar(creatorCfg);
+      charGroup.position.set(0,0,0);
+      charGroup.rotation.y = 0;
+    };
+    wrap.appendChild(b);
+  });
+}
 function closeCreator(){
+  if(creatorWho !== 'child'){
+    /* แต่งตัวให้พ่อแม่ — บันทึกลง data.parents ไม่ใช่ data.char ของเด็ก */
+    const nm = $('house-creator-name');
+    FAMILY.setParent(creatorWho, {name: nm ? nm.value : '', char: creatorCfg});
+    const p = FAMILY.one(creatorWho);
+    if(typeof showToast==='function') showToast('🎉', p.name + 'เปลี่ยนลุคใหม่แล้ว!');
+    exitCreatorToWorld();
+    buildParents();                 /* สร้างตัวใหม่ในบ้านให้ตรงกับที่เพิ่งแก้ */
+    return;
+  }
   saveHouseData({char: creatorCfg});
   if(typeof showToast==='function') showToast('🎉', 'เก่งมาก! ตัวละครของหนูพร้อมแล้ว');
   exitCreatorToWorld();
@@ -7576,6 +7683,13 @@ function closeCreator(){
 }
 /* ยกเลิกการแต่งตัว (ปุ่ม ← ตอนกำลังแก้ไขตัวละคร) — ทิ้งชุดที่เพิ่งลอง กลับไปใช้ชุดที่บันทึกไว้เดิม */
 function cancelCreator(){
+  if(creatorWho !== 'child'){        /* ยกเลิกตอนแต่งตัวให้พ่อแม่ = ไม่บันทึกอะไรเลย */
+    /* ⚠ **ห้ามตั้ง creatorWho='child' ตรงนี้** — exitCreatorToWorld() ต้องเห็นว่ายังอยู่โหมดพ่อแม่
+       ถึงจะคืน creatorCfg ของเด็กให้ก่อน rebuildChar ไม่งั้นตัวเด็กกลายเป็นพ่อ/แม่ (บั๊กจริง 2026-08-09) */
+    exitCreatorToWorld();
+    if(typeof showToast==='function') showToast('↩️', 'ยกเลิกแล้ว ยังเป็นชุดเดิมนะ');
+    return;
+  }
   const saved = loadHouseData();
   creatorCfg = Object.assign({}, H_DEFAULT_CHAR, (saved && saved.char) || {});
   exitCreatorToWorld();
@@ -7583,6 +7697,14 @@ function cancelCreator(){
 }
 function exitCreatorToWorld(){
   hMode = 'world';
+  /* ⚠ **บั๊กที่เคยเจอ 2026-08-09**: ตอนออกจากหน้าแต่งตัวพ่อ/แม่ `creatorCfg` ยังเป็นหน้าตาของพ่อแม่อยู่
+     ถ้าเอาไป rebuildChar ตรงๆ **ตัวเด็กจะกลายเป็นพ่อ/แม่ทันที** (โดนทั้งตอนบันทึกและตอนยกเลิก)
+     ⇒ ออกจากโหมดพ่อแม่เมื่อไหร่ ต้องดึง char ของเด็กจาก save กลับมาใช้เสมอ */
+  if(creatorWho !== 'child'){
+    const saved = loadHouseData() || {};
+    creatorCfg = Object.assign({}, H_DEFAULT_CHAR, saved.char || {});
+  }
+  creatorWho = 'child';
   $('house-creator').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
@@ -7715,16 +7837,20 @@ function walkToTag(gx, gz, action){
    คนที่เดินไปมา (roam/route) ไม่ได้จองช่องในกริด nearestWalkable จึงคืนช่องเดียวกับตัวเขาเอง
    ทำให้เด็กเดินเข้าไปทับ — ต้องเลือกช่องข้างเคียงเองเสมอ */
 function tileBesideTarget(gx, gz){
-  const cx = Math.round(charGroup.position.x + (OUT_W-1)/2);
-  const cz = Math.round(charGroup.position.z + (OUT_D-1)/2);
+  /* ⚠ ใช้กริดของ "ฉากที่ยืนอยู่ตอนนี้" — เดิม hardcode OUT_* ไว้ พอเอามาใช้ในบ้านจะคำนวณผิดฉาก
+     (เฟส 4A ต้องใช้ตอนเด็กเดินไปหาพ่อแม่ในบ้าน) */
+  const out = hScene === 'out';
+  const grid = out ? outGrid : inGrid, W = out ? OUT_W : IN_W, D = out ? OUT_D : IN_D;
+  const cx = Math.round(charGroup.position.x + (W-1)/2);
+  const cz = Math.round(charGroup.position.z + (D-1)/2);
   const cand = [];
   [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dx,dz])=>{
     const x = gx+dx, z = gz+dz;
-    if(x<0 || z<0 || x>=OUT_W || z>=OUT_D) return;
-    if(!isWalk(outGrid, OUT_W, OUT_D, x, z)) return;
+    if(x<0 || z<0 || x>=W || z>=D) return;
+    if(!isWalk(grid, W, D, x, z)) return;
     cand.push({x, z, d: Math.hypot(x-cx, z-cz) + (dx && dz ? .35 : 0)});   /* ชอบช่องตรงทิศมากกว่าเฉียง */
   });
-  if(!cand.length) return nearestWalkable(outGrid, OUT_W, OUT_D, gx, gz);
+  if(!cand.length) return nearestWalkable(grid, W, D, gx, gz);
   cand.sort((a,b)=>a.d-b.d);
   return cand[0];
 }
@@ -7945,14 +8071,15 @@ function renderQuestList(){
   }
   const left = QUESTS.boardLeft();
   const sub = $('hq-sub');
-  if(sub) sub.textContent = st.board.claimed
-    ? 'วันนี้ทำครบทุกชุดแล้ว เก่งมาก! พรุ่งนี้มีงานใหม่มาอีกนะ'
+  /* โบนัสครบ 5 ชุดกลับมาแล้ว (10 🪙) — แต่ข้อความยังต้องไม่กดดันว่า "ต้องทำให้ครบ" (กติกาเหล็กข้อ 2) */
+  if(sub) sub.textContent = left
+    ? ('เหลืออีก ' + left + ' ชุด ทำได้เท่าไหร่ก็เก่งแล้วนะ')
     : (QUESTS.boardBonusReady() ? 'ครบ 5 ชุดแล้ว! กดรับโบนัสได้เลย'
-                                : 'เหลืออีก ' + left + ' ชุด ทำครบทั้ง 5 ชุดวันนี้ได้โบนัสพิเศษนะ');
+                                : 'วันนี้ทำครบทุกชุดแล้ว เก่งมาก! พรุ่งนี้มีงานใหม่มาอีกนะ');
   const btn = $('hq-claim');
   if(btn){
     btn.hidden = !QUESTS.boardBonusReady();
-    btn.textContent = 'รับโบนัสครบ 5 ชุด +' + QUESTS.BOARD_BONUS + ' 🪙';
+    btn.innerHTML = 'รับโบนัสครบ 5 ชุด <i class="hs-coin"></i>' + QUESTS.BOARD_BONUS;
   }
   const stEl = $('hq-stars');
   if(stEl) stEl.textContent = '⭐ ดาวสะสม ' + (st.stars|0) + ' ดวง';
@@ -7969,21 +8096,22 @@ function openQuestBoard(){
   if(typeof playClick==='function') playClick();
 }
 function closeQuestBoard(){ const el = $('house-quest'); if(el) el.hidden = true; }
-/* โบนัสทำกระดานครบ 5 ชุด (+100 🪙) — ไม่มีบทลงโทษถ้าวันก่อนทำไม่ครบ */
+/* โบนัสทำกระดานครบ 5 ชุด (10 🪙 · ผู้ใช้สั่งเอากลับมา 2026-08-09) — ไม่มีบทลงโทษถ้าวันก่อนทำไม่ครบ */
 function claimQuestReward(){
   if(!QUESTS || !QUESTS.boardBonusReady()) return;
-  const coins = QUESTS.boardClaim();
-  awardCoins(coins);
+  const got = QUESTS.boardClaim();
+  if(!got) return;
+  awardCoins(got);
   renderQuestList();
   refreshQuestMark();
-  if(questBoardObj) for(let i=0; i<14; i++)
+  questBarKey = '';
+  if(questBoardObj) for(let i=0; i<12; i++)
     spawnParticle(questBoardObj.position.x + (Math.random()-.5)*2, 1.8 + Math.random()*1.4,
                   questBoardObj.position.z + .5 + Math.random()*.6,
                   [0xffd54f, 0xff8fb3, 0x7fc4e8, 0xfff1a8][i%4]);
   if(typeof playCongrats==='function') playCongrats();
-  else if(typeof playClick==='function') playClick();
   charBubble('⭐');
-  if(typeof showToast==='function') showToast('⭐', 'เก่งมาก! ทำครบทั้ง 5 ชุด ได้โบนัส ' + coins + ' เหรียญ');
+  if(typeof showToast==='function') showToast('⭐', 'เก่งมาก! ทำครบทั้ง 5 ชุด ได้โบนัส ' + got + ' เหรียญ');
 }
 
 /* ---------- จ่ายเหรียญ: จุดเดียวในโหมดบ้านที่แตะ window.OwlCoins (กติกาเหล็กข้อ 5) ---------- */
@@ -8036,6 +8164,7 @@ function offerQuest(spec){
   if(!QUESTS || !spec || spec.done) return;
   if(hMode !== 'world' || editMode) return;   /* กำลังแต่งตัว/เลือกสัตว์/ตกแต่งบ้านอยู่ → ไม่เด้งงานทับ */
   if(window.HouseQB && window.HouseQB.isOpen()) return;   /* เปิดหน้าคลังคำถามอยู่ → ไม่เด้งงานจริงทับหน้าเทส */
+  closeQuestSummary();                                   /* กำลังดูรายการเควสต์อยู่ → ปิดก่อน ไม่ให้กล่องซ้อนกัน */
   qzNpcId = spec.test ? null : (spec.npc || null);   /* คนออกโจทย์ต้องยืนรออยู่กับเด็กจนกว่าจะเล่นจบ */
   closeQuestBoard();
   const d = npcDefById(spec.npc);
@@ -8213,6 +8342,9 @@ function finishQuest(){
   /* ติดค้าง "ทำงานแทนค่ารักษา" อยู่ → งานนี้ถือว่าใช้หนี้ครบ น้องหายป่วยทันที (ข้อ 18.4) */
   const cured = PETCARE ? PETCARE.questDone() : false;
   refreshNpcMarks();
+  refreshParentMark();          /* เควสต์ครอบครัวจบ → ป้ายเหนือหัวพ่อ/แม่เปลี่ยนเป็น ✓ */
+  questBarKey = '';             /* บังคับให้แถบสรุปวาดตัวเลขใหม่ */
+  renderQuestSummary();
   refreshQuestMark();
   qzHead(run.spec, 'เก่งมาก!');
   const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
@@ -8227,11 +8359,6 @@ function finishQuest(){
   if(res.chal){
     const tag = document.createElement('div'); tag.className = 'hqz-chal';
     tag.textContent = '🌟 โจทย์ท้าทาย ได้เหรียญเพิ่มพิเศษ';
-    st.appendChild(tag);
-  }
-  if(run.spec.src === 'board' && res.boardBonus){
-    const tag = document.createElement('div'); tag.className = 'hqz-chal';
-    tag.textContent = '📋 ครบ 5 ชุดแล้ว! ไปกดรับโบนัสที่กระดานได้เลย';
     st.appendChild(tag);
   }
   if(cured){
@@ -9584,7 +9711,9 @@ const _petV = new THREE.Vector3();
 function updatePetLabels(){
   const nameEl = $('house-pet-name'), bubEl = $('house-pet-bubble');
   refreshPetBar();
+  refreshQuestBar();
   refreshBackBtn();
+  refreshParentBtn();
   if(!hPet.group || !houseOpen || hMode!=='world' || editMode){
     nameEl.hidden = true;
     return;
@@ -9773,6 +9902,454 @@ function updateFeedAnim(dt, u){
   }
   if(a.t >= T4){ endFeedAnim(); petHappy(.7, false); }
 }
+/* ---------- พ่อ-แม่ในบ้าน (เฟส 4A · ข้อ 28) ----------
+   ยืนอยู่ในบ้านชั้นใน ไม่ออกไปในเมือง · ตัวสูงกว่าเด็ก 1.25 เท่า (ใช้ buildCharacter ตัวเดียวกัน)
+   แตะแล้วคุย/รับงาน — วันนี้พ่อหรือแม่เป็นคนขอ สุ่ม seeded รายวันจาก js/house-quests.js
+   ⚠ **สร้างใหม่ทุกครั้งที่เข้าบ้าน** เพราะเด็กแก้ชื่อ/หน้าตาได้ระหว่างเล่น */
+const PARENT_SCALE = 1.25;
+/* จุดยืน: แม่อยู่ครัว (x≥9, z≤7) · พ่ออยู่ห้องนั่งเล่น (x≤8, z≤7) — ดู roomOf() */
+const PARENT_SPOT = {dad:{x:2, z:4, ry:Math.PI*0.25}, mom:{x:11, z:3, ry:-Math.PI*0.25}};
+let parentObjs = {};                 /* {dad:{g, who}, mom:{...}} — group ที่อยู่ใน interiorGroup */
+function clearParents(){
+  Object.keys(parentObjs).forEach(w=>{
+    const o = parentObjs[w];
+    if(o && o.g){ if(o.g.parent) o.g.parent.remove(o.g); disposeGroup(o.g); }
+    if(o && o.mk){ [o.mk.open, o.mk.done].forEach(m=>{ if(m && m.parent) m.parent.remove(m); }); }
+  });
+  parentObjs = {};
+}
+function buildParents(){
+  if(!FAMILY || !interiorGroup) return;
+  clearParents();
+  const ps = FAMILY.parents();
+  FAMILY.WHO.forEach(w=>{
+    const spot = PARENT_SPOT[w];
+    /* snap ไปช่องเดินได้ที่ใกล้ที่สุด เผื่อเด็กวางเฟอร์นิเจอร์ทับจุดยืนประจำ */
+    const t = nearestWalkable(inGrid, IN_W, IN_D, spot.x, spot.z) || spot;
+    const g = buildCharacter(ps[w].char);
+    g.scale.setScalar(PARENT_SCALE);
+    g.position.set(inWX(t.x), 0, inWZ(t.z));
+    g.rotation.order = 'YXZ';
+    g.rotation.y = spot.ry;
+    g.userData.hParent = w;          /* tag ให้ raycast ตอนแตะเจอ (ancestor walk เหมือน hNpc) */
+    interiorGroup.add(g);
+    /* ป้ายงาน "!" / "✓" ลอยเหนือหัว — **ใช้ texture/geometry ชุดเดียวกับชาวบ้านในเมือง**
+       (npcMarkMat/NPC_MARK_GEO) เด็กจะได้อ่านสัญลักษณ์เดียวกันทั้งเกม ไม่ต้องเรียนรู้ใหม่ */
+    let mk = null;
+    if(QUESTS){
+      if(!NPC_MARK_GEO.g) NPC_MARK_GEO.g = new THREE.PlaneGeometry(.74, .74);
+      const open = new THREE.Mesh(NPC_MARK_GEO.g, npcMarkMat('open'));
+      const done = new THREE.Mesh(NPC_MARK_GEO.g, npcMarkMat('done'));
+      open.renderOrder = done.renderOrder = 5;
+      open.visible = done.visible = false;
+      interiorGroup.add(open); interiorGroup.add(done);
+      mk = {open, done};
+    }
+    parentObjs[w] = {g, who:w, mk, ph:Math.random()*6.28, sw:Math.random()*6.28, bubbleT:6 + Math.random()*8,
+                     path:[], to:null, wait:1 + Math.random()*2, busy:0, actCat:null, actNow:null};
+  });
+  refreshParentMark();        /* ตั้งสถานะป้ายทันทีตั้งแต่สร้างเสร็จ ไม่ต้องรอเฟรมแรกของลูป */
+}
+/* ---------- กิจกรรมของพ่อแม่ (ผู้ใช้สั่งเพิ่ม 2026-08-09) ----------
+   **สุ่มทำกิจกรรม "ตามอุปกรณ์ที่มีอยู่ในบ้านจริง" เท่านั้น** — อ่านจาก data.decor.in ที่เด็กวางเอง
+   บ้านไม่มีเตา = ไม่มีทำอาหาร · ไม่มีของเลย = เดินเล่นไปมาเฉยๆ (ไม่แกล้งทำกิจกรรมลอยๆ ให้เด็กงง) */
+const PARENT_ACTS = {
+  kitchen: {emoji:'🍳', dad:'พ่อทำกับข้าวอยู่นะ',      mom:'แม่ทำกับข้าวอยู่จ้ะ'},
+  table:   {emoji:'🍽️', dad:'พ่อจัดโต๊ะให้เรียบร้อยก่อน', mom:'แม่จัดโต๊ะรออยู่นะ'},
+  seat:    {emoji:'📖', dad:'พ่อนั่งอ่านหนังสือแป๊บนึง',  mom:'แม่นั่งพักสักครู่นะ'},
+  bed:     {emoji:'🛏️', dad:'พ่อเก็บที่นอนให้เรียบร้อย',  mom:'แม่เก็บที่นอนอยู่จ้ะ'},
+  bath:    {emoji:'🧼', dad:'พ่อทำความสะอาดอยู่นะ',    mom:'แม่ทำความสะอาดอยู่จ้ะ'},
+  decor:   {emoji:'🪴', dad:'พ่อจัดของให้สวยหน่อย',     mom:'แม่จัดของให้สวยๆ นะ'},
+};
+const PARENT_SPEED = .62;               /* ช้ากว่าชาวบ้านในเมือง — เดินในบ้านไม่ต้องรีบ */
+/* จุดหมายที่ไปทำกิจกรรมได้ = ของในบ้านที่เด็กวางไว้จริง (คืนช่องที่ "ยืนข้างๆ ของ" ได้) */
+function parentActSpots(){
+  const d = loadHouseData() || {};
+  const list = (d.decor && d.decor.in) || [];
+  const out = [];
+  list.forEach(rec=>{
+    const item = FURN.byId[rec.id];
+    if(!item || !PARENT_ACTS[item.cat]) return;
+    /* ยืนช่องข้างๆ ของ ไม่ใช่ทับตัวของ (ช่องที่ของวางอยู่เดินไม่ได้) */
+    const near = nearestWalkable(inGrid, IN_W, IN_D, rec.x, rec.z);
+    if(near) out.push({x:near.x, z:near.z, cat:item.cat, name:item.name});
+  });
+  return out;
+}
+function parentWalkTiles(){
+  const out = [];
+  for(let z=0; z<IN_D; z++) for(let x=0; x<IN_W; x++)
+    if(isWalk(inGrid, IN_W, IN_D, x, z)) out.push({x, z});
+  return out;
+}
+function parentTile(g){
+  return {x: Math.round(g.position.x + (IN_W-1)/2), z: Math.round(g.position.z + (IN_D-1)/2)};
+}
+/* เลือกงานถัดไป: มีอุปกรณ์ก็ไปทำกิจกรรม ไม่มีก็เดินเล่นไปช่องว่างแทน */
+function parentPickTarget(o){
+  const spots = parentActSpots();
+  const cur = parentTile(o.g);
+  let dst = null;
+  if(spots.length && Math.random() < .75){
+    dst = spots[(Math.random()*spots.length)|0];
+    o.actCat = dst.cat;
+  }else{
+    const tiles = parentWalkTiles();
+    if(!tiles.length) return;
+    dst = tiles[(Math.random()*tiles.length)|0];
+    o.actCat = null;
+  }
+  o.path = findPath(inGrid, IN_W, IN_D, cur, {x:dst.x, z:dst.z}) || [];
+  o.wait = o.path.length ? 0 : 1 + Math.random()*2;
+}
+/* เดิน + ทำกิจกรรม + หันหน้าหาเด็กเมื่อเข้าใกล้ (ให้บ้านดูมีชีวิต ไม่ใช่หุ่นยืนนิ่ง) */
+function updateParents(dt, t){
+  if(!FAMILY || hScene !== 'in' || hMode !== 'world') return;
+  Object.keys(parentObjs).forEach(w=>{
+    const o = parentObjs[w], g = o.g;
+    if(!g) return;
+    /* ⚠ `buildCharacter()` เก็บ rig ไว้ที่ **`g.userData` ตรงๆ** (`{rig, legs, arms, head}`)
+       ไม่ใช่ `userData.anim` (อันนั้นของเฟอร์นิเจอร์/สัตว์) — เคยอ่านผิดแล้วท่าเดินไม่ทำงานทั้งชุด */
+    const rg = g.userData;
+    let moving = false;
+    /* เด็กยืนใกล้ = หยุดคุยด้วย ไม่เดินหนี (เหมือน n.hold ของชาวบ้านในเมือง) */
+    const near = charGroup && Math.hypot(charGroup.position.x - g.position.x,
+                                         charGroup.position.z - g.position.z) < 2.2;
+    if(near || o.busy > 0){
+      if(o.busy > 0) o.busy -= dt;
+    }else if(o.to){
+      /* ก้าวเข้าหาจุดถัดไปในเส้นทาง */
+      const dx = o.to.x - g.position.x, dz = o.to.z - g.position.z, d = Math.hypot(dx, dz);
+      if(d < .06){ o.to = null; }
+      else{
+        const st = Math.min(d, PARENT_SPEED*dt);
+        g.position.x += dx/d*st; g.position.z += dz/d*st;
+        let want = Math.atan2(dx, dz), cur = g.rotation.y;
+        while(want - cur > Math.PI) want -= Math.PI*2;
+        while(want - cur < -Math.PI) want += Math.PI*2;
+        g.rotation.y += (want-cur) * Math.min(1, dt*5);
+        moving = true;
+      }
+    }else if(o.path && o.path.length){
+      const tl = o.path.shift();
+      o.to = {x: inWX(tl.x), z: inWZ(tl.z)};
+    }else{
+      o.wait -= dt;
+      if(o.wait <= 0){
+        if(o.actCat){                       /* ถึงที่หมายที่มีอุปกรณ์แล้ว → ลงมือทำกิจกรรม */
+          const act = PARENT_ACTS[o.actCat];
+          o.busy = 4 + Math.random()*4;
+          o.actNow = o.actCat; o.actCat = null;
+          if(!questPlayOpen()) parentBubble(w, act.emoji + ' ' + act[w]);
+        }else{
+          o.actNow = null;
+          parentPickTarget(o);
+          if(!o.path.length) o.wait = 1.5 + Math.random()*2;
+        }
+      }
+    }
+    /* ---- ท่าทาง ---- */
+    if(rg && rg.legs && rg.arms){
+      const k = Math.min(1, dt*8);
+      if(moving){
+        o.sw += dt * 7.2;
+        const sN = Math.sin(o.sw) * .5;
+        rg.legs[0].rotation.x = sN;  rg.legs[1].rotation.x = -sN;
+        rg.arms[0].rotation.x = -sN*.7; rg.arms[1].rotation.x = sN*.7;
+        rg.rig.position.y = Math.abs(Math.sin(o.sw))*.035;
+      }else if(o.busy > 0 && o.actNow){
+        /* กำลังทำกิจกรรม — ขยับแขนทั้งสองข้างเป็นจังหวะ (ทำครัว/จัดของ/ถูพื้น อ่านออกด้วยตา) */
+        const a = Math.sin(t*.009) * .5 - .7;
+        rg.legs.forEach(p => p.rotation.x += (0 - p.rotation.x) * k);
+        rg.arms[0].rotation.x += (a - rg.arms[0].rotation.x) * k;
+        rg.arms[1].rotation.x += (a - rg.arms[1].rotation.x) * k;
+        rg.rig.position.y = Math.sin(t*.0045)*.02;
+      }else{
+        const idle = Math.sin(t*.0022 + o.ph) * .06;
+        rg.legs.forEach(p => p.rotation.x += (0 - p.rotation.x) * k);
+        rg.arms[0].rotation.x += ( idle - rg.arms[0].rotation.x) * k;
+        rg.arms[1].rotation.x += (-idle - rg.arms[1].rotation.x) * k;
+        rg.rig.position.y = Math.sin(t*.0021 + o.ph)*.022;
+      }
+    }
+    if(near && charGroup){                   /* เด็กเข้ามาใกล้ → หันหน้าหา */
+      const dx = charGroup.position.x - g.position.x, dz = charGroup.position.z - g.position.z;
+      let want = Math.atan2(dx, dz), cur = g.rotation.y;
+      while(want - cur > Math.PI) want -= Math.PI*2;
+      while(want - cur < -Math.PI) want += Math.PI*2;
+      g.rotation.y += (want - cur) * Math.min(1, dt*4);
+    }
+    o.bubbleT -= dt;
+    if(o.bubbleT <= 0){
+      o.bubbleT = 16 + Math.random()*14;
+      if(!questPlayOpen() && !o.actNow) parentBubble(w, FAMILY.idleLine(w));
+    }
+  });
+}
+/* สถานะป้ายงานของพ่อแม่ — มีแค่คนที่วันนี้เป็นคนขอ อีกคนไม่มีป้าย (จะได้ไม่สับสนว่าใครมีงาน) */
+function refreshParentMark(){
+  if(!QUESTS || !FAMILY) return;
+  const who = QUESTS.familyWho(), done = QUESTS.familyDone();
+  Object.keys(parentObjs).forEach(w=>{
+    const mk = parentObjs[w].mk;
+    if(!mk) return;
+    const mine = (w === who);
+    mk.open.visible = mine && !done;
+    mk.done.visible = mine && done;
+  });
+}
+/* ป้ายลอยเหนือหัว หันเข้าหากล้องเสมอ + เด้งขึ้นลงเบาๆ (เหมือนป้ายของชาวบ้านในเมืองเป๊ะ) */
+function updateParentMarks(t){
+  const show = hScene === 'in' && hMode === 'world' && !editMode;
+  Object.keys(parentObjs).forEach(w=>{
+    const o = parentObjs[w], mk = o.mk;
+    if(!mk || !o.g) return;
+    if(!show){ mk.open.visible = mk.done.visible = false; return; }
+    const y = 2.85 + Math.sin(t*.003 + o.ph)*.1;
+    [mk.open, mk.done].forEach(m=>{
+      m.position.set(o.g.position.x, y, o.g.position.z);
+      m.rotation.copy(camera.rotation);
+    });
+  });
+  if(show) refreshParentMark();
+}
+/* ฟองคำพูดเหนือหัวพ่อ/แม่ — ใช้ป้ายเดียวกับฟองของ NPC ในเมือง (#house-npc-bubble) */
+function parentBubble(w, text){
+  const o = parentObjs[w];
+  if(!o || !o.g) return;
+  const p = FAMILY.one(w);
+  const el = $('house-npc-bubble');
+  if(!el) return;
+  el.innerHTML = '';
+  const nm = document.createElement('b'); nm.textContent = p.icon + ' ' + p.name;
+  const tx = document.createElement('span'); tx.textContent = text;
+  el.appendChild(nm); el.appendChild(tx);
+  el.classList.add('on');
+  parentTalk = {w, until: performance.now() + Math.max(3200, text.length * 120)};
+}
+let parentTalk = null;
+/* ป้ายฟองคำพูดของพ่อแม่ลอยตามตำแหน่ง 3D (คู่กับ updateNpcLabels ของฝั่งเมือง) */
+const _parV = new THREE.Vector3();
+function updateParentLabels(){
+  const el = $('house-npc-bubble');
+  if(!el || !parentTalk) return;
+  const o = parentObjs[parentTalk.w];
+  if(!o || !o.g || hScene !== 'in' || hMode !== 'world' || performance.now() > parentTalk.until){
+    parentTalk = null; el.classList.remove('on');
+    return;
+  }
+  _parV.set(o.g.position.x, o.g.position.y + 2.5, o.g.position.z).project(camera);
+  el.style.left = ((_parV.x+1)/2*window.innerWidth).toFixed(1) + 'px';
+  el.style.top  = ((1-_parV.y)/2*window.innerHeight).toFixed(1) + 'px';
+}
+/* แตะตัวพ่อ/แม่ = **เดินไปหาก่อนแล้วค่อยคุย** (เหมือนแตะชาวบ้านในเมือง ผู้ใช้สั่ง 2026-08-09)
+   ตะโกนคุยข้ามห้องแล้วดูไม่เป็นธรรมชาติ และเด็กไม่รู้ว่าตัวเองต้องเดินไปไหน */
+function walkToParent(w){
+  const o = parentObjs[w];
+  if(!o || !o.g || hMode !== 'world' || editMode) return;
+  o.busy = Math.max(o.busy, 14);       /* พ่อแม่ยืนรอให้เด็กเดินมาถึง ไม่เดินหนีระหว่างทาง */
+  o.path = []; o.to = null;
+  const gx = Math.round(o.g.position.x + (IN_W-1)/2), gz = Math.round(o.g.position.z + (IN_D-1)/2);
+  const t = tileBesideTarget(gx, gz);
+  if(!t){ tapParent(w); return; }      /* หาช่องยืนไม่ได้ (มุมอับ) → คุยตรงนั้นเลย ดีกว่าไม่มีอะไรเกิดขึ้น */
+  walkTo(t.x, t.z, {action:{type:'parent', who:w, pos: tileWorld({x:gx, z:gz})}});
+}
+/* แตะตัวพ่อ/แม่ — วันนี้เป็นคนขอ = ยื่นงาน · ไม่ใช่ = พูดให้กำลังใจ/บอกใบ้ว่าอีกคนมีงาน */
+function tapParent(w){
+  if(!FAMILY || hMode !== 'world' || editMode) return;
+  if(typeof playClick==='function') playClick();
+  const p = FAMILY.one(w);
+  const spec = QUESTS ? QUESTS.specForFamily() : null;
+  const mine = spec && spec.who === w;
+  if(mine && !spec.done){
+    parentBubble(w, FAMILY.askLine(w));
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerFamilyQuest(spec); }, 280);
+    return;
+  }
+  /* ผู้ใช้สั่ง 2026-08-09: **แตะตัว = คุยเพื่อทำเควสต์เท่านั้น** ไม่มีการ์ดแต่งตัวเด้งมาแล้ว
+     (การแต่งตัวย้ายไปปุ่มของตัวเองบน HUD) ⇒ ไม่มีงานก็แค่ฟองคำพูด ไม่มีกล่องอะไรมาบัง */
+  if(mine && spec.done) parentBubble(w, FAMILY.thankLine(w));
+  else parentBubble(w, spec && !spec.done ? FAMILY.hintLine(w) : FAMILY.idleLine(w));
+}
+/* ยื่นงานครอบครัว — ใช้การ์ด/เส้นทางเล่นชุดเดียวกับเควสต์ NPC ต่างแค่หัวการ์ดเป็นชื่อพ่อแม่ */
+function offerFamilyQuest(spec){
+  if(!QUESTS || !spec || spec.done) return;
+  if(hMode !== 'world' || editMode) return;
+  if(window.HouseQB && window.HouseQB.isOpen()) return;
+  const p = FAMILY.one(spec.who);
+  closeQuestBoard();
+  qzNpcId = null;
+  qzShow();
+  const who = $('hqz-who'); if(who) who.textContent = p.icon + ' ' + p.name;
+  const s = $('hqz-sub'); if(s) s.textContent = 'งานของครอบครัววันนี้';
+  const st = qzStage(); if(!st) return;
+  const line = document.createElement('div');
+  line.className = 'hqz-line';
+  line.textContent = FAMILY.askLine(spec.who);
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn('ช่วยเลย! 💪', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); startQuest(spec); }));
+  /* **ปฏิเสธได้เสมอ ไม่มีใครโกรธ** (กติกาเหล็กข้อ 2 · โทน "ขอความช่วยเหลือ" ไม่ใช่ "สั่ง") */
+  row.appendChild(qzBtn('ไว้ก่อน', 'hqz-no', ()=>{
+    if(typeof playClick==='function') playClick();
+    closeQuestPanel();
+    parentBubble(spec.who, 'ไม่เป็นไรเลยลูก ไว้ว่างค่อยมาช่วยนะ 😊');
+  }));
+  st.appendChild(line); st.appendChild(row);
+  if(typeof playClick==='function') playClick();
+}
+
+/* ---------- แถบสรุปเควสต์ของวันนี้ (#house-quest-bar · ผู้ใช้สั่งเพิ่ม 2026-08-09) ----------
+   บอกด้วยตัวเลขว่าวันนี้ยังเหลืองานกี่ชุด/ทำไปแล้วกี่ชุด · กดแล้วกางรายการว่าเหลืองานของใคร ร้านไหน
+   ⚠ ค่าที่โชว์คำนวณจาก QUESTS.daySummary() ซึ่งอ่าน state ทุกครั้ง ⇒ **ห้ามเรียกทุกเฟรม**
+     วาดใหม่เฉพาะตอนตัวเลขเปลี่ยนจริง (เทียบ key) เหมือนแถบสัตว์เลี้ยง */
+let questBarKey = '';
+function refreshQuestBar(){
+  const b = $('house-quest-bar');
+  if(!b) return;
+  const want = !!(QUESTS && houseOpen && hMode === 'world' && !editMode);
+  if(b.hidden === want) b.hidden = !want;
+  if(!want) return;
+  const sum = QUESTS.daySummary();
+  const alert = QUESTS.starBonusReady();
+  const key = sum.left + '/' + sum.done + '/' + alert;
+  if(key === questBarKey) return;
+  questBarKey = key;
+  const l = $('hqbar-left'), d = $('hqbar-done');
+  if(l) l.textContent = '❗ ' + sum.left;
+  if(d) d.textContent = '✅ ' + sum.done;
+  /* มีโบนัสดาวรอรับ → ขึ้นไอคอนของขวัญ + แถบเด้งเรียกให้เด็กกดเข้ามารับ */
+  const al = $('hqbar-alert');
+  if(al) al.hidden = !alert;
+  b.classList.toggle('hqbar-gift', !!alert);
+  b.classList.toggle('hqbar-clear', sum.left === 0);   /* ทำครบแล้ว = เปลี่ยนโทนเป็นเขียว ให้เด็กภูมิใจ */
+}
+/* แปลงรายการดิบจาก engine → ชื่อคน/ชื่อร้านที่เด็กอ่านรู้เรื่อง */
+function questItemInfo(it){
+  if(it.src === 'board')
+    return {icon:'📋', name:'กระดานเควสต์', place:'ข้างน้ำพุกลางหมู่บ้าน'};
+  if(it.src === 'family'){
+    const p = FAMILY ? FAMILY.one(it.who) : null;
+    return {icon: p ? p.icon : '👪', name: p ? p.name : 'ครอบครัว', place:'ที่บ้านของหนู'};
+  }
+  const d = npcDefById(it.id) || {};
+  /* หาชื่อสถานที่ตามลำดับ: ล็อตที่ผูกไว้ในผัง → ล็อตที่ยืนอยู่/ใกล้ที่สุดจากพิกัดจริง → ย่านจากพิกัด
+     ⚠ **NPC ส่วนใหญ่ไม่มีฟิลด์ `lot`** (แม่ค้ารถเข็น/นักวิทย์/ชาวนา ฯลฯ) ถ้าดูแค่ `d.lot`
+       รายการจะขึ้นว่า "ในหมู่บ้าน" เกือบทั้งหน้า = ไม่ตอบโจทย์ "ร้านอะไร" ที่ผู้ใช้ขอ */
+  let lot = d.lot ? LOT_BY_ID[d.lot] : null;
+  if(!lot && d.x != null){
+    lot = lotAt(d.x, d.z, 0) || lotAt(d.x, d.z, 3);   /* ยืนในล็อต หรือยืนหน้าร้านในระยะ 3 ช่อง */
+  }
+  return {icon: d.icon || '🙂', name: d.name || 'ชาวบ้าน',
+          place: lot ? ((lot.icon ? lot.icon + ' ' : '') + lot.name) : zoneNameAt(d.x, d.z)};
+}
+/* ย่านของคนที่ไม่ได้ยืนติดล็อตไหนเลย
+   ⚠ **ห้ามเดากล่องพิกัดเอง** (กติกาเดียวกับตอนแก้ผังเมือง) — รอบแรกผมเดาเองแล้วแม่ค้าตลาด
+     ขึ้นว่า "ริมหาด" เพราะตลาดจริงอยู่ x11-17/z56-62 ไม่ใช่ที่เดาไว้
+   ⇒ ใช้ของที่ผังประกาศไว้จริงเท่านั้น: MARKET (ลานตลาดรถเข็น) กับ FARM_PLOTS (แปลงนา) */
+function zoneNameAt(x, z){
+  if(x == null || z == null) return 'ในหมู่บ้าน';
+  if(typeof MARKET !== 'undefined' && MARKET && inBox(MARKET, x, z, 2)) return '🛒 ตลาดรถเข็น';
+  if(FARM_PLOTS.some(p => inBox(p, x, z, 4))) return '🌾 ไร่นา';
+  return 'ในหมู่บ้าน';
+}
+function questSummaryOpen(){ const e = $('house-qsum'); return !!e && !e.hidden; }
+function closeQuestSummary(){ const e = $('house-qsum'); if(e) e.hidden = true; }
+function openQuestSummary(){
+  if(!QUESTS || hMode !== 'world' || editMode) return;
+  if(SHOP) SHOP.close();
+  closeQuestPanel(); closeQuestBoard();
+  if(window.HouseQB) window.HouseQB.close();
+  if(window.HouseDev) window.HouseDev.close();
+  const e = $('house-qsum'); if(e) e.hidden = false;
+  renderQuestSummary();
+}
+/* หมุดโบนัสบนหลอดดาว — บอกว่าทำถึงตรงไหนได้เงินเพิ่ม และกดรับได้เมื่อถึงเกณฑ์
+   (ผู้ใช้สั่งย้ายจากบล็อกปุ่มแยกมาไว้บนหลอดเลย 2026-08-09 · เงินจ่ายผ่าน awardCoins() จุดเดียว) */
+function renderStarBonus(){
+  if(!QUESTS) return;
+  const b = QUESTS.starBonus();
+  [['half', 'hqsum-pin-half'], ['full', 'hqsum-pin-full']].forEach(([k, id])=>{
+    const el = $(id);
+    if(!el) return;
+    const it = b[k];
+    /* ตำแหน่งหมุด = สัดส่วนดาวที่ต้องได้ (ครึ่งทาง ~50% · เต็ม 100%) */
+    el.style.left = (b.starsMax ? Math.round(it.need / b.starsMax * 100) : 0) + '%';
+    el.className = 'hqsum-pin' + (it.claimed ? ' taken' : (it.ready ? ' ready' : ''));
+    /* หมุด = **เหรียญ + จำนวนเงิน** (บอกว่าถึงตรงนี้แล้วได้เงิน) และ **จำนวนดาวที่ต้องได้อยู่ใต้เหรียญ**
+       เหรียญวาดด้วย CSS (.hs-coin) ไม่ใช้ emoji 🪙 — บางเครื่องไม่มี glyph ตัวนั้น (กับดักเดิม) */
+    el.innerHTML = '<span class="hqsum-pincoin">'
+                 + (it.claimed ? '✓' : '<i class="hs-coin"></i>' + it.coins) + '</span>'
+                 + '<span class="hqsum-pinneed">' + it.need + '⭐</span>';
+    el.disabled = !it.ready;
+    el.title = it.claimed ? ('รับโบนัส ' + it.coins + ' เหรียญไปแล้ว')
+             : it.ready ? ('กดรับโบนัส ' + it.coins + ' เหรียญ')
+                        : ('ได้ ' + it.need + ' ดาว รับโบนัส ' + it.coins + ' เหรียญ');
+    el.onclick = it.ready ? ()=>{
+      if(typeof playClick==='function') playClick();
+      const got = QUESTS.claimStarBonus(k);
+      if(!got) return;
+      awardCoins(got);
+      if(typeof playCongrats==='function') playCongrats();
+      if(typeof showToast==='function') showToast('🎁', 'ได้โบนัสดาว ' + got + ' เหรียญ! เก่งมากเลย');
+      questBarKey = '';
+      renderQuestSummary();
+    } : null;
+  });
+}
+/* ดาว 1 ดวง — tone 0 = ยังไม่ได้ (จาง) · 1-3 = สีตามจำนวนดาวที่ทำได้ทั้งชุด */
+function starSvg(tone){
+  return '<svg class="hqsum-star ' + (tone ? 'on tone' + tone : 'off') + '" viewBox="0 0 24 24" aria-hidden="true">'
+       + '<path d="M12 3.1 14.75 8.9 21.1 9.8 16.5 14.25 17.6 20.55 12 17.55 6.4 20.55 7.5 14.25 2.9 9.8 9.25 8.9z"/></svg>';
+}
+function renderQuestSummary(){
+  const e = $('house-qsum');
+  if(!e || e.hidden || !QUESTS) return;
+  const sum = QUESTS.daySummary();
+  const cnt = $('hqsum-count');
+  if(cnt) cnt.textContent = 'เหลือ ' + sum.left + ' · เสร็จ ' + sum.done;
+  /* แถบดาวของวันนี้ด้านบน — บอกว่าได้ไปแล้วกี่ดาวจากเต็มเท่าไหร่ + หลอดความคืบหน้า
+     (ดาวสะสมทั้งชีวิตอยู่ที่กระดานเควสต์ ไม่ใช่ตรงนี้ — ตรงนี้คือ "วันนี้" เท่านั้น) */
+  const stTxt = $('hqsum-startxt'), stFill = $('hqsum-starfill');
+  if(stTxt) stTxt.textContent = sum.stars + ' / ' + sum.starsMax;
+  if(stFill) stFill.style.width = (sum.starsMax ? Math.round(sum.stars / sum.starsMax * 100) : 0) + '%';
+  const sub = $('hqsum-sub');
+  if(sub) sub.textContent = sum.left
+    ? 'วันนี้ยังมีคนรอให้หนูไปช่วยอยู่นะ'
+    : 'เก่งมาก! วันนี้ช่วยครบทุกคนแล้ว พรุ่งนี้มีงานใหม่มาอีกนะ';
+  renderStarBonus();
+  const list = $('hqsum-list');
+  if(!list) return;
+  list.innerHTML = '';
+  /* 2 กลุ่ม: ยังไม่ได้ทำ (❗) มาก่อนเสมอ แล้วต่อด้วยที่ทำเสร็จแล้ว (✅) ให้เด็กเห็นความคืบหน้าของตัวเอง */
+  const sec = (label, arr, done)=>{
+    if(!arr.length) return;
+    const h = document.createElement('div');
+    h.className = 'hqsum-sec';
+    h.textContent = label + ' (' + arr.length + ')';
+    list.appendChild(h);
+    arr.forEach(it=>{
+      const info = questItemInfo(it);
+      const row = document.createElement('div');
+      row.className = 'hqsum-row' + (done ? ' hqsum-ok' : '');
+      /* ดาวรายเควสต์: ทำแล้วโชว์ที่ได้จริง (⭐ เต็ม + ☆ ที่ยังไม่ได้) · ยังไม่ทำโชว์ ☆☆☆ จางๆ
+         ⇒ เด็กเห็นว่าชุดไหนยังทำได้ดีกว่านี้ โดยไม่ต้องอ่านตัวเลข */
+      const n = done ? Math.max(0, Math.min(3, it.stars | 0)) : 0;
+      /* ดาววาดเป็น SVG **เปลี่ยนสีตามจำนวนที่ทำได้** (ผู้ใช้สั่ง 2026-08-09 · ไม่มีตัวเลขกำกับแล้ว)
+         1 ดาว = ทองแดง · 2 ดาว = ส้ม · 3 ดาว = ทอง ⇒ เด็กแยกออกด้วยสีตั้งแต่เหลือบเห็น ไม่ต้องนับ
+         ⚠ ใช้ emoji ⭐ ไม่ได้เพราะสีตายตัวเปลี่ยนไม่ได้ (และบางเครื่องไม่มี glyph ☆) */
+      const star = '<span class="hqsum-stars' + (done ? '' : ' hqsum-stars-todo') + '">'
+                 + [0,1,2].map(i => starSvg(i < n ? n : 0)).join('') + '</span>';
+      row.innerHTML = '<span class="hqsum-mark">' + (done ? '✅' : '❗') + '</span>'
+                    + '<span class="hqsum-ic">' + info.icon + '</span>'
+                    + '<span class="hqsum-name">' + info.name + '</span>'
+                    + star
+                    + '<span class="hqsum-place">' + info.place + '</span>';
+      list.appendChild(row);
+    });
+  };
+  sec('❗ ยังไม่ได้ทำ', sum.items.filter(x=>!x.done), false);
+  sec('✅ ทำเสร็จแล้ว', sum.items.filter(x=>x.done), true);
+}
 /* ---------- แถบสถานะเพื่อนตัวน้อย ใต้ชื่อเด็ก (#house-pet-bar) ----------
    ชื่อสัตว์ · ไอคอนอาหารที่น้องกิน · หลอดความอิ่ม · ปุ่มให้อาหาร — โผล่เฉพาะตอนมีสัตว์เลี้ยงจริง
    ⚠ **เช็คจาก hPet.group ไม่ใช่ loadHouseData()** เพราะถูกเรียกทุกเฟรม (JSON.parse ทุกเฟรม = กินเฟรมเรต)
@@ -9783,6 +10360,15 @@ function updateFeedAnim(dt, u){
    ส่วนทางออกจากโหมดบ้านย้ายไปปุ่ม "ออกจากบ้าน" ในเมนูเฟือง
    ⚠ **ห้ามลบ element `#house-back` และห้ามลบ logic ปิดแผงใน handler ของมัน** — ชุดเทสยิง
      dispatchEvent ใส่ id นี้อยู่ และปุ่มยังทำหน้าที่ "ยกเลิก" จริงในโหมดแต่งตัว/แต่งบ้าน */
+/* ปุ่ม "แต่งตัวพ่อแม่" — โผล่เฉพาะตอนอยู่ในบ้าน (พ่อแม่อยู่แต่ชั้นใน ไม่ออกไปในเมือง)
+   ปุ่มเดียวเข้าหน้าแต่งตัว แล้วค่อยเลือกพ่อ/แม่จากแท็บข้างใน (ผู้ใช้สั่ง 2026-08-09) */
+function refreshParentBtn(){
+  const b = $('house-parent-btn');
+  if(!b) return;
+  const want = !!(FAMILY && houseOpen && hScene === 'in' && hMode === 'world' && !editMode);
+  if(b.hidden !== want) return;
+  b.hidden = !want;
+}
 function refreshBackBtn(){
   const b = $('house-back');
   if(!b) return;
@@ -9986,6 +10572,7 @@ function openPetPicker(wantType){
   if(window.HouseDev) window.HouseDev.close();
   closeQuestPanel(); closeQuestBoard();
   hMode = 'pet';
+  clearFloatLabels();
   creatorState.rotY = 0; creatorState.rotTarget = 0;
   const data = loadHouseData() || {};
   /* wantType = เพิ่งซื้อตัวนี้มาจากร้าน ให้เปิดมาชี้ตัวนั้นเลย
@@ -10058,7 +10645,9 @@ const _nameV = new THREE.Vector3();
 const _swingV = new THREE.Vector3();   /* ตำแหน่งที่นั่งชิงช้าตอนแกว่ง (reuse) */
 function updateNameLabel(){
   const el = $('house-char-name');
-  if(!charGroup || !houseOpen || !charGroup.visible){ el.hidden = true; return; }
+  /* ⚠ `hMode !== 'world'` จำเป็น — ในหน้าแต่งตัว charGroup คือ "ตัวพรีวิว" ซึ่งอาจเป็นพ่อ/แม่
+     ถ้าไม่กันไว้ **ชื่อเด็กจะลอยอยู่บนหัวพ่อแม่** (ผู้ใช้เจอ 2026-08-09) */
+  if(!charGroup || !houseOpen || !charGroup.visible || hMode !== 'world'){ el.hidden = true; return; }
   _nameV.set(charGroup.position.x, charGroup.position.y + 2.05, charGroup.position.z).project(camera);
   const lx = ((_nameV.x+1)/2*window.innerWidth).toFixed(1)+'px';
   const ty = ((1-_nameV.y)/2*window.innerHeight).toFixed(1)+'px';
@@ -11130,10 +11719,13 @@ function frame(t){
     updatePet(dt);
     updatePetCare(dt);
     syncPetSick();
+    updateParents(dt, t);
+    updateParentMarks(t);
   }
   updateNameLabel();
   updatePetLabels();
   updateNpcLabels();
+  updateParentLabels();
   updateCompass();
   updateCoinBadge();
   updatePosChip();
@@ -11573,6 +12165,20 @@ $('house-ctrl-gear').addEventListener('click', ()=>{
   });
 }
 /* ปุ่ม "ปรับค่าต่างๆ" ในเมนูเฟือง — เครื่องมือเทสระบบ (js/house-devtools.js) */
+/* ปุ่มแต่งตัวพ่อแม่ — เข้าหน้าแต่งตัวเลย เริ่มที่คนที่มีงานวันนี้ (แท็บสลับได้ในหน้านั้น) */
+{ const qb = $('house-quest-bar');
+  if(qb) qb.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); openQuestSummary(); });
+  const qc = $('hqsum-close');
+  if(qc) qc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestSummary(); });
+}
+{ const pb = $('house-parent-btn');
+  if(pb) pb.addEventListener('click', ()=>{
+    if(typeof playClick==='function') playClick();
+    if(hMode !== 'world' || editMode) return;
+    const who = (QUESTS && QUESTS.familyWho()) || 'mom';
+    fadeSwap(()=>openCreator(true, who));
+  });
+}
 { const dv = $('house-dev-btn');
   if(dv) dv.addEventListener('click', ()=>{
     if(typeof playClick==='function') playClick();
@@ -11622,6 +12228,7 @@ window.startHouseGame = startHouseGame;
 window.HouseShop = SHOP;
 window.HouseQuests = QUESTS;      /* ให้ชุดเทส/เฟสถัดไปเรียกดูสถานะเควสต์ได้ตรงๆ */
 window.HousePetCare = PETCARE;    /* เฟส 3B — ความหิว/อาหาร/ป่วย/ค่ารักษา (ชุดเทสเรียกตรวจตรงนี้) */
+window.HouseFamily = FAMILY;      /* เฟส 4A — พ่อ-แม่ในบ้าน (ชื่อ/หน้าตา/บทพูด) */
 /* จุดต่อสำหรับชุดเทส Playwright — เรียกหน้าจอเควสต์ได้โดยไม่ต้องคลิกตัว NPC ในฉาก 3D
    (คลิกจริงต้องเดินเข้าไปหาให้ถึงก่อน ทำในเทสไม่ไหว) โค้ดเกมจริงไม่ได้ใช้ตัวนี้เลย */
 window.HouseQuestUI = {
@@ -11636,14 +12243,39 @@ window.HouseQuestUI = {
   playTest: (opt, onClose) => playTestRun(opt, onClose),
 };
 /* จุดต่อชุดเทสของเฟส 3B — แผงให้อาหาร/การ์ดคุณหมอ (เดินไปหาหมอในฉาก 3D ทำในเทสไม่ไหวเหมือนกัน) */
+/* จุดต่อชุดเทสของเฟส 4A — แตะตัวพ่อแม่/เปิดหน้าแต่งตัวให้ตรงตัวใน 3D ทำในเทสไม่ไหว */
+window.HouseFamilyUI = {
+  tap:   w => tapParent(w),
+  tapScene: w => walkToParent(w),     /* เส้นทางจริงของเกม: เดินไปหาก่อนแล้วค่อยคุย */
+  dress: w => openCreator(true, w),
+  built: () => Object.keys(parentObjs),
+  /* ป้ายงานเหนือหัวพ่อแม่ (ชุดเทส) — {who, open, done} */
+  marks: () => Object.keys(parentObjs).map(w => ({
+    who: w,
+    open: !!(parentObjs[w].mk && parentObjs[w].mk.open.visible),
+    done: !!(parentObjs[w].mk && parentObjs[w].mk.done.visible),
+  })),
+  /* rig ของพ่อแม่ (ชุดเทสตรวจว่าขาแกว่งจริงตอนเดิน) */
+  rig: w => { const o = parentObjs[w]; if(!o || !o.g) return null;
+    const r = o.g.userData;
+    return (r && r.legs) ? {legs: r.legs.map(p=>p.rotation.x), arms: r.arms.map(p=>p.rotation.x)} : null; },
+  screen:w=>{
+    const o = parentObjs[w]; if(!o || !o.g) return null;
+    const v = new THREE.Vector3(o.g.position.x, o.g.position.y + 1.4, o.g.position.z).project(camera);
+    if(v.z >= 1) return null;
+    const x = (v.x+1)/2*window.innerWidth, y = (1-v.y)/2*window.innerHeight;
+    return (x > 40 && y > 40 && x < window.innerWidth-40 && y < window.innerHeight-40) ? {x, y} : null;
+  },
+  pos:   w => { const o = parentObjs[w]; return o && o.g ? {x:o.g.position.x, z:o.g.position.z} : null; },
+};
 window.HousePetUI = {
   feed:  () => feedNow(),
   cure:  id => { const d = npcDefById(id); return d ? offerCure(d) : false; },
   hearts:() => petCareHud.hearts,
 };
 $('house-entry-btn').addEventListener('click', startHouseGame);
-$('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
 $('hq-claim').addEventListener('click', claimQuestReward);
+$('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
 { const qc = $('hqz-close');
   if(qc) qc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }); }
 /* เฟส 3B — ปุ่มให้อาหาร + ปิดแผง */
@@ -11656,6 +12288,7 @@ $('house-back').addEventListener('click', ()=>{
   /* อยู่ในร้าน (รวมตอนดูตัวอย่างสินค้า) → ปุ่มย้อนกลับ = ออกจากร้านก่อน ยังไม่ออกจากบ้าน
      กดซ้ำอีกครั้งถึงจะออกจากโหมดบ้านจริงๆ (เด็กจะได้ไม่หลุดออกจากบ้านทั้งที่ตั้งใจแค่ปิดร้าน) */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }
+  if(questSummaryOpen()){ closeQuestSummary(); return; }
   if(questPlayOpen()){ closeQuestPanel(); return; }    /* กำลังเล่นเควสต์ → ปุ่มย้อนกลับ = เลิกเล่นรอบนี้ (ทำใหม่ได้ ไม่เสียอะไร) */
   if(window.HouseDev && window.HouseDev.isOpen()){ window.HouseDev.close(); return; }
   if(window.HouseQB && window.HouseQB.isOpen()){ window.HouseQB.close(); return; }
@@ -11743,7 +12376,9 @@ if(!homeView.hidden) houseBuddyRefresh();
      เพราะ offerQuest()/SHOP.open() ออกเงียบๆ ถ้ายังอยู่โหมด creator/pet หรือกำลังตกแต่งอยู่
      (เดาเวลาด้วย waitForTimeout แล้วเครื่องช้าตอนรันทั้งชุด = เทสแดงแบบไม่มีร่องรอย) */
   mode:()=>hMode, editing:()=>!!editMode,
-  /* ตำแหน่ง NPC + คนที่กำลังคุมงานอยู่ — ชุดเทสใช้พิสูจน์ว่าคนออกโจทย์ยืนรอจริง ไม่เดินหนี */
+  scene:()=>hScene, creatorWho:()=>creatorWho, charLook:()=>charCfgNow,
+  /* พาเด็กเข้าไปในบ้านทันที (ชุดเทสของเฟส 4A — เดินไปหน้าประตูเองในเทสช้ามาก) */
+  enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
   npcPos:id=>{ const n = npcs.find(k=>k.def.id===id); return n ? {x:n.g.position.x, z:n.g.position.z} : null; },
   /* พิกัดบนจอของชาวบ้าน (สำหรับชุดเทสเลื่อนเมาส์ไปวางให้ตรงตัว) — ยิงที่กลางลำตัว ไม่ใช่ที่เท้า */
   npcScreen:id=>{

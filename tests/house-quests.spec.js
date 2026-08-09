@@ -6,7 +6,8 @@ const { test, expect } = require('@playwright/test');
      2) โจทย์ต้องคงที่ต่อ (เด็ก + วัน + คนออกโจทย์) — เปิดใหม่กี่ครั้งก็ได้ข้อเดิม กัน reroll หาข้อง่าย
      3) **ห้ามลงโทษเด็ก** ตอบผิดกี่ครั้งก็ยังจบเควสต์ได้ ได้เหรียญเสมอ เงินไม่เคยลด
      4) เงินต้องเพิ่มผ่าน window.OwlCoins เท่านั้น และค่าตอบแทนอยู่ในช่วงที่จูนไว้
-        (จูนลง ~3 เท่าเมื่อ 2026-08-08 กันเงินเฟ้อ: เควสต์ NPC 6-17 🪙 · กระดาน 10-28 🪙 · โบนัสครบ 5 ชุด +35)
+        (จูนลง ~3 เท่าเมื่อ 2026-08-08 กันเงินเฟ้อ: เควสต์ NPC 6-17 🪙 · กระดาน 10-28 🪙
+         · **โบนัสครบ 5 ชุดถูกเอาออกแล้ว 2026-08-09** ห้ามใส่กลับโดยไม่ถามผู้ใช้)
         **เทสนี้คือตัวคุมไม่ให้ใครปรับรางวัลขึ้นกลับโดยไม่ตั้งใจ** — เศรษฐกิจทั้งเกมผูกกับตัวเลขชุดนี้
      5) ประตูเช็คความพร้อมต้องไม่โผล่มาเงียบๆ — ต้องครบเกณฑ์ก่อน แล้วเด็กกดรับเอง */
 
@@ -127,8 +128,7 @@ test('เล่นเควสต์ NPC จนจบ: ได้เหรีย�
     return q.finish(run);
   }, npcId);
   expect(res.stars).toBe(3);
-  expect(res.coins).toBeGreaterThanOrEqual(6);
-  expect(res.coins).toBeLessThanOrEqual(17);
+  expect(res.coins).toBe(10);   /* 3 ดาว = 10 🪙 เท่ากันทุกชั้น */
 
   await page.evaluate(c => window.OwlCoins.add(c), res.coins);
   expect(await coins(page)).toBe(res.coins);
@@ -196,13 +196,16 @@ test('ตอบผิดไม่มีบทลงโทษ: ผิดรัว
   expect(await coins(page)).toBe(120);         // ยอดเงินเดิมต้องไม่ถูกหักแม้แต่เหรียญเดียว
 });
 
-test('กระดานเควสต์: 5 ชุดแยกโควตาจาก NPC · ทำครบได้โบนัส 35 🪙 · ค่าตอบแทน 10-28', async ({ page }) => {
+/* ⚠ **โบนัสครบ 5 ชุดถูกเอาออกแล้ว** (ผู้ใช้สั่ง 2026-08-09) — เทสนี้คือตัวกันไม่ให้ใครใส่กลับ
+   เควสต์กระดานได้เหรียญของตัวเองครบอยู่แล้ว โบนัสก้อนโตทำให้เด็กรู้สึกว่า "ต้องเก็บให้ครบ" */
+test('กระดานเควสต์: 5 ชุดแยกโควตาจาก NPC · ค่าตอบแทน 13 (3 ดาว) · โบนัสครบ 5 ชุด +10 🪙', async ({ page }) => {
   await openHouse(page);
   await page.evaluate(() => window.HouseQuestUI.board());
   await expect(page.locator('#house-quest')).toBeVisible();
   await expect(page.locator('#hq-list .hq-row')).toHaveCount(5);
-  await expect(page.locator('#hq-claim')).toBeHidden();
+  await expect(page.locator('#hq-claim')).toBeHidden();   /* ยังทำไม่ครบ = ยังไม่มีให้รับ */
 
+  const before = await coins(page);
   const out = await page.evaluate(() => {
     const q = window.HouseQuests, got = [];
     for (let i = 0; i < q.BOARD_N; i++) {
@@ -210,21 +213,23 @@ test('กระดานเควสต์: 5 ชุดแยกโควตา�
       while (!run.over) q.answer(run, run.items[run.idx].correct);
       got.push(q.finish(run).coins);
     }
-    return { got, ready: q.boardBonusReady(), left: q.boardLeft(),
-             npcOpen: q.openNpcCount(), npcPerDay: q.NPC_PER_DAY };
+    return { got, left: q.boardLeft(), npcOpen: q.openNpcCount(), npcPerDay: q.NPC_PER_DAY,
+             ready: q.boardBonusReady(), bonus: q.BOARD_BONUS };
   });
-  out.got.forEach(c => { expect(c).toBeGreaterThanOrEqual(10); expect(c).toBeLessThanOrEqual(28); });
+  out.got.forEach(c => expect(c).toBe(13));   /* กระดาน 3 ดาว = 13 🪙 เท่ากันทุกชั้น */
   expect(out.left).toBe(0);
-  expect(out.ready).toBe(true);
   expect(out.npcOpen).toBe(out.npcPerDay);     // โควตา NPC ต้องไม่ถูกกระดานกิน
+  expect(out.bonus).toBe(10);                  /* ผู้ใช้สั่งกลับมาที่ 10 (เดิม 35) */
+  expect(out.ready).toBe(true);
+  /* **ต้องกดรับเอง** — ยังไม่กดต้องยังไม่ได้เงิน */
+  expect(await coins(page)).toBe(before);
 
-  const before = await coins(page);
   await page.evaluate(() => window.HouseQuestUI.board());
   await expect(page.locator('#hq-claim')).toBeVisible();
   await page.locator('#hq-claim').click();
-  await page.waitForTimeout(300);
-  expect(await coins(page) - before).toBe(35);
-  await expect(page.locator('#hq-claim')).toBeHidden();   // รับได้ครั้งเดียว
+  await page.waitForTimeout(350);
+  expect(await coins(page) - before).toBe(10);
+  await expect(page.locator('#hq-claim')).toBeHidden();   /* รับได้ครั้งเดียว */
 });
 
 test('ประตูเช็คความพร้อม: ยังไม่ครบเกณฑ์ต้องไม่ถาม · ครบแล้วต้องถามก่อนเสมอ', async ({ page }) => {
@@ -276,32 +281,54 @@ test('เพดานเหรียญต่อวัน: เกินเพด
   expect(out.earned).toBe(out.cap);
 });
 
-test('ค่าตอบแทนอยู่ในช่วงที่จูนไว้ทุกระดับชั้น (NPC 6-17 · กระดาน 10-28) + รายได้ต่อวันไม่เฟ้อ', async ({ page }) => {
+test('ค่าตอบแทนเท่ากันทุกระดับชั้น (NPC 6/8/10 · กระดาน 8/10/13 · ครอบครัว 10/13/16) + รายได้ต่อวันไม่เฟ้อ', async ({ page }) => {
   await openHouse(page);
   const table = await page.evaluate(() => {
     const q = window.HouseQuests, out = [];
     for (let tier = 1; tier <= 6; tier++)
       for (let st = 1; st <= 3; st++)
-        out.push({ tier, st, npc: q.coinsFor('A', st, tier, false), board: q.coinsFor('board', st, tier, false) });
+        out.push({ tier, st, npc: q.coinsFor('A', st, tier, false), board: q.coinsFor('board', st, tier, false),
+                   family: q.coinsFor('family', st, tier, false) });
     return out;
   });
+  /* ⚠️ **จูนล่าสุด 2026-08-09 ตามคำสั่งผู้ใช้ — ห้ามปรับขึ้นกลับโดยไม่ถาม**
+     NPC 6/8/10 · กระดาน 8/10/13 · ครอบครัว 10/13/16 (ตามจำนวนดาว)
+     และ **ทุกระดับชั้นได้เท่ากันหมด** (ตัวคูณชั้น = 1.0)
+     ส่วนที่หายไปย้ายไปเป็นโบนัสดาวรายวันที่เด็กต้องกดรับเอง (+15 ครึ่งทาง · +20 เต็ม) */
   table.forEach(r => {
     expect(r.npc).toBeGreaterThanOrEqual(6);
-    expect(r.npc).toBeLessThanOrEqual(17);
-    expect(r.board).toBeGreaterThanOrEqual(10);
-    expect(r.board).toBeLessThanOrEqual(28);
+    expect(r.npc).toBeLessThanOrEqual(10);
+    expect(r.board).toBeGreaterThanOrEqual(8);
+    expect(r.board).toBeLessThanOrEqual(13);
+    expect(r.family).toBeGreaterThanOrEqual(10);
+    expect(r.family).toBeLessThanOrEqual(16);
+    expect(r.family).toBeGreaterThan(r.board);   /* วันละชุดเดียว จึงให้สูงกว่าเสมอ */
   });
-  /* รายได้สูงสุดต่อวัน (ทุกงาน ⭐⭐⭐) ต้องไม่เกิน 320 🪙 — ของแพงสุดในร้าน 300 🪙
-     ⇒ ของชิ้นใหญ่ต้องใช้เวลาเก็บอย่างน้อย ~1 วันเสมอ ไม่ใช่เล่นแป๊บเดียวก็ซื้อได้ */
+  /* **ทุกระดับชั้นต้องได้เท่ากันเป๊ะ** — ป.1 ต้องไม่ได้น้อยกว่า ป.6 ที่ทำงานเหมือนกัน */
+  [1, 2, 3].forEach(st => {
+    ['npc', 'board', 'family'].forEach(k => {
+      const vals = table.filter(r => r.st === st).map(r => r[k]);
+      expect(new Set(vals).size, k + ' ' + st + ' ดาว ต้องเท่ากันทุกชั้น').toBe(1);
+    });
+  });
+  /* รายได้สูงสุดต่อวัน (ทุกงาน ⭐⭐⭐ รวมเควสต์ครอบครัว 1 ชุด) ต้องไม่เกิน 360 🪙
+     ของแพงสุดในร้าน 300 🪙 ⇒ ของชิ้นใหญ่ยังต้องใช้เวลาเก็บอย่างน้อย ~1 วันเสมอ
+     ⚠ เพดานนี้ขยับจาก 320 → 360 ตอนเพิ่มเควสต์ครอบครัวในเฟส 4A (ผู้ใช้อนุมัติ 2026-08-09)
+       และต้องยังต่ำกว่า DAY_CAP เสมอ ไม่งั้นเด็กชนเพดานทุกวันจนเควสต์ท้ายๆ ได้ 0 เหรียญ */
   const perDay = await page.evaluate(() => {
     const q = window.HouseQuests, out = [];
     for (let tier = 1; tier <= 6; tier++)
       out.push(q.coinsFor('A', 3, tier, false) * q.NPC_PER_DAY
-             + q.coinsFor('board', 3, tier, false) * q.BOARD_N + q.BOARD_BONUS);
+             + q.coinsFor('board', 3, tier, false) * q.BOARD_N
+             + q.coinsFor('family', 3, tier, false)
+             + q.STAR_BONUS.half + q.STAR_BONUS.full + q.BOARD_BONUS);   /* รวมโบนัสทั้งหมด */
     return out;
   });
-  perDay.forEach(v => expect(v).toBeLessThanOrEqual(320));
+  perDay.forEach(v => expect(v).toBeLessThanOrEqual(210));   /* ลดลงอีกหลังจูนรอบ 2026-08-09 */
+  const cap = await page.evaluate(() => window.HouseQuests.DAY_CAP);
+  perDay.forEach(v => expect(v).toBeLessThan(cap));
   expect(Math.max.apply(null, perDay)).toBeGreaterThan(150);   // แต่ก็ต้องไม่น้อยจนเล่นทั้งวันแล้วซื้ออะไรไม่ได้
+  expect(new Set(perDay).size, 'รายได้ต่อวันต้องเท่ากันทุกชั้น').toBe(1);
   /* โจทย์ท้าทายต้องได้มากกว่าโจทย์ปกติเสมอ (แรงจูงใจให้ลองของยาก) */
   const chal = await page.evaluate(() => ({
     plain: window.HouseQuests.coinsFor('A', 3, 2, false),
@@ -329,7 +356,8 @@ test('โจทย์เข้ากับระดับชั้นและ�
   expect(out.cats).toBeGreaterThan(5);
   expect(out.gid).toBe('p2');
   expect(out.tier).toBe(2);
-  expect(out.qN).toBe(3);              // ป.1-2 = 3 ข้อ (เด็กเล็กสมาธิสั้นกว่า)
+  /* 5-10 ข้อไล่ตามชั้น (ผู้ใช้สั่งเพิ่มจาก 3-5 เมื่อ 2026-08-09) — ป.2 = tier 2 ⇒ 6 ข้อ */
+  expect(out.qN).toBe(6);
   expect(out.inBank).toBe(true);       // คำถามมาจากคลังจริงของชั้น ป.2
   expect(out.choices).toBe(true);
   expect(out.thSubj).toContain('thai');
@@ -438,4 +466,319 @@ test('โจทย์นับของ: สร้างเองได้โด
   });
   expect(out.bad).toEqual([]);
   expect(out.kinds).toBe(1);           // ป.1-2 ปนของชนิดเดียว (นับง่ายก่อน)
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: แถบสรุปเควสต์ของวันนี้ (เหลือกี่ชุด/เสร็จกี่ชุด)
+   กดแล้วกางรายการว่าเหลืองานของใคร ร้านไหน — เด็กจะได้รู้ว่าต้องไปหาใครต่อ */
+test('แถบสรุปเควสต์วันนี้: นับเหลือ/เสร็จถูกต้อง และอัปเดตหลังเล่นจบ', async ({ page }) => {
+  const errors = await openHouse(page);
+  const bar = page.locator('#house-quest-bar');
+  await expect(bar).toBeVisible();
+
+  const sum0 = await page.evaluate(() => window.HouseQuests.daySummary());
+  /* NPC 8 + กระดาน 5 + ครอบครัว 1 = 14 ชุด/วัน */
+  expect(sum0.total).toBe(14);
+  expect(sum0.left).toBe(14);
+  expect(sum0.done).toBe(0);
+  await expect(page.locator('#hqbar-left')).toContainText('14');
+  await expect(page.locator('#hqbar-done')).toContainText('0');
+  /* ต้องมีสัญลักษณ์ให้เด็กอ่านออกโดยไม่ต้องอ่านคำ */
+  await expect(page.locator('#hqbar-left')).toContainText('❗');
+  await expect(page.locator('#hqbar-done')).toContainText('✅');
+
+  /* เล่นเควสต์ NPC 1 ชุดจนจบ → ตัวเลขต้องขยับ */
+  await page.evaluate(() => {
+    const q = window.HouseQuests, run = q.buildRun(q.specForNpc(q.state().npcIds[0]));
+    while (!run.over) q.answer(run, run.items[run.idx].correct);
+    q.finish(run);
+  });
+  await expect.poll(() => page.evaluate(() => document.getElementById('hqbar-left').textContent),
+    { timeout: 10000 }).toContain('13');
+  await expect(page.locator('#hqbar-done')).toContainText('1');
+  expect(errors).toEqual([]);
+});
+
+test('รายการเควสต์: บอกชื่อคนและร้าน/สถานที่ครบทุกชุดที่ยังไม่ได้ทำ', async ({ page }) => {
+  const errors = await openHouse(page);
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  await expect(page.locator('#hqsum-list .hqsum-row')).toHaveCount(14);
+  await expect(page.locator('#hqsum-list .hqsum-row.hqsum-ok')).toHaveCount(0);   /* ยังไม่ได้ทำอะไรเลย */
+
+  const rows = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#hqsum-list .hqsum-row')).map(r => ({
+      name: r.querySelector('.hqsum-name').textContent,
+      place: r.querySelector('.hqsum-place').textContent,
+    })));
+  /* ทุกแถวต้องมีทั้งชื่อและสถานที่ ไม่มีช่องว่าง */
+  rows.forEach(r => {
+    expect(r.name.length, 'ชื่อต้องไม่ว่าง').toBeGreaterThan(0);
+    expect(r.place.length, 'สถานที่ต้องไม่ว่าง').toBeGreaterThan(0);
+  });
+  /* ต้องมีทั้งงานกระดานและงานครอบครัวอยู่ในรายการ */
+  expect(rows.filter(r => r.name.includes('กระดาน')).length).toBe(5);
+  expect(rows.filter(r => r.place.includes('บ้านของหนู')).length).toBe(1);
+
+  await page.locator('#hqsum-close').click();
+  await expect(page.locator('#house-qsum')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: รายการต้องโชว์ "อันที่ทำเสร็จแล้ว" ด้วย ไม่ใช่แสดงแค่ที่เหลือ */
+test('รายการเควสต์: แยกกลุ่ม "ยังไม่ได้ทำ" กับ "ทำเสร็จแล้ว" และย้ายกลุ่มตามจริงหลังเล่นจบ', async ({ page }) => {
+  const errors = await openHouse(page);
+  await page.evaluate(() => {
+    const q = window.HouseQuests, run = q.buildRun(q.specForNpc(q.state().npcIds[0]));
+    while (!run.over) q.answer(run, run.items[run.idx].correct);
+    q.finish(run);
+  });
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  await expect(page.locator('#hqsum-list .hqsum-row')).toHaveCount(14);        /* ครบทุกชุดของวัน */
+  await expect(page.locator('#hqsum-list .hqsum-row.hqsum-ok')).toHaveCount(1); /* ที่เพิ่งทำเสร็จ */
+  /* กลุ่ม "ยังไม่ได้ทำ" ต้องมาก่อนเสมอ */
+  const secs = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#hqsum-list .hqsum-sec')).map(e => e.textContent));
+  expect(secs.length).toBe(2);
+  expect(secs[0]).toContain('ยังไม่ได้ทำ');
+  expect(secs[1]).toContain('ทำเสร็จแล้ว');
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: กล่องที่เปิดอยู่ แตะพื้นที่ด้านนอกแล้วต้องปิด */
+test('แตะนอกกล่อง = ปิดกล่อง (รายการเควสต์ · กระดาน · การ์ดเควสต์) และตัวละครต้องไม่เดินตามไปด้วย', async ({ page }) => {
+  const errors = await openHouse(page);
+  /* คลิกเมาส์จริงบนพื้นที่ว่างมุมซ้าย (นอกกล่องทุกใบ · นอกแถบ HUD · นอกเข็มทิศ) */
+  const tapAway = async () => { await page.mouse.click(60, 260); await page.waitForTimeout(250); };
+
+  /* 1) รายการเควสต์ */
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  await tapAway();
+  await expect(page.locator('#house-qsum')).toBeHidden();
+
+  /* 2) กระดานเควสต์ */
+  await page.evaluate(() => window.HouseQuestUI.board());
+  await expect(page.locator('#house-quest')).toBeVisible();
+  await tapAway();
+  await expect(page.locator('#house-quest')).toBeHidden();
+
+  /* 3) การ์ดเควสต์ */
+  await page.evaluate(() => window.HouseQuestUI.offer(window.HouseQuests.state().npcIds[0]));
+  await expect(page.locator('#house-qz')).toBeVisible();
+  await tapAway();
+  await expect(page.locator('#house-qz')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: เพิ่มจำนวนข้อต่อเควสต์เป็น 5-10 ข้อ ไล่ตามระดับชั้น */
+test('จำนวนข้อต่อเควสต์: 5-10 ข้อ ไล่ตามชั้น และเกณฑ์ดาวยืดตามจำนวนข้อ (ไม่เข้มขึ้นเงียบๆ)', async ({ page }) => {
+  const errors = await openHouse(page);
+  const qn = await page.evaluate(() => {
+    const q = window.HouseQuests, out = {};
+    q.GRADES.forEach(g => { out[g.id] = q.difficulty(g.id).qN; });
+    return out;
+  });
+  Object.keys(qn).forEach(g => {
+    expect(qn[g], 'จำนวนข้อของ ' + g).toBeGreaterThanOrEqual(5);
+    expect(qn[g], 'จำนวนข้อของ ' + g).toBeLessThanOrEqual(10);
+  });
+  expect(qn['p6']).toBe(10);
+  expect(qn['p1']).toBe(5);
+  /* ต้องไล่ขึ้นตามชั้น ไม่ลดลงกลางทาง */
+  const seq = await page.evaluate(() => window.HouseQuests.GRADES.map(g => window.HouseQuests.difficulty(g.id).qN));
+  for (let i = 1; i < seq.length; i++) expect(seq[i]).toBeGreaterThanOrEqual(seq[i - 1]);
+
+  /* เกณฑ์ 2 ดาวต้องยืดตามจำนวนข้อ — เควสต์ 10 ข้อ ผิด 5 ข้อยังต้องได้ 2 ดาว (ห้ามลงโทษเด็ก) */
+  const stars = await page.evaluate(() => ({
+    long5:  window.HouseQuests.starsOf({wrong: 5, items: new Array(10)}),
+    long9:  window.HouseQuests.starsOf({wrong: 9, items: new Array(10)}),
+    short2: window.HouseQuests.starsOf({wrong: 2, items: new Array(3)}),
+    perfect:window.HouseQuests.starsOf({wrong: 0, items: new Array(10)}),
+  }));
+  expect(stars.long5).toBe(2);
+  expect(stars.long9).toBe(1);
+  expect(stars.short2).toBe(2);      /* พฤติกรรมเดิมของเควสต์ 3 ข้อต้องไม่เปลี่ยน */
+  expect(stars.perfect).toBe(3);
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: หน้ารายการเควสต์ต้องบอกดาวของแต่ละชุดและดาวรวมของวันนี้ */
+test('หน้ารายการเควสต์: โชว์ดาวรายชุด + แถบดาวรวมของวันนี้', async ({ page }) => {
+  const errors = await openHouse(page);
+  /* เล่น 2 ชุด: ชุดแรกเต็ม 3 ดาว · ชุดที่สองตอบผิดรัวๆ ให้เหลือ 1 ดาว */
+  await page.evaluate(() => {
+    const q = window.HouseQuests, ids = q.state().npcIds;
+    const a = q.buildRun(q.specForNpc(ids[0]));
+    while (!a.over) q.answer(a, a.items[a.idx].correct);
+    q.finish(a);
+    const b = q.buildRun(q.specForNpc(ids[1]));
+    let g = 0;
+    while (!b.over && g++ < 300) {
+      const it = b.items[b.idx];
+      const bad = it.choices.map((_, i) => i).filter(i => i !== it.correct);
+      bad.forEach(i => q.answer(b, i));          /* ผิดทุกตัวเลือกก่อน */
+      q.answer(b, it.correct);
+    }
+    q.finish(b);
+  });
+
+  const sum = await page.evaluate(() => window.HouseQuests.daySummary());
+  expect(sum.starsMax).toBe(sum.total * 3);
+  expect(sum.stars).toBe(4);                     /* 3 ดาว + 1 ดาว */
+
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  await expect(page.locator('#hqsum-startxt')).toHaveText('4 / ' + sum.starsMax);
+  await expect.poll(() => page.evaluate(() =>
+    document.getElementById('hqsum-starfill').style.width)).not.toBe('0%');
+
+  /* ทุกแถวต้องมีดาว 3 ดวงเสมอ (⭐ ที่ได้ + ☆ ที่ยังไม่ได้) */
+  const stars = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#hqsum-list .hqsum-row')).map(r => {
+      const all = Array.from(r.querySelectorAll('.hqsum-star'));
+      const on = all.filter(e => e.classList.contains('on'));
+      return {
+        n: all.length, on: on.length,
+        tone: on.length ? (on[0].className.baseVal || on[0].getAttribute('class')).match(/tone(\d)/)[1] : '',
+        color: on.length ? getComputedStyle(on[0]).color : '',
+        done: r.classList.contains('hqsum-ok'),
+        hasNum: !!r.querySelector('.hqsum-starn'),
+      };
+    }));
+  expect(stars.length).toBe(sum.total);
+  stars.forEach(s => expect(s.n, 'ทุกแถวต้องมีดาว 3 ดวง').toBe(3));
+  /* ผู้ใช้สั่ง 2026-08-09: **ไม่มีตัวเลขกำกับแล้ว** ใช้สีบอกจำนวนแทน */
+  stars.forEach(s => expect(s.hasNum, 'ต้องไม่มีตัวเลขกำกับดาวแล้ว').toBe(false));
+  /* ชุดที่ยังไม่ทำ = ดาวจางทั้ง 3 ดวง (ไม่มีดวงติด) */
+  stars.filter(s => !s.done).forEach(s => expect(s.on).toBe(0));
+  /* ชุดที่ทำแล้ว: จำนวนดาวที่ติด = โทนสี ⇒ 1 ดาว/2 ดาว/3 ดาว คนละสีกัน */
+  const done = stars.filter(s => s.done);
+  done.forEach(s => {
+    expect(s.on).toBeGreaterThanOrEqual(1);
+    expect(String(s.on), 'โทนสีต้องตรงกับจำนวนดาว').toBe(s.tone);
+  });
+  const c3 = done.find(s => s.on === 3), c1 = done.find(s => s.on === 1);
+  expect(c3).toBeTruthy();
+  expect(c1).toBeTruthy();
+  expect(c3.color, 'ดาว 3 ดวงกับ 1 ดวงต้องคนละสี').not.toBe(c1.color);
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: โบนัสดาวรายวัน — ครึ่งทาง +15 · เต็ม +20 · **เด็กต้องกดรับเอง**
+   และปุ่มเควสต์บน HUD ต้องขึ้นแจ้งเตือนให้รู้ว่ามีของรอรับ */
+test('โบนัสดาวรายวัน: กดรับได้เมื่อถึงเกณฑ์ · จ่ายผ่าน OwlCoins · รับซ้ำไม่ได้ · มีแจ้งเตือนที่ปุ่ม', async ({ page }) => {
+  const errors = await openHouse(page);
+  const bonus = () => page.evaluate(() => window.HouseQuests.starBonus());
+
+  let b = await bonus();
+  expect(b.half.coins).toBe(15);
+  expect(b.full.coins).toBe(20);
+  expect(b.half.ready).toBe(false);
+  expect(b.halfNeed).toBe(Math.ceil(b.starsMax / 2));
+  await expect(page.locator('#hqbar-alert')).toBeHidden();      /* ยังไม่มีอะไรให้รับ */
+
+  /* เก็บดาวให้ถึงครึ่งทาง (เล่นแบบเต็มดาวไปเรื่อยๆ) */
+  await page.evaluate(() => {
+    const q = window.HouseQuests;
+    const need = Math.ceil(q.daySummary().starsMax / 2);
+    const specs = q.state().npcIds.map(id => q.specForNpc(id))
+      .concat([0,1,2,3,4].map(i => q.specForBoard(i)));
+    for (const sp of specs) {
+      if (q.daySummary().stars >= need) break;
+      const r = q.buildRun(sp);
+      while (!r.over) q.answer(r, r.items[r.idx].correct);
+      q.finish(r);
+    }
+  });
+  b = await bonus();
+  expect(b.stars).toBeGreaterThanOrEqual(b.halfNeed);
+  expect(b.half.ready).toBe(true);
+  expect(b.full.ready).toBe(false);
+  /* หมุดที่ยังไม่ถึงต้องบอกไว้ล่วงหน้าว่าต้องได้กี่ดาว + ได้เงินเท่าไหร่ (มีรูปเหรียญ) */
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  const lock = await page.evaluate(() => {
+    const e = document.getElementById('hqsum-pin-full');
+    return { coinIcon: !!e.querySelector('.hqsum-pincoin .hs-coin'),
+             coinTxt: e.querySelector('.hqsum-pincoin').textContent.trim(),
+             need: e.querySelector('.hqsum-pinneed').textContent };
+  });
+  expect(lock.coinIcon, 'ต้องมีรูปเหรียญบนหมุด').toBe(true);
+  expect(lock.coinTxt).toBe('20');
+  expect(lock.need).toBe('42⭐');
+  await page.locator('#hqsum-close').click();
+  /* ปุ่มบน HUD ต้องขึ้นแจ้งเตือน */
+  await expect.poll(() => page.evaluate(() =>
+    !document.getElementById('hqbar-alert').hidden), { timeout: 10000 }).toBe(true);
+  expect(await page.evaluate(() =>
+    document.getElementById('house-quest-bar').classList.contains('hqbar-gift'))).toBe(true);
+
+  /* กดรับในหน้ารายการ → เงินเพิ่มผ่าน OwlCoins */
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  const before = await coins(page);
+  await page.locator('#hqsum-pin-half.ready').click();
+  await page.waitForTimeout(400);
+  expect(await coins(page) - before).toBe(15);
+
+  /* รับซ้ำไม่ได้ + แจ้งเตือนหายไป */
+  b = await bonus();
+  expect(b.half.claimed).toBe(true);
+  expect(b.half.ready).toBe(false);
+  expect(await page.evaluate(() => window.HouseQuests.claimStarBonus('half'))).toBe(0);
+  await expect(page.locator('#hqsum-pin-half.taken')).toHaveCount(1);
+  await expect.poll(() => page.evaluate(() =>
+    document.getElementById('hqbar-alert').hidden), { timeout: 10000 }).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('โบนัสดาวเต็มวัน: ได้ดาวครบทุกชุดแล้วกดรับ +20 ได้', async ({ page }) => {
+  const errors = await openHouse(page);
+  await page.evaluate(() => {
+    const q = window.HouseQuests;
+    const specs = q.state().npcIds.map(id => q.specForNpc(id))
+      .concat([0,1,2,3,4].map(i => q.specForBoard(i)))
+      .concat([q.specForFamily()]);
+    specs.forEach(sp => {
+      const r = q.buildRun(sp);
+      while (!r.over) q.answer(r, r.items[r.idx].correct);
+      q.finish(r);
+    });
+  });
+  const b = await page.evaluate(() => window.HouseQuests.starBonus());
+  expect(b.stars).toBe(b.starsMax);
+  expect(b.full.ready).toBe(true);
+
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  const before = await coins(page);
+  /* กดรับทั้ง 2 ก้อน (ครึ่งทาง + เต็ม) */
+  for (const id of ['#hqsum-pin-half', '#hqsum-pin-full']) {
+    const btn = page.locator(id + '.ready');
+    if (await btn.count()) { await btn.click(); await page.waitForTimeout(350); }
+  }
+  expect(await coins(page) - before).toBe(35);
+  await expect(page.locator('.hqsum-pin.taken')).toHaveCount(2);
+  /* หมุดต้องอยู่ตำแหน่งตามสัดส่วนดาวที่ต้องได้ (ครึ่งทาง ~50% · เต็ม 100%) */
+  const pos = await page.evaluate(() => ({
+    half: document.getElementById('hqsum-pin-half').style.left,
+    full: document.getElementById('hqsum-pin-full').style.left,
+  }));
+  /* หมุดต้องบอก **เหรียญ (รูปเหรียญ ไม่ใช่ emoji)** และ **จำนวนดาวที่ต้องได้ใต้เหรียญ** */
+  const pin = await page.evaluate(() => {
+    const e = document.getElementById('hqsum-pin-full');
+    return { coinIcon: !!e.querySelector('.hqsum-pincoin .hs-coin'),
+             taken: e.classList.contains('taken'),
+             need: e.querySelector('.hqsum-pinneed').textContent,
+             coinTxt: e.querySelector('.hqsum-pincoin').textContent };
+  });
+  expect(pin.need).toMatch(/^\d+⭐$/);
+  expect(parseInt(pin.need, 10)).toBe(42);       /* เต็มวัน = 14 ชุด × 3 ดาว */
+  expect(pin.taken).toBe(true);
+  expect(pin.coinTxt).toContain('✓');            /* รับแล้วโชว์ ✓ แทนจำนวนเงิน */
+  expect(pos.full).toBe('100%');
+  expect(parseInt(pos.half, 10)).toBeGreaterThanOrEqual(50);
+  expect(parseInt(pos.half, 10)).toBeLessThanOrEqual(52);
+  expect(errors).toEqual([]);
 });

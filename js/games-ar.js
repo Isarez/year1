@@ -720,6 +720,7 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-shop.js'+v))
     .then(()=>loadScriptOnce('js/house-quests.js'+v))
     .then(()=>loadScriptOnce('js/house-pet-care.js'+v))
+    .then(()=>loadScriptOnce('js/house-family.js'+v))
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
     /* หน้าคลังคำถาม (เมนูเฟือง) — ต้องมาหลัง house.js เพราะเรียก window.HouseQuestUI ตอนกดเล่น */
     .then(()=>loadScriptOnce('js/house-qbrowse.js'+v))

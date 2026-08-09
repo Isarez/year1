@@ -892,6 +892,9 @@
         <button class="child-edit-btn" id="house-child-edit-btn" aria-label="แก้ไข Emoji" data-tooltip="แก้ไข Emoji"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg></button>
       </div>
       <button class="back-btn" id="house-pet-btn" aria-label="สัตว์เลี้ยงของหนู" data-tooltip="สัตว์เลี้ยงของหนู"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15.5" rx="4.8" ry="3.9" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="5.8" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="12" cy="8.6" r="2.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="18.2" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/></svg></button>
+      <!-- เฟส 4A: แต่งตัวให้พ่อแม่ — ปุ่มเดียวเข้าหน้าแต่งตัว แล้วเลือกพ่อ/แม่จากแท็บข้างใน
+           โผล่เฉพาะตอนอยู่ในบ้าน (พ่อแม่อยู่แต่ชั้นใน) — refreshParentBtn ใน js/house.js -->
+      <button class="back-btn" id="house-parent-btn" hidden aria-label="แต่งตัวให้พ่อแม่" data-tooltip="แต่งตัวให้พ่อแม่"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="7.4" r="3.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><path d="M2.9 19.5c0-3 2.3-5.2 5.1-5.2s5.1 2.2 5.1 5.2z" fill="#8FC7F0" stroke="#3A79D8" stroke-width="1.5" stroke-linejoin="round"/><circle cx="16.6" cy="8.6" r="2.7" fill="#FFD9A0" stroke="#C0527A" stroke-width="1.5"/><path d="M12 19.5c0-2.6 2-4.6 4.6-4.6s4.6 2 4.6 4.6z" fill="#FFD6E8" stroke="#C0527A" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
       <button class="back-btn" id="house-edit-btn" aria-label="แต่งตัวให้ตัวละคร" data-tooltip="แต่งตัวให้ตัวละคร"><svg class="house-btn-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 3.6L4 6.2L5.9 10.6L8.2 9.6L8.2 20L15.8 20L15.8 9.6L18.1 10.6L20 6.2L14.8 3.6Q12 7.2 9.2 3.6Z" fill="#FFD6E8"/><path d="M12 15.9c-1.8-1.3-2.6-2.1-2.6-3.1 0-.8.65-1.4 1.4-1.4.5 0 .9.25 1.2.65.3-.4.7-.65 1.2-.65.75 0 1.4.6 1.4 1.4 0 1-.8 1.8-2.6 3.1z" fill="#C0527A" stroke="none"/></svg></button>
       <button class="back-btn" id="house-decorate-btn" aria-label="ตกแต่งบ้าน" data-tooltip="ตกแต่งบ้าน"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v.6a2.4 2.4 0 0 0-2.4 2.4V17H6.4v-2A2.4 2.4 0 0 0 4 12.6z" fill="#FFD6A0" stroke="#E59A5B" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 9V7.5A1.5 1.5 0 0 1 8.5 6h7A1.5 1.5 0 0 1 17 7.5V9" fill="#FFE9C8" stroke="#E59A5B" stroke-width="1.2"/><path d="M5.5 17v2M18.5 17v2" stroke="#E59A5B" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       <!-- ยอดเงินนกฮูกของเด็กคนนี้ — อยู่ท้ายแถวปุ่มบน ต่อจากปุ่มตกแต่งบ้าน (ตัวเลขอัปเดตจาก window.OwlCoins) -->
@@ -928,6 +931,7 @@
     </div>
     <!-- เฟส 3B: แถบสถานะเพื่อนตัวน้อย ใต้ชื่อเด็ก — ชื่อสัตว์ · อาหารที่กิน · หลอดความอิ่ม · ปุ่มให้อาหาร
          ซ่อนไว้จนกว่าจะมีสัตว์เลี้ยงจริง (refreshPetBar ใน js/house.js) -->
+    <div class="house-hud-row" id="house-hud-row">
     <div class="house-pet-bar" id="house-pet-bar" hidden>
       <span class="hpb-pet" id="hpb-pet"></span>
       <span class="hpb-meter"><i class="hpb-fill" id="hpb-fill"></i></span>
@@ -936,6 +940,26 @@
       <!-- ไอคอนชามเป็น SVG ไม่ใช่ emoji 🍽️ — บางเครื่องไม่มี glyph ตัวนั้นแล้วขึ้นเป็นวงกลมเทาทึบ
            (กับดักเดียวกับ 🪙 ที่เคยเจอมาแล้ว ดูหมายเหตุ .hs-coin) ป้ายข้อความอยู่ใน <span> เสมอ -->
       <button type="button" class="hpb-feed" id="hpb-feed"><svg class="hpb-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h16a8 8 0 0 1-8 7 8 8 0 0 1-8-7z" fill="#FFF3D6" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 13h18" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 9.6c0-1.3 1.6-1.5 1.6-3M12 9.2c0-1.5 1.8-1.7 1.8-3.4M15.5 9.6c0-1.3 1.6-1.5 1.6-3" fill="none" stroke="#FFF3D6" stroke-width="1.5" stroke-linecap="round"/></svg><span id="hpb-feed-label">ให้อาหาร</span></button>
+    </div>
+    </div>
+    <!-- เฟส 4A: แถบสรุปเควสต์ของวันนี้ — **แถวที่ 3 ใต้แถบสัตว์เลี้ยง** (ผู้ใช้สั่ง 2026-08-09)
+         กดแล้วเปิดรายการว่าเหลืองานของใคร/ร้านไหน + อันที่ทำเสร็จแล้ว -->
+    <div class="house-hud-row house-hud-row2">
+      <button type="button" class="house-quest-bar" id="house-quest-bar" hidden aria-label="สรุปเควสต์วันนี้">
+        <!-- ไอคอนกระดานเช็คลิสต์ — วาดเป็น SVG ให้เข้าชุดกับไอคอนอื่นในแอป (แบน มน พาสเทล)
+             ใช้พาเลตต์เดียวกับ UI โหมดบ้าน: ครีม #FFF6E6 · ขอบน้ำตาล #C08340 · คลิปส้ม #F0A14B · ติ๊กเขียว #5FAF52
+             ⚠ **ไม่มีข้อความกำกับแล้ว** (ผู้ใช้สั่งเอา "เควสต์วันนี้" ออก 2026-08-09) ⇒ ไอคอนต้องสื่อเองให้ได้ -->
+        <svg class="hqb-ic" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4.6" y="3.4" width="14.8" height="17.4" rx="3.2" fill="#FFF6E6" stroke="#C08340" stroke-width="1.7"/>
+          <rect x="8.4" y="1.9" width="7.2" height="3.6" rx="1.6" fill="#F0A14B" stroke="#C08340" stroke-width="1.5"/>
+          <path d="M7.7 11.2 L9.2 12.8 L12 9.6" fill="none" stroke="#5FAF52" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 11.2h3.1M7.7 15.6h9.4M7.7 18.2h6.2" stroke="#E0B98A" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        <span class="hqb-left" id="hqbar-left">0</span>
+        <span class="hqb-done" id="hqbar-done">0</span>
+        <!-- จุดแจ้งเตือน: มีโบนัสดาวรอให้กดรับอยู่ (refreshQuestBar ใน js/house.js) -->
+        <span class="hqb-alert" id="hqbar-alert" hidden aria-label="มีของรางวัลรอรับ">🎁</span>
+      </button>
     </div>
     <!-- ปุ่มควบคุมชุดเดียวกับ header หลัก (header ถูกซ่อนในโหมดบ้าน) — เป็น proxy คลิกแทนปุ่มจริง icon mirror อัตโนมัติใน js/house.js ยกเว้น fullscreen ที่ผูกกับ fsBtns ใน js/app.js ตรงๆ -->
     <div class="house-ctrl-wrap">
@@ -995,7 +1019,7 @@
       <div class="house-creator-sub" id="hq-sub">เลือกงานที่อยากทำได้เลย ทำครบทั้ง 5 ชุดวันนี้ได้โบนัสพิเศษ</div>
       <div class="hq-list" id="hq-list"></div>
       <div class="hq-stars" id="hq-stars">⭐ ดาวสะสม 0 ดวง</div>
-      <button class="house-done-btn" id="hq-claim" hidden>รับดาวรางวัล ⭐</button>
+      <button class="house-done-btn" id="hq-claim" hidden>รับโบนัสครบ 5 ชุด</button>
       <button class="house-pet-alt-btn hq-close-btn" id="hq-close">ปิดกระดาน</button>
     </div>
   </div>
@@ -1010,6 +1034,27 @@
       <div class="hqz-sub" id="hqz-sub"></div>
       <div class="hqz-stage" id="hqz-stage"></div>
       <button class="house-pet-alt-btn hqz-close-btn" id="hqz-close">ปิด</button>
+    </div>
+  </div>
+  <!-- เฟส 4A: รายการเควสต์ที่ยังไม่ได้ทำวันนี้ — เนื้อในสร้างด้วย JS (renderQuestSummary ใน js/house.js) -->
+  <div class="house-creator house-qz house-qsum" id="house-qsum" hidden>
+    <div class="house-creator-panel hqz-panel hqsum-panel">
+      <div class="hqz-top"><div class="hqz-who">📋 เควสต์วันนี้</div><div class="hqsum-count" id="hqsum-count"></div></div>
+      <div class="hqz-sub" id="hqsum-sub"></div>
+      <!-- แถบดาวของวันนี้ — ได้ไปแล้วกี่ดาวจากเต็มเท่าไหร่ (เฟส 4A · ผู้ใช้สั่งเพิ่ม 2026-08-09) -->
+      <!-- หลอดดาวของวันนี้ + **หมุดบอกจุดที่ได้โบนัส** (ครึ่งทาง/เต็ม)
+           หมุดที่ถึงเกณฑ์แล้วกดรับเงินได้เลย (ผู้ใช้สั่งย้ายมาไว้บนหลอด 2026-08-09) -->
+      <div class="hqsum-starbar">
+        <span class="hqsum-starlab">⭐ ดาววันนี้</span>
+        <span class="hqsum-starwrap">
+          <span class="hqsum-starmeter"><i class="hqsum-starfill" id="hqsum-starfill"></i></span>
+          <button type="button" class="hqsum-pin" id="hqsum-pin-half"></button>
+          <button type="button" class="hqsum-pin" id="hqsum-pin-full"></button>
+        </span>
+        <span class="hqsum-startxt" id="hqsum-startxt">0 / 0</span>
+      </div>
+      <div class="hqsum-list" id="hqsum-list"></div>
+      <button class="house-pet-alt-btn hqz-close-btn" id="hqsum-close">ปิด</button>
     </div>
   </div>
   <!-- ปรับค่าต่างๆ (หน้าเทส) — เนื้อในสร้างด้วย JS ทั้งหมดใน js/house-devtools.js -->
@@ -1041,6 +1086,13 @@
     <div class="house-creator-panel">
       <div class="house-creator-title" id="house-creator-title"><svg class="house-title-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="#ffe0b3" stroke="#e59a5b" stroke-width="2"/><circle cx="9" cy="11" r="1.3" fill="#6b4a2b"/><circle cx="15" cy="11" r="1.3" fill="#6b4a2b"/><path d="M9 14.6 Q12 17 15 14.6" fill="none" stroke="#c9573f" stroke-width="1.8" stroke-linecap="round"/></svg> สร้างตัวละครของหนู</div>
       <div class="house-creator-sub">หมุนดูตัวละครได้ แตะเลือกแบบที่ชอบเลย!</div>
+      <!-- เฟส 4A: แท็บเลือกว่าจะแต่งตัวให้พ่อหรือแม่ — โผล่เฉพาะตอนแต่งตัวให้พ่อแม่ -->
+      <div class="hqb-tabs house-creator-tabs" id="house-creator-tabs" hidden role="tablist" aria-label="เลือกพ่อหรือแม่"></div>
+      <!-- เฟส 4A: แถวตั้งชื่อ — โผล่เฉพาะตอนแต่งตัวให้พ่อ/แม่ (ชื่อเด็กแก้ที่ป้ายชื่อบนหัวจออยู่แล้ว) -->
+      <div class="house-creator-name-row" id="house-creator-name-row" hidden>
+        <div class="house-row-label">ตั้งชื่อ</div>
+        <input class="house-pet-name-input" id="house-creator-name" type="text" maxlength="14" placeholder="เช่น คุณแม่">
+      </div>
       <div class="house-creator-rows" id="house-creator-rows"></div>
       <button class="house-done-btn" id="house-done-btn">เสร็จแล้ว ไปบ้านกันเลย! <svg class="house-done-ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 L12 4.5 L20 11.5" fill="rgba(255,255,255,.28)"/><path d="M6 10.5 V20 H18 V10.5" fill="rgba(255,255,255,.28)"/><rect x="10" y="14" width="4" height="6" rx="1" fill="#fff" stroke="none"/></svg></button>
     </div>

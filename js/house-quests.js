@@ -27,7 +27,7 @@
   'use strict';
 
   /* ---------- สูตรรางวัล (ข้อ 6 + ข้อ 19 ของแผนแม่บท) ----------
-     เหรียญ = base(ตระกูลเควสต์) × mulStar × mulTier
+     เหรียญ = base(ตระกูลเควสต์) × mulStar   (ตัวคูณระดับชั้น = 1.0 ทุกชั้น)
      ⚠️ **จูนลง ~3 เท่าเมื่อ 2026-08-08 ตามคำสั่งผู้ใช้ — ห้ามปรับขึ้นกลับโดยไม่ถามก่อน**
      ของทั้งเกมรวม ~15,800 🪙 (เฟอร์นิเจอร์ 116 ชิ้น 11,005 + ของแต่งตัว 160 ชิ้น 4,780)
      ของเดิม (base A=18 · board=28 · โบนัส 100) ให้วันละ ~600 🪙 ⇒ เด็กซื้อครบทั้งเกมใน ~27 วัน
@@ -36,13 +36,30 @@
        สีเสื้อ 15 🪙 = 2 เควสต์ · เฟอร์จิ๋ว 25 = 3 เควสต์ · เล็ก 60 = ครึ่งวัน
        กลาง 140 = ~1 วัน · ใหญ่ 300 = ~1.5 วัน · สัตว์หายาก 1,500 = ~1 สัปดาห์ · ครบทั้งเกม ~80 วัน
      A = งานในร้าน · B = งานเดินโลก (เฟส 7) · C = งานสร้างสรรค์ (เฟส 7) · board = กระดาน */
-  const FAM_BASE   = { A:6, B:8, C:7, board:10 };
-  const STAR_MUL   = [0, 1.0, 1.5, 2.0];        /* index = จำนวนดาว */
+  /* family = เควสต์ครอบครัว (พ่อ/แม่ในบ้าน · เฟส 4A) — วันละ 1 ชุดเท่านั้น โควตาแยกจาก NPC/กระดาน
+     จึงให้สูงกว่าทั้งคู่ (14-39 🪙 · ผู้ใช้เลือกตัวเลขนี้เอง 2026-08-09 ห้ามปรับโดยไม่ถาม)
+     แผนข้อ 28 เขียนไว้ 50-90 แต่นั่นเขียนก่อนจูนเศรษฐกิจลง ~3 เท่าเมื่อ 2026-08-08 */
+  /* ⚠️ **จูนลงอีกรอบ 2026-08-09 ตามคำสั่งผู้ใช้ — ห้ามปรับขึ้นกลับโดยไม่ถาม**
+       - เควสต์ NPC: ลดเฉพาะ 2-3 ดาว (1 ดาวคงเดิม 6-8) ⇒ ทำผ่านตัวคูณดาว
+       - กระดาน + ครอบครัว: ลดทุกระดับดาว ⇒ ทำผ่าน base ของตระกูลนั้นโดยตรง
+     ผลลัพธ์ (ทุกชั้นเท่ากัน): NPC 6 / 8 / 10 · กระดาน 8 / 10 / 13 · ครอบครัว 10 / 13 / 16
+     ส่วนที่หายไปถูกชดเชยด้วย **โบนัสดาวรายวัน** (ครึ่งทาง +15 · เต็ม +20) ที่เด็กต้องกดรับเอง */
+  const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
+  const STAR_MUL   = [0, 1.0, 1.3, 1.6];        /* index = จำนวนดาว (เดิม 1.0/1.5/2.0) */
+  /* ---------- โบนัสดาวรายวัน (ผู้ใช้สั่งเพิ่ม 2026-08-09) ----------
+     ได้ดาวถึงครึ่งของดาวเต็มวันนี้ → กดรับ 15 🪙 · ได้ครบเต็มจำนวน → กดรับอีก 20 🪙
+     **ต้องกดรับเองในหน้ารายการเควสต์** (ไม่จ่ายอัตโนมัติ) เพื่อให้เด็กรู้ตัวว่าได้อะไรมา
+     ⚠ ต่างจากโบนัส "ทำครบ 5 ชุด" ของกระดานที่ถูกเอาออกไป — อันนี้วัดที่ **คุณภาพ (ดาว)** ไม่ใช่จำนวนชุด
+       และไม่บังคับให้ทำครบทุกชุด (ครึ่งทางก็ได้แล้ว) จึงไม่ขัดกติกาข้อ 2 */
+  const STAR_BONUS = {half:15, full:20};
+  const BOARD_BONUS = 10;                        /* ทำกระดานครบ 5 ชุด → กดรับที่กระดาน (ผู้ใช้สั่งกลับมา 2026-08-09) */
   const CHAL_MUL   = 1.5;                        /* โจทย์ท้าทาย (สูงกว่าชั้น 1 ระดับ) ได้เหรียญ ×1.5 */
   const DAY_CAP    = 400;                        /* เพดานเหรียญต่อวัน — กันฟาร์ม (ป.6 เล่นครบแบบไม่พลาดเลย ~340) */
   const NPC_PER_DAY = 8;                         /* วันนี้มีกี่ NPC ที่ติดป้าย "!" (ข้อ 7: 5-8 ร้าน/วัน) */
   const BOARD_N     = 5;                         /* กระดาน 5 ชุด/วัน (ข้อ 19) */
-  const BOARD_BONUS = 35;                        /* ทำครบ 5 ชุด → โบนัส (≈ 2 เควสต์กระดาน จูงใจให้เก็บครบ) */
+  /* ⚠ **โบนัสครบ 5 ชุดของกระดานถูกเอาออกแล้ว** (ผู้ใช้สั่ง 2026-08-09)
+     เควสต์กระดานได้เหรียญของตัวเองครบอยู่แล้ว โบนัสก้อนโตทำให้เด็กรู้สึกว่า "ต้องเก็บให้ครบ"
+     ซึ่งขัดกับกติกาที่ว่าไม่บังคับ ไม่ลงโทษ · **ห้ามใส่กลับโดยไม่ถามผู้ใช้** */
 
   /* ---------- ประตูเช็คความพร้อม (ข้อ 24) ---------- */
   const CHAL_NEED = 12;    /* ต้องทำเควสต์ระดับตัวเองสำเร็จครบกี่ชุดก่อนถูกถาม */
@@ -180,24 +197,30 @@
       const tier = Math.max(1, gradeIndex(gid || gradeId()));   /* เตรียม ป.1 กับ ป.1 = tier 1 */
       return {
         tier: tier,
-        qN:      tier <= 2 ? 3 : (tier <= 4 ? 4 : 5),  /* จำนวนข้อต่อเควสต์ (เด็กเล็กสั้นกว่า) */
+        /* จำนวนข้อต่อเควสต์ — **5-10 ข้อ ไล่ตามชั้น** (ผู้ใช้สั่งเพิ่มจาก 3-5 เมื่อ 2026-08-09)
+           เตรียม ป.1/ป.1 = 5 · ป.2 = 6 · ป.3 = 7 · ป.4 = 8 · ป.5 = 9 · ป.6 = 10
+           ⚠ ยาวขึ้นเท่าตัว แต่ **ค่าตอบแทนคิดต่อเควสต์เหมือนเดิม** ⇒ เหรียญต่อข้อลดลงครึ่งหนึ่ง
+             (ตั้งใจ: ยืดเวลาเล่นต่อวันโดยไม่ทำเงินเฟ้อ — ตัวเลขเหรียญเป็นค่าที่ผู้ใช้ล็อกไว้ ห้ามขยับเอง) */
+        qN:      Math.min(10, 4 + tier),
         countMax:tier <= 2 ? 9 : (tier <= 4 ? 15 : 24),/* จำนวนของสูงสุดในโจทย์นับ */
         kinds:   tier <= 2 ? 1 : (tier <= 4 ? 2 : 3),  /* ของกี่ชนิดปนกันในโจทย์นับ */
         hints:   tier <= 2,                            /* ป.1-2 มีคำใบ้/ตัวช่วย */
-        mulTier: 1 + (tier - 1) * 0.08,                /* ป.1 = 1.0 → ป.6 = 1.4 */
+        mulTier: 1,                                    /* ทุกชั้นเท่ากัน (ผู้ใช้สั่ง 2026-08-09) */
       };
     }
 
     /* ================= state ใน house save (data.q2) ================= */
     let S = null;
     function blank(){
-      return { d:'', npcIds:[], npc:{}, board:{q:[], done:[], claimed:false},
+      return { d:'', npcIds:[], npc:{}, board:{q:[], done:[], st:{}, claimed:false},
+               sb:{half:false, full:false},
+               fam:{who:'', m:'', st:'', stars:0},
                earned:0, stars:0, total:0,
                chal:{done:{}, recent:[], on:false, miss:0, ask:''} };
     }
     function persist(){
       if(!S) return;
-      save({q2:{ d:S.d, npcIds:S.npcIds, npc:S.npc, board:S.board,
+      save({q2:{ d:S.d, npcIds:S.npcIds, npc:S.npc, board:S.board, fam:S.fam, sb:S.sb,
                  earned:S.earned, stars:S.stars, total:S.total, chal:S.chal }});
     }
     /* โหลด state + รีเซ็ตส่วน "รายวัน" เมื่อขึ้นวันใหม่
@@ -223,18 +246,24 @@
         S.board  = raw.board || {q:[], done:[], claimed:false};
         S.board.q      = S.board.q || [];
         S.board.done   = S.board.done || [];
+        S.board.st     = S.board.st || {};
         S.board.claimed= !!S.board.claimed;
+        S.fam    = raw.fam || {who:'', m:'', st:'', stars:0};
+        S.sb     = raw.sb  || {half:false, full:false};
         S.earned = raw.earned | 0;
       }
       if(S.d !== day || !S.npcIds.length){       /* วันใหม่ (หรือ save เก่ายังไม่มีข้อมูล) → สุ่มชุดใหม่ */
         S.d      = day;
         S.npcIds = rollNpcs(day);
         S.npc    = {};
-        S.board  = {q: rollBoard(day), done:[], claimed:false};
+        S.board  = {q: rollBoard(day), done:[], st:{}, claimed:false};
+        S.fam    = rollFamily(day);
+        S.sb     = {half:false, full:false};
         S.earned = 0;
         persist();
       }
       if(!S.board.q.length){ S.board.q = rollBoard(day); persist(); }
+      if(!S.fam || !S.fam.who){ S.fam = rollFamily(day); persist(); }
       return S;
     }
     function state(){ return S || sync(); }
@@ -249,6 +278,13 @@
     function rollNpcs(day){
       const rng = rngFrom(fnv(childId() + '|' + day + '|npcs'));
       return pickMany(rng, questableIds(), NPC_PER_DAY);
+    }
+    /* เควสต์ครอบครัว 1 ชุด/วัน (ข้อ 28) — สุ่มว่าวันนี้พ่อหรือแม่เป็นคนขอ (อีกคนพูดให้กำลังใจ)
+       seeded ด้วย childId+วัน ⇒ วันนี้ได้พ่อก็พ่อทั้งวัน รีเฟรชกี่ครั้งก็ไม่เปลี่ยน */
+    function rollFamily(day){
+      const rng = rngFrom(fnv(childId() + '|' + day + '|fam'));
+      return { who: rng() < .5 ? 'dad' : 'mom',
+               m: rng() < .3 ? 'count' : 'quiz', st:'', stars:0 };
     }
     /* กระดาน 5 ชุด/วัน — โควตาแยกจาก NPC เด็ดขาด (ข้อ 19) */
     function rollBoard(day){
@@ -369,6 +405,40 @@
                fam:'A', chal: done ? !!rec.chal : rollChal(npcId),
                done: done, stars: rec.stars | 0 };
     }
+    /* เควสต์ครอบครัวของวันนี้ — `who` บอกว่าพ่อหรือแม่เป็นคนขอ (ตัวอีกคนไม่มีงาน) */
+    function specForFamily(){
+      const s = state();
+      const f = s.fam || {};
+      if(!f.who) return null;
+      const done = f.st === 'done';
+      return { src:'family', key:'fam', who:f.who, npc:'', mech: MECHS[f.m] ? f.m : 'quiz',
+               fam:'family', chal: done ? false : rollChal('fam'),
+               done: done, stars: f.stars | 0 };
+    }
+    /* สรุปเควสต์ของ "วันนี้" ทั้งหมด (แถบสรุป + หน้ารายการใน js/house.js)
+       คืนเฉพาะข้อมูลดิบ — ชื่อคน/ชื่อร้านให้ฝั่งหน้าจอไปแปลเอง (ไฟล์นี้ไม่รู้จักผังเมือง) */
+    /* คืน **ทุกชุดของวันนี้พร้อมธง done** (ผู้ใช้สั่งให้โชว์อันที่ทำเสร็จแล้วด้วย 2026-08-09)
+       ฝั่งหน้าจอเป็นคนแยกกลุ่ม/แปลชื่อคน-ชื่อร้านเอง (ไฟล์นี้ไม่รู้จักผังเมือง) */
+    function daySummary(){
+      const s = state();
+      const items = [];
+      const bst = s.board.st || {};
+      s.npcIds.forEach(id=>{
+        const r = s.npc[id] || {};
+        items.push({src:'npc', id, done: r.st === 'done', stars: r.stars | 0});
+      });
+      for(let i=0; i<BOARD_N; i++)
+        items.push({src:'board', idx:i, done: s.board.done.indexOf(i) >= 0, stars: bst[i] | 0});
+      const f = s.fam || {};
+      if(f.who) items.push({src:'family', who:f.who, done: f.st === 'done', stars: f.stars | 0});
+      const left = items.filter(x => !x.done).length;
+      /* ดาวของ "วันนี้" (ไม่ใช่ดาวสะสมทั้งชีวิตที่อยู่ใน s.stars) + เพดานดาวที่เป็นไปได้ */
+      const starsGot = items.reduce((a, x) => a + (x.stars | 0), 0);
+      return {left, done: items.length - left, total: items.length, items,
+              stars: starsGot, starsMax: items.length * 3};
+    }
+    function familyWho(){ const f = state().fam || {}; return f.who || ''; }
+    function familyDone(){ const f = state().fam || {}; return f.st === 'done'; }
     function specForBoard(i){
       const s = state();
       const b = s.board.q[i];
@@ -404,14 +474,20 @@
       if(run.idx >= run.items.length){ run.over = true; return {ok:true, done:true}; }
       return {ok:true, done:false};
     }
+    /* ⚠ เกณฑ์ 2 ดาว **ต้องยืดตามจำนวนข้อ** — เดิมตายตัวที่ "ผิดไม่เกิน 2 ข้อ" ซึ่งตอนเควสต์มี 3 ข้อ
+       คือผ่อนปรนมาก (ผิดได้ 2 ใน 3) แต่พอเพิ่มเป็น 10 ข้อจะกลายเป็นเข้มขึ้นเท่าตัวโดยไม่ตั้งใจ
+       ⇒ คิดเป็นสัดส่วนเดิม (~2/3 ของจำนวนข้อ) ให้ความรู้สึกเหมือนเดิมทุกระดับชั้น (กติกาเหล็กข้อ 2) */
     function starsOf(run){
       if(run.wrong === 0) return 3;
-      if(run.wrong <= 2)  return 2;
-      return 1;                     /* ผิดเยอะแค่ไหนก็ยังได้ 1 ดาว + เงิน — ห้ามลงโทษเด็ก */
-    }
+      const n = (run.items && run.items.length) || 3;
+      return run.wrong <= Math.max(2, Math.round(n * 2 / 3)) ? 2 : 1;
+    }                               /* ผิดเยอะแค่ไหนก็ยังได้ 1 ดาว + เงิน — ห้ามลงโทษเด็ก */
     function coinsFor(fam, stars, tier, chal){
       const base = FAM_BASE[fam] || FAM_BASE.A;
-      const v = base * (STAR_MUL[stars] || 1) * (1 + (tier - 1) * 0.08) * (chal ? CHAL_MUL : 1);
+      /* ⚠ **ทุกระดับชั้นได้เท่ากันหมด (ตัวคูณชั้น = 1.0)** — ผู้ใช้สั่ง 2026-08-09 ห้ามใส่ตัวคูณกลับ
+         เดิม ป.1 ×1.0 → ป.6 ×1.4 ซึ่งทำให้พี่ ป.6 ได้เงินมากกว่าน้อง ป.1 ทั้งที่ทำงานเท่ากัน
+         (พารามิเตอร์ `tier` ยังรับไว้เพื่อไม่ให้ผู้เรียก/เทสเดิมพัง แต่ไม่มีผลกับเหรียญแล้ว) */
+      const v = base * (STAR_MUL[stars] || 1) * (chal ? CHAL_MUL : 1);
       return Math.max(1, Math.round(v));
     }
 
@@ -432,6 +508,12 @@
         s.npc[run.spec.key] = {m:run.spec.mech, st:'done', stars:stars, chal:!!run.chal};
       }else if(run.spec.src === 'board'){
         if(s.board.done.indexOf(run.spec.idx) < 0) s.board.done.push(run.spec.idx);
+        /* เก็บดาวรายชุดด้วย — หน้ารายการเควสต์ต้องโชว์ว่าแต่ละชุดได้กี่ดาว (ผู้ใช้สั่ง 2026-08-09)
+           ข้อมูลเก่าที่ไม่มี `st` จะอ่านได้ 0 เอง ไม่ต้อง migrate */
+        s.board.st = s.board.st || {};
+        s.board.st[run.spec.idx] = stars;
+      }else if(run.spec.src === 'family'){
+        s.fam = Object.assign({}, s.fam, {st:'done', stars:stars});
       }
 
       /* ---------- ประตูเช็คความพร้อม: เก็บสถิติ ---------- */
@@ -451,20 +533,6 @@
       return {stars, coins, capped, chal:!!run.chal,
               boardLeft: BOARD_N - s.board.done.length,
               boardBonus: boardBonusReady()};
-    }
-
-    /* ---------- กระดาน: โบนัสครบ 5 ชุด ---------- */
-    function boardBonusReady(){ const s = state(); return s.board.done.length >= BOARD_N && !s.board.claimed; }
-    function boardClaim(){
-      const s = state();
-      if(!boardBonusReady()) return 0;
-      s.board.claimed = true;
-      const room = Math.max(0, DAY_CAP - (s.earned | 0));
-      const coins = Math.min(BOARD_BONUS, room);
-      s.earned = (s.earned | 0) + coins;
-      s.stars  = (s.stars | 0) + 1;
-      persist();
-      return coins;
     }
 
     /* ---------- ประตูเช็คความพร้อม (ข้อ 24) ---------- */
@@ -598,6 +666,54 @@
       return (r && r.st === 'done') ? 'done' : 'open';
     }
     function openNpcCount(){ return state().npcIds.filter(id => npcStatus(id) === 'open').length; }
+    /* ---------- โบนัสดาวรายวัน ----------
+       คืนสถานะของทั้ง 2 ก้อน: ถึงเกณฑ์แล้วหรือยัง · กดรับไปหรือยัง · ได้กี่เหรียญ */
+    function starBonus(){
+      const s = state();
+      const d = daySummary();
+      const sb = s.sb || {half:false, full:false};
+      const halfNeed = Math.ceil(d.starsMax / 2);
+      return {
+        stars: d.stars, starsMax: d.starsMax, halfNeed,
+        half: {coins: STAR_BONUS.half, need: halfNeed,
+               ready: d.stars >= halfNeed && !sb.half, claimed: !!sb.half},
+        full: {coins: STAR_BONUS.full, need: d.starsMax,
+               ready: d.starsMax > 0 && d.stars >= d.starsMax && !sb.full, claimed: !!sb.full},
+      };
+    }
+    /* มีอะไรให้กดรับอยู่ไหม (ปุ่มเควสต์บน HUD ใช้ตัวนี้ขึ้นจุดแจ้งเตือน) */
+    function starBonusReady(){ const b = starBonus(); return b.half.ready || b.full.ready; }
+    /* กดรับ — คืนจำนวนเหรียญที่ได้ (0 = ยังไม่ถึงเกณฑ์/รับไปแล้ว) · ผู้เรียกเป็นคนจ่ายผ่าน OwlCoins */
+    function claimStarBonus(kind){
+      const s = state(), b = starBonus();
+      if(kind !== 'half' && kind !== 'full') return 0;
+      if(!b[kind].ready) return 0;
+      const room = Math.max(0, DAY_CAP - (s.earned | 0));   /* ยังอยู่ใต้เพดานรายวันเหมือนเควสต์ปกติ */
+      const coins = Math.min(b[kind].coins, room);
+      s.sb = Object.assign({half:false, full:false}, s.sb);
+      s.sb[kind] = true;
+      s.earned = (s.earned | 0) + coins;
+      persist();
+      return coins;
+    }
+
+    /* ---------- กระดาน: โบนัสทำครบ 5 ชุด ----------
+       ⚠ เคยเอาออกไปเมื่อ 2026-08-09 แล้ว **ผู้ใช้สั่งให้เอากลับมาแต่ลดเหลือ 10 🪙** (เดิม 35)
+         ก้อนเล็กลงมากจึงไม่กดดันเหมือนเดิม แค่ให้รู้สึกดีตอนเก็บครบ */
+    function boardBonusReady(){ const s = state(); return s.board.done.length >= BOARD_N && !s.board.claimed; }
+    function boardClaim(){
+      const s = state();
+      if(!boardBonusReady()) return 0;
+      s.board.claimed = true;
+      const room = Math.max(0, DAY_CAP - (s.earned | 0));
+      const coins = Math.min(BOARD_BONUS, room);
+      s.earned = (s.earned | 0) + coins;
+      s.stars  = (s.stars | 0) + 1;
+      persist();
+      return coins;
+    }
+
+    /* ---------- กระดาน ---------- */
     function boardLeft(){ const s = state(); return BOARD_N - s.board.done.length; }
 
     return {
@@ -606,7 +722,9 @@
       CHAL_NEED, CHAL_ACC, CHAL_KEEP, CHAL_MISS, CHAL_RATE, CHAL_MUL,
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
-      specForNpc, specForBoard, buildRun, answer, starsOf, coinsFor, finish,
+      specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
+      STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
+      buildRun, answer, starsOf, coinsFor, finish,
       /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
       catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
       ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */

@@ -53,6 +53,15 @@ const H_HOLD_N = 9;      /* ของถือ: ไม่ถือ/ลูกโ�
 const H_DEFAULT_CHAR = {gender:0, hair:0, hairC:0, eyes:1, eyeC:0, shirt:5, bottom:0, shoes:0,
   pattern:0, hat:0, hatC:0, glass:0, glassC:0, bag:0, bagC:0, hold:0, holdC:0};
 
+/* หน้าตาเริ่มต้นของพ่อ-แม่ในบ้าน (เฟส 4A · ข้อ 28 ของ QUEST-DESIGN.md)
+   เด็กเปิดบ้านครั้งแรกต้อง **เจอพ่อแม่ยืนอยู่แล้วทันที ไม่มีหน้าจอบังคับให้สร้างตัวละครก่อน**
+   ⇒ ต้องมีค่าปริยายครบทุกแถวของ H_ROWS · เด็กแก้ชื่อ/หน้าตาเองได้ทีหลังทุกแถว
+   ⚠ ใช้เฉพาะแถวที่มีอยู่จริงใน H_ROWS เท่านั้น (ค่าที่ไม่มีในแถวจะถูก build ตกไปใช้ค่าแรกเงียบๆ) */
+const H_DEFAULT_PARENT_DAD = {gender:0, hair:1, hairC:0, eyes:0, eyeC:0, shirt:1, bottom:2, shoes:1,
+  pattern:0, hat:0, hatC:0, glass:1, glassC:0, bag:0, bagC:0, hold:0, holdC:0};
+const H_DEFAULT_PARENT_MOM = {gender:1, hair:2, hairC:2, eyes:1, eyeC:1, shirt:8, bottom:1, shoes:2,
+  pattern:0, hat:0, hatC:0, glass:0, glassC:0, bag:0, bagC:0, hold:0, holdC:0};
+
 /* ลำดับแถวในหน้าแต่งตัว — **จับคู่ "แบบ" มาก่อน "สี" ของชิ้นนั้นเสมอ**
    (ทรงผม→สีผม · ดวงตา→สีตา · ลายเสื้อ→สีเสื้อ · เครื่องหัว→สีเครื่องหัว …)
    เด็กจะได้เลือกว่าจะใส่อะไรก่อน แล้วค่อยเลือกสีของสิ่งนั้น ไม่สลับไปมา
@@ -1377,7 +1386,7 @@ function isHedgeTile(x, z){ return HEDGE_SET.has(x + ',' + z); }
 return {
   H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
   H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
-  H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_ROWS, H_ROW_ICONS, NPAD,
+  H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_DEFAULT_PARENT_DAD, H_DEFAULT_PARENT_MOM, H_ROWS, H_ROW_ICONS, NPAD,
   EPAD, EPAD2, EPAD_ALL, OUT_W, OUT_D, sx,
   sz, sRect, sTile, sList, s2z, s2Rect,
   s2Tile, s2List, RIVER_X, BRIDGE_Z, BRIDGE2_Z, FARM_BRIDGE_Z,
