@@ -719,9 +719,12 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-furniture.js'+v))
     .then(()=>loadScriptOnce('js/house-shop.js'+v))
     .then(()=>loadScriptOnce('js/house-quests.js'+v))
+    .then(()=>loadScriptOnce('js/house-pet-care.js'+v))
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
     /* หน้าคลังคำถาม (เมนูเฟือง) — ต้องมาหลัง house.js เพราะเรียก window.HouseQuestUI ตอนกดเล่น */
     .then(()=>loadScriptOnce('js/house-qbrowse.js'+v))
+    /* หน้าปรับค่าต่างๆ (เครื่องมือเทส) — ต้องมาหลัง house.js เช่นกัน เพราะเรียก window.HousePetCare/HouseShop */
+    .then(()=>loadScriptOnce('js/house-devtools.js'+v))
     .then(()=>{ step(.20, 'กำลังปลุกเมืองให้ตื่น…'); })
     .catch(err=>{ housePromise = null; throw err; });
   return housePromise;

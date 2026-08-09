@@ -35,12 +35,16 @@ async function openHouse(page, seedHouse, seedProgress) {
     await page.locator('#house-done-btn').click();
     await page.waitForFunction(() => document.getElementById('house-creator').hidden, null, { timeout: 15000 });
   }
-  await page.waitForTimeout(600);
   if (await page.locator('#house-pet-picker').isVisible()) {
     await page.locator('#house-pet-skip').click();
     await page.waitForFunction(() => document.getElementById('house-pet-picker').hidden, null, { timeout: 15000 });
   }
-  await page.waitForTimeout(900);
+  /* ⚠ ห้ามใช้ waitForTimeout เดาเวลาตรงนี้ — offerQuest()/SHOP.open() ใน js/house.js **ออกเงียบๆ**
+     ถ้ายังไม่อยู่โหมด 'world' (ไม่ error ไม่มีอะไรขึ้นจอ) พอเครื่องช้าตอนรันทั้งชุด การ์ดเควสต์
+     จะไม่โผล่ แล้วเทสไปตายที่ expect(...).toBeVisible() ครบ 10 วินาทีแทน — เจอมาแล้ว 2026-08-09 */
+  await page.waitForFunction(
+    () => window.__houseDbg && window.__houseDbg.mode() === 'world' && !window.__houseDbg.editing(),
+    null, { timeout: 30000 });
   return errors;
 }
 const readHouse = page => page.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), HKEY);
@@ -106,7 +110,6 @@ test('เล่นเควสต์ NPC จนจบ: ได้เหรีย�
   await page.evaluate(id => window.HouseQuestUI.offer(id), npcId);
   await expect(page.locator('#house-qz')).toBeVisible();
   await page.locator('#hqz-stage .hqz-yes').click();      // กด "รับงาน!"
-  await page.waitForTimeout(200);
   await expect(page.locator('.hqz-choice')).toHaveCount(4);
 
   const played = await playPerfect(page);
@@ -143,6 +146,32 @@ test('เล่นเควสต์ NPC จนจบ: ได้เหรีย�
   await page.evaluate(id => window.HouseQuestUI.talk(id), npcId);
   await page.waitForTimeout(1200);
   await expect(page.locator('#house-qz')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้แจ้ง 2026-08-09: รับงานแล้วคนออกโจทย์เดินจากไป เด็กงงว่าคุยกับใครอยู่
+   ⇒ ระหว่างการ์ดเควสต์เปิดอยู่ NPC เจ้าของงานต้องถูกตรึงให้ยืนกับที่ (n.hold ไม่มีวันหมด) */
+test('คนออกโจทย์ต้องยืนรออยู่กับเด็กตลอดรอบเล่น ไม่เดินหนีระหว่างทำเควสต์', async ({ page }) => {
+  const errors = await openHouse(page);
+  const npcId = await page.evaluate(() => window.HouseQuests.state().npcIds[0]);
+  await page.evaluate(id => window.HouseQuestUI.offer(id), npcId);
+  await expect(page.locator('#house-qz')).toBeVisible();
+  await page.locator('#hqz-stage .hqz-yes').click();
+  await expect(page.locator('.hqz-choice')).toHaveCount(4);
+
+  const posOf = () => page.evaluate(id => {
+    const n = window.__houseDbg.npcPos(id);
+    return n ? {x:+n.x.toFixed(3), z:+n.z.toFixed(3)} : null;
+  }, npcId);
+  const a = await posOf();
+  expect(a).not.toBe(null);
+  await page.waitForTimeout(4000);          /* นานกว่าฟองคำพูด (~3.6 วิ) — เมื่อก่อนพ้นช่วงนี้แล้วเดินต่อ */
+  const b = await posOf();
+  expect(b).toEqual(a);
+
+  /* ปิดการ์ดแล้วต้องปล่อยให้เดินต่อได้ตามปกติ (ห้ามตรึงค้างจนคนยืนแข็งทั้งเมือง) */
+  await page.evaluate(() => window.HouseQuestUI.close());
+  expect(await page.evaluate(() => window.__houseDbg.questNpc())).toBe(null);
   expect(errors).toEqual([]);
 });
 

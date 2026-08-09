@@ -233,6 +233,8 @@
        ถ้ารับเป็นค่าตรงๆ จะชน TDZ ของ const PET_TYPES ตอนสร้าง SHOP */
     const petTypes = kit.petTypes || function(){ return []; };
     const petInfo  = t => petTypes().filter(p => p.id === t)[0] || null;
+    /* เครื่องยนต์ดูแลสัตว์ (เฟส 3B) — รับเป็นฟังก์ชันด้วยเหตุผลเดียวกับ petTypes (โหลดคนละไฟล์) */
+    const care = kit.care || function(){ return null; };
 
     const $ = id => document.getElementById(id);
     const click = () => { if(typeof playClick === 'function') playClick(); };
@@ -249,6 +251,11 @@
     function fitKey(row, i){ return 'fit:' + row + ':' + i; }
     function petKey(type){ return 'pet:' + type; }
     function petColKey(type, i){ return 'pet:' + type + ':' + i; }
+    /* 'pet:dog' / 'pet:dog:2' → 'dog' (ใช้รู้ว่าตอนนี้เด็กเลือกดูสัตว์ตัวไหนอยู่ในร้าน) */
+    function petTypeOfKey(k){
+      const p = String(k || '').split(':');
+      return p[0] === 'pet' && p[1] ? p[1] : null;
+    }
     function ensureSet(){
       const cid = kit.childId ? kit.childId() : '';
       if(!ownSet || ownFor !== cid){
@@ -362,6 +369,42 @@
     }
     function starterHome(){ return STARTER_HOME.map(r => Object.assign({}, r)); }
 
+    /* ---------- เครื่องมือเทสเท่านั้น (js/house-devtools.js) ----------
+       ⚠ **ของโกง ห้ามเรียกจากโค้ดเกมจริงเด็ดขาด** — ปลดล็อกโดยไม่ตัดเงิน ใช้เทสว่าของทุกชิ้น
+         วาง/ใส่/ใช้ได้จริงไหมโดยไม่ต้องนั่งเก็บเงินหมื่นกว่าเหรียญก่อน
+       (ยังผ่าน grant() ตัวเดียวกับการซื้อจริง สถานะ/cache จึงตรงกันเป๊ะ ไม่ใช่เขียน localStorage ตรงๆ) */
+    function devAllKeys(kind){
+      const keys = [];
+      if(kind === 'furn' || kind === 'all')
+        FURN.items.forEach(it=>{ if(priceFurn(it.id) > 0) keys.push(it.id); });
+      if(kind === 'fit' || kind === 'all')
+        H_ROWS.forEach(r=>{
+          const n = r.type === 'color' ? r.colors.length : (r.type === 'num' ? r.n : 0);
+          for(let i = 0; i < n; i++) if(priceFit(r.key, i) > 0) keys.push(fitKey(r.key, i));
+        });
+      if(kind === 'pet' || kind === 'all')
+        petTypes().forEach(p=>{
+          keys.push(petKey(p.id));
+          (p.colors || []).forEach((c, i)=> keys.push(petColKey(p.id, i)));
+        });
+      return keys;
+    }
+    function devUnlockAll(kind){
+      const keys = devAllKeys(kind || 'all');
+      grant(keys);
+      onChange();
+      if(isOpen()){ renderItems(); renderBuyBar(); }
+      return keys.length;
+    }
+    /* คืนค่าเป็น "เด็กใหม่": ล้างสิทธิ์ที่ซื้อไว้ แต่คืนชุดเริ่มต้นให้ ไม่งั้นชุดที่ใส่อยู่จะกลายเป็นล็อก */
+    function devLockAll(){
+      save({unlocked: []});
+      invalidate();
+      grant(starterFit().concat(STARTER_FURN));
+      onChange();
+      if(isOpen()){ renderItems(); renderBuyBar(); }
+    }
+
     /* ---------- migration (กติกาเหล็กข้อ 3: ของเก่าห้ามหาย) ----------
        เรียกจาก loadHouseData() ของ house.js ทุกครั้งที่อ่านข้อมูล — ทำงานจริงครั้งเดียวต่อเด็ก
        คืน true ถ้าแก้ข้อมูล (ให้คนเรียกเขียนกลับ localStorage) */
@@ -470,6 +513,8 @@
         PET_GROUPS.forEach(g=>{
           out.push({id:'petg:' + g.id, label:g.label, emoji:g.emoji});
         });
+        /* เฟส 3B — อาหารสัตว์อยู่แท็บสุดท้าย (ข้อ 18.2) ต่อท้ายกลุ่มราคาสัตว์ */
+        if(care()) out.push({id:'petfood', label:'อาหาร', emoji:'🍖'});
         return out;
       }
       /* ร้านที่ขายเฟอร์นิเจอร์ — หมวดที่ขายมาจาก cfg.groups ของร้านนั้น (ห้างเฟอร์/ร้านต้นไม้/ร้านของเล่น) */
@@ -520,7 +565,8 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'hs-card' + (opts.owned ? ' hs-owned' : (coins() < opts.price ? ' hs-poor' : ''))
-                  + (opts.key === selKey ? ' hs-sel' : '');
+                  + (opts.key === selKey ? ' hs-sel' : '')
+                  + (opts.sub ? ' hs-has-sub' : '');   /* ใบที่มีบรรทัดรองสูงกว่าปกติ — ทั้งแท็บใส่เหมือนกันหมด ขนาดจึงยังเท่ากัน */
       const pic = document.createElement('span');
       if(opts.color != null){
         pic.className = 'hs-sw';
@@ -536,6 +582,13 @@
       nm.className = 'hs-name';
       nm.textContent = opts.name;
       b.appendChild(nm);
+      /* บรรทัดรองใต้ชื่อ (อาหารสัตว์ใช้บอกว่าของสัตว์ตัวไหน + เหลือกี่มื้อ) — ขึ้นบรรทัดใหม่ด้วย \n ได้ */
+      if(opts.sub){
+        const sb = document.createElement('span');
+        sb.className = 'hs-sub';
+        sb.textContent = opts.sub;
+        b.appendChild(sb);
+      }
       const pr = document.createElement('span');
       pr.className = 'hs-price';
       /* เหรียญวาดด้วย CSS ไม่ใช้ emoji 🪙 — เครื่องบางรุ่นไม่มีตัวนี้ในฟอนต์ แล้วขึ้นเป็นวงกลมเทาทึบ */
@@ -587,7 +640,8 @@
       bar.appendChild(nm);
       const btn = document.createElement('button');
       btn.type = 'button';
-      if(sel.owned){
+      /* `repeat` = ของกินได้หมดไป (อาหารสัตว์ เฟส 3B) ซื้อซ้ำได้ไม่จำกัด ⇒ ไม่มีสถานะ "มีแล้ว" */
+      if(sel.owned && !sel.repeat){
         btn.className = 'hs-buy-btn hs-buy-have';
         btn.textContent = '✓ มีแล้ว';
         btn.onclick = ()=>{ click(); toast('✓', sel.name + ' มีอยู่แล้วนะ'); };
@@ -598,7 +652,7 @@
         btn.onclick = ()=>{
           click();
           if(!sel.onBuy()) return;
-          sel.owned = true;                 /* ซื้อสำเร็จ → แถบเปลี่ยนเป็น "มีแล้ว" ทันที ไม่ต้องปิดพรีวิว */
+          if(!sel.repeat) sel.owned = true; /* ซื้อสำเร็จ → แถบเปลี่ยนเป็น "มีแล้ว" ทันที ไม่ต้องปิดพรีวิว */
           renderItems(); renderBuyBar();
         };
       }
@@ -652,6 +706,36 @@
         return;
       }
       if(cfg.kind === 'pet'){
+        /* ---------- แท็บอาหาร (เฟส 3B) ----------
+           ของกินได้หมดไป ⇒ ซื้อซ้ำได้เสมอ (repeat) และโชว์ว่าเหลือกี่มื้อแทนป้าย "มีแล้ว"
+           **ขายครบทุกชนิดเสมอ ไม่กรองตามสัตว์ที่มี** — เด็กซื้อเผื่อสัตว์ตัวใหม่ล่วงหน้าได้ */
+        if(shopTab === 'petfood'){
+          const C = care();
+          if(!C) return;
+          const d = load() || {}, pet = d.pet || null;
+          C.FOOD.forEach(f=>{
+            const left = C.meals(f.id);
+            const mine = pet && C.foodForPet(pet.type) === f.id;
+            /* **ต้องบอกเสมอว่าอาหารถุงนี้ของสัตว์ตัวไหน** — นี่คือตัวสอนหลักของเฟส 3B
+               (เด็กต้องรู้ว่าสัตว์ตัวไหนกินอะไร) ถ้าไม่บอกก็เหลือแค่การเดาสุ่ม */
+            /* สัตว์ละบรรทัด — เบราว์เซอร์ตัดคำไทยกลางคำ ("หมา/น้อย") ถ้าปล่อยให้ไหลบรรทัดเดียว */
+            const who = f.pets.map(p => { const i = petInfo(p); return i ? i.emoji + ' ' + i.label : p; }).join('\n');
+            wrap.appendChild(makeCard({
+              key: 'food:' + f.id,
+              name: f.name + (mine ? ' ⭐' : ''),
+              sub: 'สำหรับ\n' + who + (left ? '\nเหลือ ' + left + ' มื้อ' : ''),
+              price: f.price, owned: false, repeat: true, emoji: f.emoji,
+              onBuy: ()=>{
+                if(coins() < f.price){ toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!'); return false; }
+                if(!C.buyBag(f.id)) return false;
+                toast('🎉', 'ได้ ' + f.name + ' 1 ถุง (' + C.MEALS_PER_BAG + ' มื้อ) แล้ว!');
+                onChange();
+                return true;
+              },
+            }));
+          });
+          return;
+        }
         const g = PET_GROUPS.filter(x => 'petg:' + x.id === shopTab)[0];
         if(!g) return;
         g.ids.forEach(type=>{
@@ -664,26 +748,34 @@
             onBuy: ()=> buyPet(type),
           }));
         });
-        /* สีขน — โชว์เฉพาะสัตว์ที่ "มีแล้ว" เท่านั้น (ซื้อสีของสัตว์ที่ยังไม่มีก็ใช้ไม่ได้ ยิ่งทำให้เด็กงง)
-           ⇒ แท็บของเด็กใหม่จะสั้นๆ แค่การ์ดสัตว์ แล้วค่อยยาวขึ้นเมื่อเริ่มมีเพื่อนตัวน้อย */
-        g.ids.filter(t => ownsPet(t)).forEach(type=>{
-          const info = petInfo(type);
+        /* ---------- สีขน: โชว์ของ "ตัวที่เลือกอยู่" ตัวเดียว ----------
+           เดิมกางเป็น section ของสัตว์ทุกตัวที่มี ทำให้แท็บยาวขึ้นเรื่อยๆ และเด็กต้องเลื่อนหาว่าสีไหนของใคร
+           (ผู้ใช้สั่งแก้ 2026-08-09) ⇒ แตะการ์ดสัตว์ตัวไหน สีของตัวนั้นก็โผล่ต่อท้ายทันที section เดียวจบ
+           ⚠ **โชว์สีของสัตว์ที่ยังไม่มีด้วย** (ผู้ใช้สั่งเพิ่ม 2026-08-09 — กลับข้อตัดสินใจของเฟส 3A)
+             เด็กจะได้เห็นก่อนว่าตัวนี้มีสีอะไรบ้างคุ้มกับที่ต้องเก็บเงินไหม แตะดูตัวอย่าง 3D ได้เต็มที่
+             แต่ **ยังซื้อไม่ได้จนกว่าจะรับมาเลี้ยงก่อน** — buyPetColor() เป็นคนกันไว้ พร้อมบอกเหตุผล */
+        const selType = petTypeOfKey(selKey);
+        if(selType && g.ids.indexOf(selType) >= 0){
+          const info = petInfo(selType);
           const cols = (info && info.colors) || [];
-          if(cols.length < 2) return;
-          const h = document.createElement('div');
-          h.className = 'hs-subsec';
-          h.innerHTML = '<span>🎨 สีขนของ' + info.label + '</span>';
-          wrap.appendChild(h);
-          cols.forEach((col, i)=>{
-            wrap.appendChild(makeCard({
-              key: petColKey(type, i),
-              name: col.n, price: PET_COLOR_PRICE, owned: ownsPetColor(type, i),
-              color: col.c,
-              preview: {kind:'pet', type, color:i},
-              onBuy: ()=> buyPetColor(type, i),
-            }));
-          });
-        });
+          if(cols.length >= 2){
+            const h = document.createElement('div');
+            h.className = 'hs-subsec';
+            /* ยังไม่ได้รับมาเลี้ยง = ดูสีได้แต่ซื้อไม่ได้ ⇒ บอกไว้ตรงหัวข้อเลย เด็กจะได้ไม่กดแล้วงงว่าทำไมไม่ได้ */
+            h.innerHTML = '<span>🎨 สีขนของ' + info.label
+                        + (ownsPet(selType) ? '' : ' — รับมาเลี้ยงก่อนถึงจะเลือกสีได้') + '</span>';
+            wrap.appendChild(h);
+            cols.forEach((col, i)=>{
+              wrap.appendChild(makeCard({
+                key: petColKey(selType, i),
+                name: col.n, price: PET_COLOR_PRICE, owned: ownsPetColor(selType, i),
+                color: col.c,
+                preview: {kind:'pet', type:selType, color:i},
+                onBuy: ()=> buyPetColor(selType, i),
+              }));
+            });
+          }
+        }
         return;
       }
       const parts = shopTab.split(':'), scope = parts[0], cat = parts[1];
@@ -710,6 +802,7 @@
       pricePet, ownsPet, ownsPetColor, buyPet, buyPetColor,
       petTypes,        /* PET_TYPES อยู่ใน IIFE ของ house.js — ทางเดียวที่เทสมองเห็นคือผ่านตรงนี้ */
       starterHome, starterFit, STARTER_FURN,
+      devUnlockAll, devLockAll,        /* เครื่องมือเทสเท่านั้น — ห้ามเรียกจากโค้ดเกมจริง */
       shopForLot, open, close, isOpen, clearSelected,
       refresh: ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } },
     };

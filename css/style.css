@@ -649,6 +649,12 @@
     white-space:nowrap; max-width:130px; overflow:hidden;
   }
   .child-chip:active{transform:translateY(2px); box-shadow:none;}
+  /* ป้ายชื่อแบบอ่านอย่างเดียว (โหมดบ้าน) — ไม่มี hover/เด้งตอนกด เพราะกดไม่ได้จริงๆ
+     ⚠ **ต้องเป็น `cursor:inherit` ห้ามใช้ `default`** — แอปนี้ตั้ง cursor เป็นรูปนกฮูก SVG ไว้ที่ `body`
+       (ดูหัวข้อ CUSTOM OWL CURSOR) การใส่ `default` = ทับด้วยลูกศรระบบธรรมดา เคอร์เซอร์ประจำแอปหายทันที
+       `inherit` จะรับ cursor นกฮูกตัวปกติมาจาก body ส่วนตัว "มือชี้" ยังสงวนไว้ให้ของที่กดได้จริง */
+  .child-chip-static{cursor:inherit; transition:none;}
+  .child-chip-static:active{transform:none; box-shadow:var(--shadow-btn);}
   #header-child-name{overflow:hidden; text-overflow:ellipsis; max-width:90px; display:inline-block;}
   /* button group: ชื่อเด็ก (ซ้าย, ไซส์เท่าเดิม) + ปุ่มแก้ไข emoji (ขวา) เชื่อมเป็นปุ่มเดียวกัน มีเส้นแบ่งตรงกลาง
      (คงสี/เงา/ฟอนต์ตาม template เดิม แค่เปลี่ยนทรงจาก 2 ปุ่มแยกเป็นกลุ่มเชื่อมต่อ) */
@@ -819,6 +825,10 @@
     display:flex; align-items:center; justify-content:center;
   }
   .back-btn:active{transform:translateY(3px); box-shadow:none;}
+  /* จำเป็นจริง ห้ามลบ: `display:flex` ข้างบน specificity ชนะ `[hidden]{display:none}` ของเบราว์เซอร์
+     ⇒ ใส่แค่ attribute hidden อย่างเดียวปุ่มจะยังโผล่อยู่ (กับดักเดียวกับ .house-entry-btn[hidden])
+     ใช้กับ #house-back ที่ถูกซ่อนตอนเดินเล่นในเมืองปกติ (refreshBackBtn ใน js/house.js) */
+  .back-btn[hidden]{display:none;}
   .quiz-top-info{flex:1;}
   .quiz-top-info .cat-label{font-size:16px; font-weight:800; color:var(--cat-color,var(--math)); display:flex; align-items:center; gap:6px;}
   .cat-label-icon{width:20px; height:20px; object-fit:contain; display:block; flex-shrink:0;}
@@ -2253,6 +2263,18 @@
     /* owl face cursor — hotspot กลาง (18,18) */
     cursor:url("data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDIwNDggMjA0OCIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIj4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDE4Miw5Nyw0OSkiIGQ9Ik0gMTc1MS43NSA2MC4yMDMzIEMgMTc2OC41NCA1OS43ODM4IDE3NzQuODMgNjYuOTkxIDE3NzkuNDcgODIuNzM4NyBDIDE3ODQuNTcgMTAyLjM4NSAxNzg4Ljg5IDEyMy41MDYgMTc5MS40NiAxNDMuNzAyIEMgMTc5OC40NyAxOTguNzI4IDE4MDcuNzUgMjUzLjYxOSAxODE1LjU0IDMwOC40NjcgQyAxODIwLjM5IDM0NC4yNjMgMTgyNC45NiAzODAuMDk2IDE4MjkuMjYgNDE1Ljk2MiBDIDE4NDcuMTIgNTQ2LjMyNSAxODYyLjcyIDY3Ni45ODcgMTg3Ni4wNiA4MDcuODkgQyAxODg3Ljg4IDkwOC45MDggMTg5Ny43NSAxMDEwLjE1IDE5MDUuNjUgMTExMS41NSBDIDE5MTUuMTUgMTI0Ny40OCAxOTE2LjQ3IDEzNzQuMzUgMTg2OC4zNiAxNTAzLjY2IEMgMTg1OC4zNiAxNTMwLjU1IDE4NDQuOSAxNTU2LjgyIDE4MzEuMSAxNTgxLjg5IEMgMTgwOC41MSAxNjIzLjUgMTc4MS41MiAxNjYyLjU2IDE3NTAuNTggMTY5OC4zOSBDIDE2NTYuNzIgMTgwNi4xMyAxNTA5LjAxIDE4OTYuMzkgMTM3Mi45OSAxOTM5LjkzIEMgMTI5Ni4wNyAxOTY0LjU1IDExOTcuOTQgMTk4MC4wNyAxMTE3LjgxIDE5ODUuNDUgQyAxMDgyLjgzIDE5ODcuNSAxMDQ3Ljc5IDE5ODguMzYgMTAxMi43NiAxOTg4LjA0IEMgNzY0Ljc3NSAxOTg3Ljc4IDU1Mi41MTYgMTkyNy4xNCAzNjIuOTk1IDE3NjEuNjkgQyAyMTUuODI2IDE2MzYuNjcgMTM1LjY0NCAxNDM1LjkxIDEzNy44MzMgMTI0NC43NiBDIDEzOS4yMzggMTEyMi4wNCAxNTQuNDk3IDk5OS4zMTMgMTY3LjI5MiA4NzcuNDMgQyAxODIuMTg5IDcyNi4zMzkgMTk5Ljc1IDU3NS41MjIgMjE5Ljk2NiA0MjUuMDUgQyAyMjcuOTg3IDM2Ny4xOTIgMjM4LjQzMiAzMDkuNjg0IDI0Ny4yODYgMjUxLjk2NyBDIDI1Mi4xNTIgMjIwLjI0MiAyNjkuMzEzIDk0LjE3NTkgMjgyLjAwOSA3My41ODQ1IEMgMjg2LjI3NSA2Ni42NjU5IDI5Mi40NjIgNjEuOTAzNSAzMDAuNjY2IDYxLjAyNiBDIDMwNy45MjEgNjAuMjQ5OSAzMTQuODYxIDYxLjg5NjUgMzIxLjY0NiA2NC4zMTA4IEMgMzQxLjA2MiA3MS4yMjAxIDM1OS4yODMgODEuODcyNSAzNzcuODA1IDkwLjgxMTMgQyA0MTUuNzQ0IDEwOS4xMjEgNDU1LjkzMSAxMjguMjIzIDQ5NS41MzQgMTQyLjI5NiBDIDUyOS44MzEgMTU0LjQ4MyA1NzIuNTAyIDE2Ni45ODkgNjA3Ljg0NSAxNzUuNTUzIEMgNjIwLjk4IDE3OC43MzYgNjM0LjMzMyAxODAuODYyIDY0Ny40OTIgMTgzLjkxOSBDIDY3NS44NzUgMTkwLjUxNCA3MDIuOTE0IDE5Ny4zOCA3MzEuODE5IDIwMS43NjUgQyA4MzIuMDE2IDIxNi4xOTMgOTMzLjIgMjIyLjY1NiAxMDM0LjQyIDIyMS4wOTIgQyAxMDkwLjYxIDIxOS4zOTMgMTE0Ni43NCAyMTYuMDEzIDEyMDIuNzMgMjEwLjk1NCBDIDEyOTkuNyAyMDMuMTY2IDE0MDguMDUgMTg4Ljc4MiAxNTAxLjUzIDE2MC4xNzQgQyAxNTE4LjQgMTU1LjAxIDE1MzcuMDEgMTQ3LjkzNCAxNTU0LjA4IDE0Mi4yOTggQyAxNTczLjUyIDEzNS44NzggMTU5OC41MiAxMjguOTA0IDE2MTYuNjcgMTIwLjQzMyBDIDE2NTEuOCAxMDQuMDM0IDE2ODYuOTMgODYuMjAyNyAxNzIyLjczIDcxLjE4MzIgQyAxNzMxLjQ5IDY3LjUxMDYgMTc0Mi42OSA2Mi4yNzU2IDE3NTEuNzUgNjAuMjAzMyB6Ii8+CjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYigyMzAsMTUxLDgyKSIgZD0iTSAxMDIxLjcyIDQ2OS44MTYgQyAxMDMxLjkzIDQ2MS4yOTcgMTA0MS41OCA0NTEuNjc2IDEwNTEuNjEgNDQyLjg0NCBDIDExNDUuNjUgMzU5Ljk5MiAxMjUxLjI2IDMxMi43MzMgMTM3OC41MiAzMjQuMjc1IEMgMTQ3My44NCAzMzIuMDczIDE1NjMuMjIgMzczLjcwOSAxNjMwLjUxIDQ0MS42NTggQyAxNjU4LjcgNDcwLjIwMyAxNjY5LjYzIDQ4Ni40NyAxNjg5LjIxIDUyMC40MTUgQyAxNzgyLjczIDY4My4xNDQgMTc1NC45NCA4ODMuNTYyIDE2MDcuMDUgMTAwMy42OCBDIDE1MjUuODcgMTA2OS42MSAxNDIyLjY5IDEwOTcuNiAxMzE4Ljk5IDEwODguMjkgQyAxMjY5LjUgMTA4My44NSAxMTc4Ljc4IDEwNTIuMzQgMTEzOS41OSAxMDIxLjc2IEMgMTExNi40MiAxMDYwLjk5IDEwODYuMzEgMTA5Ny4xOSAxMDQ4LjM4IDExMjMgQyAxMDI3LjE4IDExMzguMTMgMTAxMi4xMSAxMTI5LjM2IDk5My40MzIgMTExNS42NCBDIDk1Ny4yMDQgMTA4OS4wMyA5MzAuOTM2IDEwNTQuMjUgOTA3Ljg3MyAxMDE2LjMgQyA4MzQuMzIgMTA2NC4wMiA3MzguNzIyIDEwOTcuMSA2NDkuODg3IDEwODguMzIgQyA2MzUuNTY4IDEwODYuOSA2MjEuMzE3IDEwODQuNCA2MDcuMjQxIDEwODEuMzkgQyA1MDUuNjM3IDEwNjAuNjkgNDE2LjYyNyA5OTkuOTk5IDM2MC4yNDkgOTEyLjk3MyBDIDI0Ny4zMTIgNzM4LjQ3OSAzMTYuNzk5IDQ5Mi4wMDMgNDg4LjUwOCAzODMuMDM3IEMgNTc2Ljg1NyAzMjYuOTcgNjg0LjU5MSAzMDkuMzYzIDc4Ni40OTMgMzMyLjU4NCBDIDg4MS4yMDggMzU0LjA4IDk1MS4zOTYgNDA2LjEzMiAxMDIxLjcyIDQ2OS44MTYgeiIvPgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoMjU0LDIxNSw1NSkiIGQ9Ik0gOTA3Ljg3MyAxMDE2LjMgQyA5MDEuMDYxIDEwMDIuODcgODgyLjAwMyA5NjkuNTYzIDg4Ny44NjEgOTU1LjYyNCBDIDg5MC45MjYgOTQ4LjMzMiA5MTEuNzI4IDkyNC4xNTcgOTE4LjA2MiA5MTQuODEgQyA5MzAuNjI3IDg5Ni4yNjYgOTUzLjIxOCA4NzYuNjUgOTczLjg5NiA4NjcuOTc1IEMgMTAwMy42MyA4NTUuMTY2IDEwMzguODYgODUyLjk3MSAxMDY5LjQxIDg2NC40MzIgQyAxMTAzLjM4IDg3Ny4xODEgMTEyMC45NiA5MDMuODkgMTE0Mi4yOCA5MzAuNjAzIEMgMTE2My4zMiA5NTYuOTc2IDExNzAuMzggOTU2LjM5NyAxMTU0LjcyIDk5MS40MDcgQyAxMTUwLjA5IDEwMDEuNzMgMTE0NS4wNCAxMDExLjg1IDExMzkuNTkgMTAyMS43NiBDIDExMTYuNDIgMTA2MC45OSAxMDg2LjMxIDEwOTcuMTkgMTA0OC4zOCAxMTIzIEMgMTAyNy4xOCAxMTM4LjEzIDEwMTIuMTEgMTEyOS4zNiA5OTMuNDMyIDExMTUuNjQgQyA5NTcuMjA0IDEwODkuMDMgOTMwLjkzNiAxMDU0LjI1IDkwNy44NzMgMTAxNi4zIHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDI1NSwyNTUsMjU1KSIgZD0iTSAxMzM0LjkyIDQzMS40MDkgQyAxNDg4LjkyIDQxNS41NzYgMTYyNi41NCA1MjcuNjkyIDE2NDIuMTcgNjgxLjcwNyBDIDE2NTcuOCA4MzUuNzIyIDE1NDUuNSA5NzMuMiAxMzkxLjQ3IDk4OC42MjUgQyAxMjM3LjcyIDEwMDQuMDIgMTEwMC41NiA4OTEuOTc5IDEwODQuOTYgNzM4LjI1MiBDIDEwNjkuMzYgNTg0LjUyNSAxMTgxLjIyIDQ0Ny4yMTMgMTMzNC45MiA0MzEuNDA5IHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDY5LDIzLDApIiBkPSJNIDEzNTYuNTcgNTU1LjU3OSBDIDE0NDEuOTUgNTUxLjI0OSAxNTE0LjcgNjE2LjkwOSAxNTE5LjExIDcwMi4yODggQyAxNTIzLjUzIDc4Ny42NjYgMTQ1Ny45NCA4NjAuNDggMTM3Mi41NyA4NjQuOTc5IEMgMTI4Ny4wNyA4NjkuNDg1IDEyMTQuMTQgODAzLjc4NSAxMjA5LjcxIDcxOC4yODcgQyAxMjA1LjI5IDYzMi43ODggMTI3MS4wNyA1NTkuOTE2IDEzNTYuNTcgNTU1LjU3OSB6Ii8+CjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYigyNTUsMjU1LDI1NSkiIGQ9Ik0gNjU4Ljc1MSA0MzEuODI4IEMgODEyLjY1NSA0MTcuODYgOTQ4LjY4NiA1MzEuNDM1IDk2Mi40MTMgNjg1LjM2MSBDIDk3Ni4xMzkgODM5LjI4NyA4NjIuMzUxIDk3NS4xNCA3MDguNDA0IDk4OC42MjUgQyA1NTQuNzk3IDEwMDIuMDggNDE5LjMxMSA4ODguNTk5IDQwNS42MTUgNzM1LjAxNCBDIDM5MS45MTkgNTgxLjQyOSA1MDUuMTg3IDQ0NS43NjUgNjU4Ljc1MSA0MzEuODI4IHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDY5LDIzLDApIiBkPSJNIDY3OS43OSA1NTYuNDk0IEMgNzY0LjY2NiA1NTQuMTYzIDgzNS4zOCA2MjEuMDM5IDgzNy43ODYgNzA1LjkxMiBDIDg0MC4xOTEgNzkwLjc4NSA3NzMuMzc4IDg2MS41NTggNjg4LjUwNyA4NjQuMDM5IEMgNjAzLjUzMSA4NjYuNTIyIDUzMi42NSA3OTkuNjA4IDUzMC4yNDEgNzE0LjYyOSBDIDUyNy44MzMgNjI5LjY1IDU5NC44MDkgNTU4LjgyOCA2NzkuNzkgNTU2LjQ5NCB6Ii8+CjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYigyMzAsMTUxLDgyKSIgZD0iTSAzMzAuNjUzIDE1NC4xNjkgQyAzNDkuNDIzIDE1Mi41MTUgMzc3LjIzIDE2Ni4yNjUgMzkzLjg0NSAxNzUuMzcgQyA0NDYuMjg1IDIwNC4xMDggNDk0LjYyIDIxNy45NDggNTUyLjIxMiAyMzMuMDcgQyA1MDcuNDcxIDI1MS42NzcgNDY0LjI2MyAyNzMuNzczIDQyMi45ODUgMjk5LjE1MiBDIDM3Ny4xNDkgMzI2LjIxNSAzMzIuNzU4IDM1NC4wNzYgMjkyLjQ3OSAzODkuMjk3IEMgMjkzLjMyNSAzNTUuMjcyIDMxNy45NjUgMTc0LjY5NSAzMzAuNjUzIDE1NC4xNjkgeiIvPgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoMjMwLDE1MSw4MikiIGQ9Ik0gMTcxNC41IDE1My4xOTQgQyAxNzE3LjcyIDE1My4yNTggMTcxNy41OCAxNTMuMDc0IDE3MjAuMjYgMTU0Ljc5MiBDIDE3MzIuMTcgMTczLjgxIDE3NTIuOTcgMzUyLjg1NiAxNzU1LjcgMzg1LjgxNiBDIDE3NTAuNDMgMzgyLjEwNiAxNzQ0Ljk3IDM3Ny41MjggMTczOS45NyAzNzMuNDMgQyAxNzA2LjQyIDM0NS45MSAxNjcyLjEyIDMyMC44NTMgMTYzNC44IDI5OC42OTggQyAxNjI0LjI3IDI5MS41NDggMTYwOS44IDI4My43MDggMTU5OC43NCAyNzcuMzQ5IEMgMTU2Ny4yMiAyNTkuMjM4IDE1MzcuMTUgMjQ0LjE4IDE1MDMuNTMgMjMwLjY5OSBDIDE1MDguNzcgMjI5LjI4NCAxNTE1LjE1IDIyNy45NzYgMTUyMC41IDIyNi45MzMgQyAxNTY1LjQ0IDIxOC4xNiAxNjA1LjI4IDIwMC41MDggMTY0Ni41IDE4MC45OTUgQyAxNjY2LjIyIDE3MS42NTkgMTY5My4zNiAxNTYuNzQ3IDE3MTQuNSAxNTMuMTk0IHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDIzMCwxNTEsODIpIiBkPSJNIDExNjIuNjUgMTUyNy4yMyBDIDExNjcuMjMgMTUyOC4zMyAxMTczLjcgMTUzMC45MiAxMTc4LjE5IDE1MzIuNjggQyAxMjQ0LjQyIDE1NTguNTggMTMyMS42NyAxNTYyLjAyIDEzODYuNjggMTUzMC42NiBDIDEzODkuOTMgMTUyOS4wOSAxMzkxLjI3IDE1MjkuMjQgMTM5NC4yOCAxNTMwLjUxIEMgMTQwNC4yMyAxNTQyLjY1IDEzODAuNiAxNTgxLjg4IDEzNzIuNzggMTU5Mi41MyBDIDEzNjUuNDYgMTYwMS41OCAxMzU3LjI2IDE2MDkuODkgMTM0OC4zIDE2MTcuMzQgQyAxMjc1LjU1IDE2NzYuOTEgMTE1Mi44OCAxNjIxLjE4IDExNjIuNjUgMTUyNy4yMyB6Ii8+CjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYigyMzAsMTUxLDgyKSIgZD0iTSAxMTM1LjE0IDE2OTUuOTggQyAxMTM5LjcyIDE2OTYuODkgMTE0MS4zIDE3MDEuMjMgMTE0MC43MSAxNzA1LjQ1IEMgMTEyNi4yNiAxODA5LjU1IDEwMDAuMTUgMTg0Ny41IDkzMS45NTYgMTc2Ni4zOCBDIDkxNC45NjUgMTc0NC44NyA5MDkuMDE0IDE3MjIuNjIgOTA2LjgyNSAxNjk1Ljk5IEMgOTIxLjA5MyAxNzAxLjY5IDkzOS45MDggMTcwOS45NiA5NTQuMTM4IDE3MTQuNTUgQyA5OTQuOTkyIDE3MjcuODUgMTAzOC45MyAxNzI4LjM5IDEwODAuMSAxNzE2LjExIEMgMTA5OC40OCAxNzEwLjUyIDExMTYuNTYgMTcwMi4xMiAxMTM1LjE0IDE2OTUuOTggeiIvPgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoMjMwLDE1MSw4MikiIGQ9Ik0gODg0LjkwOCAxNTI5Ljk0IEwgODg2LjEyMiAxNTMxLjEzIEMgODg4Ljk3NiAxNTQxLjI3IDg4My4zOSAxNTU2Ljg3IDg3OS4zMzYgMTU2Ni40NiBDIDg3MC43NiAxNTg2Ljc0IDg1Ni4xNTEgMTYwNS4zMSA4MzguNTM5IDE2MTguNTUgQyA4MTMuOTEzIDE2MzcuMyA3ODIuNzU0IDE2NDUuMjkgNzUyLjE0NyAxNjQwLjcxIEMgNzE5LjM3IDE2MzUuOTggNjk4LjM0MiAxNjIyLjcxIDY3OS4wNzQgMTU5Ni43MSBDIDY3Mi4xNTYgMTU4Ni4wMSA2NDcuODA4IDE1NDIuNzkgNjU4LjQ1IDE1MzIuMDcgQyA2NjQuNjAzIDE1MzEuNjEgNjc5LjcxOSAxNTM4IDY4Ni4zMzYgMTU0MC43OCBDIDcyOS44NTMgMTU1OS4wNSA3ODguMTM1IDE1NTguMjcgODMzLjY1MyAxNTQ4Ljc5IEMgODQ3LjUzOCAxNTQ1LjkgODcxLjUxNCAxNTM1Ljg5IDg4NC45MDggMTUyOS45NCB6Ii8+Cjwvc3ZnPg==") 24 24, pointer !important;
   }
+  /* ===== เคอร์เซอร์ "ฟองคำพูด" — วางเมาส์บนชาวบ้านในโหมดบ้านแล้วบอกว่าคุยได้ =====
+     ออกแบบให้เป็นชุดเดียวกับเคอร์เซอร์นกฮูก 2 ตัวข้างบน โดยใช้ **พาเลตต์เดียวกันเป๊ะ**:
+       ขอบ+จุด = #B66131 (สีตัวนกฮูก) · พื้นฟอง = #F8E2CF (เฉดอ่อนของสีหน้านกฮูก #E69752)
+     ⚠ ทำ "เส้นขอบ" ด้วยการวางรูปทรงทึบซ้อนกันแทน stroke บางๆ — เส้นบางแตกตอนย่อเหลือ 36px
+     ⚠ **หางฟองต้องทึบ อ้วน ปลายมน** (วาด path แล้วใส่ stroke สีเดียวกัน + linejoin/linecap:round)
+       เคยทำเป็นสามเหลี่ยมเรียวมีครีมข้างใน แล้วขอบน้ำตาลบางเป็นเส้นผมจนดูแหว่ง (ลองเทียบ 7 แบบแล้ว)
+     วาดหางก่อนตัวฟอง ⇒ โคนหางถูกตัวฟองทับ ไม่เห็นรอยต่อ
+     เขียนเป็น SVG อ่านออกตรงๆ (ไม่ใช่ base64 เหมือน 2 ตัวบนที่ export มาจากโปรแกรมวาด) จะได้แก้ง่าย
+     hotspot = ปลายหางฟอง (7,32) ⇒ หางชี้โดนตัวชาวบ้านพอดี ตัวฟองลอยอยู่มุมบนขวาไม่บังของ */
+  #house-canvas.house-talk-hover{
+    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36' width='36' height='36'%3E%3Cpath d='M9.4 21.5 L7.2 31.6 L17.6 24.2 Z' fill='%23B66131' stroke='%23B66131' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Crect x='2.4' y='3.4' width='31.2' height='24.2' rx='9.8' fill='%23B66131'/%3E%3Crect x='4.7' y='5.7' width='26.6' height='19.6' rx='7.7' fill='%23F8E2CF'/%3E%3Ccircle cx='12' cy='15.5' r='2.5' fill='%23B66131'/%3E%3Ccircle cx='18' cy='15.5' r='2.5' fill='%23B66131'/%3E%3Ccircle cx='24' cy='15.5' r='2.5' fill='%23B66131'/%3E%3C/svg%3E") 7 32, pointer;
+  }
   body .cat-card.cat-locked, body .choice-btn:disabled { cursor:url("data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDIwNDggMjA0OCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIj4KCjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYigxODIsOTcsNDkpIiBkPSJNIDE3NTEuNzUgNjAuMjAzMyBDIDE3NjguNTQgNTkuNzgzOCAxNzc0LjgzIDY2Ljk5MSAxNzc5LjQ3IDgyLjczODcgQyAxNzg0LjU3IDEwMi4zODUgMTc4OC44OSAxMjMuNTA2IDE3OTEuNDYgMTQzLjcwMiBDIDE3OTguNDcgMTk4LjcyOCAxODA3Ljc1IDI1My42MTkgMTgxNS41NCAzMDguNDY3IEMgMTgyMC4zOSAzNDQuMjYzIDE4MjQuOTYgMzgwLjA5NiAxODI5LjI2IDQxNS45NjIgQyAxODQ3LjEyIDU0Ni4zMjUgMTg2Mi43MiA2NzYuOTg3IDE4NzYuMDYgODA3Ljg5IEMgMTg4Ny44OCA5MDguOTA4IDE4OTcuNzUgMTAxMC4xNSAxOTA1LjY1IDExMTEuNTUgQyAxOTE1LjE1IDEyNDcuNDggMTkxNi40NyAxMzc0LjM1IDE4NjguMzYgMTUwMy42NiBDIDE4NTguMzYgMTUzMC41NSAxODQ0LjkgMTU1Ni44MiAxODMxLjEgMTU4MS44OSBDIDE4MDguNTEgMTYyMy41IDE3ODEuNTIgMTY2Mi41NiAxNzUwLjU4IDE2OTguMzkgQyAxNjU2LjcyIDE4MDYuMTMgMTUwOS4wMSAxODk2LjM5IDEzNzIuOTkgMTkzOS45MyBDIDEyOTYuMDcgMTk2NC41NSAxMTk3Ljk0IDE5ODAuMDcgMTExNy44MSAxOTg1LjQ1IEMgMTA4Mi44MyAxOTg3LjUgMTA0Ny43OSAxOTg4LjM2IDEwMTIuNzYgMTk4OC4wNCBDIDc2NC43NzUgMTk4Ny43OCA1NTIuNTE2IDE5MjcuMTQgMzYyLjk5NSAxNzYxLjY5IEMgMjE1LjgyNiAxNjM2LjY3IDEzNS42NDQgMTQzNS45MSAxMzcuODMzIDEyNDQuNzYgQyAxMzkuMjM4IDExMjIuMDQgMTU0LjQ5NyA5OTkuMzEzIDE2Ny4yOTIgODc3LjQzIEMgMTgyLjE4OSA3MjYuMzM5IDE5OS43NSA1NzUuNTIyIDIxOS45NjYgNDI1LjA1IEMgMjI3Ljk4NyAzNjcuMTkyIDIzOC40MzIgMzA5LjY4NCAyNDcuMjg2IDI1MS45NjcgQyAyNTIuMTUyIDIyMC4yNDIgMjY5LjMxMyA5NC4xNzU5IDI4Mi4wMDkgNzMuNTg0NSBDIDI4Ni4yNzUgNjYuNjY1OSAyOTIuNDYyIDYxLjkwMzUgMzAwLjY2NiA2MS4wMjYgQyAzMDcuOTIxIDYwLjI0OTkgMzE0Ljg2MSA2MS44OTY1IDMyMS42NDYgNjQuMzEwOCBDIDM0MS4wNjIgNzEuMjIwMSAzNTkuMjgzIDgxLjg3MjUgMzc3LjgwNSA5MC44MTEzIEMgNDE1Ljc0NCAxMDkuMTIxIDQ1NS45MzEgMTI4LjIyMyA0OTUuNTM0IDE0Mi4yOTYgQyA1MjkuODMxIDE1NC40ODMgNTcyLjUwMiAxNjYuOTg5IDYwNy44NDUgMTc1LjU1MyBDIDYyMC45OCAxNzguNzM2IDYzNC4zMzMgMTgwLjg2MiA2NDcuNDkyIDE4My45MTkgQyA2NzUuODc1IDE5MC41MTQgNzAyLjkxNCAxOTcuMzggNzMxLjgxOSAyMDEuNzY1IEMgODMyLjAxNiAyMTYuMTkzIDkzMy4yIDIyMi42NTYgMTAzNC40MiAyMjEuMDkyIEMgMTA5MC42MSAyMTkuMzkzIDExNDYuNzQgMjE2LjAxMyAxMjAyLjczIDIxMC45NTQgQyAxMjk5LjcgMjAzLjE2NiAxNDA4LjA1IDE4OC43ODIgMTUwMS41MyAxNjAuMTc0IEMgMTUxOC40IDE1NS4wMSAxNTM3LjAxIDE0Ny45MzQgMTU1NC4wOCAxNDIuMjk4IEMgMTU3My41MiAxMzUuODc4IDE1OTguNTIgMTI4LjkwNCAxNjE2LjY3IDEyMC40MzMgQyAxNjUxLjggMTA0LjAzNCAxNjg2LjkzIDg2LjIwMjcgMTcyMi43MyA3MS4xODMyIEMgMTczMS40OSA2Ny41MTA2IDE3NDIuNjkgNjIuMjc1NiAxNzUxLjc1IDYwLjIwMzMgeiIvPgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoMjMwLDE1MSw4MikiIGQ9Ik0gMTAyMS43MiA0NjkuODE2IEMgMTAzMS45MyA0NjEuMjk3IDEwNDEuNTggNDUxLjY3NiAxMDUxLjYxIDQ0Mi44NDQgQyAxMTQ1LjY1IDM1OS45OTIgMTI1MS4yNiAzMTIuNzMzIDEzNzguNTIgMzI0LjI3NSBDIDE0NzMuODQgMzMyLjA3MyAxNTYzLjIyIDM3My43MDkgMTYzMC41MSA0NDEuNjU4IEMgMTY1OC43IDQ3MC4yMDMgMTY2OS42MyA0ODYuNDcgMTY4OS4yMSA1MjAuNDE1IEMgMTc4Mi43MyA2ODMuMTQ0IDE3NTQuOTQgODgzLjU2MiAxNjA3LjA1IDEwMDMuNjggQyAxNTI1Ljg3IDEwNjkuNjEgMTQyMi42OSAxMDk3LjYgMTMxOC45OSAxMDg4LjI5IEMgMTI2OS41IDEwODMuODUgMTE3OC43OCAxMDUyLjM0IDExMzkuNTkgMTAyMS43NiBDIDExMTYuNDIgMTA2MC45OSAxMDg2LjMxIDEwOTcuMTkgMTA0OC4zOCAxMTIzIEMgMTAyNy4xOCAxMTM4LjEzIDEwMTIuMTEgMTEyOS4zNiA5OTMuNDMyIDExMTUuNjQgQyA5NTcuMjA0IDEwODkuMDMgOTMwLjkzNiAxMDU0LjI1IDkwNy44NzMgMTAxNi4zIEMgODM0LjMyIDEwNjQuMDIgNzM4LjcyMiAxMDk3LjEgNjQ5Ljg4NyAxMDg4LjMyIEMgNjM1LjU2OCAxMDg2LjkgNjIxLjMxNyAxMDg0LjQgNjA3LjI0MSAxMDgxLjM5IEMgNTA1LjYzNyAxMDYwLjY5IDQxNi42MjcgOTk5Ljk5OSAzNjAuMjQ5IDkxMi45NzMgQyAyNDcuMzEyIDczOC40NzkgMzE2Ljc5OSA0OTIuMDAzIDQ4OC41MDggMzgzLjAzNyBDIDU3Ni44NTcgMzI2Ljk3IDY4NC41OTEgMzA5LjM2MyA3ODYuNDkzIDMzMi41ODQgQyA4ODEuMjA4IDM1NC4wOCA5NTEuMzk2IDQwNi4xMzIgMTAyMS43MiA0NjkuODE2IHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDI1NCwyMTUsNTUpIiBkPSJNIDkwNy44NzMgMTAxNi4zIEMgOTAxLjA2MSAxMDAyLjg3IDg4Mi4wMDMgOTY5LjU2MyA4ODcuODYxIDk1NS42MjQgQyA4OTAuOTI2IDk0OC4zMzIgOTExLjcyOCA5MjQuMTU3IDkxOC4wNjIgOTE0LjgxIEMgOTMwLjYyNyA4OTYuMjY2IDk1My4yMTggODc2LjY1IDk3My44OTYgODY3Ljk3NSBDIDEwMDMuNjMgODU1LjE2NiAxMDM4Ljg2IDg1Mi45NzEgMTA2OS40MSA4NjQuNDMyIEMgMTEwMy4zOCA4NzcuMTgxIDExMjAuOTYgOTAzLjg5IDExNDIuMjggOTMwLjYwMyBDIDExNjMuMzIgOTU2Ljk3NiAxMTcwLjM4IDk1Ni4zOTcgMTE1NC43MiA5OTEuNDA3IEMgMTE1MC4wOSAxMDAxLjczIDExNDUuMDQgMTAxMS44NSAxMTM5LjU5IDEwMjEuNzYgQyAxMTE2LjQyIDEwNjAuOTkgMTA4Ni4zMSAxMDk3LjE5IDEwNDguMzggMTEyMyBDIDEwMjcuMTggMTEzOC4xMyAxMDEyLjExIDExMjkuMzYgOTkzLjQzMiAxMTE1LjY0IEMgOTU3LjIwNCAxMDg5LjAzIDkzMC45MzYgMTA1NC4yNSA5MDcuODczIDEwMTYuMyB6Ii8+Cgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoNjksMjMsMCkiIGQ9Ik0gMTM1Ni41NyA1NTUuNTc5IEMgMTQ0MS45NSA1NTEuMjQ5IDE1MTQuNyA2MTYuOTA5IDE1MTkuMTEgNzAyLjI4OCBDIDE1MjMuNTMgNzg3LjY2NiAxNDU3Ljk0IDg2MC40OCAxMzcyLjU3IDg2NC45NzkgQyAxMjg3LjA3IDg2OS40ODUgMTIxNC4xNCA4MDMuNzg1IDEyMDkuNzEgNzE4LjI4NyBDIDEyMDUuMjkgNjMyLjc4OCAxMjcxLjA3IDU1OS45MTYgMTM1Ni41NyA1NTUuNTc5IHoiLz4KCjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYig2OSwyMywwKSIgZD0iTSA2NzkuNzkgNTU2LjQ5NCBDIDc2NC42NjYgNTU0LjE2MyA4MzUuMzggNjIxLjAzOSA4MzcuNzg2IDcwNS45MTIgQyA4NDAuMTkxIDc5MC43ODUgNzczLjM3OCA4NjEuNTU4IDY4OC41MDcgODY0LjAzOSBDIDYwMy41MzEgODY2LjUyMiA1MzIuNjUgNzk5LjYwOCA1MzAuMjQxIDcxNC42MjkgQyA1MjcuODMzIDYyOS42NSA1OTQuODA5IDU1OC44MjggNjc5Ljc5IDU1Ni40OTQgeiIvPgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoMjMwLDE1MSw4MikiIGQ9Ik0gMzMwLjY1MyAxNTQuMTY5IEMgMzQ5LjQyMyAxNTIuNTE1IDM3Ny4yMyAxNjYuMjY1IDM5My44NDUgMTc1LjM3IEMgNDQ2LjI4NSAyMDQuMTA4IDQ5NC42MiAyMTcuOTQ4IDU1Mi4yMTIgMjMzLjA3IEMgNTA3LjQ3MSAyNTEuNjc3IDQ2NC4yNjMgMjczLjc3MyA0MjIuOTg1IDI5OS4xNTIgQyAzNzcuMTQ5IDMyNi4yMTUgMzMyLjc1OCAzNTQuMDc2IDI5Mi40NzkgMzg5LjI5NyBDIDI5My4zMjUgMzU1LjI3MiAzMTcuOTY1IDE3NC42OTUgMzMwLjY1MyAxNTQuMTY5IHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDIzMCwxNTEsODIpIiBkPSJNIDE3MTQuNSAxNTMuMTk0IEMgMTcxNy43MiAxNTMuMjU4IDE3MTcuNTggMTUzLjA3NCAxNzIwLjI2IDE1NC43OTIgQyAxNzMyLjE3IDE3My44MSAxNzUyLjk3IDM1Mi44NTYgMTc1NS43IDM4NS44MTYgQyAxNzUwLjQzIDM4Mi4xMDYgMTc0NC45NyAzNzcuNTI4IDE3MzkuOTcgMzczLjQzIEMgMTcwNi40MiAzNDUuOTEgMTY3Mi4xMiAzMjAuODUzIDE2MzQuOCAyOTguNjk4IEMgMTYyNC4yNyAyOTEuNTQ4IDE2MDkuOCAyODMuNzA4IDE1OTguNzQgMjc3LjM0OSBDIDE1NjcuMjIgMjU5LjIzOCAxNTM3LjE1IDI0NC4xOCAxNTAzLjUzIDIzMC42OTkgQyAxNTA4Ljc3IDIyOS4yODQgMTUxNS4xNSAyMjcuOTc2IDE1MjAuNSAyMjYuOTMzIEMgMTU2NS40NCAyMTguMTYgMTYwNS4yOCAyMDAuNTA4IDE2NDYuNSAxODAuOTk1IEMgMTY2Ni4yMiAxNzEuNjU5IDE2OTMuMzYgMTU2Ljc0NyAxNzE0LjUgMTUzLjE5NCB6Ii8+CjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMCkiIGZpbGw9InJnYigyMzAsMTUxLDgyKSIgZD0iTSAxMTYyLjY1IDE1MjcuMjMgQyAxMTY3LjIzIDE1MjguMzMgMTE3My43IDE1MzAuOTIgMTE3OC4xOSAxNTMyLjY4IEMgMTI0NC40MiAxNTU4LjU4IDEzMjEuNjcgMTU2Mi4wMiAxMzg2LjY4IDE1MzAuNjYgQyAxMzg5LjkzIDE1MjkuMDkgMTM5MS4yNyAxNTI5LjI0IDEzOTQuMjggMTUzMC41MSBDIDE0MDQuMjMgMTU0Mi42NSAxMzgwLjYgMTU4MS44OCAxMzcyLjc4IDE1OTIuNTMgQyAxMzY1LjQ2IDE2MDEuNTggMTM1Ny4yNiAxNjA5Ljg5IDEzNDguMyAxNjE3LjM0IEMgMTI3NS41NSAxNjc2LjkxIDExNTIuODggMTYyMS4xOCAxMTYyLjY1IDE1MjcuMjMgeiIvPgo8cGF0aCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIiBmaWxsPSJyZ2IoMjMwLDE1MSw4MikiIGQ9Ik0gMTEzNS4xNCAxNjk1Ljk4IEMgMTEzOS43MiAxNjk2Ljg5IDExNDEuMyAxNzAxLjIzIDExNDAuNzEgMTcwNS40NSBDIDExMjYuMjYgMTgwOS41NSAxMDAwLjE1IDE4NDcuNSA5MzEuOTU2IDE3NjYuMzggQyA5MTQuOTY1IDE3NDQuODcgOTA5LjAxNCAxNzIyLjYyIDkwNi44MjUgMTY5NS45OSBDIDkyMS4wOTMgMTcwMS42OSA5MzkuOTA4IDE3MDkuOTYgOTU0LjEzOCAxNzE0LjU1IEMgOTk0Ljk5MiAxNzI3Ljg1IDEwMzguOTMgMTcyOC4zOSAxMDgwLjEgMTcxNi4xMSBDIDEwOTguNDggMTcxMC41MiAxMTE2LjU2IDE3MDIuMTIgMTEzNS4xNCAxNjk1Ljk4IHoiLz4KPHBhdGggdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwwKSIgZmlsbD0icmdiKDIzMCwxNTEsODIpIiBkPSJNIDg4NC45MDggMTUyOS45NCBMIDg4Ni4xMjIgMTUzMS4xMyBDIDg4OC45NzYgMTU0MS4yNyA4ODMuMzkgMTU1Ni44NyA4NzkuMzM2IDE1NjYuNDYgQyA4NzAuNzYgMTU4Ni43NCA4NTYuMTUxIDE2MDUuMzEgODM4LjUzOSAxNjE4LjU1IEMgODEzLjkxMyAxNjM3LjMgNzgyLjc1NCAxNjQ1LjI5IDc1Mi4xNDcgMTY0MC43MSBDIDcxOS4zNyAxNjM1Ljk4IDY5OC4zNDIgMTYyMi43MSA2NzkuMDc0IDE1OTYuNzEgQyA2NzIuMTU2IDE1ODYuMDEgNjQ3LjgwOCAxNTQyLjc5IDY1OC40NSAxNTMyLjA3IEMgNjY0LjYwMyAxNTMxLjYxIDY3OS43MTkgMTUzOCA2ODYuMzM2IDE1NDAuNzggQyA3MjkuODUzIDE1NTkuMDUgNzg4LjEzNSAxNTU4LjI3IDgzMy42NTMgMTU0OC43OSBDIDg0Ny41MzggMTU0NS45IDg3MS41MTQgMTUzNS44OSA4ODQuOTA4IDE1MjkuOTQgeiIvPgo8L3N2Zz4=") 24 24, pointer !important; }
 
   /* ---------- บ้านของหนู (My House — 3D Three.js) ---------- */
@@ -2388,18 +2410,35 @@
   }
   /* ป้ายชื่อเด็กในแถบบนของโหมดบ้าน — ใช้ .child-chip-group ชุดเดียวกับ header หลัก
      ต่างแค่ต้องบีบชื่อให้สั้นลง เพราะแถวนี้มีปุ่มกลม 4 ปุ่มแย่งที่อยู่แล้ว */
-  /* กันปุ่มแถวซ้ายไหลไปชนปุ่มเฟือง #house-ctrl-gear ที่ลอยอยู่มุมขวาบนแถวเดียวกัน */
-  .house-overlay-ui .quiz-top{padding-right:50px;}
+  /* กันปุ่มแถวซ้ายไหลไปชนปุ่มเฟือง #house-ctrl-gear ที่ลอยอยู่มุมขวาบนแถวเดียวกัน
+     ⚠ `margin-bottom:0` ทับค่า 18px ของ .quiz-top (หน้าควิซ) โดยตั้งใจ — ในโหมดบ้าน UI ทุกชิ้น
+       ลอยทับโลก 3D อยู่ ยิ่งเว้นห่างยิ่งบังฉากที่เด็กกำลังเล่น ระยะห่างจึงคุมจาก margin ของแถบสัตว์แทน */
+  .house-overlay-ui .quiz-top{padding-right:50px; margin-bottom:0;}
   .house-child-chip{min-width:0;}
   .house-child-chip[hidden]{display:none;}
-  #house-child-name{overflow:hidden; text-overflow:ellipsis; max-width:84px; display:inline-block;}
+  /* ⚠ ในโหมดบ้าน chip ชื่อเด็กต้อง **สูงเท่าป้ายเหรียญ `.house-coins` เป๊ะ** (42px / 38px จอแคบ)
+     ไม่งั้นแถบบนดูเบี้ยว ป้าย 2 อันข้างกันคนละขนาด (ผู้ใช้สั่ง 2026-08-09)
+     — ตัวเลขนี้ผูกกันอยู่ แก้ที่ไหนต้องแก้อีกที่ให้ตรงกันเสมอ */
+  .house-child-chip .child-chip{height:42px; padding:0 13px 0 9px; font-size:17px; max-width:none;}
+  .house-child-chip .child-edit-btn{height:42px; padding:0 11px;}
+  #house-child-emoji{font-size:20px; line-height:1; flex:0 0 auto;}
+  /* ชื่อยืดหดได้และตัดด้วย … ส่วน **อายุห้ามหด/ห้ามตัด** (flex-shrink:0) — จอแคบต้องยอมเสียตัวอักษร
+     ท้ายชื่อ แต่ยังต้องเห็นอายุครบ ไม่งั้นที่อุตส่าห์ใส่มาก็ไม่มีประโยชน์ */
+  #house-child-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:0 1 auto;}
+  #house-child-age{flex:0 0 auto; white-space:nowrap;}
   @media (max-width:480px){
-    /* จอแคบ: บีบช่องไฟ + ย่อปุ่มกลม ให้ทั้งแถวยังอยู่บรรทัดเดียวได้ ทั้งที่ต้องเว้นที่ให้ปุ่มเฟืองด้วย */
-    .house-overlay-ui .quiz-top{gap:6px; padding-right:46px;}
-    .house-overlay-ui .quiz-top .back-btn{width:38px; height:38px;}
-    #house-child-name{max-width:62px;}
-    .house-child-chip .child-chip{padding:6px 9px 6px 7px; font-size:14px;}
-    .house-child-chip .child-edit-btn{padding:6px 8px;}
+    /* จอแคบ: บีบช่องไฟ + ย่อปุ่มกลม ให้ทั้งแถวยังอยู่บรรทัดเดียวได้ ทั้งที่ต้องเว้นที่ให้ปุ่มเฟืองด้วย
+       ⚠ ปุ่มกลมห้ามเล็กกว่า 36px — เด็ก 5 ขวบกดด้วยนิ้วโป้งไม่โดน (ที่เหลือไปบีบช่องไฟ/ป้ายเหรียญแทน) */
+    .house-overlay-ui .quiz-top{gap:5px; padding-right:44px;}
+    .house-overlay-ui .quiz-top .back-btn{width:36px; height:36px;}
+    #house-child-emoji{font-size:17px;}
+    .house-child-chip .child-chip{height:38px; padding:0 8px 0 7px; font-size:15px; gap:4px;}
+    .house-child-chip .child-edit-btn{height:38px; padding:0 7px;}
+    .house-child-chip .child-edit-btn svg{width:17px; height:17px;}
+    .house-coins{padding:0 8px 0 4px; gap:4px; font-size:14.5px;}
+    .house-coins .owl-coin{width:22px; height:22px;}
+    /* จอแคบ: ย่ออายุเหลือ "(7)" — ยังบอกอายุครบ แต่คืนที่ให้ชื่อเด็กพอไม่ให้ถูกตัดเหลือตัวเดียว */
+    .hc-age-unit{display:none;}
   }
   /* ป้ายชื่อตัวละคร (ชื่อเด็ก) ลอยเหนือหัว — ตำแหน่ง JS อัปเดตทุกเฟรมจาก projection 3D */
   .house-char-name{
@@ -2812,6 +2851,18 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden; width:100%; word-break:break-word;
   }
+  /* บรรทัดรองใต้ชื่อสินค้า — ตอนนี้ใช้กับอาหารสัตว์ (บอกว่าเป็นของสัตว์ตัวไหน + เหลือกี่มื้อ)
+     ใบที่มีบรรทัดรองจะสูงกว่าปกติ แต่ทั้งแท็บใส่เหมือนกันหมด การ์ดในตารางเดียวกันจึงยังเท่ากันเป๊ะ */
+  .hs-card.hs-has-sub{height:150px;}
+  .hs-card.hs-has-sub .hs-name{-webkit-line-clamp:1;}
+  /* ⚠ **ห้ามใส่ word-break:break-word** — เบราว์เซอร์ตัดคำไทยกลางคำ ("หมาน้อย" → "หมา/น้อย")
+     แต่ละบรรทัดถูกจัดมาให้สั้นพอจากฝั่ง JS แล้ว (คั่นด้วย \n + white-space:pre-line) */
+  .hs-sub{
+    font-size:10px; font-weight:800; color:var(--ink-soft); text-align:center; line-height:1.3;
+    white-space:pre-line; width:100%;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .hs-card.hs-poor .hs-sub{color:#C3B6A4;}
   .hs-price{font-size:12px; font-weight:800; color:#C98B2E; line-height:1; display:inline-flex; align-items:center; gap:4px;}
   /* เหรียญนกฮูกจิ๋วข้างราคา — วาดด้วย CSS ล้วน (ไม่ใช้ emoji 🪙 เพราะบางเครื่องไม่มีในฟอนต์
      แล้วจะขึ้นเป็นวงกลมเทาทึบ) โทนทองชุดเดียวกับป้ายยอดเงินบนหัวจอ */
@@ -3014,6 +3065,86 @@
             background:#FFF1CF; border-radius:14px; padding:8px 12px;}
   .hqz-close-btn{align-self:center; margin-top:2px;}
   body.night-mode .hqz-line, body.night-mode .hqz-show{background:#FFF6E6; color:#4A3520;}
+
+  /* ---------- หน้า "ปรับค่าต่างๆ" (เครื่องมือเทส · js/house-devtools.js) ----------
+     ใช้กล่อง/แท็บชุดเดียวกับการ์ดเควสต์และหน้าคลังคำถาม ต่างแค่แถวปุ่มปรับค่า
+     คนอ่านคือผู้ใหญ่ที่กำลังเทส ตัวหนังสือเล็กกว่าปกติได้ */
+  .house-dev{width:min(560px,94vw);}
+  .hdev-body{display:flex; flex-direction:column; gap:9px; min-height:0; overflow-y:auto; padding:2px;}
+  .hdev-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    background:#FFF6E6; border-radius:16px; padding:9px 12px;
+  }
+  .hdev-label{font-size:14.5px; font-weight:900; color:var(--ink);}
+  .hdev-btns{display:flex; gap:6px; flex-wrap:wrap;}
+  .hdev-btn{
+    font-family:inherit; font-size:13.5px; font-weight:900; cursor:pointer; color:#fff;
+    border:none; border-radius:999px; padding:0 13px; height:32px;
+    background:linear-gradient(180deg,#8FD07B,#5FAF52); box-shadow:0 3px 0 rgba(0,0,0,.12);
+  }
+  .hdev-btn:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.12);}
+  .hdev-btn.hdev-warn{background:linear-gradient(180deg,#FFAE8F,#EF8E7A);}
+  .hdev-note{font-size:12.5px; font-weight:800; color:var(--ink-soft); line-height:1.45; padding:0 4px;}
+  /* ดาวแดงท้ายเมนู = เมนูนี้เป็นเครื่องมือเทส ไม่ใช่ของให้เด็กเล่น (ต้องปิดก่อน deploy) */
+  .hc-test-star{color:#E14B3C; font-weight:900; margin-left:2px;}
+
+  /* ---------- แถบสถานะเพื่อนตัวน้อย ใต้ชื่อเด็ก (เฟส 3B) ----------
+     แคปซูลเดียวจบ: ชื่อสัตว์ · ไอคอนอาหารที่กิน · หลอดความอิ่ม · ปุ่มให้อาหาร
+     ต้องอ่านออกด้วยสายตาโดยไม่ต้องอ่านหนังสือคล่อง ⇒ หลอดเปลี่ยนสีตามระดับ + ไอคอนอาหารเป็นภาพ */
+  /* ⚠ **ต้องสูงเท่าแถวชื่อเด็กเป๊ะ (42px / 38px จอแคบ) และชิดขอบซ้ายตรงกัน (margin-left:0)**
+     UI ในโหมดบ้านลอยทับโลก 3D ทั้งหมด ⇒ เว้นห่างจากแถวบนแค่ 6px พอให้แยกแถวออก ไม่ให้กินฉากเกินจำเป็น
+     (ผู้ใช้สั่ง 2026-08-09) — ตัวเลขความสูงผูกกับ .house-coins/.child-chip แก้ที่ไหนต้องแก้ให้ตรงกันหมด */
+  .house-pet-bar{
+    position:relative; z-index:6; pointer-events:auto;
+    margin:10px 0 0 0; align-self:flex-start; height:42px; box-sizing:border-box;
+    display:inline-flex; align-items:center; gap:9px; flex-wrap:nowrap;
+    background:rgba(255,255,255,.92); border-radius:999px;
+    /* เงาชุดเดียวกับป้ายเหรียญ/ชื่อเด็ก (--shadow-btn) + เงาฟุ้งอีกชั้นให้ลอยพ้นพื้นหญ้าสีสด */
+    padding:0 5px 0 13px; box-shadow:var(--shadow-btn), 0 4px 12px rgba(70,40,10,.18);
+    max-width:calc(100vw - 28px);
+  }
+  .house-pet-bar[hidden]{display:none;}
+  .hpb-pet{font-size:14.5px; font-weight:900; color:var(--ink); white-space:nowrap;
+           overflow:hidden; text-overflow:ellipsis; max-width:120px;}
+  /* ไอคอนอาหาร + จำนวนมื้อคงเหลือ อยู่หลังหลอดความอิ่ม (ผู้ใช้สั่ง 2026-08-09) */
+  .hpb-food{font-size:18px; line-height:1; flex:0 0 auto; display:inline-flex; align-items:center; gap:2px;}
+  .hpb-left{font-size:13px; font-weight:900; color:var(--ink-soft);}
+  .hpb-food.hpb-food-out{opacity:.42;}       /* อาหารหมด = จางลง เตือนให้ไปซื้อเพิ่ม */
+  .hpb-meter{
+    width:84px; height:13px; flex:0 0 auto; border-radius:999px;
+    background:#EFE3CC; overflow:hidden; box-shadow:inset 0 1px 2px rgba(70,40,10,.14);
+  }
+  .hpb-fill{display:block; height:100%; border-radius:999px; background:linear-gradient(180deg,#8FD07B,#5FAF52);
+            transition:width .35s ease, background .3s ease;}
+  .hpb-fill.hpb-mid{background:linear-gradient(180deg,#FFCE6B,#F0A14B);}
+  .hpb-fill.hpb-low{background:linear-gradient(180deg,#FFAE8F,#EF8E7A);}
+  .hpb-fill.hpb-sick{background:#C9BCA8;}
+  .hpb-feed{
+    font-family:inherit; font-size:13.5px; font-weight:900; cursor:pointer; color:#fff; white-space:nowrap;
+    border:none; border-radius:999px; padding:0 14px 0 11px; height:32px; flex:0 0 auto;
+    display:inline-flex; align-items:center; gap:6px;
+    background:linear-gradient(180deg,#8FD07B,#5FAF52); box-shadow:0 3px 0 rgba(0,0,0,.12);
+  }
+  .hpb-feed .hpb-ic{width:19px; height:19px; display:block; flex:0 0 auto;}
+  .hpb-feed:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.12);}
+  /* ป่วย = ปุ่มเปลี่ยนเป็นโทนส้มอ่อน "พาไปหาหมอ" (ไม่ใช่สีแดงน่ากลัว — ธีมเด็ก 5 ขวบ) */
+  .hpb-feed.hpb-feed-sick{background:linear-gradient(180deg,#FFC08A,#EF9A5B);}
+  /* น้องหิว/ไม่สบาย = **หลอด**กะพริบเบาๆ ให้เด็กเหลือบเห็น (ไม่ใช้สีแดงจัด/ไอคอนน่ากลัว)
+     ⚠ ห้ามใส่ animation ที่ขยับตัวแถบ/ปุ่ม — ปุ่มที่ขยับตลอดเวลากดพลาดง่าย และทำให้ชุดเทสคลิกไม่โดน
+       (Playwright รอ element นิ่งก่อนคลิก ถ้าเต้นไม่หยุดก็รอจนหมดเวลา) เจอมาแล้ว 2026-08-09 */
+  .house-pet-bar.hpb-warn .hpb-meter{animation:hpbPulse 1.8s ease-in-out infinite;}
+  @keyframes hpbPulse{0%,100%{box-shadow:inset 0 1px 2px rgba(70,40,10,.14);}
+                      50%{box-shadow:inset 0 1px 2px rgba(70,40,10,.14), 0 0 0 4px rgba(240,161,75,.28);}}
+  @media (prefers-reduced-motion:reduce){.house-pet-bar.hpb-warn .hpb-meter{animation:none;}}
+  @media (max-width:480px){
+    .house-pet-bar{gap:7px; padding:0 4px 0 11px; height:38px; margin-top:10px;}
+    .hpb-pet{font-size:13px; max-width:78px;}
+    .hpb-meter{width:58px; height:11px;}
+    .hpb-feed{font-size:12.5px; padding:0 11px; height:30px;}
+    .hpb-feed .hpb-ic{width:17px; height:17px;}
+  }
+  body.night-mode .house-pet-bar{background:rgba(255,255,255,.9);}
+  body.house-edit .house-pet-bar{display:none;}
 
   /* ---------- คลังคำถาม (หน้าเทส · js/house-qbrowse.js) ----------
      เป็นหน้า "ดูของทั้งคลัง" จึงต้องสูงและกว้างกว่าแผงอื่นๆ ตัวหนังสือเล็กกว่าปกติได้

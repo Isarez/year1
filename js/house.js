@@ -293,6 +293,7 @@ const SHOP = (typeof window.HOUSE_SHOP === 'function')
       closePreview: ()=>closeShopPreview(),
       /* PET_TYPES ประกาศอยู่ท้ายไฟล์นี้ (หลังบรรทัดนี้มาก) — ต้องส่งเป็นฟังก์ชัน ไม่งั้นชน TDZ */
       petTypes: ()=>PET_TYPES,
+      care: ()=>PETCARE,               /* PETCARE ประกาศใต้บรรทัดนี้ — ส่งเป็นฟังก์ชันกัน TDZ เหมือน petTypes */
       onPetBought: (type)=>petBoughtFlow(type),
     })
   : null;
@@ -307,6 +308,15 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
                   : (typeof resolveGradeForChild==='function' ? resolveGradeForChild(activeChild) : 'prep-p1'),
       npcDefs: NPC_DEFS,
       dayKey: ()=> questDayKey(),
+    })
+  : null;
+/* การดูแลสัตว์เลี้ยงเฟส 3B (js/house-pet-care.js โหลดก่อนไฟล์นี้) — ความหิว/อาหาร/ป่วย/ค่ารักษา
+   ไฟล์นั้นไม่แตะ DOM/WebGL เช่นกัน · ชามอาหาร แถบหัวใจ การ์ดคุณหมอ อยู่ในไฟล์นี้ทั้งหมด */
+const PETCARE = (typeof window.HOUSE_PET_CARE === 'function')
+  ? window.HOUSE_PET_CARE({
+      load: loadHouseData, save: saveHouseData,
+      dayKey: ()=> questDayKey(),
+      onChange: ()=>{ petBarKey = ''; },   /* สถานะเปลี่ยน → บังคับวาดแถบสถานะสัตว์ใหม่ */
     })
   : null;
 
@@ -7156,6 +7166,42 @@ function bindCanvasInput(canvas){
       pinchDist = d;
     }
   });
+  /* ---------- hover: วางเมาส์บนชาวบ้าน = เคอร์เซอร์เปลี่ยนเป็นฟองคำพูด ----------
+     บอกเด็ก(และผู้ปกครองที่เล่นด้วย)ว่า "คนนี้คุยได้" โดยไม่ต้องลองกดมั่ว
+     ⚠ ทำงานเฉพาะเมาส์/trackpad — จอสัมผัสไม่มี hover และ pointermove ของนิ้วจะยิงรัวมาก
+     ⚠ **raycast ใส่เฉพาะตัว NPC ไม่ใช่ทั้งฉาก** + throttle 90ms ไม่งั้นกินเฟรมเรตตอนลากเมาส์ */
+  let hoverT = 0, hoverTimer = 0, hoverX = 0, hoverY = 0, hoverTalk = false;
+  function setTalkHover(on){
+    on = !!on;
+    if(hoverTalk === on) return;
+    hoverTalk = on;
+    canvas.classList.toggle('house-talk-hover', on);
+  }
+  function npcUnderPointer(cx, cy){
+    if(!npcs.length) return false;
+    raycaster.setFromCamera(ndcFromClient(cx, cy), camera);
+    return raycaster.intersectObjects(npcs.map(n=>n.g), true).length > 0;
+  }
+  function hoverCheck(){
+    hoverT = performance.now();
+    setTalkHover(houseOpen && hMode === 'world' && !editMode && hScene === 'out'
+                 && npcUnderPointer(hoverX, hoverY));
+  }
+  canvas.addEventListener('pointermove', e=>{
+    if(e.pointerType === 'touch') return;
+    if(pointers.size) return;                    /* กำลังลาก/กดค้างอยู่ ไม่ต้องเช็ค hover */
+    hoverX = e.clientX; hoverY = e.clientY;
+    const wait = 90 - (performance.now() - hoverT);
+    if(wait <= 0){ hoverCheck(); return; }
+    /* ⚠ ต้องมี trailing edge ด้วย — ถ้า throttle ทิ้ง event สุดท้ายไป แล้วผู้ใช้หยุดเมาส์ค้างบนตัว NPC พอดี
+       จะไม่มี event ตามมาอีกเลย เคอร์เซอร์ก็ไม่เปลี่ยนทั้งที่ชี้อยู่บนตัวคน (เจอตอนเขียนเทส 2026-08-09) */
+    if(!hoverTimer) hoverTimer = setTimeout(()=>{ hoverTimer = 0; hoverCheck(); }, wait);
+  });
+  canvas.addEventListener('pointerleave', ()=>{
+    if(hoverTimer){ clearTimeout(hoverTimer); hoverTimer = 0; }
+    setTalkHover(false);
+  });
+  window.__houseTalkHover = ()=> hoverTalk;      /* จุดต่อชุดเทส */
   const endPointer = e=>{
     pointers.delete(e.pointerId);
     if(hMode==='creator' || hMode==='pet') creatorState.dragging = false;
@@ -7726,9 +7772,17 @@ function talkToNpc(n){
   if(d.board) setTimeout(()=>{ if(!questPanelOpen() && !questPlayOpen()) openQuestBoard(); }, 700);
   /* งานวันนี้ของคนนี้ (ป้าย "!" เหนือหัว) — ทักทายจบแล้วยื่นงานให้เด็กกดรับเอง
      ถ้ามีงานค้างอยู่ จะยังไม่เปิดหน้าร้านให้ (กล่องซ้อนกันแล้วเด็กงง) คุยอีกรอบหลังทำงานเสร็จค่อยเปิดร้าน */
+  /* เฟส 3B — คุณหมอ/พยาบาลมาก่อนงานประจำวัน: สัตว์ป่วยคือเรื่องด่วนที่สุดที่เด็กมาโรงพยาบาล
+     (ถ้าปล่อยให้การ์ดรับงานเด้งก่อน เด็กจะหาทางรักษาน้องไม่เจอ) */
+  /* ⚠ หน่วงสั้นๆ พอให้ฟองคำพูดโผล่ก่อนการ์ดเลื่อนขึ้นมาเท่านั้น — **ห้ามยาวกว่านี้**
+     ผู้ใช้แจ้ง 2026-08-09 ว่าเดิม 900ms รู้สึกอืด เด็กแตะแล้วนึกว่าเกมค้าง */
+  if(PETCARE && (d.id === 'npc-doctor' || d.id === 'npc-nurse') && PETCARE.isSick()){
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerCure(d); }, 280);
+    return;
+  }
   const spec = QUESTS ? QUESTS.specForNpc(d.id) : null;
   if(spec && !spec.done){
-    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 900);
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 280);
     return;
   }
   /* พนักงานที่ดูแลร้าน (ธง `shop` ใน NPC_DEFS) — ทักทายเสร็จแล้วเปิดหน้าร้านให้เลย
@@ -7947,10 +8001,14 @@ function awardCoins(n){
 let qRun = null;                 /* รอบเล่นปัจจุบัน (null = ไม่ได้เล่นอยู่) */
 let qLock = false;               /* กันกดรัวระหว่างเอฟเฟกต์เฉลย */
 let qzOnClose = null;            /* งานที่ต้องทำตอนปิดการ์ด (หน้าคลังคำถามใช้กลับเข้าตารางของตัวเอง) */
+/* id ของ NPC ที่กำลังยื่นงาน/คุมงานอยู่ — ระหว่างนี้เขาต้อง **ยืนอยู่กับเด็ก ไม่เดินหนี**
+   (ผู้ใช้แจ้ง 2026-08-09: รับงานแล้วคนออกโจทย์เดินจากไป เด็กงงว่าคุยกับใครอยู่)
+   updateNpcs() อ่านค่านี้แล้วตรึง n.hold/n.faceT ให้คนนั้นทุกเฟรม */
+let qzNpcId = null;
 function questPlayOpen(){ const el = $('house-qz'); return !!el && !el.hidden; }
 function closeQuestPanel(){
   const el = $('house-qz'); if(el) el.hidden = true;
-  qRun = null; qLock = false;
+  qRun = null; qLock = false; qzNpcId = null;   /* ปล่อยให้คนออกโจทย์เดินต่อได้ตามปกติ */
   const cb = qzOnClose; qzOnClose = null;
   if(cb) cb();
 }
@@ -7978,6 +8036,7 @@ function offerQuest(spec){
   if(!QUESTS || !spec || spec.done) return;
   if(hMode !== 'world' || editMode) return;   /* กำลังแต่งตัว/เลือกสัตว์/ตกแต่งบ้านอยู่ → ไม่เด้งงานทับ */
   if(window.HouseQB && window.HouseQB.isOpen()) return;   /* เปิดหน้าคลังคำถามอยู่ → ไม่เด้งงานจริงทับหน้าเทส */
+  qzNpcId = spec.test ? null : (spec.npc || null);   /* คนออกโจทย์ต้องยืนรออยู่กับเด็กจนกว่าจะเล่นจบ */
   closeQuestBoard();
   const d = npcDefById(spec.npc);
   qzShow();
@@ -8151,6 +8210,8 @@ function finishQuest(){
   const run = qRun, res = QUESTS.finish(run);
   qRun = null;
   awardCoins(res.coins);
+  /* ติดค้าง "ทำงานแทนค่ารักษา" อยู่ → งานนี้ถือว่าใช้หนี้ครบ น้องหายป่วยทันที (ข้อ 18.4) */
+  const cured = PETCARE ? PETCARE.questDone() : false;
   refreshNpcMarks();
   refreshQuestMark();
   qzHead(run.spec, 'เก่งมาก!');
@@ -8172,6 +8233,13 @@ function finishQuest(){
     const tag = document.createElement('div'); tag.className = 'hqz-chal';
     tag.textContent = '📋 ครบ 5 ชุดแล้ว! ไปกดรับโบนัสที่กระดานได้เลย';
     st.appendChild(tag);
+  }
+  if(cured){
+    const tag = document.createElement('div'); tag.className = 'hqz-chal';
+    const nm = ((loadHouseData() || {}).pet || {}).name || 'เพื่อนตัวน้อย';
+    tag.textContent = '🩺 ขอบคุณที่ช่วยงานนะ ' + nm + ' หายป่วยแล้ว!';
+    st.appendChild(tag);
+    curedCelebrate(nm);
   }
   const row = document.createElement('div'); row.className = 'hqz-row';
   row.appendChild(qzBtn('เยี่ยม!', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
@@ -8879,6 +8947,8 @@ function updateNpcs(dt, t){
   for(let i=0;i<npcs.length;i++){
     const n = npcs[i], g = n.g;
     g.rotation.z = Math.sin(t*.0016 + n.ph) * .022;            /* ยืนโยกตัวเบาๆ ให้ดูมีชีวิต */
+    /* คนที่กำลังยื่นงาน/คุมงานให้เด็กอยู่ → ตรึงไว้ให้ยืนหันหน้าหาเด็กตลอดรอบเล่น ไม่เดินหนี */
+    if(qzNpcId && n.def.id === qzNpcId){ n.hold = 1; n.faceT = Math.max(n.faceT || 0, .5); }
     if(n.hold > 0) n.hold -= dt;                               /* ถูกเด็กเรียกคุย → ยืนรออยู่กับที่ */
     let moving = false;
     if(n.route && !(n.faceT > 0) && !(n.hold > 0)){            /* คนเดินทางไกล: เดินตามเส้นทางจริงไปทีละจุดแวะ */
@@ -9335,6 +9405,13 @@ function petHappy(dur, spin){
 /* แตะตัวสัตว์เลี้ยง = เล่นด้วยกัน: หันหน้าเข้าหากัน กระโดดหมุนตัวดีใจ + หัวใจฟุ้ง */
 function playWithPet(){
   if(!hPet.group) return;
+  /* ป่วยอยู่ = ออกมาเล่นไม่ไหว ต้องพาไปหาหมอก่อน (ข้อ 18.4) — บอกทางทุกครั้งที่แตะ ไม่ปล่อยให้เด็กงง */
+  if(PETCARE && PETCARE.isSick()){
+    if(typeof playClick==='function') playClick();
+    petBubble('🤒');
+    charBubble('พาหนูไปหาคุณหมอที่โรงพยาบาลที 🏥', true);
+    return;
+  }
   /* แตะตัวที่โผล่ครึ่งตัวอยู่ในบ้านสัตว์เลี้ยง = เรียกออกมาเดินเล่นต่อ (ไม่ต้องเดินไปแตะตัวบ้าน) */
   if(hPet.rest){ if(typeof playClick==='function') playClick(); petLeaveHouse(); return; }
   questEvent('pet', null);
@@ -9359,6 +9436,11 @@ function pickOne(a){ return a[(Math.random()*a.length)|0]; }
 
 function togglePetRest(g){
   if(!hPet.group){ charBubble('ยังไม่มีสัตว์เลี้ยงเลย 🐾', true); return; }
+  if(PETCARE && PETCARE.isSick()){
+    petBubble('🤒');
+    charBubble('น้องไม่สบาย พาไปหาคุณหมอที่โรงพยาบาลนะ 🏥', true);
+    return;
+  }
   if(hPet.rest) petLeaveHouse(); else petEnterHouse(g);
 }
 /* พาน้องเข้าไปนอนรอ: จอดตรงประตู (ด้านหน้าโมเดล = +z ของ group) ให้ครึ่งตัวหลังจมอยู่ในบ้าน
@@ -9407,6 +9489,7 @@ function updatePetRest(dt){
 
 function updatePet(dt){
   if(!hPet.group || hMode!=='world') return;
+  if(feedAnim) return;             /* กำลังเล่นอนิเมชันป้อนอาหาร — updateFeedAnim() คุมน้องอยู่ ห้ามแย่ง */
   hPet.t += dt;
   if(hPet.rest){ updatePetRest(dt); return; }
   const u = hPet.group.userData.anim || {};
@@ -9500,6 +9583,8 @@ function updatePet(dt){
 const _petV = new THREE.Vector3();
 function updatePetLabels(){
   const nameEl = $('house-pet-name'), bubEl = $('house-pet-bubble');
+  refreshPetBar();
+  refreshBackBtn();
   if(!hPet.group || !houseOpen || hMode!=='world' || editMode){
     nameEl.hidden = true;
     return;
@@ -9512,6 +9597,295 @@ function updatePetLabels(){
   nameEl.hidden = false;
   bubEl.style.left = px.toFixed(1)+'px';
   bubEl.style.top = (py-28).toFixed(1)+'px';
+  /* แถบความอิ่มเป็น "หัวใจ" ไม่ใช่ตัวเลข — เด็ก 5 ขวบอ่านเปอร์เซ็นต์ไม่รู้เรื่อง (ข้อ 18.3)
+     โชว์เฉพาะตอนเริ่มหิว (< LOW_AT) เพื่อไม่ให้รกจอตอนน้องสบายดี */
+  nameEl.textContent = '🐾 ' + hPet.cfg.name + petCareHud.hearts;
+}
+/* ---------- เฟส 3B: ความหิว · อาหาร · ป่วย · คุณหมอ (ข้อ 18.2-18.4) ---------- */
+/* ⚠ PETCARE.* ทุกตัวอ่าน localStorage + JSON.parse ⇒ **ห้ามเรียกทุกเฟรม** เก็บผลไว้ที่นี่แล้ว
+   ให้ลูปวาดภาพอ่านจากตัวแปรแทน (คำนวณใหม่ทุก ~1 วิ ก็ทันตาเด็กเหลือเฟือ) */
+const petCareHud = {hearts:'', sick:false, full:100, t:0};
+let petMoanT = 0;
+function updatePetCare(dt){
+  if(!PETCARE || !hPet.group || hMode !== 'world' || editMode) return;
+  petCareHud.t -= dt;
+  if(petCareHud.t <= 0){
+    petCareHud.t = 1;
+    const sick = PETCARE.isSick();
+    petCareHud.sick = sick;
+    petCareHud.full = PETCARE.fullness();
+    if(sick) petCareHud.hearts = '  🤒';
+    else if(petCareHud.full >= PETCARE.LOW_AT) petCareHud.hearts = '';
+    else{
+      const n = Math.ceil(petCareHud.full / (PETCARE.FULL_MAX / 3));   /* 3 ดวง: เต็ม/ครึ่ง/ว่าง */
+      petCareHud.hearts = '  ' + '❤️'.repeat(n) + '🤍'.repeat(3 - n);
+    }
+  }
+  /* น้องบ่นเป็นระยะตอนหิว/ป่วย — คำเตือนล่วงหน้าก่อนป่วยจริง (ห้ามให้เด็กงงว่าอยู่ๆ ก็ป่วย) */
+  petMoanT -= dt;
+  if(petMoanT > 0) return;
+  petMoanT = 12 + Math.random()*8;
+  if(petCareHud.sick) petBubble('🤒');
+  else if(petCareHud.hearts) petBubble(Math.random()<.5 ? '😢' : '🍽️');
+}
+/* สัตว์ป่วย = นอนในบ้านสัตว์ ออกมาไม่ได้ (ข้อ 18.4) — ใช้กลไก hPet.rest เดิมแต่ล็อกไว้ ปลุกไม่ตื่น */
+function petHouseGroup(){
+  const list = decorGroups.out || [];
+  for(let i=0; i<list.length; i++){
+    const d = list[i].userData && list[i].userData.deco;
+    if(d && d.rec && d.rec.id === 'pet-house') return list[i];
+  }
+  return null;
+}
+function syncPetSick(){
+  if(!PETCARE || !hPet.group || hScene !== 'out' || feedAnim) return;
+  if(!petCareHud.sick || hPet.rest) return;   /* สบายดี หรือนอนอยู่แล้ว */
+  const g = petHouseGroup();
+  if(g) petEnterHouse(g);
+}
+/* ---------- ให้อาหาร: กดปุ่มเดียวจบ (ผู้ใช้สั่งเอา popup ออก 2026-08-09) ----------
+   เดิมเปิดการ์ดให้เลือกชนิดอาหารก่อน แต่สัตว์แต่ละตัวกินได้ชนิดเดียวอยู่แล้ว การ์ดจึงมีของใบเดียว
+   = คลิกเปล่าเพิ่มมาขั้นนึงโดยไม่ได้อะไร ⇒ กดปุ่มในแถบสถานะแล้วป้อนเลย
+   (บทเรียน "สัตว์ตัวไหนกินอะไร" ย้ายไปสอนที่การ์ดอาหารในร้านแทน ซึ่งเห็นครบทุกชนิดพร้อมกัน) */
+function feedNow(){
+  if(!PETCARE || editMode || hMode !== 'world') return;
+  if(typeof playClick==='function') playClick();
+  const d = loadHouseData() || {};
+  if(!d.pet){ charBubble('ยังไม่มีเพื่อนตัวน้อยเลย 🐾', true); return; }
+  const fid = PETCARE.foodForPet(d.pet.type);
+  const f = PETCARE.FOOD.filter(x => x.id === fid)[0];
+  if(!f) return;
+  const r = PETCARE.feed(f.id);
+  if(r.ok){
+    petCareHud.t = 0;               /* บังคับคำนวณใหม่เฟรมถัดไป — หลอดในแถบจะได้ขยับทันตา ไม่รอครบวินาที */
+    petBarKey = '';                 /* จำนวนมื้อคงเหลือในแถบต้องอัปเดตด้วย */
+    startFeedAnim(f);
+    return;
+  }
+  /* ทุกกรณีที่ให้ไม่ได้ **ห้ามหักของ ห้ามดุ** แค่บอกเหตุผลน่ารักๆ (กติกาเหล็กข้อ 2) */
+  if(r.reason === 'stuffed'){
+    /* อิ่มอยู่แล้ว → ให้ตัวน้องเป็นคนบอกเอง (เด็กอ่านจากฟองเหนือหัวน้องเข้าใจกว่า toast มุมจอ) */
+    petBubble('😊');
+    charBubble(d.pet.name + 'อิ่มอยู่แล้ว ยังไม่หิวนะ 😊', true);
+    if(typeof showToast==='function') showToast('😊', d.pet.name + 'อิ่มอยู่ ไม่ต้องให้อาหารตอนนี้ก็ได้');
+  }else if(r.reason === 'sick'){
+    petBubble('🤒');
+    if(typeof showToast==='function') showToast('🤒', 'น้องไม่สบาย ต้องไปหาคุณหมอก่อนนะ');
+  }else if(r.reason === 'empty'){
+    if(typeof showToast==='function') showToast('🛒', f.name + 'หมดแล้ว ไปซื้อเพิ่มที่ร้านสัตว์เลี้ยง 🐾 กลางเมืองนะ');
+  }
+}
+/* ---------- อนิเมชันป้อนอาหาร (เฟส 3B · ผู้ใช้สั่งเพิ่ม 2026-08-09) ----------
+   4 ช่วงต่อกัน ~2.6 วิ: เด็กหันหาน้อง+ยื่นชาม → น้องวิ่งมาหา → ก้มกินหัวโยกๆ → ดีใจกระโดด
+   ⚠ ระหว่างเล่นอนิเมชัน **updatePet() ต้องหยุดคุมน้อง** ไม่งั้นระบบเดินเล่นปกติจะแย่งลากน้องกลับไป
+     และตอนจบต้อง sync hPet.tile ให้ตรงช่องที่ยืนจริง ไม่งั้นก้าวต่อไปจะวาร์ปกลับช่องเดิม */
+let feedAnim = null;
+function buildFoodBowl(color){
+  const g = new THREE.Group();
+  const bowl = cyl(.13, .09, .07, 0xfff3d6, 12); bowl.position.y = .035; g.add(bowl);
+  const food = sphere(.075, color, 10); food.position.y = .085; food.scale.y = .62; g.add(food);
+  return g;
+}
+function startFeedAnim(f){
+  if(!charGroup || !hPet.group || hMode !== 'world' || editMode) return;
+  if(feedAnim) endFeedAnim();
+  if(hPet.rest) petLeaveHouse(true);                 /* นอนอยู่ในบ้านสัตว์ → ออกมากินก่อน */
+  hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
+  hPet.beh = null; hPet.happy = 0; hPet.spin = false; hPet.sitK = 0;
+  const cp = charGroup.position, pp = hPet.group.position;
+  const dx = pp.x - cp.x, dz = pp.z - cp.z, d = Math.max(.001, Math.hypot(dx, dz));
+  /* น้องมายืนกินและวางชามบนเส้นตรงระหว่างเด็กกับน้อง
+     ⚠ ระยะต้องห่างพอให้เห็น **เด็ก → ชาม → น้อง** แยกกันชัด — เคยตั้งไว้ .52/.92 แล้วตัวน้องบังชามมิด
+       (ตัวสัตว์ยาว ~.36 หน่วย) ต้องเว้นช่องว่างระหว่างชามกับน้องอย่างน้อย ~.5 หน่วย */
+  const petTo = new THREE.Vector3(cp.x + dx/d*1.38, 0, cp.z + dz/d*1.38);
+  const bowlAt = new THREE.Vector3(cp.x + dx/d*.78, 0, cp.z + dz/d*.78);
+  hChar.targetRotY = Math.atan2(dx, dz);
+  const bowl = buildFoodBowl(f.color || 0xd0694a);
+  bowl.position.set(cp.x, .78, cp.z);                /* เริ่มที่ระดับมือเด็ก แล้วค่อยวางลงพื้น */
+  petParent().add(bowl);
+  feedAnim = {t:0, food:f, bowl, bowlFrom: bowl.position.clone(), bowlTo: bowlAt,
+              petFrom: pp.clone(), petTo, ate:false, joy:false};
+}
+function endFeedAnim(){
+  if(!feedAnim) return;
+  const b = feedAnim.bowl;
+  if(b){ if(b.parent) b.parent.remove(b); disposeGroup(b); }
+  if(hPet.group){
+    const {grid, W, D} = curGridInfo();
+    const p = hPet.group.position;
+    const t = nearestWalkable(grid, W, D, Math.round(p.x + (OUT_W-1)/2), Math.round(p.z + (OUT_D-1)/2));
+    if(t) hPet.tile = {x:t.x, z:t.z};
+    hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null; hPet.repathT = 0;
+    hPet.group.rotation.x = 0; hPet.group.position.y = 0;
+  }
+  feedAnim = null;
+}
+function updateFeedAnim(dt, u){
+  const a = feedAnim;
+  if(!hPet.group || !charGroup){ endFeedAnim(); return; }
+  a.t += dt;
+  const T2 = 1.15, T3 = 2.0, T4 = 2.6;               /* วิ่งมาถึง → กินเสร็จ → จบ */
+  /* --- เด็ก: ยื่นแขนทั้งสองข้างไปข้างหน้า แล้วค่อยลดลงตอนท้าย --- */
+  if(u){
+    const up = a.t < T3 ? Math.min(1, a.t/.45) : Math.max(0, 1 - (a.t-T3)/.45);
+    u.arms[0].rotation.x = -1.15*up; u.arms[1].rotation.x = -1.15*up;
+    u.arms[0].rotation.z = -.16; u.arms[1].rotation.z = .16;
+    u.rig.position.y = 0;
+  }
+  /* --- ชาม: จากมือเด็กลอยลงไปวางที่พื้นตรงกลาง --- */
+  if(a.bowl){
+    const k = Math.min(1, a.t/T2), e = k*k*(3-2*k);
+    a.bowl.position.lerpVectors(a.bowlFrom, a.bowlTo, e);
+    a.bowl.position.y = a.bowlFrom.y * (1-e) + .02;
+    if(a.t > T4 - .3) a.bowl.scale.setScalar(Math.max(.001, (T4 - a.t)/.3));   /* ยุบหายตอนจบ */
+  }
+  /* --- น้อง: วิ่งเข้ามาหาชาม แล้วก้มกิน --- */
+  const g = hPet.group;
+  const pk = Math.min(1, Math.max(0, (a.t - .15)/(T2 - .15))), pe = pk*pk*(3-2*pk);
+  g.position.lerpVectors(a.petFrom, a.petTo, pe);
+  g.position.y = pk < 1 ? Math.abs(Math.sin(a.t*16))*.07 : 0;               /* เด้งหยองๆ ตอนวิ่ง */
+  g.rotation.y = Math.atan2(charGroup.position.x - g.position.x, charGroup.position.z - g.position.z);
+  const anim = g.userData.anim || {};
+  if(a.t >= T2 && a.t < T3){
+    /* ก้มกิน: ทั้งตัวก้มลง + หัวโยกขึ้นลงเป็นจังหวะเคี้ยว + หางกระดิก */
+    g.rotation.x = .34 * Math.min(1, (a.t - T2)/.18);
+    if(anim.head) anim.head.rotation.x = Math.sin(a.t*17)*.28;
+    if(anim.tail) anim.tail.rotation.z = Math.sin(a.t*13)*.5;
+    if(!a.ate && a.t >= T2 + .25){
+      a.ate = true;
+      petBubble('😋');
+      for(let i=0; i<7; i++)
+        spawnParticle(a.bowlTo.x + (Math.random()-.5)*.45, .25 + Math.random()*.45,
+                      a.bowlTo.z + (Math.random()-.5)*.45, i%2 ? 0xffd54f : 0xfff1a8, petParent());
+    }
+  }else if(a.t >= T3){
+    /* กินเสร็จ: เงยหน้าขึ้นแล้วกระโดดดีใจ + หัวใจฟุ้ง */
+    g.rotation.x = Math.max(0, .34 * (1 - (a.t - T3)/.2));
+    if(anim.head) anim.head.rotation.x = 0;
+    g.position.y = Math.abs(Math.sin((a.t - T3)*11))*.16;
+    if(!a.joy){
+      a.joy = true;
+      petBubble('❤️');
+      for(let i=0; i<8; i++)
+        spawnParticle(g.position.x + (Math.random()-.5)*.6, .45 + Math.random()*.5,
+                      g.position.z + (Math.random()-.5)*.6, i%2 ? 0xf06292 : 0xff8fb3, petParent());
+    }
+  }
+  if(a.t >= T4){ endFeedAnim(); petHappy(.7, false); }
+}
+/* ---------- แถบสถานะเพื่อนตัวน้อย ใต้ชื่อเด็ก (#house-pet-bar) ----------
+   ชื่อสัตว์ · ไอคอนอาหารที่น้องกิน · หลอดความอิ่ม · ปุ่มให้อาหาร — โผล่เฉพาะตอนมีสัตว์เลี้ยงจริง
+   ⚠ **เช็คจาก hPet.group ไม่ใช่ loadHouseData()** เพราะถูกเรียกทุกเฟรม (JSON.parse ทุกเฟรม = กินเฟรมเรต)
+     ส่วนเนื้อในแถบ (ชื่อ/อาหาร/หลอด) วาดใหม่แค่ตอนค่าเปลี่ยนจริง ผ่าน petBarPaint() */
+/* ปุ่ม ← ในโหมดบ้าน: **โผล่แค่ 3 หน้าเท่านั้น — แต่งตัว · สัตว์เลี้ยง · แต่งบ้าน** (ผู้ใช้สั่ง 2026-08-09)
+   ที่เหลือซ่อนหมด รวมถึงตอนเปิดร้าน/การ์ดเควสต์/กระดาน/หน้าเทส เพราะกล่องพวกนั้น **มีปุ่มปิดของตัวเอง
+   อยู่ในกล่องแล้วทุกอัน** (ออกจากร้าน / ปิด / ปิดกระดาน) การมีปุ่มซ้อนอีกปุ่มมุมจอทำให้เด็กสับสน
+   ส่วนทางออกจากโหมดบ้านย้ายไปปุ่ม "ออกจากบ้าน" ในเมนูเฟือง
+   ⚠ **ห้ามลบ element `#house-back` และห้ามลบ logic ปิดแผงใน handler ของมัน** — ชุดเทสยิง
+     dispatchEvent ใส่ id นี้อยู่ และปุ่มยังทำหน้าที่ "ยกเลิก" จริงในโหมดแต่งตัว/แต่งบ้าน */
+function refreshBackBtn(){
+  const b = $('house-back');
+  if(!b) return;
+  const want = !!(houseOpen && (hMode === 'creator' || hMode === 'pet' || editMode));
+  if(b.hidden !== want) return;
+  b.hidden = !want;
+}
+let petBarKey = '';
+function refreshPetBar(){
+  const bar = $('house-pet-bar');
+  if(!bar) return;
+  const want = !!(PETCARE && hPet.group && hPet.cfg && houseOpen && hMode === 'world' && !editMode
+                  );
+  if(bar.hidden === want) bar.hidden = !want;
+  if(want) petBarPaint();
+}
+function petBarPaint(){
+  if(!hPet.cfg) return;
+  const full = petCareHud.full, sick = petCareHud.sick;
+  const fid = PETCARE.foodForPet(hPet.cfg.type);
+  const left = PETCARE.meals(fid);
+  const key = hPet.cfg.type + '|' + hPet.cfg.name + '|' + full + '|' + sick + '|' + left;
+  if(key === petBarKey) return;               /* ค่าเดิม ไม่ต้องแตะ DOM ซ้ำทุกเฟรม */
+  petBarKey = key;
+  const info = petTypeInfo(hPet.cfg.type);
+  const nm = $('hpb-pet');
+  if(nm) nm.textContent = info.emoji + ' ' + hPet.cfg.name;
+  const f = PETCARE.FOOD.filter(x => x.id === fid)[0];
+  const ic = $('hpb-food-ic');
+  if(ic) ic.textContent = f ? f.emoji : '';
+  const lf = $('hpb-left');
+  if(lf) lf.textContent = '×' + left;
+  const fd = $('hpb-food');
+  if(fd){
+    fd.title = f ? ('น้องกิน' + f.name + ' · เหลือ ' + left + ' มื้อ') : '';
+    fd.classList.toggle('hpb-food-out', left <= 0);   /* หมดแล้ว = จางลง เตือนให้ไปซื้อเพิ่ม */
+  }
+  const fill = $('hpb-fill');
+  if(fill){
+    /* ป่วย = หลอดว่างสีเทา ไม่ใช่สีแดงน่ากลัว (ธีมเด็ก ห้ามดูน่ากลัว) */
+    fill.style.width = (sick ? 0 : Math.max(4, full)) + '%';
+    fill.className = 'hpb-fill' + (sick ? ' hpb-sick' : full < 25 ? ' hpb-low' : full < PETCARE.LOW_AT ? ' hpb-mid' : '');
+  }
+  const bar = $('house-pet-bar');
+  if(bar) bar.classList.toggle('hpb-warn', sick || full < PETCARE.LOW_AT);
+  /* เขียนเฉพาะ <span> ป้ายข้อความ — ห้าม textContent ทั้งปุ่ม ไม่งั้นไอคอน SVG หายไปด้วย */
+  const lb = $('hpb-feed-label');
+  if(lb) lb.textContent = sick ? 'พาไปหาหมอ' : 'ให้อาหาร';
+  const btn = $('hpb-feed');
+  if(btn) btn.classList.toggle('hpb-feed-sick', sick);
+}
+/* ---------- คุณหมอ/พยาบาล: การ์ดรักษาสัตว์ป่วย (ข้อ 18.4) ----------
+   เงินไม่พอ **ห้ามไล่กลับ** ต้องมีทางไปต่อเสมอ = รับงานช่วยคุณหมอแทนค่ารักษา (กติกาเหล็กข้อ 1) */
+function offerCure(npcDef){
+  if(!PETCARE || !PETCARE.isSick()) return false;
+  if(hMode !== 'world' || editMode) return false;
+  const d = loadHouseData() || {};
+  if(!d.pet) return false;
+  closeQuestBoard();
+  qzNpcId = npcDef.id;                        /* คุณหมอต้องยืนอยู่กับเด็กจนกว่าจะรักษาเสร็จ/กดไว้ก่อน */
+  qzShow();
+  const who = $('hqz-who'); if(who) who.textContent = (npcDef.icon || '🩺') + ' ' + npcDef.name;
+  const s = $('hqz-sub'); if(s) s.textContent = 'รักษาเพื่อนตัวน้อย';
+  const st = qzStage(); if(!st) return true;
+  const line = document.createElement('div');
+  line.className = 'hqz-line';
+  const enough = (window.OwlCoins ? window.OwlCoins.get() : 0) >= PETCARE.CURE_COST;
+  line.textContent = enough
+    ? (d.pet.name + 'ไม่สบายนะ เดี๋ยวหมอรักษาให้เอง ค่ารักษา ' + PETCARE.CURE_COST + ' เหรียญจ้ะ')
+    : (d.pet.name + 'ไม่สบายนะ เหรียญยังไม่พอก็ไม่เป็นไรเลย มาช่วยหมอทำงานแทนค่ารักษาก็ได้จ้ะ');
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn(enough ? ('รักษาเลย 🩺 ' + PETCARE.CURE_COST) : 'ช่วยคุณหมอทำงาน 💪', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    const r = PETCARE.cure();
+    if(r === 'cured'){
+      curedCelebrate(d.pet.name);
+      closeQuestPanel();
+    }else if(r === 'quest'){
+      /* รับปากช่วยงานแล้ว → เปิดงานของคนนี้ให้เล่นต่อทันที เล่นจบเมื่อไหร่น้องหายป่วยเอง */
+      const spec = QUESTS ? QUESTS.specForNpc(npcDef.id) : null;
+      if(spec && !spec.done){ startQuest(spec); }
+      else{
+        closeQuestPanel();
+        if(typeof showToast==='function') showToast('💪', 'ทำภารกิจให้จบสัก 1 งาน แล้วน้องจะหายป่วยนะ');
+      }
+    }
+  }));
+  row.appendChild(qzBtn('ไว้ก่อน', 'hqz-no', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
+  st.appendChild(line); st.appendChild(row);
+  if(typeof playClick==='function') playClick();
+  return true;
+}
+function curedCelebrate(name){
+  petCareHud.t = 0;                 /* หายป่วยแล้ว แถบสถานะต้องเปลี่ยนทันที ไม่ใช่ค้างว่า "ไม่สบาย" */
+  petCareHud.sick = false;
+  if(hPet.rest) petLeaveHouse(true);
+  petHappy(1.6, true);
+  petBubble('💖');
+  if(typeof showToast==='function') showToast('🩺', name + ' หายป่วยแล้ว! กลับมาวิ่งเล่นได้เหมือนเดิม');
+  if(typeof playCongrats==='function') playCongrats();
+  if(charGroup) for(let i=0; i<10; i++)
+    spawnParticle(charGroup.position.x + (Math.random()-.5)*1.2, 1.5 + Math.random()*1.2,
+                  charGroup.position.z + (Math.random()-.5)*.9, i%2 ? 0xff8fb3 : 0xfff1a8);
 }
 
 /* ---------- แผงเลือกสัตว์เลี้ยง (hMode 'pet') — reuse แท่นกลม/กล้อง/ปุ่มหมุนของ creator ---------- */
@@ -9609,6 +9983,7 @@ function openPetPicker(wantType){
   if(editMode) return;   /* กันแผงสัตว์เลี้ยงเด้งทับตอนกำลังตกแต่ง */
   if(SHOP) SHOP.close();
   if(window.HouseQB) window.HouseQB.close();
+  if(window.HouseDev) window.HouseDev.close();
   closeQuestPanel(); closeQuestBoard();
   hMode = 'pet';
   creatorState.rotY = 0; creatorState.rotTarget = 0;
@@ -9650,9 +10025,11 @@ function closePetPicker(kind){
     const name = ($('house-pet-name-input').value || '').trim().slice(0,14) || petTypeInfo(petPickerType).def;
     saveHouseData({pet:{type:petPickerType, name, color:petPickerColor}});
     syncPetHouse(true);           /* มีสัตว์แล้ว → บ้านสัตว์โผล่ที่ช่องที่จองไว้ (ข้อ 18.1) */
+    if(PETCARE) PETCARE.onAdopt();/* เฟส 3B: เริ่มนับความอิ่มใหม่ + แถมอาหารถุงแรกของชนิดนั้น */
   }else if(kind==='remove'){
     saveHouseData({pet:null});
     syncPetHouse(false);          /* ปล่อยเพื่อนตัวน้อยคืน → บ้านสัตว์หายไปด้วย */
+    if(PETCARE) PETCARE.onRelease();
   }
   hMode = 'world';
   $('house-pet-picker').hidden = true;
@@ -10621,7 +10998,8 @@ function frame(t){
     }
   }else if(charGroup){
     const gettingUp = hChar.getUpT0 && (performance.now() - hChar.getUpT0) < hChar.getUpDur;
-    if(slideRide){ updateSlideRide(dt, t, u); }
+    if(feedAnim){ updateFeedAnim(dt, u); }      /* ป้อนอาหาร: คุมทั้งท่าเด็กและตัวน้องพร้อมกัน */
+    else if(slideRide){ updateSlideRide(dt, t, u); }
     else if(gettingUp){
       /* ลุกจากที่นั่ง/นอน: สไลด์ออกจากเฟอร์นิเจอร์กลับช่องข้างๆ + ยืดแขนขากลับท่ายืน
          (rotation.x คืนศูนย์ผ่าน trx ด้านล่างเพราะ sitState=null แล้ว) — ยังไม่เดินจนกว่าจะยืนเสร็จ */
@@ -10750,6 +11128,8 @@ function frame(t){
     updateNpcMarks(t);
     updateFx(t, dt);
     updatePet(dt);
+    updatePetCare(dt);
+    syncPetSick();
   }
   updateNameLabel();
   updatePetLabels();
@@ -10913,11 +11293,14 @@ function enterHouseGame(){
 function stopHouseGame(){
   if(editMode) exitEditMode();
   if(sitState) endSit();
+  endFeedAnim();                 /* ออกจากบ้านกลางอนิเมชันป้อนอาหาร → เก็บชามทิ้ง ไม่ให้ค้างในฉาก */
+  { const cv = $('house-canvas'); if(cv) cv.classList.remove('house-talk-hover'); }   /* กันเคอร์เซอร์ฟองคำพูดค้าง */
   houseOpen = false;
   qzOnClose = null;              /* ออกจากบ้านแล้ว ห้ามให้หน้าคลังคำถามเด้งกลับมาทับหน้าหลัก */
   closeQuestBoard();
   closeQuestPanel();
   if(window.HouseQB) window.HouseQB.close();
+  if(window.HouseDev) window.HouseDev.close();
   if(SHOP) SHOP.close();
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
   document.body.classList.remove('house-open');
@@ -11189,6 +11572,19 @@ $('house-ctrl-gear').addEventListener('click', ()=>{
     else if(typeof showToast==='function') showToast('📚', 'คลังคำถามยังโหลดไม่เสร็จ ลองอีกครั้งนะ');
   });
 }
+/* ปุ่ม "ปรับค่าต่างๆ" ในเมนูเฟือง — เครื่องมือเทสระบบ (js/house-devtools.js) */
+{ const dv = $('house-dev-btn');
+  if(dv) dv.addEventListener('click', ()=>{
+    if(typeof playClick==='function') playClick();
+    setHouseCtrlOpen(false);
+    if(window.HouseDev) window.HouseDev.open();
+    else if(typeof showToast==='function') showToast('🛠️', 'หน้าปรับค่ายังโหลดไม่เสร็จ ลองอีกครั้งนะ');
+  });
+}
+/* จุดต่อให้หน้าเทสสั่งวาด HUD ใหม่หลังยัดค่า (ไม่งั้นหลอด/จำนวนมื้อในแถบค้างค่าเก่าจนกว่าจะครบวินาที) */
+window.HouseDevHooks = {
+  petChanged: ()=>{ petCareHud.t = 0; petBarKey = ''; },
+};
 
 /* ---------- ป้ายชื่อเด็ก (child chip) ในโหมดบ้าน ----------
    proxy ของ #child-chip-group ใน header เหมือนกัน — ก๊อบ emoji/ชื่อจาก chip จริง
@@ -11200,8 +11596,18 @@ function houseSyncChild(){
   const em = $('header-child-emoji'), nm = $('header-child-name');
   const hasChild = !$('child-chip-group').hidden;
   $('house-child-emoji').textContent = em ? em.textContent : '';
-  $('house-child-name').textContent  = nm ? nm.textContent : '';
-  if(nm) $('house-char-name').textContent = nm.textContent;
+  /* ชื่อ + อายุในวงเล็บ (เช่น "มะลิ (6 ขวบ)") — อายุปัดลงเป็นปีเต็มจาก childAgeYears() ใน js/app-core.js
+     ⚠ แยกอายุเป็น <span> ของตัวเอง **โดยตั้งใจ**: บนจอแคบแถวบนของเต็มจนต้องตัดข้อความ
+       ถ้ารวมเป็นก้อนเดียวจะโดนตัดท้ายจนเหลือ "มะ…" (อายุหายไปทั้งดุ้น) แยกแล้วชื่อตัดได้แต่อายุอยู่ครบเสมอ
+     ป้ายเหนือหัวตัวละครในฉากยังใช้ชื่อเปล่าเหมือนเดิม (สั้นๆ ไม่บังฉาก) */
+  const age = (typeof childAgeYears === 'function' && activeChild) ? childAgeYears(activeChild) : null;
+  const base = nm ? nm.textContent : '';
+  $('house-child-name').textContent = base;
+  /* คำว่า "ขวบ" อยู่ใน <span> ย่อยเพราะบนจอมือถือแคบจะถูกซ่อนด้วย CSS เหลือแค่ "(7)"
+     — แถวบนที่นั่นแน่นจนถ้าเก็บคำเต็มไว้ ชื่อเด็กจะถูกตัดจนเหลือตัวเดียว (วัดจริงแล้ว) */
+  $('house-child-age').innerHTML = (age != null && age >= 1)
+    ? ' (' + Math.floor(age) + '<span class="hc-age-unit"> ขวบ</span>)' : '';
+  if(nm) $('house-char-name').textContent = base;
   /* ระหว่างสร้าง/แก้ตัวละคร แผงสัตว์เลี้ยง หรือโหมดตกแต่ง ปุ่มบนถูกซ่อนอยู่ — อย่าแอบโชว์กลับมา */
   chip.hidden = !hasChild || !houseOpen || hMode !== 'world' || editMode;
 }
@@ -11215,6 +11621,7 @@ window.startHouseGame = startHouseGame;
    และให้ชุดเทสเปิดหน้าร้านตรงๆ ได้โดยไม่ต้องพาเด็กเดินข้ามเมืองไปหน้าห้างก่อน */
 window.HouseShop = SHOP;
 window.HouseQuests = QUESTS;      /* ให้ชุดเทส/เฟสถัดไปเรียกดูสถานะเควสต์ได้ตรงๆ */
+window.HousePetCare = PETCARE;    /* เฟส 3B — ความหิว/อาหาร/ป่วย/ค่ารักษา (ชุดเทสเรียกตรวจตรงนี้) */
 /* จุดต่อสำหรับชุดเทส Playwright — เรียกหน้าจอเควสต์ได้โดยไม่ต้องคลิกตัว NPC ในฉาก 3D
    (คลิกจริงต้องเดินเข้าไปหาให้ถึงก่อน ทำในเทสไม่ไหว) โค้ดเกมจริงไม่ได้ใช้ตัวนี้เลย */
 window.HouseQuestUI = {
@@ -11228,11 +11635,20 @@ window.HouseQuestUI = {
   /* หน้าคลังคำถาม (js/house-qbrowse.js) เรียกตัวนี้เพื่อเล่นโจทย์แบบทดสอบด้วยเส้นทางวาดจริง */
   playTest: (opt, onClose) => playTestRun(opt, onClose),
 };
+/* จุดต่อชุดเทสของเฟส 3B — แผงให้อาหาร/การ์ดคุณหมอ (เดินไปหาหมอในฉาก 3D ทำในเทสไม่ไหวเหมือนกัน) */
+window.HousePetUI = {
+  feed:  () => feedNow(),
+  cure:  id => { const d = npcDefById(id); return d ? offerCure(d) : false; },
+  hearts:() => petCareHud.hearts,
+};
 $('house-entry-btn').addEventListener('click', startHouseGame);
 $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestBoard(); });
 $('hq-claim').addEventListener('click', claimQuestReward);
 { const qc = $('hqz-close');
   if(qc) qc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }); }
+/* เฟส 3B — ปุ่มให้อาหาร + ปิดแผง */
+{ const fb = $('hpb-feed');
+  if(fb) fb.addEventListener('click', ()=> feedNow()); }
 /* ปุ่มกลับ (←): ถ้าเปิดแผงอะไรค้างอยู่ = "ยกเลิก" กลับไปหน้าเกมก่อน ยังไม่ออกจากบ้าน
    ยกเว้นตอนสร้างตัวละครครั้งแรก (ยังไม่มีตัวละคร/โลกให้กลับไป) ให้ออกจากบ้านเหมือนเดิม */
 $('house-back').addEventListener('click', ()=>{
@@ -11241,6 +11657,7 @@ $('house-back').addEventListener('click', ()=>{
      กดซ้ำอีกครั้งถึงจะออกจากโหมดบ้านจริงๆ (เด็กจะได้ไม่หลุดออกจากบ้านทั้งที่ตั้งใจแค่ปิดร้าน) */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }
   if(questPlayOpen()){ closeQuestPanel(); return; }    /* กำลังเล่นเควสต์ → ปุ่มย้อนกลับ = เลิกเล่นรอบนี้ (ทำใหม่ได้ ไม่เสียอะไร) */
+  if(window.HouseDev && window.HouseDev.isOpen()){ window.HouseDev.close(); return; }
   if(window.HouseQB && window.HouseQB.isOpen()){ window.HouseQB.close(); return; }
   if(questPanelOpen()){ closeQuestBoard(); return; }
   if(editMode){ exitEditMode(); return; }
@@ -11256,14 +11673,19 @@ $('house-decorate-btn').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
   if(hMode==='world' && !editMode) enterEditMode();
 });
-/* ป้ายชื่อเด็ก: กดชื่อ = ออกจากบ้านก่อนแล้วไปหน้าเลือกเด็ก (ปล่อยให้ปุ่มจริงจัดการต่อ
-   ถ้าไม่ stop ก่อน ฉาก 3D จะยังวน rAF อยู่เบื้องหลังทั้งที่ view ถูกซ่อนไปแล้ว)
+/* ป้ายชื่อเด็กในโหมดบ้าน **ไม่ใช่ปุ่มอีกต่อไป** (ผู้ใช้สั่ง 2026-08-09) — เมื่อก่อนกดแล้วเด้งออกไป
+   หน้าเลือกเด็กทันที ซึ่งเด็กเผลอกดโดนบ่อยแล้วหลุดออกจากบ้านทั้งที่แค่อยากดูชื่อตัวเอง
+   ⇒ ทางออกไปหน้าเลือกเด็กย้ายไปอยู่ปุ่ม "ออกจากบ้าน" ในเมนูเฟืองที่เดียว (#house-exit-btn)
    กดดินสอ = เปิด modal แก้ชื่อ/emoji ตัวเดิม (z-index สูงกว่าโหมดบ้าน ใช้ทับได้เลย) */
-$('house-child-btn').addEventListener('click', ()=>{
-  stopHouseGame();
-  $('switch-child-btn').click();
-});
 $('house-child-edit-btn').addEventListener('click', ()=> $('header-edit-emoji-btn').click());
+/* ออกจากบ้าน → หน้าเลือกเด็ก (ต้อง stopHouseGame ก่อน ไม่งั้นฉาก 3D ยังวน rAF อยู่เบื้องหลัง
+   ทั้งที่ view ถูกซ่อนไปแล้ว = กินแบตกับ CPU ฟรีๆ) */
+{ const ex = $('house-exit-btn');
+  if(ex) ex.addEventListener('click', ()=>{
+    if(typeof playClick==='function') playClick();
+    stopHouseGame();
+    $('switch-child-btn').click();
+  }); }
 $('house-compass').addEventListener('click', compassGoHome);
 $('house-edit-done').addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); exitEditMode(); });
 $('house-edit-rotate').addEventListener('click', rotateSel);
@@ -11317,5 +11739,49 @@ if(!homeView.hidden) houseBuddyRefresh();
   npcTiles:()=>npcs.filter(n=>(n.tiles||[]).some(t=>inHomeZone(t.x,t.z))).map(n=>n.def.id),
   /* จำลอง "แตะฉากตรงช่องนี้" ผ่านทางเดินโค้ดจริงทั้งเส้น (ใช้เทสว่าม้านั่งในเมืองนั่งได้จริงไหม) */
   tapScene:(x,z)=>tapStaticScene(new THREE.Vector3(outWX(x),0,outWZ(z))),
+  /* โหมดปัจจุบัน — ชุดเทสต้องรอให้เป็น 'world' ก่อนสั่งเปิดการ์ดเควสต์/หน้าร้าน
+     เพราะ offerQuest()/SHOP.open() ออกเงียบๆ ถ้ายังอยู่โหมด creator/pet หรือกำลังตกแต่งอยู่
+     (เดาเวลาด้วย waitForTimeout แล้วเครื่องช้าตอนรันทั้งชุด = เทสแดงแบบไม่มีร่องรอย) */
+  mode:()=>hMode, editing:()=>!!editMode,
+  /* ตำแหน่ง NPC + คนที่กำลังคุมงานอยู่ — ชุดเทสใช้พิสูจน์ว่าคนออกโจทย์ยืนรอจริง ไม่เดินหนี */
+  npcPos:id=>{ const n = npcs.find(k=>k.def.id===id); return n ? {x:n.g.position.x, z:n.g.position.z} : null; },
+  /* พิกัดบนจอของชาวบ้าน (สำหรับชุดเทสเลื่อนเมาส์ไปวางให้ตรงตัว) — ยิงที่กลางลำตัว ไม่ใช่ที่เท้า */
+  npcScreen:id=>{
+    const n = npcs.find(k=>k.def.id===id); if(!n) return null;
+    const v = new THREE.Vector3(n.g.position.x, n.g.position.y + 1.1, n.g.position.z).project(camera);
+    return {x:(v.x+1)/2*window.innerWidth, y:(1-v.y)/2*window.innerHeight, z:v.z};
+  },
+  /* ชาวบ้านคนแรกที่ "อยู่ในเฟรมจริง" ตอนนี้ — ชุดเทสต้องใช้ตัวนี้ ไม่ใช่หยิบจากรายชื่อเควสต์
+     (คนที่มีงานวันนี้กระจายอยู่ทั่วเมือง ส่วนใหญ่ไม่ได้อยู่ในจอตอนเด็กยืนอยู่หน้าบ้าน) */
+  /* ยิง ray ใส่ตัวชาวบ้านที่พิกัดจอนี้ คืน id ที่โดน (ชุดเทส/ดีบักเคอร์เซอร์ฟองคำพูด) */
+  hitNpc:(cx, cy)=>{
+    raycaster.setFromCamera(ndcFromClient(cx, cy), camera);
+    const h = raycaster.intersectObjects(npcs.map(n=>n.g), true);
+    if(!h.length) return null;
+    let o = h[0].object;
+    /* ⚠ `userData.hNpc` เก็บ **def** (`d`) ไม่ใช่ record `n` — ดูตอนสร้างใน buildNpcs() */
+    while(o){ if(o.userData && o.userData.hNpc) return o.userData.hNpc.id; o = o.parent; }
+    return 'hit-but-untagged';
+  },
+  /* ⚠ **เลือกคนที่ยืนประจำที่ก่อนเสมอ** — ชาวบ้านที่เดินไปมาจะขยับทุกเฟรม พอเทสวัดพิกัดแล้วค่อย
+     เลื่อนเมาส์ไป เขาเดินหนีไปแล้ว (เจอตอนเขียนเทสเคอร์เซอร์ 2026-08-09) */
+  npcOnScreen:()=>{
+    const W = window.innerWidth, H = window.innerHeight, m = 60;
+    const seen = (n)=>{
+      const v = new THREE.Vector3(n.g.position.x, n.g.position.y + 1.1, n.g.position.z).project(camera);
+      if(v.z >= 1) return null;                    /* อยู่หลังกล้อง */
+      const x = (v.x+1)/2*W, y = (1-v.y)/2*H;
+      return (x > m && y > m && x < W-m && y < H-m) ? {id:n.def.id, x, y} : null;
+    };
+    const still = npcs.filter(n => !n.route && !(n.tiles && n.tiles.length));
+    for(let i=0; i<still.length; i++){ const r = seen(still[i]); if(r) return r; }
+    for(let i=0; i<npcs.length; i++){ const r = seen(npcs[i]); if(r) return r; }
+    return null;
+  },
+  questNpc:()=>qzNpcId,
+  /* อนิเมชันป้อนอาหาร — ชุดเทสใช้ยืนยันว่ามีชามโผล่ในฉากจริงและน้องเดินเข้ามาหาเด็ก */
+  feeding:()=>!!feedAnim,
+  petPos:()=>hPet.group ? {x:hPet.group.position.x, z:hPet.group.position.z} : null,
+  charPos:()=>charGroup ? {x:charGroup.position.x, z:charGroup.position.z} : null,
   sitting:()=>!!sitState, tile:()=>({x:hChar.tile.x, z:hChar.tile.z})};
 })();

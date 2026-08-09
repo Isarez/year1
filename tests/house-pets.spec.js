@@ -40,6 +40,40 @@ const readHouse = page => page.evaluate(k => JSON.parse(localStorage.getItem(k) 
 const coinsOf = page => page.evaluate(() => window.OwlCoins.get());
 const petHouses = d => ((d.decor && d.decor.out) || []).filter(r => r.id === 'pet-house').length;
 
+/* ผู้ใช้สั่ง 2026-08-09: ปุ่ม ← ต้องโผล่ **แค่ 3 หน้า** คือ แต่งตัว · สัตว์เลี้ยง · แต่งบ้าน
+   ที่เหลือซ่อนหมด (รวมตอนเปิดร้าน/การ์ด/หน้าเทส) เพราะกล่องพวกนั้นมีปุ่มปิดของตัวเองอยู่แล้ว
+   ⇒ เดินเล่นในเมืองปกติจะไม่มีปุ่ม ← เลย ทางออกอยู่ที่ "ออกจากบ้าน" ในเมนูเฟือง */
+test('ปุ่ม ← โผล่แค่หน้าแต่งตัว/สัตว์เลี้ยง/แต่งบ้าน — เดินเล่นปกติหรือเปิดร้านต้องไม่มี', async ({ page }) => {
+  const errors = await openHouse(page, null, 400);
+  const back = page.locator('#house-back');
+
+  await expect(back).toBeHidden();                       /* เดินเล่นในเมืองปกติ */
+
+  await page.evaluate(() => window.HouseShop.open('shop-pet'));
+  await expect(page.locator('#house-shop')).toBeVisible();
+  await expect(back).toBeHidden();                       /* เปิดร้านอยู่ก็ยังไม่มี (ร้านมีปุ่มออกเอง) */
+  await page.evaluate(() => window.HouseShop.close());
+  await page.waitForTimeout(300);
+
+  await page.locator('#house-pet-btn').click();          /* หน้าสัตว์เลี้ยง */
+  await expect(page.locator('#house-pet-picker')).toBeVisible();
+  await expect(back).toBeVisible();
+  await page.locator('#house-pet-skip').click();
+  await page.waitForTimeout(900);
+
+  await page.locator('#house-edit-btn').click();         /* หน้าแต่งตัว */
+  await expect(page.locator('#house-creator')).toBeVisible();
+  await expect(back).toBeVisible();
+  await page.locator('#house-back').click();             /* ← ที่นี่คือ "ยกเลิก" กลับไปชุดเดิม */
+  await page.waitForTimeout(900);
+  await expect(back).toBeHidden();
+
+  await page.locator('#house-decorate-btn').click();     /* โหมดแต่งบ้าน */
+  await expect.poll(() => page.evaluate(() => window.__houseDbg.editing())).toBe(true);
+  await expect(back).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('ราคาสัตว์ + สีขน ตรงตารางข้อ 17.1 (ตัวคุมไม่ให้ลดราคาโดยไม่ตั้งใจ)', async ({ page }) => {
   const errors = await openHouse(page);
   const p = await page.evaluate(() => ({
@@ -119,7 +153,9 @@ test('ซื้อสัตว์: ตัดเงินผ่าน OwlCoins ·
 
   await page.evaluate(() => window.HouseShop.open('shop-pet'));
   await page.waitForTimeout(700);
-  await expect(page.locator('#house-shop-tabs .he-tab')).toHaveCount(4);
+  /* 4 แท็บกลุ่มราคาสัตว์ + 1 แท็บอาหาร (เพิ่มในเฟส 3B) */
+  await expect(page.locator('#house-shop-tabs .he-tab')).toHaveCount(5);
+  await expect(page.locator('#house-shop-tabs .he-tab').last()).toContainText('อาหาร');
 
   /* เงิน 300 ซื้อแพนด้า 1,500 ไม่ได้ */
   const rich = await page.evaluate(() => window.HouseShop.buyPet('panda'));
@@ -172,6 +208,65 @@ test('บ้านสัตว์ตามเงื่อนไข: รับเ
   expect(errors).toEqual([]);
 });
 
+/* ผู้ใช้สั่งแก้ 2026-08-09: เดิมกางสีของสัตว์ "ทุกตัวที่มี" เป็น section ต่อกันยาวเรื่อยๆ
+   เปลี่ยนเป็น **แตะเลือกสัตว์ตัวไหน สีของตัวนั้นถึงโผล่** — section เดียวเสมอ ไม่แยกตามชนิด
+   และ **สัตว์ที่ยังไม่มีก็ต้องดูสีได้** (ดูตัวอย่างก่อนตัดสินใจเก็บเงิน) แต่ยังซื้อสีไม่ได้ */
+test('ร้านสัตว์: สัตว์ที่ยังไม่มีก็เลือกดูสีได้ แต่ซื้อสีไม่ได้จนกว่าจะรับมาเลี้ยง', async ({ page }) => {
+  const errors = await openHouse(page, null, 400);
+  await page.evaluate(() => window.HouseShop.open('shop-pet'));
+  await page.waitForTimeout(700);
+  /* เด็กใหม่ยังไม่มีสัตว์สักตัว — แตะกระต่ายแล้วต้องเห็นสีของกระต่าย */
+  await page.evaluate(() => {
+    Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .find(b => b.textContent.includes('กระต่าย')).click();
+  });
+  await page.waitForTimeout(300);
+  const h = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#house-shop-items .hs-subsec')).map(x => x.textContent.trim()));
+  expect(h.length).toBe(1);
+  expect(h[0]).toContain('กระต่าย');
+  expect(h[0]).toContain('รับมาเลี้ยงก่อน');        /* บอกเหตุผลไว้ตรงหัวข้อ เด็กจะได้ไม่งง */
+  /* กดซื้อสีไม่ได้จริง และเงินต้องไม่ถูกหัก */
+  expect(await page.evaluate(() => window.HouseShop.buyPetColor('rabbit', 1))).toBe(false);
+  expect(await coinsOf(page)).toBe(400);
+  expect(errors).toEqual([]);
+});
+
+test('ร้านสัตว์: สีขนโผล่เฉพาะตัวที่เลือกอยู่ ไม่กางทุกตัวที่มี', async ({ page }) => {
+  const errors = await openHouse(page, null, 900);
+  /* ซื้อ 2 ตัวในกลุ่มเดียวกัน (เริ่มต้น) เพื่อพิสูจน์ว่าไม่ได้กางสีของทั้งคู่พร้อมกัน */
+  await page.evaluate(() => { window.HouseShop.buyPet('dog'); });
+  await page.waitForTimeout(2200);
+  await page.evaluate(() => { window.HouseShop.buyPet('cat'); });
+  await page.waitForTimeout(2200);
+
+  await page.evaluate(() => window.HouseShop.open('shop-pet'));
+  await page.waitForTimeout(700);
+  const headings = () => page.evaluate(() =>
+    Array.from(document.querySelectorAll('#house-shop-items .hs-subsec')).map(h => h.textContent.trim()));
+
+  /* แตะการ์ดหมาน้อย → เห็นเฉพาะสีของหมา */
+  await page.evaluate(() => {
+    Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .find(b => b.textContent.includes('หมาน้อย')).click();
+  });
+  await page.waitForTimeout(300);
+  let h = await headings();
+  expect(h.length).toBe(1);
+  expect(h[0]).toContain('หมาน้อย');
+
+  /* แตะการ์ดแมวเหมียว → สลับเป็นสีของแมวแทน (ไม่ใช่ต่อท้ายเพิ่มอีก section) */
+  await page.evaluate(() => {
+    Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .find(b => b.textContent.includes('แมวเหมียว')).click();
+  });
+  await page.waitForTimeout(300);
+  h = await headings();
+  expect(h.length).toBe(1);
+  expect(h[0]).toContain('แมวเหมียว');
+  expect(errors).toEqual([]);
+});
+
 test('สีขน: ซื้อสีของสัตว์ที่ยังไม่มีไม่ได้ · มีแล้วซื้อได้และตัดเงิน 100', async ({ page }) => {
   const errors = await openHouse(page, null, 400);
   expect(await page.evaluate(() => window.HouseShop.buyPetColor('cat', 1)),
@@ -184,5 +279,48 @@ test('สีขน: ซื้อสีของสัตว์ที่ยัง
   expect(await page.evaluate(() => window.HouseShop.buyPetColor('dog', 1))).toBe(true);
   expect(await coinsOf(page)).toBe(50);
   expect(await page.evaluate(() => window.HouseShop.ownsPetColor('dog', 1))).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-09: ออกแบบเคอร์เซอร์ "ฟองคำพูด" ไว้บอกว่าชาวบ้านคนนี้คุยได้
+   ให้เข้าชุดกับเคอร์เซอร์นกฮูกเดิม — ต้องเปลี่ยนจริงตอนวางเมาส์บนตัว NPC เท่านั้น */
+test('เคอร์เซอร์ฟองคำพูด: วางเมาส์บนชาวบ้านแล้วเปลี่ยนจริง · ที่ว่างเปล่าไม่เปลี่ยน', async ({ page }) => {
+  const errors = await openHouse(page, null, 0);
+  const canvas = page.locator('#house-canvas');
+  const cursorOf = () => page.evaluate(() => getComputedStyle(document.getElementById('house-canvas')).cursor);
+
+  /* พื้นโล่งมุมจอ — ต้องยังเป็นเคอร์เซอร์นกฮูกปกติ ไม่ใช่ฟองคำพูด */
+  await page.mouse.move(40, 620);
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.__houseTalkHover())).toBe(false);
+  const plain = await cursorOf();
+
+  /* วาร์ปไปลานหน้าโรงพยาบาลก่อน — หน้าบ้านเด็กไม่มีชาวบ้านอยู่ในจอเลยสักคน (NPC เข้าเขตบ้านไม่ได้) */
+  await page.evaluate(() => window.__houseDbg.tp(58, 35));
+  await page.waitForTimeout(1500);
+
+  /* ⚠ ชาวบ้านหลายคนเดินตลอดเวลา ⇒ วัดพิกัดแล้วเลื่อนเมาส์ไปอาจไม่ทัน ต้องลองซ้ำ
+     (npcOnScreen เลือกคนที่ยืนประจำที่ให้ก่อนแล้ว แต่บางมุมกล้องอาจไม่มีคนยืนอยู่ในจอ) */
+  let hovered = false, at = null;
+  for(let i = 0; i < 12 && !hovered; i++){
+    at = await page.evaluate(() => window.__houseDbg.npcOnScreen());
+    if(!at){ await page.waitForTimeout(300); continue; }
+    await page.mouse.move(Math.round(at.x) + (i % 2), Math.round(at.y));   /* ขยับ 1px สลับ บังคับให้เกิด event */
+    await page.waitForTimeout(220);
+    hovered = await page.evaluate(() => window.__houseTalkHover());
+  }
+  expect(at, 'ต้องมีชาวบ้านอยู่ในจออย่างน้อย 1 คน').not.toBe(null);
+  expect(hovered, 'วางเมาส์บนตัวชาวบ้านแล้วเคอร์เซอร์ต้องเปลี่ยน').toBe(true);
+
+  const talk = await cursorOf();
+  expect(talk).not.toBe(plain);
+  expect(talk).toContain('svg');            /* เป็นเคอร์เซอร์รูปที่วาดเอง ไม่ใช่ pointer ของระบบ */
+  expect(talk).toContain('7 32');           /* hotspot = ปลายหางฟอง ชี้โดนตัวชาวบ้าน */
+  expect(await canvas.evaluate(el => el.classList.contains('house-talk-hover'))).toBe(true);
+
+  /* เลื่อนออกจากตัว → กลับเป็นเคอร์เซอร์ปกติ ไม่ค้าง */
+  await page.mouse.move(40, 620);
+  await expect.poll(() => page.evaluate(() => window.__houseTalkHover()), { timeout: 5000 }).toBe(false);
+  expect(await cursorOf()).toBe(plain);
   expect(errors).toEqual([]);
 });
