@@ -37,10 +37,35 @@
     {id:'quiz',    ic:'📝', name:'ตอบคำถาม'},
     {id:'count',   ic:'🔢', name:'นับของ'},
     /* เฟส 4B — มินิเกมครอบครัว (ในเกมจริงโผล่เฉพาะเควสต์ของพ่อ/แม่ วันละชุด) */
-    {id:'tidy',    ic:'🧹', name:'เก็บของเข้าที่'},
-    {id:'laundry', ic:'🧺', name:'แยกผ้าซัก'},
+    {id:'tidy',     ic:'🧹', name:'เก็บของเข้าที่'},
+    {id:'laundry',  ic:'🧺', name:'แยกผ้าซัก'},
+    {id:'cook',     ic:'🍳', name:'ช่วยทำอาหาร'},
+    {id:'routine',  ic:'🕰️', name:'กิจวัตรของหนู'},
+    {id:'petfeed',  ic:'🐾', name:'เตือนเรื่องสัตว์'},
+    {id:'budget',   ic:'💰', name:'ใช้เงินให้พอ'},
+    {id:'shopping', ic:'🛒', name:'จำของที่แม่สั่ง'},
+    {id:'clock',    ic:'⏰', name:'ตื่นให้ตรงเวลา'},
+    {id:'dinner',   ic:'🍽️', name:'กินข้าวพร้อมหน้า'},
+    {id:'market',   ic:'🏪', name:'ไปซื้อของให้แม่'},
+    {id:'orderlearn', ic:'📚', name:'เรียงลำดับ (คลังหน้าหลัก)'},
+    {id:'sortcat',    ic:'🗂️', name:'จัดหมวดของ (คลังหน้าหลัก)'},
   ];
   const SORT_MECHS = ['tidy', 'laundry'];
+  /* มินิเกมที่สร้างโจทย์เองล้วน ไม่มีคลังตายตัวให้กาง ⇒ หน้านี้บอกกติกา + ปุ่มสุ่มเล่นอย่างเดียว */
+  const PLAY_MECHS = ['cook', 'routine', 'petfeed', 'budget', 'shopping', 'clock', 'dinner', 'market',
+                      'orderlearn', 'sortcat'];
+  const MECH_HOW = {
+    cook:     'ลากขั้นตอนทำอาหารไปวางในช่อง 1-N ให้ถูกลำดับ · ชั้นเล็ก 3 ขั้น ชั้นโต 5 ขั้น',
+    routine:  'ลากกิจวัตรประจำวันไปเรียงว่าทำอะไรก่อนหลัง · ชั้นเล็ก 3 ขั้น ชั้นโต 5 ขั้น',
+    petfeed:  'ลากอาหารไปให้สัตว์ที่กินของนั้น · ตารางอาหารมาจาก js/house-pet-care.js ตัวจริง',
+    budget:   'เลือกของให้ครบจำนวนโดยรวมราคาไม่เกินงบ · มีคำตอบถูกได้หลายชุด',
+    shopping: 'ดูรายการของที่แม่สั่งก่อน แล้วหยิบให้ครบจากชั้นวาง',
+    clock:    'ดูหน้าปัดนาฬิกาแล้วตอบว่ากี่โมง · ชั้นเล็กเป็นชั่วโมงเต็ม ชั้นโตมีนาที',
+    dinner:   'เควสต์เดิน: รับงานแล้วการ์ดปิด เด็กเดินไปนั่งโต๊ะ/เก้าอี้ในบ้าน = จบงาน (ต้องมีโต๊ะหรือเก้าอี้ในบ้านก่อน)',
+    market:   'เควสต์เดิน: จำรายการที่บ้าน → เดินไปตลาด → พอถึงตลาดกระดานซื้อของเด้งขึ้นเอง',
+    orderlearn: 'ลากเรียงลำดับจากคลัง ORDER_SETS ของเกมหน้าหลัก (แยกตามระดับชั้น ป.4-ป.6) — ชั้นที่ไม่มีคลังจะไม่ถูกแจกเกมนี้',
+    sortcat:  'ลากของลงหมวดจากคลัง EF_CATEGORIES ของเกม "นกฮูกสั่ง" ในหน้าหลัก (ผลไม้/สัตว์บก/ยานพาหนะ/ของกิน/แมลง/สัตว์น้ำ)',
+  };
   const KIND_LABEL = {img:'🖼️ ภาพ', pattern:'🔮 แพทเทิร์น', emoji:'😀 อิโมจิ', text:'🔤 ข้อความ'};
   const SUBJ_LABEL = {math:'เลข', thai:'ไทย', eng:'อังกฤษ', iq:'เชาว์', sci:'วิทย์',
                       social:'สังคม', art:'ศิลปะ', misc:'อื่นๆ'};
@@ -240,6 +265,27 @@
       + '(ในเกมจริงโผล่เฉพาะเควสต์ครอบครัว วันละ 1 ชุด)'));
   }
 
+  /* ---------- มินิเกมที่สร้างโจทย์เองล้วน: บอกกติกา + กดเล่นได้เลย ---------- */
+  function renderPlayOnly(wrap, sum){
+    const tab = MECH_TABS.filter(t => t.id === mech)[0] || {};
+    const walk = (Q().MECHS[mech] || {}).walk;
+    sum.textContent = (MECH_HOW[mech] || '')
+      + (walk ? ' · งานเดิน (ไม่เข้ากติกาขั้นต่ำ 5 ข้อ)' : ' · ' + Q().MIN_Q + ' ข้อ/เควสต์');
+    const box = el('div', 'hqb-empty',
+      'กลไกนี้สุ่มโจทย์ใหม่ทุกครั้ง ไม่มีคลังคำถามตายตัวให้กาง — กดปุ่มข้างล่างเพื่อเล่นทดสอบได้เลย '
+      + '(ในเกมจริงโผล่เฉพาะเควสต์ครอบครัว วันละ 1 ชุด)');
+    wrap.appendChild(box);
+    const row = el('div', 'hqb-playrow');
+    const b = el('button', 'hqb-go-btn', '▶ เล่นทดสอบ ' + (tab.ic || '') + ' ' + (tab.name || mech));
+    b.type = 'button';
+    b.addEventListener('click', ()=>{
+      if(typeof playClick === 'function') playClick();
+      play({mech:mech, gid:gid, title:'🧪 ' + (tab.ic || '') + ' ' + (tab.name || mech)});
+    });
+    row.appendChild(b);
+    wrap.appendChild(row);
+  }
+
   /* ---------- วาดใหม่ทั้งหน้า ---------- */
   function render(){
     if(!Q()) return;
@@ -248,7 +294,8 @@
     const sum  = $('hqb-sum');
     wrap.innerHTML = '';
     wrap.scrollTop = 0;
-    if(SORT_MECHS.indexOf(mech) >= 0) renderSort(wrap, sum);
+    if(PLAY_MECHS.indexOf(mech) >= 0) renderPlayOnly(wrap, sum);
+    else if(SORT_MECHS.indexOf(mech) >= 0) renderSort(wrap, sum);
     else if(mech === 'count') renderCount(wrap, sum);
     else renderQuiz(wrap, sum);
     const rnd = $('hqb-random');
@@ -286,7 +333,7 @@
   /* ปุ่มล่าง: สุ่มชุดเต็มเหมือนเควสต์จริง (จำนวนข้อตามระดับชั้น) — ไล่กดทีละข้อไม่ไหวก็ใช้ตัวนี้ */
   $('hqb-random').addEventListener('click', ()=>{
     if(typeof playClick === 'function') playClick();
-    if(SORT_MECHS.indexOf(mech) >= 0){
+    if(PLAY_MECHS.indexOf(mech) >= 0 || SORT_MECHS.indexOf(mech) >= 0){
       const tab = MECH_TABS.filter(t => t.id === mech)[0];
       play({mech:mech, gid:gid, title:'🧪 สุ่มชุดเต็ม · ' + ((tab && tab.name) || mech)});
       return;

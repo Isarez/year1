@@ -361,8 +361,10 @@ test('โจทย์เข้ากับระดับชั้นและ�
   expect(out.cats).toBeGreaterThan(5);
   expect(out.gid).toBe('p2');
   expect(out.tier).toBe(2);
-  /* 5-10 ข้อไล่ตามชั้น (ผู้ใช้สั่งเพิ่มจาก 3-5 เมื่อ 2026-08-09) — ป.2 = tier 2 ⇒ 6 ข้อ */
-  expect(out.qN).toBe(6);
+  /* **จำนวนข้อสุ่ม 5-10 ต่อเควสต์** (ผู้ใช้สั่ง 2026-08-10 — เดิมผูกกับระดับชั้นตายตัว ป.2 = 6 ข้อ)
+     ระดับชั้นยังมีผลกับ "ความยากของแต่ละข้อ" เหมือนเดิม แต่ไม่ใช่จำนวนข้ออีกต่อไป */
+  expect(out.qN).toBeGreaterThanOrEqual(5);
+  expect(out.qN).toBeLessThanOrEqual(10);
   expect(out.inBank).toBe(true);       // คำถามมาจากคลังจริงของชั้น ป.2
   expect(out.choices).toBe(true);
   expect(out.thSubj).toContain('thai');

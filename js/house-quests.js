@@ -44,7 +44,10 @@
        - กระดาน + ครอบครัว: ลดทุกระดับดาว ⇒ ทำผ่าน base ของตระกูลนั้นโดยตรง
      ผลลัพธ์ (ทุกชั้นเท่ากัน): NPC 6 / 8 / 10 · กระดาน 8 / 10 / 13 · ครอบครัว 10 / 13 / 16
      ส่วนที่หายไปถูกชดเชยด้วย **โบนัสดาวรายวัน** (ครึ่งทาง +15 · เต็ม +20) ที่เด็กต้องกดรับเอง */
-  const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
+  /* ⚠ **ขั้นต่ำ 5 โจทย์/กระดานต่อ 1 เควสต์เสมอ ไม่ว่าจะเป็นเกมอะไร** (ผู้ใช้สั่ง 2026-08-10)
+   มินิเกมใหม่ทุกตัวต้องอ้างค่านี้ ห้ามตั้งเลขต่ำกว่านี้เอง */
+const MIN_Q = 5;
+const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
   const STAR_MUL   = [0, 1.0, 1.3, 1.6];        /* index = จำนวนดาว (เดิม 1.0/1.5/2.0) */
   /* ---------- โบนัสดาวรายวัน (ผู้ใช้สั่งเพิ่ม 2026-08-09) ----------
      ได้ดาวถึงครึ่งของดาวเต็มวันนี้ → กดรับ 15 🪙 · ได้ครบเต็มจำนวน → กดรับอีก 20 🪙
@@ -128,24 +131,75 @@
       name:'เก็บของเข้าที่', emoji:'🧹',
       q:'ของพวกนี้วางผิดที่ ช่วยเก็บเข้าที่ให้หน่อยนะ',
       bins:[
-        {id:'kitchen', name:'ของใช้ในครัว',  emoji:'🍳', items:['🥄','🍴','🥣','🍽️','🫖','🧂']},
-        {id:'bath',    name:'ของใช้ห้องน้ำ', emoji:'🚿', items:['🧼','🪥','🧴','🧻','🧽']},
+        /* ⚠ ไอคอนถังใช้ 🍽️ ไม่ใช่ 🍳 — กระทะย่อเล็กแล้วอ่านเป็น "แว่นขยาย" (ดูภาพจริง 2026-08-10)
+             และของในถังห้ามซ้ำกับไอคอนถังเอง ไม่งั้นเด็กงงว่าอันไหนของอันไหนถัง */
+        {id:'kitchen', name:'ของใช้ในครัว',  emoji:'🍽️', items:['🥄','🍴','🥣','🫖','🧂','🍶','🥢','🫕']},
+        {id:'bath',    name:'ของใช้ห้องน้ำ', emoji:'🚿', items:['🧼','🪥','🧴','🧻','🧽','🪣','🧯','🚽']},
         /* ⚠ ของเล่นต้อง **ดูออกทันทีตอนย่อเหลือ 30px** — 🪀 (โยโย่) กลายเป็นลูกบอลเขียวเฉยๆ
              เด็กเดาไม่ออกว่าคืออะไร (เจอตอนดูภาพจริง 2026-08-10) จึงเปลี่ยนเป็นของที่รูปทรงเด่น */
-        {id:'toy',     name:'กล่องของเล่น',  emoji:'🧸', items:['🧸','🎈','🎲','🚗','⚽','🧩']},
-        {id:'study',   name:'โต๊ะเรียน',     emoji:'📚', items:['📕','✏️','📐','🎒','📏','🖍️']},
+        {id:'toy',     name:'กล่องของเล่น',  emoji:'🧸', items:['🧸','🎈','🎲','🚗','⚽','🧩','🪁','🏀','🎯']},
+        {id:'study',   name:'โต๊ะเรียน',     emoji:'📚', items:['📕','✏️','📐','🎒','📏','🖍️','📓','🖊️','📎']},
       ],
     },
     laundry: {
       name:'แยกผ้าซัก', emoji:'🧺',
       q:'ช่วยแยกผ้าลงตะกร้าให้ถูกใบหน่อยนะ',
       bins:[
-        {id:'top',   name:'เสื้อ',           emoji:'👕', items:['👕','👚','🧥','👔']},
-        {id:'pants', name:'กางเกง-กระโปรง',  emoji:'👖', items:['👖','🩳','👗']},
-        {id:'small', name:'ของชิ้นเล็ก',     emoji:'🧦', items:['🧦','🧣','🧤','🧢','👒']},
+        {id:'top',   name:'เสื้อ',           emoji:'👕', items:['👕','👚','🧥','👔','🥼','👘']},
+        {id:'pants', name:'กางเกง-กระโปรง',  emoji:'👖', items:['👖','🩳','👗','🩱','🥻']},
+        {id:'small', name:'ของชิ้นเล็ก',     emoji:'🧦', items:['🧦','🧣','🧤','🧢','👒','🩲','🧶']},
       ],
     },
   };
+  /* ---------- เกม "เรียงลำดับ" (cook / routine) ----------
+     ⚠ ขั้นตอนในแต่ละชุด **ต้องเรียงถูกอยู่แล้วในอาเรย์** และ **ตัดเอาแค่ N ตัวแรกต้องยังสมเหตุสมผล**
+       (เกมตัดให้สั้นลงตามระดับชั้น) — เขียนชุดใหม่ต้องเช็คข้อนี้ด้วยตัวเองเสมอ */
+  const ORDER_POOLS = {
+    cook: {
+      name:'ช่วยทำอาหาร', emoji:'🍳', q:'ช่วยเรียงขั้นตอนทำ',
+      sets:[
+        {name:'ไข่เจียว',  steps:[['🥚','ตอกไข่'],['🥣','ตีไข่'],['🔥','ตั้งกระทะ'],['🍳','ทอดไข่'],['🍽️','ตักใส่จาน']]},
+        {name:'ข้าวผัด',   steps:[['🍚','หุงข้าว'],['🔪','หั่นผัก'],['🔥','ตั้งกระทะ'],['🥘','ผัดให้เข้ากัน'],['🍽️','ตักใส่จาน']]},
+        {name:'น้ำส้มคั้น', steps:[['🍊','ล้างส้ม'],['🔪','ผ่าครึ่ง'],['🥤','คั้นน้ำ'],['🧊','ใส่น้ำแข็ง'],['😋','ดื่มได้เลย']]},
+        {name:'แซนด์วิช',  steps:[['🍞','วางขนมปัง'],['🧈','ทาเนย'],['🥬','ใส่ผัก'],['🧀','ใส่ชีส'],['🥪','ประกบแล้วหั่น']]},
+        {name:'ชาเย็น',    steps:[['💧','ต้มน้ำ'],['🍵','ชงชา'],['🥛','ใส่นม'],['🧊','ใส่น้ำแข็ง'],['🥤','เสิร์ฟ']]},
+        {name:'สลัดผัก',   steps:[['🥬','ล้างผัก'],['🔪','หั่นผัก'],['🥗','ใส่ชาม'],['🫗','ราดน้ำสลัด'],['🍽️','เสิร์ฟ']]},
+        {name:'ต้มไข่',    steps:[['🥚','เตรียมไข่'],['🫕','ใส่หม้อน้ำ'],['🔥','ต้มให้เดือด'],['⏳','รอสุก'],['🍽️','ปอกใส่จาน']]},
+        {name:'แพนเค้ก',   steps:[['🥣','ผสมแป้ง'],['🥚','ใส่ไข่'],['🥛','เทนม'],['🍳','ทอดในกระทะ'],['🥞','ราดน้ำผึ้ง']]},
+        {name:'ปั่นผลไม้', steps:[['🍓','ล้างผลไม้'],['🔪','หั่นชิ้นเล็ก'],['🧊','ใส่น้ำแข็ง'],['🌀','ปั่นให้ละเอียด'],['🥤','เทใส่แก้ว']]},
+      ],
+    },
+    routine: {
+      name:'กิจวัตรของหนู', emoji:'🕰️', q:'ช่วยเรียงว่าทำอะไรก่อนหลัง — ',
+      sets:[
+        {name:'ตอนเช้า',     steps:[['⏰','ตื่นนอน'],['🪥','แปรงฟัน'],['🍳','กินข้าวเช้า'],['👕','ใส่ชุด'],['🎒','ไปโรงเรียน']]},
+        {name:'ตอนเย็น',     steps:[['🏠','กลับบ้าน'],['📖','ทำการบ้าน'],['🍽️','กินข้าวเย็น'],['🛁','อาบน้ำ'],['🛏️','เข้านอน']]},
+        {name:'วันหยุด',     steps:[['⏰','ตื่นนอน'],['🥞','กินข้าว'],['🧹','ช่วยงานบ้าน'],['⚽','ออกไปเล่น'],['🛁','อาบน้ำ']]},
+        {name:'ก่อนกินข้าว', steps:[['🧼','ล้างมือ'],['🍽️','จัดโต๊ะ'],['🥄','ตักข้าว'],['🙏','ขอบคุณอาหาร'],['😋','กินข้าว']]},
+        {name:'ก่อนนอน',     steps:[['🧸','เก็บของเล่น'],['🛁','อาบน้ำ'],['🪥','แปรงฟัน'],['📖','อ่านนิทาน'],['🛏️','เข้านอน']]},
+        {name:'ไปโรงเรียน',  steps:[['👕','ใส่ชุดนักเรียน'],['🎒','เก็บกระเป๋า'],['👟','ใส่รองเท้า'],['👋','บอกลาคุณแม่'],['🚌','ขึ้นรถ']]},
+        {name:'ปลูกต้นไม้',  steps:[['🪴','เตรียมกระถาง'],['🌱','ใส่ดิน'],['🌰','หยอดเมล็ด'],['💧','รดน้ำ'],['☀️','ตั้งไว้ที่แดด']]},
+      ],
+    },
+  };
+  /* ---------- เกม "เตือนเรื่องสัตว์" (petfeed) ----------
+     ⚠ **ตารางอาหารของจริงอยู่ที่ `FOOD` ใน `js/house-pet-care.js`** ไฟล์นี้ขอมาทาง kit.petFoods()
+       ที่นี่เก็บแค่ "หน้าตา/ชื่อไทยของสัตว์" เพื่อวาดถัง — มีเทสคุมว่าสัตว์ทุกตัวในตารางอาหารต้องมีชื่อที่นี่ */
+  const PET_FACE = {
+    dog:{e:'🐶', n:'น้องหมา'},   cat:{e:'🐱', n:'น้องแมว'},    rabbit:{e:'🐰', n:'น้องกระต่าย'},
+    chick:{e:'🐥', n:'น้องเจี๊ยบ'}, hamster:{e:'🐹', n:'น้องแฮมสเตอร์'}, turtle:{e:'🐢', n:'น้องเต่า'},
+    sheep:{e:'🐑', n:'น้องแกะ'},  pig:{e:'🐷', n:'น้องหมู'},    frog:{e:'🐸', n:'น้องกบ'},
+    panda:{e:'🐼', n:'น้องแพนด้า'}, penguin:{e:'🐧', n:'น้องเพนกวิน'}, unicorn:{e:'🦄', n:'น้องยูนิคอร์น'},
+  };
+  /* ---------- เกม "ซื้อของ" (budget / shopping) ---------- */
+  const MARKET_GOODS = [
+    ['🍎','แอปเปิ้ล'], ['🍌','กล้วย'], ['🥛','นม'], ['🍞','ขนมปัง'], ['🥚','ไข่'], ['🧀','ชีส'],
+    ['🍅','มะเขือเทศ'], ['🥕','แครอท'], ['🍓','สตรอว์เบอร์รี'], ['🍇','องุ่น'], ['🥬','ผักกาด'],
+    ['🐟','ปลา'], ['🍗','ไก่'], ['🧃','น้ำผลไม้'], ['🍚','ข้าวสาร'], ['🧂','เกลือ'],
+    ['🍉','แตงโม'], ['🍍','สับปะรด'], ['🥭','มะม่วง'], ['🥥','มะพร้าว'], ['🌽','ข้าวโพด'],
+    ['🥔','มันฝรั่ง'], ['🧅','หัวหอม'], ['🍄','เห็ด'], ['🥦','บรอกโคลี'], ['🍯','น้ำผึ้ง'],
+    ['🧈','เนย'], ['🍪','คุกกี้'], ['🥜','ถั่ว'],
+  ];
   /* ชุดของ + วิชาที่ NPC คนนี้ชอบออกโจทย์ — ไล่จากเฉพาะเจาะจงไปกว้าง เจอตัวแรกที่ตรงแล้วหยุด */
   const NPC_THEMES = [
     [/^npc-lab/,                     'lab',    ['sci','iq']],
@@ -205,6 +259,10 @@
     const childId = kit.childId || function(){ return '-'; };
     const gradeId = kit.gradeId || function(){ return 'prep-p1'; };
     const dayKey  = kit.dayKey  || function(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+    /* ตารางอาหารสัตว์ของจริงอยู่ที่ js/house-pet-care.js — ไฟล์นี้ขอมาทาง kit ไม่อ่าน global เอง */
+    const petFoods = kit.petFoods || function(){ return []; };
+    /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม (เควสต์ "ไปนั่งกินข้าว") — ฝั่งหน้าจอเป็นคนตอบ */
+    const hasIndoorSeat = kit.hasIndoorSeat || function(){ return false; };
     const npcDefs = kit.npcDefs || [];
     const defById = {};
     npcDefs.forEach(d=>{ defById[d.id] = d; });
@@ -227,6 +285,19 @@
     }
 
     /* ================= ระดับความยาก (ข้อ 5) ================= */
+    /* ---------- ไล่ระดับความยาก "ภายในเควสต์เดียว" (ผู้ใช้สั่ง 2026-08-10) ----------
+       ข้อแรกง่ายสุด ข้อท้ายเต็มระดับชั้นของเด็ก ⇒ อุ่นเครื่องก่อนแล้วค่อยยาก
+       ⚠ `p` = สัดส่วนความคืบหน้าในเควสต์ (0 = ข้อแรก · 1 = ข้อสุดท้าย) มินิเกมทุกตัวใช้ค่านี้ร่วมกัน
+       ⚠ **ไล่ระดับไม่กระทบเงิน** — `coinsFor()` คิดจากประเภทเควสต์กับดาวเท่านั้น ไม่ดูจำนวน/ความยากข้อ */
+    function stepDiff(diff, i, n){
+      const p = (n <= 1) ? 1 : i / (n - 1);
+      const at = (lo, hi) => Math.round(lo + (hi - lo) * p);
+      return Object.assign({}, diff, {
+        p: p,
+        countMax: Math.max(4, at(Math.ceil(diff.countMax * .55), diff.countMax)),
+        kinds:    Math.max(1, at(1, diff.kinds)),
+      });
+    }
     function difficulty(gid){
       const tier = Math.max(1, gradeIndex(gid || gradeId()));   /* เตรียม ป.1 กับ ป.1 = tier 1 */
       return {
@@ -235,6 +306,8 @@
            เตรียม ป.1/ป.1 = 5 · ป.2 = 6 · ป.3 = 7 · ป.4 = 8 · ป.5 = 9 · ป.6 = 10
            ⚠ ยาวขึ้นเท่าตัว แต่ **ค่าตอบแทนคิดต่อเควสต์เหมือนเดิม** ⇒ เหรียญต่อข้อลดลงครึ่งหนึ่ง
              (ตั้งใจ: ยืดเวลาเล่นต่อวันโดยไม่ทำเงินเฟ้อ — ตัวเลขเหรียญเป็นค่าที่ผู้ใช้ล็อกไว้ ห้ามขยับเอง) */
+        /* ค่าตั้งต้น — **จำนวนข้อจริงสุ่มใหม่ทุกเควสต์ที่ buildRun() (5-10 ข้อ ไม่จำเป็นต้องเท่ากัน)**
+           ผู้ใช้สั่ง 2026-08-10 · ระดับชั้นยังมีผลกับ "ความยากของแต่ละข้อ" เหมือนเดิม ไม่ใช่จำนวนข้อ */
         qN:      Math.min(10, 4 + tier),
         countMax:tier <= 2 ? 9 : (tier <= 4 ? 15 : 24),/* จำนวนของสูงสุดในโจทย์นับ */
         kinds:   tier <= 2 ? 1 : (tier <= 4 ? 2 : 3),  /* ของกี่ชนิดปนกันในโจทย์นับ */
@@ -320,7 +393,11 @@
       /* กลไกของเควสต์ครอบครัว = สุ่มจาก FAM_MECHS (มีมินิเกมของเฟส 4B ด้วย)
          วันละชุดเดียว ⇒ สุ่มเท่าๆ กันไปเลย เด็กจะได้เจอครบทุกแบบภายในไม่กี่วัน */
       const who = rng() < .5 ? 'dad' : 'mom';
-      return { who: who, m: pick(rng, FAM_MECHS), st:'', stars:0 };
+      /* สุ่มจนได้กลไกที่บ้านหลังนี้เล่นได้จริง (เช่นเควสต์ไปนั่งโต๊ะต้องมีโต๊ะ/เก้าอี้ก่อน) */
+      let m = pick(rng, FAM_MECHS), guard = 0;
+      while(!famMechOk(m) && guard++ < 20) m = pick(rng, FAM_MECHS);
+      if(!famMechOk(m)) m = 'quiz';
+      return { who: who, m: m, st:'', stars:0 };
     }
     /* กระดาน 5 ชุด/วัน — โควตาแยกจาก NPC เด็ดขาด (ข้อ 19) */
     function rollBoard(day){
@@ -365,20 +442,47 @@
     /* ================= กลไกเควสต์ (mechanic) ================= */
     /* แต่ละกลไกมี gen(rng, diff, def, gid) → คืนอาเรย์ข้อ [{q, emoji, show, choices, correct, explain}]
        เฟส 2 มี 2 แบบ · เฟส 5-7 ค่อยเติมที่ตารางนี้ที่เดียว (house.js ไม่ต้องแก้) */
+    /* ---------- คลังโจทย์จาก "เกมหน้าหลัก" ที่เอามาใช้ซ้ำ (ผู้ใช้สั่ง 2026-08-10) ----------
+       ⚠ อ่านจาก global ของหน้าหลักตรงๆ (`ORDER_SETS` / `EF_CATEGORIES` ใน js/data-pools.js)
+         ซึ่งโหลดมาก่อนไฟล์นี้เสมอ · **ถ้าไม่มีให้ถอยไปใช้คลังของโหมดบ้านเอง ห้ามพัง**
+       ⚠ ORDER_SETS ติดแท็กระดับชั้น (p4/p5/p6) — เด็กเล็กไม่มีชุดของตัวเอง จึงถอยไปใช้ ORDER_POOLS */
+    function mainOrderSets(gid){
+      if(typeof ORDER_SETS === 'undefined' || !Array.isArray(ORDER_SETS)) return [];
+      return ORDER_SETS.filter(o => o.tag === gid && o.items && o.items.length >= 3)
+                       .map(o => ({name:o.prompt, steps:o.items.map(x => [x.e, x.l])}));
+    }
+    function efSortSet(){
+      if(typeof EF_CATEGORIES === 'undefined' || !EF_CATEGORIES) return null;
+      const bins = Object.keys(EF_CATEGORIES).map(k => ({
+        id:k, name:EF_CATEGORIES[k].name, emoji:EF_CATEGORIES[k].items[0],
+        items:EF_CATEGORIES[k].items.slice(1),
+      })).filter(b => b.items.length >= 4);
+      if(bins.length < 2) return null;
+      return {name:'จัดหมวดของ', emoji:'🗂️', q:'ช่วยจัดของพวกนี้ลงหมวดให้ถูกหน่อยนะ', bins:bins};
+    }
+
     /* ---------- ตัวสร้างกลไก "จัดของลงถัง" (เฟส 4B) ----------
        1 "ข้อ" = 1 กระดาน (ของ 4-8 ชิ้น ลงถัง 2-4 ใบ) ⇒ ใช้เวลานานกว่าโจทย์ตอบคำถามมาก
-       ⇒ **จำนวนกระดานต่อเควสต์ = ครึ่งหนึ่งของ diff.qN (อย่างน้อย 3)** ไม่ใช่ qN เต็ม
+       ⇒ **จำนวนกระดานต่อเควสต์ = ครึ่งหนึ่งของ diff.qN แต่ไม่ต่ำกว่า MIN_Q** ไม่ใช่ qN เต็ม
           เกณฑ์ดาวคิดจาก `run.items.length` อยู่แล้ว จึงยืดตามเองไม่ต้องแก้ starsOf */
-    function sortRounds(diff){ return Math.max(3, Math.round(diff.qN / 2)); }
-    function sortMech(setId){
-      const set = SORT_SETS[setId];
+    /* จำนวนกระดานของมินิเกม = จำนวนข้อของเควสต์นั้น (5-10 สุ่มมาแล้วที่ buildRun) แต่ไม่ต่ำกว่า MIN_Q */
+    function sortRounds(diff){ return Math.max(MIN_Q, diff.qN | 0); }
+    function sortMech(setId, getSet){
+      const set0 = SORT_SETS[setId];
       return {
-        id:setId, name:set.name, fam:'family', sort:true, only:'family',
+        id:setId, name:(set0 || {}).name || setId, fam:'family', sort:true, only:'family',
         gen(rng, diff){
+          const set = getSet ? (getSet() || set0) : set0;
+          if(!set) return MECHS.count.gen(rng, diff, {id:'', job:'villager'});
           const binN  = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : set.bins.length);
-          const tileN = diff.tier <= 2 ? 4 : (diff.tier <= 4 ? 6 : 8);
+          /* ไล่ระดับภายในเควสต์: กระดานแรกของน้อย → กระดานสุดท้ายเต็มระดับชั้น (ผู้ใช้สั่ง 2026-08-10) */
+          const tLo = diff.tier <= 2 ? 3 : (diff.tier <= 4 ? 4 : 5);
+          const tHi = diff.tier <= 2 ? 5 : (diff.tier <= 4 ? 7 : 9);
+          const nR = sortRounds(diff);
           const out = [];
-          for(let r = 0; r < sortRounds(diff); r++){
+          for(let r = 0; r < nR; r++){
+            const p  = (nR <= 1) ? 1 : r / (nR - 1);
+            const tN = Math.round(tLo + (tHi - tLo) * p);
             const bins = pickMany(rng, set.bins, Math.min(binN, set.bins.length));
             /* แจกของให้ **ทุกถังมีอย่างน้อย 1 ชิ้น** — ถังที่ว่างเปล่าทั้งกระดานทำให้เด็กงงว่าใส่ผิดไหม */
             const tiles = [];
@@ -386,7 +490,7 @@
             bins.forEach((b, i) => { tiles.push({e: left[i].pop(), bin: b.id}); });
             /* guard: ถ้าของในถังที่เลือกไว้หมดก่อนครบจำนวน ให้หยุด (ไม่วนไม่รู้จบ) */
             let guard = 0;
-            while(tiles.length < tileN && guard++ < 200){
+            while(tiles.length < tN && guard++ < 200){
               const i = (rng() * bins.length) | 0;
               if(!left[i].length) continue;
               tiles.push({e: left[i].pop(), bin: bins[i].id});
@@ -409,6 +513,234 @@
         },
       };
     }
+    /* ---------- เกมเรียงลำดับ: ลากขั้นตอนไปวางในช่อง 1..N ----------
+       ใช้กระดานลาก-วางชุดเดียวกับเกมจัดของ ต่างกันแค่ `layout:'slots'` (ช่องละ 1 ชิ้น เรียงเป็นแถว) */
+    function orderMech(poolId, getSets){
+      const pool = ORDER_POOLS[poolId];
+      return {
+        id:poolId, name:pool.name, fam:'family', sort:true, only:'family',
+        gen(rng, diff, def, gid){
+          /* คลังจากเกมหน้าหลักมาก่อน (ถ้าระดับชั้นนี้มี) ไม่มีก็ใช้คลังของโหมดบ้าน */
+          const outer = getSets ? getSets(gid || '') : null;
+          const sets  = (outer && outer.length) ? outer : pool.sets;
+          const nR = sortRounds(diff);
+          const nStepMax = diff.tier <= 2 ? 3 : (diff.tier <= 4 ? 4 : 5);
+          const out = [];
+          for(let r = 0; r < nR; r++){
+            const p = (nR <= 1) ? 1 : r / (nR - 1);
+            const nStep = Math.max(3, Math.round(3 + (nStepMax - 3) * p));   /* ไล่ระดับในรอบ */
+            const set = sets[(r + ((rng() * sets.length) | 0)) % sets.length];
+            const steps = set.steps.slice(0, Math.min(nStep, set.steps.length));
+            const bins = steps.map((_, i) => ({id:'s' + i, name:'ที่ ' + (i + 1), emoji:String(i + 1)}));
+            const tiles = shuffled(rng, steps.map((st, i) => ({e:st[0], label:st[1], bin:'s' + i})))
+                            .map((t, i) => ({k:'t' + i, e:t.e, label:t.label, bin:t.bin}));
+            out.push({kind:'sort', layout:'slots', q:(outer && outer.length) ? set.name : (pool.q + set.name), emoji:'', choices:[], correct:0,
+                      bins, tiles, explain:'เรียงถูกทุกขั้นเลย เก่งมาก!'});
+          }
+          return out;
+        },
+        verify(it, placed){
+          placed = placed || {};
+          const bad = it.tiles.filter(t => placed[t.k] !== t.bin).map(t => t.k);
+          return {ok: bad.length === 0, bad: bad};
+        },
+      };
+    }
+    /* ---------- เกมเตือนเรื่องสัตว์: ลากอาหารไปให้สัตว์ที่กินของนั้น ----------
+       ⚠ ต้องเลือกสัตว์ที่ "กินอาหารคนละชนิดกัน" เท่านั้น — แมวกับเพนกวินกินปลาเหมือนกัน
+         ถ้าอยู่กระดานเดียวกันเด็กวางถูกก็ยังถูกนับว่าผิด (ผิดกติกาเหล็กข้อ 2) */
+    function petFeedMech(){
+      return {
+        id:'petfeed', name:'เตือนเรื่องสัตว์', fam:'family', sort:true, only:'family',
+        gen(rng, diff){
+          const foods = (petFoods() || []).filter(f => f.pets && f.pets.length && PET_FACE[f.pets[0]]);
+          if(!foods.length) return MECHS.count.gen(rng, diff, {id:'', job:'villager'});
+          const binN  = Math.min(diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4), foods.length);
+          const tileN = diff.tier <= 2 ? 4 : (diff.tier <= 4 ? 6 : 8);
+          const out = [];
+          for(let r = 0; r < MIN_Q; r++){
+            const use = pickMany(rng, foods, binN);        /* 1 ชนิดอาหาร = 1 ตัว ⇒ ไม่มีทางกำกวม */
+            const bins = use.map(f => {
+              const p = PET_FACE[f.pets[0]];
+              return {id:f.pets[0], name:p.n, emoji:p.e};
+            });
+            const tiles = [];
+            use.forEach((f, i) => tiles.push({e:f.emoji, label:f.name, bin:bins[i].id}));
+            let guard = 0;
+            while(tiles.length < tileN && guard++ < 100){
+              const i = (rng() * use.length) | 0;
+              tiles.push({e:use[i].emoji, label:use[i].name, bin:bins[i].id});
+            }
+            out.push({kind:'sort', q:'ถึงเวลาให้อาหารแล้ว ลากอาหารไปให้น้องแต่ละตัวหน่อยนะ',
+                      emoji:'', choices:[], correct:0,
+                      bins, tiles: shuffled(rng, tiles).map((t, i) => ({k:'t' + i, e:t.e, label:t.label, bin:t.bin})),
+                      explain:'น้องๆ ได้กินอาหารที่ถูกชนิดครบทุกตัวแล้ว!'});
+          }
+          return out;
+        },
+        verify(it, placed){
+          placed = placed || {};
+          const bad = it.tiles.filter(t => placed[t.k] !== t.bin).map(t => t.k);
+          return {ok: bad.length === 0, bad: bad};
+        },
+      };
+    }
+    /* ---------- เกมใช้เงินให้พอ: เลือกของให้ครบจำนวนโดยรวมแล้วไม่เกินงบ ----------
+       ⚠ **มีคำตอบถูกได้หลายชุด** (ขอแค่ครบจำนวนและไม่เกินเงิน) ตั้งใจให้เป็นแบบนี้
+         เด็กได้ลองคิดเอง ไม่ใช่ทายว่าผู้ใหญ่คิดชุดไหนอยู่ */
+    function budgetMech(){
+      return {
+        id:'budget', name:'ใช้เงินให้พอ', fam:'family', basket:true, only:'family',
+        gen(rng, diff){
+          const need  = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
+          const shelf = diff.tier <= 2 ? 5 : (diff.tier <= 4 ? 6 : 8);
+          const pmax  = diff.tier <= 2 ? 6 : (diff.tier <= 4 ? 12 : 25);
+          const out = [];
+          for(let r = 0; r < MIN_Q; r++){
+            const goods = pickMany(rng, MARKET_GOODS, shelf);
+            const tiles = goods.map((g, i) => ({k:'t' + i, e:g[0], label:g[1],
+                                                price: 1 + ((rng() * pmax) | 0)}));
+            /* งบ = ราคาถูกสุด need ชิ้น + เผื่อนิดหน่อย ⇒ **มีคำตอบที่เป็นไปได้เสมอ** และไม่ง่ายเกิน */
+            const cheap = tiles.map(t => t.price).sort((a, b) => a - b).slice(0, need)
+                               .reduce((a, b) => a + b, 0);
+            const budget = cheap + 1 + ((rng() * 3) | 0);
+            out.push({kind:'sort', basket:true, need:need, budget:budget,
+                      q:'คุณแม่ให้เงิน ' + budget + ' เหรียญ ช่วยเลือกของ ' + need + ' อย่างให้ไม่เกินเงินนะ',
+                      emoji:'', choices:[], correct:0,
+                      bins:[{id:'basket', name:'ตะกร้าของหนู', emoji:'🧺'}],
+                      tiles: shuffled(rng, tiles),
+                      explain:'เลือกได้ครบและไม่เกินเงินเลย เก่งมาก!'});
+          }
+          return out;
+        },
+        verify(it, placed){
+          placed = placed || {};
+          const inb = it.tiles.filter(t => placed[t.k] === 'basket');
+          const sum = inb.reduce((a, t) => a + t.price, 0);
+          if(inb.length !== it.need || sum > it.budget){
+            /* บอกเฉพาะชิ้นที่ทำให้เกินงบ (ถ้าเกิน) — ไม่เด้งทิ้งทั้งตะกร้าให้เด็กเริ่มใหม่หมด */
+            const bad = sum > it.budget
+              ? inb.slice().sort((a, b) => b.price - a.price).slice(0, 1).map(t => t.k)
+              : [];
+            return {ok:false, bad: bad};
+          }
+          return {ok:true};
+        },
+      };
+    }
+    /* ---------- เกมจำรายการของ: ดูรายการก่อน แล้วหยิบให้ครบ ---------- */
+    function shoppingMech(){
+      return {
+        id:'shopping', name:'จำของที่แม่สั่ง', fam:'family', basket:true, memory:true, only:'family',
+        gen(rng, diff){
+          const need  = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
+          const shelf = Math.min(MARKET_GOODS.length, need + (diff.tier <= 2 ? 3 : 5));
+          const out = [];
+          for(let r = 0; r < MIN_Q; r++){
+            const goods = pickMany(rng, MARKET_GOODS, shelf);
+            const want  = goods.slice(0, need);
+            out.push({kind:'sort', basket:true, memory:true, need:need,
+                      showFor: diff.tier <= 2 ? 4500 : 3500,
+                      list: want.map(g => ({e:g[0], label:g[1]})),
+                      q:'หยิบของที่คุณแม่สั่งให้ครบนะ',
+                      emoji:'', choices:[], correct:0,
+                      bins:[{id:'basket', name:'ตะกร้าของหนู', emoji:'🧺'}],
+                      tiles: shuffled(rng, goods).map((g, i) => ({k:'t' + i, e:g[0], label:g[1],
+                                                                  want: want.indexOf(g) >= 0})),
+                      explain:'จำได้ครบทุกอย่างเลย!'});
+          }
+          return out;
+        },
+        verify(it, placed){
+          placed = placed || {};
+          const bad = it.tiles.filter(t => (placed[t.k] === 'basket') !== !!t.want && placed[t.k] === 'basket')
+                              .map(t => t.k);
+          const okCount = it.tiles.filter(t => t.want && placed[t.k] === 'basket').length;
+          return {ok: bad.length === 0 && okCount === it.need, bad: bad};
+        },
+      };
+    }
+    /* ---------- เควสต์ที่ต้อง "เดินไปทำนอกบ้าน" (family-time / shopping-list) ----------
+       ⚠ **กลุ่มนี้ไม่เข้ากติกา "อย่างน้อย MIN_Q ข้อ" โดยตั้งใจ** (ผู้ใช้อนุมัติ 2026-08-10)
+         กติกานั้นใช้กับเกมที่เปิด popup ให้เด็กตอบคำถามเท่านั้น — งานเดินคือ "ไปให้ถึงแล้วทำ"
+         ชิ้นเดียวจบ ถ้าบังคับให้เดินวน 5 รอบจะกลายเป็นงานน่าเบื่อแทนที่จะสนุก
+       ⚠ ตัวตัดสินว่า "ไปถึงแล้ว" อยู่ที่ js/house.js (ไฟล์นี้ไม่รู้จักผังเมือง/ฉาก 3D)
+         ที่นี่แค่บอกว่าเป้าหมายคืออะไรผ่าน `target` */
+    function dinnerMech(){
+      return {
+        id:'dinner', name:'กินข้าวพร้อมหน้า', fam:'family', walk:true, only:'family',
+        gen(){
+          return [{kind:'walk', target:'table',
+                   q:'เดี๋ยวเรากินข้าวพร้อมหน้ากันนะ ไปนั่งรอที่โต๊ะก่อนเลยจ้ะ',
+                   go:'ไปนั่งที่โต๊ะ 🍽️', hint:'ไปนั่งที่โต๊ะหรือเก้าอี้ในบ้านกันนะ',
+                   emoji:'', choices:[], correct:0, explain:'นั่งกินข้าวพร้อมหน้ากันแล้ว อบอุ่นจัง!'}];
+        },
+        verify(){ return {ok:true}; },     /* หน้าจอเป็นคนตัดสินว่าไปถึงจริงแล้วค่อยส่งมา */
+      };
+    }
+    function marketMech(){
+      return {
+        id:'market', name:'ไปซื้อของให้แม่', fam:'family', walk:true, only:'family',
+        gen(rng, diff){
+          const need  = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
+          const shelf = Math.min(MARKET_GOODS.length, need + (diff.tier <= 2 ? 3 : 5));
+          const goods = pickMany(rng, MARKET_GOODS, shelf);
+          const want  = goods.slice(0, need);
+          return [
+            {kind:'walk', target:'market', list: want.map(g => ({e:g[0], label:g[1]})),
+             q:'ช่วยไปซื้อของที่ตลาดให้หน่อยนะ จำให้ได้ว่าต้องซื้ออะไรบ้าง',
+             go:'จำได้แล้ว ไปตลาด! 🛒', hint:'เดินไปที่ตลาดในหมู่บ้านกันนะ',
+             emoji:'', choices:[], correct:0, explain:''},
+            {kind:'sort', basket:true, need:need, q:'ถึงตลาดแล้ว! หยิบของที่คุณแม่สั่งให้ครบนะ',
+             emoji:'', choices:[], correct:0,
+             bins:[{id:'basket', name:'ตะกร้าของหนู', emoji:'🧺'}],
+             tiles: shuffled(rng, goods).map((g, i) => ({k:'t' + i, e:g[0], label:g[1],
+                                                        want: want.indexOf(g) >= 0})),
+             explain:'ซื้อของครบตามที่แม่สั่งเลย!'},
+          ];
+        },
+        verify(it, placed){
+          if(it.kind === 'walk') return {ok:true};
+          placed = placed || {};
+          const bad = it.tiles.filter(t => placed[t.k] === 'basket' && !t.want).map(t => t.k);
+          const got = it.tiles.filter(t => t.want && placed[t.k] === 'basket').length;
+          return {ok: bad.length === 0 && got === it.need, bad: bad};
+        },
+      };
+    }
+
+    /* ---------- เกมดูนาฬิกา: ตื่นให้ตรงเวลา ----------
+       เป็นโจทย์ 4 ตัวเลือกธรรมดา แค่มีหน้าปัดนาฬิกาเป็นรูปประกอบ (`it.clock`)
+       ⇒ ใช้ทางตอบเดิมทั้งหมด ไม่ต้องมี verify() ของตัวเอง */
+    function clockMech(){
+      const say = (h, m) => (m === 0 ? h + ' โมง' : (m === 30 ? h + ' โมงครึ่ง' : h + ' โมง ' + m + ' นาที'));
+      return {
+        id:'clock', name:'ตื่นให้ตรงเวลา', fam:'family', only:'family',
+        gen(rng, diff){
+          const out = [];
+          for(let r = 0; r < MIN_Q; r++){
+            const h = 1 + ((rng() * 12) | 0);
+            const m = diff.tier <= 2 ? 0
+                    : (diff.tier <= 4 ? (rng() < .5 ? 0 : 30) : [0, 5, 15, 30, 45][(rng() * 5) | 0]);
+            const ans = say(h, m);
+            const opts = [ans];
+            let guard = 0;
+            while(opts.length < 4 && guard++ < 60){
+              const dh = ((h + 11 + ((rng() * 3) | 0)) % 12) + 1;
+              const dm = diff.tier <= 2 ? 0 : [0, 30, 15, 45][(rng() * 4) | 0];
+              const v = say(dh, dm);
+              if(opts.indexOf(v) < 0) opts.push(v);
+            }
+            while(opts.length < 4) opts.push(say(((h + opts.length) % 12) + 1, m));
+            const order = shuffled(rng, opts);
+            out.push({kind:'clock', clock:{h:h, m:m}, q:'นาฬิกาบอกเวลาว่ากี่โมง?',
+                      emoji:'', show:'', choices:order, correct:order.indexOf(ans),
+                      explain:'ตอนนี้คือ ' + ans + ' พอดี'});
+          }
+          return out;
+        },
+      };
+    }
     const MECHS = {
       /* ---- ตอบคำถาม: ดึงโจทย์จริงจาก CATS ตามระดับชั้น + เอียงไปทางวิชาที่เข้ากับร้าน ---- */
       quiz: {
@@ -422,9 +754,12 @@
           /* รวมคำถามจาก 2-3 หมวดที่เข้าธีม แล้วสุ่มมา qN ข้อ (ไม่ซ้ำข้อ) */
           const cats = pickMany(rng, pool, Math.min(3, pool.length));
           let bank = [];
-          cats.forEach(c => { bank = bank.concat(c.questions); });
+          cats.forEach(c => { c.questions.forEach((q, i) => bank.push({q:q, ord:i})); });
           const qs = pickMany(rng, bank, Math.min(diff.qN, bank.length));
-          return qs.map(q => normQuiz(rng, q));
+          /* ⚠ **เรียงตามลำดับที่โจทย์อยู่ในคลัง** — คลัง CATS เขียนไล่ง่าย→ยากอยู่แล้ว
+             จึงได้ "ไล่ระดับความยากภายในเควสต์" ฟรีโดยไม่ต้องติดป้ายความยากใหม่ทั้งคลัง */
+          qs.sort((a, b) => a.ord - b.ord);
+          return qs.map(x => normQuiz(rng, x.q));
         },
       },
       /* ---- นับของ: สร้างโจทย์เองทั้งหมด ไม่ง้อคลัง (จึงเป็นตัวสำรองกันทางตันด้วย) ---- */
@@ -434,17 +769,18 @@
           const set = ITEM_SETS[themeOf(def).items] || ITEM_SETS.town;
           const out = [];
           for(let k=0; k<diff.qN; k++){
-            const kinds = pickMany(rng, set, diff.kinds);
-            const nums  = kinds.map(() => 2 + ((rng() * (diff.countMax - 2)) | 0));
+            const dk = stepDiff(diff, k, diff.qN);      /* ข้อแรกของน้อย/ชนิดเดียว → ข้อท้ายเต็มระดับชั้น */
+            const kinds = pickMany(rng, set, dk.kinds);
+            const nums  = kinds.map(() => 2 + ((rng() * (dk.countMax - 2)) | 0));
             let cells = [];
             kinds.forEach((e, i) => { for(let j=0; j<nums[i]; j++) cells.push(e); });
             cells = shuffled(rng, cells);
             let qText, ans;
-            if(diff.kinds === 1 || rng() < .55){                 /* นับของชนิดเดียว */
+            if(dk.kinds === 1 || rng() < .55){                   /* นับของชนิดเดียว */
               const t = (rng() * kinds.length) | 0;
               qText = 'มี ' + kinds[t] + ' กี่ชิ้น?';
               ans = nums[t];
-            }else if(diff.tier >= 5 && rng() < .5){              /* ต่างกันกี่ชิ้น (ป.5-6) */
+            }else if(dk.tier >= 5 && rng() < .5){                /* ต่างกันกี่ชิ้น (ป.5-6) */
               let a = 0, b = 1;
               if(nums[b] > nums[a]){ const t=a; a=b; b=t; }
               qText = 'มี ' + kinds[a] + ' มากกว่า ' + kinds[b] + ' อยู่กี่ชิ้น?';
@@ -470,12 +806,33 @@
         },
       },
       /* ---- เฟส 4B: จัดของลงถัง (เกมครอบครัว) — สร้างโจทย์เองทั้งหมด ไม่ง้อคลัง ---- */
-      tidy:    sortMech('tidy'),
-      laundry: sortMech('laundry'),
+      tidy:     sortMech('tidy'),
+      laundry:  sortMech('laundry'),
+      cook:     orderMech('cook'),
+      routine:  orderMech('routine'),
+      /* คลังจากเกมหน้าหลัก: เรียงลำดับตามหลักสูตร (ORDER_SETS) + จัดหมวดของ (EF_CATEGORIES) */
+      orderlearn: orderMech('routine', mainOrderSets),
+      sortcat:    sortMech('tidy', efSortSet),
+      petfeed:  petFeedMech(),
+      budget:   budgetMech(),
+      shopping: shoppingMech(),
+      clock:    clockMech(),
+      dinner:   dinnerMech(),
+      market:   marketMech(),
     };
     const MECH_IDS = Object.keys(MECHS);
-    /* กลไกที่ **เควสต์ครอบครัวเท่านั้น**สุ่มได้ — NPC/กระดานยังเป็น quiz/count เหมือนเดิม */
-    const FAM_MECHS = ['quiz', 'count', 'tidy', 'laundry'];
+    /* กลไกที่ **เควสต์ครอบครัวเท่านั้น**สุ่มได้ — NPC/กระดานยังเป็น quiz/count เหมือนเดิม
+       (มินิเกม 8 แบบของเฟส 4B + quiz/count ที่ใช้ตั้งแต่เฟส 4A) */
+    const FAM_MECHS = ['quiz', 'count', 'tidy', 'laundry', 'cook', 'routine',
+                       'petfeed', 'budget', 'shopping', 'clock', 'dinner', 'market',
+                       'orderlearn', 'sortcat'];
+    /* เควสต์ "เดินไปทำ" — ต้องเช็คก่อนว่าเล่นได้จริงในบ้านหลังนี้ ไม่งั้นเด็กรับงานแล้วทำไม่ได้ (ห้ามมี dead end) */
+    function famMechOk(m){
+      if(m === 'dinner') return !!hasIndoorSeat();      /* ไม่มีโต๊ะ/เก้าอี้ในบ้าน = ไปนั่งไม่ได้ */
+      if(m === 'orderlearn') return mainOrderSets(gradeId()).length >= 2;   /* ชั้นนี้ไม่มีคลัง = ไม่แจก */
+      if(m === 'sortcat') return !!efSortSet();
+      return true;
+    }
 
     /* ================= สร้างชุดโจทย์ 1 เควสต์ ================= */
     /* spec = {src:'npc'|'board', key, npc, mech, fam, chal} — เปิดกี่ครั้งก็ได้ชุดเดิม (seed คงที่) */
@@ -496,7 +853,8 @@
       const f = s.fam || {};
       if(!f.who) return null;
       const done = f.st === 'done';
-      return { src:'family', key:'fam', who:f.who, npc:'', mech: MECHS[f.m] ? f.m : 'quiz',
+      const fm = (MECHS[f.m] && famMechOk(f.m)) ? f.m : 'quiz';
+      return { src:'family', key:'fam', who:f.who, npc:'', mech: fm,
                fam:'family', chal: done ? false : rollChal('fam'),
                done: done, stars: f.stars | 0 };
     }
@@ -532,6 +890,45 @@
       return { src:'board', key:'b' + i, idx:i, npc:b.npc, mech: MECHS[b.m] ? b.m : 'quiz',
                fam:'board', chal: done ? false : rollChal('b' + i), done: done };
     }
+    /* ---------- กันโจทย์ซ้ำภายในเควสต์เดียว (ผู้ใช้แจ้ง 2026-08-10) ----------
+       กลไกที่ "สุ่มสร้างโจทย์เอง" (count · มินิเกมทุกตัว) มีโอกาสออกโจทย์เหมือนเดิมซ้ำในรอบเดียว
+       เพราะแต่ละข้อสุ่มอิสระกัน ⇒ ตรงนี้ตัดซ้ำแล้วสุ่มเพิ่มจนครบ
+       ⚠ ถ้าคลังเล็กจนหาไม่ครบจริงๆ **ยอมให้เควสต์สั้นลง ดีกว่าให้เด็กเจอโจทย์เดิมซ้ำ**
+         (เกณฑ์ดาวคิดจาก run.items.length อยู่แล้ว จึงยืดตามเองไม่มีใครเสียเปรียบ) */
+    function itemSig(it){
+      if(!it) return '';
+      if(it.kind === 'sort'){
+        return 's|' + (it.q || '') + '|' + (it.bins || []).map(b => b.id).join(',')
+             + '|' + (it.tiles || []).map(t => t.e + '>' + t.bin).slice().sort().join(',')
+             + '|' + (it.budget == null ? '' : it.budget)
+             + '|' + (it.list || []).map(x => x.e).slice().sort().join(',');
+      }
+      return 'q|' + (it.q || '') + '|' + (it.show || '') + '|' + (it.emoji || '') + '|' + (it.img || '')
+           + '|' + (it.pattern || []).join(',')
+           + '|' + (it.clock ? it.clock.h + ':' + it.clock.m : '')
+           + '|' + (it.choices || []).join('~');
+    }
+    function uniqueRun(mech, rng, diff, def, gid, first){
+      const want = first.length;
+      const out = [], seen = {};
+      const take = batch => {
+        for(let i = 0; i < batch.length && out.length < want; i++){
+          const sg = itemSig(batch[i]);
+          if(seen[sg]) continue;
+          seen[sg] = 1;
+          out.push(batch[i]);
+        }
+      };
+      take(first);
+      let tries = 0;
+      while(out.length < want && tries++ < 10){
+        const more = mech.gen(rng, diff, def, gid);
+        if(!more || !more.length) break;
+        take(more);
+      }
+      return out.length ? out : first;
+    }
+
     /* สร้าง "รอบเล่น" จริง — โจทย์ผูกกับ seed ของเควสต์ ⇒ ปิดแล้วเปิดใหม่ได้โจทย์เดิม ไม่ใช่สุ่มใหม่ */
     function buildRun(spec){
       const s = state();
@@ -539,11 +936,14 @@
       /* โจทย์ท้าทาย = ระดับชั้นถัดไป (ข้อ 24) — เลือกเฉพาะตอนประตูเปิดแล้วและสุ่มติด */
       const chal = spec.chal && gradeIndex(own) < GR.length - 1;
       const gid  = chal ? gradeAt(gradeIndex(own) + 1) : own;
-      const diff = difficulty(gid);
-      const def  = defById[spec.npc] || {id:spec.npc || '', job:'villager'};
       const rng  = rngFrom(fnv(childId() + '|' + s.d + '|' + spec.key + '|run'));
+      /* **จำนวนข้อสุ่ม 5-10 ต่อเควสต์** (ผู้ใช้สั่ง 2026-08-10) — seed เดิม ⇒ เปิดใหม่ได้ชุดเดิมเสมอ
+         ⚠ จำนวนข้อ **ไม่มีผลกับเงิน** ค่าตอบแทนคิดต่อเควสต์เหมือนเดิมทุกประการ (ดู coinsFor) */
+      const diff = Object.assign({}, difficulty(gid), {qN: 5 + ((rng() * 6) | 0)});
+      const def  = defById[spec.npc] || {id:spec.npc || '', job:'villager'};
       let items  = MECHS[spec.mech].gen(rng, diff, def, gid);
       if(!items || !items.length) items = MECHS.count.gen(rng, diff, def, gid);
+      items = uniqueRun(MECHS[spec.mech], rng, diff, def, gid, items);   /* ห้ามมีโจทย์ซ้ำในรอบเดียว */
       return { spec, def, gid, chal, diff, items, idx:0, wrong:0, missed:{}, over:false };
     }
     /* ส่งคำตอบ 1 ครั้ง (ทุกกลไก) — คืน {ok, done, bad}
@@ -736,10 +1136,10 @@
       opt = opt || {};
       const gid  = opt.gid || gradeId();
       const mech = MECHS[opt.mech] ? opt.mech : 'quiz';
-      const diff = difficulty(gid);
       const seed = (opt.seed == null) ? ((Math.random() * 1e9) | 0) : opt.seed;
       const rng  = rngFrom(fnv(['t', gid, mech, opt.catId || '', opt.qIdx == null ? '' : opt.qIdx,
                                 opt.theme || '', seed].join('|')));
+      const diff = Object.assign({}, difficulty(gid), {qN: 5 + ((rng() * 6) | 0)});
       const def  = {id:'', job:'villager',
                     themeKey: ITEM_SETS[opt.theme] ? opt.theme : 'town',
                     subjKey: ALL_SUBJ};
@@ -754,6 +1154,7 @@
       }
       if(!items || !items.length) items = MECHS[mech].gen(rng, diff, def, gid);
       if(!items || !items.length) items = MECHS.count.gen(rng, diff, def, gid);
+      items = uniqueRun(MECHS[mech], rng, diff, def, gid, items);
       const spec = {src:'test', key:'test', npc:'', mech:mech, fam:'A', chal:false,
                     test:true, title: opt.title || '🧪 ทดสอบคำถาม'};
       return {spec, def, gid, chal:false, diff, items, idx:0, wrong:0, missed:{}, over:false,
@@ -834,14 +1235,14 @@
 
     return {
       /* ค่าคงที่ให้ UI/เทสอ้างอิงได้ ไม่ต้องเดาเลข */
-      DAY_CAP, NPC_PER_DAY, BOARD_N, BOARD_BONUS, FAM_BASE, STAR_MUL,
+      DAY_CAP, NPC_PER_DAY, BOARD_N, BOARD_BONUS, FAM_BASE, STAR_MUL, MIN_Q,
       CHAL_NEED, CHAL_ACC, CHAL_KEEP, CHAL_MISS, CHAL_RATE, CHAL_MUL,
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
       STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
-      buildRun, answer, submit, starsOf, coinsFor, finish,
-      FAM_MECHS, SORT_SETS, catalogSort,
+      buildRun, answer, submit, starsOf, coinsFor, finish, itemSig,
+      FAM_MECHS, SORT_SETS, ORDER_POOLS, PET_FACE, MARKET_GOODS, catalogSort, famMechOk,
       /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
       catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
       ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */

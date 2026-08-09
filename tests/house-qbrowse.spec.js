@@ -56,13 +56,16 @@ test('สวิตช์ QB_FEATURE_OFF เปิดอยู่: ปุ่ม �
   expect(errors).toEqual([]);
 });
 
-test('เปิดจากเมนูเฟือง: มีแท็บครบทุกระดับชั้น + 2 กลไก และเปิดมาที่ชั้นของเด็กคนนี้', async ({ page }) => {
+test('เปิดจากเมนูเฟือง: มีแท็บครบทุกระดับชั้นและครบทุกกลไก และเปิดมาที่ชั้นของเด็กคนนี้', async ({ page }) => {
   const errors = await openBrowser(page);
   expect(errors).toEqual([]);
 
   const nGrades = await page.evaluate(() => GRADES.length);
   await expect(page.locator('#hqb-grades .hqb-chip')).toHaveCount(nGrades);
-  await expect(page.locator('#hqb-mechs .hqb-chip')).toHaveCount(2);
+  /* ⚠ **ต้องมีแท็บครบทุกกลไกที่เล่นได้จริง** — เพิ่มกลไกใหม่ใน MECHS แล้วลืมเติม MECH_TABS
+     = เทสโจทย์กลไกนั้นไม่ได้เลย (เดิม hardcode ไว้ 2 แท็บ พอเฟส 4B เพิ่มเป็น 14 ก็ไม่มีใครเตือน) */
+  const nMech = await page.evaluate(() => window.HouseQuests.MECH_IDS.length);
+  await expect(page.locator('#hqb-mechs .hqb-chip')).toHaveCount(nMech);
   /* เด็กคนนี้เป็น ป.2 ⇒ ต้องเปิดมาที่ ป.2 ไม่ใช่แท็บแรกเสมอ */
   await expect(page.locator('#hqb-grades .hqb-chip.on')).toHaveText(/ป\.2/);
   await expect(page.locator('#hqb-mechs .hqb-chip.on')).toHaveText(/ตอบคำถาม/);

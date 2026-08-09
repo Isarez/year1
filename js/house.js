@@ -308,6 +308,11 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
                   : (typeof resolveGradeForChild==='function' ? resolveGradeForChild(activeChild) : 'prep-p1'),
       npcDefs: NPC_DEFS,
       dayKey: ()=> questDayKey(),
+      /* ตารางอาหารสัตว์ (เกม "เตือนเรื่องสัตว์" เฟส 4B) — ของจริงอยู่ที่ js/house-pet-care.js
+         อ่านแบบ lazy เพราะ PETCARE ถูกสร้างทีหลังบรรทัดนี้ (gen() เรียกตอนเล่นจริงซึ่งช้ากว่ามาก) */
+      petFoods: ()=> (PETCARE ? PETCARE.FOOD : []),
+      /* เควสต์ "ไปนั่งกินข้าวพร้อมหน้า" ต้องมีโต๊ะ/เก้าอี้ในบ้านก่อน ไม่งั้นรับงานแล้วทำไม่ได้ */
+      hasIndoorSeat: ()=> hasIndoorSeat(),
     })
   : null;
 /* การดูแลสัตว์เลี้ยงเฟส 3B (js/house-pet-care.js โหลดก่อนไฟล์นี้) — ความหิว/อาหาร/ป่วย/ค่ารักษา
@@ -8141,6 +8146,11 @@ function questPlayOpen(){ const el = $('house-qz'); return !!el && !el.hidden; }
 function closeQuestPanel(){
   const el = $('house-qz'); if(el) el.hidden = true;
   qRun = null; qLock = false; qzNpcId = null;   /* ปล่อยให้คนออกโจทย์เดินต่อได้ตามปกติ */
+  /* ปิดกลางกระดานมินิเกม → ถอด listener ลาก-วางที่ผูกไว้ที่ window ทิ้งด้วย ไม่งั้นค้างสะสม */
+  if(qSortOff){ qSortOff(); qSortOff = null; }
+  if(qDrag){ const b = qDrag.b; qDrag = null;
+             if(b){ b.classList.remove('drag'); b.style.left = b.style.top = b.style.width = b.style.height = '';
+                    if(b.parentNode === document.body) b.parentNode.removeChild(b); } }
   const cb = qzOnClose; qzOnClose = null;
   if(cb) cb();
 }
@@ -8212,7 +8222,7 @@ function startQuest(spec){
   if(!QUESTS || !spec) return;
   if(QUESTS.chalReady()){ offerChallenge(()=>startQuest(spec)); return; }
   qRun = QUESTS.buildRun(spec);
-  qLock = false;
+  qLock = false; qMemShown = {};
   qzShow();
   renderQuestStep();
 }
@@ -8234,7 +8244,13 @@ function renderQuestStep(){
   const it = qRun.items[qRun.idx];
   /* เฟส 4B: มินิเกมครอบครัวไม่ใช่โจทย์ 4 ตัวเลือก ⇒ แยกทางวาดตั้งแต่ตรงนี้
      **เพิ่มมินิเกมใหม่ให้มาต่อแถวที่นี่** (ตัวที่ไม่มี `it.kind` = โจทย์ตอบคำถามแบบเดิม) */
-  if(it.kind === 'sort'){ renderSortStep(st, it); return; }
+  if(it.kind === 'walk'){ renderWalkStep(st, it); return; }
+  if(it.kind === 'sort'){
+    /* เกมจำรายการของ: โชว์รายการก่อน แล้วค่อยให้หยิบ */
+    if(it.memory && !qMemShown[qRun.idx]){ renderMemoryList(st, it); return; }
+    renderSortStep(st, it); return;
+  }
+  if(it.kind === 'clock') renderClockFace(st, it);   /* วาดหน้าปัดแล้วไปต่อทางโจทย์ 4 ตัวเลือกปกติ */
   /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
@@ -8283,70 +8299,332 @@ function renderQuestStep(){
   st.appendChild(wrap);
 }
 /* ================= เฟส 4B — กระดาน "จัดของลงถัง" =================
-   กติกาหน้าจอ: **แตะของ 1 ชิ้น → แตะถัง** (ไม่ใช่ลาก)
-   เหตุผล: เด็ก 5 ขวบบนแท็บเล็ตลากพลาดง่ายมาก และแตะคือท่าเดียวกับที่เขาใช้ตอบคำถามอยู่แล้ว
-           ทั้งเควสต์จึงเป็นท่าเดียวกันหมด · แตะของที่อยู่ในถังแล้ว = เอากลับลงถาด (แก้ได้ตลอด)
+   ท่าเล่น = **ลากของไปวางในถัง (drag & drop)** ผู้ใช้สั่งเปลี่ยนจาก "แตะ → แตะ" เมื่อ 2026-08-10
+   ⚠ ใช้ pointer event เขียนเอง **ห้ามใช้ HTML5 drag-and-drop** (`draggable`/`dragstart`) เด็ดขาด —
+     API นั้นไม่ทำงานบนจอสัมผัส ซึ่งคือเครื่องหลักที่เด็กเล่น (iPad)
+   ⚠ ตัวที่ลากต้อง `pointer-events:none` ระหว่างลาก ไม่งั้น `elementFromPoint()` เจอแต่ตัวมันเอง
+     เลยไม่มีวันรู้ว่าปล่อยลงถังไหน
+   ⚠ ยังเก็บทาง "แตะเลือก → แตะถัง" ไว้เป็นทางสำรอง (ขยับไม่ถึง 6px = นับเป็นแตะ) —
+     เด็กที่ลากไม่ไหวต้องมีทางไปต่อเสมอ (กติกาเหล็กข้อ 1 ห้ามมี dead end)
    วางครบทุกชิ้นเมื่อไหร่ = ตรวจให้เอง ไม่ต้องมีปุ่ม "ส่งคำตอบ" ให้เด็กหาว่ากดตรงไหน */
-let qSortSel = '';          /* ชิ้นที่กำลังเลือกอยู่ (key) */
+/* ================= เควสต์ที่ต้อง "เดินไปทำ" (เฟส 4B) =================
+   family-time = ไปนั่งที่โต๊ะในบ้าน · shopping-list = เดินไปตลาดแล้วซื้อของตามที่แม่สั่ง
+   ⚠ รับงานแล้ว **การ์ดต้องปิด** ให้เด็กเดินได้ ⇒ เก็บรอบเล่นไว้ที่ walkQuest แล้วค่อยเปิดกลับ
+     ตอนไปถึง (closeQuestPanel() ล้าง qRun ทิ้งเสมอ จึงต้องเก็บไว้ก่อนเรียก) */
+let walkQuest = null;          /* {run, target:'table'|'market'} */
+/* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม — อ่านจากของที่เด็กวางไว้จริง (ไม่นับของนอกบ้าน) */
+function hasIndoorSeat(){
+  const d = loadHouseData() || {};
+  const list = (d.decor && d.decor.in) || [];
+  return list.some(rec=>{
+    const it = FURN.byId[rec.id];
+    return it && (it.cat === 'table' || it.cat === 'seat');
+  });
+}
+/* การ์ดรับงานเดิน: บอกงาน (+ รายการของถ้ามี) แล้วปิดการ์ดให้เด็กออกไปเดิน */
+function renderWalkStep(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = it.q;
+  st.appendChild(line);
+  if(it.list && it.list.length){
+    const row = document.createElement('div'); row.className = 'hqz-tray hqz-memlist';
+    it.list.forEach(x=>{
+      const b = document.createElement('div'); b.className = 'hqz-tile hqz-tile-lab';
+      const em = document.createElement('span'); em.className = 'hqz-tile-em'; em.textContent = x.e;
+      const tx = document.createElement('span'); tx.className = 'hqz-tile-tx'; tx.textContent = x.label;
+      b.appendChild(em); b.appendChild(tx);
+      row.appendChild(b);
+    });
+    st.appendChild(row);
+  }
+  const row2 = document.createElement('div'); row2.className = 'hqz-row';
+  row2.appendChild(qzBtn(it.go || 'ไปเลย!', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    const run = qRun;
+    walkQuest = {run: run, target: it.target};
+    closeQuestPanel();                       /* ⚠ ล้าง qRun ทิ้ง จึงต้องคว้า run ไว้ก่อนบรรทัดนี้ */
+    walkHint();
+  }));
+  st.appendChild(row2);
+}
+/* ป้ายบอกว่าตอนนี้ต้องไปไหน — ใช้แถบคำใบ้เดิมของโหมดบ้าน ไม่สร้าง UI ใหม่ให้เด็กงง */
+function walkHint(){
+  if(!walkQuest) return;
+  const it = walkQuest.run.items[walkQuest.run.idx];
+  const hint = $('house-hint');
+  if(hint){
+    hint.textContent = '📋 ' + (it && it.hint ? it.hint : 'ไปทำงานที่คุณแม่ฝากไว้กันนะ');
+    showHint();
+  }
+  if(typeof showToast==='function') showToast('📋', (it && it.hint) || 'ไปทำงานที่ฝากไว้กันนะ');
+}
+/* ไปถึงเป้าหมายแล้ว → เปิดรอบเล่นกลับมาทำต่อ (ตลาดมีกระดานซื้อของต่อ · โต๊ะจบเลย) */
+/* เรียกทุกครั้งที่ตัวละครก้าวถึงช่องใหม่ในฉากนอกบ้าน — ถึงตลาดแล้วเปิดกระดานซื้อของให้เลย */
+function walkQuestTileCheck(){
+  if(!walkQuest || walkQuest.target !== 'market') return;
+  if(hScene !== 'out' || hMode !== 'world' || editMode) return;
+  if(inMarket(hChar.tile.x, hChar.tile.z)) walkQuestArrive('market');
+}
+function walkQuestArrive(target){
+  if(!walkQuest || walkQuest.target !== target) return false;
+  const run = walkQuest.run;
+  walkQuest = null;
+  qRun = run; qLock = false;
+  const r = QUESTS.submit(qRun, true);
+  if(r.done){ qzShow(); finishQuest(); return true; }
+  qzShow();
+  renderQuestStep();
+  return true;
+}
+/* หน้าปัดนาฬิกาการ์ตูน (เกม "ตื่นให้ตรงเวลา") — วาดเป็น SVG ให้เข้าธีมเด็ก 5 ขวบ
+   เข็มสั้น = ชั่วโมง (เดินตามนาทีด้วย) · เข็มยาว = นาที · ตัวเลข 12/3/6/9 ตัวใหญ่อ่านง่าย */
+function renderClockFace(st, it){
+  const h = it.clock.h % 12, m = it.clock.m;
+  const ha = (h + m / 60) * 30 - 90, ma = m * 6 - 90;
+  const R = 78, C = 92;
+  const hand = (ang, len, w, col) => {
+    const x = C + Math.cos(ang * Math.PI / 180) * len, y = C + Math.sin(ang * Math.PI / 180) * len;
+    return '<line x1="' + C + '" y1="' + C + '" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '"'
+         + ' stroke="' + col + '" stroke-width="' + w + '" stroke-linecap="round"/>';
+  };
+  let ticks = '';
+  for(let i = 0; i < 12; i++){
+    const a = i * 30 - 90;
+    const x = C + Math.cos(a * Math.PI / 180) * (R - 11), y = C + Math.sin(a * Math.PI / 180) * (R - 11);
+    ticks += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.4" fill="#E0B072"/>';
+  }
+  let nums = '';
+  [[12, 0], [3, 90], [6, 180], [9, 270]].forEach(([n, a])=>{
+    const x = C + Math.cos((a - 90) * Math.PI / 180) * (R - 27);
+    const y = C + Math.sin((a - 90) * Math.PI / 180) * (R - 27);
+    nums += '<text x="' + x.toFixed(1) + '" y="' + (y + 8).toFixed(1) + '" text-anchor="middle"'
+          + ' font-size="21" font-weight="900" fill="#8A5A2B">' + n + '</text>';
+  });
+  const wrap = document.createElement('div');
+  wrap.className = 'hqz-clock';
+  wrap.innerHTML = '<svg viewBox="0 0 184 184" role="img" aria-label="หน้าปัดนาฬิกา">'
+    + '<circle cx="' + C + '" cy="' + C + '" r="' + R + '" fill="#FFF6E6" stroke="#F0C58A" stroke-width="7"/>'
+    + ticks + nums
+    /* ⚠ วาดเข็มยาว (นาที) ก่อน แล้วค่อยเข็มสั้น (ชั่วโมง) — **เข็มสั้นต้องอยู่หน้า**
+       กติกาเดียวกับเกมนาฬิกาวิเศษในหน้าหลัก จะได้อ่านนาฬิกาแบบเดียวกันทั้งแอป */
+    + hand(ma, 60, 6, '#8A5A2B') + hand(ha, 40, 9, '#E07A3F')
+    + '<circle cx="' + C + '" cy="' + C + '" r="7" fill="#8A5A2B"/></svg>';
+  st.appendChild(wrap);
+}
+/* เกมจำรายการของ: หน้าแรกโชว์ของที่ต้องซื้อ กดปุ่ม (หรือหมดเวลา) แล้วค่อยไปหน้าหยิบของ */
+let qMemShown = {};
+function renderMemoryList(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = 'คุณแม่สั่งของ ' + it.list.length + ' อย่าง จำให้ได้นะ';
+  const row = document.createElement('div'); row.className = 'hqz-tray hqz-memlist';
+  it.list.forEach(x=>{
+    const b = document.createElement('div'); b.className = 'hqz-tile hqz-tile-lab';
+    b.innerHTML = '<span class="hqz-tile-em"></span><span class="hqz-tile-tx"></span>';
+    b.querySelector('.hqz-tile-em').textContent = x.e;
+    b.querySelector('.hqz-tile-tx').textContent = x.label;
+    row.appendChild(b);
+  });
+  const btn = qzBtn('จำได้แล้ว! 👍', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    go();
+  });
+  const brow = document.createElement('div'); brow.className = 'hqz-row'; brow.appendChild(btn);
+  st.appendChild(line); st.appendChild(row); st.appendChild(brow);
+  let done = false;
+  function go(){
+    if(done) return;
+    done = true;
+    clearTimeout(tid);
+    qMemShown[qRun.idx] = 1;
+    renderQuestStep();
+  }
+  /* หมดเวลาแล้วไปต่อเอง — เด็กที่ยังอ่านปุ่มไม่ออกก็ไม่ค้างอยู่หน้านี้ */
+  const tid = setTimeout(go, it.showFor || 4000);
+}
+let qSortSel = '';          /* ชิ้นที่กำลังเลือกอยู่ด้วยการแตะ (key) */
 let qSortPut = null;        /* {tileKey: binId} ของกระดานนี้ */
+let qDrag = null;           /* สถานะการลากที่ทำอยู่ */
 function renderSortStep(st, it){
-  qSortSel = ''; qSortPut = {};
+  qSortSel = ''; qSortPut = {}; qDrag = null;
   const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = it.q;
   st.appendChild(q);
 
   const wrap = document.createElement('div'); wrap.className = 'hqz-sort';
   const tray = document.createElement('div'); tray.className = 'hqz-tray';
   const bins = document.createElement('div');
-  bins.className = 'hqz-bins' + (it.bins.length >= 4 ? ' hqz-bins4' : '');
+  bins.className = 'hqz-bins'
+    + (it.layout === 'slots' ? ' hqz-slots' : '')
+    + (it.basket ? ' hqz-basket' : '')
+    + (!it.layout && !it.basket && it.bins.length >= 4 ? ' hqz-bins4' : '');
+  const tiles = {};
+  /* ยอดรวมในตะกร้า (เกมใช้เงินให้พอ) — ต้องเห็นสดๆ ระหว่างเลือก ไม่ใช่รู้ตอนตรวจ */
+  const totalEl = document.createElement('div');
+  totalEl.className = 'hqz-total';
+  totalEl.hidden = !(it.budget != null);
+  function paintTotal(){
+    if(it.budget == null) return;
+    const inb = it.tiles.filter(t => qSortPut[t.k] === 'basket');
+    const sum = inb.reduce((a, t) => a + t.price, 0);
+    totalEl.innerHTML = '';
+    totalEl.appendChild(document.createTextNode('ในตะกร้า ' + inb.length + '/' + it.need
+                                                + ' อย่าง · รวม '));
+    const ic = document.createElement('i'); ic.className = 'hs-coin';
+    totalEl.appendChild(ic);
+    totalEl.appendChild(document.createTextNode(sum + ' / ' + it.budget));
+    totalEl.classList.toggle('over', sum > it.budget);
+  }
 
+  /* ปล่อยของลงที่ตรงพิกัดนี้ — คืน true ถ้าลงถังสำเร็จ */
+  function dropAt(b, cx, cy){
+    const under = document.elementFromPoint(cx, cy);
+    const bin = under && under.closest ? under.closest('.hqz-bin') : null;
+    if(bin && bin.dataset.bin){
+      qSortPut[b.dataset.k] = bin.dataset.bin;
+      b.classList.add('in');
+      bin.querySelector('.hqz-bin-slot').appendChild(b);
+      paintTotal();
+      return true;
+    }
+    delete qSortPut[b.dataset.k];      /* ปล่อยนอกถัง = กลับลงถาด (เอาของออกจากถังก็ทางนี้) */
+    b.classList.remove('in');
+    tray.appendChild(b);
+    paintTotal();
+    return false;
+  }
+  function clearOver(){
+    Array.from(bins.querySelectorAll('.hqz-bin.over')).forEach(e=>e.classList.remove('over'));
+  }
   function tile(t){
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'hqz-tile'; b.dataset.k = t.k; b.textContent = t.e;
-    b.addEventListener('click', ()=>{
-      if(qLock) return;
-      if(qSortPut[t.k]){                       /* อยู่ในถังอยู่แล้ว → เอากลับลงถาด */
-        delete qSortPut[t.k];
-        tray.appendChild(b);
-        b.classList.remove('in');
-        if(typeof playClick==='function') playClick();
-        return;
+    b.type = 'button'; b.className = 'hqz-tile'; b.dataset.k = t.k;
+    if(t.label || t.price != null){
+      /* ของที่มีชื่อ/ราคากำกับ (เรียงขั้นตอน · อาหารสัตว์ · ซื้อของ) — เด็กต้องอ่านได้ว่าคืออะไร */
+      b.classList.add('hqz-tile-lab');
+      const em = document.createElement('span'); em.className = 'hqz-tile-em'; em.textContent = t.e;
+      const tx = document.createElement('span'); tx.className = 'hqz-tile-tx';
+      tx.textContent = t.label;
+      b.appendChild(em); b.appendChild(tx);
+      if(t.price != null){
+        /* ราคาโชว์เป็น "เหรียญ" ชุดเดียวกับทั้งเกม — ห้ามใช้ ฿ หรือ emoji 🪙
+           (เด็ก 5 ขวบยังอ่านสัญลักษณ์เงินไม่ออก · 🪙 บางเครื่องไม่มี glyph) */
+        const pr = document.createElement('span'); pr.className = 'hqz-tile-pr';
+        const ic = document.createElement('i'); ic.className = 'hs-coin';
+        pr.appendChild(ic);
+        pr.appendChild(document.createTextNode(String(t.price)));
+        b.appendChild(pr);
       }
-      const on = qSortSel === t.k;
-      Array.from(wrap.querySelectorAll('.hqz-tile.sel')).forEach(e=>e.classList.remove('sel'));
-      qSortSel = on ? '' : t.k;
-      if(!on) b.classList.add('sel');
-      if(typeof playClick==='function') playClick();
+    }else{
+      b.textContent = t.e;
+    }
+    b.addEventListener('pointerdown', e=>{
+      if(qLock) return;
+      e.preventDefault();
+      qDrag = {b, id:e.pointerId, x0:e.clientX, y0:e.clientY, on:false};
     });
     return b;
   }
-  const tiles = {};
   it.tiles.forEach(t=>{ const b = tile(t); tiles[t.k] = b; tray.appendChild(b); });
 
   it.bins.forEach(bn=>{
-    const box = document.createElement('div'); box.className = 'hqz-bin';
+    const box = document.createElement('div'); box.className = 'hqz-bin'; box.dataset.bin = bn.id;
     const head = document.createElement('div'); head.className = 'hqz-bin-head';
     const ic = document.createElement('span'); ic.className = 'hqz-bin-ic'; ic.textContent = bn.emoji;
     const nm = document.createElement('span'); nm.className = 'hqz-bin-name'; nm.textContent = bn.name;
     head.appendChild(ic); head.appendChild(nm);
     const slot = document.createElement('div'); slot.className = 'hqz-bin-slot';
     box.appendChild(head); box.appendChild(slot);
-    box.addEventListener('click', e=>{
+    /* ทางสำรอง: แตะเลือกของไว้แล้วมาแตะถัง */
+    box.addEventListener('click', ()=>{
       if(qLock || !qSortSel) return;
-      if(e.target.closest('.hqz-tile')) return;      /* แตะของในถัง = เอากลับ ไม่ใช่วางซ้ำ */
       const b = tiles[qSortSel];
       if(!b) return;
       qSortPut[qSortSel] = bn.id;
       b.classList.remove('sel'); b.classList.add('in');
       slot.appendChild(b);
       qSortSel = '';
+      paintTotal();
       if(typeof playClick==='function') playClick();
-      if(!tray.querySelector('.hqz-tile')) checkSortBoard(it, tray, tiles);
+      afterPlace();
     });
     bins.appendChild(box);
   });
   wrap.appendChild(tray); wrap.appendChild(bins);
+  if(it.budget != null) wrap.appendChild(totalEl);
   st.appendChild(wrap);
+  paintTotal();
+  /* ⚠ เกมตะกร้า (ซื้อของ/จำของ) **ไม่ได้ใช้ของทุกชิ้น** ⇒ ไม่มีจังหวะ "ถาดว่าง" ให้ตรวจอัตโนมัติ
+     ต้องมีปุ่มยืนยันของตัวเอง (เกมจัดของ/เรียงลำดับยังตรวจให้เองเหมือนเดิม ไม่ต้องกดอะไร) */
+  if(it.basket){
+    const row = document.createElement('div'); row.className = 'hqz-row';
+    row.appendChild(qzBtn('เสร็จแล้ว! 🧺', 'hqz-yes', ()=>{
+      if(qLock) return;
+      if(typeof playClick==='function') playClick();
+      checkSortBoard(it, tray, tiles);
+    }));
+    st.appendChild(row);
+  }
+
+  function afterPlace(){
+    if(it.basket) return;                       /* เกมตะกร้ารอให้เด็กกดปุ่มเอง */
+    if(!tray.querySelector('.hqz-tile')) checkSortBoard(it, tray, tiles);
+  }
+  /* ---- ตัวลากจริง: ฟังที่ window เพราะตัวที่ลากถูกถอดออกจากผังชั่วคราว ---- */
+  function onMove(e){
+    if(!qDrag || e.pointerId !== qDrag.id) return;
+    const b = qDrag.b;
+    if(!qDrag.on){
+      if(Math.hypot(e.clientX - qDrag.x0, e.clientY - qDrag.y0) < 6) return;   /* ยังไม่ถือว่าลาก */
+      qDrag.on = true;
+      const r = b.getBoundingClientRect();
+      qDrag.w = r.width; qDrag.h = r.height;
+      qSortSel = ''; b.classList.remove('sel');
+      b.classList.add('drag');
+      b.style.width = r.width + 'px'; b.style.height = r.height + 'px';
+      document.body.appendChild(b);
+    }
+    b.style.left = (e.clientX - qDrag.w / 2) + 'px';
+    b.style.top  = (e.clientY - qDrag.h / 2) + 'px';
+    clearOver();
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const bin = under && under.closest ? under.closest('.hqz-bin') : null;
+    if(bin) bin.classList.add('over');
+  }
+  function onUp(e){
+    if(!qDrag || e.pointerId !== qDrag.id) return;
+    const d = qDrag; qDrag = null;
+    const b = d.b;
+    clearOver();
+    if(!d.on){                                  /* ขยับไม่ถึง 6px = แตะ (ทางสำรอง) */
+      if(typeof playClick==='function') playClick();
+      if(qSortPut[b.dataset.k]){                /* ของที่อยู่ในถัง → แตะแล้วเอากลับถาด */
+        delete qSortPut[b.dataset.k];
+        b.classList.remove('in'); tray.appendChild(b);
+        paintTotal();
+        return;
+      }
+      const on = qSortSel === b.dataset.k;
+      Array.from(wrap.querySelectorAll('.hqz-tile.sel')).forEach(x=>x.classList.remove('sel'));
+      qSortSel = on ? '' : b.dataset.k;
+      if(!on) b.classList.add('sel');
+      return;
+    }
+    b.classList.remove('drag');
+    b.style.left = b.style.top = b.style.width = b.style.height = '';
+    const ok = dropAt(b, e.clientX, e.clientY);
+    if(typeof playClick==='function') playClick();
+    if(ok) afterPlace();
+  }
+  /* ผูก listener ใหม่ทุกกระดาน แล้วเก็บตัวถอดไว้ที่ตัว wrapper — กระดานถัดไปวาดทับได้เลยไม่ค้าง */
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
+  qSortOff = ()=>{
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+  };
 }
+let qSortOff = null;
 /* วางครบแล้ว → ตรวจ · ผิดเฉพาะชิ้นที่ผิดเด้งกลับถาด ชิ้นที่ถูกอยู่ในถังต่อไป (ไม่ต้องเริ่มใหม่หมด) */
 function checkSortBoard(it, tray, tiles){
   if(!qRun || qLock) return;
@@ -8365,11 +8643,10 @@ function checkSortBoard(it, tray, tiles){
     return;
   }
   if(typeof playCorrect==='function') playCorrect();
-  Array.from(tiles ? Object.keys(tiles) : []).forEach(k=>{
-    const b = tiles[k]; if(b) b.classList.add('right');
-  });
+  Object.keys(tiles).forEach(k=>{ if(tiles[k]) tiles[k].classList.add('right'); });
   setTimeout(()=>{
     qLock = false;
+    if(qSortOff){ qSortOff(); qSortOff = null; }
     if(r.done) finishQuest(); else renderQuestStep();
   }, 620);
 }
@@ -8427,7 +8704,7 @@ function playTestRun(opt, onClose){
   if(!QUESTS) return;
   if(onClose !== undefined) qzOnClose = onClose;
   qRun = QUESTS.testRun(opt);
-  qLock = false;
+  qLock = false; qMemShown = {};
   qzShow();
   renderQuestStep();
 }
@@ -10059,6 +10336,16 @@ const PARENT_ACTS = {
   bath:    {emoji:'🧼', dad:'พ่อทำความสะอาดอยู่นะ',    mom:'แม่ทำความสะอาดอยู่จ้ะ'},
   decor:   {emoji:'🪴', dad:'พ่อจัดของให้สวยหน่อย',     mom:'แม่จัดของให้สวยๆ นะ'},
 };
+/* ท่าประจำระหว่างทำกิจกรรมของพ่อแม่ (เฟส 4B) — base = องศาแขนตั้งต้น · amp/spd = แกว่งแรง/เร็ว
+   alt:true = แขนสลับข้างกัน (งานที่ใช้มือสลับ) · alt:false = ขยับพร้อมกัน (งานที่ใช้สองมือ) */
+const PARENT_POSE = {
+  kitchen: {base:-1.05, amp:.30, spd:.010, alt:false},  /* คนหม้อสองมือ */
+  table:   {base:-0.70, amp:.32, spd:.008, alt:true},   /* หยิบจานวางทีละใบ */
+  seat:    {base:-1.45, amp:.05, spd:.004, alt:false},  /* ถือหนังสืออ่าน เกือบนิ่ง */
+  bed:     {base:-0.85, amp:.40, spd:.007, alt:true},   /* สะบัดผ้าห่มเก็บที่นอน */
+  bath:    {base:-1.20, amp:.28, spd:.017, alt:false},  /* ถูๆ เร็วๆ */
+  decor:   {base:-1.30, amp:.35, spd:.006, alt:true},   /* ยกของสลับมือจัดวาง */
+};
 const PARENT_SPEED = .62;               /* ช้ากว่าชาวบ้านในเมือง — เดินในบ้านไม่ต้องรีบ */
 /* จุดหมายที่ไปทำกิจกรรมได้ = ของในบ้านที่เด็กวางไว้จริง (คืนช่องที่ "ยืนข้างๆ ของ" ได้) */
 function parentActSpots(){
@@ -10156,11 +10443,14 @@ function updateParents(dt, t){
         rg.arms[0].rotation.x = -sN*.7; rg.arms[1].rotation.x = sN*.7;
         rg.rig.position.y = Math.abs(Math.sin(o.sw))*.035;
       }else if(o.busy > 0 && o.actNow){
-        /* กำลังทำกิจกรรม — ขยับแขนทั้งสองข้างเป็นจังหวะ (ทำครัว/จัดของ/ถูพื้น อ่านออกด้วยตา) */
-        const a = Math.sin(t*.009) * .5 - .7;
+        /* กำลังทำกิจกรรม — **ท่าต่างกันตามชนิดงาน** (เฟส 4B · งานที่เฟส 4A ทิ้งไว้)
+           ทำครัวคนไม้พาย · อ่านหนังสือยกมือค้างนิ่งๆ · ถูพื้นถูเร็ว · จัดของยกมือสลับข้าง
+           ⚠ ตัวเลขคือ rotation.x ของแขน (ลบ = ยกไปข้างหน้า) ปรับแล้วต้องดูในฉากจริง อย่าเดา */
+        const ps = PARENT_POSE[o.actNow] || PARENT_POSE.kitchen;
+        const w2 = Math.sin(t * ps.spd + o.ph) * ps.amp;
         rg.legs.forEach(p => p.rotation.x += (0 - p.rotation.x) * k);
-        rg.arms[0].rotation.x += (a - rg.arms[0].rotation.x) * k;
-        rg.arms[1].rotation.x += (a - rg.arms[1].rotation.x) * k;
+        rg.arms[0].rotation.x += ((ps.base + w2) - rg.arms[0].rotation.x) * k;
+        rg.arms[1].rotation.x += ((ps.base + (ps.alt ? -w2 : w2)) - rg.arms[1].rotation.x) * k;
         rg.rig.position.y = Math.sin(t*.0045)*.02;
       }else{
         const idle = Math.sin(t*.0022 + o.ph) * .06;
@@ -11458,6 +11748,11 @@ function decorInteract(g){
 }
 function startSit(g, item, act){
   questEvent('sit', null);
+  /* เควสต์ "กินข้าวพร้อมหน้า": นั่งโต๊ะ/เก้าอี้ **ในบ้าน** แล้วถือว่าทำงานเสร็จ */
+  if(walkQuest && walkQuest.target === 'table' && hScene === 'in'
+     && item && (item.cat === 'table' || item.cat === 'seat')){
+    setTimeout(()=> walkQuestArrive('table'), 700);   /* ให้เห็นตัวเองนั่งลงก่อนค่อยเด้งการ์ด */
+  }
   const sit = item.sit || {};
   const ang = g.rotation.y;
   const ry = ang + (sit.ry!=null ? sit.ry : 0);   /* หันหน้าตามด้านหน้าเฟอร์นิเจอร์ (+z ที่ rot 0) */
@@ -11666,6 +11961,9 @@ function frame(t){
   const dt = Math.min(.05, (t - lastT)/1000 || 0);
   lastT = t;
   updateLightLerp(dt);
+  /* เควสต์ "ไปตลาด": เช็คทุกเฟรม (ราคาถูกมาก — เทียบพิกัด 4 ครั้งเมื่อมีงานค้างเท่านั้น)
+     ⚠ เช็คแค่ตอนก้าวถึงช่องใหม่ไม่พอ — เด็กอาจถูกวาร์ป/เริ่มเกมมาทั้งที่ยืนอยู่ในตลาดแล้ว */
+  if(walkQuest) walkQuestTileCheck();
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator' || hMode==='pet'){
@@ -11706,6 +12004,7 @@ function frame(t){
       if(from.x!==to.x || from.z!==to.z) hChar.targetRotY = Math.atan2(b.x-a.x, b.z-a.z);
       if(k>=1){
         hChar.segT = 0; hChar.tile = to; hChar.segFrom = to; hChar.seg++;
+        walkQuestTileCheck();          /* เควสต์ไปตลาด: เช็คทุกช่องที่ก้าวถึง ไม่ต้องเดินจนสุดทาง */
         if(hChar.seg >= hChar.path.length){
           hChar.path = []; hChar.walking = false;
           finishArrive();
@@ -11977,10 +12276,18 @@ function enterHouseGame(){
     }
   }
   lastT = performance.now();
+  houseStarted = true;          /* ✅ เข้าบ้านเสร็จสมบูรณ์แล้ว (ชุดเทสรอสัญญาณนี้ ดู __houseDbg.ready) */
   rafId = requestAnimationFrame(frame);
 }
+/* ⚠ **ห้ามใช้ `__houseDbg.mode() === 'world'` เป็นสัญญาณว่า "เข้าบ้านเสร็จแล้ว"** —
+   `hMode` มีค่าเริ่มต้นเป็น 'world' ตั้งแต่ house.js โหลดเสร็จ (บรรทัด ~136) ทั้งที่ startHouseGame()
+   ยังไม่ทำงาน ⇒ เทสที่รอแค่ค่านี้จะแอบเปิดการ์ด/แผงก่อนบ้านพร้อม แล้ว startHouseGame() ที่ตามมา
+   ทีหลังจะ closeQuestPanel() ปิดทิ้งให้เงียบๆ (เทสแดงแบบสุ่มๆ หาสาเหตุยากมาก — เจอ 2026-08-10)
+   ⇒ ให้รอ `__houseDbg.ready()` แทนเสมอ */
+let houseStarted = false;
 
 function stopHouseGame(){
+  walkQuest = null;      /* งานเดินที่ค้างอยู่ไม่ถือว่าทำเสร็จ — กลับมาคุยกับพ่อแม่รับใหม่ได้ */
   if(editMode) exitEditMode();
   if(sitState) endSit();
   endFeedAnim();                 /* ออกจากบ้านกลางอนิเมชันป้อนอาหาร → เก็บชามทิ้ง ไม่ให้ค้างในฉาก */
@@ -12479,6 +12786,22 @@ if(!homeView.hidden) houseBuddyRefresh();
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
   /* รอบเล่นเควสต์ที่กำลังเปิดอยู่ (ชุดเทสมินิเกมเฟส 4B ต้องรู้ว่าของชิ้นไหนควรลงถังไหน) */
   qRun: ()=> qRun,
+  /* ชุดเทส: สั่งให้เด็กเดินไปนั่งเก้าอี้/โต๊ะตัวแรกในบ้าน (เส้นทางเดียวกับตอนแตะของจริง) */
+  sitIndoor: ()=>{
+    const g = (decorGroups.in || []).filter(x=>{
+      const d = x.userData && x.userData.deco;
+      return d && d.item && (d.item.cat === 'seat' || d.item.cat === 'table') && d.item.sit;
+    })[0];
+    if(!g) return false;
+    decorInteract(g);
+    return true;
+  },
+  /* งานเดินที่กำลังค้างอยู่ (ชุดเทสเควสต์ family-time / shopping-list) */
+  walkQuest: ()=> walkQuest ? {target: walkQuest.target, idx: walkQuest.run.idx} : null,
+  /* ตารางท่าประจำของพ่อแม่ (ชุดเทสตรวจว่าแต่ละกิจกรรมมีท่าของตัวเอง ไม่ใช่ท่าเดียวกันหมด) */
+  pose: ()=> PARENT_POSE,
+  /* เข้าบ้านเสร็จสมบูรณ์หรือยัง — **ชุดเทสต้องรอค่านี้ก่อนสั่งอะไรเสมอ** ไม่ใช่รอแค่ mode()==='world' */
+  ready: ()=> houseStarted,
   npcPos:id=>{ const n = npcs.find(k=>k.def.id===id); return n ? {x:n.g.position.x, z:n.g.position.z} : null; },
   /* พิกัดบนจอของชาวบ้าน (สำหรับชุดเทสเลื่อนเมาส์ไปวางให้ตรงตัว) — ยิงที่กลางลำตัว ไม่ใช่ที่เท้า */
   npcScreen:id=>{
