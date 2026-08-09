@@ -7217,6 +7217,10 @@ function bindCanvasInput(canvas){
     setTalkHover(false);
   });
   window.__houseTalkHover = ()=> hoverTalk;      /* จุดต่อชุดเทส */
+  /* จุดต่อชุดเทส: "พิกัดจอนี้มีตัวที่คุยได้อยู่ไหม" — เช็คเรขาคณิตล้วน ไม่ผ่าน throttle/สถานะ hover
+     ⚠ เทสที่ต้องการ "ที่ว่าง" ต้องหาผ่านตัวนี้ **ห้าม hardcode พิกัด** เพราะแต่ละขนาดจอมุมกล้องต่างกัน
+       จุดที่ว่างบนจอ desktop อาจมีคนยืนอยู่พอดีบนจอ tablet (เทสแดงแบบนี้มาแล้ว 2026-08-10) */
+  window.__houseTalkAt = (cx, cy)=> npcUnderPointer(cx, cy);
   const endPointer = e=>{
     pointers.delete(e.pointerId);
     if(hMode==='creator' || hMode==='pet') creatorState.dragging = false;

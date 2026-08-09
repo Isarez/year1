@@ -198,10 +198,24 @@ test('พ่อแม่เดินไปมาในบ้านจริง �
   expect(errors).toEqual([]);
 });
 
+/* หา "ที่ว่าง" บนจอที่ไม่มีตัวที่คุยได้อยู่จริง — ห้าม hardcode พิกัด เพราะ desktop กับ tablet
+   มุมกล้องต่างกัน จุดเดียวกันอาจมีคนยืนอยู่พอดีบนจอหนึ่ง (เทสแดงแบบนี้มาแล้ว 2026-08-10) */
+async function emptySpot(page) {
+  const size = page.viewportSize();
+  const cands = [];
+  for (const fy of [0.9, 0.12, 0.75, 0.25]) for (const fx of [0.06, 0.94, 0.2, 0.8])
+    cands.push({ x: Math.round(size.width * fx), y: Math.round(size.height * fy) });
+  for (const c of cands) {
+    if (!(await page.evaluate(p => window.__houseTalkAt(p.x, p.y), c))) return c;
+  }
+  throw new Error('หาที่ว่างบนจอไม่เจอ (มีตัวละครเต็มจอ?)');
+}
+
 test('เคอร์เซอร์ฟองคำพูดใช้กับพ่อแม่ในบ้านด้วย (ไม่ใช่เฉพาะชาวบ้านในเมือง)', async ({ page }) => {
   const errors = await openHouse(page);
   await goInside(page);
-  await page.mouse.move(30, 640);
+  const blank = await emptySpot(page);
+  await page.mouse.move(blank.x, blank.y);
   await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.__houseTalkHover())).toBe(false);
 

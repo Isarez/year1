@@ -284,13 +284,27 @@ test('สีขน: ซื้อสีของสัตว์ที่ยัง
 
 /* ผู้ใช้สั่ง 2026-08-09: ออกแบบเคอร์เซอร์ "ฟองคำพูด" ไว้บอกว่าชาวบ้านคนนี้คุยได้
    ให้เข้าชุดกับเคอร์เซอร์นกฮูกเดิม — ต้องเปลี่ยนจริงตอนวางเมาส์บนตัว NPC เท่านั้น */
+/* หา "ที่ว่าง" บนจอที่ไม่มีตัวที่คุยได้อยู่จริง — ห้าม hardcode พิกัด เพราะ desktop กับ tablet
+   มุมกล้องต่างกัน จุดเดียวกันอาจมีคนยืนอยู่พอดีบนจอหนึ่ง (เทสแดงแบบนี้มาแล้ว 2026-08-10) */
+async function emptySpot(page) {
+  const size = page.viewportSize();
+  const cands = [];
+  for (const fy of [0.9, 0.12, 0.75, 0.25]) for (const fx of [0.06, 0.94, 0.2, 0.8])
+    cands.push({ x: Math.round(size.width * fx), y: Math.round(size.height * fy) });
+  for (const c of cands) {
+    if (!(await page.evaluate(p => window.__houseTalkAt(p.x, p.y), c))) return c;
+  }
+  throw new Error('หาที่ว่างบนจอไม่เจอ (มีตัวละครเต็มจอ?)');
+}
+
 test('เคอร์เซอร์ฟองคำพูด: วางเมาส์บนชาวบ้านแล้วเปลี่ยนจริง · ที่ว่างเปล่าไม่เปลี่ยน', async ({ page }) => {
   const errors = await openHouse(page, null, 0);
   const canvas = page.locator('#house-canvas');
   const cursorOf = () => page.evaluate(() => getComputedStyle(document.getElementById('house-canvas')).cursor);
 
   /* พื้นโล่งมุมจอ — ต้องยังเป็นเคอร์เซอร์นกฮูกปกติ ไม่ใช่ฟองคำพูด */
-  await page.mouse.move(40, 620);
+  let blank = await emptySpot(page);
+  await page.mouse.move(blank.x, blank.y);
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__houseTalkHover())).toBe(false);
   const plain = await cursorOf();
@@ -318,8 +332,10 @@ test('เคอร์เซอร์ฟองคำพูด: วางเมา
   expect(talk).toContain('7 32');           /* hotspot = ปลายหางฟอง ชี้โดนตัวชาวบ้าน */
   expect(await canvas.evaluate(el => el.classList.contains('house-talk-hover'))).toBe(true);
 
-  /* เลื่อนออกจากตัว → กลับเป็นเคอร์เซอร์ปกติ ไม่ค้าง */
-  await page.mouse.move(40, 620);
+  /* เลื่อนออกจากตัว → กลับเป็นเคอร์เซอร์ปกติ ไม่ค้าง
+     ⚠ ต้องหาที่ว่าง **ใหม่** ตรงนี้ — วาร์ปมาที่ใหม่แล้ว จุดเดิมอาจมีชาวบ้านยืนอยู่ */
+  blank = await emptySpot(page);
+  await page.mouse.move(blank.x, blank.y);
   await expect.poll(() => page.evaluate(() => window.__houseTalkHover()), { timeout: 5000 }).toBe(false);
   expect(await cursorOf()).toBe(plain);
   expect(errors).toEqual([]);
