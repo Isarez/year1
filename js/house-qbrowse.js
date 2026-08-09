@@ -34,9 +34,13 @@
 
   /* แท็บกลไก — เพิ่ม mechanic ใหม่ในเฟส 5-7 แล้วมาต่อแถวนี้ */
   const MECH_TABS = [
-    {id:'quiz',  ic:'📝', name:'ตอบคำถาม'},
-    {id:'count', ic:'🔢', name:'นับของ'},
+    {id:'quiz',    ic:'📝', name:'ตอบคำถาม'},
+    {id:'count',   ic:'🔢', name:'นับของ'},
+    /* เฟส 4B — มินิเกมครอบครัว (ในเกมจริงโผล่เฉพาะเควสต์ของพ่อ/แม่ วันละชุด) */
+    {id:'tidy',    ic:'🧹', name:'เก็บของเข้าที่'},
+    {id:'laundry', ic:'🧺', name:'แยกผ้าซัก'},
   ];
+  const SORT_MECHS = ['tidy', 'laundry'];
   const KIND_LABEL = {img:'🖼️ ภาพ', pattern:'🔮 แพทเทิร์น', emoji:'😀 อิโมจิ', text:'🔤 ข้อความ'};
   const SUBJ_LABEL = {math:'เลข', thai:'ไทย', eng:'อังกฤษ', iq:'เชาว์', sci:'วิทย์',
                       social:'สังคม', art:'ศิลปะ', misc:'อื่นๆ'};
@@ -206,6 +210,36 @@
     ui.playTest(opt, ()=>{ $('house-qb').hidden = false; });
   }
 
+  /* ---------- ตาราง: กลไกจัดของลงถัง (เฟส 4B) ---------- */
+  function renderSort(wrap, sum){
+    const c = Q().catalogSort(mech, gid);
+    if(!c){ wrap.appendChild(el('div', 'hqb-empty', 'ไม่มีข้อมูลกลไกนี้')); return; }
+    sum.textContent = c.rounds + ' กระดาน/เควสต์ · ชั้นนี้: ถัง ' + c.binN + ' ใบ · ของ '
+      + c.tileN + ' ชิ้น/กระดาน · คลังของทั้งหมด '
+      + c.bins.reduce((a, b) => a + b.items.length, 0) + ' ชิ้น';
+
+    const tb = el('table', 'hqb-table');
+    tb.appendChild(head([{t:'#', c:'hqb-n'}, {t:'ถัง', c:'hqb-cat'},
+                         {t:'ของที่ต้องอยู่ถังนี้', c:'hqb-q'}, {t:'', c:'hqb-go'}]));
+    const bd = el('tbody');
+    c.bins.forEach((b, n)=>{
+      const tr = el('tr', 'hqb-row');
+      cell(tr, 'hqb-n', String(n + 1));
+      cell(tr, 'hqb-cat', b.emoji + ' ' + b.name);
+      cell(tr, 'hqb-q', b.items.join(' '));
+      const go = el('td', 'hqb-go');
+      go.appendChild(playBtn('▶', {mech:mech, gid:gid,
+        title:'🧪 ' + c.emoji + ' ' + c.name + ' · ' + b.name}));
+      tr.appendChild(go);
+      bd.appendChild(tr);
+    });
+    tb.appendChild(bd);
+    wrap.appendChild(tb);
+    wrap.appendChild(el('div', 'hqb-empty',
+      'กลไกนี้สร้างโจทย์เองทั้งหมด ไม่มีคลังคำถามตายตัว — ปุ่ม ▶ ทุกแถวสุ่มกระดานชุดใหม่เหมือนกัน '
+      + '(ในเกมจริงโผล่เฉพาะเควสต์ครอบครัว วันละ 1 ชุด)'));
+  }
+
   /* ---------- วาดใหม่ทั้งหน้า ---------- */
   function render(){
     if(!Q()) return;
@@ -214,12 +248,16 @@
     const sum  = $('hqb-sum');
     wrap.innerHTML = '';
     wrap.scrollTop = 0;
-    if(mech === 'count') renderCount(wrap, sum);
+    if(SORT_MECHS.indexOf(mech) >= 0) renderSort(wrap, sum);
+    else if(mech === 'count') renderCount(wrap, sum);
     else renderQuiz(wrap, sum);
     const rnd = $('hqb-random');
-    if(rnd) rnd.textContent = (mech === 'count')
-      ? '▶ สุ่มเล่นชุดเต็ม (นับของ)'
-      : '▶ สุ่มเล่นชุดเต็ม' + (catId ? ' (เฉพาะหมวดนี้)' : '');
+    if(rnd){
+      const tab = MECH_TABS.filter(t => t.id === mech)[0];
+      rnd.textContent = (mech === 'quiz')
+        ? '▶ สุ่มเล่นชุดเต็ม' + (catId ? ' (เฉพาะหมวดนี้)' : '')
+        : '▶ สุ่มเล่นชุดเต็ม (' + ((tab && tab.name) || mech) + ')';
+    }
   }
 
   /* ---------- เปิด/ปิด ---------- */
@@ -248,6 +286,11 @@
   /* ปุ่มล่าง: สุ่มชุดเต็มเหมือนเควสต์จริง (จำนวนข้อตามระดับชั้น) — ไล่กดทีละข้อไม่ไหวก็ใช้ตัวนี้ */
   $('hqb-random').addEventListener('click', ()=>{
     if(typeof playClick === 'function') playClick();
+    if(SORT_MECHS.indexOf(mech) >= 0){
+      const tab = MECH_TABS.filter(t => t.id === mech)[0];
+      play({mech:mech, gid:gid, title:'🧪 สุ่มชุดเต็ม · ' + ((tab && tab.name) || mech)});
+      return;
+    }
     if(mech === 'count'){
       const ts = Q().catalogCount(gid);
       const t  = ts.length ? ts[(Math.random() * ts.length) | 0].theme : 'town';

@@ -112,6 +112,40 @@
     dress:  ['👗','👕','👒','👜','👟','🧦'],
     town:   ['🎈','⚽','🎪','🌈','🎨','🪁'],
   };
+  /* ================= เฟส 4B — มินิเกมครอบครัว =================
+     กลไก "จัดของลงถัง" (`sort`) ใช้ร่วมกัน 2 เกม ต่างกันแค่คลังของ:
+       tidy    = เก็บของเข้าที่ (ถัง = ห้องในบ้าน)
+       laundry = แยกผ้าซัก    (ถัง = ประเภทผ้า)
+     ⚠ **ของชิ้นเดียวห้ามอยู่ 2 ถังในเกมเดียวกัน** ไม่งั้นโจทย์ไม่มีคำตอบที่ถูกต้องแน่นอน
+       (ข้ามเกมซ้ำได้ เช่น 🧦 อยู่ห้องนอนของ tidy และตะกร้าของชิ้นเล็กของ laundry)
+     ⚠ เกมครอบครัวเท่านั้น — NPC/กระดานยังสุ่มได้แค่ quiz/count เหมือนเดิม */
+  const SORT_SETS = {
+    /* ⚠ **ของทุกชิ้นต้องมีถังที่ถูกต้องแค่ถังเดียวอย่างชัดเจนสำหรับเด็ก 5 ขวบ**
+       ห้ามใส่ของกำกวม (📖 อยู่ห้องนอนหรือห้องนั่งเล่น? ⏰ กับ 🕰️ ต่างกันยังไง?)
+       เด็กตอบตามเหตุผลของตัวเองแล้วยัง "ผิด" = ลงโทษเด็กกลายๆ ผิดกติกาเหล็กข้อ 2
+       ⇒ ถังจึงเป็น **หมวดของ** (ครัว/ห้องน้ำ/ของเล่น/ของใช้เรียน) ไม่ใช่ห้องในบ้าน */
+    tidy: {
+      name:'เก็บของเข้าที่', emoji:'🧹',
+      q:'ของพวกนี้วางผิดที่ ช่วยเก็บเข้าที่ให้หน่อยนะ',
+      bins:[
+        {id:'kitchen', name:'ของใช้ในครัว',  emoji:'🍳', items:['🥄','🍴','🥣','🍽️','🫖','🧂']},
+        {id:'bath',    name:'ของใช้ห้องน้ำ', emoji:'🚿', items:['🧼','🪥','🧴','🧻','🧽']},
+        /* ⚠ ของเล่นต้อง **ดูออกทันทีตอนย่อเหลือ 30px** — 🪀 (โยโย่) กลายเป็นลูกบอลเขียวเฉยๆ
+             เด็กเดาไม่ออกว่าคืออะไร (เจอตอนดูภาพจริง 2026-08-10) จึงเปลี่ยนเป็นของที่รูปทรงเด่น */
+        {id:'toy',     name:'กล่องของเล่น',  emoji:'🧸', items:['🧸','🎈','🎲','🚗','⚽','🧩']},
+        {id:'study',   name:'โต๊ะเรียน',     emoji:'📚', items:['📕','✏️','📐','🎒','📏','🖍️']},
+      ],
+    },
+    laundry: {
+      name:'แยกผ้าซัก', emoji:'🧺',
+      q:'ช่วยแยกผ้าลงตะกร้าให้ถูกใบหน่อยนะ',
+      bins:[
+        {id:'top',   name:'เสื้อ',           emoji:'👕', items:['👕','👚','🧥','👔']},
+        {id:'pants', name:'กางเกง-กระโปรง',  emoji:'👖', items:['👖','🩳','👗']},
+        {id:'small', name:'ของชิ้นเล็ก',     emoji:'🧦', items:['🧦','🧣','🧤','🧢','👒']},
+      ],
+    },
+  };
   /* ชุดของ + วิชาที่ NPC คนนี้ชอบออกโจทย์ — ไล่จากเฉพาะเจาะจงไปกว้าง เจอตัวแรกที่ตรงแล้วหยุด */
   const NPC_THEMES = [
     [/^npc-lab/,                     'lab',    ['sci','iq']],
@@ -283,8 +317,10 @@
        seeded ด้วย childId+วัน ⇒ วันนี้ได้พ่อก็พ่อทั้งวัน รีเฟรชกี่ครั้งก็ไม่เปลี่ยน */
     function rollFamily(day){
       const rng = rngFrom(fnv(childId() + '|' + day + '|fam'));
-      return { who: rng() < .5 ? 'dad' : 'mom',
-               m: rng() < .3 ? 'count' : 'quiz', st:'', stars:0 };
+      /* กลไกของเควสต์ครอบครัว = สุ่มจาก FAM_MECHS (มีมินิเกมของเฟส 4B ด้วย)
+         วันละชุดเดียว ⇒ สุ่มเท่าๆ กันไปเลย เด็กจะได้เจอครบทุกแบบภายในไม่กี่วัน */
+      const who = rng() < .5 ? 'dad' : 'mom';
+      return { who: who, m: pick(rng, FAM_MECHS), st:'', stars:0 };
     }
     /* กระดาน 5 ชุด/วัน — โควตาแยกจาก NPC เด็ดขาด (ข้อ 19) */
     function rollBoard(day){
@@ -329,6 +365,50 @@
     /* ================= กลไกเควสต์ (mechanic) ================= */
     /* แต่ละกลไกมี gen(rng, diff, def, gid) → คืนอาเรย์ข้อ [{q, emoji, show, choices, correct, explain}]
        เฟส 2 มี 2 แบบ · เฟส 5-7 ค่อยเติมที่ตารางนี้ที่เดียว (house.js ไม่ต้องแก้) */
+    /* ---------- ตัวสร้างกลไก "จัดของลงถัง" (เฟส 4B) ----------
+       1 "ข้อ" = 1 กระดาน (ของ 4-8 ชิ้น ลงถัง 2-4 ใบ) ⇒ ใช้เวลานานกว่าโจทย์ตอบคำถามมาก
+       ⇒ **จำนวนกระดานต่อเควสต์ = ครึ่งหนึ่งของ diff.qN (อย่างน้อย 3)** ไม่ใช่ qN เต็ม
+          เกณฑ์ดาวคิดจาก `run.items.length` อยู่แล้ว จึงยืดตามเองไม่ต้องแก้ starsOf */
+    function sortRounds(diff){ return Math.max(3, Math.round(diff.qN / 2)); }
+    function sortMech(setId){
+      const set = SORT_SETS[setId];
+      return {
+        id:setId, name:set.name, fam:'family', sort:true, only:'family',
+        gen(rng, diff){
+          const binN  = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : set.bins.length);
+          const tileN = diff.tier <= 2 ? 4 : (diff.tier <= 4 ? 6 : 8);
+          const out = [];
+          for(let r = 0; r < sortRounds(diff); r++){
+            const bins = pickMany(rng, set.bins, Math.min(binN, set.bins.length));
+            /* แจกของให้ **ทุกถังมีอย่างน้อย 1 ชิ้น** — ถังที่ว่างเปล่าทั้งกระดานทำให้เด็กงงว่าใส่ผิดไหม */
+            const tiles = [];
+            const left  = bins.map(b => shuffled(rng, b.items));
+            bins.forEach((b, i) => { tiles.push({e: left[i].pop(), bin: b.id}); });
+            /* guard: ถ้าของในถังที่เลือกไว้หมดก่อนครบจำนวน ให้หยุด (ไม่วนไม่รู้จบ) */
+            let guard = 0;
+            while(tiles.length < tileN && guard++ < 200){
+              const i = (rng() * bins.length) | 0;
+              if(!left[i].length) continue;
+              tiles.push({e: left[i].pop(), bin: bins[i].id});
+            }
+            const order = shuffled(rng, tiles).map((t, i) => ({k:'t' + i, e:t.e, bin:t.bin}));
+            out.push({
+              kind:'sort', q:set.q, emoji:'', choices:[], correct:0,
+              bins: bins.map(b => ({id:b.id, name:b.name, emoji:b.emoji})),
+              tiles: order,
+              explain:'ของทุกชิ้นอยู่ถูกที่แล้ว เก่งมาก!',
+            });
+          }
+          return out;
+        },
+        /* payload = {tileKey: binId} — คืนรายชื่อชิ้นที่วางผิดให้หน้าจอเด้งกลับถาด */
+        verify(it, placed){
+          placed = placed || {};
+          const bad = it.tiles.filter(t => placed[t.k] !== t.bin).map(t => t.k);
+          return {ok: bad.length === 0, bad: bad};
+        },
+      };
+    }
     const MECHS = {
       /* ---- ตอบคำถาม: ดึงโจทย์จริงจาก CATS ตามระดับชั้น + เอียงไปทางวิชาที่เข้ากับร้าน ---- */
       quiz: {
@@ -389,8 +469,13 @@
           return out;
         },
       },
+      /* ---- เฟส 4B: จัดของลงถัง (เกมครอบครัว) — สร้างโจทย์เองทั้งหมด ไม่ง้อคลัง ---- */
+      tidy:    sortMech('tidy'),
+      laundry: sortMech('laundry'),
     };
     const MECH_IDS = Object.keys(MECHS);
+    /* กลไกที่ **เควสต์ครอบครัวเท่านั้น**สุ่มได้ — NPC/กระดานยังเป็น quiz/count เหมือนเดิม */
+    const FAM_MECHS = ['quiz', 'count', 'tidy', 'laundry'];
 
     /* ================= สร้างชุดโจทย์ 1 เควสต์ ================= */
     /* spec = {src:'npc'|'board', key, npc, mech, fam, chal} — เปิดกี่ครั้งก็ได้ชุดเดิม (seed คงที่) */
@@ -460,6 +545,23 @@
       let items  = MECHS[spec.mech].gen(rng, diff, def, gid);
       if(!items || !items.length) items = MECHS.count.gen(rng, diff, def, gid);
       return { spec, def, gid, chal, diff, items, idx:0, wrong:0, missed:{}, over:false };
+    }
+    /* ส่งคำตอบ 1 ครั้ง (ทุกกลไก) — คืน {ok, done, bad}
+       กลไกตอบคำถาม: payload = index ของตัวเลือก · กลไกจัดของ: payload = {tileKey: binId}
+       กลไกไหนมี `verify()` จะใช้ตัวนั้น ที่เหลือเทียบกับ `it.correct` แบบเดิม
+       ⚠ ตอบผิดไม่มีบทลงโทษ แค่ให้ลองใหม่ (ดาวลดลงเท่านั้น — กติกาเหล็กข้อ 2) */
+    function submit(run, payload){
+      if(run.over) return {ok:true, done:true};
+      const it = run.items[run.idx];
+      const m  = MECHS[run.spec.mech];
+      const res = (m && m.verify) ? m.verify(it, payload) : {ok: payload === it.correct};
+      if(!res.ok){
+        if(!run.missed[run.idx]){ run.missed[run.idx] = 1; run.wrong++; }
+        return {ok:false, done:false, bad: res.bad || []};
+      }
+      run.idx++;
+      if(run.idx >= run.items.length){ run.over = true; return {ok:true, done:true}; }
+      return {ok:true, done:false};
     }
     /* ตอบ 1 ครั้ง — คืน {ok, done} · ตอบผิดไม่มีบทลงโทษ แค่ให้ลองใหม่ (ดาวลดลงเท่านั้น) */
     function answer(run, i){
@@ -658,6 +760,20 @@
               test:true, opt:opt};
     }
 
+    /* ---------- คลังของกลไกจัดของ (หน้าคลังคำถาม — อ่านอย่างเดียว) ---------- */
+    function catalogSort(setId, gid){
+      const set = SORT_SETS[setId];
+      if(!set) return null;
+      const diff = difficulty(gid || gradeId());
+      return {
+        id:setId, name:set.name, emoji:set.emoji, q:set.q,
+        rounds: sortRounds(diff),
+        binN: diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : set.bins.length),
+        tileN: diff.tier <= 2 ? 4 : (diff.tier <= 4 ? 6 : 8),
+        bins: set.bins.map(b => ({id:b.id, name:b.name, emoji:b.emoji, items:b.items.slice()})),
+      };
+    }
+
     /* ---------- สถานะของ NPC สำหรับป้ายเหนือหัว ---------- */
     function npcStatus(npcId){
       const s = state();
@@ -724,7 +840,8 @@
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
       STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
-      buildRun, answer, starsOf, coinsFor, finish,
+      buildRun, answer, submit, starsOf, coinsFor, finish,
+      FAM_MECHS, SORT_SETS, catalogSort,
       /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
       catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
       ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */

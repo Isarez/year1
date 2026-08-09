@@ -8232,6 +8232,9 @@ function renderQuestStep(){
   }
   const st = qzStage(); if(!st) return;
   const it = qRun.items[qRun.idx];
+  /* เฟส 4B: มินิเกมครอบครัวไม่ใช่โจทย์ 4 ตัวเลือก ⇒ แยกทางวาดตั้งแต่ตรงนี้
+     **เพิ่มมินิเกมใหม่ให้มาต่อแถวที่นี่** (ตัวที่ไม่มี `it.kind` = โจทย์ตอบคำถามแบบเดิม) */
+  if(it.kind === 'sort'){ renderSortStep(st, it); return; }
   /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
@@ -8278,6 +8281,97 @@ function renderQuestStep(){
     wrap.appendChild(b);
   });
   st.appendChild(wrap);
+}
+/* ================= เฟส 4B — กระดาน "จัดของลงถัง" =================
+   กติกาหน้าจอ: **แตะของ 1 ชิ้น → แตะถัง** (ไม่ใช่ลาก)
+   เหตุผล: เด็ก 5 ขวบบนแท็บเล็ตลากพลาดง่ายมาก และแตะคือท่าเดียวกับที่เขาใช้ตอบคำถามอยู่แล้ว
+           ทั้งเควสต์จึงเป็นท่าเดียวกันหมด · แตะของที่อยู่ในถังแล้ว = เอากลับลงถาด (แก้ได้ตลอด)
+   วางครบทุกชิ้นเมื่อไหร่ = ตรวจให้เอง ไม่ต้องมีปุ่ม "ส่งคำตอบ" ให้เด็กหาว่ากดตรงไหน */
+let qSortSel = '';          /* ชิ้นที่กำลังเลือกอยู่ (key) */
+let qSortPut = null;        /* {tileKey: binId} ของกระดานนี้ */
+function renderSortStep(st, it){
+  qSortSel = ''; qSortPut = {};
+  const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = it.q;
+  st.appendChild(q);
+
+  const wrap = document.createElement('div'); wrap.className = 'hqz-sort';
+  const tray = document.createElement('div'); tray.className = 'hqz-tray';
+  const bins = document.createElement('div');
+  bins.className = 'hqz-bins' + (it.bins.length >= 4 ? ' hqz-bins4' : '');
+
+  function tile(t){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-tile'; b.dataset.k = t.k; b.textContent = t.e;
+    b.addEventListener('click', ()=>{
+      if(qLock) return;
+      if(qSortPut[t.k]){                       /* อยู่ในถังอยู่แล้ว → เอากลับลงถาด */
+        delete qSortPut[t.k];
+        tray.appendChild(b);
+        b.classList.remove('in');
+        if(typeof playClick==='function') playClick();
+        return;
+      }
+      const on = qSortSel === t.k;
+      Array.from(wrap.querySelectorAll('.hqz-tile.sel')).forEach(e=>e.classList.remove('sel'));
+      qSortSel = on ? '' : t.k;
+      if(!on) b.classList.add('sel');
+      if(typeof playClick==='function') playClick();
+    });
+    return b;
+  }
+  const tiles = {};
+  it.tiles.forEach(t=>{ const b = tile(t); tiles[t.k] = b; tray.appendChild(b); });
+
+  it.bins.forEach(bn=>{
+    const box = document.createElement('div'); box.className = 'hqz-bin';
+    const head = document.createElement('div'); head.className = 'hqz-bin-head';
+    const ic = document.createElement('span'); ic.className = 'hqz-bin-ic'; ic.textContent = bn.emoji;
+    const nm = document.createElement('span'); nm.className = 'hqz-bin-name'; nm.textContent = bn.name;
+    head.appendChild(ic); head.appendChild(nm);
+    const slot = document.createElement('div'); slot.className = 'hqz-bin-slot';
+    box.appendChild(head); box.appendChild(slot);
+    box.addEventListener('click', e=>{
+      if(qLock || !qSortSel) return;
+      if(e.target.closest('.hqz-tile')) return;      /* แตะของในถัง = เอากลับ ไม่ใช่วางซ้ำ */
+      const b = tiles[qSortSel];
+      if(!b) return;
+      qSortPut[qSortSel] = bn.id;
+      b.classList.remove('sel'); b.classList.add('in');
+      slot.appendChild(b);
+      qSortSel = '';
+      if(typeof playClick==='function') playClick();
+      if(!tray.querySelector('.hqz-tile')) checkSortBoard(it, tray, tiles);
+    });
+    bins.appendChild(box);
+  });
+  wrap.appendChild(tray); wrap.appendChild(bins);
+  st.appendChild(wrap);
+}
+/* วางครบแล้ว → ตรวจ · ผิดเฉพาะชิ้นที่ผิดเด้งกลับถาด ชิ้นที่ถูกอยู่ในถังต่อไป (ไม่ต้องเริ่มใหม่หมด) */
+function checkSortBoard(it, tray, tiles){
+  if(!qRun || qLock) return;
+  qLock = true;
+  const r = QUESTS.submit(qRun, qSortPut);
+  if(!r.ok){
+    if(typeof playWrong==='function') playWrong();
+    (r.bad || []).forEach(k=>{
+      const b = tiles[k]; if(!b) return;
+      delete qSortPut[k];
+      b.classList.remove('in'); b.classList.add('bad');
+      tray.appendChild(b);
+      setTimeout(()=>b.classList.remove('bad'), 640);
+    });
+    setTimeout(()=>{ qLock = false; }, 660);
+    return;
+  }
+  if(typeof playCorrect==='function') playCorrect();
+  Array.from(tiles ? Object.keys(tiles) : []).forEach(k=>{
+    const b = tiles[k]; if(b) b.classList.add('right');
+  });
+  setTimeout(()=>{
+    qLock = false;
+    if(r.done) finishQuest(); else renderQuestStep();
+  }, 620);
 }
 function answerQuest(i, btn){
   if(!qRun || qLock) return;
@@ -12383,6 +12477,8 @@ if(!homeView.hidden) houseBuddyRefresh();
   scene:()=>hScene, creatorWho:()=>creatorWho, charLook:()=>charCfgNow,
   /* พาเด็กเข้าไปในบ้านทันที (ชุดเทสของเฟส 4A — เดินไปหน้าประตูเองในเทสช้ามาก) */
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
+  /* รอบเล่นเควสต์ที่กำลังเปิดอยู่ (ชุดเทสมินิเกมเฟส 4B ต้องรู้ว่าของชิ้นไหนควรลงถังไหน) */
+  qRun: ()=> qRun,
   npcPos:id=>{ const n = npcs.find(k=>k.def.id===id); return n ? {x:n.g.position.x, z:n.g.position.z} : null; },
   /* พิกัดบนจอของชาวบ้าน (สำหรับชุดเทสเลื่อนเมาส์ไปวางให้ตรงตัว) — ยิงที่กลางลำตัว ไม่ใช่ที่เท้า */
   npcScreen:id=>{
