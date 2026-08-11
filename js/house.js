@@ -12007,18 +12007,24 @@ function charBubble(txt, say){
 /* ---------- loop ---------- */
 const WALK_SPEED = 3;      /* ช่อง/วินาที */
 /* กล้องโหมดมือเปิดอยู่ไหม — hand tracking กินซีพียูมาก ถ้าปล่อยลูป 3D วิ่งเต็มสปีดด้วย
-   เฟรมจะตกทั้งคู่ ⇒ หรี่เหลือ ~20fps ตอนกล้องเปิด (ช่วงนั้นการ์ดเควสต์บังโลกอยู่แล้ว) */
-let houseFrameThrottle = false, lastDrawT = 0;
-window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; };
+   เฟรมจะตกทั้งคู่ ⇒ หรี่ลงตอนกล้องเปิด (ช่วงนั้นการ์ดเควสต์บังโลกอยู่แล้ว)
+   ⚠ **หรี่ด้วยการข้ามเฟรมเว้นเฟรม (ครึ่งหนึ่งพอดี) ห้ามใช้ "เว้นตามเวลา" แบบ `t - lastDrawT < 50`**
+     เพราะจังหวะเฟรมจะไม่เท่ากัน (50/66/50/83 ms) แล้ว dt ไปชนเพดาน .05 บ่อยๆ
+     ⇒ ของในโลกขยับกระตุกเป็นช่วงๆ (ผู้ใช้แจ้ง 2026-08-12) · เว้นเฟรมได้จังหวะสม่ำเสมอ ~30fps
+     และ dt ~33ms ยังไม่ถึงเพดาน ความเร็วจึงตรงกับของจริง */
+let houseFrameThrottle = false, frameOdd = false;
+const frameLog = [];        /* เวลาที่ "วาดจริง" 120 เฟรมหลังสุด (เทสอ่านผ่าน __houseDbg.frameLog) */
+window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; frameOdd = false; };
 function frame(t){
   if(!houseOpen) return;
   rafId = requestAnimationFrame(frame);
   if(houseFrameThrottle){
-    if(t - lastDrawT < 50) return;      /* ~20fps */
-    lastDrawT = t;
+    frameOdd = !frameOdd;
+    if(frameOdd) return;                /* วาดเว้นเฟรม = ~30fps จังหวะเท่ากันทุกเฟรม */
   }
   const dt = Math.min(.05, (t - lastT)/1000 || 0);
   lastT = t;
+  frameLog.push(t); if(frameLog.length > 120) frameLog.shift();
   updateLightLerp(dt);
   /* เควสต์ "ไปตลาด": เช็คทุกเฟรม (ราคาถูกมาก — เทียบพิกัด 4 ครั้งเมื่อมีงานค้างเท่านั้น)
      ⚠ เช็คแค่ตอนก้าวถึงช่องใหม่ไม่พอ — เด็กอาจถูกวาร์ป/เริ่มเกมมาทั้งที่ยืนอยู่ในตลาดแล้ว */
@@ -12861,6 +12867,9 @@ if(!homeView.hidden) houseBuddyRefresh();
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
   /* รอบเล่นเควสต์ที่กำลังเปิดอยู่ (ชุดเทสมินิเกมเฟส 4B ต้องรู้ว่าของชิ้นไหนควรลงถังไหน) */
   qRun: ()=> qRun,
+  /* จังหวะเฟรมของลูปวาด — ใช้วัดว่า "หรี่เฟรมตอนเปิดกล้อง" แล้วยังเดินสม่ำเสมอไหม
+     (ผู้ใช้แจ้ง 2026-08-12 ว่าโลกกระตุกตอนเปิดกล้อง — ต้นเหตุคือหรี่แบบเว้นตามเวลา) */
+  frameLog: ()=> frameLog.slice(),
   /* ชุดเทส: สั่งให้เด็กเดินไปนั่งเก้าอี้/โต๊ะตัวแรกในบ้าน (เส้นทางเดียวกับตอนแตะของจริง) */
   sitIndoor: ()=>{
     const g = (decorGroups.in || []).filter(x=>{

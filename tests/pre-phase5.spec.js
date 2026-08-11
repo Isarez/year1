@@ -208,3 +208,118 @@ test('HouseGames: ยืม engine หน้าหลักมาเล่นใ
   expect(after.cur).toBe(null);
   expect(errs).toEqual([]);
 });
+
+/* ผู้ใช้สั่ง 2026-08-12: ในโหมดบ้าน ตอบด้วยการ "ชี้ค้าง 1.5 วินาที" ไม่ต้องจีบนิ้ว
+   ⚠ เกม ป.3 ในหน้าหลักต้องยังเป็นจีบนิ้วเหมือนเดิม (CLAUDE.md ล็อกไว้)
+   เทสนี้เรียก updateHandCursor() ตรงๆ จึงไม่ต้องเปิดกล้องจริง */
+test('โหมดมือในบ้าน: ชี้ค้าง 1.5 วิ = ตอบ · แถบเดินแบบ linear · ขยับออกแล้วเริ่มนับใหม่', async ({ page }) => {
+  const errs = await pickChild(page);
+  await enterHouse(page);
+  await page.evaluate(()=>window.HouseQuestUI.playTest({mech:'quiz', title:'🧪 ชี้ค้าง'}));
+  await expect(page.locator('#house-qz')).toBeVisible();
+
+  const r = await page.evaluate(async ()=>{
+    setHandDwellMode(true);
+    const btn = document.querySelector('#house-qz button:not(#hqz-close)');
+    const b = btn.getBoundingClientRect();
+    const x = b.left + b.width/2, y = b.top + b.height/2;
+    let clicked = false;
+    btn.addEventListener('click', ()=>{ clicked = true; }, {once:true});
+
+    /* ชี้ครึ่งทาง แล้วขยับออกไปที่ว่าง → ต้องรีเซ็ต (ไม่มี .hp-dwell เหลือ) */
+    const t0 = Date.now();
+    while(Date.now()-t0 < 600){ updateHandCursor(x, y, false); await new Promise(r2=>setTimeout(r2,60)); }
+    const pMid = parseFloat(getComputedStyle(document.querySelector('.hp-dwell')).getPropertyValue('--hp-dwell-p'));
+    updateHandCursor(2, 2, false);
+    const resetOk = !document.querySelector('.hp-dwell') && !clicked;
+
+    /* ชี้ค้างยาวๆ ต้องกดให้ + เก็บคู่ (เวลา, ความคืบหน้า) ไว้ตรวจว่าเดินแบบ linear */
+    const marks = [];
+    const t1 = Date.now();
+    while(Date.now()-t1 < 4000 && !clicked){
+      updateHandCursor(x, y, false);
+      const el = document.querySelector('.hp-dwell');
+      if(el) marks.push([Date.now()-t1, parseFloat(getComputedStyle(el).getPropertyValue('--hp-dwell-p'))]);
+      await new Promise(r2=>setTimeout(r2,60));
+    }
+    const box = document.querySelector('#house-qz button:not(#hqz-close)');
+    return { clicked, held: Date.now()-t1, pMid, resetOk, marks,
+             outlineOffset: parseFloat(getComputedStyle(box).outlineOffset) || 0 };
+  });
+  console.log('ชี้ค้าง: ' + JSON.stringify(r));
+  expect(r.pMid, 'วงแหวนต้องเดินหน้าระหว่างชี้').toBeGreaterThan(0.15);
+  expect(r.resetOk, 'ขยับนิ้วออกจากปุ่มแล้วต้องเริ่มนับใหม่ ไม่กดเอง').toBe(true);
+  expect(r.clicked, 'ชี้ค้างครบแล้วต้องนับเป็นการกด').toBe(true);
+  expect(r.held).toBeGreaterThan(1200);
+  expect(r.held).toBeLessThan(2400);
+  /* linear = ความคืบหน้าต้องโตตามเวลาแบบตรงๆ (คลาดจาก t/1500 ไม่เกิน 0.15) */
+  r.marks.forEach(([ms,p])=>{ expect(Math.abs(p - Math.min(1, ms/1500))).toBeLessThan(0.15); });
+  /* เส้นต้องวาดในกรอบปุ่ม ไม่งั้นโผล่พ้นขอบการ์ดออกไปในโลก 3D */
+  expect(r.outlineOffset, 'เส้นเล็ง/แถบต้องอยู่ในกรอบปุ่ม (outline-offset ติดลบ)').toBeLessThanOrEqual(0);
+  expect(errs).toEqual([]);
+});
+
+test('เกมหน้าหลักยังใช้ท่าเดิม — ชี้ค้างต้องไม่กดให้เอง', async ({ page }) => {
+  const errs = await pickChild(page);
+  const r = await page.evaluate(async ()=>{
+    setHandDwellMode(false);
+    const btn = document.querySelector('#home-view button');
+    const b = btn.getBoundingClientRect();
+    let clicked = false;
+    const stop = e => { clicked = true; e.preventDefault(); e.stopPropagation(); };
+    btn.addEventListener('click', stop, true);
+    const t0 = Date.now();
+    while(Date.now()-t0 < 4000){ updateHandCursor(b.left+b.width/2, b.top+b.height/2, false); await new Promise(r2=>setTimeout(r2,100)); }
+    btn.removeEventListener('click', stop, true);
+    return { clicked, ring: !!document.querySelector('.hp-dwell') };
+  });
+  expect(r.clicked, 'หน้าหลักต้องไม่ตอบด้วยการชี้ค้าง (ท่าเดิม = จีบนิ้ว)').toBe(false);
+  expect(r.ring).toBe(false);
+  expect(errs).toEqual([]);
+});
+
+/* โหมดชี้ค้างไม่ได้ตัดการจีบนิ้วทิ้ง — เด็กที่จีบนิ้วเป็นต้องตอบได้ทันทีไม่ต้องรอ 1.5 วิ
+   (ผู้ใช้ยืนยัน 2026-08-12 ให้คงไว้ + เพิ่มคำอธิบาย) */
+test('โหมดมือในบ้าน: จีบนิ้วยังตอบได้ทันที ไม่ต้องรอชี้ค้าง', async ({ page }) => {
+  const errs = await pickChild(page);
+  await enterHouse(page);
+  await page.evaluate(()=>window.HouseQuestUI.playTest({mech:'quiz', title:'🧪 จีบนิ้ว'}));
+  const r = await page.evaluate(async ()=>{
+    setHandDwellMode(true);                 /* โหมดบ้าน = ชี้ค้าง แต่จีบนิ้วต้องยังใช้ได้ */
+    const btn = document.querySelector('#house-qz button:not(#hqz-close)');
+    const b = btn.getBoundingClientRect();
+    const x = b.left + b.width/2, y = b.top + b.height/2;
+    let clicked = false;
+    btn.addEventListener('click', ()=>{ clicked = true; }, {once:true});
+    const t0 = Date.now();
+    updateHandCursor(x, y, false);          /* เฟรมแรกยังไม่จีบ */
+    updateHandCursor(x, y, true);           /* จีบนิ้ว = ต้องตอบทันที */
+    await new Promise(r2=>setTimeout(r2, 120));
+    return { clicked, ms: Date.now()-t0 };
+  });
+  console.log('จีบนิ้ว: ' + JSON.stringify(r));
+  expect(r.clicked, 'จีบนิ้วต้องตอบได้ทันทีแม้อยู่ในโหมดชี้ค้าง').toBe(true);
+  expect(r.ms, 'ต้องไม่ต้องรอครบเวลาชี้ค้าง').toBeLessThan(600);
+  expect(errs).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-12: แถบ HUD ทุกแถวใช้ .house-hud-row ตัวเดียว (margin-top 10) ห้ามมี row2 */
+test('แถบ HUD โหมดบ้าน: ทุกแถวใช้คลาสเดียวกัน ระยะเท่ากัน ชิดซ้ายตรงกัน', async ({ page }) => {
+  const errs = await pickChild(page);
+  await enterHouse(page);
+  const m = await page.evaluate(()=>{
+    const rows = Array.from(document.querySelectorAll('#house-view .house-hud-row'));
+    const qb = document.getElementById('house-quest-bar');
+    return {
+      row2: document.querySelectorAll('.house-hud-row2').length,
+      mts: rows.map(r=>getComputedStyle(r).marginTop),
+      qbLeft: Math.round(qb.getBoundingClientRect().left),
+      chipLeft: Math.round(document.querySelector('#house-view .child-chip').getBoundingClientRect().left),
+    };
+  });
+  console.log('HUD: ' + JSON.stringify(m));
+  expect(m.row2, 'ไม่ควรมี .house-hud-row2 เหลืออยู่แล้ว').toBe(0);
+  m.mts.forEach(v => expect(v).toBe('10px'));
+  expect(m.qbLeft).toBe(m.chipLeft);
+  expect(errs).toEqual([]);
+});

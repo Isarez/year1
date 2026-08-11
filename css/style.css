@@ -1379,7 +1379,20 @@
   .hp-layer[hidden]{display:none;}
   #hp-video{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;}
   #hp-canvas{position:absolute; inset:0; width:100%; height:100%;}
-  .hp-hover{outline:4px dashed #FFC53D; outline-offset:3px;}
+  /* ⚠ **เส้นเล็ง/เส้นนับถอยหลังต้องวาดอยู่ "ในกรอบของชิ้นนั้น" เสมอ** (outline-offset ติดลบ)
+     ของเดิมวาดล้นออกไป 3-7px แล้วโผล่พ้นขอบการ์ดคำถามออกไปในโลก 3D (ผู้ใช้แจ้ง 2026-08-12) */
+  .hp-hover{outline:4px dashed #FFC53D; outline-offset:-4px;}
+  /* "ชี้ค้าง" ในโหมดบ้าน — แถบเขียวไล่จากซ้ายไปขวาด้วยความเร็วคงที่ (linear) เต็มแถบ = ตอบ
+     (ผู้ใช้สั่ง 2026-08-12: เดิมเป็นวงแหวนรอบขอบ ซึ่งวิ่งเร็ว-ช้าไม่เท่ากันตามด้านของสี่เหลี่ยม)
+     ตัวคุมความคืบหน้าคือ `--hp-dwell-p` 0→1 ที่ JS ตั้งให้ทุกเฟรม
+     ⚠ ใช้ clip-path แทน width เพื่อให้มุมโค้งตามปุ่มจริง และไม่ต้องใส่ overflow:hidden (จะไปตัดลูกในปุ่ม) */
+  .hp-dwell{position:relative; outline:3px solid #2FBF66; outline-offset:-3px;}
+  .hp-dwell::after{
+    content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:1;
+    background:linear-gradient(90deg, rgba(47,191,102,.38), rgba(47,191,102,.20));
+    clip-path:inset(0 calc(100% - var(--hp-dwell-p, 0) * 100%) 0 0);
+  }
+  .hp-dwell.hp-hover{outline:3px solid #2FBF66; outline-offset:-3px;}
 
   /* ---------- Memory matching game (จับคู่โดมิโน) ---------- */
   /* อยู่ในกล่องเดียวกับ .progress-track (.quiz-top-info) แทนที่จะลอยแยกกลางจอ ให้ความยาวเท่ากับแถบ progress เป๊ะเสมอ */
@@ -2190,6 +2203,14 @@
   #fp-piano .music-black{width:clamp(16px,3vw,32px);}
   @media (min-width:1025px){ #fp-piano{height:288px;} }
   @media (max-width:480px){ #fp-piano{height:196px;} }
+  /* เปียโนตอนถูกยืมไปเล่นในการ์ดเควสต์ (โหมดบ้าน) — ใช้กติกาเดียวกับ modal "เปียโนของหนู"
+     คือคีย์ขาวยืด/หดพอดีกล่อง **ห้ามให้ต้องเลื่อนดู** เด็กมองไม่เห็นคีย์ที่ต้องกด (ผู้ใช้สั่ง 2026-08-12) */
+  .og-embedded .music-piano-wrap{overflow-x:hidden; padding-left:2px; padding-right:2px;}
+  .og-embedded #music-piano{width:100%; height:212px;}
+  .og-embedded #music-piano .music-white{flex:1 1 0; width:auto; min-width:0; padding-bottom:10px;}
+  .og-embedded #music-piano .music-white .mk-label{width:clamp(15px,2.4vw,24px); height:clamp(15px,2.4vw,24px); font-size:clamp(9px,1.6vw,13px);}
+  .og-embedded #music-piano .music-black{width:clamp(16px,2.8vw,30px);}
+  @media (max-width:480px){ .og-embedded #music-piano{height:180px;} }
 
   /* ---------- Connect dots game (เกมลากเส้นต่อจุด 1/2 — เกมฝึกเขียน) ---------- */
   .dots-board{display:flex; justify-content:center; padding:14px 6px 40px; width:100%; max-width:100%;}
@@ -3261,8 +3282,8 @@
      ตั้งที่ `> *` ทีเดียว เพิ่มแถบใหม่ในแถวนี้ทีหลังจะได้ไม่ต้องมาไล่แก้อีก */
   .house-hud-row{display:flex; align-items:center; gap:8px; align-self:flex-start; margin-top:10px;
                  flex-wrap:wrap; pointer-events:none;}
-  /* แถวที่ 3 (แถบเควสต์) — ชิดแถวสัตว์เลี้ยงกว่าปกติ เพราะเป็น HUD ชุดเดียวกัน ไม่ให้กินฉากเพิ่ม */
-  .house-hud-row2{margin-top:7px;}
+  /* ⚠ ทุกแถวของ HUD ใช้ `.house-hud-row` ตัวเดียว ระยะห่างเท่ากันหมด (margin-top ข้างบน)
+     เคยมี `.house-hud-row2` ให้แถบเควสต์ชิดขึ้น 7px — ผู้ใช้สั่งเอาออก 2026-08-12 **ห้ามใส่กลับ** */
   .house-hud-row > *{pointer-events:auto;}
 
   /* ---------- แถบสรุปเควสต์วันนี้ (เฟส 4A) ---------- */
@@ -3532,6 +3553,10 @@
          78vw ทำให้แท็บเล็ตได้เต็ม 640 ส่วนจอ desktop ยังชนเพดาน 760px เท่าเดิม */
       top:50%; bottom:auto; width:min(760px,78vw); max-height:88vh;
     }
+    /* เกมที่ยืม engine หน้าหลักมา (เฟส 5) ถูกออกแบบมาสำหรับ "ทั้งหน้าจอ" ไม่ใช่การ์ดใบเล็ก
+       ⇒ ตอนถูก mount ให้การ์ดกว้างขึ้น ไม่งั้นกระดาน/คีย์เปียโนล้นจนต้องเลื่อนดู
+       (ผู้ใช้แจ้ง 2026-08-12: เปียโน 15 คีย์ต้องการ 980px แต่การ์ดให้แค่ 708px) */
+    body.og-mounted .house-creator.house-qz{width:min(1040px,92vw);}
     .house-qz .hqz-panel{height:auto;}
     /* ร้านค้ากว้างกว่าแผงอื่นบนจอใหญ่ — ของเยอะ ถ้าแคบเท่ากันจะได้แค่ 3 ใบต่อแถว เลื่อนยาวมาก */
     .house-creator.house-shop{width:min(640px,56vw); max-height:none;}

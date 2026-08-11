@@ -49,3 +49,42 @@ test('เปิดกล้องในการ์ดเควสต์แล�
   /* ปิดกล้องให้เรียบร้อยก่อนจบเทส */
   await page.evaluate(() => stopHandPlay());
 });
+
+/* บั๊กจริงที่ผู้ใช้เจอ 2026-08-11 — "ปิดคำถามแล้วเปิดกล้องใหม่ มือไม่ขึ้น"
+   ตอนนั้นสร้าง `new Hands()` ใหม่ทุกครั้งที่เปิดกล้อง โดยตัวเก่าไม่ได้ถูก close()
+   ⇒ ระบบไฟล์ในหน่วยความจำของ wasm ยังไม่ถูกคืน ตัวใหม่อ่านไฟล์โมเดลไม่เจอแล้ว abort
+   อาการเป็นแบบ "บางที" (รอบ 1 ดี · รอบ 2 พัง · รอบ 3 ดี) จึงต้องวนหลายรอบถึงจับได้ */
+test('ปิดการ์ดคำถามแล้วเปิดกล้องใหม่ 3 รอบ ต้องเจอมือได้ทุกรอบ', async ({ page }) => {
+  test.setTimeout(180000);
+  const errs = [];
+  page.on('pageerror', e => errs.push(String(e)));
+  await page.addInitScript(c => {
+    localStorage.setItem('p1quiz_children', JSON.stringify([c]));
+    localStorage.setItem('p1quiz_active_child', c.id);
+    localStorage.setItem('p1quiz_music', 'off');
+    localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify({ v: 1, mapV: 3,
+      char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } }));
+  }, CHILD);
+  await page.goto('/');
+  await page.locator('#child-select-view .child-card').first().click();
+  await page.locator('#landing-house').click();
+  await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
+
+  const got = [];
+  for (let i = 0; i < 3; i++) {
+    await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'quiz', title: '🧪 กล้อง' }));
+    await page.locator('#handplay-toggle').click();
+    await page.waitForFunction(() => typeof hpActive !== 'undefined' && hpActive === true, null, { timeout: 40000 });
+    got.push(await page.evaluate(async () => {
+      window.__n = 0;
+      hpHands.onResults(() => { window.__n++; });
+      await new Promise(r => setTimeout(r, 2500));
+      return window.__n;
+    }));
+    await page.locator('#hqz-close').click();      /* = closeQuestPanel() → ปิดกล้อง */
+    await page.waitForTimeout(600);
+  }
+  console.log('ผลลัพธ์ต่อรอบ:', got.join(' · '));
+  got.forEach((n, i) => expect(n, 'รอบที่ ' + (i + 1) + ' โมเดลไม่ประมวลผลเลย').toBeGreaterThan(0));
+  expect(errs).toEqual([]);
+});

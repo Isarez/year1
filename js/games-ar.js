@@ -46,6 +46,23 @@ function loadMediaPipeScripts(){
   return _mpLoadPromise;
 }
 
+/* ⚠ **Hands ตัวเดียวใช้ทั้งแอป — ห้ามสร้างใหม่ทุกครั้งที่เปิดกล้อง**
+   บั๊กจริงที่ผู้ใช้เจอ 2026-08-11: ปิดการ์ดคำถาม (= ปิดกล้อง) แล้วเปิดใหม่ มือไม่ขึ้น "บางที"
+     รอบ 1 ได้ผลลัพธ์ปกติ · รอบ 2 ได้ 0 · รอบ 3 กลับมาปกติ
+   สาเหตุ: ตัวเก่าถูกทิ้งด้วย `hpHands = null` เฉยๆ (ไม่ได้ close()) ระบบไฟล์ในหน่วยความจำของ wasm
+     ยังไม่ถูกคืน ตัวใหม่จึงอ่านไฟล์โมเดลไม่เจอ →
+     "LocalFileContentsCalculator failed: Failed to read file …" แล้ว abort ทั้งกราฟ
+   ⇒ สร้างครั้งเดียวแล้วใช้ซ้ำตลอด · `onResults` ตั้งทับได้ (mediapipe เก็บ callback ตัวเดียว)
+     ⇒ ฝั่งที่เลิกใช้แค่ตั้ง `arHands/hpHands = null` ของตัวเองได้ตามเดิม ไม่กระทบตัวจริง
+   ⚠ เกม AR กับโหมดมือไม่มีทางเปิดพร้อมกัน (คนละ view) จึงใช้ตัวเดียวกันได้ปลอดภัย */
+let _mpSolution = null;
+function getHandsSolution(){
+  if(_mpSolution) return _mpSolution;
+  _mpSolution = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
+  _mpSolution.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+  return _mpSolution;
+}
+
 
 function buildLevel(catId){
   const cat = catById(catId);
@@ -414,8 +431,7 @@ async function initHandTracking(){
     arResizeHandler();
     window.addEventListener('resize', arResizeHandler);
 
-    arHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
-    arHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    arHands = getHandsSolution();
     /* ยามเฝ้าแบบเดียวกับโหมดมือ — กันอาการ "กล้องติดแต่ไม่เจอมือ" เงียบๆ (ดู startHandWatchdog)
        เกม AR ยังลากด้วยนิ้ว/เมาส์ได้อยู่แล้ว จึงแค่บอกให้รู้ ไม่ต้องปิดกล้องทิ้ง */
     arResCount = 0; arSawHand = false;
@@ -466,6 +482,22 @@ async function initHandTracking(){
    - ต่างจาก ar-view ตรงที่ "ไม่โชว์ภาพจากกล้อง" เป็นพื้นหลัง (จะบังกระดานเกม) วาดแค่มือการ์ตูนทับหน้าจอ
    - default = ปิด (ไม่ขอสิทธิ์กล้องเอง) เด็กกดปุ่มเองถึงจะเปิด, ไม่แสดงบนมือถือ (จอเล็กเกินไป) ============================= */
 const HP_CLICK_SEL = 'button:not([disabled]), .sort-bin, .coord-cell, .memory-card, [data-hp-click]';
+/* ⚠ ของบางชิ้นฟัง **pointerdown** ไม่ได้ฟัง click ⇒ ยิง .click() ใส่แล้วเงียบสนิท
+   (คีย์เปียโนของเกมดนตรี — ผู้ใช้แจ้ง 2026-08-12 ว่าชี้ค้างแล้วกดคีย์ไม่ได้)
+   ของกลุ่มนี้ต้องยิง pointerdown+pointerup จริงแทน · เพิ่มของใหม่ให้เติมที่ลิสต์นี้ที่เดียว */
+const HP_POINTER_SEL = '.music-key, [data-hp-pointer]';
+function hpFire(el){
+  if(!el) return;
+  if(el.matches && el.matches(HP_POINTER_SEL)){
+    const r = el.getBoundingClientRect();
+    const o = {bubbles:true, cancelable:true, clientX:r.left+r.width/2, clientY:r.top+r.height/2,
+               pointerId:1, pointerType:'touch', isPrimary:true};
+    el.dispatchEvent(new PointerEvent('pointerdown', o));
+    el.dispatchEvent(new PointerEvent('pointerup', o));
+    return;
+  }
+  el.click();
+}
 let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = null, hpLandmarks = null,
     hpRaf = null, hpSmooth = null, hpWasPinching = false, hpResizeHandler = null, hpHoverEl = null, hpClickAt = 0,
     hpHintShown = false, hpResCount = 0, hpSawHand = false, hpWatchdog = null;
@@ -508,12 +540,14 @@ function mountHandPlayHouse(){
   /* ⚠ ต้องเรียกซ้ำได้โดย "ไม่ปิดกล้องที่เปิดอยู่" — qzShow() ในโหมดบ้านถูกเรียกทุกครั้งที่เปลี่ยนข้อ
      (8 จุด: รับงาน → เริ่มเล่น → ข้อถัดไป → หน้าสรุป) ถ้า unmount ทุกรอบแบบ mountHandPlay()
      เด็กจะเปิดกล้องแล้วมือหายทันทีที่ตอบข้อแรก (บั๊กจริงที่ผู้ใช้เจอ 2026-08-11) */
+  setHandDwellMode(true);          /* โหมดบ้าน = ชี้ค้าง 3 วิ (ไม่ต้องจีบนิ้ว) */
   if(hpBtn && hpBtn.parentNode === top){ hpRefreshBtn(); return; }
   top.appendChild(hpEnsureBtn());
   hpRefreshBtn();
 }
 function mountHandPlay(cat){
   unmountHandPlay();
+  setHandDwellMode(false);         /* เกมหน้าหลักยังใช้ท่าเดิม (จีบนิ้ว) ตามที่ล็อกไว้ใน CLAUDE.md */
   if(!cat || !cat.handPlay || isMobileViewport()) return;
   const view = hpVisibleView();
   if(!view) return;
@@ -534,18 +568,60 @@ function toggleHandPlay(){
   if(hpActive){ stopHandPlay(); hpRefreshBtn(); showToast('📷','ปิดกล้องแล้ว แตะหน้าจอเล่นต่อได้เลย!'); }
   else startHandPlay();
 }
-/* บอกโหมดบ้านว่ากล้องเปิดอยู่ → หรี่ลูปวาด 3D ลง ไม่ให้แย่งซีพียูกับ hand tracking
-   (ตอนการ์ดเควสต์เปิด โลกนิ่งอยู่แล้ว จึงไม่มีใครสังเกตเห็น)
-   ⚠ ต้องเรียก "หลัง" hpActive ถูกตั้งค่าจริง — startHandPlay() เป็น async ถ้าเรียกต่อท้าย
-     toggleHandPlay() ค่าจะยังเป็น false เสมอ = การหรี่เฟรมไม่เคยทำงาน (เจอ 2026-08-11) */
+/* บอกโหมดบ้านว่ากล้องเปิดอยู่อยู่ไหม
+   ⚠ **ไม่หรี่ลูปวาด 3D แล้ว** (ส่ง false เสมอ) — ลองหรี่เหลือ 20-30fps ตอนกล้องเปิดแล้ว
+     ผู้ใช้แจ้งว่า "โลกกระตุก" 2026-08-12 · ตัวการจริงคือ inference ของ MediaPipe ที่บล็อก main thread
+     ซึ่งแก้ที่ "ส่งเข้าโมเดลเว้นเฟรม" ตรงกล้องแทน (ดู onFrame ใน startHandPlay)
+     คงฟังก์ชันนี้ไว้เป็นจุดต่อ เผื่อวันหลังเจอเครื่องช้าจริงๆ ที่ต้องหรี่
+   ⚠ ถ้าจะเปิดหรี่กลับ ต้องเรียก "หลัง" hpActive ถูกตั้งค่าจริง — startHandPlay() เป็น async */
 function hpFrameHint(){
-  if(window.HouseFrameHint) window.HouseFrameHint(hpActive);
+  if(window.HouseFrameHint) window.HouseFrameHint(false);
 }
 function hpSetHover(el){
   if(hpHoverEl === el) return;
   if(hpHoverEl && hpHoverEl.classList) hpHoverEl.classList.remove('hp-hover');
   hpHoverEl = el;
   if(hpHoverEl && hpHoverEl.classList) hpHoverEl.classList.add('hp-hover');
+}
+/* ---- "ชี้ค้าง" (dwell) — ตอบโดยไม่ต้องจีบนิ้ว (ผู้ใช้สั่ง 2026-08-12) ----
+   เอานิ้วชี้ค้างบนปุ่มครบ HP_DWELL_MS แล้วนับเป็นการกดหนึ่งครั้ง
+   ระหว่างนับ ปุ่มจะมี "แถบเขียวไล่จากซ้ายไปขวา" ด้วยความเร็วคงที่ (linear) ดู .hp-dwell ใน css/style.css
+   ⚠ **ตัวบอกความคืบหน้าต้องวาดอยู่ "ในกรอบปุ่ม" เท่านั้น** (outline-offset ติดลบ / pseudo inset:0)
+     ของเดิมวาดล้นออกนอกปุ่ม 7px แล้วโผล่พ้นขอบการ์ดออกไปในโลก 3D (ผู้ใช้แจ้ง 2026-08-12)
+   ⚠ **ใช้เฉพาะโหมดบ้าน** (hpDwellOn) — เกม ป.3 กับ ar-match ในหน้าหลักยังใช้ท่าเดิม
+     (CLAUDE.md ล็อกไว้ว่าห้ามเปลี่ยนท่ามือของเกมพวกนั้นโดยไม่ถามผู้ใช้)
+   ⚠ **จีบนิ้วยังใช้ได้เหมือนเดิม** เป็นทางลัดของเด็กที่ทำเป็น ไม่ได้เอาออก
+   ⚠ ขยับนิ้วออกนอกปุ่ม = เริ่มนับใหม่ · สั่นเล็กน้อยไม่นับว่าออก (เป้าเดิม = นับต่อ) */
+const HP_DWELL_MS = 1500;
+let hpDwellOn = false, hpDwellEl = null, hpDwellAt = 0;
+function setHandDwellMode(on){
+  hpDwellOn = !!on;
+  if(!hpDwellOn) hpDwellClear();
+}
+function hpDwellClear(){
+  if(hpDwellEl){
+    hpDwellEl.classList.remove('hp-dwell');
+    hpDwellEl.style.removeProperty('--hp-dwell-p');
+  }
+  hpDwellEl = null; hpDwellAt = 0;
+}
+function hpDwellTick(target){
+  if(!hpDwellOn || !target){ hpDwellClear(); return false; }
+  if(target !== hpDwellEl){
+    hpDwellClear();
+    hpDwellEl = target; hpDwellAt = Date.now();
+    target.classList.add('hp-dwell');
+  }
+  const p = Math.min(1, (Date.now() - hpDwellAt) / HP_DWELL_MS);
+  hpDwellEl.style.setProperty('--hp-dwell-p', p.toFixed(3));
+  if(p >= 1){
+    const el = hpDwellEl;
+    hpDwellClear();
+    hpClickAt = Date.now();
+    hpFire(el);
+    return true;
+  }
+  return false;
 }
 function updateHandCursor(pageX, pageY, pinching){
   const cur = $('hp-cursor');
@@ -560,7 +636,12 @@ function updateHandCursor(pageX, pageY, pinching){
   if(pinching && !hpWasPinching && target && Date.now()-hpClickAt > 450){
     hpClickAt = Date.now();
     cur.classList.add('grabbed');
-    target.click();
+    hpDwellClear();
+    hpFire(target);
+  } else if(!pinching && Date.now()-hpClickAt > 450){
+    if(hpDwellTick(target)) cur.classList.add('grabbed');
+  } else if(pinching){
+    hpDwellClear();          /* กำลังจีบนิ้วอยู่ = ไม่ต้องนับถอยหลังซ้อน */
   }
   hpWasPinching = pinching;
 }
@@ -586,6 +667,7 @@ function hpDrawLoop(){
   } else {
     hpSmooth = null;
     hpSetHover(null);
+    hpDwellClear();          /* มือหลุดออกนอกกล้อง = เริ่มนับใหม่รอบหน้า */
     $('hp-cursor').classList.remove('active');
     hpWasPinching = false;
   }
@@ -605,19 +687,31 @@ async function startHandPlay(){
     hpResizeHandler = ()=>{ canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     hpResizeHandler();
     window.addEventListener('resize', hpResizeHandler);
-    hpHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
-    hpHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+    hpHands = getHandsSolution();
     hpResCount = 0; hpSawHand = false;
     hpHands.onResults(res=>{
       hpResCount++;
       hpLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null;
       if(hpLandmarks) hpSawHand = true;
     });
-    hpCamera = new Camera(video, { onFrame: async ()=>{ if(hpHands){ await hpHands.send({ image:video }); } }, width:480, height:360 });
+    /* ⚠ **ต้นเหตุจริงที่โลก 3D กระตุกตอนเปิดกล้อง คือ "การประมวลผลมือ" ไม่ใช่การวาดฉาก**
+       hands.send() ทำ inference บน main thread เฟรมละ ~10-20 ms ⇒ rAF ของโลกโดนบล็อกเป็นช่วงๆ
+       การไปหรี่ลูปวาดจึงไม่ช่วย (ยิ่งกระตุกกว่าเดิม — ผู้ใช้แจ้ง 2026-08-12)
+       ⇒ ส่งเข้าโมเดล "เว้นเฟรม" แทน งานหนักลดครึ่ง เคอร์เซอร์มือยังลื่นพอ (~15 ครั้ง/วินาที)
+         ซึ่งเหลือเฟือสำหรับกลไก "ชี้ค้าง" ที่ไม่ต้องการความแม่นระดับเฟรมแบบตอนจีบนิ้ว */
+    let sendOdd = false;
+    hpCamera = new Camera(video, { onFrame: async ()=>{
+      sendOdd = !sendOdd;
+      if(sendOdd) return;
+      if(hpHands){ await hpHands.send({ image:video }); }
+    }, width:480, height:360 });
     await hpCamera.start();
     hpActive = true;
     hpRaf = requestAnimationFrame(hpDrawLoop);
-    showToast('✋','ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" เพื่อแตะได้เลย!');
+    /* ⚠ โหมดชี้ค้าง **ไม่ได้ตัดการจีบนิ้วทิ้ง** — ต้องบอกเด็กว่าทำได้ทั้ง 2 ทาง (ผู้ใช้สั่ง 2026-08-12) */
+    showToast('✋', hpDwellOn
+      ? 'ยกมือขึ้นหน้ากล้อง ชี้ค้างที่คำตอบจนเส้นเขียวเต็ม = ตอบ · หรือ "จีบนิ้ว" ตอบทันทีก็ได้!'
+      : 'ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" เพื่อแตะได้เลย!');
     startHandWatchdog();
   }catch(err){
     console.warn('hand play unavailable:', err);
@@ -646,6 +740,7 @@ function startHandWatchdog(){
 function clearHandWatchdog(){ if(hpWatchdog){ clearTimeout(hpWatchdog); hpWatchdog = null; } }
 function stopHandPlay(){
   clearHandWatchdog();
+  hpDwellClear();
   hpActive = false;
   hpLandmarks = null;
   hpSmooth = null;

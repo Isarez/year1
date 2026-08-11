@@ -63,3 +63,71 @@ test('เฟส 5: เล่นเกมที่ยืมมาในการ�
   expect(after.stars).toContain('⭐⭐⭐');
   expect(errs).toEqual([]);
 });
+
+/* ผู้ใช้แจ้ง 2026-08-12: เปียโนในการ์ดเควสต์เห็นคีย์ไม่ครบ ต้องเลื่อนดู
+   ⇒ การ์ดของเกมที่ยืม engine หน้าหลักต้องกว้างขึ้น + คีย์ยืดพอดีกล่องเหมือน modal "เปียโนของหนู" */
+test('เปียโนในการ์ดเควสต์: เห็นคีย์ครบทุกตัว ไม่ต้องเลื่อนดู', async ({ page }) => {
+  const errs = await house(page);
+  await page.evaluate(()=>window.HouseGames.play({gameId:'music', gradeId:'p3'}));
+  await expect(page.locator('#music-piano')).toBeVisible();
+  const m = await page.evaluate(()=>{
+    const wrap = document.querySelector('#music-view .music-piano-wrap');
+    const piano = document.getElementById('music-piano');
+    const card = document.querySelector('#house-qz .house-qz') || document.getElementById('house-qz');
+    const keys = Array.from(piano.querySelectorAll('.music-white'));
+    const last = keys[keys.length-1].getBoundingClientRect();
+    const w = wrap.getBoundingClientRect();
+    return { overflowX: wrap.scrollWidth - wrap.clientWidth,
+             overflowY: card.scrollHeight - card.clientHeight,
+             keyW: Math.round(keys[0].getBoundingClientRect().width),
+             lastKeyInside: last.right <= w.right + 1,
+             keys: keys.length };
+  });
+  console.log('เปียโนในการ์ด: ' + JSON.stringify(m));
+  expect(m.keys).toBeGreaterThan(10);
+  expect(m.overflowX, 'คีย์ล้นกล่อง = เด็กต้องเลื่อนหาคีย์ที่ต้องกด').toBeLessThanOrEqual(2);
+  expect(m.overflowY, 'การ์ดสูงเกินจนต้องเลื่อน').toBeLessThanOrEqual(2);
+  expect(m.lastKeyInside).toBe(true);
+  expect(m.keyW, 'คีย์แคบเกินไปสำหรับนิ้วเด็ก').toBeGreaterThan(38);
+  expect(errs).toEqual([]);
+});
+
+/* เกมอื่นที่ยืมมาเล่นก็ต้องพอดีการ์ดเหมือนกัน (ไม่มีเลื่อนแนวตั้ง) */
+test('เกมที่ยืม engine มาเล่น: พอดีการ์ด ไม่ต้องเลื่อนแนวตั้ง', async ({ page }) => {
+  const errs = await house(page);
+  for(const g of ['mix','memory','balance','shadow']){
+    await page.evaluate(()=>{ window.OwlGames.unmount(); window.HouseQuestUI.closeCard(); });
+    await page.evaluate(id=>window.HouseGames.play({gameId:id, gradeId:'p3'}), g);
+    await page.waitForTimeout(500);
+    const o = await page.evaluate(()=>{
+      const card = document.querySelector('#house-qz .house-qz') || document.getElementById('house-qz');
+      return card.scrollHeight - card.clientHeight;
+    });
+    expect(o, 'เกม ' + g + ' ล้นการ์ดจนต้องเลื่อน').toBeLessThanOrEqual(2);
+  }
+  expect(errs).toEqual([]);
+});
+
+/* ผู้ใช้แจ้ง 2026-08-12: เล่นเปียโนด้วยโหมดมือไม่ได้ — คีย์ฟัง pointerdown ไม่ได้ฟัง click
+   ⇒ hpFire() ต้องยิง pointer event จริงให้ของกลุ่ม HP_POINTER_SEL */
+test('เปียโน: ชี้ค้างด้วยโหมดมือแล้วคีย์กดติดจริง', async ({ page }) => {
+  const errs = await house(page);
+  await page.evaluate(()=>window.HouseGames.play({gameId:'music', gradeId:'p3'}));
+  await expect(page.locator('#music-piano .music-white').first()).toBeVisible();
+  const r = await page.evaluate(async ()=>{
+    setHandDwellMode(true);
+    const key = document.querySelector('#music-piano .music-white');
+    let fired = 0;
+    key.addEventListener('pointerdown', ()=>{ fired++; });
+    const b = key.getBoundingClientRect();
+    const t0 = Date.now();
+    while(Date.now()-t0 < 3000 && !fired){
+      updateHandCursor(b.left+b.width/2, b.top+b.height*0.8, false);
+      await new Promise(r2=>setTimeout(r2,60));
+    }
+    return {fired, ms: Date.now()-t0};
+  });
+  console.log('เปียโน+โหมดมือ: ' + JSON.stringify(r));
+  expect(r.fired, 'ชี้ค้างบนคีย์เปียโนแล้วต้องกดติด').toBeGreaterThan(0);
+  expect(errs).toEqual([]);
+});
