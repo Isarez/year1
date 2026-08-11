@@ -1873,4 +1873,9 @@ if(window.OwlGames){
   OwlGames.register('order', {name:'เรียงลำดับ', view:'order-view',
     start:o => startOrderGame(o.catId),
     stop:() => { orderGame = null; }});
+  /* เฟส 6 — ต่อวงจรไฟฟ้า (แล็บ STEM `circuit-lab`) ⚠ มีหมวดเดียวคือ ป.6
+     ⇒ `pickCat()` ใน js/house-games.js จะไม่แจกให้เด็กชั้นต่ำกว่าเอง (ห้ามลดเงื่อนไขนั้น) */
+  OwlGames.register('circuit', {name:'ต่อวงจรไฟฟ้า', view:'circuit-view',
+    start:o => startCircuitGame(o.catId),
+    stop:() => { circuitGame = null; }});
 }

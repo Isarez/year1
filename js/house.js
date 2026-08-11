@@ -313,9 +313,12 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
       petFoods: ()=> (PETCARE ? PETCARE.FOOD : []),
       /* เควสต์ "ไปนั่งกินข้าวพร้อมหน้า" ต้องมีโต๊ะ/เก้าอี้ในบ้านก่อน ไม่งั้นรับงานแล้วทำไม่ได้ */
       hasIndoorSeat: ()=> hasIndoorSeat(),
-      /* เฟส 5: เกมของหน้าหลักตัวนี้ยืมมาเล่นได้ไหม (ต้องลงทะเบียนกับ OwlGames + อยู่ในรายการ ALLOW) */
-      hasGame: id => !!(window.OwlGames && OwlGames.has(id)
-                        && window.HouseGames && HouseGames.ALLOW[id]),
+      /* เฟส 5: เกมของหน้าหลักตัวนี้ยืมมาเล่นได้ไหม (ต้องลงทะเบียนกับ OwlGames + อยู่ในรายการ ALLOW)
+         เฟส 6 เพิ่มเงื่อนไขที่ 3: **ต้องมีหมวดที่ระดับชั้นเด็กเล่นได้จริงด้วย** — วงจรไฟฟ้ามีแต่ ป.6
+         แท็งแกรมมีแต่ ป.5-6 ถ้าไม่เช็ค เด็ก ป.1 จะได้รับงานที่เปิดขึ้นมาแล้วเป็นโจทย์ ป.6 */
+      hasGame: (id, gid, pick) => !!(window.OwlGames && OwlGames.has(id)
+                        && window.HouseGames && HouseGames.ALLOW[id]
+                        && HouseGames.pickCat(id, gid || 'prep-p1', pick)),
     })
   : null;
 /* การดูแลสัตว์เลี้ยงเฟส 3B (js/house-pet-care.js โหลดก่อนไฟล์นี้) — ความหิว/อาหาร/ป่วย/ค่ารักษา
@@ -8260,6 +8263,8 @@ function renderQuestStep(){
     renderSortStep(st, it); return;
   }
   if(it.kind === 'clock') renderClockFace(st, it);   /* วาดหน้าปัดแล้วไปต่อทางโจทย์ 4 ตัวเลือกปกติ */
+  if(it.kind === 'beaker') renderBeaker(st, it);     /* เฟส 6: บีกเกอร์ตวงน้ำ — ก็เป็นโจทย์ 4 ตัวเลือกเหมือนกัน */
+  if(it.kind === 'code') renderCodeLines(st, it);    /* เฟส 6: รายการคำสั่งหุ่นยนต์ (หาบรรทัดที่ผิด) */
   /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
@@ -8336,7 +8341,8 @@ function renderEngineStep(st, it){
 function startEngineGame(it){
   if(!window.OwlGames || !window.HouseGames){ finishEngineRound(0); return; }
   const gid = it.game;
-  const cat = HouseGames.pickCat(gid, qRun && qRun.gid ? qRun.gid : 'prep-p1');
+  /* `it.pick` = หมวดย่อยของเกมเดียวกัน (เฟส 6: code เล่นได้ 3 แบบ plain/loop/cond) */
+  const cat = HouseGames.pickCat(gid, qRun && qRun.gid ? qRun.gid : 'prep-p1', it.pick || '');
   const stage = qzStage();
   if(!cat || !stage){ finishEngineRound(0); return; }
   const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
@@ -8460,6 +8466,59 @@ function renderClockFace(st, it){
     + hand(ma, 60, 6, '#8A5A2B') + hand(ha, 40, 9, '#E07A3F')
     + '<circle cx="' + C + '" cy="' + C + '" r="7" fill="#8A5A2B"/></svg>';
   st.appendChild(wrap);
+}
+/* ================= เฟส 6: บีกเกอร์ตวงน้ำ (แล็บ measure-lab) =================
+   วาดเป็น SVG อ่านออกในโค้ด (ไม่ใช่ base64) แบบเดียวกับหน้าปัดนาฬิกา
+   ⚠ **ต้องมีตัวเลขกำกับขีดจริง** ไม่ใช่ขีดเปล่าๆ — โจทย์คือ "อ่านค่าจากขีด" ถ้าไม่มีเลขบอก
+     เด็กต้องนับขีดเอาเองซึ่งกลายเป็นโจทย์คนละข้อ (และชั้นเล็กนับไม่ทัน)
+   ⚠ ระดับน้ำวัดจาก **ก้นบีกเกอร์ขึ้นบน** — วาดกลับหัวแล้วโจทย์ผิดทั้งข้อโดยไม่มี error ให้จับ */
+function renderBeaker(st, it){
+  const b = it.beaker || {val:0, max:100, step:10};
+  const W = 150, H = 190, X0 = 30, Y0 = 22, BW = 84, BH = 148;   /* กรอบแก้ว */
+  const p = Math.max(0, Math.min(1, b.val / b.max));
+  const wy = Y0 + BH * (1 - p);                                   /* ผิวน้ำ */
+  let ticks = '';
+  const nTick = Math.round(b.max / b.step);
+  const every = nTick > 10 ? Math.ceil(nTick / 10) : 1;           /* ขีดเยอะไปก็เขียนเลขห่างขึ้น */
+  for(let i = 1; i <= nTick; i++){
+    const y = Y0 + BH * (1 - i / nTick);
+    const long = (i % every === 0);
+    ticks += '<line x1="' + X0 + '" y1="' + y.toFixed(1) + '" x2="' + (X0 + (long ? 20 : 11))
+           + '" y2="' + y.toFixed(1) + '" stroke="#9BC7DE" stroke-width="2.4" stroke-linecap="round"/>';
+    if(long)
+      ticks += '<text x="' + (X0 + BW + 7) + '" y="' + (y + 5).toFixed(1) + '" font-size="13"'
+             + ' font-weight="800" fill="#5C86A0">' + (i * b.step) + '</text>';
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'hqz-beaker';
+  wrap.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="บีกเกอร์ตวงน้ำ">'
+    + '<clipPath id="hqz-bk-clip"><rect x="' + X0 + '" y="' + Y0 + '" width="' + BW + '" height="' + BH
+    + '" rx="9"/></clipPath>'
+    /* น้ำ (ตัดด้วย clip ให้อยู่ในแก้วเสมอ) + ผิวน้ำเข้มกว่านิดหน่อยให้เห็นระดับชัด */
+    + '<g clip-path="url(#hqz-bk-clip)">'
+    + '<rect x="' + X0 + '" y="' + wy.toFixed(1) + '" width="' + BW + '" height="' + (Y0 + BH - wy).toFixed(1)
+    + '" fill="#7FD1F0"/>'
+    + '<rect x="' + X0 + '" y="' + wy.toFixed(1) + '" width="' + BW + '" height="5" fill="#4FB8DE"/></g>'
+    + '<rect x="' + X0 + '" y="' + Y0 + '" width="' + BW + '" height="' + BH
+    + '" rx="9" fill="none" stroke="#8AB6CC" stroke-width="4"/>'
+    + ticks + '</svg>';
+  st.appendChild(wrap);
+}
+/* ================= เฟส 6: รายการคำสั่งหุ่นยนต์ (แล็บ code-debug) =================
+   วาดเป็นแถวมีเลขบรรทัดกำกับ เพราะตัวเลือกอ้างถึง "บรรทัดที่ N" ตรงๆ
+   ⚠ เลขบรรทัดต้องเห็นชัดเท่ากับตัวคำสั่ง ไม่ใช่เลขจางๆ — เด็กต้องจับคู่เลขกับปุ่มตัวเลือกให้ได้ */
+function renderCodeLines(st, it){
+  const box = document.createElement('div');
+  box.className = 'hqz-code';
+  (it.lines || []).forEach(ln=>{
+    const row = document.createElement('div'); row.className = 'hqz-code-line';
+    const n = document.createElement('span'); n.className = 'hqz-code-n'; n.textContent = ln.n;
+    const e = document.createElement('span'); e.className = 'hqz-code-e'; e.textContent = ln.e;
+    const t = document.createElement('span'); t.className = 'hqz-code-t'; t.textContent = ln.t;
+    row.appendChild(n); row.appendChild(e); row.appendChild(t);
+    box.appendChild(row);
+  });
+  st.appendChild(box);
 }
 /* เกมจำรายการของ: หน้าแรกโชว์ของที่ต้องซื้อ กดปุ่ม (หรือหมดเวลา) แล้วค่อยไปหน้าหยิบของ */
 let qMemShown = {};

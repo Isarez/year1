@@ -3206,6 +3206,27 @@
   /* ---- หน้าปัดนาฬิกา (ตื่นให้ตรงเวลา) ---- */
   .hqz-clock{display:flex; justify-content:center;}
   .hqz-clock svg{width:min(196px,52vw); height:auto;}
+  /* ---- บีกเกอร์ตวงน้ำ (แล็บ measure-lab · เฟส 6) ---- */
+  .hqz-beaker{display:flex; justify-content:center;}
+  .hqz-beaker svg{width:min(168px,44vw); height:auto;}
+  /* ---- รายการคำสั่งหุ่นยนต์ (แล็บ code-debug · เฟส 6) ---- */
+  .hqz-code{display:flex; flex-direction:column; gap:7px; margin:2px auto; width:min(430px,100%);}
+  .hqz-code-line{
+    display:flex; align-items:center; gap:10px;
+    background:#FFFDF7; border:3px solid #F0C58A; border-radius:16px; padding:8px 12px;
+  }
+  .hqz-code-n{
+    flex:0 0 auto; min-width:27px; height:27px; border-radius:9px;
+    background:#F0C58A; color:#6B4A22; font-size:16px; font-weight:900;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hqz-code-e{font-size:24px; line-height:1; flex:0 0 auto;}
+  .hqz-code-t{font-size:17px; font-weight:800; color:#6B5636; text-align:left;}
+  @media (max-width:480px){
+    .hqz-code-line{padding:7px 10px; gap:8px;}
+    .hqz-code-e{font-size:21px;}
+    .hqz-code-t{font-size:15px;}
+  }
   .hqz-memlist{border-style:solid; border-color:#F0C58A; background:#FFF1D6;}
   .hqz-bin.over{border-color:#F0A14B; background:#FFF0D6;}
   .hqz-bin.over .hqz-bin-slot{background:#FFE3B4;}
