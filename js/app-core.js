@@ -153,7 +153,13 @@ function addChild(name){
   enterHome();
 }
 
+/* เข้าแอปหลังเลือกเด็ก — แวะ "หน้าเลือกทาง" ก่อน (js/app-landing.js)
+   ถ้าโหมดบ้านปิดอยู่ หรือเลือกไปแล้วในรอบนี้ จะตกมาที่ enterHomeReal() ตามเดิม */
 function enterHome(){
+  if(window.OwlLanding && OwlLanding.maybeShow()) return;
+  enterHomeReal();
+}
+function enterHomeReal(){
   $('child-select-view').hidden = true;
   $('owl-widget').hidden = false;
   $('clear-btn').hidden = false;

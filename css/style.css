@@ -3010,6 +3010,53 @@
   button.hq-row:active{transform:scale(.97);}
   .hq-row.hq-go .hq-prog{background:#7C9BE8;}
 
+  /* ---------- หน้าเลือกทาง (js/app-landing.js) ----------
+     การ์ดใหญ่ 2 ใบ เด็ก 5 ขวบต้องกดโดนง่ายและอ่านออกด้วยภาพ ไม่ต้องอ่านตัวหนังสือก็รู้ */
+  #landing-view{padding:18px 14px 40px;}
+  .landing-wrap{max-width:760px; margin:0 auto; text-align:center;}
+  .landing-greet{
+    font-size:24px; font-weight:900; color:var(--ink); margin:14px 0 20px; line-height:1.4;
+  }
+  body.night-mode .landing-greet{color:#F3EBDA;}
+  .landing-cards{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;}
+  .landing-card{
+    font-family:inherit; cursor:pointer; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    background:#FFFDF7; border:4px solid #F0C58A; border-radius:26px;
+    padding:22px 16px 20px; min-height:230px; justify-content:center;
+    box-shadow:0 6px 18px rgba(70,40,10,.14);
+    transition:transform .14s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .landing-card:hover{transform:translateY(-3px); box-shadow:0 10px 24px rgba(70,40,10,.2);}
+  .landing-card:active{transform:scale(.97);}
+  .landing-house{border-color:#7FC97F; background:linear-gradient(180deg,#F4FFF0,#FFFDF7);}
+  .landing-quiz{border-color:#6FA8DC; background:linear-gradient(180deg,#EFF7FF,#FFFDF7);}
+  .landing-ic{width:96px; height:96px; display:block;}
+  .landing-ic-emoji{font-size:76px; line-height:1;}
+  .landing-name{font-size:23px; font-weight:900; color:var(--ink);}
+  .landing-sub{font-size:14px; font-weight:700; color:var(--ink-soft); line-height:1.5;}
+  .landing-note{font-size:13px; font-weight:700; color:var(--ink-soft); margin-top:18px;}
+  body.night-mode .landing-note{color:#C9BEA8;}
+  @media (max-width:560px){
+    .landing-cards{grid-template-columns:1fr;}
+    .landing-card{min-height:0; padding:18px 14px;}
+    .landing-ic{width:74px; height:74px;}
+    .landing-ic-emoji{font-size:60px;}
+  }
+
+  /* ---------- สัญญา Mount: เกมของหน้าหลักที่ถูกย้ายมาวางในกล่องอื่น (js/owl-games.js) ----------
+     view เดิมเป็น section เต็มจอ พอย้ายมาอยู่ในการ์ดเควสต์ต้องยุบให้พอดีกล่องแทน
+     ⚠ ห้ามตั้ง position/overflow ทับของเดิมมากกว่านี้ — engine บางตัววัดตำแหน่งจาก
+       getBoundingClientRect() จริง (ลากการ์ด/ลากเข็ม) ถ้าเปลี่ยน layout มากจะเพี้ยน */
+  .og-embedded{
+    display:block; width:100%; margin:0; padding:0;
+    min-height:0; max-height:none;
+  }
+  /* ในโหมด mount ซ่อนของที่เป็นของ "หน้าเต็มจอ" ซึ่งโฮสต์มีให้อยู่แล้ว */
+  .og-embedded > .quiz-top,
+  .og-embedded > .back-btn,
+  .og-embedded > .cat-label{ display:none; }
+
   /* ---------- หน้าจอเล่นเควสต์ (บ้านของหนู เฟส 2) ----------
      การ์ดครีมมนๆ ลอยกลางจอ **ไม่เต็มจอ** — เด็กยังเห็นเมือง/ร้านข้างหลัง รู้สึกว่ายืนอยู่ในร้านจริง
      (ข้อ 10 ของ QUEST-DESIGN.md — ห้ามเปลี่ยนเป็นหน้าเต็มจอโดยไม่ถามผู้ใช้ก่อน) */

@@ -374,3 +374,12 @@ $('code-back').addEventListener('click', ()=>{
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
+
+/* ============================= ลงทะเบียนกับ OwlGames (สัญญา Mount) =============================
+   ให้โฮสต์อื่น (การ์ดเควสต์ในโหมดบ้าน / โหมดครู) หยิบเกมพวกนี้ไปวางในกล่องของตัวเองได้
+   ⚠ `stop()` ต้องล้าง state ให้หมด ไม่งั้นเกมเดิมค้างทำงานอยู่หลังปิดการ์ด — ดู js/owl-games.js */
+if(window.OwlGames){
+  OwlGames.register('code', {name:'หุ่นยนต์', view:'code-view',
+    start:o => startCodeGame(o.catId),
+    stop:() => { codeGame = null; }});
+}

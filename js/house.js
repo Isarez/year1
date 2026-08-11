@@ -8145,6 +8145,7 @@ let qzNpcId = null;
 function questPlayOpen(){ const el = $('house-qz'); return !!el && !el.hidden; }
 function closeQuestPanel(){
   const el = $('house-qz'); if(el) el.hidden = true;
+  if(typeof unmountHandPlay === 'function') unmountHandPlay();   /* ปิดการ์ด = ปิดกล้อง/ถอดปุ่ม */
   qRun = null; qLock = false; qzNpcId = null;   /* ปล่อยให้คนออกโจทย์เดินต่อได้ตามปกติ */
   /* ปิดกลางกระดานมินิเกม → ถอด listener ลาก-วางที่ผูกไว้ที่ window ทิ้งด้วย ไม่งั้นค้างสะสม */
   if(qSortOff){ qSortOff(); qSortOff = null; }
@@ -8156,6 +8157,9 @@ function closeQuestPanel(){
 }
 function qzShow(){
   const el = $('house-qz'); if(el) el.hidden = false;
+  /* โหมดมือ (เล่นด้วยมือหน้ากล้อง) — ใช้ระบบเดียวกับเกมหน้าหลักทั้งดุ้น ดู js/games-ar.js
+     ปุ่มกล้องไปติดที่แถบบนของโหมดบ้าน กดเองถึงจะเปิดกล้อง (ไม่ขอสิทธิ์เอง) */
+  if(typeof mountHandPlayHouse === 'function') mountHandPlayHouse();
 }
 function qzStage(){ const el = $('hqz-stage'); if(el) el.innerHTML = ''; return el; }
 function qzHead(spec, sub){
@@ -8527,6 +8531,7 @@ function renderSortStep(st, it){
 
   it.bins.forEach(bn=>{
     const box = document.createElement('div'); box.className = 'hqz-bin'; box.dataset.bin = bn.id;
+    box.dataset.hpClick = '1';        /* โหมดมือ: ถังไม่ใช่ <button> ต้องติดธงให้จีบนิ้วคลิกโดน */
     const head = document.createElement('div'); head.className = 'hqz-bin-head';
     const ic = document.createElement('span'); ic.className = 'hqz-bin-ic'; ic.textContent = bn.emoji;
     const nm = document.createElement('span'); nm.className = 'hqz-bin-name'; nm.textContent = bn.name;
@@ -11955,9 +11960,17 @@ function charBubble(txt, say){
 
 /* ---------- loop ---------- */
 const WALK_SPEED = 3;      /* ช่อง/วินาที */
+/* กล้องโหมดมือเปิดอยู่ไหม — hand tracking กินซีพียูมาก ถ้าปล่อยลูป 3D วิ่งเต็มสปีดด้วย
+   เฟรมจะตกทั้งคู่ ⇒ หรี่เหลือ ~20fps ตอนกล้องเปิด (ช่วงนั้นการ์ดเควสต์บังโลกอยู่แล้ว) */
+let houseFrameThrottle = false, lastDrawT = 0;
+window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; };
 function frame(t){
   if(!houseOpen) return;
   rafId = requestAnimationFrame(frame);
+  if(houseFrameThrottle){
+    if(t - lastDrawT < 50) return;      /* ~20fps */
+    lastDrawT = t;
+  }
   const dt = Math.min(.05, (t - lastT)/1000 || 0);
   lastT = t;
   updateLightLerp(dt);
@@ -12646,6 +12659,22 @@ window.HouseQuestUI = {
   close: () => { closeQuestPanel(); closeQuestBoard(); },
   /* หน้าคลังคำถาม (js/house-qbrowse.js) เรียกตัวนี้เพื่อเล่นโจทย์แบบทดสอบด้วยเส้นทางวาดจริง */
   playTest: (opt, onClose) => playTestRun(opt, onClose),
+
+  /* ---------- จุดต่อสำหรับ js/house-games.js (เฟส 5: เกมที่ mount engine ของหน้าหลักเข้ามา) ----------
+     house.js ห่อด้วย IIFE ⇒ ไฟล์อื่นแตะภายในไม่ได้ นี่คือ "ประตูเดียว" ที่เปิดให้
+     ⚠ เพิ่มอะไรตรงนี้ให้เพิ่มเท่าที่จำเป็นจริงๆ อย่าเปิดภายในทั้งก้อน ไม่งั้นการแยกไฟล์จะไร้ความหมาย */
+  openCard: (title, sub) => {          /* เปิดการ์ดเปล่าแล้วคืนกล่องให้ไปวาดต่อ */
+    qzNpcId = null; qRun = null; qLock = false;
+    qzShow();
+    const who = $('hqz-who'); if(who) who.textContent = title || '🎮 มาเล่นเกมกัน';
+    const sb  = $('hqz-sub'); if(sb)  sb.textContent  = sub || '';
+    const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
+    return qzStage();
+  },
+  closeCard: () => closeQuestPanel(),
+  isCardOpen: () => questPlayOpen(),
+  makeBtn: (label, cls, fn) => qzBtn(label, cls, fn),
+  award: n => awardCoins(n),
 };
 /* จุดต่อชุดเทสของเฟส 3B — แผงให้อาหาร/การ์ดคุณหมอ (เดินไปหาหมอในฉาก 3D ทำในเทสไม่ไหวเหมือนกัน) */
 /* จุดต่อชุดเทสของเฟส 4A — แตะตัวพ่อแม่/เปิดหน้าแต่งตัวให้ตรงตัวใน 3D ทำในเทสไม่ไหว */

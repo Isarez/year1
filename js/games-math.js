@@ -19,6 +19,10 @@ function p2GoHome(){
 }
 /* result/ดาว ร่วมกัน (pattern เดียวกับ finishScienceGame) */
 function finishP2Game(catId, mistakes, totalLevels, doneWord){
+  /* ⭐ ตะเข็บเดียวของ "สัญญา Mount" — engine ทุกตัวจบเกมผ่านฟังก์ชันนี้ (25 จุดเรียก)
+     ถ้าเกมกำลังถูก mount อยู่ในโฮสต์อื่น (เช่นการ์ดเควสต์ในโหมดบ้าน) ให้ส่งผลกลับโฮสต์
+     แล้วจบตรงนี้ — ห้ามเด้งหน้าสรุป/แจกสติกเกอร์ของหน้าหลักทับ (ดู js/owl-games.js) */
+  if(window.OwlGames && OwlGames.handleFinish(catId, mistakes, totalLevels, doneWord)) return;
   const cat = catById(catId);
   showOnlyView(resultView);
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
@@ -1818,4 +1822,55 @@ function mixHexColor(hex, other, t){
   const a = p(hex), b = p(other);
   const v = a.map((x,i)=>Math.round(x + (b[i]-x)*t));
   return '#'+v.map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+/* ============================= ลงทะเบียนกับ OwlGames (สัญญา Mount) =============================
+   ให้โฮสต์อื่น (การ์ดเควสต์ในโหมดบ้าน / โหมดครู) หยิบเกมพวกนี้ไปวางในกล่องของตัวเองได้
+   ⚠ `stop()` ต้องล้าง state ให้หมด ไม่งั้นเกมเดิมค้างทำงานอยู่หลังปิดการ์ด — ดู js/owl-games.js */
+if(window.OwlGames){
+  OwlGames.register('money', {name:'ร้านค้านกฮูก', view:'money-view',
+    start:o => startMoneyGame(o.catId),
+    stop:() => { moneyGame = null; }});
+  OwlGames.register('fraction', {name:'พิซซ่าเศษส่วน', view:'fraction-view',
+    start:o => startFractionGame(o.catId),
+    stop:() => { fractionGame = null; }});
+  OwlGames.register('balance', {name:'ตาชั่งวิเศษ', view:'balance-view',
+    start:o => startBalanceGame(o.catId),
+    stop:() => { balanceGame = null; }});
+  OwlGames.register('calendar', {name:'ปฏิทิน', view:'calendar-view',
+    start:o => startCalendarGame(o.catId),
+    stop:() => { calendarGame = null; }});
+  OwlGames.register('timeline', {name:'เส้นเวลา', view:'timeline-view',
+    start:o => startTimelineGame(o.catId),
+    stop:() => { timelineGame = null; }});
+  OwlGames.register('sort', {name:'จัดหมวดหมู่', view:'sort-view',
+    start:o => startSortGame(o.catId),
+    stop:() => { sortGame = null; }});
+  OwlGames.register('world', {name:'หมุนโลก', view:'world-view',
+    start:o => startWorldGame(o.catId),
+    stop:() => { worldGame = null; }});
+  OwlGames.register('coord', {name:'พิกัด', view:'coord-view',
+    start:o => startCoordGame(o.catId),
+    stop:() => { coordGame = null; }});
+  OwlGames.register('chart', {name:'แผนภูมิ', view:'chart-view',
+    start:o => startChartGame(o.catId),
+    stop:() => { chartGame = null; }});
+  OwlGames.register('area', {name:'พื้นที่', view:'area-view',
+    start:o => startAreaGame(o.catId),
+    stop:() => { areaGame = null; }});
+  OwlGames.register('angle', {name:'มุม', view:'angle-view',
+    start:o => startAngleGame(o.catId),
+    stop:() => { angleGame = null; }});
+  OwlGames.register('clock', {name:'นาฬิกาวิเศษ', view:'clock-view',
+    start:o => startClockGame(o.catId),
+    stop:() => { clockGame = null; }});
+  OwlGames.register('tangram', {name:'แทนแกรม', view:'tangram-view',
+    start:o => startTangramGame(o.catId),
+    stop:() => { tangramGame = null; }});
+  OwlGames.register('mirror', {name:'กระจกเงา', view:'mirror-view',
+    start:o => startMirrorGame(o.catId),
+    stop:() => { mirrorGame = null; }});
+  OwlGames.register('order', {name:'เรียงลำดับ', view:'order-view',
+    start:o => startOrderGame(o.catId),
+    stop:() => { orderGame = null; }});
 }

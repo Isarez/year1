@@ -111,6 +111,26 @@
   </section>
 
   <!-- HOME VIEW -->
+  <!-- LANDING: เลือกก่อนว่าจะเข้าเมืองหรือทำโจทย์ (js/app-landing.js) -->
+  <section id="landing-view" hidden>
+    <div class="landing-wrap">
+      <h2 class="landing-greet" id="landing-greet">วันนี้อยากทำอะไรดี?</h2>
+      <div class="landing-cards">
+        <button class="landing-card landing-house" id="landing-house">
+          <img class="landing-ic" src="assets/icons/my-house.svg" alt="">
+          <span class="landing-name">เข้าเมือง</span>
+          <span class="landing-sub">เดินเล่นในโลก 3D · รับงานจากชาวบ้าน<br>เลี้ยงสัตว์ ตกแต่งบ้าน สะสมเหรียญ</span>
+        </button>
+        <button class="landing-card landing-quiz" id="landing-quiz">
+          <span class="landing-ic landing-ic-emoji" aria-hidden="true">📚</span>
+          <span class="landing-name">ทำโจทย์</span>
+          <span class="landing-sub">เลือกหมวดที่อยากฝึกเอง<br>เก็บดาวและสติกเกอร์ลงสมุด</span>
+        </button>
+      </div>
+      <p class="landing-note">เปลี่ยนใจทีหลังได้นะ — ในเมืองมีปุ่มออก และหน้าหมวดก็มีปุ่มเข้าเมือง</p>
+    </div>
+  </section>
+
   <section id="home-view" hidden>
     <div class="hero">
       <div class="hero-mascot"><img src="assets/owl_full.svg" alt="นกฮูก" width="80" height="85"></div>
@@ -1369,6 +1389,7 @@
 <script src="js/owl-messages.js?v=2.0.0"></script>
 <!-- ชุดไฟล์ของแอป: app-core ต้องมาก่อนไฟล์เกมทุกไฟล์ และ app-ui ต้องอยู่ท้ายสุด
      (บรรทัด INIT อยู่ท้าย app-ui และเรียกใช้ฟังก์ชันจากทุกไฟล์) -->
+<script src="js/owl-games.js?v=2.0.0"></script>
 <script src="js/app-core.js?v=2.0.0"></script>
 <script src="js/game-quiz.js?v=2.0.0"></script>
 <script src="js/games-think.js?v=2.0.0"></script>
@@ -1378,6 +1399,7 @@
 <script src="js/games-art.js?v=2.0.0"></script>
 <script src="js/games-listen.js?v=2.0.0"></script>
 <script src="js/games-ar.js?v=2.0.0"></script>
+<script src="js/app-landing.js?v=2.0.0"></script>
 <script src="js/app-ui.js?v=2.0.0"></script>
 <!-- โหมด "บ้านของหนู" (three.min.js + house-furniture.js + house.js) โหลดแบบ lazy จาก js/games-ar.js
      เฉพาะตอนกดเข้าบ้าน หรือตอนเด็กคนนี้มีบ้านอยู่แล้ว (ต้องโชว์เพื่อนซี้หน้าหลัก)

@@ -454,8 +454,11 @@ let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = 
 
 /* view ที่กำลังเปิดอยู่ (section ใน <main> ที่ไม่ hidden และมีแถบหัวเกม) — ใช้หาที่ติดปุ่มกล้อง */
 function hpVisibleView(){
-  return Array.from(document.querySelectorAll('main > section'))
-    .find(s=>!s.hidden && s.querySelector('.quiz-top')) || null;
+  /* ⚠ ต้องรวม section ที่อยู่ "นอก <main>" ด้วย — #house-view กับ #ar-view วางไว้นอก main
+     เพราะเรื่อง stacking context (ดูคอมเมนต์ใน index.html) ถ้าเลือกแค่ 'main > section'
+     โหมดบ้านจะติดปุ่มกล้องไม่ได้เลย (เจอตอนต่อโหมดมือเข้าโหมดบ้าน 2026-08-11) */
+  const all = Array.from(document.querySelectorAll('main > section, body > section'));
+  return all.find(s=>!s.hidden && s.querySelector('.quiz-top')) || null;
 }
 function hpEnsureBtn(){
   if(hpBtn) return hpBtn;
@@ -474,6 +477,20 @@ function hpRefreshBtn(){
   hpBtn.dataset.tooltip = label;
 }
 /* เรียกทุกครั้งที่เข้าเกม — ติดปุ่มกล้องให้เฉพาะหมวดที่รองรับ (นอกนั้นถอดออก+ปิดกล้องให้เรียบร้อย) */
+/* โหมดบ้านไม่มี "cat" — เรียกตัวนี้แทน (ใช้ทางเดียวกันทุกอย่าง ต่างแค่ไม่ต้องเช็ค cat.handPlay)
+   ⚠ โหมดบ้านเป็นกลไก "แตะ" ทั้งหมดอยู่แล้ว (ปุ่มตัวเลือก/กล่องของ/ถัง) จึงยิง .click() ได้ตรงๆ
+     ส่วนการเดินในโลก 3D ใช้ pointer event ไม่ใช่ click — จีบนิ้วสั่งเดินไม่ได้ ตั้งใจให้เป็นแบบนั้น
+     (โหมดมือมีไว้เล่นโจทย์ ไม่ได้มีไว้บังคับตัวละคร) */
+function mountHandPlayHouse(){
+  unmountHandPlay();
+  if(isMobileViewport()) return;
+  const view = document.getElementById('house-view');
+  if(!view || view.hidden) return;
+  const top = view.querySelector('.quiz-top');
+  if(!top) return;
+  top.appendChild(hpEnsureBtn());
+  hpRefreshBtn();
+}
 function mountHandPlay(cat){
   unmountHandPlay();
   if(!cat || !cat.handPlay || isMobileViewport()) return;
@@ -495,6 +512,9 @@ function unmountHandPlay(){
 function toggleHandPlay(){
   if(hpActive){ stopHandPlay(); hpRefreshBtn(); showToast('📷','ปิดกล้องแล้ว แตะหน้าจอเล่นต่อได้เลย!'); }
   else startHandPlay();
+  /* บอกโหมดบ้านว่ากล้องเปิดอยู่ → หรี่ลูปวาด 3D ลง ไม่ให้แย่งซีพียูกับ hand tracking
+     (ตอนการ์ดเควสต์เปิด โลกนิ่งอยู่แล้ว จึงไม่มีใครสังเกตเห็น) */
+  if(window.HouseFrameHint) window.HouseFrameHint(hpActive);
 }
 function hpSetHover(el){
   if(hpHoverEl === el) return;
@@ -722,6 +742,8 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-pet-care.js'+v))
     .then(()=>loadScriptOnce('js/house-family.js'+v))
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
+    /* สะพานไปหา engine เกมของหน้าหลัก (เฟส 5) — ต้องมาหลัง house.js เพราะใช้ window.HouseQuestUI */
+    .then(()=>loadScriptOnce('js/house-games.js'+v))
     /* หน้าคลังคำถาม (เมนูเฟือง) — ต้องมาหลัง house.js เพราะเรียก window.HouseQuestUI ตอนกดเล่น */
     .then(()=>loadScriptOnce('js/house-qbrowse.js'+v))
     /* หน้าปรับค่าต่างๆ (เครื่องมือเทส) — ต้องมาหลัง house.js เช่นกัน เพราะเรียก window.HousePetCare/HouseShop */

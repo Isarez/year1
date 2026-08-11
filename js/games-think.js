@@ -918,3 +918,21 @@ $('sci-back').addEventListener('click', ()=>{
   renderHome();
   window.scrollTo({top:0, behavior:'smooth'});
 });
+
+/* ============================= ลงทะเบียนกับ OwlGames (สัญญา Mount) =============================
+   ให้โฮสต์อื่น (การ์ดเควสต์ในโหมดบ้าน / โหมดครู) หยิบเกมพวกนี้ไปวางในกล่องของตัวเองได้
+   ⚠ `stop()` ต้องล้าง state ให้หมด ไม่งั้นเกมเดิมค้างทำงานอยู่หลังปิดการ์ด — ดู js/owl-games.js */
+if(window.OwlGames){
+  OwlGames.register('memory', {name:'จับคู่ความจำ', view:'memory-view',
+    start:o => startMemoryGame(o.catId),
+    stop:() => { memoryGame = null; }});
+  OwlGames.register('shadow', {name:'ทายเงา', view:'shadow-view',
+    start:o => startShadowGame(o.catId),
+    stop:() => { shadowGame = null; }});
+  OwlGames.register('ef', {name:'นกฮูกสั่ง', view:'ef-view',
+    start:o => startEfGame(o.catId),
+    stop:() => { efGame = null; }});
+  OwlGames.register('science', {name:'นักวิทยาศาสตร์', view:'science-view',
+    start:o => startScienceGame(o.catId),
+    stop:() => { scienceGame = null; }});
+}

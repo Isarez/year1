@@ -677,3 +677,15 @@ $('fp-piano').addEventListener('pointerdown', e=>{
     }
   }
 });
+
+/* ============================= ลงทะเบียนกับ OwlGames (สัญญา Mount) =============================
+   ให้โฮสต์อื่น (การ์ดเควสต์ในโหมดบ้าน / โหมดครู) หยิบเกมพวกนี้ไปวางในกล่องของตัวเองได้
+   ⚠ `stop()` ต้องล้าง state ให้หมด ไม่งั้นเกมเดิมค้างทำงานอยู่หลังปิดการ์ด — ดู js/owl-games.js */
+if(window.OwlGames){
+  OwlGames.register('mix', {name:'ผสมสี', view:'mix-view',
+    start:o => startMixGame(o.catId),
+    stop:() => { mixGame = null; }});
+  OwlGames.register('music', {name:'ดนตรี', view:'music-view',
+    start:o => startMusicGame(o.catId),
+    stop:() => { musicGame = null; }});
+}
