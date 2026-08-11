@@ -313,6 +313,9 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
       petFoods: ()=> (PETCARE ? PETCARE.FOOD : []),
       /* เควสต์ "ไปนั่งกินข้าวพร้อมหน้า" ต้องมีโต๊ะ/เก้าอี้ในบ้านก่อน ไม่งั้นรับงานแล้วทำไม่ได้ */
       hasIndoorSeat: ()=> hasIndoorSeat(),
+      /* เฟส 5: เกมของหน้าหลักตัวนี้ยืมมาเล่นได้ไหม (ต้องลงทะเบียนกับ OwlGames + อยู่ในรายการ ALLOW) */
+      hasGame: id => !!(window.OwlGames && OwlGames.has(id)
+                        && window.HouseGames && HouseGames.ALLOW[id]),
     })
   : null;
 /* การดูแลสัตว์เลี้ยงเฟส 3B (js/house-pet-care.js โหลดก่อนไฟล์นี้) — ความหิว/อาหาร/ป่วย/ค่ารักษา
@@ -8147,6 +8150,7 @@ function closeQuestPanel(){
   const el = $('house-qz'); if(el) el.hidden = true;
   if(typeof unmountHandPlay === 'function') unmountHandPlay();   /* ปิดการ์ด = ปิดกล้อง/ถอดปุ่ม */
   qRun = null; qLock = false; qzNpcId = null;   /* ปล่อยให้คนออกโจทย์เดินต่อได้ตามปกติ */
+  if(window.OwlGames) OwlGames.unmount();   /* ปิดกลางเกมที่ยืมมา → คืน view กลับหน้าหลักให้เรียบร้อย */
   /* ปิดกลางกระดานมินิเกม → ถอด listener ลาก-วางที่ผูกไว้ที่ window ทิ้งด้วย ไม่งั้นค้างสะสม */
   if(qSortOff){ qSortOff(); qSortOff = null; }
   if(qDrag){ const b = qDrag.b; qDrag = null;
@@ -8249,6 +8253,7 @@ function renderQuestStep(){
   /* เฟส 4B: มินิเกมครอบครัวไม่ใช่โจทย์ 4 ตัวเลือก ⇒ แยกทางวาดตั้งแต่ตรงนี้
      **เพิ่มมินิเกมใหม่ให้มาต่อแถวที่นี่** (ตัวที่ไม่มี `it.kind` = โจทย์ตอบคำถามแบบเดิม) */
   if(it.kind === 'walk'){ renderWalkStep(st, it); return; }
+  if(it.kind === 'engine'){ renderEngineStep(st, it); return; }
   if(it.kind === 'sort'){
     /* เกมจำรายการของ: โชว์รายการก่อน แล้วค่อยให้หยิบ */
     if(it.memory && !qMemShown[qRun.idx]){ renderMemoryList(st, it); return; }
@@ -8311,6 +8316,47 @@ function renderQuestStep(){
    ⚠ ยังเก็บทาง "แตะเลือก → แตะถัง" ไว้เป็นทางสำรอง (ขยับไม่ถึง 6px = นับเป็นแตะ) —
      เด็กที่ลากไม่ไหวต้องมีทางไปต่อเสมอ (กติกาเหล็กข้อ 1 ห้ามมี dead end)
    วางครบทุกชิ้นเมื่อไหร่ = ตรวจให้เอง ไม่ต้องมีปุ่ม "ส่งคำตอบ" ให้เด็กหาว่ากดตรงไหน */
+/* ================= เฟส 5: ข้อที่เป็น "เกมของหน้าหลัก" =================
+   ยืม engine เดิมมาวางในเวทีของการ์ดเควสต์ผ่าน window.OwlGames (ดู js/owl-games.js)
+   ⚠ ต้องมีหน้าชวนเล่นคั่นก่อน 1 จังหวะ — engine บางตัวเริ่มเล่นทันทีที่ mount
+     ถ้าโผล่มาแล้วเริ่มจับเวลา/นับพลาดเลย เด็กจะงงว่าเกิดอะไรขึ้น
+   ⚠ ดาวของข้อนี้มาจาก "จำนวนที่พลาด" ที่ engine คืนมา ไม่ใช่ run.wrong ที่นับเอง
+     ⇒ ยัด mistakes ใส่ run.wrong ก่อนปิดเควสต์ เกณฑ์ดาวเดิม (starsOf) จึงใช้ได้ตรงๆ */
+function renderEngineStep(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = it.q;
+  st.appendChild(line);
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  row.appendChild(qzBtn(it.go || 'เล่นเลย!', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    startEngineGame(it);
+  }));
+  st.appendChild(row);
+}
+function startEngineGame(it){
+  if(!window.OwlGames || !window.HouseGames){ finishEngineRound(0); return; }
+  const gid = it.game;
+  const cat = HouseGames.pickCat(gid, qRun && qRun.gid ? qRun.gid : 'prep-p1');
+  const stage = qzStage();
+  if(!cat || !stage){ finishEngineRound(0); return; }
+  const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
+  const sub = $('hqz-sub'); if(sub) sub.textContent = cat.name || '';
+  const ok = OwlGames.mount(gid, stage, {
+    catId: cat.id,
+    onDone: res => finishEngineRound(res ? res.mistakes : 0),
+  });
+  if(!ok) finishEngineRound(0);
+}
+/* engine จบรอบแล้ว → บันทึกจำนวนพลาดเข้ารอบเล่น แล้วปิดเควสต์ตามทางปกติ */
+function finishEngineRound(mistakes){
+  if(!qRun) return;
+  qRun.wrong = Math.max(0, mistakes | 0);
+  const r = QUESTS.submit(qRun, true);
+  qLock = false;
+  if(r.done) finishQuest();
+  else renderQuestStep();
+}
+
 /* ================= เควสต์ที่ต้อง "เดินไปทำ" (เฟส 4B) =================
    family-time = ไปนั่งที่โต๊ะในบ้าน · shopping-list = เดินไปตลาดแล้วซื้อของตามที่แม่สั่ง
    ⚠ รับงานแล้ว **การ์ดต้องปิด** ให้เด็กเดินได้ ⇒ เก็บรอบเล่นไว้ที่ walkQuest แล้วค่อยเปิดกลับ

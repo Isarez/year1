@@ -263,6 +263,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     const petFoods = kit.petFoods || function(){ return []; };
     /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม (เควสต์ "ไปนั่งกินข้าว") — ฝั่งหน้าจอเป็นคนตอบ */
     const hasIndoorSeat = kit.hasIndoorSeat || function(){ return false; };
+    /* เกมของหน้าหลักตัวนี้พร้อมให้ยืมมาเล่นในบ้านไหม (เฟส 5) — ฝั่งหน้าจอถาม OwlGames/HouseGames ให้
+       ⚠ ไฟล์นี้ไม่รู้จัก DOM/registry จึงต้องถามออกไป ไม่ใช่เช็คเอง */
+    const hasGame = kit.hasGame || function(){ return false; };
     const npcDefs = kit.npcDefs || [];
     const defById = {};
     npcDefs.forEach(d=>{ defById[d.id] = d; });
@@ -382,6 +385,17 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     function questableIds(){
       return npcDefs.filter(d => d.quest && !d.mascot).map(d => d.id);
     }
+    /* กลไกของงาน NPC/กระดาน — เฟส 5 เพิ่มเกมกลุ่ม C เข้ามา
+       ⚠ **quiz ต้องมีโอกาสเจอมากที่สุดเสมอ** (กติกาข้อ 4 ของแผน: ทุก NPC ต้องตอบคำถามได้)
+       ⚠ ถ้าเกมกลุ่ม C ยังโหลดไม่เสร็จ/ไม่มีในเครื่องนี้ ต้องถอยไป quiz ไม่ใช่ปล่อยพัง */
+    function rollWorkMech(rng){
+      const r = rng();
+      if(r < .45) return 'quiz';
+      if(r < .62) return 'count';
+      const pool = ENGINE_MECHS.filter(engineReady);
+      if(!pool.length) return rng() < .5 ? 'count' : 'quiz';
+      return pool[(rng() * pool.length) | 0];
+    }
     function rollNpcs(day){
       const rng = rngFrom(fnv(childId() + '|' + day + '|npcs'));
       return pickMany(rng, questableIds(), NPC_PER_DAY);
@@ -405,7 +419,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const ids = questableIds();
       const out = [];
       for(let i=0; i<BOARD_N; i++){
-        out.push({ m: rng() < .35 ? 'count' : 'quiz', npc: ids.length ? pick(rng, ids) : '' });
+        out.push({ m: rollWorkMech(rng), npc: ids.length ? pick(rng, ids) : '' });
       }
       return out;
     }
@@ -660,6 +674,24 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
         },
       };
     }
+    /* ---------- เฟส 5: กลไกกลุ่ม C — ยืม engine เกมของหน้าหลักมาเล่นในการ์ดเควสต์ ----------
+       ไม่ได้เขียนเกมใหม่ · ตัวจริงอยู่ที่ js/games-*.js แล้วห่อด้วย js/owl-games.js
+       ⚠ **1 เควสต์ = 1 รอบเกม** (engine เดิมเป็นเกมยาว 10 ด่านอยู่แล้ว) ไม่ใช่ 5-10 ข้อแบบกลไกอื่น
+         ⇒ ดาวมาจาก "จำนวนที่พลาด" ที่ engine คืนมา ไม่ใช่ run.wrong ที่นับเอง
+       ⚠ ตัวตัดสินว่าเล่นจบแล้วอยู่ที่หน้าจอ (js/house.js) — ไฟล์นี้แค่บอกว่าจะเล่นเกมไหน */
+    function engineMech(gameId, name, emoji){
+      return {
+        id:gameId, name:name, fam:'A', engine:gameId, only:'engine',
+        gen(){
+          return [{kind:'engine', game:gameId, emoji:emoji || '',
+                   q:'มาเล่น "' + name + '" ด้วยกันหน่อยสิ!',
+                   go:'เล่นเลย! ' + (emoji || '🎮'),
+                   choices:[], correct:0, explain:''}];
+        },
+        verify(){ return {ok:true}; },      /* หน้าจอส่งมาเมื่อ engine จบเกมแล้วเท่านั้น */
+      };
+    }
+
     /* ---------- เควสต์ที่ต้อง "เดินไปทำนอกบ้าน" (family-time / shopping-list) ----------
        ⚠ **กลุ่มนี้ไม่เข้ากติกา "อย่างน้อย MIN_Q ข้อ" โดยตั้งใจ** (ผู้ใช้อนุมัติ 2026-08-10)
          กติกานั้นใช้กับเกมที่เปิด popup ให้เด็กตอบคำถามเท่านั้น — งานเดินคือ "ไปให้ถึงแล้วทำ"
@@ -819,7 +851,22 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       clock:    clockMech(),
       dinner:   dinnerMech(),
       market:   marketMech(),
+      /* เฟส 5 — กลุ่ม C: ยืม engine เกมของหน้าหลัก (ดูข้อ 15.3 ของ QUEST-DESIGN.md) */
+      mix:      engineMech('mix',     'ผสมสี',        '🎨'),
+      memory:   engineMech('memory',  'จับคู่ความจำ',  '🎴'),
+      balance:  engineMech('balance', 'ตาชั่งวิเศษ',   '⚖️'),
+      clockset: engineMech('clock',   'นาฬิกาวิเศษ',   '🕐'),
+      shadow:   engineMech('shadow',  'ทายเงา',       '🫥'),
+      sortcat2: engineMech('sort',    'จัดหมวดหมู่',   '🗂️'),
+      orderg:   engineMech('order',   'เรียงลำดับ',    '🔢'),
+      melody:   engineMech('music',   'เล่นตามทำนอง',  '🎹'),
     };
+    /* กลไกที่ยืม engine หน้าหลัก — id ของ mech ไม่จำเป็นต้องตรงกับ id ของเกม (ดู .engine) */
+    const ENGINE_MECHS = ['mix','memory','balance','clockset','shadow','sortcat2','orderg','melody'];
+    function engineReady(m){
+      const spec = MECHS[m];
+      return !!(spec && spec.engine && hasGame(spec.engine));
+    }
     const MECH_IDS = Object.keys(MECHS);
     /* กลไกที่ **เควสต์ครอบครัวเท่านั้น**สุ่มได้ — NPC/กระดานยังเป็น quiz/count เหมือนเดิม
        (มินิเกม 8 แบบของเฟส 4B + quiz/count ที่ใช้ตั้งแต่เฟส 4A) */
@@ -841,9 +888,10 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       if(s.npcIds.indexOf(npcId) < 0) return null;
       const rec = s.npc[npcId] || {};
       const rng = rngFrom(fnv(childId() + '|' + s.d + '|' + npcId));
-      const mech = rec.m || (rng() < .35 ? 'count' : 'quiz');
+      const mech = rec.m || rollWorkMech(rng);
       const done = rec.st === 'done';
-      return { src:'npc', key:npcId, npc:npcId, mech: MECHS[mech] ? mech : 'quiz',
+      const um = (MECHS[mech] && (!MECHS[mech].engine || engineReady(mech))) ? mech : 'quiz';
+      return { src:'npc', key:npcId, npc:npcId, mech: um,
                fam:'A', chal: done ? !!rec.chal : rollChal(npcId),
                done: done, stars: rec.stars | 0 };
     }
@@ -887,7 +935,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const b = s.board.q[i];
       if(!b) return null;
       const done = s.board.done.indexOf(i) >= 0;
-      return { src:'board', key:'b' + i, idx:i, npc:b.npc, mech: MECHS[b.m] ? b.m : 'quiz',
+      const bm = (MECHS[b.m] && (!MECHS[b.m].engine || engineReady(b.m))) ? b.m : 'quiz';
+      return { src:'board', key:'b' + i, idx:i, npc:b.npc, mech: bm,
                fam:'board', chal: done ? false : rollChal('b' + i), done: done };
     }
     /* ---------- กันโจทย์ซ้ำภายในเควสต์เดียว (ผู้ใช้แจ้ง 2026-08-10) ----------
@@ -1242,7 +1291,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
       STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
       buildRun, answer, submit, starsOf, coinsFor, finish, itemSig,
-      FAM_MECHS, SORT_SETS, ORDER_POOLS, PET_FACE, MARKET_GOODS, catalogSort, famMechOk,
+      FAM_MECHS, ENGINE_MECHS, SORT_SETS, ORDER_POOLS, PET_FACE, MARKET_GOODS, catalogSort, famMechOk,
       /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
       catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
       ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */

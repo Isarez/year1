@@ -3032,16 +3032,25 @@
   .landing-house{border-color:#7FC97F; background:linear-gradient(180deg,#F4FFF0,#FFFDF7);}
   .landing-quiz{border-color:#6FA8DC; background:linear-gradient(180deg,#EFF7FF,#FFFDF7);}
   .landing-ic{width:96px; height:96px; display:block;}
-  .landing-ic-emoji{font-size:76px; line-height:1;}
   .landing-name{font-size:23px; font-weight:900; color:var(--ink);}
   .landing-sub{font-size:14px; font-weight:700; color:var(--ink-soft); line-height:1.5;}
   .landing-note{font-size:13px; font-weight:700; color:var(--ink-soft); margin-top:18px;}
   body.night-mode .landing-note{color:#C9BEA8;}
+  /* ปุ่มกลับไปหน้าเลือกเด็ก — เล็กกว่าการ์ด 2 ใบชัดเจน เด็กจะได้ไม่สับสนว่าเป็นทางเลือกที่ 3 */
+  .landing-back{
+    margin-top:14px; padding:10px 20px; border:none; border-radius:999px; cursor:pointer;
+    background:rgba(255,255,255,.72); color:var(--ink-soft); font-family:inherit;
+    font-size:15px; font-weight:800; box-shadow:0 3px 0 rgba(0,0,0,.08);
+    transition:transform .12s ease, background .2s ease;
+  }
+  .landing-back:hover{background:#fff; transform:translateY(-1px);}
+  .landing-back:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.08);}
+  body.night-mode .landing-back{background:rgba(38,52,78,.8); color:#E6DCC8;}
+  body.night-mode .landing-back:hover{background:rgba(52,70,102,.92);}
   @media (max-width:560px){
     .landing-cards{grid-template-columns:1fr;}
     .landing-card{min-height:0; padding:18px 14px;}
     .landing-ic{width:74px; height:74px;}
-    .landing-ic-emoji{font-size:60px;}
   }
 
   /* ---------- สัญญา Mount: เกมของหน้าหลักที่ถูกย้ายมาวางในกล่องอื่น (js/owl-games.js) ----------

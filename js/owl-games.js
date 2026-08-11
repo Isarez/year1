@@ -28,6 +28,7 @@
 
   const REG = {};          /* id → {view, start, stop, needsCat} */
   let cur = null;          /* {id, host, placeholder, view, opts} ตอนกำลัง mount อยู่ */
+  let realShowOnly = null; /* showOnlyView ตัวจริง ตอนถูกครอบไว้ระหว่าง mount */
 
   function el(id){ return document.getElementById(id); }
 
@@ -65,8 +66,17 @@
     document.body.classList.add('og-mounted');
 
     cur = {id, host, placeholder: ph, view, opts};
+
+    /* ⚠ engine ทุกตัวเริ่มด้วย `showOnlyView(ของตัวเอง)` ซึ่งจะ **ซ่อนทุก view ที่เหลือรวมทั้งโฮสต์**
+       (โหมดบ้านอยู่ใน ALL_VIEWS ด้วย ⇒ การ์ดเควสต์หายทั้งใบ) จึงต้องครอบไว้ระหว่าง mount
+       ให้ทำแค่ "โชว์ view ที่ขอ" ไม่ต้องไปซ่อนของคนอื่น — โฮสต์เป็นคนคุมการมองเห็นเอง */
+    if(typeof window.showOnlyView === 'function' && !realShowOnly){
+      realShowOnly = window.showOnlyView;
+      window.showOnlyView = function(v){ if(v) v.hidden = false; };
+    }
     try{
       spec.start(opts);
+      view.hidden = false;        /* กันกรณี engine ไปซ่อนตัวเองระหว่างตั้งค่า */
     }catch(e){
       /* start พังกลางทาง → คืน DOM ให้เรียบร้อยก่อน ไม่ปล่อยให้ view ค้างอยู่ในโฮสต์ */
       unmount();
@@ -80,6 +90,7 @@
     if(!cur) return false;
     const c = cur;
     cur = null;                                  /* เคลียร์ก่อนเรียก stop กัน stop วนกลับมาเรียก unmount ซ้ำ */
+    if(realShowOnly){ window.showOnlyView = realShowOnly; realShowOnly = null; }
     const spec = REG[c.id];
     if(spec && spec.stop){ try{ spec.stop(); }catch(e){} }
     c.view.classList.remove('og-embedded');

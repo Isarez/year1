@@ -249,6 +249,9 @@ function renderChildSelect(){
   initEmojiPicker();
   initDobPicker();
   $('child-select-view').hidden = false;
+  /* กลับมาหน้าเลือกเด็ก = เริ่มรอบใหม่ ⇒ หน้าเลือกโหมด (เข้าเมือง/ทำโจทย์) ต้องเด้งอีกครั้ง
+     (app-landing.js โหลดทีหลังไฟล์นี้ จึงต้องเช็คก่อนเรียกเสมอ) */
+  if(window.OwlLanding) OwlLanding.reset();
   $('clear-btn').hidden = true;
   homeView.hidden = true;
   $('owl-widget').hidden = true;

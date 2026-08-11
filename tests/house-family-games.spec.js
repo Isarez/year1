@@ -3,7 +3,8 @@
    ตอนนี้มี 2 เกมที่ใช้กลไก "จัดของลงถัง" (sort) ร่วมกัน:
      tidy    = เก็บของเข้าที่
      laundry = แยกผ้าซัก
-   ⚠ เกมพวกนี้โผล่เฉพาะ **เควสต์ครอบครัว** เท่านั้น — NPC/กระดานต้องยังเป็น quiz/count เหมือนเดิม
+   ⚠ เกมพวกนี้โผล่เฉพาะ **เควสต์ครอบครัว** เท่านั้น
+     (NPC/กระดานได้ quiz/count + กลไกกลุ่ม engine ของเฟส 5 แต่ห้ามได้มินิเกม 4B)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
 
@@ -141,20 +142,28 @@ test('เอนจิน: วางผิดคืนรายชื่อชิ
   expect(errors).toEqual([]);
 });
 
-test('มินิเกมโผล่เฉพาะเควสต์ครอบครัว — NPC/กระดานยังเป็น quiz/count เท่านั้น', async ({ page }) => {
+/* ⚠ อัปเดตตอนเฟส 5 (2026-08-11): NPC/กระดาน **สุ่มกลไกกลุ่ม C (ยืม engine หน้าหลัก) ได้แล้ว**
+   แต่ "มินิเกมครอบครัว" ของเฟส 4B ยังต้องเป็นของเควสต์ครอบครัวล้วนเหมือนเดิม */
+test('มินิเกมครอบครัว 4B โผล่เฉพาะเควสต์ครอบครัว — NPC/กระดานได้แค่ quiz/count/กลุ่ม engine', async ({ page }) => {
   const errors = await openHouse(page);
   const r = await page.evaluate(() => {
     const q = window.HouseQuests;
-    const fam = q.FAM_MECHS;
     const others = [];
     q.state().npcIds.forEach(id => { const s = q.specForNpc(id); if (s) others.push(s.mech); });
     for (let i = 0; i < q.BOARD_N; i++) { const s = q.specForBoard(i); if (s) others.push(s.mech); }
-    return { fam, others: others.filter((v, i, a) => a.indexOf(v) === i) };
+    return { fam: q.FAM_MECHS, engines: q.ENGINE_MECHS,
+             others: others.filter((v, i, a) => a.indexOf(v) === i) };
   });
   expect(r.fam).toContain('tidy');
   expect(r.fam).toContain('laundry');
   expect(r.fam).toContain('quiz');
-  r.others.forEach(m => expect(['quiz', 'count']).toContain(m));
+  /* มินิเกม 4B ต้องไม่หลุดไปอยู่กับ NPC/กระดาน */
+  const famOnly = r.fam.filter(m => m !== 'quiz' && m !== 'count');
+  const allowed = ['quiz', 'count'].concat(r.engines);
+  r.others.forEach(m => {
+    expect(famOnly).not.toContain(m);
+    expect(allowed).toContain(m);
+  });
   expect(errors).toEqual([]);
 });
 
@@ -695,25 +704,30 @@ test('จำนวนโจทย์สุ่ม 5-10 ข้อต่อเค�
   const errors = await openHouse(page);
   const r = await page.evaluate(() => {
     const q = window.HouseQuests;
+    /* ⚠ กลไกกลุ่ม engine (เฟส 5) ไม่เข้ากติกา 5-10 ข้อโดยตั้งใจ — 1 เควสต์ = 1 รอบเกม 10 ด่านของ engine เดิม */
+    const eng = q.ENGINE_MECHS;
     const ns = [];
-    q.state().npcIds.forEach(id => {
-      const sp = q.specForNpc(id);
-      if (sp) ns.push(q.buildRun(sp).items.length);
-    });
-    for (let i = 0; i < q.BOARD_N; i++) {
-      const sp = q.specForBoard(i);
-      if (sp) ns.push(q.buildRun(sp).items.length);
-    }
+    const specs = [];
+    q.state().npcIds.forEach(id => { const sp = q.specForNpc(id); if (sp) specs.push(sp); });
+    for (let i = 0; i < q.BOARD_N; i++) { const sp = q.specForBoard(i); if (sp) specs.push(sp); }
+    specs.filter(sp => eng.indexOf(sp.mech) < 0)
+         .forEach(sp => ns.push(q.buildRun(sp).items.length));
     /* เปิดเควสต์เดิมซ้ำต้องได้จำนวนข้อเท่าเดิม (seed คงที่) */
-    const sp0 = q.specForNpc(q.state().npcIds[0]);
+    const sp0 = specs.filter(sp => eng.indexOf(sp.mech) < 0)[0];
     const again = [q.buildRun(sp0).items.length, q.buildRun(sp0).items.length];
-    return { ns, again, uniq: ns.filter((v, i, a) => a.indexOf(v) === i).length };
+    const engNs = specs.filter(sp => eng.indexOf(sp.mech) >= 0)
+                       .map(sp => q.buildRun(sp).items.length);
+    return { ns, engNs, again, uniq: ns.filter((v, i, a) => a.indexOf(v) === i).length };
   });
   r.ns.forEach(n => {
     expect(n).toBeGreaterThanOrEqual(5);
     expect(n).toBeLessThanOrEqual(10);
   });
-  expect(r.uniq, 'เควสต์ในวันเดียวกันต้องไม่ยาวเท่ากันหมด').toBeGreaterThan(1);
+  /* กลุ่ม engine = ก้อนเดียวเสมอ (หน้าจอจะ mount เกมยาว 10 ด่านของหน้าหลักลงไปในนั้น) */
+  r.engNs.forEach(n => expect(n).toBe(1));
+  if (r.ns.length >= 4) {
+    expect(r.uniq, 'เควสต์ในวันเดียวกันต้องไม่ยาวเท่ากันหมด').toBeGreaterThan(1);
+  }
   expect(r.again[0]).toBe(r.again[1]);
   expect(errors).toEqual([]);
 });

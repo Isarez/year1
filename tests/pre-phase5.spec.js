@@ -78,6 +78,31 @@ test('หน้าเลือกทาง: โผล่หลังเลือ
   await expect(page.locator('#landing-view')).toBeHidden();
   expect(errs).toEqual([]);
 });
+/* บั๊กจริงที่ผู้ใช้เจอ 2026-08-11 — กลับไปหน้าเลือกเด็กแล้วเข้าใหม่ ไม่เจอหน้าเลือกโหมดอีกเลย
+   (ตัวคุม `chosen` ไม่เคยถูกล้าง) + ต้องมีปุ่มย้อนกลับเพื่อเปลี่ยนคนเล่นได้จากหน้านี้ */
+test('หน้าเลือกทาง: ปุ่ม ← กลับไปเลือกเด็กได้ · เข้าใหม่ต้องเจอหน้าเลือกโหมดอีกครั้ง', async ({ page }) => {
+  const errs = await pickChild(page);
+  await expect(page.locator('#landing-view')).toBeVisible();
+
+  /* ปุ่มย้อนกลับ → หน้าเลือกเด็ก */
+  await page.locator('#landing-back').click();
+  await expect(page.locator('#child-select-view')).toBeVisible();
+  await expect(page.locator('#landing-view')).toBeHidden();
+
+  /* เลือกเด็กใหม่ → หน้าเลือกโหมดต้องเด้งอีกครั้ง */
+  await page.locator('#child-select-view .child-card').first().click();
+  await expect(page.locator('#landing-view')).toBeVisible();
+
+  /* เข้าหน้าหมวดแล้วกดเปลี่ยนเด็กจาก header → เลือกใหม่ ก็ต้องเจอหน้าเลือกโหมดอีก */
+  await page.locator('#landing-quiz').click();
+  await expect(page.locator('#home-view')).toBeVisible();
+  await page.locator('#switch-child-btn').click();
+  await expect(page.locator('#child-select-view')).toBeVisible();
+  await page.locator('#child-select-view .child-card').first().click();
+  await expect(page.locator('#landing-view')).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('หน้าเลือกทาง: เลือกเข้าเมืองแล้วโหมดบ้านเปิดจริง', async ({ page }) => {
   const errs = await pickChild(page);
   await enterHouse(page);
@@ -112,6 +137,39 @@ test('โหมดมือในโหมดบ้าน: ปุ่มกล้
 
   await page.locator('#hqz-close').click();
   await expect(page.locator('#handplay-toggle')).toHaveCount(0);
+  expect(errs).toEqual([]);
+});
+
+/* บั๊กจริงที่ผู้ใช้เจอ 2026-08-11 — "เปิดกล้องใช้ AR แล้วมือไม่ขึ้น"
+   สาเหตุ: qzShow() ถูกเรียกทุกครั้งที่เปลี่ยนข้อ (8 จุดใน house.js) แล้ว mountHandPlayHouse()
+   เริ่มด้วย unmountHandPlay() = ปิดกล้องทิ้ง ⇒ เปิดกล้องแล้วมือหายทันทีที่ตอบข้อแรก
+   วิธีจับ: `#hp-layer` ถูกซ่อนโดย stopHandPlay() เสมอ ⇒ ถ้ามันยัง hidden=false อยู่ = ไม่ถูกปิด */
+test('โหมดมือ: เปลี่ยนข้อ/เปิดการ์ดซ้ำ ต้องไม่ปิดกล้องที่เปิดค้างอยู่', async ({ page }) => {
+  const errs = await pickChild(page);
+  await enterHouse(page);
+
+  await page.evaluate(()=>window.HouseQuestUI.playTest({mech:'quiz', title:'🧪 t'}));
+  await expect(page.locator('#handplay-toggle')).toBeVisible();
+
+  /* จำลองว่ากล้องเปิดอยู่ (ไม่ขอสิทธิ์กล้องจริงในเทส) แล้วยิง qzShow ซ้ำแบบที่เกมทำตอนเปลี่ยนข้อ */
+  const r = await page.evaluate(()=>{
+    const layer = document.getElementById('hp-layer');
+    layer.hidden = false;
+    const before = document.getElementById('handplay-toggle') !== null;
+    mountHandPlayHouse();
+    mountHandPlayHouse();
+    return {before, stillOn: !layer.hidden,
+            btn: document.getElementById('handplay-toggle') !== null,
+            inTop: !!document.querySelector('#house-view .quiz-top #handplay-toggle')};
+  });
+  expect(r.before).toBe(true);
+  expect(r.stillOn).toBe(true);       /* ← ตัวจับบั๊ก: กล้องต้องไม่ถูกปิด */
+  expect(r.btn).toBe(true);
+  expect(r.inTop).toBe(true);
+
+  /* แต่ปิดการ์ด = ต้องปิดกล้องให้เรียบร้อยจริงๆ */
+  await page.locator('#hqz-close').click();
+  expect(await page.evaluate(()=>document.getElementById('hp-layer').hidden)).toBe(true);
   expect(errs).toEqual([]);
 });
 
