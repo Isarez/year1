@@ -18,6 +18,7 @@ const HAND_CONNECTIONS = [
 let arGame = null;             // {catId, level, mistakes, totalLevels}
 let arActive = false;          // hand-tracking running?
 let arHands = null, arCamera = null, arStream = null, arRafId = null, arResizeHandler = null;
+let arResCount = 0, arSawHand = false, arWatchdog = null;   /* ยามเฝ้า "กล้องติดแต่ไม่เจอมือ" */
 let arLandmarks = null;        // latest hand landmarks from onResults
 let arHandSmooth = null;       // landmark (พิกัด pixel) ผ่าน temporal smoothing แล้ว — ลด jitter ให้มือ/cursor ขยับนุ่มขึ้น
 let arWasPinching = false;
@@ -415,7 +416,14 @@ async function initHandTracking(){
 
     arHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
     arHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
-    arHands.onResults(res=>{ arLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
+    /* ⚠ นับผลลัพธ์ไว้ให้ยามเฝ้าข้างล่างใช้ — กันอาการ "กล้องติดแต่ไม่เจอมือ" เงียบๆ
+       (ไฟล์โมเดล hands.binarypb เคยหายไปจาก repo ทั้งที่ทุกอย่างดูปกติ เจอ 2026-08-11) */
+    arResCount = 0; arSawHand = false;
+    arHands.onResults(res=>{
+      arResCount++;
+      arLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null;
+      if(arLandmarks) arSawHand = true;
+    });
 
     arCamera = new Camera(video, {
       onFrame: async ()=>{ if(arHands){ await arHands.send({ image:video }); } },
@@ -426,6 +434,16 @@ async function initHandTracking(){
     arActive = true;
     $('ar-cursor').classList.add('active');
     arRafId = requestAnimationFrame(arDrawLoop);
+    if(arWatchdog) clearTimeout(arWatchdog);
+    arWatchdog = setTimeout(()=>{
+      if(!arActive) return;
+      if(arResCount === 0){
+        console.warn('AR: MediaPipe ไม่คายผลลัพธ์เลย (โมเดลโหลดไม่ครบหรือเครื่องไม่รองรับ)');
+        showToast('🖐️','เครื่องนี้ยังใช้มือหน้ากล้องไม่ได้ ลากด้วยนิ้วหรือเมาส์ได้เลยนะ!');
+      } else if(!arSawHand){
+        showToast('🖐️','ยกมือขึ้นให้เห็นทั้งฝ่ามือ ห่างกล้องสักหนึ่งช่วงแขน ในที่สว่างนะ!');
+      }
+    }, 7000);
   }catch(err){
     console.warn('AR hand tracking unavailable, using mouse/touch fallback:', err);
     $('ar-camera-msg-emoji').textContent = '🖐️🚫';
@@ -450,7 +468,7 @@ async function initHandTracking(){
 const HP_CLICK_SEL = 'button:not([disabled]), .sort-bin, .coord-cell, .memory-card, [data-hp-click]';
 let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = null, hpLandmarks = null,
     hpRaf = null, hpSmooth = null, hpWasPinching = false, hpResizeHandler = null, hpHoverEl = null, hpClickAt = 0,
-    hpHintShown = false;
+    hpHintShown = false, hpResCount = 0, hpSawHand = false, hpWatchdog = null;
 
 /* view ที่กำลังเปิดอยู่ (section ใน <main> ที่ไม่ hidden และมีแถบหัวเกม) — ใช้หาที่ติดปุ่มกล้อง */
 function hpVisibleView(){
@@ -562,12 +580,18 @@ async function startHandPlay(){
     window.addEventListener('resize', hpResizeHandler);
     hpHands = new Hands({ locateFile:(f)=>'js/vendor/mediapipe/hands/'+f });
     hpHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
-    hpHands.onResults(res=>{ hpLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
+    hpResCount = 0; hpSawHand = false;
+    hpHands.onResults(res=>{
+      hpResCount++;
+      hpLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null;
+      if(hpLandmarks) hpSawHand = true;
+    });
     hpCamera = new Camera(video, { onFrame: async ()=>{ if(hpHands){ await hpHands.send({ image:video }); } }, width:480, height:360 });
     await hpCamera.start();
     hpActive = true;
     hpRaf = requestAnimationFrame(hpDrawLoop);
     showToast('✋','ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" เพื่อแตะได้เลย!');
+    startHandWatchdog();
   }catch(err){
     console.warn('hand play unavailable:', err);
     stopHandPlay();
@@ -575,7 +599,25 @@ async function startHandPlay(){
   }
   hpRefreshBtn();
 }
+/* ⚠ ยามเฝ้า "เปิดกล้องแล้วมือไม่ขึ้น" — อาการนี้เคยเงียบสนิทมาก่อน (ไฟล์โมเดล hands.binarypb
+   หายไปจาก repo ตั้งแต่ 2026-07-30 ถึง 2026-08-11 กล้องติดแต่ไม่เคยเจอมือเลย ไม่มีอะไรบอกเด็ก/ผู้ปกครอง)
+   ⇒ แยก 2 กรณีให้ชัด: โมเดลไม่ทำงานเลย (บอกแล้วปิดกล้องคืนให้) vs โมเดลทำงานแต่ยังไม่เห็นมือ (สอนวิธียกมือ) */
+function startHandWatchdog(){
+  clearHandWatchdog();
+  hpWatchdog = setTimeout(()=>{
+    if(!hpActive) return;
+    if(hpResCount === 0){
+      console.warn('hand play: MediaPipe ไม่คายผลลัพธ์เลย (โมเดลโหลดไม่ครบหรือเครื่องไม่รองรับ)');
+      showToast('📷','เครื่องนี้ยังใช้โหมดมือไม่ได้ ไม่เป็นไรนะ แตะหน้าจอเล่นได้ตามปกติ!');
+      stopHandPlay();
+    } else if(!hpSawHand){
+      showToast('🖐️','ยกมือขึ้นให้เห็นทั้งฝ่ามือ ห่างกล้องสักหนึ่งช่วงแขน ในที่สว่างนะ!');
+    }
+  }, 7000);
+}
+function clearHandWatchdog(){ if(hpWatchdog){ clearTimeout(hpWatchdog); hpWatchdog = null; } }
 function stopHandPlay(){
+  clearHandWatchdog();
   hpActive = false;
   hpLandmarks = null;
   hpSmooth = null;

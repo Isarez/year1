@@ -27,8 +27,10 @@ function loadScriptOnce(src){
 function loadMediaPipeScripts(){
   if(window.Hands && window.Camera) return Promise.resolve();
   if(_mpLoadPromise) return _mpLoadPromise;
-  _mpLoadPromise = loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js')
-    .then(()=>loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'))
+  /* ⚠ self-host เท่านั้น ห้ามกลับไปใช้ CDN (หลักการของโปรเจค) — ไฟล์อยู่ที่ js/vendor/mediapipe/
+     หน้าครูอยู่ในโฟลเดอร์ teacher/ จึงต้องถอยขึ้นหนึ่งชั้นด้วย ../ */
+  _mpLoadPromise = loadScriptOnce('../js/vendor/mediapipe/hands/hands.js')
+    .then(()=>loadScriptOnce('../js/vendor/mediapipe/camera_utils/camera_utils.js'))
     .then(()=>{ if(!window.Hands || !window.Camera) throw new Error('ไม่พบ MediaPipe Hands/Camera'); });
   return _mpLoadPromise;
 }
@@ -262,7 +264,7 @@ async function initHandTracking(){
     arResizeHandler();
     window.addEventListener('resize', arResizeHandler);
 
-    arHands = new Hands({ locateFile:(f)=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f });
+    arHands = new Hands({ locateFile:(f)=>'../js/vendor/mediapipe/hands/'+f });
     arHands.setOptions({ maxNumHands:1, modelComplexity:0, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
     arHands.onResults(res=>{ arLandmarks = (res.multiHandLandmarks && res.multiHandLandmarks[0]) || null; });
 
