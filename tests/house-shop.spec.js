@@ -138,26 +138,28 @@ test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เ�
   const r = await page.evaluate(() => {
     const S = window.HouseShop, C = window.OwlCoins;
     C.set(0);
-    const price = S.priceFurn('piano');                 // 300 (ระดับใหญ่/พิเศษ)
-    const poor = S.buyFurn('piano');                    // เงิน 0 → ต้องซื้อไม่ได้
+    /* ⚠ เฟส 9 ย้าย `piano` ไปหมวดเครื่องดนตรี ราคาขึ้นเป็น 1,500 ⇒ ใช้ `tv` (ระดับ 3 = 140) แทน
+       เพื่อทดสอบกลไกซื้อ-ตัดเงิน ส่วนราคาเครื่องดนตรีมีเทสของตัวเองที่ house-phase9.spec.js */
+    const price = S.priceFurn('tv');                    // 140 (ระดับกลาง)
+    const poor = S.buyFurn('tv');                       // เงิน 0 → ต้องซื้อไม่ได้
     C.set(500);
-    const rich = S.buyFurn('piano');                    // เงินพอ → ซื้อได้
+    const rich = S.buyFurn('tv');                       // เงินพอ → ซื้อได้
     const after = C.get();
-    const twice = S.buyFurn('piano');                   // ซื้อซ้ำไม่ได้ (มีแล้ว)
-    return { price, poor, rich, after, twice, owns: S.ownsFurn('piano'),
+    const twice = S.buyFurn('tv');                      // ซื้อซ้ำไม่ได้ (มีแล้ว)
+    return { price, poor, rich, after, twice, owns: S.ownsFurn('tv'),
              cheap: S.priceFurn('bath-mat'), mid: S.priceFurn('sofa') };
   });
-  expect(r.price).toBe(300);
+  expect(r.price).toBe(140);
   expect(r.cheap).toBe(25);
   expect(r.mid).toBe(140);
   expect(r.poor).toBe(false);
   expect(r.rich).toBe(true);
-  expect(r.after).toBe(200);                            // 500 - 300
+  expect(r.after).toBe(360);                            // 500 - 140
   expect(r.twice).toBe(false);
   expect(r.owns).toBe(true);
   /* สิทธิ์ต้องถูกบันทึกลง house save (export/import ย้ายเครื่องตามไปด้วย) */
   const d = await readHouse(page);
-  expect(d.unlocked).toContain('piano');
+  expect(d.unlocked).toContain('tv');
 });
 
 test('หน้าแต่งตัว: แถวสีของเครื่องแต่งโผล่เฉพาะตอนใส่ชิ้นนั้นอยู่', async ({ page }) => {
@@ -337,9 +339,9 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
   expect(furn.open).toBe(true);
   expect(furn.cards).toBeGreaterThan(0);
   const ft = await tabState();
-  /* 6 หมวดในบ้านล้วน — ของนอกบ้านย้ายไปร้านต้นไม้/ร้านของเล่นแล้วเมื่อ 2026-08-08 (ข้อ 17.4)
-     กลุ่มเดียวจึงไม่ต้องมีหัวข้อกลุ่มคั่น */
-  expect(ft.tabs).toBe(6);
+  /* 7 หมวดในบ้านล้วน — ของนอกบ้านย้ายไปร้านต้นไม้/ร้านของเล่นแล้วเมื่อ 2026-08-08 (ข้อ 17.4)
+     กลุ่มเดียวจึงไม่ต้องมีหัวข้อกลุ่มคั่น · เฟส 9 เพิ่มหมวด "เครื่องดนตรี" (scope in) อีก 1 หมวด */
+  expect(ft.tabs).toBe(7);
   expect(ft.secs).toBe(0);
   expect(ft.wrap).toBe('wrap');
   expect(ft.clippedY).toBe(0);                  // ต้องเห็นหมวดครบพร้อมกัน ไม่ถูกตัด
@@ -433,7 +435,9 @@ test('ร้านต้นไม้/ร้านของเล่น: เป�
   }, id);
 
   const furn = await shopTabs('mall-furniture');
-  expect(furn.t).toEqual(['ที่นั่ง', 'โต๊ะ', 'ห้องนอน', 'ครัว', 'ห้องน้ำ', 'ตกแต่ง']);   // ในบ้านล้วน
+  /* ⚠ เฟส 9 เพิ่มหมวด "เครื่องดนตรี" (scope in) ⇒ ห้างเฟอร์นิเจอร์ที่ขาย "ทุกหมวดของ in"
+     จึงมีแท็บนี้ด้วยโดยอัตโนมัติ — ถูกต้องแล้ว ของยังอยู่ในบ้านล้วนเหมือนเดิม */
+  expect(furn.t).toEqual(['ที่นั่ง', 'โต๊ะ', 'ห้องนอน', 'ครัว', 'ห้องน้ำ', 'ตกแต่ง', 'เครื่องดนตรี']);
   expect(furn.t).not.toContain('เครื่องเล่น');
   expect(furn.t).not.toContain('ตกแต่งสวน');
 

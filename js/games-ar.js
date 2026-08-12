@@ -889,6 +889,8 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-quests.js'+v))
     .then(()=>loadScriptOnce('js/house-pet-care.js'+v))
     .then(()=>loadScriptOnce('js/house-family.js'+v))
+    /* ตัวละคร/ของแต่งตัว — ต้องมาก่อน house.js (house.js เรียก HOUSE_AVATAR ตอนโหลด) */
+    .then(()=>loadScriptOnce('js/house-avatar.js'+v))
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
     /* สะพานไปหา engine เกมของหน้าหลัก (เฟส 5) — ต้องมาหลัง house.js เพราะใช้ window.HouseQuestUI */
     .then(()=>loadScriptOnce('js/house-games.js'+v))
