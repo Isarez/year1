@@ -884,6 +884,8 @@ function loadHouseMode(curtain){
     .then(()=>{ step(.12, 'โหลดเครื่องมือสร้างเมือง…'); return loadScriptOnce('js/house-map.js'+v); })
     .then(()=>loadScriptOnce('js/house-furniture.js'+v))
     .then(()=>loadScriptOnce('js/house-shop.js'+v))
+    /* คลังโจทย์ต้องมาก่อน engine เควสต์เสมอ (house-quests.js throw ทันทีถ้าไม่มี) */
+    .then(()=>loadScriptOnce('js/house-quest-data.js'+v))
     .then(()=>loadScriptOnce('js/house-quests.js'+v))
     .then(()=>loadScriptOnce('js/house-pet-care.js'+v))
     .then(()=>loadScriptOnce('js/house-family.js'+v))
