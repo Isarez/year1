@@ -23,6 +23,7 @@ const {
   H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
   H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
   H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_DEFAULT_PARENT_DAD, H_DEFAULT_PARENT_MOM, H_ROWS, H_ROW_ICONS, NPAD,
+  outfitIcon,   /* เฟส 8C: ไอคอนของแต่ละแบบในหน้าแต่งตัว — อยู่ใน IIFE ของไฟล์นี้ ต้องส่งออกทางนี้เท่านั้น */
   EPAD, EPAD2, EPAD_ALL, OUT_W, OUT_D, sx,
   sz, sRect, sTile, sList, s2z, s2Rect,
   s2Tile, s2List, RIVER_X, BRIDGE_Z, BRIDGE2_Z, FARM_BRIDGE_Z,
@@ -7902,7 +7903,17 @@ function buildCreatorRows(cfg){
       }else if(row.type==='num'){
         /* แถวของแต่ง (row.none) — ตัวเลือกแรกคือ "ไม่ใส่" โชว์เป็นเครื่องหมายกากบาท ไม่ใช่เลข 1
            (ไม่งั้นเด็กเลือกแบบที่ 1 แล้วไม่มีอะไรขึ้น นึกว่าแอปเสีย) */
-        b.textContent = row.none ? (i===0 ? '✖' : String(i)) : String(i+1);
+        /* เฟส 8C: วาด **รูปของชิ้นนั้นจริงๆ** แทนปุ่มตัวเลข (ข้อ 29 ของ QUEST-DESIGN.md)
+           เด็ก 5 ขวบอ่านเลข 7 แล้วไม่มีทางรู้ว่าเป็นหมวกอะไร ⇒ ต้องดูออกด้วยตา
+           ⚠ ถ้าแถวไหนยังไม่มีไอคอน `outfitIcon` คืนค่าว่าง → ถอยไปใช้ตัวเลขแบบเดิม ไม่พัง */
+        const ico = (typeof outfitIcon === 'function') ? outfitIcon(row.key, i) : '';
+        if(ico && !(row.none && i===0)){
+          b.classList.add('house-chip-ico');
+          b.innerHTML = ico;
+          b.setAttribute('aria-label', row.label+' แบบที่ '+(row.none ? i : i+1));
+        }else{
+          b.textContent = row.none ? (i===0 ? '✖' : String(i)) : String(i+1);
+        }
         if(row.none && i===0){ b.classList.add('house-chip-none'); b.setAttribute('aria-label', row.label+' — ไม่ใส่'); }
       }
       else{ b.textContent = row.options[i]; }
@@ -13388,6 +13399,16 @@ if(!homeView.hidden) houseBuddyRefresh();
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
   /* รอบเล่นเควสต์ที่กำลังเปิดอยู่ (ชุดเทสมินิเกมเฟส 4B ต้องรู้ว่าของชิ้นไหนควรลงถังไหน) */
   qRun: ()=> qRun,
+  /* ---- จุดต่อชุดเทสเฟส 8 (คลังเฟอร์นิเจอร์ 180 ชิ้น + ของแต่งตัว 114 แบบ) ----
+     สร้างของ/ตัวละครจริงผ่านทางเดินโค้ดเดียวกับในเกม เพื่อจับชิ้นที่วาดแล้วพัง
+     (เดินไปซื้อ+วางทีละชิ้นในฉาก 3D ทำในเทสไม่ไหว) */
+  furn: ()=> FURN,
+  rows: ()=> H_ROWS,
+  defaultChar: ()=> Object.assign({}, H_DEFAULT_CHAR),
+  buildFurn: id => { const it = FURN.byId[id]; if(!it) throw new Error('ไม่พบ '+id);
+    const g = new THREE.Group(); it.build(g, (it.colors && it.colors[0]) || 0xffffff, decorKit()); return g; },
+  buildChar: cfg => buildCharacter(cfg),
+  openCreator: ()=> openCreator(true),
   /* ผัง NPC ทั้งเมือง + ปิดการ์ดเควสต์ (ชุดเทสเฟส 6-7 สร้าง engine เควสต์ตัวที่ 2 มาไล่ทุกระดับชั้น
      ⚠ ถ้าไม่ส่ง npcDefs เข้าไป งาน "ส่งของถึงมือ" จะหาปลายทางไม่ได้แล้วถอยไปใช้ count เงียบๆ
        ⇒ เทสผ่านโดยไม่เคยรันโค้ดของกลไกนั้นเลยสักบรรทัด) */

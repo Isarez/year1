@@ -2522,6 +2522,12 @@
   .house-chip:active{transform:scale(.92);}
   .house-chip.active{border-color:#33B7EE; box-shadow:0 0 0 3px rgba(51,183,238,.25); transform:scale(1.06);}
   .house-chip-color{padding:0; width:42px;}
+  /* ---- เฟส 8C: ชิปที่เป็น "รูปของชิ้นนั้น" แทนตัวเลข (หน้าแต่งตัว) ----
+     ⚠ รูปต้องเต็มชิปพอให้เด็กดูออกว่าเป็นอะไร แต่ห้ามล้นขอบ (ชิปมีกรอบ active/ล็อกวาดทับอยู่) */
+  .house-chip-ico{padding:0; width:42px;}
+  .house-chip-ico svg{width:32px; height:32px; display:block;}
+  /* ชิปที่ยังไม่ได้ซื้อ: รูปจางลงพร้อมกับตัวชิป จะได้รู้ว่ายังใช้ไม่ได้ (แต่ยังเห็นว่าเป็นของอะไร) */
+  .house-chip-lock.house-chip-ico svg{opacity:.55;}
   /* ชิป "ไม่ใส่" ของแถวเครื่องแต่งตัว (หมวก/แว่น/เป้/ของถือ) — สีจางกว่าชิปแบบอื่นให้รู้ว่าเป็นตัวเลือกถอดออก */
   .house-chip-none{background:#EDE4D6; color:#A08E77;}
   /* เฟส 1 เศรษฐกิจ: แบบที่ยังไม่ได้ซื้อ — จางลง ขอบเส้นประ มีแม่กุญแจมุมบนขวา (ยังเห็นสี/เลขได้)
@@ -2700,6 +2706,8 @@
     .house-creator{max-height:60vh; max-height:60dvh;}
     .house-chip{min-width:38px; height:38px; border-radius:12px;}
     .house-chip-color{width:38px;}
+    .house-chip-ico{width:38px;}
+    .house-chip-ico svg{width:29px; height:29px;}
   }
   /* ปุ่มหมุนตัวละครในหน้าสร้างตัวละคร (แทน auto-rotate ตามคำขอผู้ใช้)
      มือถือ: แยกชิดขอบซ้าย-ขวาของจอ (ตรงกลางเป็นตัวละคร วางคู่กลางจะทับเท้า)

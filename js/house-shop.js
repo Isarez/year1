@@ -856,7 +856,7 @@
     document.addEventListener('owlcoins', ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } });
 
     return {
-      ECON_VER, SHOPS, TIER_PRICE, FIT_PRICE,
+      ECON_VER, SHOPS, TIER_PRICE, FIT_PRICE, FIT_NAMES,   /* FIT_NAMES: ชุดเทสเฟส 8 ใช้ตรวจว่าชื่อไทยครบทุกแบบ */
       migrate, invalidate,
       priceFurn, priceFit, ownsFurn, ownsFit,
       buyFurn, buyFit,

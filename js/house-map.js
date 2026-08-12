@@ -109,6 +109,8 @@ const H_ROW_ICONS = {
   shirt:  '<svg viewBox="0 0 24 24"><path d="M8.5 4 L4 7 L6 10.2 L8 9 V20 H16 V9 L18 10.2 L20 7 L15.5 4 Q12 6.8 8.5 4 z" fill="#7ec0f5" stroke="#3a86c9" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   bottom: '<svg viewBox="0 0 24 24"><path d="M6.5 4 H17.5 L16.6 20 H13 L12 10.5 L11 20 H7.4 z" fill="#7f8fd6" stroke="#4a5aa8" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   shoes:  '<svg viewBox="0 0 24 24"><path d="M3 15.5 V11.5 Q3 9.5 5 9.5 L8 9.5 L11 12.5 L18 14.2 Q21 14.8 21 17 V18.5 H3 z" fill="#ffd24d" stroke="#d99a1f" stroke-width="1.8" stroke-linejoin="round"/><line x1="8" y1="11" x2="9.6" y2="12.6" stroke="#d99a1f" stroke-width="1.5" stroke-linecap="round"/><line x1="10.2" y1="12" x2="11.8" y2="13.6" stroke="#d99a1f" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  /* เฟส 8: แถว "แบบรองเท้า" (รูปทรง) — ใช้รองเท้าบูทให้ต่างจากไอคอนแถว "สีรองเท้า" ที่เป็นผ้าใบสีเหลือง */
+  shoeStyle: '<svg viewBox="0 0 24 24"><path d="M8 4.5 h6 v9 h3.6 a2.4 2.4 0 0 1 2.4 2.4 v1.6 a1 1 0 0 1 -1 1 h-11 z" fill="#a1785a" stroke="#7a5540" stroke-width="1.8" stroke-linejoin="round"/><line x1="8" y1="7.5" x2="14" y2="7.5" stroke="#7a5540" stroke-width="1.5"/></svg>',
   pattern:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="#ffe08a" stroke="#e0a52e" stroke-width="1.8"/><circle cx="9" cy="9" r="1.7" fill="#ef5350"/><circle cx="15" cy="9" r="1.7" fill="#42a5f5"/><circle cx="9" cy="15" r="1.7" fill="#42a5f5"/><circle cx="15" cy="15" r="1.7" fill="#ef5350"/></svg>',
   hat:    '<svg viewBox="0 0 24 24"><path d="M6 13 Q6 5.5 12 5.5 Q18 5.5 18 13 z" fill="#7fd1a6" stroke="#2f9e6b" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.5 13 H20.5 Q21 15.5 18.5 15.5 H5.5 Q3 15.5 3.5 13 z" fill="#a8e6c4" stroke="#2f9e6b" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   glass:  '<svg viewBox="0 0 24 24"><circle cx="7.5" cy="13" r="4.2" fill="#dff1fb" stroke="#4a6fa5" stroke-width="1.8"/><circle cx="16.5" cy="13" r="4.2" fill="#dff1fb" stroke="#4a6fa5" stroke-width="1.8"/><path d="M11.7 12.6 Q12 11.6 12.3 12.6" fill="none" stroke="#4a6fa5" stroke-width="1.8" stroke-linecap="round"/><path d="M3.3 11.4 L4.6 9.6 M20.7 11.4 L19.4 9.6" stroke="#4a6fa5" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -120,6 +122,199 @@ const H_ROW_ICONS = {
   holdC:  '<svg viewBox="0 0 24 24"><ellipse cx="10" cy="8.5" rx="4.6" ry="5.2" fill="#ff9fb0" stroke="#e05575" stroke-width="1.7"/><path d="M10 13.7 q1.7 2.3 0 4.6" fill="none" stroke="#e05575" stroke-width="1.5" stroke-linecap="round"/><circle cx="19.2" cy="18.6" r="2.7" fill="#9fd8f5" stroke="#3a9ad8" stroke-width="1.4"/></svg>',
   accC:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="#fff3c4" stroke="#e0a52e" stroke-width="1.8"/><path d="M12 3.5 a8.5 8.5 0 0 1 0 17 z" fill="#ffb3c8"/><circle cx="8.6" cy="9.4" r="1.5" fill="#66bb6a"/><circle cx="8.6" cy="14.6" r="1.5" fill="#42a5f5"/></svg>',
 };
+/* ============================================================
+   เฟส 8C — ไอคอนของ "แต่ละแบบ" ในหน้าแต่งตัว (ข้อ 29 ของ QUEST-DESIGN.md)
+
+   ปัญหาเดิม: แถว type:'num' ทุกแถวแสดงเป็นปุ่มตัวเลข 1 2 3 4… ซึ่งขัดหลักการโปรเจค
+   ที่ว่า "เด็ก 5 ขวบต้องเข้าใจด้วยสายตาโดยไม่ต้องอ่านออก" — เลข 7 ไม่บอกอะไรเลยว่าเป็นหมวกอะไร
+
+   วิธี: `outfitIcon(rowKey, i)` คืน SVG จำลอง "ของชิ้นนั้นจริงๆ" สไตล์แบนพาสเทลขอบมน
+   ชุดเดียวกับ H_ROW_ICONS ด้านบน
+   ⚠ ปุ่ม "ไม่ใส่" (index 0 ของแถวที่มี none) ยังเป็น ✖ เหมือนเดิม — ห้ามเปลี่ยนเป็นไอคอน
+   ⚠ ชิปสีทั้งหมดคงเดิม (ไอคอนใช้เฉพาะแถวแบบ)
+   ⚠ **ลำดับต้องตรงกับ case ใน js/house.js เป๊ะ** ถ้าเพิ่มแบบใหม่ต้องต่อท้ายทั้ง 2 ที่พร้อมกัน
+   ============================================================ */
+const OI_SKIN = '#ffe0b3', OI_LINE = '#e59a5b', OI_HAIR = '#8d6e63', OI_HAIRD = '#6d4c41';
+const OI_A = '#7fc8f0', OI_AD = '#3f9ad0', OI_B = '#ffb3c6', OI_BD = '#e5789a';
+const OI_C = '#ffd97d', OI_CD = '#e0a93e', OI_G = '#9ede9e', OI_GD = '#5bb85b';
+/* หัวเปล่า (ใช้เป็นฐานของไอคอนทรงผม/หมวก/แว่น) */
+const oiHead = (y) => '<circle cx="12" cy="' + (y || 13) + '" r="6" fill="' + OI_SKIN + '" stroke="' + OI_LINE + '" stroke-width="1.6"/>';
+const oiSvg  = (inner) => '<svg viewBox="0 0 24 24">' + inner + '</svg>';
+
+/* ---- ทรงผม 12 แบบ ----
+   ⚠ **ต้องต่างกันที่ "เงารวม" (silhouette) ไม่ใช่รายละเอียดเล็กๆ** — ไอคอนโชว์แค่ 32px
+     รอบแรกเขียน path คล้ายกันหมด ผลคือ 12 แบบดูเหมือนกันเป๊ะบนจอจริง เด็กแยกไม่ออกเลย
+     (เห็นจาก screenshot ตอนเทส 2026-08-12) ⇒ ทุกแบบต้องมีของยื่นพ้นวงหัวที่ต่างกัน
+   H / D = placeholder ของสีผม/สีขอบ (แทนค่าให้ตอนสร้าง OI_HAIR_SHAPES ด้านล่าง) */
+const OI_HAIR_ICONS = [
+  /* 0 แสกข้าง */
+  '<path d="M6 12 A6 6 0 0 1 18 12 L17.6 8.6 Q12 5 7 9.6 Z" fill="H" stroke="D" stroke-width="1.2"/>',
+  /* 1 สไปก์ตั้ง */
+  '<path d="M6.2 11.4 A6 6 0 0 1 17.8 11.4 L17 9 L15.6 5.6 L13.8 8.6 L12 4.6 L10.2 8.6 L8.4 5.6 L7 9 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>',
+  /* 2 บ๊อบ */
+  '<path d="M5 14.4 Q5 6 12 6 Q19 6 19 14.4 L17.4 14.4 Q17.4 9.4 12 9.4 Q6.6 9.4 6.6 14.4 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
+  /* 3 หยิกฟู */
+  '<circle cx="12" cy="7.4" r="3" fill="H"/><circle cx="7.6" cy="9.6" r="2.6" fill="H"/><circle cx="16.4" cy="9.6" r="2.6" fill="H"/><circle cx="6.2" cy="13" r="2.2" fill="H"/><circle cx="17.8" cy="13" r="2.2" fill="H"/>',
+  /* 4 อาโฮเกะ (เส้นชี้) */
+  '<path d="M6 11.6 A6 6 0 0 1 18 11.6 L17 9 Q12 6 7 9 Z" fill="H" stroke="D" stroke-width="1.2"/><path d="M12.4 6.6 Q13.6 2.6 16.4 3.6" fill="none" stroke="H" stroke-width="1.8" stroke-linecap="round"/>',
+  /* 5 มัดจุกท้ายทอย */
+  '<path d="M6 11.6 A6 6 0 0 1 18 11.6 L17 9 Q12 6.2 7 9 Z" fill="H" stroke="D" stroke-width="1.2"/><circle cx="19" cy="9.4" r="2.4" fill="H" stroke="D" stroke-width="1"/>',
+  /* 6 เกรียน */
+  '<path d="M7 10.6 A5 5 0 0 1 17 10.6 Q12 8.6 7 10.6 Z" fill="H" stroke="D" stroke-width="1.2"/>',
+  /* 7 แสกกลาง */
+  '<path d="M6 12 A6 6 0 0 1 11.4 6.2 L11.4 10 Q9 9.6 7 11 Z" fill="H" stroke="D" stroke-width="1.1"/><path d="M18 12 A6 6 0 0 0 12.6 6.2 L12.6 10 Q15 9.6 17 11 Z" fill="H" stroke="D" stroke-width="1.1"/>',
+  /* 8 อาฟโร (วงใหญ่คลุมหัว แล้ววาดหน้าทับ) */
+  '<circle cx="12" cy="10.6" r="7.4" fill="H" stroke="D" stroke-width="1.2"/><circle cx="12" cy="13.6" r="5.2" fill="' + OI_SKIN + '" stroke="' + OI_LINE + '" stroke-width="1.2"/>',
+  /* 9 หน้าม้าหนา */
+  '<path d="M5.4 12.4 Q5.4 5.6 12 5.6 Q18.6 5.6 18.6 12.4 L18.6 11 Q12 8.6 5.4 11 Z" fill="H" stroke="D" stroke-width="1.2"/><rect x="5.6" y="9.4" width="12.8" height="2.8" rx="1.3" fill="H"/>',
+  /* 10 โมฮอว์ก */
+  '<path d="M7.6 10.6 A4.6 4.6 0 0 1 16.4 10.6 Z" fill="H"/><path d="M9.6 9.6 L12 3.4 L14.4 9.6 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>',
+  /* 11 ยาวประบ่า */
+  '<path d="M5 19 Q4.6 6 12 6 Q19.4 6 19 19 L16.6 19 Q17.4 9.6 12 9.6 Q6.6 9.6 7.4 19 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
+];
+const OI_HAIR_SHAPES = OI_HAIR_ICONS.map(p =>
+  p.split('"H"').join('"' + OI_HAIR + '"').split('"D"').join('"' + OI_HAIRD + '"'));
+
+/* ---- ดวงตา 12 แบบ ---- */
+const OI_EYES = [
+  '<circle cx="9.4" cy="12.6" r="1.5" fill="#4a3a2a"/><circle cx="14.6" cy="12.6" r="1.5" fill="#4a3a2a"/>',
+  '<circle cx="9.4" cy="12.6" r="2.4" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="9.4" cy="12.6" r="1.2" fill="#4a3a2a"/><circle cx="14.6" cy="12.6" r="2.4" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="14.6" cy="12.6" r="1.2" fill="#4a3a2a"/>',
+  '<path d="M7.8 13.4 L9.4 11.6 L11 13.4 M13 13.4 L14.6 11.6 L16.2 13.4" fill="none" stroke="#4a3a2a" stroke-width="1.5" stroke-linecap="round"/>',
+  '<rect x="7.9" y="12" width="3" height="1.4" rx=".7" fill="#4a3a2a"/><rect x="13.1" y="12" width="3" height="1.4" rx=".7" fill="#4a3a2a"/>',
+  '<circle cx="9.4" cy="12.8" r="2.2" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="9.4" cy="12.8" r="1.1" fill="#4a3a2a"/><path d="M7.6 10.4 L9 9.4" stroke="#4a3a2a" stroke-width="1.2" stroke-linecap="round"/><circle cx="14.6" cy="12.8" r="2.2" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="14.6" cy="12.8" r="1.1" fill="#4a3a2a"/><path d="M16.4 10.4 L15 9.4" stroke="#4a3a2a" stroke-width="1.2" stroke-linecap="round"/>',
+  '<ellipse cx="9.4" cy="12.6" rx="1.1" ry="2" fill="#4a3a2a"/><ellipse cx="14.6" cy="12.6" rx="1.1" ry="2" fill="#4a3a2a"/>',
+  '<path d="M7.8 13 A1.7 1.7 0 0 1 11 13 M13 13 A1.7 1.7 0 0 1 16.2 13" fill="none" stroke="#4a3a2a" stroke-width="1.5" stroke-linecap="round"/>',
+  '<circle cx="9.4" cy="12.6" r="2.6" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="9.4" cy="12.6" r="1.4" fill="#4a3a2a"/><circle cx="10.4" cy="11.6" r=".6" fill="#fff"/><circle cx="14.6" cy="12.6" r="2.6" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="14.6" cy="12.6" r="1.4" fill="#4a3a2a"/><circle cx="15.6" cy="11.6" r=".6" fill="#fff"/>',
+  '<circle cx="9.4" cy="13.2" r="2.2" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="9.4" cy="13.4" r="1.1" fill="#4a3a2a"/><rect x="7.2" y="11.4" width="4.4" height="1.3" rx=".6" fill="' + OI_SKIN + '" stroke="' + OI_LINE + '" stroke-width=".7"/><circle cx="14.6" cy="13.2" r="2.2" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="14.6" cy="13.4" r="1.1" fill="#4a3a2a"/><rect x="12.4" y="11.4" width="4.4" height="1.3" rx=".6" fill="' + OI_SKIN + '" stroke="' + OI_LINE + '" stroke-width=".7"/>',
+  '<path d="M9.4 14.4 L7.7 12.4 A1.1 1.1 0 0 1 9.4 11.1 A1.1 1.1 0 0 1 11.1 12.4 Z" fill="#ff5a7a"/><path d="M14.6 14.4 L12.9 12.4 A1.1 1.1 0 0 1 14.6 11.1 A1.1 1.1 0 0 1 16.3 12.4 Z" fill="#ff5a7a"/>',
+  '<circle cx="9.3" cy="12.6" r="3" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="9.3" cy="12.6" r="1.6" fill="#4a3a2a"/><circle cx="10.5" cy="11.4" r=".7" fill="#fff"/><circle cx="14.7" cy="12.6" r="3" fill="#fff" stroke="#4a3a2a" stroke-width="1"/><circle cx="14.7" cy="12.6" r="1.6" fill="#4a3a2a"/><circle cx="15.9" cy="11.4" r=".7" fill="#fff"/>',
+  '<path d="M7.8 12.4 A1.7 1.7 0 0 0 11 12.4 M13 12.4 A1.7 1.7 0 0 0 16.2 12.4" fill="none" stroke="#4a3a2a" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="7.4" cy="14.6" rx="1.2" ry=".7" fill="#ffb3b3"/><ellipse cx="16.6" cy="14.6" rx="1.2" ry=".7" fill="#ffb3b3"/>',
+];
+/* ---- ลายเสื้อ 20 แบบ (วาดบนทรงเสื้อ) ---- */
+const OI_SHIRT = '<path d="M8 6 L10 5 Q12 6.6 14 5 L16 6 L18.4 8 L16.6 10 L16 10 L16 19 Q12 20 8 19 L8 10 L7.4 10 L5.6 8 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.4" stroke-linejoin="round"/>';
+const OI_PAT = [
+  '',
+  '<path d="M8 11 H16 M8 14 H16 M8 17 H16" stroke="#fff" stroke-width="1.4"/>',
+  '<circle cx="10.4" cy="11.6" r=".9" fill="#fff"/><circle cx="13.6" cy="13.6" r=".9" fill="#fff"/><circle cx="10.4" cy="16" r=".9" fill="#fff"/>',
+  '<path d="M12 10.6 l.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z" fill="#fff"/>',
+  '<path d="M12 16 L9.8 13.6 A1.5 1.5 0 0 1 12 11.8 A1.5 1.5 0 0 1 14.2 13.6 Z" fill="#fff"/>',
+  '<path d="M9.6 10.6 H14.4 V16 H9.6 Z" fill="#ffd97d" stroke="#e0a93e" stroke-width="1"/>',
+  '<path d="M8 12 l2-1.6 2 1.6 2-1.6 2 1.6" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>',
+  '<rect x="12.6" y="10.6" width="3" height="2.6" rx=".5" fill="#fff"/>',
+  '<path d="M8.4 6.6 Q12 9.6 15.6 6.6 L16.6 8.4 Q12 11.6 7.4 8.4 Z" fill="#fff"/>',
+  '<path d="M10.4 10 V19 M13.6 10 V19" stroke="#fff" stroke-width="1.6"/>',
+  '<path d="M8 12 H16 M8 15.4 H16 M10.4 10 V19 M13.6 10 V19" stroke="#fff" stroke-width="1"/>',
+  '<path d="M10 11 l.5 1 1 .2-.8.7.2 1.1-.9-.5-.9.5.2-1.1-.8-.7 1-.2z" fill="#fff"/><path d="M14 14 l.5 1 1 .2-.8.7.2 1.1-.9-.5-.9.5.2-1.1-.8-.7 1-.2z" fill="#fff"/>',
+  '<path d="M10.6 14.6 L9 12.9 A1.1 1.1 0 0 1 10.6 11.6 A1.1 1.1 0 0 1 12.2 12.9 Z" fill="#fff"/><path d="M14 16.4 L12.4 14.7 A1.1 1.1 0 0 1 14 13.4 A1.1 1.1 0 0 1 15.6 14.7 Z" fill="#fff"/>',
+  '<circle cx="10.6" cy="12" r="1.5" fill="#fff"/><circle cx="14" cy="16" r="1.5" fill="#fff"/>',
+  '<path d="M8.6 17 L14.6 10.4 M11 18.4 L16 12.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>',
+  '<circle cx="12" cy="14" r="1.4" fill="#fff"/><circle cx="10.4" cy="11.8" r=".7" fill="#fff"/><circle cx="12" cy="11.2" r=".7" fill="#fff"/><circle cx="13.6" cy="11.8" r=".7" fill="#fff"/>',
+  '<path d="M11 11.4 L12.4 10.6 V17 M10.6 17 H14.2" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+  '<path d="M9.4 12.4 l.4.9.9.1-.7.6.2 1-.8-.5-.8.5.2-1-.7-.6.9-.1z" fill="#fff"/><path d="M12 12.4 l.4.9.9.1-.7.6.2 1-.8-.5-.8.5.2-1-.7-.6.9-.1z" fill="#fff"/><path d="M14.6 12.4 l.4.9.9.1-.7.6.2 1-.8-.5-.8.5.2-1-.7-.6.9-.1z" fill="#fff"/>',
+  '<path d="M8 12 H16" stroke="#ff6b6b" stroke-width="1.5"/><path d="M8 14 H16" stroke="#ffd93d" stroke-width="1.5"/><path d="M8 16 H16" stroke="#6bcb77" stroke-width="1.5"/>',
+  '<circle cx="12" cy="13.8" r="2.4" fill="#fff"/><circle cx="11.1" cy="13.2" r=".45" fill="#4a3a2a"/><circle cx="12.9" cy="13.2" r=".45" fill="#4a3a2a"/><path d="M10.9 14.8 Q12 15.8 13.1 14.8" fill="none" stroke="#4a3a2a" stroke-width=".8" stroke-linecap="round"/>',
+];
+/* ---- เครื่องหัว 18 แบบ (index 0 = ไม่ใส่ ⇒ ไม่มีไอคอน) ---- */
+const OI_HAT = [
+  '',
+  '<path d="M6 10.4 A6 6 0 0 1 18 10.4 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/><path d="M12 10.4 H21 A2 2 0 0 1 21 12.4 H12 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/>',
+  '<path d="M6.2 10.8 A6 6 0 0 1 17.8 10.8 Z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3"/><rect x="5.6" y="10.4" width="12.8" height="2.4" rx="1.2" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3"/><circle cx="12" cy="4.6" r="1.6" fill="' + OI_B + '"/>',
+  '<path d="M7.4 10.4 A4.6 4.6 0 0 1 16.6 10.4 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><ellipse cx="12" cy="11" rx="8.4" ry="1.8" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/>',
+  '<circle cx="9.4" cy="7" r="2.2" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="14.6" cy="7" r="2.2" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="12" cy="7" r="1.2" fill="' + OI_BD + '"/>',
+  '<path d="M6.6 10.4 L6.6 5.6 L9.4 8 L12 4.6 L14.6 8 L17.4 5.6 L17.4 10.4 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3" stroke-linejoin="round"/>',
+  '<path d="M7 8.6 L8 4.6 L11 7.4 Z" fill="' + OI_HAIR + '"/><path d="M17 8.6 L16 4.6 L13 7.4 Z" fill="' + OI_HAIR + '"/><path d="M6.4 10.2 A6 6 0 0 1 17.6 10.2" fill="none" stroke="' + OI_HAIRD + '" stroke-width="1.4"/>',
+  '<path d="M12 3.6 L15.6 10.4 H8.4 Z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="3.4" r="1.2" fill="' + OI_C + '"/>',
+  '<path d="M6.4 10.4 A6 6 0 0 1 17.6 10.4" fill="none" stroke="' + OI_BD + '" stroke-width="1.6"/><circle cx="16.6" cy="8.4" r="2.2" fill="' + OI_B + '"/><circle cx="16.6" cy="8.4" r=".9" fill="' + OI_C + '"/>',
+  '<path d="M7.6 9 L8.6 4.6 L11.6 7.8 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.1" stroke-linejoin="round"/><path d="M16.4 9 L15.4 4.6 L12.4 7.8 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.1" stroke-linejoin="round"/>',
+  '<rect x="8" y="3.4" width="2.6" height="6.4" rx="1.3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.1"/><rect x="13.4" y="3.4" width="2.6" height="6.4" rx="1.3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.1"/>',
+  '<path d="M6 11 A6 6 0 0 1 18 11 Z" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.4"/><rect x="5.4" y="10.6" width="13.2" height="1.8" rx=".9" fill="' + OI_GD + '"/>',
+  '<ellipse cx="12" cy="11" rx="9" ry="2.2" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><path d="M8 10.6 A4 4 0 0 1 16 10.6 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/>',
+  '<circle cx="8.4" cy="6.6" r="3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="15.6" cy="6.6" r="3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="12" cy="6.6" r="1.5" fill="' + OI_BD + '"/>',
+  '<path d="M5.8 10.4 Q12 6 18.2 10.4 L17.6 12 Q12 8.4 6.4 12 Z" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.2"/><circle cx="18.4" cy="11.4" r="1.4" fill="' + OI_G + '"/>',
+  '<path d="M6.6 10.4 A5.4 5.4 0 0 1 17.4 10.4 Z" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.3"/><rect x="6" y="10.2" width="12" height="1.8" rx=".9" fill="' + OI_A + '"/><path d="M12 10.2 H20 A1.4 1.4 0 0 1 20 12 H12 Z" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.2"/>',
+  '<circle cx="7.4" cy="9.4" r="1.5" fill="' + OI_B + '"/><circle cx="10.4" cy="7.4" r="1.5" fill="' + OI_C + '"/><circle cx="13.6" cy="7.4" r="1.5" fill="' + OI_B + '"/><circle cx="16.6" cy="9.4" r="1.5" fill="' + OI_C + '"/>',
+  '<path d="M6.4 10.6 A5.6 5.6 0 0 1 17.6 10.6 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/><rect x="5.8" y="10.2" width="12.4" height="2.2" rx="1.1" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.1"/><circle cx="12" cy="4.2" r="1.8" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.1"/>',
+];
+/* ---- แว่นตา 12 แบบ ---- */
+const OI_GLASS = [
+  '',
+  '<circle cx="8.6" cy="13" r="3" fill="#eaf6ff" stroke="#4a3a2a" stroke-width="1.3"/><circle cx="15.4" cy="13" r="3" fill="#eaf6ff" stroke="#4a3a2a" stroke-width="1.3"/><path d="M11.6 13 H12.4" stroke="#4a3a2a" stroke-width="1.3"/>',
+  '<rect x="5.6" y="10.6" width="6" height="4.6" rx="1" fill="#eaf6ff" stroke="#4a3a2a" stroke-width="1.3"/><rect x="12.4" y="10.6" width="6" height="4.6" rx="1" fill="#eaf6ff" stroke="#4a3a2a" stroke-width="1.3"/><path d="M11.6 12.6 H12.4" stroke="#4a3a2a" stroke-width="1.3"/>',
+  '<rect x="5.4" y="10.6" width="6.2" height="4.6" rx="2" fill="#4a3a2a"/><rect x="12.4" y="10.6" width="6.2" height="4.6" rx="2" fill="#4a3a2a"/><path d="M11.6 12.4 H12.4" stroke="#4a3a2a" stroke-width="1.4"/>',
+  '<path d="M8.6 16 L6 13.2 A1.8 1.8 0 0 1 8.6 10.8 A1.8 1.8 0 0 1 11.2 13.2 Z" fill="#ff5a7a"/><path d="M15.4 16 L12.8 13.2 A1.8 1.8 0 0 1 15.4 10.8 A1.8 1.8 0 0 1 18 13.2 Z" fill="#ff5a7a"/>',
+  '<path d="M8.6 10 l.8 1.8 2 .2-1.5 1.3.4 1.9-1.7-1-1.7 1 .4-1.9-1.5-1.3 2-.2z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width=".8"/><path d="M15.4 10 l.8 1.8 2 .2-1.5 1.3.4 1.9-1.7-1-1.7 1 .4-1.9-1.5-1.3 2-.2z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width=".8"/>',
+  '<circle cx="8.6" cy="13" r="3.2" fill="#9fdcf5" stroke="' + OI_AD + '" stroke-width="1.4"/><circle cx="15.4" cy="13" r="3.2" fill="#9fdcf5" stroke="' + OI_AD + '" stroke-width="1.4"/><path d="M4 12.6 H5.4 M18.6 12.6 H20" stroke="' + OI_AD + '" stroke-width="1.6" stroke-linecap="round"/>',
+  '<path d="M8.6 16.2 L5.8 13.2 A1.9 1.9 0 0 1 8.6 10.6 A1.9 1.9 0 0 1 11.4 13.2 Z" fill="#4a3a2a"/><path d="M15.4 16.2 L12.6 13.2 A1.9 1.9 0 0 1 15.4 10.6 A1.9 1.9 0 0 1 18.2 13.2 Z" fill="#4a3a2a"/>',
+  '<rect x="5" y="9.8" width="14" height="6" rx="2.4" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.4"/><rect x="6.6" y="11.2" width="10.8" height="3.2" rx="1.4" fill="#d8f3ff"/>',
+  '<path d="M5.4 11 h5.8 l-.8 4 h-3.4 z" fill="#8fd6f0" stroke="' + OI_AD + '" stroke-width="1.2"/><path d="M18.6 11 h-5.8 l.8 4 h3.4 z" fill="#8fd6f0" stroke="' + OI_AD + '" stroke-width="1.2"/><path d="M11.2 11.6 H12.8" stroke="' + OI_AD + '" stroke-width="1.2"/>',
+  '<circle cx="8.6" cy="13" r="3.2" fill="#d8f3ff" stroke="' + OI_GD + '" stroke-width="1.5"/><circle cx="15.4" cy="13" r="3.2" fill="#d8f3ff" stroke="' + OI_GD + '" stroke-width="1.5"/><path d="M11.8 12.6 H12.2" stroke="' + OI_GD + '" stroke-width="2"/><path d="M4.4 11.6 H5.6 M18.4 11.6 H19.6" stroke="' + OI_GD + '" stroke-width="1.5" stroke-linecap="round"/>',
+  '<circle cx="8.4" cy="13" r="3.6" fill="#fff" stroke="#4a3a2a" stroke-width="1.5"/><circle cx="15.6" cy="13" r="3.6" fill="#fff" stroke="#4a3a2a" stroke-width="1.5"/><path d="M12 12.6 H12.1" stroke="#4a3a2a" stroke-width="1.5"/><path d="M6.6 11 L7.8 10.2" stroke="#4a3a2a" stroke-width="1" stroke-linecap="round"/>',
+];
+/* ---- ของสะพาย 14 แบบ ---- */
+const OI_BAG = [
+  '',
+  '<rect x="7" y="8.6" width="10" height="10" rx="2.4" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.4"/><rect x="7" y="8.6" width="10" height="3.4" rx="1.6" fill="' + OI_AD + '"/><rect x="10.6" y="13" width="2.8" height="2" rx=".6" fill="#fff"/>',
+  '<circle cx="12" cy="13.4" r="5.4" fill="' + OI_HAIR + '" stroke="' + OI_HAIRD + '" stroke-width="1.4"/><circle cx="8.2" cy="8.6" r="2" fill="' + OI_HAIR + '"/><circle cx="15.8" cy="8.6" r="2" fill="' + OI_HAIR + '"/><circle cx="10.4" cy="12.4" r=".7" fill="#4a3a2a"/><circle cx="13.6" cy="12.4" r=".7" fill="#4a3a2a"/>',
+  '<ellipse cx="12" cy="13.4" rx="6" ry="5" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.4"/><path d="M8.4 11 L15.6 11 M8.4 15.6 L15.6 15.6 M12 8.6 V18.2" stroke="' + OI_GD + '" stroke-width="1"/>',
+  '<path d="M11.4 12 Q6 6.6 5.4 12 Q5 16.4 11.4 14.6 Z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><path d="M12.6 12 Q18 6.6 18.6 12 Q19 16.4 12.6 14.6 Z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><rect x="11.2" y="9.6" width="1.6" height="8" rx=".8" fill="' + OI_BD + '"/>',
+  '<path d="M11.4 12.4 Q6.4 7 5.6 12.4 Q5.4 16 11.4 15 Z" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.2"/><path d="M12.6 12.4 Q17.6 7 18.4 12.4 Q18.6 16 12.6 15 Z" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.2"/>',
+  '<rect x="9" y="11.4" width="8" height="6" rx="1.6" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><path d="M9.6 11.4 L6.6 6.6" stroke="' + OI_CD + '" stroke-width="1.6" stroke-linecap="round"/>',
+  '<rect x="7" y="8.6" width="10" height="10" rx="2.4" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.4"/><circle cx="9.8" cy="12" r="1" fill="' + OI_CD + '"/><circle cx="14" cy="14.4" r="1" fill="' + OI_CD + '"/><circle cx="13.4" cy="11" r=".8" fill="' + OI_CD + '"/>',
+  '<rect x="7.4" y="12" width="9.2" height="5.6" rx="1.6" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3"/><rect x="7.4" y="12" width="9.2" height="2" rx="1" fill="' + OI_BD + '"/><path d="M8 12 L14 6.6" stroke="' + OI_BD + '" stroke-width="1.4" stroke-linecap="round"/>',
+  '<path d="M8 9.4 h8 l-1 9 h-6 z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/><path d="M7.4 9.4 h9.2" stroke="' + OI_AD + '" stroke-width="1.6" stroke-linecap="round"/><path d="M9.4 9.4 A2.6 2.6 0 0 1 14.6 9.4" fill="none" stroke="' + OI_AD + '" stroke-width="1.2"/>',
+  '<rect x="9" y="8.6" width="6" height="8.4" rx="3" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.3"/><path d="M12 4.6 L14.4 9 H9.6 Z" fill="#ff6b6b"/><path d="M9 15 L7 18 M15 15 L17 18" stroke="#ffa726" stroke-width="1.6" stroke-linecap="round"/>',
+  '<path d="M11.4 12 Q6 8.6 4.6 13.4 Q7.4 12.6 11.4 15 Z" fill="#7e57c2" stroke="#5e35b1" stroke-width="1.2"/><path d="M12.6 12 Q18 8.6 19.4 13.4 Q16.6 12.6 12.6 15 Z" fill="#7e57c2" stroke="#5e35b1" stroke-width="1.2"/>',
+  '<ellipse cx="12" cy="13.4" rx="5.2" ry="5" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.3"/><path d="M12 8 l1.4 2 -2.8 0 z" fill="' + OI_GD + '"/><path d="M12 10.6 l1.4 2 -2.8 0 z" fill="' + OI_GD + '"/>',
+  '<rect x="7.6" y="10.6" width="8.8" height="7.4" rx="2" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3"/><circle cx="12" cy="13.6" r="1.2" fill="' + OI_C + '"/><circle cx="10.2" cy="12.4" r=".9" fill="#fff"/><circle cx="13.8" cy="12.4" r=".9" fill="#fff"/><circle cx="10.2" cy="14.8" r=".9" fill="#fff"/><circle cx="13.8" cy="14.8" r=".9" fill="#fff"/>',
+];
+/* ---- ของถือ 18 แบบ ---- */
+const OI_HOLD = [
+  '',
+  '<circle cx="12" cy="8.4" r="4.4" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3"/><path d="M12 12.8 Q13 16 12 19.4" fill="none" stroke="' + OI_BD + '" stroke-width="1.2"/>',
+  '<circle cx="12" cy="13.4" r="4.6" fill="' + OI_HAIR + '" stroke="' + OI_HAIRD + '" stroke-width="1.3"/><circle cx="8.8" cy="9.4" r="1.9" fill="' + OI_HAIR + '"/><circle cx="15.2" cy="9.4" r="1.9" fill="' + OI_HAIR + '"/><circle cx="10.6" cy="12.6" r=".7" fill="#4a3a2a"/><circle cx="13.4" cy="12.6" r=".7" fill="#4a3a2a"/>',
+  '<path d="M9.4 11 h5.2 l-1.6 8 h-2 z" fill="#e6b877" stroke="#c99552" stroke-width="1.2"/><circle cx="10.8" cy="9.6" r="2.2" fill="' + OI_B + '"/><circle cx="13.4" cy="9.6" r="2.2" fill="#fff3c4"/>',
+  '<rect x="6.6" y="9" width="10.8" height="8.4" rx="1.2" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/><path d="M12 9 V17.4" stroke="' + OI_AD + '" stroke-width="1.2"/>',
+  '<path d="M8 18 L15.4 8.6" stroke="#d7a86e" stroke-width="2" stroke-linecap="round"/><path d="M16 4.6 l1 2.2 2.4.3-1.8 1.6.5 2.3-2.1-1.2-2.1 1.2.5-2.3-1.8-1.6 2.4-.3z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width=".9"/>',
+  '<circle cx="12" cy="13" r="5" fill="#fff" stroke="#4a3a2a" stroke-width="1.3"/><path d="M12 8 L14.6 11.4 L13.4 15.4 H10.6 L9.4 11.4 Z" fill="#4a3a2a"/>',
+  '<circle cx="9.4" cy="9.6" r="2.2" fill="' + OI_B + '"/><circle cx="14.4" cy="9" r="2.2" fill="' + OI_C + '"/><circle cx="12" cy="12.4" r="2.2" fill="#fff"/><path d="M10.6 14 L11.4 19 M13.4 13.6 L12.6 19" stroke="' + OI_GD + '" stroke-width="1.4" stroke-linecap="round"/>',
+  '<path d="M4.6 12 A7.4 7.4 0 0 1 19.4 12 Z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3"/><path d="M12 12 V17.4 A1.8 1.8 0 0 0 15 18" fill="none" stroke="' + OI_BD + '" stroke-width="1.3" stroke-linecap="round"/>',
+  '<path d="M9 19 L13 10" stroke="#d7a86e" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="14.6" cy="8" rx="4" ry="3.4" fill="#eaf6ff" stroke="' + OI_AD + '" stroke-width="1.3"/>',
+  '<rect x="5.6" y="9.4" width="12.8" height="8.6" rx="2" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/><circle cx="12" cy="13.6" r="2.8" fill="#eaf6ff" stroke="' + OI_AD + '" stroke-width="1.2"/><rect x="7.4" y="7" width="3.4" height="2.4" rx=".8" fill="' + OI_AD + '"/>',
+  '<path d="M12 4.6 L18 10.6 L12 16.6 L6 10.6 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><path d="M12 16.6 Q11 19 12.6 20" fill="none" stroke="' + OI_CD + '" stroke-width="1.1"/>',
+  '<ellipse cx="12" cy="8.6" rx="4" ry="4.6" fill="#eaf6ff" stroke="' + OI_GD + '" stroke-width="1.4"/><path d="M12 13.2 V19.4" stroke="#d7a86e" stroke-width="1.8" stroke-linecap="round"/>',
+  '<rect x="6" y="10" width="12" height="8" rx="1.6" fill="' + OI_HAIR + '" stroke="' + OI_HAIRD + '" stroke-width="1.3"/><path d="M10 10 V7.6 h4 V10" fill="none" stroke="' + OI_HAIRD + '" stroke-width="1.3"/><path d="M6 13.6 H18" stroke="' + OI_HAIRD + '" stroke-width="1.1"/>',
+  '<ellipse cx="12" cy="9" rx="4.4" ry="3.6" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3"/><circle cx="15.6" cy="6.4" r="2.2" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.1"/><path d="M12 12.6 V19.4" stroke="' + OI_AD + '" stroke-width="1.1"/>',
+  '<path d="M9.6 12 h4.8 l-1.4 7.4 h-2 z" fill="#e6b877" stroke="#c99552" stroke-width="1.2"/><circle cx="12" cy="10" r="2.6" fill="' + OI_B + '"/><circle cx="12" cy="6.8" r="2.2" fill="#fff3c4"/><circle cx="12" cy="4.4" r="1" fill="#ef5350"/>',
+  '<rect x="10.8" y="4.6" width="2.4" height="8" rx="1" fill="#d7a86e"/><ellipse cx="12" cy="15" rx="4.6" ry="4" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><circle cx="12" cy="15" r="1.4" fill="#4a3a2a"/>',
+  '<path d="M8 4.6 V19.4" stroke="#d7a86e" stroke-width="1.8" stroke-linecap="round"/><path d="M8.8 5.4 h8.4 l-2 3 2 3 h-8.4 z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2" stroke-linejoin="round"/>',
+];
+/* ---- แบบรองเท้า 8 แบบ ---- */
+const OI_SHOE = [
+  '<path d="M4.6 16 h6 l3.4 -3 h4 a2 2 0 0 1 2 2 v1 a2 2 0 0 1 -2 2 h-13.4 z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3" stroke-linejoin="round"/>',
+  '<path d="M8 6 h6 v8 h4 a2 2 0 0 1 2 2 v1 a1 1 0 0 1 -1 1 h-11 z" fill="' + OI_HAIR + '" stroke="' + OI_HAIRD + '" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 9 h6" stroke="' + OI_HAIRD + '" stroke-width="1.1"/>',
+  '<path d="M5 16.4 h13 a1.6 1.6 0 0 1 0 2.4 h-13 a1.2 1.2 0 0 1 0 -2.4 z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><path d="M8 16.4 Q11.4 12.6 14.6 16.4" fill="none" stroke="' + OI_CD + '" stroke-width="1.4"/>',
+  '<path d="M5.6 15.6 h6 l3.4 -2.6 h3.4 a1.8 1.8 0 0 1 1.8 1.8 v1.4 a1.6 1.6 0 0 1 -1.6 1.6 h-13 z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9.4" cy="14.6" r="1.4" fill="' + OI_BD + '"/>',
+  '<path d="M8 4.6 h6.4 v10 h3.6 a1.8 1.8 0 0 1 1.8 1.8 v1 a1 1 0 0 1 -1 1 h-10.8 z" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.6 h6.4" stroke="' + OI_GD + '" stroke-width="1.2"/>',
+  '<path d="M6 13 h6 l3.4 -2.6 h3 a1.8 1.8 0 0 1 1.8 1.8 v1.4 a1.4 1.4 0 0 1 -1.4 1.4 h-12.8 z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9" cy="17.4" r="1.8" fill="#fff" stroke="#4a3a2a" stroke-width="1.2"/><circle cx="16" cy="17.4" r="1.8" fill="#fff" stroke="#4a3a2a" stroke-width="1.2"/>',
+  '<path d="M4.6 15.4 h6 l3.4 -2.8 h4 a2 2 0 0 1 2 2 v1.2 h-15.4 z" fill="' + OI_GD + '" stroke="#3d8b3d" stroke-width="1.3" stroke-linejoin="round"/><rect x="4.4" y="15.8" width="15.6" height="2.4" rx="1.2" fill="#fff" stroke="#3d8b3d" stroke-width="1.1"/>',
+  '<path d="M6 12.6 h5.4 l3.4 -2 h3.4 a2 2 0 0 1 2 2 v2 h-14.2 z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3" stroke-linejoin="round"/><rect x="5.4" y="10.4" width="14" height="2.6" rx="1.3" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.1"/><rect x="4.6" y="15" width="15.6" height="2.6" rx="1.2" fill="' + OI_HAIRD + '"/>',
+];
+/* คืน SVG ของ "แบบที่ i" ในแถว rowKey — ไม่มีก็คืนค่าว่าง (ผู้เรียกจะถอยไปใช้ตัวเลขเหมือนเดิม) */
+function outfitIcon(rowKey, i){
+  switch(rowKey){
+    /* ⚠ ทรงผมบางแบบ (อาฟโร) วาดวงผมคลุมแล้ววาดหน้าทับเอง ⇒ ส่ง markup เต็มมาเลย ไม่ห่อ path ซ้ำ */
+    case 'hair':  return oiSvg(oiHead() + (OI_HAIR_SHAPES[i] || OI_HAIR_SHAPES[0]));
+    case 'eyes':  return oiSvg(oiHead() + (OI_EYES[i] || ''));
+    case 'pattern': return oiSvg(OI_SHIRT + (OI_PAT[i] || ''));
+    case 'hat':   return i === 0 ? '' : oiSvg(oiHead(14) + (OI_HAT[i] || ''));
+    case 'glass': return i === 0 ? '' : oiSvg(oiHead() + (OI_GLASS[i] || ''));
+    case 'bag':   return i === 0 ? '' : oiSvg(OI_BAG[i] || '');
+    case 'hold':  return i === 0 ? '' : oiSvg(OI_HOLD[i] || '');
+    case 'shoeStyle': return oiSvg(OI_SHOE[i] || OI_SHOE[0]);
+  }
+  return '';
+}
+
 
 /* ---------- แผนที่นอกบ้าน (grid) ----------
    ค่า tile: 0 = หญ้าเดินได้, 1 = น้ำ (คลอง), 2 = สะพานเดินได้, 3 = ถูกบล็อก (ต้นไม้/บ้าน) */
@@ -1398,6 +1593,7 @@ return {
   H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
   H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
   H_HAIR_N, H_EYE_N, H_DEFAULT_CHAR, H_DEFAULT_PARENT_DAD, H_DEFAULT_PARENT_MOM, H_ROWS, H_ROW_ICONS, NPAD,
+  outfitIcon,   /* เฟส 8C: ไอคอนของแต่ละแบบในหน้าแต่งตัว — อยู่ใน IIFE ของไฟล์นี้ ต้องส่งออกทางนี้เท่านั้น */
   EPAD, EPAD2, EPAD_ALL, OUT_W, OUT_D, sx,
   sz, sRect, sTile, sList, s2z, s2Rect,
   s2Tile, s2List, RIVER_X, BRIDGE_Z, BRIDGE2_Z, FARM_BRIDGE_Z,
