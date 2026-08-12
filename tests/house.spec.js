@@ -144,5 +144,8 @@ test('คลังเฟอร์นิเจอร์: ต้นไม้/พ�
   expect(shouldLeaf.filter(m => !m.leafy).map(m => m.id)).toEqual([]);
   /* ต้นสูงต้องถูกทำเครื่องหมายไว้ด้วย ใบจะได้ร่วงจากยอดไม่ใช่จากพื้น */
   const tall = meta.filter(m => m.leafyTall).map(m => m.id).sort();
-  expect(tall).toEqual(['flower-arch', 'palm-tall', 'pine', 'tree', 'tree-round']);
+  /* เฟส 8 เพิ่มของที่มีต้นไม้จริงอีก 3 ชิ้น (ซุ้มไม้เลื้อย/บ้านต้นไม้/ม้านั่งรอบต้นไม้)
+     — ใบต้องร่วงจากยอด ไม่ใช่จากพื้น จึงต้องอยู่ในลิสต์นี้ด้วย */
+  expect(tall).toEqual(['flower-arch', 'garden-arch-vine', 'palm-tall', 'pine',
+                        'tree', 'tree-bench', 'tree-house', 'tree-round']);
 });

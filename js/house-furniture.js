@@ -1527,6 +1527,7 @@
               pet.position.set(x+Math.cos(a)*.06,.15,z+Math.sin(a)*.06); pet.rotation.y=a; g.add(pet); } });
         } },
       { id:'garden-arch-vine', name:'ซุ้มไม้เลื้อย', cat:'garden', scope:'out', emoji:'🍀', fw:2, fd:1, block:false, colors:GREEN,
+        leafy:true, leafyTall:true,
         build(g,col){
           [-1,1].forEach(s=>{ const post=cyl(.06,.06,1.6,0x8d6e63,8); post.position.set(s*.62,.8,0); g.add(post); });
           const top=torus(.62,.06,0x8d6e63,20,Math.PI); top.position.y=1.6; g.add(top);
@@ -1578,6 +1579,7 @@
 
       /* ============ นอกบ้าน — เครื่องเล่น (เฟส 8 · +5) ============ */
       { id:'tree-house', name:'บ้านต้นไม้', cat:'play', scope:'out', emoji:'🏚️', fw:2, fd:2, colors:WOOD,
+        leafy:true, leafyTall:true,
         build(g,col){
           const trunk=cyl(.2,.26,1.3,0x8d6e63,12); trunk.position.y=.65; g.add(trunk);
           const leaf=ball(.6,0x66bb6a,14); leaf.position.y=1.9; g.add(leaf);
@@ -1650,6 +1652,7 @@
           const back=box(1.2,.4,.06,col,.03); back.position.set(0,1.04,-.22); g.add(back);
         } },
       { id:'tree-bench', name:'ม้านั่งรอบต้นไม้', cat:'seatout', scope:'out', emoji:'🎋', fw:2, fd:2, colors:WOOD,
+        leafy:true, leafyTall:true,
         action:'sit', sit:{sy:.44},
         build(g,col){
           const trunk=cyl(.18,.22,1.5,0x8d6e63,12); trunk.position.y=.75; g.add(trunk);
