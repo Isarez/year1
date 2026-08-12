@@ -595,6 +595,25 @@ function addHair(head, girl, style, hex){
       case 5: /* มัดจุกเล็กด้านหลัง */
         hairCap(head,c,{h:.44,y:.19});
         { const bun=sphere(.15,c); bun.position.set(0,.34,-.44); head.add(bun); } break;
+      /* ---- เฟส 8 (+6) ---- ต่อท้ายเสมอ ห้ามแทรกกลาง (index ผูกกับ save ของเด็ก) */
+      case 6: /* รองทรงสั้นเกรียน */
+        hairCap(head,c,{h:.36,y:.22,d:.68,w:.76,drop:.08}); break;
+      case 7: /* แสกกลาง */
+        hairCap(head,c,{h:.46,y:.19,fw:.7,drop:.14});
+        { const part=box(.05,.1,.16,petShade(c,.9)); part.position.set(0,.34,.28); head.add(part); } break;
+      case 8: /* ผมหยิกฟูสูง (อาฟโร) */
+        hairCap(head,c,{h:.44,y:.2,d:.74,w:.8,drop:.12});
+        [[0,.56,.06,.19],[.3,.46,.02,.16],[-.3,.46,.02,.16],[.2,.52,-.24,.15],[-.2,.52,-.24,.15]]
+          .forEach(p=>{ const b=sphere(p[3],c); b.position.set(p[0],p[1],p[2]); head.add(b); }); break;
+      case 9: /* ผมม้าหน้าตรง (หน้าม้าหนา) */
+        hairCap(head,c,{h:.48,y:.17,d:.76,w:.84,drop:.2,fw:.78}); break;
+      case 10: /* โมฮอว์กเล็ก */
+        hairCap(head,c,{h:.34,y:.22,d:.66,w:.72,fringe:false});
+        [[0,.5],[0,.58],[0,.62]].forEach((p,i)=>{ const sp=box(.1,.16,.34-i*.06,c,.05);
+          sp.position.set(p[0],p[1],-.02-i*.02); head.add(sp); }); break;
+      case 11: /* ผมยาวประบ่า (เด็กชายผมยาว) */
+        hairCap(head,c,{h:.5,y:.15,d:.8,w:.84,drop:.14});
+        [-1,1].forEach(s=>{ const lk=box(.14,.36,.16,c,.06); lk.position.set(.36*s,-.02,-.06); head.add(lk); }); break;
     }
   }else{
     /* ---- ทรงผมเด็กหญิง 6 แบบ (ยาว/ตกแต่งมากขึ้น) ---- */
@@ -621,6 +640,28 @@ function addHair(head, girl, style, hex){
       case 5: /* เปียข้างเดี่ยว */
         hairCap(head,c,{h:.5,y:.13,d:.8,w:.84,rz:.14});
         hairStrand(head,c,.4,.04,.12,4,.12,.2); break;
+      /* ---- เฟส 8 (+6) ---- */
+      case 6: /* บ๊อบสั้นทันสมัย */
+        hairCap(head,c,{h:.5,y:.16,d:.76,w:.84,drop:.16});
+        [-1,1].forEach(s=>{ const tip=box(.13,.2,.15,c,.05); tip.position.set(.38*s,-.02,.04); head.add(tip); }); break;
+      case 7: /* หางม้าคู่สูง */
+        hairCap(head,c,{h:.46,y:.18,fw:.66});
+        [-1,1].forEach(s=>{ const tie=sphere(.09,c); tie.position.set(.3*s,.44,-.12); head.add(tie);
+          hairLock(head,c,{x:.34*s,y:.24,z:-.3,h:.5,rt:.12,rb:.07,sz:1,rx:.3}); }); break;
+      case 8: /* มวยผมคู่ (ดังโงะ) */
+        hairCap(head,c,{h:.46,y:.18,fw:.66});
+        [-1,1].forEach(s=>{ const bun=sphere(.16,c); bun.position.set(.34*s,.44,-.02); head.add(bun); }); break;
+      case 9: /* ผมหยิกยาว */
+        hairCap(head,c,{h:.5,y:.14,d:.82,w:.86,drop:.14});
+        [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const cu=sphere(.14-i*.02,c);
+          cu.position.set(.4*s,-.02-i*.2,-.04+(i%2?.06:-.06)); head.add(cu); } }); break;
+      case 10: /* ผมสั้นซอยมีกิ๊บ */
+        hairCap(head,c,{h:.46,y:.18,d:.74,w:.8,drop:.13});
+        { const clip=box(.14,.05,.06,0xff6f91,.02); clip.position.set(.26,.32,.24); head.add(clip); } break;
+      case 11: /* เปียยาวข้างเดียวพาดหน้า */
+        hairCap(head,c,{h:.5,y:.14,d:.8,w:.84,rz:.16});
+        hairStrand(head,c,.36,.06,.16,5,.13,.22);
+        { const tie=sphere(.07,0xff6f91); tie.position.set(.36,-.42,.12); head.add(tie); } break;
     }
   }
 }
@@ -644,6 +685,24 @@ function addEyes(head, style, hex){
     case 7: mk(s=>{ const w = sphere(.095,0xffffff,10); w.position.set(.16*s,.04,F); head.add(w);          /* แบ๊วประกาย */
                     const i = sphere(.055,hex,8); i.position.set(.16*s,.04,F+.055); head.add(i);
                     const h = sphere(.02,0xffffff,6); h.position.set(.19*s,.08,F+.1); head.add(h); }); break;
+    /* ---- เฟส 8 (+4) ---- */
+    case 8: mk(s=>{ const w = sphere(.085,0xffffff,10); w.position.set(.16*s,.04,F); head.add(w);          /* ตาง่วง (เปลือกตาตก) */
+                    const i = sphere(.045,hex,8); i.position.set(.16*s,.02,F+.05); head.add(i);
+                    const lid = box(.16,.05,.03,0xffd9b8); lid.position.set(.16*s,.1,F+.01); head.add(lid); }); break;
+    case 9: mk(s=>{ const h1 = sphere(.05,0xff5a7a,8); h1.scale.set(1,1,.5);                               /* ตาหัวใจ */
+                    h1.position.set(.16*s-.025,.06,F); head.add(h1);
+                    const h2 = sphere(.05,0xff5a7a,8); h2.scale.set(1,1,.5);
+                    h2.position.set(.16*s+.025,.06,F); head.add(h2);
+                    const tip = box(.06,.06,.02,0xff5a7a); tip.rotation.z=Math.PI/4;
+                    tip.position.set(.16*s,.0,F); head.add(tip); }); break;
+    case 10: mk(s=>{ const w = sphere(.11,0xffffff,12); w.position.set(.17*s,.04,F); head.add(w);          /* ตากลมโตมาก */
+                     const i = sphere(.062,hex,10); i.position.set(.17*s,.04,F+.06); head.add(i);
+                     const h = sphere(.026,0xffffff,6); h.position.set(.21*s,.09,F+.1); head.add(h);
+                     const h2 = sphere(.014,0xffffff,6); h2.position.set(.13*s,.0,F+.1); head.add(h2); }); break;
+    case 11: mk(s=>{ const t = new THREE.Mesh(new THREE.TorusGeometry(.06,.017,6,10,Math.PI), toonMat(hex));/* ตาปิดยิ้ม ∪ */
+                     t.rotation.z = Math.PI; t.position.set(.15*s,.05,F); head.add(t);
+                     const bl = sphere(.035,0xffb3b3,8); bl.scale.set(1.4,.8,.4);
+                     bl.position.set(.19*s,-.06,F); head.add(bl); }); break;
   }
 }
 
@@ -765,6 +824,57 @@ function addShirtPattern(rig, arms, style, shirtC, shirtB, botC, girl){
         const st = box(.104, CH_BH, CH_BD+.01, c); st.position.set(x, CH_BY, 0); rig.add(st); });
       /* ลายทางตั้งไม่ลงแขน (ผู้ใช้ขอ 2026-08-04) — ต่างจากลายทางขวางที่ต้องพันแขนเพื่อไม่ให้แถบขาดตอน */
       break;
+    /* ================= เฟส 8 (+10) =================
+       ⚠ กติกาเดิมข้อ 1-3 ยังบังคับอยู่: ลายต้องเป็นเนื้อเดียวกับเสื้อ (กล่องขอบมนยื่นแค่ ~.006)
+         ลายที่พันรอบตัวต้องพันแขนที่ความสูงเดียวกันด้วย · ลายเป็นจุดวางได้เฉพาะกลางอก |x|<.15 */
+    case 10:                                         /* ตารางสก็อต — เส้นตั้ง+ขวางบางๆ ไขว้กัน */
+      [.6,.76].forEach(y=>{ const b = box(CH_BW+.012,.05,CH_BD+.012,c,.08); b.position.y=y; rig.add(b);
+        chArmBand(arms, y, .045, c); });
+      [-.09,.09].forEach(x=>{ const st = box(.05,CH_BH,CH_BD+.011,c); st.position.set(x,CH_BY,0); rig.add(st); });
+      break;
+    case 11:                                         /* ดาวกระจายทั้งตัว */
+      [[0,.8],[-.13,.7],[.13,.7],[-.07,.58],[.09,.56]].forEach(([x,y],i)=>
+        face(chStar(.055-i*.004,.038,c), x, y));
+      face(chStar(.06,.04,c), 0, .7, true);
+      break;
+    case 12:                                         /* หัวใจคู่กลางอก */
+      face(chHeart(.09,c), -.07, .72); face(chHeart(.09,c), .07, .72);
+      face(chHeart(.07,c), 0, .58);
+      break;
+    case 13:                                         /* จุดใหญ่ */
+      [[-.1,.76],[.1,.62],[0,.5]].forEach(([x,y])=>{
+        const d = cyl(.07,.07,.02,c,14); d.rotation.x=Math.PI/2; face(d,x,y); });
+      [[0,.7]].forEach(([x,y])=>{ const d = cyl(.07,.07,.02,c,14); d.rotation.x=Math.PI/2; face(d,x,y,true); });
+      break;
+    case 14:                                         /* แถบเฉียง */
+      [[-.06,.5],[.02,.62],[.1,.74]].forEach(([x,y])=>{
+        const b = box(.3,.07,.02,c,.02); b.rotation.z = .5; face(b,x,y); });
+      break;
+    case 15:                                         /* รอยเท้าสัตว์ */
+      [[-.09,.74],[.09,.62]].forEach(([x,y])=>{
+        const pad = cyl(.045,.045,.02,c,12); pad.rotation.x=Math.PI/2; face(pad,x,y);
+        [[-.035,.05],[0,.062],[.035,.05]].forEach(([dx,dy])=>{
+          const t = cyl(.017,.017,.02,c,10); t.rotation.x=Math.PI/2; face(t,x+dx,y+dy); }); });
+      break;
+    case 16: {                                       /* เลข 1 ตัวใหญ่ (เสื้อกีฬา) */
+      const bar = box(.06,.26,.02,c,.02); face(bar,.01,.68);
+      const foot = box(.16,.05,.02,c,.02); face(foot,.01,.55);
+      const tip = box(.07,.05,.02,c,.02); tip.rotation.z=.7; face(tip,-.04,.79);
+      break; }
+    case 17:                                         /* ดวงดาวเรียงแถว */
+      [-.13,0,.13].forEach(x=>face(chStar(.05,.034,c), x, .72));
+      chArmBand(arms, .72, .04, c);
+      break;
+    case 18:                                         /* สายรุ้งพาดอก (3 แถบชิดกัน) */
+      [.66,.72,.78].forEach((y,i)=>{ const b = box(CH_BW+.012,.045,CH_BD+.012,
+        [0xff6b6b,0xffd93d,0x6bcB77][i],.06); b.position.y=y; rig.add(b);
+        chArmBand(arms, y, .04, [0xff6b6b,0xffd93d,0x6bcB77][i]); });
+      break;
+    case 19: {                                       /* หน้ายิ้มกลางอก */
+      const f = cyl(.1,.1,.02,c,16); f.rotation.x=Math.PI/2; face(f,0,.7);
+      [-.04,.04].forEach(x=>{ const e = cyl(.014,.014,.02,0x4a3a2a,8); e.rotation.x=Math.PI/2; face(e,x,.735); });
+      const m = box(.08,.018,.02,0x4a3a2a,.008); face(m,0,.66);
+      break; }
   }
 }
 /* ---------- ทรงผมประจำหมวก ----------
@@ -871,6 +981,61 @@ function addHeadwear(head, style, col){
       }
       const ctr = sphere(.045, 0xffd54f, 8); ctr.position.set(fx, fy, fz+.045); head.add(ctr);
       break; }
+    /* ================= เฟส 8 (+9) =================
+       ⚠ ทุกใบต้องอ้าง HT (ยอดผม) / R (รัศมีครอบผม) เสมอ ห้ามใส่เลขมือ ไม่งั้นหมวกจมหัวหรือลอย */
+    case 9: {                                      /* หูแมว */
+      [-1,1].forEach(s=>{ const ear = cone(.1,.2, col, 4); ear.rotation.y = Math.PI/4;
+        ear.position.set(R*.5*s, HT+.06, -.02); head.add(ear);
+        const inn = cone(.055,.12, 0xffc0cb, 4); inn.rotation.y = Math.PI/4;
+        inn.position.set(R*.5*s, HT+.04, .02); head.add(inn); });
+      const band = torus(R*.92,.03, col, 16); band.rotation.x = Math.PI/2.2; band.position.set(0,HT-.1,0); head.add(band);
+      break; }
+    case 10: {                                     /* หูกระต่าย */
+      [-1,1].forEach(s=>{ const ear = box(.1,.34,.07, col,.045);
+        ear.position.set(R*.42*s, HT+.18, -.02); ear.rotation.z = -s*.18; head.add(ear);
+        const inn = box(.05,.24,.03, 0xffc0cb,.02);
+        inn.position.set(R*.42*s, HT+.18, .03); inn.rotation.z = -s*.18; head.add(inn); });
+      const band = torus(R*.92,.03, col, 16); band.rotation.x = Math.PI/2.2; band.position.set(0,HT-.1,0); head.add(band);
+      break; }
+    case 11: {                                     /* หมวกกันน็อก */
+      const shell = sphere(R+.06, col, 16); shell.scale.set(1,.92,1); shell.position.set(0,HT-.02,0); head.add(shell);
+      const vis = box(.5,.08,.16, petShade(col,.8),.03); vis.position.set(0,HT-.05,R*.72); head.add(vis);
+      const strp = box(.06,.2,.05, 0xfff3d0,.02); strp.position.set(R*.62,HT-.28,.06); head.add(strp);
+      break; }
+    case 12: {                                     /* หมวกปีกกว้างกันแดด */
+      const brim = cyl(R+.34,R+.34,.035, col, 20); brim.position.set(0,HT-.04,0); head.add(brim);
+      const crown = cyl(R*.86,R*.9,.24, col, 16); crown.position.set(0,HT+.1,0); head.add(crown);
+      const band = cyl(R*.88,R*.88,.06, petShade(col,.78), 16); band.position.set(0,HT+.01,0); head.add(band);
+      break; }
+    case 13: {                                     /* โบว์ใหญ่บนหัว */
+      [-1,1].forEach(s=>{ const w = sphere(.14, col, 10); w.scale.set(1.1,.85,.55);
+        w.position.set(.15*s, HT+.1, .02); head.add(w); });
+      const kn = sphere(.06, petShade(col,.85), 8); kn.position.set(0,HT+.1,.04); head.add(kn);
+      break; }
+    case 14: {                                     /* ผ้าโพกหัว */
+      const wrap = box(.78,.16,.74, col,.24); wrap.position.set(0,HT-.14,0); head.add(wrap);
+      const knot = sphere(.08, petShade(col,1.12), 10); knot.position.set(R*.66,HT-.1,.16); head.add(knot);
+      [-1,1].forEach(s=>{ const t = box(.06,.16,.05, petShade(col,1.12),.02);
+        t.position.set(R*.7, HT-.24, .1+s*.06); t.rotation.z = .3; head.add(t); });
+      break; }
+    case 15: {                                     /* หมวกกัปตัน */
+      const brim = box(.5,.05,.2, petShade(col,.7),.02); brim.position.set(0,HT-.06,R*.72); head.add(brim);
+      const crown = cyl(R*.94,R*.9,.2, col, 16); crown.position.set(0,HT+.08,0); head.add(crown);
+      const band = cyl(R*.96,R*.96,.07, 0xfff3d0, 16); band.position.set(0,HT-.01,0); head.add(band);
+      const anchor = sphere(.04, 0xffd54f, 8); anchor.position.set(0,HT+.02,R*.86); head.add(anchor);
+      break; }
+    case 16: {                                     /* มงกุฎดอกไม้ (พวงมาลัย) */
+      for(let i=0;i<8;i++){ const a = i/8*Math.PI*2;
+        const fl = sphere(.055, i%2 ? col : petShade(col,1.2), 8);
+        fl.position.set(Math.cos(a)*R*.94, HT-.08, Math.sin(a)*R*.94); head.add(fl);
+        const lf = sphere(.03, 0x7cc47f, 6); lf.scale.set(1.4,.5,.8);
+        lf.position.set(Math.cos(a+.4)*R*.94, HT-.12, Math.sin(a+.4)*R*.94); head.add(lf); }
+      break; }
+    case 17: {                                     /* หมวกไหมพรมมีปอม */
+      const cap = sphere(R+.05, col, 14); cap.scale.set(1,.9,1); cap.position.set(0,HT-.02,0); head.add(cap);
+      const cuff = cyl(R+.07,R+.07,.12, petShade(col,1.15), 16); cuff.position.set(0,HT-.2,0); head.add(cuff);
+      const pom = sphere(.11, petShade(col,1.15), 10); pom.position.set(0,HT+.3,0); head.add(pom);
+      break; }
   }
 }
 /* ---------- แว่นตา (index 0 = ไม่ใส่) ----------
@@ -916,6 +1081,41 @@ function addGlasses(head, style, col){
       const br = box(.08,.04,.05, col,.02); br.position.set(0, EY, Z-.03); head.add(br);
       const strap = box(.68,.07,.7, col, .3); strap.position.set(0, EY+.02, .02); head.add(strap);   /* สายรัดรอบหัว */
       break; }
+    /* ================= เฟส 8 (+5) ================= */
+    case 7: {                                        /* กันแดดทรงหัวใจ */
+      [-1,1].forEach(s=>{
+        [[-.03,.02],[.03,.02]].forEach(([dx,dy])=>{ const lob = cyl(.05,.05,.03, col, 12);
+          lob.rotation.x = Math.PI/2; lob.position.set(EX*s+dx, EY+dy, Z); head.add(lob); });
+        const tip = box(.08,.08,.03, col,.01); tip.rotation.z = Math.PI/4;
+        tip.position.set(EX*s, EY-.045, Z); head.add(tip); });
+      const br = box(.1,.03,.03, col,.01); br.position.set(0, EY+.02, Z); head.add(br);
+      temples(col); break; }
+    case 8: {                                        /* แว่นดำน้ำ (บานเดียวเต็มหน้า) */
+      const mask = box(.62,.26,.12, col,.09); mask.position.set(0, EY, Z-.04); head.add(mask);
+      const lens = box(.5,.16,.04, 0x9fdcf5,.05); lens.position.set(0, EY, Z+.03); head.add(lens);
+      const nose = box(.14,.1,.1, col,.04); nose.position.set(0, EY-.16, Z-.02); head.add(nose);
+      const strap = box(.7,.06,.7, col,.3); strap.position.set(0, EY+.02, .02); head.add(strap);
+      break; }
+    case 9: {                                        /* แว่นนักบิน (หยดน้ำ) */
+      [-1,1].forEach(s=>{ const l = cyl(.1,.11,.03, 0x8fd6f0, 14); l.rotation.x = Math.PI/2;
+        l.scale.set(1,1,.85); l.position.set(EX*s, EY-.01, Z); head.add(l);
+        const rim = torus(.105,.016, col, 14); rim.position.set(EX*s, EY-.01, Z+.005); head.add(rim); });
+      const br = box(.14,.025,.03, col,.01); br.position.set(0, EY+.04, Z); head.add(br);
+      temples(col); break; }
+    case 10: {                                       /* แว่นวิทยาศาสตร์ (โกเกิลแล็บ) */
+      [-1,1].forEach(s=>{ const cup = cyl(.12,.13,.08, col, 14); cup.rotation.x = Math.PI/2;
+        cup.position.set(EX*s, EY, Z-.02); head.add(cup);
+        const lens = cyl(.1,.1,.03, 0xd8f3ff, 14); lens.rotation.x = Math.PI/2;
+        lens.position.set(EX*s, EY, Z+.03); head.add(lens); });
+      const br = box(.1,.05,.05, col,.02); br.position.set(0, EY, Z-.02); head.add(br);
+      const strap = box(.66,.06,.68, petShade(col,.8),.3); strap.position.set(0, EY+.02, .02); head.add(strap);
+      break; }
+    case 11: {                                       /* แว่นกลมโตการ์ตูน */
+      [-1,1].forEach(s=>{ const rim = torus(.135,.022, col, 16); rim.position.set(EX*s, EY, Z); head.add(rim);
+        const shine = box(.05,.02,.02, 0xffffff,.008); shine.rotation.z = .6;
+        shine.position.set(EX*s-.05, EY+.06, Z+.01); head.add(shine); });
+      const br = box(.1,.028,.03, col,.01); br.position.set(0, EY, Z); head.add(br);
+      temples(col); break; }
   }
 }
 /* ---------- ของสะพายหลัง (index 0 = ไม่สะพาย) ---------- */
@@ -1020,6 +1220,51 @@ function addBackpack(rig, style, col){
         st.position.set(.04,.78,z); st.rotation.z = -.55; rig.add(st); });
       const ov = box(.075,.06,.2, petShade(col,.85),.025); ov.position.set(.22,.9,-.02); rig.add(ov);   /* ช่วงข้ามไหล่ */
       break; }
+    /* ================= เฟส 8 (+7) =================
+       ⚠ ของสะพายอยู่หลังตัว (z ติดลบ) เสมอ และ **ห้ามใส่สายพาดอก** ตามกติกาเดิมด้านบน */
+    case 7: {                                        /* เป้ลายสัตว์ (ลายจุดเสือดาว) */
+      const bag = box(.42,.44,.2, col,.09); bag.position.set(0,.7,-.27); rig.add(bag);
+      [[-.1,.8],[.08,.74],[-.05,.62],[.11,.6],[0,.68]].forEach(([x,y])=>{
+        const sp = cyl(.035,.035,.02, petShade(col,.6), 8); sp.rotation.x = Math.PI/2;
+        sp.position.set(x,y,-.375); rig.add(sp); });
+      const flap = box(.44,.14,.215, petShade(col,.8),.06); flap.position.set(0,.88,-.275); rig.add(flap);
+      break; }
+    case 8: {                                        /* กระเป๋าคาดอก (สะพายเฉียงมาข้างหน้า) */
+      const bag = box(.26,.2,.14, col,.06); bag.position.set(.2,.62,.2); rig.add(bag);
+      const flap = box(.27,.09,.15, petShade(col,.82),.04); flap.position.set(.2,.72,.205); rig.add(flap);
+      const strap = box(.06,.5,.05, petShade(col,.9),.02); strap.position.set(.06,.86,.06);
+      strap.rotation.z = .5; rig.add(strap);
+      break; }
+    case 9: {                                        /* ถังน้ำสะพายหลัง */
+      const t = cyl(.17,.15,.42, col, 14); t.position.set(0,.72,-.3); rig.add(t);
+      const lid = cyl(.18,.18,.05, petShade(col,.75), 14); lid.position.set(0,.95,-.3); rig.add(lid);
+      const hose = cyl(.02,.02,.3, petShade(col,.85), 8); hose.rotation.z = .8;
+      hose.position.set(.2,.78,-.24); rig.add(hose);
+      break; }
+    case 10: {                                       /* เป้จรวด */
+      [-1,1].forEach(s=>{ const body = cyl(.09,.09,.42, col, 12); body.position.set(.13*s,.74,-.3); rig.add(body);
+        const nose = cone(.09,.16, petShade(col,.75), 12); nose.position.set(.13*s,1.02,-.3); rig.add(nose);
+        const fire = cone(.07,.14, 0xffa726, 10); fire.rotation.z = Math.PI; fire.position.set(.13*s,.46,-.3); rig.add(fire); });
+      const link = box(.2,.08,.1, petShade(col,.85),.03); link.position.set(0,.78,-.3); rig.add(link);
+      break; }
+    case 11: {                                       /* ปีกค้างคาว */
+      [-1,1].forEach(s=>{ for(let i=0;i<3;i++){
+        const w = sphere(.17-i*.03, col, 12); w.scale.set(1,.9,.08);
+        w.position.set((.3+i*.16)*s, .84-i*.1, -.28); w.rotation.z = -s*(.2+i*.15); rig.add(w); } });
+      const bd = box(.08,.4,.1, petShade(col,.7),.03); bd.position.set(0,.78,-.26); rig.add(bd);
+      break; }
+    case 12: {                                       /* เป้ไดโนเสาร์ (มีหนามหลัง) */
+      const bag = sphere(.24, col, 16); bag.scale.set(1,1.05,.78); bag.position.set(0,.72,-.28); rig.add(bag);
+      [0,1,2].forEach(i=>{ const sp = cone(.06,.12, petShade(col,1.2), 6);
+        sp.position.set(0,.92-i*.16,-.33); sp.rotation.x = -.3; rig.add(sp); });
+      const tail = cone(.09,.24, col, 8); tail.rotation.x = 1.2; tail.position.set(0,.56,-.42); rig.add(tail);
+      break; }
+    case 13: {                                       /* กระเป๋าดอกไม้ */
+      const bag = box(.34,.32,.18, col,.11); bag.position.set(0,.7,-.27); rig.add(bag);
+      for(let i=0;i<5;i++){ const a = i/5*Math.PI*2;
+        const p = sphere(.045, 0xfff3d0, 8); p.position.set(Math.cos(a)*.07, .72+Math.sin(a)*.07, -.37); rig.add(p); }
+      const ctr = sphere(.035, 0xffd54f, 8); ctr.position.set(0,.72,-.38); rig.add(ctr);
+      break; }
   }
 }
 /* ---------- ของถือ (index 0 = ไม่ถือ) — ผูกกับ pivot แขนขวา ของจึงแกว่งไปกับมือตอนเดิน ---------- */
@@ -1102,6 +1347,117 @@ function addHoldItem(piv, style, col){
       const tp = sphere(.035, petShade(col,.85), 8); tp.position.y = .89; g.add(tp);
       const hk = torus(.05,.016, 0xfff3d0, 12); hk.rotation.y = Math.PI/2; hk.position.set(0,-.03,.05); g.add(hk);
       break; }
+    /* ================= เฟส 8 (+9) =================
+       ⚠ ของทุกชิ้นโคนต้องอยู่ที่ y=0 ของกลุ่ม (กลางฝ่ามือ) — ห้ามเลื่อนจุดยึด ให้เอียงด้วย rotation แทน */
+    case 9: {                                        /* ตาข่ายจับแมลง */
+      const st = cyl(.014,.014,.6, 0xd7a86e, 8); st.position.y = .28; g.add(st);
+      const rim = torus(.16,.018, col, 14); rim.rotation.x = Math.PI/2.6; rim.position.y = .62; g.add(rim);
+      const net = cone(.15,.24, 0xfff3d0, 12); net.rotation.x = Math.PI; net.position.y = .74; g.add(net);
+      break; }
+    case 10: {                                       /* กล้องถ่ายรูป */
+      const body = box(.26,.18,.14, col,.05); body.position.y = .12; g.add(body);
+      const lens = cyl(.07,.07,.09, petShade(col,.7), 14); lens.rotation.x = Math.PI/2;
+      lens.position.set(0,.12,.1); g.add(lens);
+      const glass = cyl(.045,.045,.02, 0x9fdcf5, 12); glass.rotation.x = Math.PI/2;
+      glass.position.set(0,.12,.16); g.add(glass);
+      const fl = box(.07,.05,.04, 0xfff3d0,.02); fl.position.set(-.08,.22,.05); g.add(fl);
+      break; }
+    case 11: {                                       /* ว่าว */
+      g.rotation.z -= .3;
+      const str = cyl(.008,.008,.5, 0xfff3d0, 6); str.position.y = .24; g.add(str);
+      const kite = box(.26,.26,.02, col,.02); kite.rotation.z = Math.PI/4; kite.position.y = .62; g.add(kite);
+      [0,1,2].forEach(i=>{ const bow = sphere(.035, petShade(col,1.2), 8);
+        bow.position.set(-.04-i*.03, .44-i*.1, .01); g.add(bow); });
+      break; }
+    case 12: {                                       /* ไม้เทนนิส */
+      const h = cyl(.02,.02,.26, 0xd7a86e, 8); h.position.y = .12; g.add(h);
+      const rim = torus(.14,.022, col, 16); rim.position.y = .4; g.add(rim);
+      const face = cyl(.125,.125,.012, 0xfff3d0, 16); face.rotation.x = Math.PI/2;
+      face.scale.set(1,1,.6); face.position.y = .4; g.add(face);
+      break; }
+    case 13: {                                       /* กระเป๋าเดินทาง (ถือข้างตัว) */
+      g.rotation.x -= .35;
+      const body = box(.3,.24,.14, col,.05); body.position.y = -.12; g.add(body);
+      const hd = torus(.07,.018, petShade(col,.7), 12); hd.position.y = .04; g.add(hd);
+      const band = box(.31,.05,.145, petShade(col,.8),.02); band.position.y = -.12; g.add(band);
+      break; }
+    case 14: {                                       /* ลูกโป่งรูปสัตว์ (หมา) */
+      g.rotation.z -= .2;
+      const str = cyl(.008,.008,.4, 0xfff3d0, 6); str.position.y = .2; g.add(str);
+      const body = sphere(.13, col, 12); body.scale.set(1.3,1,1); body.position.y = .56; g.add(body);
+      const head = sphere(.1, col, 12); head.position.set(.13,.72,0); g.add(head);
+      [-1,1].forEach(s=>{ const ear = sphere(.045, petShade(col,.85), 8); ear.scale.set(.6,1.3,.6);
+        ear.position.set(.15,.8,.05*s); g.add(ear); });
+      break; }
+    case 15: {                                       /* ไอศกรีมโคน 2 ลูก */
+      const cone1 = cone(.075,.2, 0xe6b877, 10); cone1.rotation.x = Math.PI; cone1.position.y = .1; g.add(cone1);
+      const s1 = sphere(.085, col, 12); s1.position.y = .24; g.add(s1);
+      const s2 = sphere(.07, petShade(col,1.25), 12); s2.position.y = .37; g.add(s2);
+      const ch = sphere(.028, 0xef5350, 8); ch.position.y = .45; g.add(ch);
+      break; }
+    case 16: {                                       /* กีตาร์จิ๋ว (อูคูเลเล่) */
+      g.rotation.x -= .3;
+      const nk = box(.05,.34,.04, 0xd7a86e,.015); nk.position.y = .3; g.add(nk);
+      const b1 = sphere(.13, col, 14); b1.scale.set(1,1,.4); b1.position.y = .04; g.add(b1);
+      const b2 = sphere(.1, col, 14); b2.scale.set(1,1,.4); b2.position.y = .16; g.add(b2);
+      const hole = cyl(.04,.04,.02, 0x4a3a2a, 10); hole.rotation.x = Math.PI/2; hole.position.set(0,.06,.06); g.add(hole);
+      break; }
+    case 17: {                                       /* ธงเล็ก */
+      const pole = cyl(.012,.012,.66, 0xd7a86e, 8); pole.position.y = .32; g.add(pole);
+      const fl = box(.24,.16,.02, col,.02); fl.position.set(.13,.56,0); g.add(fl);
+      const st = sphere(.03, 0xffd54f, 8); st.position.y = .67; g.add(st);
+      break; }
+  }
+}
+
+/* ---------- แบบรองเท้า (แถวใหม่เฟส 8 · index 0 = ผ้าใบ ซึ่งเป็นทรงเดิมของเกม) ----------
+   ⚠ index 0 ต้องเป็น "ทรงเดิม" เป๊ะเสมอ — เด็กที่เล่นอยู่ก่อนเฟส 8 ไม่มีคีย์ `shoeStyle` ใน save
+     จะตกมาที่ 0 เอง ⇒ รองเท้าต้องหน้าตาเหมือนเดิมทุกประการ ไม่งั้นตัวละครเปลี่ยนเองทั้งเมือง
+   ⚠ ทุกแบบต้องยึด y = -.35 (ระดับพื้นเท้าเดิม) ไม่งั้นเท้าจมพื้นหรือลอย */
+function addShoe(piv, style, col, girl){
+  const Y = -.35;
+  switch(style|0){
+    case 1: {                                        /* บูทหุ้มข้อ */
+      const sh = box(.2,.11,.25, col,.045); sh.position.set(0,Y,.03); piv.add(sh);
+      const shaft = box(.19,.16,.19, col,.05); shaft.position.set(0,Y+.12,-.01); piv.add(shaft);
+      const cuff = box(.21,.05,.21, petShade(col,1.2),.03); cuff.position.set(0,Y+.2,-.01); piv.add(cuff);
+      break; }
+    case 2: {                                        /* รองเท้าแตะ */
+      const sole = box(.19,.05,.24, col,.03); sole.position.set(0,Y-.02,.03); piv.add(sole);
+      const strap = box(.17,.04,.05, petShade(col,1.25),.02); strap.position.set(0,Y+.03,.08); piv.add(strap);
+      break; }
+    case 3: {                                        /* รองเท้าเต้น (บัลเลต์) */
+      const sh = box(.18,.08,.24, col,.07); sh.position.set(0,Y-.01,.03); piv.add(sh);
+      const bow = sphere(.035, petShade(col,1.3), 8); bow.scale.set(1.6,.8,.6);
+      bow.position.set(0,Y+.05,.1); piv.add(bow);
+      [-1,1].forEach(s=>{ const rb = box(.03,.03,.14, petShade(col,1.3),.01);
+        rb.position.set(.07*s,Y+.1,-.02); rb.rotation.x = .3; piv.add(rb); });
+      break; }
+    case 4: {                                        /* บูทกันฝน (ยาวถึงน่อง) */
+      const sh = box(.21,.12,.26, col,.05); sh.position.set(0,Y,.03); piv.add(sh);
+      const shaft = box(.2,.28,.2, col,.06); shaft.position.set(0,Y+.19,-.01); piv.add(shaft);
+      const band = box(.215,.04,.215, petShade(col,.75),.02); band.position.set(0,Y+.32,-.01); piv.add(band);
+      break; }
+    case 5: {                                        /* รองเท้าสเก็ต (มีล้อ) */
+      const sh = box(.2,.13,.25, col,.045); sh.position.set(0,Y+.03,.03); piv.add(sh);
+      const plate = box(.17,.03,.24, petShade(col,.7),.01); plate.position.set(0,Y-.05,.03); piv.add(plate);
+      [-.07,.07].forEach(z=>{ const w = cyl(.045,.045,.05, 0xfff3d0, 10); w.rotation.z = Math.PI/2;
+        w.position.set(0,Y-.1,.03+z); piv.add(w); });
+      break; }
+    case 6: {                                        /* รองเท้าวิ่ง (มีแถบข้าง) */
+      const sh = box(.2,.12,.26, col,.05); sh.position.set(0,Y,.03); piv.add(sh);
+      const sole = box(.21,.04,.27, 0xfff3d0,.02); sole.position.set(0,Y-.06,.03); piv.add(sole);
+      [-1,1].forEach(s=>{ const st = box(.02,.05,.14, petShade(col,1.35),.01);
+        st.position.set(.1*s,Y+.01,.04); st.rotation.x = .25; piv.add(st); });
+      break; }
+    case 7: {                                        /* รองเท้าหิมะ (บุขนหนา) */
+      const sh = box(.23,.14,.27, col,.06); sh.position.set(0,Y,.03); piv.add(sh);
+      const fur = box(.25,.09,.23, 0xfff3d0,.05); fur.position.set(0,Y+.13,0); piv.add(fur);
+      const sole = box(.24,.04,.28, petShade(col,.65),.02); sole.position.set(0,Y-.07,.03); piv.add(sole);
+      break; }
+    default: {                                       /* 0 = ผ้าใบ (ทรงเดิมของเกม ห้ามเปลี่ยน) */
+      const sh = box(.2,.11,.25, col,.045); sh.position.set(0,Y,.03); piv.add(sh);
+      break; }
   }
 }
 
@@ -1136,7 +1492,7 @@ function buildCharacter(cfg){
     }else{
       const leg = box(.18,.42,.18, botC, .06); leg.position.y = -.17; piv.add(leg);
     }
-    const shoe = box(.2,.11,.25, shoeC, .045); shoe.position.set(0,-.35,.03); piv.add(shoe);
+    addShoe(piv, cfg.shoeStyle|0, shoeC, girl);   /* เฟส 8: แบบรองเท้า (0 = ทรงผ้าใบเดิม) */
     rig.add(piv); return piv;
   });
   if(girl){
