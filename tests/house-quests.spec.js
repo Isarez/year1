@@ -221,7 +221,12 @@ test('กระดานเควสต์: 5 ชุดแยกโควตา�
     return { got, left: q.boardLeft(), npcOpen: q.openNpcCount(), npcPerDay: q.NPC_PER_DAY,
              ready: q.boardBonusReady(), bonus: q.BOARD_BONUS };
   });
-  out.got.forEach(c => expect(c).toBe(13));   /* กระดาน 3 ดาว = 13 🪙 เท่ากันทุกชั้น */
+  /* กระดาน 3 ดาว = base 8 × ดาว 1.6 × ตัวคูณระดับชั้นของเฟส 10 (เด็กเทสเป็น ป.2 ⇒ ×1.05)
+     ⚠ ตัวคูณคูณกับผลคูณทั้งก้อนก่อนปัดเศษ ไม่ใช่คูณกับเลข 13 ที่ปัดแล้ว */
+  const wantBoard = await page.evaluate(() =>
+    window.HouseQuests.coinsFor('board', 3, window.HouseQuests.difficulty().tier, false));
+  expect(wantBoard).toBe(Math.round(8 * 1.6 * 1.05));
+  out.got.forEach(c => expect(c).toBe(wantBoard));
   expect(out.left).toBe(0);
   expect(out.npcOpen).toBe(out.npcPerDay);     // โควตา NPC ต้องไม่ถูกกระดานกิน
   expect(out.bonus).toBe(10);                  /* ผู้ใช้สั่งกลับมาที่ 10 (เดิม 35) */
@@ -233,7 +238,8 @@ test('กระดานเควสต์: 5 ชุดแยกโควตา�
   await expect(page.locator('#hq-claim')).toBeVisible();
   await page.locator('#hq-claim').click();
   await page.waitForTimeout(350);
-  expect(await coins(page) - before).toBe(10);
+  /* โบนัสกระดานถูกคูณตัวคูณระดับชั้นด้วย (ข้อ 45.8 — ไม่งั้นช่องว่าง 🪙/นาที ปิดไม่สนิท) */
+  expect(await coins(page) - before).toBe(Math.round(10 * 1.05));
   await expect(page.locator('#hq-claim')).toBeHidden();   /* รับได้ครั้งเดียว */
 });
 
@@ -300,20 +306,37 @@ test('ค่าตอบแทนเท่ากันทุกระดับ�
      NPC 6/8/10 · กระดาน 8/10/13 · ครอบครัว 10/13/16 (ตามจำนวนดาว)
      และ **ทุกระดับชั้นได้เท่ากันหมด** (ตัวคูณชั้น = 1.0)
      ส่วนที่หายไปย้ายไปเป็นโบนัสดาวรายวันที่เด็กต้องกดรับเอง (+15 ครึ่งทาง · +20 เต็ม) */
+  /* ⚠️ เฟส 10 ใส่ตัวคูณระดับชั้นกลับมา (สูงสุด ×1.15) ⇒ เพดานของแต่ละช่วงขยับตามตัวคูณ
+     ตัวเลข "ฐาน" ยังเป็นชุดเดิมของ 2026-08-09 ทุกประการ **ห้ามปรับฐานขึ้นโดยไม่ถามผู้ใช้** */
+  const MAXMUL = 1.15;
   table.forEach(r => {
     expect(r.npc).toBeGreaterThanOrEqual(6);
-    expect(r.npc).toBeLessThanOrEqual(10);
+    expect(r.npc).toBeLessThanOrEqual(Math.round(10 * MAXMUL));
     expect(r.board).toBeGreaterThanOrEqual(8);
-    expect(r.board).toBeLessThanOrEqual(13);
+    expect(r.board).toBeLessThanOrEqual(Math.round(13 * MAXMUL));
     expect(r.family).toBeGreaterThanOrEqual(10);
-    expect(r.family).toBeLessThanOrEqual(16);
+    expect(r.family).toBeLessThanOrEqual(Math.round(16 * MAXMUL));
     expect(r.family).toBeGreaterThan(r.board);   /* วันละชุดเดียว จึงให้สูงกว่าเสมอ */
   });
-  /* **ทุกระดับชั้นต้องได้เท่ากันเป๊ะ** — ป.1 ต้องไม่ได้น้อยกว่า ป.6 ที่ทำงานเหมือนกัน */
+  /* ตัวคูณห้ามทำให้ "ฐาน" เพี้ยน — tier 1 ต้องได้ตัวเลขเดิมของ 2026-08-09 เป๊ะ */
+  const t1 = table.filter(r => r.tier === 1);
+  expect(t1.map(r => r.npc)).toEqual([6, 8, 10]);
+  expect(t1.map(r => r.board)).toEqual([8, 10, 13]);
+  expect(t1.map(r => r.family)).toEqual([10, 13, 16]);
+  /* ⚠️ **เกณฑ์นี้เปลี่ยนแล้วในเฟส 10 (ข้อ 45.8 · อนุมัติ 2026-08-12)** — เดิมบังคับว่า
+     "ทุกชั้นต้องได้เท่ากันเป๊ะ" (มติ 2026-08-09) แต่พอ ป.6 ทำข้อเยอะกว่า ป.1 จริงๆ
+     ความ "เท่ากันเป๊ะ" กลายเป็นความไม่เป็นธรรม ⇒ เปลี่ยนเป็น 2 เกณฑ์นี้แทน **ห้ามลบเทสทิ้ง**:
+       ① เงินต่างกันไม่เกิน 15% ② ป.6 ต้องไม่น้อยกว่า ป.1 (ไม่มีชั้นไหนเสียเปรียบ) */
   [1, 2, 3].forEach(st => {
     ['npc', 'board', 'family'].forEach(k => {
       const vals = table.filter(r => r.st === st).map(r => r[k]);
-      expect(new Set(vals).size, k + ' ' + st + ' ดาว ต้องเท่ากันทุกชั้น').toBe(1);
+      const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+      /* ⚠ เทียบเป็น "ค่าที่ปัดเศษแล้ว" ไม่ใช่อัตราส่วนดิบ — ค่าน้อยๆ อย่าง 6 🪙 การปัดขึ้น 1 หน่วย
+         คิดเป็น 16.7% ทั้งที่ตัวคูณจริงคือ 15% (อัตราส่วนที่แท้จริงอยู่ที่ระดับเงินรวมต่อวัน
+         ซึ่งเทสด้านล่างคุมไว้แล้ว) */
+      expect(hi, k + ' ' + st + ' ดาว ต่างกันได้ไม่เกิน 15%').toBeLessThanOrEqual(Math.round(lo * 1.15));
+      expect(vals[vals.length - 1], k + ' ' + st + ' ดาว: ป.6 ต้องไม่น้อยกว่า ป.1')
+        .toBeGreaterThanOrEqual(vals[0]);
     });
   });
   /* รายได้สูงสุดต่อวัน (ทุกงาน ⭐⭐⭐ รวมเควสต์ครอบครัว 1 ชุด) ต้องไม่เกิน 360 🪙
@@ -329,11 +352,15 @@ test('ค่าตอบแทนเท่ากันทุกระดับ�
              + q.STAR_BONUS.half + q.STAR_BONUS.full + q.BOARD_BONUS);   /* รวมโบนัสทั้งหมด */
     return out;
   });
-  perDay.forEach(v => expect(v).toBeLessThanOrEqual(210));   /* ลดลงอีกหลังจูนรอบ 2026-08-09 */
+  /* เพดาน 206 (ป.1) → 237 (ป.6) ตามตัวคูณระดับชั้นของเฟส 10 — เผื่อการปัดเศษเล็กน้อย */
+  perDay.forEach(v => expect(v).toBeLessThanOrEqual(245));
   const cap = await page.evaluate(() => window.HouseQuests.DAY_CAP);
   perDay.forEach(v => expect(v).toBeLessThan(cap));
   expect(Math.max.apply(null, perDay)).toBeGreaterThan(150);   // แต่ก็ต้องไม่น้อยจนเล่นทั้งวันแล้วซื้ออะไรไม่ได้
-  expect(new Set(perDay).size, 'รายได้ต่อวันต้องเท่ากันทุกชั้น').toBe(1);
+  /* เฟส 10: รายได้ต่อวันต่างกันได้ไม่เกิน 15% และต้องไล่ขึ้นตามชั้น ห้ามมีชั้นไหนแซงย้อน */
+  expect(Math.max.apply(null, perDay) / Math.min.apply(null, perDay)).toBeLessThanOrEqual(1.15 + 1e-9);
+  for (let i = 1; i < perDay.length; i++)
+    expect(perDay[i], 'tier ' + (i + 1) + ' ต้องไม่น้อยกว่า tier ' + i).toBeGreaterThanOrEqual(perDay[i - 1]);
   /* โจทย์ท้าทายต้องได้มากกว่าโจทย์ปกติเสมอ (แรงจูงใจให้ลองของยาก) */
   const chal = await page.evaluate(() => ({
     plain: window.HouseQuests.coinsFor('A', 3, 2, false),
@@ -487,21 +514,35 @@ test('แถบสรุปเควสต์วันนี้: นับเห
   expect(sum0.total).toBe(14);
   expect(sum0.left).toBe(14);
   expect(sum0.done).toBe(0);
-  await expect(page.locator('#hqbar-left')).toContainText('14');
+  /* ⚠️ เฟส 10 (ข้อ 45.6): **ตัวนับ ❗ นับเฉพาะงานหลัก 6 ชุด** (กระดาน 5 + ครอบครัว 1)
+     งานรอง (NPC 8 คน) เป็นของแถมที่ทำเพิ่มได้ ไม่ค้างเป็นหนี้ ⇒ แถบขึ้น 6 ไม่ใช่ 14 */
+  expect(sum0.mainTotal).toBe(6);
+  expect(sum0.sideTotal).toBe(8);
+  await expect(page.locator('#hqbar-left')).toContainText('6');
   await expect(page.locator('#hqbar-done')).toContainText('0');
   /* ต้องมีสัญลักษณ์ให้เด็กอ่านออกโดยไม่ต้องอ่านคำ */
   await expect(page.locator('#hqbar-left')).toContainText('❗');
   await expect(page.locator('#hqbar-done')).toContainText('✅');
 
-  /* เล่นเควสต์ NPC 1 ชุดจนจบ → ตัวเลขต้องขยับ */
+  /* เล่น**งานรอง** (NPC) 1 ชุดจนจบ → ✅ ขยับ แต่ ❗ ของงานหลักต้องไม่ขยับ */
   await page.evaluate(() => {
     const q = window.HouseQuests, run = q.buildRun(q.specForNpc(q.state().npcIds[0]));
     while (!run.over) q.answer(run, run.items[run.idx].correct);
     q.finish(run);
   });
+  await expect.poll(() => page.evaluate(() => document.getElementById('hqbar-done').textContent),
+    { timeout: 10000 }).toContain('1');
+  await expect(page.locator('#hqbar-left')).toContainText('6');
+
+  /* เล่น**งานหลัก** (กระดาน) 1 ชุด → ❗ ต้องลดเหลือ 5 */
+  await page.evaluate(() => {
+    const q = window.HouseQuests, run = q.buildRun(q.specForBoard(0));
+    while (!run.over) q.answer(run, run.items[run.idx].correct);
+    q.finish(run);
+  });
   await expect.poll(() => page.evaluate(() => document.getElementById('hqbar-left').textContent),
-    { timeout: 10000 }).toContain('13');
-  await expect(page.locator('#hqbar-done')).toContainText('1');
+    { timeout: 10000 }).toContain('5');
+  await expect(page.locator('#hqbar-done')).toContainText('2');
   expect(errors).toEqual([]);
 });
 
@@ -544,11 +585,14 @@ test('รายการเควสต์: แยกกลุ่ม "ยัง�
   await expect(page.locator('#hqsum-list .hqsum-row')).toHaveCount(14);        /* ครบทุกชุดของวัน */
   await expect(page.locator('#hqsum-list .hqsum-row.hqsum-ok')).toHaveCount(1); /* ที่เพิ่งทำเสร็จ */
   /* กลุ่ม "ยังไม่ได้ทำ" ต้องมาก่อนเสมอ */
+  /* ⚠️ เฟส 10 (ข้อ 45.6): แยกเป็น 3 กลุ่ม — งานสำคัญ (หลัก) → ช่วยเพื่อนบ้าน (รอง) → ทำเสร็จแล้ว
+     **ห้ามซ่อนงานรองที่ยังไม่ทำ** เด็กที่อยากเล่นต่อต้องหาเจอว่าเหลือใครบ้าง (ห้ามกั้นสิทธิ์) */
   const secs = await page.evaluate(() =>
     Array.from(document.querySelectorAll('#hqsum-list .hqsum-sec')).map(e => e.textContent));
-  expect(secs.length).toBe(2);
-  expect(secs[0]).toContain('ยังไม่ได้ทำ');
-  expect(secs[1]).toContain('ทำเสร็จแล้ว');
+  expect(secs.length).toBe(3);
+  expect(secs[0]).toContain('งานสำคัญ');
+  expect(secs[1]).toContain('ช่วยเพื่อนบ้าน');
+  expect(secs[2]).toContain('ทำเสร็จแล้ว');
   expect(errors).toEqual([]);
 });
 
@@ -689,9 +733,14 @@ test('โบนัสดาวรายวัน: กดรับได้เม
   const errors = await openHouse(page);
   const bonus = () => page.evaluate(() => window.HouseQuests.starBonus());
 
+  /* ⚠️ เฟส 10 (ข้อ 45.8): โบนัสถูกคูณตัวคูณระดับชั้นด้วย (เด็กเทสเป็น ป.2 ⇒ ×1.05)
+     ไม่งั้นช่องว่าง 🪙/นาที ระหว่างชั้นจะปิดได้ไม่สนิท เหลือ ~5% */
+  const mul = await page.evaluate(() => window.HouseQuests.tierMul(window.HouseQuests.difficulty().tier));
+  const wantHalf = Math.round(15 * mul), wantFull = Math.round(20 * mul);
   let b = await bonus();
-  expect(b.half.coins).toBe(15);
-  expect(b.full.coins).toBe(20);
+  expect(mul).toBe(1.05);
+  expect(b.half.coins).toBe(wantHalf);
+  expect(b.full.coins).toBe(wantFull);
   expect(b.half.ready).toBe(false);
   expect(b.halfNeed).toBe(Math.ceil(b.starsMax / 2));
   await expect(page.locator('#hqbar-alert')).toBeHidden();      /* ยังไม่มีอะไรให้รับ */
@@ -723,7 +772,7 @@ test('โบนัสดาวรายวัน: กดรับได้เม
              need: e.querySelector('.hqsum-pinneed').textContent };
   });
   expect(lock.coinIcon, 'ต้องมีรูปเหรียญบนหมุด').toBe(true);
-  expect(lock.coinTxt).toBe('20');
+  expect(lock.coinTxt).toBe(String(wantFull));
   expect(lock.need).toBe('42⭐');
   await page.locator('#hqsum-close').click();
   /* ปุ่มบน HUD ต้องขึ้นแจ้งเตือน */
@@ -738,7 +787,7 @@ test('โบนัสดาวรายวัน: กดรับได้เม
   const before = await coins(page);
   await page.locator('#hqsum-pin-half.ready').click();
   await page.waitForTimeout(400);
-  expect(await coins(page) - before).toBe(15);
+  expect(await coins(page) - before).toBe(wantHalf);
 
   /* รับซ้ำไม่ได้ + แจ้งเตือนหายไป */
   b = await bonus();
@@ -776,7 +825,9 @@ test('โบนัสดาวเต็มวัน: ได้ดาวครบ
     const btn = page.locator(id + '.ready');
     if (await btn.count()) { await btn.click(); await page.waitForTimeout(350); }
   }
-  expect(await coins(page) - before).toBe(35);
+  /* เฟส 10: ทั้ง 2 ก้อนถูกคูณตัวคูณระดับชั้น (ป.2 ⇒ ×1.05) */
+  const mul2 = await page.evaluate(() => window.HouseQuests.tierMul(window.HouseQuests.difficulty().tier));
+  expect(await coins(page) - before).toBe(Math.round(15 * mul2) + Math.round(20 * mul2));
   await expect(page.locator('.hqsum-pin.taken')).toHaveCount(2);
   /* หมุดต้องอยู่ตำแหน่งตามสัดส่วนดาวที่ต้องได้ (ครึ่งทาง ~50% · เต็ม 100%) */
   const pos = await page.evaluate(() => ({

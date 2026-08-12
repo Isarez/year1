@@ -57,9 +57,55 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
   const STAR_BONUS = {half:15, full:20};
   const BOARD_BONUS = 10;                        /* ทำกระดานครบ 5 ชุด → กดรับที่กระดาน (ผู้ใช้สั่งกลับมา 2026-08-09) */
   const CHAL_MUL   = 1.5;                        /* โจทย์ท้าทาย (สูงกว่าชั้น 1 ระดับ) ได้เหรียญ ×1.5 */
-  const DAY_CAP    = 400;                        /* เพดานเหรียญต่อวัน — กันฟาร์ม (ป.6 เล่นครบแบบไม่พลาดเลย ~340) */
+  /* เพดานเหรียญต่อวัน — กันฟาร์ม · เพดานจริงที่เด็กทำได้คือ 206-237 🪙 (ตามชั้น ดู TIER_MUL)
+     ⇒ ตัวเลขนี้ยังไม่เคยทำงานเลย เก็บไว้เป็นกันชนเผื่ออนาคต **ห้ามแตะตัวเลข** (ข้อ 45.9 ของแผน) */
+  const DAY_CAP    = 400;
   const NPC_PER_DAY = 8;                         /* วันนี้มีกี่ NPC ที่ติดป้าย "!" (ข้อ 7: 5-8 ร้าน/วัน) */
   const BOARD_N     = 5;                         /* กระดาน 5 ชุด/วัน (ข้อ 19) */
+
+  /* ---------- เฟส 10: ตัวคูณระดับชั้นในสูตรเงิน (ข้อ 45.8 · อนุมัติ 2026-08-12) ----------
+     index = tier (1 = เตรียม ป.1/ป.1 … 6 = ป.6)
+
+     ⚠️ **ไม่ขัดมติ 2026-08-09 ที่เขียนล็อกว่า "ห้ามใส่ตัวคูณกลับ"** — มตินั้นให้เหตุผลว่า
+        *"ป.6 ได้มากกว่า ป.1 ทั้งที่ทำงานเท่ากัน"* ซึ่งจริงตอนที่ทุกชั้นทำ 5 ข้อ/ชุดเท่ากัน
+        แต่ตาราง qN ใหม่ทำให้ ป.6 ทำ 12 ข้อ ส่วน ป.1 ทำ 9 ข้อ ⇒ ใส่ตัวคูณกลับคือ**รักษา**เจตนาเดิม:
+        "ทำงานเท่ากันได้เท่ากัน" → "ทำงานมากกว่าได้มากกว่าตามสัดส่วนเวลาที่วัดจริง"
+
+     🔒 ราวกันตก (ห้ามละเมิด):
+       1. **ห้ามเกิน 1.20 เด็ดขาด**
+       2. **ต้องถอดจากอัตราส่วนเวลาเล่นจริงเสมอ** (44.4 : 46.7 : 49.0 : 51.3 นาที ปัดขั้นละ 0.05)
+          ⇒ แก้ตาราง `Q_CARD`/`Q_DRAG` เมื่อไหร่ **ต้องคำนวณตัวคูณใหม่ทุกครั้ง** ห้ามตั้งเลขสวยๆ เอง
+       3. **ผูกกับ `tier` เท่านั้น ห้ามผูกกับจำนวนข้อจริงของเควสต์** ไม่งั้นกลไกที่มีข้อเยอะจะจ่าย
+          มากกว่ากลไกที่มีข้อน้อยในชั้นเดียวกัน เด็กจะเลือกเล่นแต่ตัวที่คุ้ม
+       4. นิยาม "ยุติธรรม" ของระบบนี้ = **🪙/นาที เท่ากัน + เวลาที่ต้องลงเพื่อซื้อของครบเท่ากัน (~95 ชม.)**
+          ไม่ใช่ "เงินต่อวันเท่ากัน" อีกต่อไป
+     ⚠️ ต้องคูณ `STAR_BONUS`/`BOARD_BONUS` ด้วย (เป็นเลขคงที่ ไม่ผ่าน `coinsFor()`)
+        ไม่งั้นช่องว่าง 🪙/นาที ปิดได้ไม่สนิท เหลือ ~5% */
+  const TIER_MUL = [0, 1.00, 1.05, 1.05, 1.10, 1.15, 1.15];
+  const TIER_MUL_MAX = 1.20;                     /* ราวกันตกข้อ 1 — มีเทสคุมว่าห้ามมีค่าไหนเกินนี้ */
+  function tierMul(tier){
+    const t = Math.max(1, Math.min(TIER_MUL.length - 1, tier | 0));
+    return TIER_MUL[t] || 1;
+  }
+
+  /* ---------- เฟส 10: งบเวลาต่อข้อ (ข้อ 45.4-45.5) ----------
+     ⚠️ **`secPerQ` เป็นค่าประมาณสำหรับ "คำนวณจำนวนข้อ" เท่านั้น**
+        ห้ามโชว์บนหน้าจอ ห้ามใช้ตัดจบเควสต์ (กติกาเหล็กข้อ 2 — ห้ามมีตัวจับเวลากดดัน) */
+  const SEC_CARD = 16;          /* การ์ด 4 ตัวเลือก */
+  const SEC_DRAG = 30;          /* ลากลงถัง/ช่อง/ตะกร้า */
+  const SEC_ENGINE = 225;       /* ยืม engine หน้าหลัก — 1 ชุด = 10 ด่านของ engine เดิม (ไม่ใช่ต่อข้อ) */
+  const QUEST_SEC_LO = 150, QUEST_SEC_HI = 240;   /* งบเวลาต่อ 1 เควสต์ (2.5-4 นาที) */
+  /* ทรงเดิน: เวลา/ข้อ = 12 + d×0.6 วิ (12 = คิด/ตอบ · 0.6 = 3 ช่อง/วิ × 1.8 เผื่อเดินอ้อม/แตะซ้ำ)
+     ⚠️ **`d` ต้องวัดด้วย `findPath()` จริง ห้ามใช้ระยะเส้นตรงเด็ดขาด** — แผนที่มีแม่น้ำกับสะพาน
+        จุดที่ห่างกัน 10 ช่องแบบเส้นตรงอาจต้องเดินอ้อม 40 ช่อง ⇒ จะแจก 10 ข้อให้เควสต์ที่เดินไกลที่สุด
+        ซึ่งตรงข้ามกับที่ออกแบบไว้เป๊ะ (ผู้เรียกเป็นคนวัดระยะมาให้ ไฟล์นี้ไม่รู้จักผังเมือง) */
+  const SEC_WALK_BASE = 12, SEC_WALK_PER_TILE = 0.6;
+  function secWalk(d){ return SEC_WALK_BASE + Math.max(0, d || 0) * SEC_WALK_PER_TILE; }
+  /* จำนวนข้อของทรงเดิน (ข้อ 45.5) — clamp 5-10 เสมอ · `jitter` = ±1 สุ่มด้วย seed ของเควสต์นั้น */
+  function walkQCount(d, jitter){
+    const n = Math.round(180 / secWalk(d)) + (jitter | 0);
+    return Math.max(MIN_Q, Math.min(10, n));
+  }
   /* ⚠ **โบนัสครบ 5 ชุดของกระดานถูกเอาออกแล้ว** (ผู้ใช้สั่ง 2026-08-09)
      เควสต์กระดานได้เหรียญของตัวเองครบอยู่แล้ว โบนัสก้อนโตทำให้เด็กรู้สึกว่า "ต้องเก็บให้ครบ"
      ซึ่งขัดกับกติกาที่ว่าไม่บังคับ ไม่ลงโทษ · **ห้ามใส่กลับโดยไม่ถามผู้ใช้** */
@@ -404,6 +450,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const set0 = opt.set || SORT_SETS[setId];
       return {
         id:opt.id || setId, name:(set0 || {}).name || setId, sort:true,
+        shape:'drag', secPerQ: SEC_DRAG,          /* ลากลงถัง — 30 วิ/ข้อ (เฟส 10 · ข้อ 45.4) */
         fam: opt.fam || 'family', only: opt.only === null ? undefined : (opt.only || 'family'),
         gen(rng, diff){
           const set = getSet ? (getSet() || set0) : set0;
@@ -459,6 +506,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
                             : ORDER_POOLS[poolId];
       return {
         id:opt.id || poolId, name:pool.name, sort:true,
+        shape:'drag', secPerQ: SEC_DRAG,          /* ลากลงช่องเรียงลำดับ — 30 วิ/ข้อ */
         fam: opt.fam || 'family', only: opt.only === null ? undefined : (opt.only || 'family'),
         gen(rng, diff, def, gid){
           /* คลังจากเกมหน้าหลักมาก่อน (ถ้าระดับชั้นนี้มี) ไม่มีก็ใช้คลังของโหมดบ้าน */
@@ -1206,6 +1254,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       opt = opt || {};
       return {
         id:opt.id || gameId, name:name, fam:'A', engine:gameId, pick:opt.pick || '', only:'engine',
+        /* 1 ชุด = 10 ด่านของ engine เดิม ไม่ใช่ "ต่อข้อ" ⇒ secPerQ เป็นเวลาทั้งชุด */
+        shape:'engine', secPerQ: SEC_ENGINE,
         gen(){
           return [{kind:'engine', game:gameId, pick:opt.pick || '', emoji:emoji || '',
                    q: opt.ask || ('มาเล่น "' + name + '" ด้วยกันหน่อยสิ!'),
@@ -1434,6 +1484,24 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       codecond:   engineMech('code',    'โปรแกรมมีเงื่อนไข', '🔀',
                     {id:'codecond', pick:'cond', ask:'คราวนี้ยากขึ้น — ถ้าเจอกำแพงต้องให้หุ่นยนต์เลี้ยวนะ'}),
     };
+
+    /* ---------- เฟส 10: ติดป้าย "ทรง" + งบเวลาต่อข้อ ให้ทุกกลไก (ข้อ 45.4) ----------
+       ⚠ **ห้ามลืมกลไกใหม่** — ตัวที่ไม่อยู่ในลิสต์จะถูกนับเป็นการ์ด 4 ตัวเลือก (16 วิ/ข้อ) อัตโนมัติ
+         ซึ่งถูกสำหรับกลไกส่วนใหญ่ แต่ถ้ากลไกใหม่เป็นทรงลากหรือทรงเดิน **ต้องมาเติมที่นี่**
+         ไม่งั้นจำนวนข้อจะถูกคำนวณจากเวลาที่ผิด (เควสต์ยาวเกินงบ 240 วิ) — มีเทสคุมไว้ที่ house-phase10
+       ⚠ `secPerQ` ใช้คำนวณจำนวนข้อเท่านั้น **ห้ามโชว์บนจอ ห้ามใช้ตัดจบเควสต์** (กติกาเหล็กข้อ 2) */
+    const DRAG_MECHS = ['petfeed', 'budget', 'shopping', 'payexact', 'fishmath', 'dressorder'];
+    const WALK_MECHS_SHAPE = ['findhidden', 'deliver', 'dinner', 'market'];
+    Object.keys(MECHS).forEach(k=>{
+      const m = MECHS[k];
+      if(m.shape) return;                                        /* factory ติดป้ายมาแล้ว */
+      if(WALK_MECHS_SHAPE.indexOf(k) >= 0){ m.shape = 'walk';  m.secPerQ = null; return; }
+      if(DRAG_MECHS.indexOf(k) >= 0)      { m.shape = 'drag';  m.secPerQ = SEC_DRAG; return; }
+      m.shape = 'card'; m.secPerQ = SEC_CARD;
+    });
+    /* ทรงของกลไกหนึ่งตัว (ชุดเทส/ตัวคำนวณจำนวนข้อใช้) — 'card' | 'drag' | 'walk' | 'engine' */
+    function mechShape(id){ const m = MECHS[id]; return m ? (m.shape || 'card') : 'card'; }
+    function mechSecPerQ(id){ const m = MECHS[id]; return m ? m.secPerQ : SEC_CARD; }
     /* กลไกที่ยืม engine หน้าหลัก — id ของ mech ไม่จำเป็นต้องตรงกับ id ของเกม (ดู .engine)
        ⚠ **ตัวของแล็บ (shapebuild/circuit/robot/codeloop/codecond) ไม่อยู่ในลิสต์นี้โดยตั้งใจ**
          ข้อ 30 ของแผนระบุว่าแล็บคือ "จุดเดียวในเมือง" ที่แจกโจทย์ STEM/coding
@@ -1547,23 +1615,42 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
        คืนเฉพาะข้อมูลดิบ — ชื่อคน/ชื่อร้านให้ฝั่งหน้าจอไปแปลเอง (ไฟล์นี้ไม่รู้จักผังเมือง) */
     /* คืน **ทุกชุดของวันนี้พร้อมธง done** (ผู้ใช้สั่งให้โชว์อันที่ทำเสร็จแล้วด้วย 2026-08-09)
        ฝั่งหน้าจอเป็นคนแยกกลุ่ม/แปลชื่อคน-ชื่อร้านเอง (ไฟล์นี้ไม่รู้จักผังเมือง) */
+    /* 🎯 **งานหลัก / ⭐ งานรอง (เฟส 10 · ข้อ 45.6)**
+       งานหลัก = กระดาน 5 + ครอบครัว 1 = **6 ชุด เท่ากันทุกระดับชั้น** (ใช้โควตาที่มีอยู่แล้ว ไม่ได้เขียนระบบใหม่)
+       งานรอง = NPC 8 คนในเมือง — **เปิดครบทุกชั้นเหมือนเดิม ไม่มีการล็อกสิทธิ์ตามระดับชั้นเด็ดขาด**
+       ⇒ ตัวนับ ❗ ของ "วันนี้ครบแล้วไหม" นับจาก**งานหลักเท่านั้น** งานรองเป็นของแถมที่ทำเพิ่มได้
+         เด็กเล็กจึงจบวันได้ที่ ~20 นาทีอย่างมีเกียรติ โดยที่งานรองไม่ค้างเป็นหนี้ให้รู้สึกผิด */
     function daySummary(){
       const s = state();
       const items = [];
       const bst = s.board.st || {};
       s.npcIds.forEach(id=>{
         const r = s.npc[id] || {};
-        items.push({src:'npc', id, done: r.st === 'done', stars: r.stars | 0});
+        items.push({src:'npc', main:false, id, done: r.st === 'done', stars: r.stars | 0});
       });
       for(let i=0; i<BOARD_N; i++)
-        items.push({src:'board', idx:i, done: s.board.done.indexOf(i) >= 0, stars: bst[i] | 0});
+        items.push({src:'board', main:true, idx:i, done: s.board.done.indexOf(i) >= 0, stars: bst[i] | 0});
       const f = s.fam || {};
-      if(f.who) items.push({src:'family', who:f.who, done: f.st === 'done', stars: f.stars | 0});
+      if(f.who) items.push({src:'family', main:true, who:f.who, done: f.st === 'done', stars: f.stars | 0});
       const left = items.filter(x => !x.done).length;
+      const main = items.filter(x => x.main), side = items.filter(x => !x.main);
+      const mainLeft = main.filter(x => !x.done).length;
+      const sideLeft = side.filter(x => !x.done).length;
       /* ดาวของ "วันนี้" (ไม่ใช่ดาวสะสมทั้งชีวิตที่อยู่ใน s.stars) + เพดานดาวที่เป็นไปได้ */
       const starsGot = items.reduce((a, x) => a + (x.stars | 0), 0);
       return {left, done: items.length - left, total: items.length, items,
+              mainLeft, mainDone: main.length - mainLeft, mainTotal: main.length,
+              sideLeft, sideDone: side.length - sideLeft, sideTotal: side.length,
               stars: starsGot, starsMax: items.length * 3};
+    }
+    /* จำนวนชุดที่ "เชียร์" ให้ทำในแต่ละระดับชั้น — **เป็นคำแนะนำบนหน้าจอเท่านั้น ไม่ใช่การกั้นสิทธิ์**
+       (ข้อ 45.6 · เตรียม-ป.1 เชียร์ที่งานหลัก 6 ชุด · ป.2-3 ที่ ~10 · ป.4-6 ที่ครบ 14) */
+    function goalSets(){
+      const t = difficulty().tier;
+      const total = BOARD_N + 1 + NPC_PER_DAY;
+      if(t <= 1) return BOARD_N + 1;
+      if(t <= 3) return Math.min(total, BOARD_N + 1 + 4);
+      return total;
     }
     function familyWho(){ const f = state().fam || {}; return f.who || ''; }
     function familyDone(){ const f = state().fam || {}; return f.st === 'done'; }
@@ -1662,20 +1749,22 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       if(run.idx >= run.items.length){ run.over = true; return {ok:true, done:true}; }
       return {ok:true, done:false};
     }
-    /* ⚠ เกณฑ์ 2 ดาว **ต้องยืดตามจำนวนข้อ** — เดิมตายตัวที่ "ผิดไม่เกิน 2 ข้อ" ซึ่งตอนเควสต์มี 3 ข้อ
-       คือผ่อนปรนมาก (ผิดได้ 2 ใน 3) แต่พอเพิ่มเป็น 10 ข้อจะกลายเป็นเข้มขึ้นเท่าตัวโดยไม่ตั้งใจ
-       ⇒ คิดเป็นสัดส่วนเดิม (~2/3 ของจำนวนข้อ) ให้ความรู้สึกเหมือนเดิมทุกระดับชั้น (กติกาเหล็กข้อ 2) */
+    /* ⭐ **พลาดฟรี 1 ข้อเสมอ ไม่ว่าเควสต์จะกี่ข้อ** (เฟส 10 · ข้อ 45.9 · อนุมัติ 2026-08-12)
+       ของเดิมคิด 3 ดาวเฉพาะตอนไม่พลาดเลย ⇒ เควสต์เดิน 5 ข้อพลาด 1 ข้อร่วงเหลือ 2 ดาวทันที
+       ขณะที่เควสต์ 12 ข้อพลาด 1 ก็ร่วงเหมือนกันแต่เจ็บน้อยกว่ามาก — **เควสต์สั้นถูกลงโทษหนักกว่า
+       โดยไม่ตั้งใจ** (เฉียดกติกาเหล็กข้อ 2) ⇒ ให้ข้อแรกที่พลาดเป็นของฟรีเท่ากันทุกความยาว
+       ⚠ เกณฑ์ 2 ดาวยังคิดเป็นสัดส่วน (~2/3 ของจำนวนข้อ) เหมือนเดิม เพื่อไม่ให้เควสต์ยาวเข้มขึ้นเงียบๆ */
     function starsOf(run){
-      if(run.wrong === 0) return 3;
+      if(run.wrong <= 1) return 3;
       const n = (run.items && run.items.length) || 3;
       return run.wrong <= Math.max(2, Math.round(n * 2 / 3)) ? 2 : 1;
     }                               /* ผิดเยอะแค่ไหนก็ยังได้ 1 ดาว + เงิน — ห้ามลงโทษเด็ก */
+    /* ⚠ **`coinsFor()` รู้จักได้แค่ `tier` เท่านั้น ห้ามรู้จักจำนวนข้อจริงของเควสต์เด็ดขาด**
+       (ราวกันตกข้อ 3 ของ TIER_MUL) — ผูกกับจำนวนข้อเมื่อไหร่ กลไกที่มีข้อเยอะจะจ่ายมากกว่า
+       กลไกที่มีข้อน้อยในชั้นเดียวกัน แล้วเด็กจะเลือกเล่นแต่ตัวที่คุ้ม */
     function coinsFor(fam, stars, tier, chal){
       const base = FAM_BASE[fam] || FAM_BASE.A;
-      /* ⚠ **ทุกระดับชั้นได้เท่ากันหมด (ตัวคูณชั้น = 1.0)** — ผู้ใช้สั่ง 2026-08-09 ห้ามใส่ตัวคูณกลับ
-         เดิม ป.1 ×1.0 → ป.6 ×1.4 ซึ่งทำให้พี่ ป.6 ได้เงินมากกว่าน้อง ป.1 ทั้งที่ทำงานเท่ากัน
-         (พารามิเตอร์ `tier` ยังรับไว้เพื่อไม่ให้ผู้เรียก/เทสเดิมพัง แต่ไม่มีผลกับเหรียญแล้ว) */
-      const v = base * (STAR_MUL[stars] || 1) * (chal ? CHAL_MUL : 1);
+      const v = base * (STAR_MUL[stars] || 1) * (chal ? CHAL_MUL : 1) * tierMul(tier);
       return Math.max(1, Math.round(v));
     }
 
@@ -1876,11 +1965,15 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const d = daySummary();
       const sb = s.sb || {half:false, full:false};
       const halfNeed = Math.ceil(d.starsMax / 2);
+      /* ⚠ ต้องคูณตัวคูณระดับชั้นด้วย — โบนัสเป็นเลขคงที่ที่ไม่ผ่าน `coinsFor()`
+         ถ้าไม่คูณ ช่องว่าง 🪙/นาที ระหว่างชั้นจะปิดได้ไม่สนิท เหลือ ~5% (ข้อ 45.8) */
+      const mul = tierMul(difficulty().tier);
+      const bc = v => Math.max(1, Math.round(v * mul));
       return {
         stars: d.stars, starsMax: d.starsMax, halfNeed,
-        half: {coins: STAR_BONUS.half, need: halfNeed,
+        half: {coins: bc(STAR_BONUS.half), need: halfNeed,
                ready: d.stars >= halfNeed && !sb.half, claimed: !!sb.half},
-        full: {coins: STAR_BONUS.full, need: d.starsMax,
+        full: {coins: bc(STAR_BONUS.full), need: d.starsMax,
                ready: d.starsMax > 0 && d.stars >= d.starsMax && !sb.full, claimed: !!sb.full},
       };
     }
@@ -1909,7 +2002,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       if(!boardBonusReady()) return 0;
       s.board.claimed = true;
       const room = Math.max(0, DAY_CAP - (s.earned | 0));
-      const coins = Math.min(BOARD_BONUS, room);
+      /* คูณตัวคูณระดับชั้นเหมือนโบนัสดาว (เหตุผลเดียวกัน — ดู starBonus) */
+      const coins = Math.min(Math.max(1, Math.round(BOARD_BONUS * tierMul(difficulty().tier))), room);
       s.earned = (s.earned | 0) + coins;
       s.stars  = (s.stars | 0) + 1;
       persist();
@@ -1923,6 +2017,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       /* ค่าคงที่ให้ UI/เทสอ้างอิงได้ ไม่ต้องเดาเลข */
       DAY_CAP, NPC_PER_DAY, BOARD_N, BOARD_BONUS, FAM_BASE, STAR_MUL, MIN_Q,
       CHAL_NEED, CHAL_ACC, CHAL_KEEP, CHAL_MISS, CHAL_RATE, CHAL_MUL,
+      /* เฟส 10 — จังหวะเวลา & ตัวคูณระดับชั้น (ข้อ 45) */
+      TIER_MUL, TIER_MUL_MAX, tierMul,
+      SEC_CARD, SEC_DRAG, SEC_ENGINE, QUEST_SEC_LO, QUEST_SEC_HI,
+      SEC_WALK_BASE, SEC_WALK_PER_TILE, secWalk, walkQCount,
+      mechShape, mechSecPerQ, goalSets,
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,

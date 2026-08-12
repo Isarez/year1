@@ -300,20 +300,24 @@ test('เฟส 5 ตกค้าง: ทายเสียงมีปุ่ม
   expect(errs).toEqual([]);
 });
 
-test('เฟส 6-7: ค่าตอบแทนไม่เปลี่ยน · ทุกชั้นได้เท่ากัน · จำนวนข้อไม่มีผลกับเงิน', async ({ page }) => {
+test('เฟส 6-7: ค่าตอบแทนฐานไม่เปลี่ยน · ต่างกันตามชั้นไม่เกิน 15% · จำนวนข้อไม่มีผลกับเงิน', async ({ page }) => {
   const errs = await house(page);
   const r = await page.evaluate(() => {
     const q = window.HouseQuests;
     const npc = [1,2,3].map(s => q.coinsFor('A', s, 1, false));
     const board = [1,2,3].map(s => q.coinsFor('board', s, 1, false));
     const fam = [1,2,3].map(s => q.coinsFor('family', s, 1, false));
-    /* ทุกระดับชั้นต้องได้เท่ากันเป๊ะ (ผู้ใช้สั่ง 2026-08-09) */
+    /* ⚠️ เฟส 10 ใส่ตัวคูณระดับชั้นกลับมา (1.00-1.15 · ข้อ 45.8) ⇒ ไม่เท่ากันเป๊ะอีกต่อไป
+       แต่ยังต้องต่างกันไม่เกิน 15% และไล่ขึ้นตามชั้นเสมอ **ห้ามลบเทสนี้ทิ้ง** */
     const perTier = [1,2,3,4,5,6].map(t => q.coinsFor('A', 3, t, false));
     return { npc, board, fam, perTier };
   });
   expect(r.npc).toEqual([6, 8, 10]);
   expect(r.board).toEqual([8, 10, 13]);
   expect(r.fam).toEqual([10, 13, 16]);
-  expect(new Set(r.perTier).size, 'ทุกระดับชั้นต้องได้เหรียญเท่ากัน').toBe(1);
+  expect(Math.max.apply(null, r.perTier) / Math.min.apply(null, r.perTier),
+    'ต่างกันได้ไม่เกิน 15%').toBeLessThanOrEqual(1.15 + 1e-9);
+  for (let i = 1; i < r.perTier.length; i++)
+    expect(r.perTier[i]).toBeGreaterThanOrEqual(r.perTier[i - 1]);
   expect(errs).toEqual([]);
 });

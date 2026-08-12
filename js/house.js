@@ -9433,17 +9433,21 @@ function refreshQuestBar(){
   if(!want) return;
   const sum = QUESTS.daySummary();
   const alert = QUESTS.starBonusReady();
-  const key = sum.left + '/' + sum.done + '/' + alert;
+  /* 🎯 **ตัวนับ ❗ นับเฉพาะ "งานหลัก" (กระดาน 5 + ครอบครัว 1 = 6 ชุด)** — เฟส 10 · ข้อ 45.6
+     งานรอง (NPC 8 คน) เป็นของแถมที่ทำเพิ่มได้ **ไม่ค้างเป็นหนี้** เด็กเล็กจึงจบวันได้ที่ ~20 นาที
+     ส่วน ✅ ยังนับรวมทุกชุด เพื่อให้เด็กที่เล่นเยอะเห็นผลงานเต็มของตัวเอง */
+  const key = sum.mainLeft + '/' + sum.done + '/' + alert;
   if(key === questBarKey) return;
   questBarKey = key;
   const l = $('hqbar-left'), d = $('hqbar-done');
-  if(l) l.textContent = '❗ ' + sum.left;
+  if(l) l.textContent = '❗ ' + sum.mainLeft;
   if(d) d.textContent = '✅ ' + sum.done;
   /* มีโบนัสดาวรอรับ → ขึ้นไอคอนของขวัญ + แถบเด้งเรียกให้เด็กกดเข้ามารับ */
   const al = $('hqbar-alert');
   if(al) al.hidden = !alert;
   b.classList.toggle('hqbar-gift', !!alert);
-  b.classList.toggle('hqbar-clear', sum.left === 0);   /* ทำครบแล้ว = เปลี่ยนโทนเป็นเขียว ให้เด็กภูมิใจ */
+  /* ทำ**งานหลัก**ครบแล้ว = เปลี่ยนโทนเป็นเขียว ให้เด็กภูมิใจว่า "วันนี้ครบแล้ว" */
+  b.classList.toggle('hqbar-clear', sum.mainLeft === 0);
 }
 /* แปลงรายการดิบจาก engine → ชื่อคน/ชื่อร้านที่เด็กอ่านรู้เรื่อง */
 function questItemInfo(it){
@@ -9528,16 +9532,22 @@ function renderQuestSummary(){
   if(!e || e.hidden || !QUESTS) return;
   const sum = QUESTS.daySummary();
   const cnt = $('hqsum-count');
-  if(cnt) cnt.textContent = 'เหลือ ' + sum.left + ' · เสร็จ ' + sum.done;
+  /* นับ "เหลือ" จากงานหลักเท่านั้น (เฟส 10 · ข้อ 45.6) — งานรองไม่ใช่หนี้ */
+  if(cnt) cnt.textContent = 'เหลือ ' + sum.mainLeft + ' · เสร็จ ' + sum.done;
   /* แถบดาวของวันนี้ด้านบน — บอกว่าได้ไปแล้วกี่ดาวจากเต็มเท่าไหร่ + หลอดความคืบหน้า
      (ดาวสะสมทั้งชีวิตอยู่ที่กระดานเควสต์ ไม่ใช่ตรงนี้ — ตรงนี้คือ "วันนี้" เท่านั้น) */
   const stTxt = $('hqsum-startxt'), stFill = $('hqsum-starfill');
   if(stTxt) stTxt.textContent = sum.stars + ' / ' + sum.starsMax;
   if(stFill) stFill.style.width = (sum.starsMax ? Math.round(sum.stars / sum.starsMax * 100) : 0) + '%';
   const sub = $('hqsum-sub');
-  if(sub) sub.textContent = sum.left
+  /* ข้อความเชียร์ 3 ระดับ (เฟส 10 · ข้อ 45.6) — **เป็นคำแนะนำเท่านั้น ไม่ได้กั้นสิทธิ์ใคร**
+     งานหลักยังไม่ครบ → ชวนไปทำต่อ · ครบแล้วแต่ยังมีงานรอง → ชมก่อน แล้วบอกว่ามีของแถมให้เล่นต่อ
+     ครบหมดจริงๆ → ชมเต็มที่ */
+  if(sub) sub.textContent = sum.mainLeft
     ? 'วันนี้ยังมีคนรอให้หนูไปช่วยอยู่นะ'
-    : 'เก่งมาก! วันนี้ช่วยครบทุกคนแล้ว พรุ่งนี้มีงานใหม่มาอีกนะ';
+    : (sum.sideLeft
+        ? 'เก่งมาก! งานสำคัญของวันนี้ครบแล้ว 🎉 ถ้ายังอยากเล่นต่อ ในเมืองมีคนรออีก ' + sum.sideLeft + ' คนนะ'
+        : 'เก่งมาก! วันนี้ช่วยครบทุกคนแล้ว พรุ่งนี้มีงานใหม่มาอีกนะ');
   renderStarBonus();
   const list = $('hqsum-list');
   if(!list) return;
@@ -9569,8 +9579,12 @@ function renderQuestSummary(){
       list.appendChild(row);
     });
   };
-  sec('❗ ยังไม่ได้ทำ', sum.items.filter(x=>!x.done), false);
-  sec('✅ ทำเสร็จแล้ว', sum.items.filter(x=>x.done), true);
+  /* เฟส 10 (ข้อ 45.6) — แยก **งานสำคัญของวันนี้** (กระดาน + ครอบครัว) ออกจาก **งานช่วยเพื่อนบ้าน**
+     งานหลักที่ยังไม่ทำมาก่อนเสมอ แล้วค่อยงานรอง แล้วปิดท้ายด้วยที่ทำเสร็จแล้ว (ขีดฆ่า ไม่ซ่อนทิ้ง)
+     ⚠ ห้ามซ่อนงานรองที่ยังไม่ทำ — เด็กที่อยากเล่นต่อต้องหาเจอว่าเหลือใครบ้าง (ห้ามกั้นสิทธิ์) */
+  sec('❗ งานสำคัญของวันนี้',  sum.items.filter(x => !x.done &&  x.main), false);
+  sec('⭐ ช่วยเพื่อนบ้าน (ทำเพิ่มได้)', sum.items.filter(x => !x.done && !x.main), false);
+  sec('✅ ทำเสร็จแล้ว', sum.items.filter(x => x.done), true);
 }
 /* ---------- แถบสถานะเพื่อนตัวน้อย ใต้ชื่อเด็ก (#house-pet-bar) ----------
    ชื่อสัตว์ · ไอคอนอาหารที่น้องกิน · หลอดความอิ่ม · ปุ่มให้อาหาร — โผล่เฉพาะตอนมีสัตว์เลี้ยงจริง
