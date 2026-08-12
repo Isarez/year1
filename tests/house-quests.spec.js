@@ -616,10 +616,21 @@ test('หน้ารายการเควสต์: โชว์ดาวร
   /* เล่น 2 ชุด: ชุดแรกเต็ม 3 ดาว · ชุดที่สองตอบผิดรัวๆ ให้เหลือ 1 ดาว */
   await page.evaluate(() => {
     const q = window.HouseQuests, ids = q.state().npcIds;
-    const a = q.buildRun(q.specForNpc(ids[0]));
+    /* ⚠ ชุดที่ต้องการให้เหลือ 1 ดาว **ต้องเป็นเควสต์ที่ตอบผิดได้จริง** — งานเดิน (deliver/findhidden)
+       กับเกมที่ยืม engine มาไม่มีปุ่มตัวเลือกให้กดผิด จะได้ 3 ดาวเสมอ ทำให้ยอดดาวไม่ตรงที่คาด
+       (เฟส 7 เพิ่มงานเดินเข้าพูลของ NPC ⇒ ids[1] ไม่การันตีว่าเป็นเควสต์ตอบคำถามอีกต่อไป) */
+    const answerable = sp => {
+      if (!sp) return false;
+      const m = q.MECHS[sp.mech];
+      if (!m || m.walk || m.engine) return false;
+      const r = q.buildRun(sp);
+      return r.items.every(it => it.choices && it.choices.length > 1);
+    };
+    const picks = ids.map(id => q.specForNpc(id)).filter(answerable);
+    const a = q.buildRun(picks[0]);
     while (!a.over) q.answer(a, a.items[a.idx].correct);
     q.finish(a);
-    const b = q.buildRun(q.specForNpc(ids[1]));
+    const b = q.buildRun(picks[1]);
     let g = 0;
     while (!b.over && g++ < 300) {
       const it = b.items[b.idx];

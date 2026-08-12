@@ -22,6 +22,12 @@ async function openApp(page, { grade = null, birthYear = 2016 } = {}) {
   const cardSel = '#child-select-view .child-card';
   if (await page.locator(cardSel).count()) {
     await page.locator(cardSel).first().click();
+    /* ⚠ เมื่อโหมดบ้านเปิดอยู่ (branch feature/house-owl) เลือกเด็กแล้วจะเจอ **หน้าเลือกทาง**
+       (`#landing-view` จาก js/app-landing.js) คั่นก่อน ไม่ได้เข้าหน้าหมวดตรงๆ เหมือนตอน
+       โหมดบ้านปิด ⇒ ต้องกดการ์ด "ทำโจทย์" ต่ออีกที ไม่งั้นรอ home-view จนหมดเวลา
+       (หนี้ค้างจากงานก่อนเฟส 5 · ทำให้ smoke/curriculum/engines แดงยกแผง 22 เทส · แก้ 2026-08-12) */
+    const landing = page.locator('#landing-quiz');
+    if (await landing.isVisible().catch(() => false)) await landing.click();
     await page.waitForFunction(() => !document.getElementById('home-view').hidden);
   }
   if (grade) {

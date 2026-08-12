@@ -720,17 +720,21 @@ test('จำนวนโจทย์สุ่ม 5-10 ข้อต่อเค�
   const errors = await openHouse(page);
   const r = await page.evaluate(() => {
     const q = window.HouseQuests;
-    /* ⚠ กลไกกลุ่ม engine (เฟส 5) ไม่เข้ากติกา 5-10 ข้อโดยตั้งใจ — 1 เควสต์ = 1 รอบเกม 10 ด่านของ engine เดิม */
+    /* ⚠ **2 กลุ่มนี้ไม่เข้ากติกา 5-10 ข้อโดยตั้งใจ** (ห้ามเอามานับรวม):
+         - กลุ่ม engine (เฟส 5): 1 เควสต์ = 1 รอบเกม 10 ด่านของ engine เดิม
+         - งานเดิน (เฟส 4B/7): "ไปให้ถึงแล้วทำ" ชิ้นเดียวจบ — dinner/market/deliver/findhidden
+           (ผู้ใช้อนุมัติข้อยกเว้นนี้ตั้งแต่ 2026-08-10 · กติกา 5 ข้อใช้กับเกมที่เปิด popup ให้ตอบเท่านั้น) */
     const eng = q.ENGINE_MECHS;
+    const oneShot = sp => eng.indexOf(sp.mech) >= 0 || !!(q.MECHS[sp.mech] && q.MECHS[sp.mech].walk);
     const ns = [];
     const specs = [];
     q.state().npcIds.forEach(id => { const sp = q.specForNpc(id); if (sp) specs.push(sp); });
     for (let i = 0; i < q.BOARD_N; i++) { const sp = q.specForBoard(i); if (sp) specs.push(sp); }
-    specs.filter(sp => eng.indexOf(sp.mech) < 0)
+    specs.filter(sp => !oneShot(sp))
          .forEach(sp => ns.push(q.buildRun(sp).items.length));
     /* เปิดเควสต์เดิมซ้ำต้องได้จำนวนข้อเท่าเดิม (seed คงที่) */
-    const sp0 = specs.filter(sp => eng.indexOf(sp.mech) < 0)[0];
-    const again = [q.buildRun(sp0).items.length, q.buildRun(sp0).items.length];
+    const sp0 = specs.filter(sp => !oneShot(sp))[0];
+    const again = sp0 ? [q.buildRun(sp0).items.length, q.buildRun(sp0).items.length] : [1, 1];
     const engNs = specs.filter(sp => eng.indexOf(sp.mech) >= 0)
                        .map(sp => q.buildRun(sp).items.length);
     return { ns, engNs, again, uniq: ns.filter((v, i, a) => a.indexOf(v) === i).length };

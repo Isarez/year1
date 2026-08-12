@@ -200,10 +200,16 @@
     });
     const mw = $('hqb-mechs');
     mw.innerHTML = '';
+    let onChip = null;
     MECH_TABS.forEach(m=>{
-      mw.appendChild(chip(m.ic + ' ' + m.name, m.id === mech,
-        ()=>{ mech = m.id; catId = ''; render(); }));
+      const c = chip(m.ic + ' ' + m.name, m.id === mech,
+        ()=>{ mech = m.id; catId = ''; render(); });
+      if(m.id === mech) onChip = c;
+      mw.appendChild(c);
     });
+    /* ⚠ แถบนี้เลื่อนได้ (สูงแค่ ~2 แถวจาก 37 กลไก) ⇒ ต้องเลื่อนชิปที่เลือกอยู่เข้ามาให้เห็นเสมอ
+       ไม่งั้นเลือกกลไกแถวล่างแล้วแถบเด้งกลับไปบนสุด คนเทสมองไม่ออกว่ากำลังดูอะไรอยู่ */
+    if(onChip) onChip.scrollIntoView({block:'nearest'});
     /* แถบหมวดมีเฉพาะกลไก quiz (count ไม่ได้ดึงจากคลัง CATS) */
     const cw = $('hqb-cats');
     cw.innerHTML = '';
