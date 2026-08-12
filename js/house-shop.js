@@ -73,6 +73,52 @@
     'scarecrow':2, 'wheelbarrow':2,
     'statue':3, 'windmill':3, 'wooden-bridge':3,
     'fountain':4, 'pond':4, 'string-lights':4, 'well':4,
+
+    /* ================= เฟส 8 — ของใหม่ 64 ชิ้น (2026-08-12) =================
+       ตั้งราคาตามขนาด/ความอลังการเหมือนของเดิมเป๊ะ ไม่มีของชิ้นไหนแพงกว่าเพดานเดิม (300)
+       ⚠ ของที่ "ใช้งานได้จริง/ตัวใหญ่" ให้ระดับ 3-4 · ของจิ๋วตั้งโต๊ะให้ระดับ 1
+       ⚠ **ห้ามลืมชิ้นไหน** — ชิ้นที่ไม่อยู่ในตารางจะได้ระดับ 2 อัตโนมัติซึ่งอาจถูก/แพงผิดขนาด
+         (มีเทสไล่ตรวจว่าเฟอร์นิเจอร์ทุกชิ้นในคลังมีราคาในตารางนี้จริง) */
+    /* ---- ที่นั่งในบ้าน (+6) ---- */
+    'stool-round':1, 'pouf':1,
+    'papasan':2, 'floor-sofa':2,
+    'love-seat':3, 'swing-chair':3,
+    /* ---- โต๊ะ (+6) ---- */
+    'nest-tables':1, 'round-coffee':1,
+    'kids-table':2, 'craft-cart':2,
+    'study-desk':3, 'art-table':3,
+    /* ---- ห้องนอน (+6) ---- */
+    'night-light':1,
+    'dress-mirror':2, 'toy-chest-bed':2,
+    'day-bed':3, 'hammock-in':3,
+    'canopy-bed':4,
+    /* ---- ครัว (+8) ---- */
+    'fruit-bowl':1, 'dish-rack':1, 'kettle-set':1,
+    'toaster':2, 'blender':2, 'spice-rack':2, 'trash-bin':2, 'pot-shelf':2,
+    /* ---- ห้องน้ำ (+5) ---- */
+    'bath-toys':1, 'flower-mirror':1,
+    'towel-shelf':2, 'step-stool':2,
+    'duck-tub':3,
+    /* ---- ของแต่งในบ้าน (+10) ---- */
+    'star-mobile':1, 'growth-chart':1, 'wall-shelf-cloud':1, 'pet-bed-in':1, 'photo-wall':1,
+    'chalkboard':2, 'beanbag-frog':2, 'floor-globe-big':2,
+    'toy-shelf':3, 'reading-nook':3,
+    /* ---- สวน (+8) ---- */
+    'berry-bush':1, 'bird-nest-box':1, 'stepping-log':1,
+    'veggie-plot':2, 'wind-spinner':2, 'garden-arch-vine':2,
+    'lotus-pond':3,
+    'greenhouse-mini':4,
+    /* ---- เครื่องเล่น (+5) ---- */
+    'balance-beam':2,
+    'jungle-net':3, 'mini-maze':3, 'water-table':3,
+    'tree-house':4,
+    /* ---- ที่นั่งนอกบ้าน (+4) ---- */
+    'canvas-chair':2, 'picnic-set':2,
+    'swing-bench':3, 'tree-bench':3,
+    /* ---- ของแต่งนอกบ้าน (+6) ---- */
+    'house-sign':1, 'sun-dial':1,
+    'garden-lantern':2, 'garden-gnome-family':2, 'garden-cart':2,
+    'stone-lantern-row':3,
   };
 
   /* ---------- ราคาชุดแต่งตัว (ต่อ 1 ตัวเลือกในแถวนั้น) ----------

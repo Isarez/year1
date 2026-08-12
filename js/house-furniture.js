@@ -1160,6 +1160,560 @@
           [[0,.3],[.08,.5],[-.08,.44]].forEach(([x,h],i)=>{ const fl=cone(.14,h*.7,col,8); fl.position.set(x,h*.6,0);
             fl.userData.bulb=true; fl.userData.anim={kind:'flame', ph:i*2.1}; g.add(fl); });
         } },
+
+      /* ============================================================
+         เฟส 8 — ขยายคลัง 116 → 180 ชิ้น (ข้อ 27 ของ QUEST-DESIGN.md)
+         ⚠ ของใหม่ทุกชิ้นต้อง: มี id ไม่ซ้ำ · อยู่ในหมวดที่มีร้านขายอยู่แล้ว ·
+           มีราคาใน FURN_TIER ของ js/house-shop.js (ไม่ใส่ = ระดับ 2 อัตโนมัติ แต่ควรใส่ให้ตรงขนาด)
+         ⚠ `torus()` คืนวงที่ "ตั้งฉาก" (ระนาบ XY) ⇒ ห่วงที่ต้องวางแบนต้องใส่ rotation.x = PI/2 เองเสมอ
+         ============================================================ */
+
+      /* ============ ในบ้าน — ที่นั่ง (เฟส 8 · +6) ============ */
+      { id:'love-seat', name:'โซฟาสองที่นั่ง', cat:'seat', scope:'in', emoji:'🛏', fw:2, fd:1, colors:FABRIC,
+        action:'sit', sit:{sy:.5},
+        build(g,col){
+          const base=cushion(1.5,.34,.72,col); base.position.y=.28; g.add(base);
+          const back=cushion(1.5,.5,.16,shade(col,.92)); back.position.set(0,.66,-.3); g.add(back);
+          [-1,1].forEach(s=>{ const arm=cushion(.18,.34,.72,shade(col,1.08)); arm.position.set(s*.66,.56,0); g.add(arm); });
+          [-.38,.38].forEach(x=>{ const p=cushion(.5,.12,.5,shade(col,1.15)); p.position.set(x,.5,.04); g.add(p); });
+          legs(g,.6,.28,.12,0x8d6e63,.04);
+        } },
+      { id:'papasan', name:'เก้าอี้กลมนุ่ม', cat:'seat', scope:'in', emoji:'🧶', colors:SOFT,
+        action:'sit', sit:{sy:.42},
+        build(g,col){
+          const bowl=ball(.46,col,16); bowl.scale.set(1,.55,1); bowl.position.y=.42; g.add(bowl);
+          const rim=torus(.44,.05,shade(col,.82),16); rim.rotation.x=Math.PI/2; rim.position.y=.5; g.add(rim);
+          const stand=cyl(.3,.34,.3,shade(col,.7),12); stand.position.y=.15; g.add(stand);
+        } },
+      { id:'stool-round', name:'สตูลกลมนุ่ม', cat:'seat', scope:'in', emoji:'🔵', colors:FABRIC,
+        action:'sit', sit:{sy:.4},
+        build(g,col){
+          const top=cyl(.26,.26,.14,col,16); top.position.y=.38; g.add(top);
+          const skirt=cyl(.24,.26,.3,shade(col,.9),16); skirt.position.y=.16; g.add(skirt);
+          const btn=ball(.04,shade(col,1.2),8); btn.position.y=.45; g.add(btn);
+        } },
+      { id:'floor-sofa', name:'โซฟาญี่ปุ่น', cat:'seat', scope:'in', emoji:'🟩', fw:2, fd:1, colors:FABRIC,
+        action:'sit', sit:{sy:.26},
+        build(g,col){
+          const seat=cushion(1.4,.2,.7,col); seat.position.y=.12; g.add(seat);
+          const back=cushion(1.4,.42,.14,shade(col,.9)); back.position.set(0,.32,-.3); g.add(back);
+          [-.36,.36].forEach(x=>{ const p=cushion(.42,.1,.42,shade(col,1.15)); p.position.set(x,.26,.02); g.add(p); });
+        } },
+      { id:'swing-chair', name:'เก้าอี้แขวน', cat:'seat', scope:'in', emoji:'🪺', colors:SOFT,
+        action:'sit', sit:{sy:.55},
+        build(g,col){
+          const rope=cyl(.02,.02,.7,0xbcaaa4,6); rope.position.y=1.42; g.add(rope);
+          const shell=ball(.42,col,16); shell.scale.set(1,.9,1); shell.position.y=.72; g.add(shell);
+          const rim=torus(.4,.045,shade(col,.85),16); rim.rotation.x=Math.PI/2; rim.position.y=.96; g.add(rim);
+          const cu=cushion(.46,.14,.36,shade(col,1.15)); cu.position.set(0,.6,.08); g.add(cu);
+        } },
+      { id:'pouf', name:'พูฟถักนุ่ม', cat:'seat', scope:'in', emoji:'🧵', colors:FABRIC,
+        action:'sit', sit:{sy:.28},
+        build(g,col){
+          const body=cyl(.28,.3,.26,col,16); body.position.y=.13; g.add(body);
+          for(let i=0;i<10;i++){ const a=i/10*Math.PI*2; const rib=cyl(.015,.015,.26,shade(col,.86),6);
+            rib.position.set(Math.cos(a)*.29,.13,Math.sin(a)*.29); g.add(rib); }
+          const top=cyl(.28,.28,.05,shade(col,1.1),16); top.position.y=.28; g.add(top);
+        } },
+
+      /* ============ ในบ้าน — โต๊ะ (เฟส 8 · +6) ============ */
+      { id:'study-desk', top:.76, name:'โต๊ะเรียน', cat:'table', scope:'in', emoji:'📔', fw:2, fd:1, colors:WOOD,
+        build(g,col){
+          const top=box(1.5,.1,.7,col,.04); top.position.y=.72; g.add(top);
+          legs(g,.66,.28,.72,shade(col,.82),.05);
+          const shelf=box(1.4,.06,.2,shade(col,1.08),.03); shelf.position.set(0,1.02,-.24); g.add(shelf);
+          [-1,1].forEach(s=>{ const side=box(.06,.3,.2,shade(col,1.08),.03); side.position.set(s*.7,.88,-.24); g.add(side); });
+          const bk=box(.1,.24,.16,BRIGHT[4],.02); bk.position.set(-.5,1.16,-.24); g.add(bk);
+        } },
+      { id:'art-table', top:.6, name:'โต๊ะวาดรูป', cat:'table', scope:'in', emoji:'🎨', fw:2, fd:1, colors:PLASTIC,
+        build(g,col){
+          const top=box(1.3,.08,.66,col,.05); top.position.y=.56; top.rotation.x=-.12; g.add(top);
+          legs(g,.56,.26,.56,shade(col,.82),.05);
+          const tray=box(1.3,.05,.12,shade(col,1.15),.03); tray.position.set(0,.48,.3); g.add(tray);
+          [-.3,0,.3].forEach((x,i)=>{ const pen=cyl(.03,.03,.16,BRIGHT[i*2],8); pen.rotation.z=Math.PI/2;
+            pen.position.set(x,.54,.3); g.add(pen); });
+        } },
+      { id:'round-coffee', top:.42, name:'โต๊ะกาแฟกลม', cat:'table', scope:'in', emoji:'☕', colors:WOOD,
+        build(g,col){
+          const top=cyl(.44,.44,.08,col,20); top.position.y=.4; g.add(top);
+          const post=cyl(.07,.09,.34,shade(col,.82),10); post.position.y=.2; g.add(post);
+          const base=cyl(.26,.26,.05,shade(col,.82),16); base.position.y=.03; g.add(base);
+        } },
+      { id:'nest-tables', top:.46, name:'โต๊ะซ้อนคู่', cat:'table', scope:'in', emoji:'🪆', colors:WOOD,
+        build(g,col){
+          const t1=box(.5,.06,.5,col,.03); t1.position.set(-.12,.44,0); g.add(t1);
+          legs(g,.2,.2,.44,shade(col,.82),.035);
+          const t2=box(.42,.06,.42,shade(col,1.12),.03); t2.position.set(.26,.3,.1); g.add(t2);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const L=cyl(.03,.03,.3,shade(col,.86),6);
+            L.position.set(.26+sx*.16,.15,.1+sz*.16); g.add(L); });
+        } },
+      { id:'craft-cart', top:.7, name:'รถเข็นของ', cat:'table', scope:'in', emoji:'🧰', colors:PLASTIC,
+        build(g,col){
+          [0,.34,.66].forEach((y,i)=>{ const sh=box(.6,.05,.44,i?shade(col,1.05):col,.03); sh.position.y=y+.16; g.add(sh); });
+          [-1,1].forEach(s=>{ const bar=cyl(.025,.025,.7,shade(col,.8),8); bar.position.set(s*.28,.42,0); g.add(bar); });
+          const handle=cyl(.02,.02,.5,shade(col,.8),8); handle.rotation.z=Math.PI/2; handle.position.set(0,.9,-.2); g.add(handle);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const w=torus(.05,.02,0x546e7a,10);
+            w.position.set(sx*.26,.06,sz*.18); g.add(w); });
+        } },
+      { id:'kids-table', top:.44, name:'โต๊ะเด็กเล็ก', cat:'table', scope:'in', emoji:'🔶', fw:2, fd:2, colors:PLASTIC,
+        build(g,col){
+          const top=cyl(.6,.6,.08,col,20); top.position.y=.42; g.add(top);
+          legs(g,.36,.36,.42,shade(col,.85),.05);
+          const star=ball(.07,shade(col,1.25),8); star.scale.set(1,.4,1); star.position.y=.47; g.add(star);
+        } },
+
+      /* ============ ในบ้าน — ห้องนอน (เฟส 8 · +6) ============ */
+      { id:'day-bed', name:'เตียงเดย์เบด', cat:'bed', scope:'in', emoji:'🟨', fw:2, fd:1, colors:FABRIC,
+        action:'sleep', sit:{sy:.44},
+        build(g,col){
+          const base=box(1.6,.3,.76,shade(col,.8),.05); base.position.y=.2; g.add(base);
+          const mat=cushion(1.5,.2,.7,col); mat.position.y=.44; g.add(mat);
+          const back=box(1.6,.4,.1,shade(col,.85),.04); back.position.set(0,.7,-.36); g.add(back);
+          const pil=cushion(.44,.14,.3,shade(col,1.2)); pil.position.set(-.5,.58,-.16); g.add(pil);
+        } },
+      { id:'hammock-in', name:'เปลญวนในบ้าน', cat:'bed', scope:'in', emoji:'🪢', fw:2, fd:1, colors:FABRIC,
+        action:'sleep', sit:{sy:.5},
+        build(g,col){
+          [-1,1].forEach(s=>{ const post=cyl(.06,.07,1.1,0x8d6e63,10); post.position.set(s*.78,.55,0); g.add(post);
+            const foot=box(.24,.08,.5,0x8d6e63,.03); foot.position.set(s*.78,.04,0); g.add(foot); });
+          for(let i=0;i<9;i++){ const t=i/8; const x=-.7+t*1.4; const y=.9-Math.sin(t*Math.PI)*.42;
+            const strip=box(.16,.05,.56,col,.02); strip.position.set(x,y,0); g.add(strip); }
+        } },
+      { id:'toy-chest-bed', name:'ตู้ลิ้นชักเตี้ย', cat:'bed', scope:'in', emoji:'🧳', fw:2, fd:1, colors:WOOD,
+        build(g,col){
+          const body=box(1.3,.6,.5,col,.04); body.position.y=.32; g.add(body);
+          [0,1].forEach(r=>[-1,1].forEach(s=>{ const dr=box(.58,.22,.04,shade(col,1.12),.02);
+            dr.position.set(s*.32,.2+r*.26,.26); g.add(dr);
+            const kn=ball(.035,shade(col,.7),8); kn.position.set(s*.32,.2+r*.26,.3); g.add(kn); }));
+          legs(g,.58,.2,.06,shade(col,.8),.04);
+        } },
+      { id:'dress-mirror', name:'กระจกยืน', cat:'bed', scope:'in', emoji:'💠', colors:WOOD,
+        build(g,col){
+          const frame=torus(.3,.05,col,20); frame.scale.set(1,1.4,1); frame.position.y=.95; g.add(frame);
+          const glass=cyl(.28,.28,.03,0xd6ecf5,20); glass.rotation.x=Math.PI/2; glass.scale.set(1,1,1.4); glass.position.y=.95; g.add(glass);
+          const post=cyl(.04,.05,.6,shade(col,.82),8); post.position.y=.3; g.add(post);
+          const base=cyl(.2,.22,.06,shade(col,.82),16); base.position.y=.03; g.add(base);
+        } },
+      { id:'canopy-bed', name:'เตียงมีผ้าคลุม', cat:'bed', scope:'in', emoji:'🏰', fw:2, fd:2, colors:FABRIC,
+        action:'sleep', sit:{sy:.48},
+        build(g,col){
+          const base=box(1.5,.3,1.7,0x8d6e63,.05); base.position.y=.2; g.add(base);
+          const mat=cushion(1.42,.22,1.6,col); mat.position.y=.46; g.add(mat);
+          const pil=cushion(.5,.16,.34,shade(col,1.2)); pil.position.set(0,.6,-.6); g.add(pil);
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const p=cyl(.045,.045,1.5,0x8d6e63,8);
+            p.position.set(sx*.7,.75,sz*.8); g.add(p); });
+          const roof=box(1.5,.06,1.7,shade(col,1.1),.03); roof.position.y=1.5; g.add(roof);
+          [-1,1].forEach(s=>{ const drape=box(.06,.7,1.5,shade(col,1.18),.03); drape.position.set(s*.7,1.1,0); g.add(drape); });
+        } },
+      { id:'night-light', name:'โคมไฟดวงจันทร์', cat:'bed', scope:'in', emoji:'🌙', colors:[0xfff59d,0xb3e5fc,0xf8bbd0],
+        action:'toggle', light:{y:.5, color:0xfff2c0, dist:3, intensity:.7},
+        build(g,col){
+          const moon=ball(.2,col,16); moon.position.y=.5; moon.userData.bulb=true; g.add(moon);
+          const bite=ball(.13,0xfffdf7,12); bite.position.set(.13,.56,.06); g.add(bite);
+          const post=cyl(.03,.04,.34,0xbcaaa4,8); post.position.y=.17; g.add(post);
+          const base=cyl(.14,.15,.05,0xbcaaa4,14); base.position.y=.025; g.add(base);
+        } },
+
+      /* ============ ในบ้าน — ครัว (เฟส 8 · +8) ============ */
+      { id:'blender', top:.5, name:'เครื่องปั่น', cat:'kitchen', scope:'in', emoji:'🥤', colors:PLASTIC,
+        action:'toggle',
+        build(g,col){
+          const base=box(.24,.18,.24,col,.04); base.position.y=.1; g.add(base);
+          const jar=cyl(.13,.11,.34,0xd6ecf5,14); jar.position.y=.36; g.add(jar);
+          const lid=cyl(.14,.14,.05,shade(col,.8),14); lid.position.y=.55; g.add(lid);
+          const btn=ball(.03,0xef5350,8); btn.position.set(0,.14,.13); g.add(btn);
+        } },
+      { id:'toaster', top:.42, name:'เครื่องปิ้งขนมปัง', cat:'kitchen', scope:'in', emoji:'🍞', colors:[0xef5350,0x90caf9,0xfff59d],
+        build(g,col){
+          const body=box(.34,.24,.22,col,.06); body.position.y=.14; g.add(body);
+          [-1,1].forEach(s=>{ const slot=box(.1,.03,.14,0x455a64,.01); slot.position.set(s*.08,.27,0); g.add(slot); });
+          const lever=cyl(.02,.02,.1,shade(col,.7),8); lever.rotation.z=Math.PI/2; lever.position.set(.19,.18,0); g.add(lever);
+          const bread=box(.09,.1,.12,0xffcc80,.02); bread.position.set(-.08,.32,0); g.add(bread);
+        } },
+      { id:'spice-rack', wall:true, name:'ชั้นเครื่องเทศ', cat:'kitchen', scope:'in', emoji:'🧂', colors:WOOD,
+        build(g,col){
+          const sh=box(.6,.05,.16,col,.02); sh.position.y=1.1; g.add(sh);
+          const sh2=box(.6,.05,.16,col,.02); sh2.position.y=.82; g.add(sh2);
+          [-1,1].forEach(s=>{ const side=box(.05,.36,.16,shade(col,.85),.02); side.position.set(s*.3,.96,0); g.add(side); });
+          [1.1,.82].forEach((y,r)=>{ for(let i=0;i<4;i++){ const j=cyl(.035,.035,.13,BRIGHT[(i+r*2)%BRIGHT.length],10);
+            j.position.set(-.2+i*.14,y+.09,0); g.add(j); } });
+        } },
+      { id:'kettle-set', top:.4, name:'กาต้มน้ำ', cat:'kitchen', scope:'in', emoji:'♨️', colors:PLASTIC,
+        build(g,col){
+          const body=cyl(.16,.14,.26,col,14); body.position.y=.15; g.add(body);
+          const lid=cyl(.14,.12,.05,shade(col,.8),14); lid.position.y=.3; g.add(lid);
+          const kn=ball(.03,shade(col,.7),8); kn.position.y=.35; g.add(kn);
+          const sp=cyl(.03,.05,.18,shade(col,.85),8); sp.rotation.z=-.9; sp.position.set(.17,.22,0); g.add(sp);
+          const hd=torus(.09,.02,shade(col,.7),12); hd.position.set(-.16,.22,0); g.add(hd);
+        } },
+      { id:'dish-rack', top:.36, name:'ที่คว่ำจาน', cat:'kitchen', scope:'in', emoji:'🥄', colors:[0xb0bec5,0x90caf9],
+        build(g,col){
+          const tray=box(.5,.05,.34,col,.03); tray.position.y=.03; g.add(tray);
+          for(let i=0;i<5;i++){ const bar=cyl(.012,.012,.24,shade(col,.85),6); bar.position.set(-.16+i*.08,.17,0); g.add(bar); }
+          [-.14,0,.14].forEach((x,i)=>{ const plate=cyl(.11,.11,.02,0xfffdf7,14); plate.rotation.z=Math.PI/2;
+            plate.position.set(x,.19,0); g.add(plate); });
+        } },
+      { id:'trash-bin', name:'ถังขยะแยก', cat:'kitchen', scope:'in', emoji:'🗑️', colors:[0x66bb6a,0x42a5f5,0xffca28],
+        action:'toggle',
+        build(g,col){
+          const body=cyl(.2,.17,.5,col,14); body.position.y=.25; g.add(body);
+          const lid=cyl(.21,.21,.05,shade(col,.75),14); lid.position.y=.53; g.add(lid);
+          const kn=cyl(.03,.03,.05,shade(col,.6),8); kn.position.y=.58; g.add(kn);
+          const sign=box(.1,.1,.01,0xfffdf7,.01); sign.position.set(0,.3,.18); g.add(sign);
+        } },
+      { id:'pot-shelf', wall:true, name:'ชั้นแขวนหม้อ', cat:'kitchen', scope:'in', emoji:'🍲', colors:WOOD,
+        build(g,col){
+          const bar=cyl(.025,.025,.9,shade(col,.8),8); bar.rotation.z=Math.PI/2; bar.position.y=1.25; g.add(bar);
+          [[-.28,.16],[0,.2],[.28,.15]].forEach(([x,r],i)=>{ const hook=cyl(.012,.012,.14,0x9e9e9e,6);
+            hook.position.set(x,1.17,0); g.add(hook);
+            const pot=cyl(r,r*.85,r*1.1,BRIGHT[i*3%BRIGHT.length],12); pot.position.set(x,1.02-r*.3,0); g.add(pot); });
+        } },
+      { id:'fruit-bowl', top:.3, name:'ชามผลไม้', cat:'kitchen', scope:'in', emoji:'🍎', colors:[0xfffdf7,0xffcc80],
+        build(g,col){
+          const bowl=ball(.2,col,16); bowl.scale.set(1,.5,1); bowl.position.y=.1; g.add(bowl);
+          [[0,0,0xef5350],[.09,.04,0xffca28],[-.08,.03,0x66bb6a],[.02,.1,0xab47bc]].forEach(([x,z,c])=>{
+            const f=ball(.07,c,10); f.position.set(x,.17,z); g.add(f); });
+        } },
+
+      /* ============ ในบ้าน — ห้องน้ำ (เฟส 8 · +5) ============ */
+      { id:'duck-tub', name:'อ่างเป็ดยาง', cat:'bath', scope:'in', emoji:'🐤', fw:2, fd:1, colors:[0xfff59d,0x90caf9,0xf8bbd0],
+        action:'bounce',
+        build(g,col){
+          const tub=box(1.2,.4,.7,shade(col,1.15),.16); tub.position.y=.22; g.add(tub);
+          const water=box(1.08,.06,.6,0x81d4fa,.06); water.position.y=.42; g.add(water);
+          const body=ball(.15,0xffee58,12); body.scale.set(1.2,1,1); body.position.set(.2,.5,0); g.add(body);
+          const head=ball(.09,0xffee58,10); head.position.set(.33,.62,0); g.add(head);
+          const beak=cone(.05,.08,0xff9800,8); beak.rotation.z=-Math.PI/2; beak.position.set(.42,.61,0); g.add(beak);
+          legs(g,.5,.28,.06,shade(col,.7),.04);
+        } },
+      { id:'towel-shelf', wall:true, name:'ชั้นผ้าเช็ดตัว', cat:'bath', scope:'in', emoji:'🧖', colors:WOOD,
+        build(g,col){
+          const sh=box(.66,.06,.24,col,.02); sh.position.y=1.2; g.add(sh);
+          [-1,1].forEach(s=>{ const br=box(.05,.2,.22,shade(col,.85),.02); br.position.set(s*.3,1.1,0); g.add(br); });
+          [[-.18,0xef9a9a],[0,0x90caf9],[.18,0xa5d6a7]].forEach(([x,c])=>{ const t=cyl(.09,.09,.2,c,12);
+            t.rotation.z=Math.PI/2; t.position.set(x,1.32,0); g.add(t); });
+          const bar=cyl(.02,.02,.6,shade(col,.8),8); bar.rotation.z=Math.PI/2; bar.position.y=1.0; g.add(bar);
+          const hang=box(.16,.28,.03,0xf8bbd0,.02); hang.position.set(-.14,.86,0); g.add(hang);
+        } },
+      { id:'flower-mirror', wall:true, name:'กระจกดอกไม้', cat:'bath', scope:'in', emoji:'💮', colors:[0xf8bbd0,0xfff59d,0xb3e5fc],
+        build(g,col){
+          const glass=cyl(.24,.24,.03,0xd6ecf5,20); glass.rotation.x=Math.PI/2; glass.position.y=1.3; g.add(glass);
+          for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const pet=ball(.09,col,10); pet.scale.set(1,.6,1);
+            pet.position.set(Math.cos(a)*.26,1.3+Math.sin(a)*.26,.02); g.add(pet); }
+        } },
+      { id:'bath-toys', name:'กล่องของเล่นอาบน้ำ', cat:'bath', scope:'in', emoji:'🛟', colors:PLASTIC,
+        build(g,col){
+          const bin=box(.42,.3,.3,col,.05); bin.position.y=.16; g.add(bin);
+          const duck=ball(.08,0xffee58,10); duck.position.set(-.1,.36,0); g.add(duck);
+          const bk=ball(.06,0xef5350,10); bk.position.set(.06,.34,.05); g.add(bk);
+          const bt=cyl(.05,.05,.12,0x66bb6a,10); bt.position.set(.14,.36,-.04); g.add(bt);
+        } },
+      { id:'step-stool', name:'บันไดเด็กล้างมือ', cat:'bath', scope:'in', emoji:'🔺', colors:PLASTIC,
+        action:'sit', sit:{sy:.3},
+        build(g,col){
+          const top=box(.44,.06,.3,col,.03); top.position.y=.3; g.add(top);
+          const mid=box(.44,.06,.26,shade(col,1.1),.03); mid.position.set(0,.16,.12); g.add(mid);
+          [-1,1].forEach(s=>{ const side=box(.05,.3,.34,shade(col,.85),.02); side.position.set(s*.22,.15,0); g.add(side); });
+        } },
+
+      /* ============ ในบ้าน — ตกแต่ง (เฟส 8 · +10) ============ */
+      { id:'star-mobile', name:'โมบายดาว', cat:'decor', scope:'in', emoji:'⭐', colors:[0xfff59d,0xb3e5fc,0xf8bbd0],
+        action:'spin',
+        build(g,col){
+          const hub=ball(.06,shade(col,.8),10); hub.position.y=1.5; g.add(hub);
+          for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const r=.26;
+            const str=cyl(.008,.008,.3,0xbcaaa4,6); str.position.set(Math.cos(a)*r,1.35,Math.sin(a)*r); g.add(str);
+            const st=ball(.09,i%2?col:shade(col,1.2),8); st.scale.set(1,1,.4);
+            st.position.set(Math.cos(a)*r,1.16,Math.sin(a)*r); g.add(st); }
+          const bar=cyl(.015,.015,.54,0xbcaaa4,6); bar.rotation.z=Math.PI/2; bar.position.y=1.44; g.add(bar);
+          const bar2=cyl(.015,.015,.54,0xbcaaa4,6); bar2.rotation.x=Math.PI/2; bar2.position.y=1.44; g.add(bar2);
+        } },
+      { id:'chalkboard', wall:true, name:'กระดานดำ', cat:'decor', scope:'in', emoji:'🖍️', colors:WOOD,
+        build(g,col){
+          const frame=box(.9,.7,.06,col,.03); frame.position.y=1.1; g.add(frame);
+          const board=box(.78,.58,.03,0x37474f,.02); board.position.set(0,1.1,.04); g.add(board);
+          const tray=box(.9,.05,.1,shade(col,.85),.02); tray.position.set(0,.74,.06); g.add(tray);
+          [-.2,0,.2].forEach((x,i)=>{ const ch=cyl(.02,.02,.1,[0xfffdf7,0xffee58,0xf48fb1][i],8);
+            ch.rotation.z=Math.PI/2; ch.position.set(x,.79,.08); g.add(ch); });
+        } },
+      { id:'toy-shelf', name:'ชั้นเก็บของเล่น', cat:'decor', scope:'in', emoji:'🧩', fw:2, fd:1, colors:WOOD,
+        build(g,col){
+          const back=box(1.3,1.0,.06,col,.03); back.position.set(0,.5,-.2); g.add(back);
+          [.28,.66].forEach(y=>{ const sh=box(1.3,.06,.42,shade(col,1.08),.03); sh.position.set(0,y,0); g.add(sh); });
+          [-1,1].forEach(s=>{ const side=box(.06,1.0,.42,shade(col,.9),.03); side.position.set(s*.62,.5,0); g.add(side); });
+          [[-.38,.42,0],[0,.42,2],[.38,.42,4],[-.38,.8,1],[.38,.8,3]].forEach(([x,y,c])=>{
+            const bin=box(.32,.22,.3,BRIGHT[c%BRIGHT.length],.04); bin.position.set(x,y,0); g.add(bin); });
+        } },
+      { id:'growth-chart', wall:true, name:'ที่วัดส่วนสูง', cat:'decor', scope:'in', emoji:'📏', colors:[0xffcc80,0xa5d6a7,0x90caf9],
+        build(g,col){
+          const board=box(.18,1.6,.04,col,.02); board.position.y=.9; g.add(board);
+          for(let i=0;i<8;i++){ const t=box(i%2?.08:.13,.02,.02,0x6d4c41,.01);
+            t.position.set(i%2?-.03:0,.3+i*.18,.03); g.add(t); }
+          const giraffe=ball(.08,0xffca28,10); giraffe.position.set(0,1.76,.02); g.add(giraffe);
+        } },
+      { id:'beanbag-frog', name:'ตุ๊กตากบยักษ์', cat:'decor', scope:'in', emoji:'🐸', colors:[0x66bb6a,0x81c784],
+        action:'bounce',
+        build(g,col){
+          const body=ball(.34,col,16); body.scale.set(1,.85,1); body.position.y=.3; g.add(body);
+          [-1,1].forEach(s=>{ const eye=ball(.11,shade(col,1.15),10); eye.position.set(s*.15,.6,.06); g.add(eye);
+            const pup=ball(.05,0x2b2b2b,8); pup.position.set(s*.15,.61,.15); g.add(pup); });
+          const mouth=box(.26,.03,.02,0x2b2b2b,.01); mouth.position.set(0,.36,.33); g.add(mouth);
+          [-1,1].forEach(s=>{ const leg=ball(.12,shade(col,.9),10); leg.scale.set(1.3,.6,1);
+            leg.position.set(s*.3,.1,.14); g.add(leg); });
+        } },
+      { id:'wall-shelf-cloud', wall:true, name:'ชั้นเมฆลอย', cat:'decor', scope:'in', emoji:'☁️', colors:[0xfffdf7,0xb3e5fc,0xf8bbd0],
+        build(g,col){
+          [[-.2,0,.14],[0,.04,.18],[.2,0,.14]].forEach(([x,y,r])=>{ const p=ball(r,col,12);
+            p.scale.set(1.2,.8,.8); p.position.set(x,1.2+y,0); g.add(p); });
+          const sh=box(.62,.05,.2,shade(col,.9),.02); sh.position.y=1.1; g.add(sh);
+          const bk=box(.08,.16,.1,BRIGHT[5],.02); bk.position.set(-.16,1.2,0); g.add(bk);
+          const tt=ball(.08,0xffcc80,10); tt.position.set(.14,1.2,0); g.add(tt);
+        } },
+      { id:'floor-globe-big', name:'ลูกโลกตั้งพื้น', cat:'decor', scope:'in', emoji:'🌍', colors:[0x42a5f5,0x66bb6a],
+        action:'spin',
+        build(g,col){
+          const gl=ball(.26,col,18); gl.position.y=.7; g.add(gl);
+          [[.1,.72,.2],[-.14,.66,.14],[.06,.86,.1]].forEach(([x,y,r])=>{ const land=ball(r*.6,0x66bb6a,10);
+            land.scale.set(1,.7,.4); land.position.set(x,y,.2); g.add(land); });
+          const ring=torus(.3,.02,0xffca28,20); ring.rotation.z=.4; ring.position.y=.7; g.add(ring);
+          const post=cyl(.04,.05,.44,0x8d6e63,8); post.position.y=.22; g.add(post);
+          const base=cyl(.18,.2,.06,0x8d6e63,16); base.position.y=.03; g.add(base);
+        } },
+      { id:'reading-nook', name:'มุมอ่านหนังสือ', cat:'decor', scope:'in', emoji:'📖', fw:2, fd:1, colors:FABRIC,
+        action:'sit', sit:{sy:.3},
+        build(g,col){
+          const rug=cyl(.6,.6,.03,shade(col,1.1),20); rug.position.y=.015; g.add(rug);
+          const cu=cushion(.6,.2,.5,col); cu.position.set(-.2,.12,0); g.add(cu);
+          const p1=cushion(.3,.24,.14,shade(col,1.2)); p1.position.set(-.2,.3,-.2); g.add(p1);
+          const stack=[0,1,2].map(i=>{ const b=box(.24,.06,.18,BRIGHT[(i*2)%BRIGHT.length],.02);
+            b.position.set(.42,.04+i*.07,0); b.rotation.y=i*.2; g.add(b); return b; });
+          const lamp=ball(.1,0xfff59d,10); lamp.position.set(.5,.5,-.1); g.add(lamp);
+        } },
+      { id:'pet-bed-in', name:'ที่นอนสัตว์เลี้ยง', cat:'decor', scope:'in', emoji:'🐾', colors:SOFT,
+        build(g,col){
+          const base=cyl(.32,.34,.14,col,18); base.position.y=.07; g.add(base);
+          const rim=torus(.31,.07,shade(col,.88),18); rim.rotation.x=Math.PI/2; rim.position.y=.14; g.add(rim);
+          const pad=cyl(.24,.24,.05,shade(col,1.18),16); pad.position.y=.15; g.add(pad);
+          const paw=ball(.05,shade(col,.8),8); paw.scale.set(1,.4,1); paw.position.y=.18; g.add(paw);
+        } },
+      { id:'photo-wall', wall:true, name:'ผนังรูปครอบครัว', cat:'decor', scope:'in', emoji:'📸', colors:WOOD,
+        build(g,col){
+          [[-.26,1.34,.2,.16],[.0,1.42,.16,.2],[.26,1.3,.22,.18],[-.14,1.02,.18,.14],[.18,1.0,.2,.16]]
+            .forEach(([x,y,w,h],i)=>{
+              const f=box(w,h,.04,i%2?col:shade(col,1.12),.02); f.position.set(x,y,0); g.add(f);
+              const ph=box(w-.05,h-.05,.02,[0xb3e5fc,0xfff59d,0xf8bbd0,0xa5d6a7,0xffcc80][i],.01);
+              ph.position.set(x,y,.03); g.add(ph); });
+        } },
+
+      /* ============ นอกบ้าน — สวน (เฟส 8 · +8) ============ */
+      { id:'greenhouse-mini', name:'เรือนกระจกจิ๋ว', cat:'garden', scope:'out', emoji:'🏡', fw:2, fd:2, colors:[0xb3e5fc,0xc8e6c9],
+        build(g,col){
+          const base=box(1.5,.16,1.5,0x8d6e63,.04); base.position.y=.08; g.add(base);
+          const glass=box(1.4,.9,1.4,col,.06); glass.position.y=.6; g.add(glass);
+          const roof=cone(1.1,.5,shade(col,.9),4); roof.rotation.y=Math.PI/4; roof.position.y=1.28; g.add(roof);
+          [-1,1].forEach(s=>[-1,1].forEach(t=>{ const post=cyl(.03,.03,.9,0x8d6e63,6);
+            post.position.set(s*.68,.6,t*.68); g.add(post); }));
+          [[-.4,.3],[.4,-.3]].forEach(([x,z])=>{ const pot=cyl(.12,.1,.16,0xd7a86e,10); pot.position.set(x,.24,z); g.add(pot);
+            const pl=ball(.14,0x66bb6a,10); pl.scale.set(1,1.2,1); pl.position.set(x,.42,z); g.add(pl); });
+        } },
+      { id:'lotus-pond', name:'บ่อบัว', cat:'garden', scope:'out', emoji:'🪷', fw:2, fd:2, block:false, colors:[0x4fc3f7,0x81d4fa],
+        build(g,col){
+          const water=cyl(.78,.78,.1,col,22); water.position.y=.05; g.add(water);
+          const rim=torus(.78,.08,0x9e9e9e,22); rim.rotation.x=Math.PI/2; rim.position.y=.06; g.add(rim);
+          [[-.3,.2],[.28,-.18],[.1,.34]].forEach(([x,z])=>{ const pad=cyl(.16,.16,.02,0x66bb6a,14);
+            pad.position.set(x,.11,z); g.add(pad); });
+          [[-.3,.2,0xf8bbd0],[.28,-.18,0xfffdf7]].forEach(([x,z,c])=>{
+            for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const pet=ball(.05,c,8); pet.scale.set(1,.5,1.6);
+              pet.position.set(x+Math.cos(a)*.06,.15,z+Math.sin(a)*.06); pet.rotation.y=a; g.add(pet); } });
+        } },
+      { id:'garden-arch-vine', name:'ซุ้มไม้เลื้อย', cat:'garden', scope:'out', emoji:'🍀', fw:2, fd:1, block:false, colors:GREEN,
+        build(g,col){
+          [-1,1].forEach(s=>{ const post=cyl(.06,.06,1.6,0x8d6e63,8); post.position.set(s*.62,.8,0); g.add(post); });
+          const top=torus(.62,.06,0x8d6e63,20,Math.PI); top.position.y=1.6; g.add(top);
+          for(let i=0;i<12;i++){ const t=i/11; const a=Math.PI*t;
+            const lf=ball(.1,i%2?col:shade(col,1.15),8); lf.scale.set(1,.5,1);
+            lf.position.set(Math.cos(a)*.62,1.6+Math.sin(a)*.62,0); g.add(lf); }
+        } },
+      { id:'veggie-plot', name:'แปลงผัก', cat:'garden', scope:'out', emoji:'🥕', fw:2, fd:1, colors:[0x8d6e63,0xa1887f],
+        build(g,col){
+          const soil=box(1.4,.16,.66,col,.03); soil.position.y=.08; g.add(soil);
+          [-1,1].forEach(s=>{ const edge=box(1.5,.1,.06,0x8d6e63,.02); edge.position.set(0,.1,s*.34); g.add(edge); });
+          [[-.45,0xff7043,'carrot'],[0,0x66bb6a,'lettuce'],[.45,0xef5350,'tomato']].forEach(([x,c],i)=>{
+            const top=ball(.13,0x66bb6a,10); top.scale.set(1,1.3,1); top.position.set(x,.28,0); g.add(top);
+            const fruit=ball(.08,c,10); fruit.position.set(x+.1,.24,.12); g.add(fruit); });
+        } },
+      { id:'wind-spinner', name:'กังหันลม', cat:'garden', scope:'out', emoji:'🌈', colors:BRIGHT,
+        action:'spin',
+        build(g,col){
+          const post=cyl(.04,.05,1.2,0xbcaaa4,8); post.position.y=.6; g.add(post);
+          const hub=ball(.06,shade(col,.8),10); hub.position.y=1.24; g.add(hub);
+          for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const bl=box(.26,.12,.02,
+            i%2?col:shade(col,1.2),.03); bl.position.set(Math.cos(a)*.2,1.24+Math.sin(a)*.2,.03);
+            bl.rotation.z=a; g.add(bl); }
+        } },
+      { id:'bird-nest-box', name:'รังนก', cat:'garden', scope:'out', emoji:'🪹', colors:WOOD,
+        build(g,col){
+          const post=cyl(.05,.06,1.1,shade(col,.8),8); post.position.y=.55; g.add(post);
+          const nest=ball(.2,0xa1887f,12); nest.scale.set(1,.6,1); nest.position.y=1.16; g.add(nest);
+          const hole=ball(.14,0x6d4c41,10); hole.scale.set(1,.5,1); hole.position.y=1.22; g.add(hole);
+          [[-.05,.02],[.05,-.03]].forEach(([x,z])=>{ const egg=ball(.05,0xfffdf7,8);
+            egg.scale.set(1,1.2,1); egg.position.set(x,1.24,z); g.add(egg); });
+        } },
+      { id:'berry-bush', name:'พุ่มเบอร์รี', cat:'garden', scope:'out', emoji:'🫐', leafy:true, colors:GREEN,
+        build(g,col){
+          [[0,.28,.3],[-.2,.22,.24],[.2,.24,.26]].forEach(([x,y,r])=>{ const b=ball(r,col,12);
+            b.position.set(x,y,0); g.add(b); });
+          for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const be=ball(.05,i%2?0x5c6bc0:0xab47bc,8);
+            be.position.set(Math.cos(a)*.26,.28+Math.sin(a*2)*.12,Math.sin(a)*.2); g.add(be); }
+        } },
+      { id:'stepping-log', name:'ตอไม้นั่งเล่น', cat:'garden', scope:'out', emoji:'🍂', colors:WOOD,
+        action:'sit', sit:{sy:.36},
+        build(g,col){
+          const trunk=cyl(.24,.26,.36,col,14); trunk.position.y=.18; g.add(trunk);
+          const top=cyl(.24,.24,.03,shade(col,1.2),14); top.position.y=.37; g.add(top);
+          for(let i=1;i<4;i++){ const ring=torus(.06*i,.008,shade(col,1.05),14);
+            ring.rotation.x=Math.PI/2; ring.position.y=.385; g.add(ring); }
+          const mush=ball(.07,0xef5350,8); mush.scale.set(1,.6,1); mush.position.set(.2,.42,.1); g.add(mush);
+        } },
+
+      /* ============ นอกบ้าน — เครื่องเล่น (เฟส 8 · +5) ============ */
+      { id:'tree-house', name:'บ้านต้นไม้', cat:'play', scope:'out', emoji:'🏚️', fw:2, fd:2, colors:WOOD,
+        build(g,col){
+          const trunk=cyl(.2,.26,1.3,0x8d6e63,12); trunk.position.y=.65; g.add(trunk);
+          const leaf=ball(.6,0x66bb6a,14); leaf.position.y=1.9; g.add(leaf);
+          const floor=box(1.2,.1,1.2,col,.04); floor.position.y=1.2; g.add(floor);
+          const wall=box(.9,.6,.9,shade(col,1.1),.05); wall.position.y=1.55; g.add(wall);
+          const roof=cone(.85,.45,0xef5350,4); roof.rotation.y=Math.PI/4; roof.position.y=2.05; g.add(roof);
+          for(let i=0;i<5;i++){ const r=box(.36,.05,.1,shade(col,.85),.02);
+            r.position.set(0,.2+i*.22,.62); g.add(r); }
+        } },
+      { id:'jungle-net', name:'ตาข่ายปีนป่าย', cat:'play', scope:'out', emoji:'🕸️', fw:2, fd:1, colors:[0xff7043,0x42a5f5],
+        build(g,col){
+          [-1,1].forEach(s=>{ const post=cyl(.06,.07,1.4,shade(col,.8),8); post.position.set(s*.68,.7,0); g.add(post); });
+          const topBar=cyl(.05,.05,1.4,shade(col,.8),8); topBar.rotation.z=Math.PI/2; topBar.position.y=1.4; g.add(topBar);
+          for(let i=0;i<5;i++){ const rope=cyl(.02,.02,1.3,col,6); rope.position.set(-.55+i*.28,.72,0); g.add(rope); }
+          for(let j=0;j<4;j++){ const cross=cyl(.02,.02,1.2,col,6); cross.rotation.z=Math.PI/2;
+            cross.position.set(0,.35+j*.3,0); g.add(cross); }
+        } },
+      { id:'balance-beam', name:'คานทรงตัว', cat:'play', scope:'out', emoji:'➖', fw:2, fd:1, colors:WOOD,
+        build(g,col){
+          const beam=box(1.7,.14,.24,col,.05); beam.position.y=.34; g.add(beam);
+          [-1,1].forEach(s=>{ const sup=box(.16,.28,.4,shade(col,.82),.03); sup.position.set(s*.7,.14,0); g.add(sup); });
+          for(let i=0;i<5;i++){ const dot=ball(.03,BRIGHT[i%BRIGHT.length],8); dot.position.set(-.6+i*.3,.42,0); g.add(dot); }
+        } },
+      { id:'mini-maze', name:'เขาวงกตเตี้ย', cat:'play', scope:'out', emoji:'🌀', fw:2, fd:2, colors:GREEN,
+        build(g,col){
+          const base=box(1.6,.06,1.6,0x9ccc65,.03); base.position.y=.03; g.add(base);
+          const seg=(x,z,w,d)=>{ const h=box(w,.4,d,col,.04); h.position.set(x,.23,z); g.add(h); };
+          seg(0,-.6,1.5,.14); seg(-.68,0,.14,1.1); seg(.2,-.2,.9,.14);
+          seg(.68,.3,.14,.9); seg(-.2,.5,.9,.14);
+          const flag=cyl(.02,.02,.3,0xbcaaa4,6); flag.position.set(.1,.2,.1); g.add(flag);
+          const fl=box(.16,.1,.02,0xef5350,.01); fl.position.set(.18,.32,.1); g.add(fl);
+        } },
+      { id:'water-table', name:'โต๊ะเล่นน้ำ', cat:'play', scope:'out', emoji:'💦', fw:2, fd:1, colors:PLASTIC,
+        build(g,col){
+          const tub=box(1.2,.24,.66,col,.06); tub.position.y=.56; g.add(tub);
+          const water=box(1.1,.06,.58,0x4fc3f7,.04); water.position.y=.66; g.add(water);
+          legs(g,.5,.26,.46,shade(col,.85),.05);
+          [[-.3,.7,0xffee58],[.1,.72,0xef5350],[.34,.7,0x66bb6a]].forEach(([x,y,c])=>{
+            const toy=ball(.08,c,10); toy.position.set(x,y,0); g.add(toy); });
+        } },
+
+      /* ============ นอกบ้าน — ที่นั่งสนาม (เฟส 8 · +4) ============ */
+      { id:'canvas-chair', name:'เก้าอี้ผ้าใบ', cat:'seatout', scope:'out', emoji:'⛺', colors:FABRIC,
+        action:'sit', sit:{sy:.44},
+        build(g,col){
+          const seat=box(.5,.06,.46,col,.03); seat.position.y=.4; seat.rotation.x=.08; g.add(seat);
+          const back=box(.5,.5,.06,col,.03); back.position.set(0,.66,-.22); back.rotation.x=.16; g.add(back);
+          [-1,1].forEach(s=>{ [[-.2,.55],[.2,.55]].forEach(([z,h])=>{ const L=cyl(.025,.025,h,0x8d6e63,8);
+            L.position.set(s*.24,h/2,z); L.rotation.x=z<0?-.2:.2; g.add(L); }); });
+        } },
+      { id:'picnic-set', name:'ชุดปิกนิก', cat:'seatout', scope:'out', emoji:'🍉', fw:2, fd:2, block:false, colors:FABRIC,
+        action:'sit', sit:{sy:.1},
+        build(g,col){
+          const mat=box(1.5,.04,1.5,col,.05); mat.position.y=.02; g.add(mat);
+          for(let i=0;i<4;i++) for(let j=0;j<4;j++){ if((i+j)%2) continue;
+            const sq=box(.34,.01,.34,shade(col,1.2),.02); sq.position.set(-.56+i*.38,.045,-.56+j*.38); g.add(sq); }
+          const basket=box(.34,.22,.26,0xd7a86e,.05); basket.position.set(-.3,.14,-.3); g.add(basket);
+          const hd=torus(.14,.02,0xd7a86e,12); hd.position.set(-.3,.3,-.3); g.add(hd);
+          [[.3,.2,0xef5350],[.16,.4,0x66bb6a]].forEach(([x,z,c])=>{ const f=ball(.08,c,10);
+            f.position.set(x,.1,z); g.add(f); });
+        } },
+      { id:'swing-bench', name:'ม้านั่งชิงช้า', cat:'seatout', scope:'out', emoji:'⛩️', fw:2, fd:1, colors:WOOD,
+        action:'sit', sit:{sy:.5},
+        build(g,col){
+          [-1,1].forEach(s=>{ const post=cyl(.06,.07,1.7,shade(col,.8),8); post.position.set(s*.8,.85,0); g.add(post); });
+          const bar=cyl(.05,.05,1.7,shade(col,.8),8); bar.rotation.z=Math.PI/2; bar.position.y=1.7; g.add(bar);
+          const roof=box(1.7,.06,.7,0xef5350,.03); roof.position.y=1.76; g.add(roof);
+          [-1,1].forEach(s=>{ const ch=cyl(.015,.015,.85,0x9e9e9e,6); ch.position.set(s*.6,1.25,0); g.add(ch); });
+          const seat=box(1.2,.08,.5,col,.04); seat.position.y=.82; g.add(seat);
+          const back=box(1.2,.4,.06,col,.03); back.position.set(0,1.04,-.22); g.add(back);
+        } },
+      { id:'tree-bench', name:'ม้านั่งรอบต้นไม้', cat:'seatout', scope:'out', emoji:'🎋', fw:2, fd:2, colors:WOOD,
+        action:'sit', sit:{sy:.44},
+        build(g,col){
+          const trunk=cyl(.18,.22,1.5,0x8d6e63,12); trunk.position.y=.75; g.add(trunk);
+          const leaf=ball(.66,0x66bb6a,14); leaf.position.y=1.9; g.add(leaf);
+          for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const seg=box(.42,.08,.26,col,.03);
+            seg.position.set(Math.cos(a)*.52,.42,Math.sin(a)*.52); seg.rotation.y=-a; g.add(seg);
+            const L=cyl(.03,.03,.4,shade(col,.8),6); L.position.set(Math.cos(a)*.6,.2,Math.sin(a)*.6); g.add(L); }
+        } },
+
+      /* ============ นอกบ้าน — ตกแต่งสวน (เฟส 8 · +6) ============ */
+      { id:'house-sign', name:'ป้ายชื่อบ้าน', cat:'decorout', scope:'out', emoji:'🪧', colors:WOOD,
+        build(g,col){
+          const post=cyl(.05,.06,.9,shade(col,.8),8); post.position.y=.45; g.add(post);
+          const board=box(.62,.28,.05,col,.04); board.position.y=.95; g.add(board);
+          const heart=ball(.07,0xef5350,10); heart.scale.set(1,1,.4); heart.position.set(-.2,.95,.04); g.add(heart);
+          [0,1,2].forEach(i=>{ const w=box(.08,.03,.02,shade(col,.6),.01); w.position.set(0+i*.12,.95,.04); g.add(w); });
+        } },
+      { id:'garden-lantern', name:'โคมไฟญี่ปุ่น', cat:'decorout', scope:'out', emoji:'🕯️', colors:[0xef5350,0xffca28,0xfffdf7],
+        action:'toggle', light:{y:.7, color:0xffb74d, dist:4, intensity:.9},
+        build(g,col){
+          const base=cyl(.18,.2,.1,0x9e9e9e,12); base.position.y=.05; g.add(base);
+          const post=cyl(.05,.05,.4,0x9e9e9e,8); post.position.y=.28; g.add(post);
+          const body=cyl(.16,.16,.28,col,14); body.position.y=.62; body.userData.bulb=true; g.add(body);
+          const roof=cone(.24,.14,0x546e7a,8); roof.position.y=.84; g.add(roof);
+          const top=ball(.04,0x546e7a,8); top.position.y=.93; g.add(top);
+        } },
+      { id:'stone-lantern-row', name:'ไฟราวประดับ', cat:'decorout', scope:'out', emoji:'🎆', fw:2, fd:1, block:false,
+        colors:[0xfff59d,0xb3e5fc,0xf8bbd0],
+        action:'toggle', light:{y:.6, color:0xfff2c0, dist:4.5, intensity:.8},
+        build(g,col){
+          [-1,1].forEach(s=>{ const post=cyl(.03,.04,.9,0xbcaaa4,6); post.position.set(s*.72,.45,0); g.add(post); });
+          for(let i=0;i<7;i++){ const t=i/6; const x=-.72+t*1.44; const y=.86-Math.sin(t*Math.PI)*.16;
+            const bulb=ball(.06,col,8); bulb.position.set(x,y,0); bulb.userData.bulb=true; g.add(bulb); }
+        } },
+      { id:'garden-cart', name:'รถเข็นดอกไม้', cat:'decorout', scope:'out', emoji:'💐', fw:2, fd:1, colors:WOOD,
+        build(g,col){
+          const body=box(.9,.34,.5,col,.05); body.position.y=.34; g.add(body);
+          [-1,1].forEach(s=>{ const w=torus(.22,.05,shade(col,.7),16); w.position.set(s*.5,.22,0); g.add(w);
+            for(let i=0;i<6;i++){ const a=i/6*Math.PI; const sp=cyl(.015,.015,.4,shade(col,.85),6);
+              sp.rotation.z=a; sp.position.set(s*.5,.22,0); g.add(sp); } });
+          const handle=cyl(.03,.03,.5,shade(col,.8),8); handle.rotation.z=.4; handle.position.set(-.62,.5,0); g.add(handle);
+          [[-.24,0xef5350],[0,0xffca28],[.24,0xab47bc]].forEach(([x,c])=>{
+            const fl=ball(.11,c,10); fl.position.set(x,.58,0); g.add(fl);
+            const st=cyl(.02,.02,.16,0x66bb6a,6); st.position.set(x,.5,0); g.add(st); });
+        } },
+      { id:'sun-dial', name:'นาฬิกาแดด', cat:'decorout', scope:'out', emoji:'🌞', colors:[0x9e9e9e,0xbcaaa4],
+        build(g,col){
+          const base=cyl(.2,.24,.14,col,16); base.position.y=.07; g.add(base);
+          const post=cyl(.08,.1,.5,col,12); post.position.y=.38; g.add(post);
+          const face=cyl(.3,.3,.05,shade(col,1.2),20); face.position.y=.66; g.add(face);
+          const gn=box(.03,.24,.24,0xffca28,.02); gn.position.set(0,.78,0); gn.rotation.x=-.5; g.add(gn);
+          for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const t=box(.03,.02,.06,shade(col,.7),.01);
+            t.position.set(Math.cos(a)*.22,.69,Math.sin(a)*.22); t.rotation.y=-a; g.add(t); }
+        } },
+      { id:'garden-gnome-family', name:'ครอบครัวคนแคระ', cat:'decorout', scope:'out', emoji:'👨‍👩‍👦', colors:[0xef5350,0x42a5f5,0x66bb6a],
+        action:'bounce',
+        build(g,col){
+          [[-.18,.9,col],[.16,.75,shade(col,1.2)],[.02,.6,shade(col,.8)]].forEach(([x,sc,c],i)=>{
+            const body=cone(.13*sc,.3*sc,c,10); body.position.set(x,.15*sc,i*.06); g.add(body);
+            const head=ball(.09*sc,0xffe0b2,10); head.position.set(x,.34*sc,i*.06); g.add(head);
+            const hat=cone(.1*sc,.24*sc,c,10); hat.position.set(x,.5*sc,i*.06); g.add(hat);
+            const beard=ball(.07*sc,0xfffdf7,8); beard.scale.set(1,1.2,.6);
+            beard.position.set(x,.28*sc,i*.06+.06*sc); g.add(beard); });
+        } },
     ];
 
     /* หมวดหมู่ (แท็บในกล่อง edit) — แยกฉาก in/out */
