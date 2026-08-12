@@ -435,5 +435,6 @@
     if(b) b.style.display = 'none';
   }
 
-  window.HouseQB = {open, close, isOpen, render, enabled:QB_ENABLED};
+  /* MECH_TABS เปิดออกมาให้ชุดเทสไล่ตรวจว่า "กลไกใหม่ทุกตัวมีแท็บครบ" (tests/house-phase67.spec.js) */
+  window.HouseQB = {open, close, isOpen, render, enabled:QB_ENABLED, MECH_TABS};
 })();
