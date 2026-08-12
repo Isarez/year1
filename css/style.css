@@ -3237,6 +3237,24 @@
     .hqz-tile-coin .hs-coin{width:21px; height:21px;}
     .hqz-coin-n{font-size:16px;}
   }
+  /* ---- คีย์โน้ต (เล่นตามทำนอง · เฟส 9) ----
+     ใช้สีประจำโน้ตชุดเดียวกับเปียโนหน้าหลัก เด็กจะได้จำสีเดียวกันทั้งแอป
+     ⚠ ปุ่มต้องใหญ่พอให้นิ้วเด็กกดถูกตัว (44px ขึ้นไป) และ **ห้ามใส่ animation ที่ขยับตัวปุ่ม** */
+  .hqz-keys{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;}
+  .hqz-key{
+    width:52px; height:64px; border-radius:12px; border:3px solid rgba(0,0,0,.12);
+    font-family:inherit; font-size:19px; font-weight:900; color:#4a3a2a; cursor:pointer;
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:7px;
+    box-shadow:0 3px 0 rgba(0,0,0,.14);
+  }
+  .hqz-key.on{filter:brightness(1.25); box-shadow:0 0 0 4px rgba(255,255,255,.7) inset;}
+  .hqz-key.bad{border-color:#EF8E7A; animation:hqzShake .4s ease;}
+  .hqz-kdots{display:flex; gap:7px; justify-content:center; margin:2px 0 4px;}
+  .hqz-kdot{width:11px; height:11px; border-radius:50%; background:#E7DCC8; display:block;}
+  .hqz-kdot.on{background:#66BB6A;}
+  @media (max-width:480px){
+    .hqz-key{width:42px; height:54px; font-size:16px;}
+  }
   /* ---- ปุ่มฟังเสียง (ทายเสียง · เฟส 5 ตกค้าง) ---- */
   .hqz-sound{display:flex; justify-content:center;}
   .hqz-sound-btn{

@@ -314,6 +314,12 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
       petFoods: ()=> (PETCARE ? PETCARE.FOOD : []),
       /* เควสต์ "ไปนั่งกินข้าวพร้อมหน้า" ต้องมีโต๊ะ/เก้าอี้ในบ้านก่อน ไม่งั้นรับงานแล้วทำไม่ได้ */
       hasIndoorSeat: ()=> hasIndoorSeat(),
+      /* เฟส 9 — เครื่องดนตรี: คลังทั้งหมด (สำหรับโจทย์ทายเสียง) + บ้านหลังนี้มีเครื่องแล้วหรือยัง
+         ⚠ เควสต์ดนตรีต้องมีเครื่องในบ้านก่อนถึงแจก ไม่งั้นเด็กรับงานแล้วเล่นไม่ได้ (กติกาเหล็กข้อ 1) */
+      instruments: ()=> FURN.items.filter(it => it.cat === 'music')
+                        .map(it => ({id:it.id, name:it.name, emoji:it.emoji,
+                                     note:it.note | 0, tune:it.tune || null})),
+      hasInstrument: ()=> hasInstrument(),
       /* เฟส 5: เกมของหน้าหลักตัวนี้ยืมมาเล่นได้ไหม (ต้องลงทะเบียนกับ OwlGames + อยู่ในรายการ ALLOW)
          เฟส 6 เพิ่มเงื่อนไขที่ 3: **ต้องมีหมวดที่ระดับชั้นเด็กเล่นได้จริงด้วย** — วงจรไฟฟ้ามีแต่ ป.6
          แท็งแกรมมีแต่ ป.5-6 ถ้าไม่เช็ค เด็ก ป.1 จะได้รับงานที่เปิดขึ้นมาแล้วเป็นโจทย์ ป.6 */
@@ -7787,6 +7793,7 @@ function finishArrive(){
       else if(act==='sit' || act==='sleep') startSit(g, item, act);
       else if(act==='toggle') decorToggle(g);
       else if(act==='spin') decorSpin(g);
+      else if(act==='music') playInstrument(g, item);   /* เฟส 9: เครื่องดนตรี — แตะแล้วมีเสียงจริง */
       else decorBounce(g);
       /* ต้นไม้/พุ่มที่เด็กปลูกเอง: เขย่าแล้วใบร่วงด้วย ให้เหมือนต้นไม้ในป่า
          (ธง leafy/leafyTall อยู่ในคลังเฟอร์นิเจอร์ js/house-furniture.js) */
@@ -8640,6 +8647,7 @@ function renderQuestStep(){
   if(it.kind === 'beaker') renderBeaker(st, it);     /* เฟส 6: บีกเกอร์ตวงน้ำ — ก็เป็นโจทย์ 4 ตัวเลือกเหมือนกัน */
   if(it.kind === 'code') renderCodeLines(st, it);    /* เฟส 6: รายการคำสั่งหุ่นยนต์ (หาบรรทัดที่ผิด) */
   if(it.kind === 'sound') renderSoundPlay(st, it);   /* เฟส 5 ตกค้าง: ทายเสียง — ปุ่มฟังซ้ำได้ไม่จำกัด */
+  if(it.kind === 'playalong'){ renderPlayAlong(st, it); return; }   /* เฟส 9: ฟังทำนองแล้วกดตาม */
   if(it.kind === 'spot') renderSpotRows(st, it);     /* เฟส 7: จับผิดภาพ — 2 แถวเทียบกัน */
   if(it.kind === 'flash'){                           /* เฟส 7: นับแว้บเดียว — โชว์ของแล้วซ่อน */
     if(!qFlashDone[qRun.idx]){ renderFlashShow(st, it); return; }
@@ -8748,6 +8756,16 @@ function finishEngineRound(mistakes){
      ตอนไปถึง (closeQuestPanel() ล้าง qRun ทิ้งเสมอ จึงต้องเก็บไว้ก่อนเรียก) */
 let walkQuest = null;          /* {run, target:'table'|'market'} */
 /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม — อ่านจากของที่เด็กวางไว้จริง (ไม่นับของนอกบ้าน) */
+/* เฟส 9 — บ้านหลังนี้มีเครื่องดนตรีวางอยู่ไหม (นับทั้งในบ้านและนอกบ้าน — ระฆังลมแขวนนอกบ้าน)
+   ⚠ ต้องดูจาก "ของที่วางไว้จริง" ไม่ใช่ "ของที่ซื้อแล้ว" — ซื้อแล้วเก็บไว้ในคลังยังเล่นไม่ได้ */
+function hasInstrument(){
+  const d = loadHouseData() || {};
+  const dec = d.decor || {};
+  return ['in','out'].some(sc => (dec[sc] || []).some(rec => {
+    const it = FURN.byId[rec.id];
+    return it && it.cat === 'music';
+  }));
+}
 function hasIndoorSeat(){
   const d = loadHouseData() || {};
   const list = (d.decor && d.decor.in) || [];
@@ -8895,6 +8913,71 @@ function renderBeaker(st, it){
     + '" rx="9" fill="none" stroke="#8AB6CC" stroke-width="4"/>'
     + ticks + '</svg>';
   st.appendChild(wrap);
+}
+/* ================= เฟส 9: เล่นตามทำนอง (play-along) =================
+   ฟังทำนองแล้วกดปุ่มโน้ตตามลำดับ — ปุ่มใช้สีประจำโน้ตชุดเดียวกับเปียโนของหน้าหลัก
+   (MUSIC_WHITE_KEYS มีฟิลด์ `color` อยู่แล้ว) เด็กจะได้จำสีเดียวกันทั้งแอป
+   ⚠ กดผิด = **เริ่มกดใหม่ข้อนั้นเฉยๆ ไม่มีบทลงโทษอื่น** (กติกาเหล็กข้อ 2)
+   ⚠ ปุ่มฟังซ้ำได้ไม่จำกัดเสมอ */
+function renderPlayAlong(st, it){
+  const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = it.q;
+  st.appendChild(q);
+
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  const listen = qzBtn('🔊 ฟังอีกครั้ง', 'hqz-no', ()=> play());
+  listen.dataset.hpClick = '1';
+  row.appendChild(listen);
+  st.appendChild(row);
+
+  const keys = document.createElement('div'); keys.className = 'hqz-keys';
+  const got = [];
+  const btns = [];
+  for(let i = 0; i < it.keys; i++){
+    const k = (typeof MUSIC_WHITE_KEYS !== 'undefined') ? MUSIC_WHITE_KEYS[i] : null;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-key';
+    b.dataset.hpClick = '1';
+    if(k) b.style.background = '#' + k.color.toString(16).padStart(6, '0');
+    b.textContent = k ? k.th : String(i + 1);
+    b.addEventListener('click', ()=>{
+      if(qLock) return;
+      if(k && typeof playPianoNote === 'function') playPianoNote(k.freq, .5);
+      b.classList.add('on');
+      setTimeout(()=> b.classList.remove('on'), 180);
+      got.push(i);
+      /* กดผิดตั้งแต่ตัวแรกก็บอกทันที ไม่ต้องรอกดจนครบ (เด็กจะได้ไม่งงว่าพลาดตรงไหน) */
+      const at = got.length - 1;
+      if(got[at] !== it.seq[at]){
+        got.length = 0;
+        dots.querySelectorAll('.hqz-kdot').forEach(d=>d.classList.remove('on'));
+        b.classList.add('bad');
+        setTimeout(()=> b.classList.remove('bad'), 400);
+        answerQuest(-1, b);        /* นับพลาด 1 ครั้งผ่านทางเดิม (ดาวลด แต่เล่นต่อได้) */
+        return;
+      }
+      const d = dots.children[at]; if(d) d.classList.add('on');
+      if(got.length === it.seq.length) submitQuestPayload(got.slice());
+    });
+    btns.push(b); keys.appendChild(b);
+  }
+  /* จุดบอกว่ากดถูกไปกี่ตัวแล้ว — เด็กเห็นความคืบหน้าโดยไม่ต้องนับเอง */
+  const dots = document.createElement('div'); dots.className = 'hqz-kdots';
+  it.seq.forEach(()=>{ const d = document.createElement('i'); d.className = 'hqz-kdot'; dots.appendChild(d); });
+  st.appendChild(dots);
+  st.appendChild(keys);
+
+  let playing = false;
+  function play(){
+    if(playing || typeof playMusicSequence !== 'function') return;
+    playing = true;
+    /* ⚠ noFlash = true เสมอ — ไม่มีเปียโนของหน้าหลักอยู่บนจอในโหมดบ้าน */
+    playMusicSequence(it.sound.seq, true, null, {
+      onNote: i => { const b = btns[it.sound.seq[i]]; if(b){ b.classList.add('on');
+        setTimeout(()=> b.classList.remove('on'), 200); } },
+      onStop: ()=>{ playing = false; },
+    });
+  }
+  setTimeout(()=>{ if(qRun && qRun.items[qRun.idx] === it) play(); }, 300);
 }
 /* ================= เฟส 7: จับผิดภาพ (spot-diff) =================
    2 แถวจากฉากเดียวกัน ต่างกัน 1 ชิ้น — เด็กเลือกจากปุ่มตัวเลือกว่าชิ้นไหนหายไปจากแถวล่าง
@@ -9209,6 +9292,24 @@ function renderSortStep(st, it){
 }
 let qSortOff = null;
 /* วางครบแล้ว → ตรวจ · ผิดเฉพาะชิ้นที่ผิดเด้งกลับถาด ชิ้นที่ถูกอยู่ในถังต่อไป (ไม่ต้องเริ่มใหม่หมด) */
+/* ส่งคำตอบของกลไกที่ไม่ใช่ "4 ตัวเลือก" และไม่ใช่ "ลากลงถัง" (เฟส 9: เล่นตามทำนอง)
+   ⚠ ใช้ทางเดียวกับ checkSortBoard เป๊ะ (ล็อกกันกดซ้ำ → submit → เสียงถูก/ผิด → ข้อถัดไป)
+     เพิ่มกลไกใหม่ที่ส่งคำตอบเป็นก้อนเดียวให้เรียกตัวนี้ ไม่ต้องเขียนทางส่งใหม่อีก */
+function submitQuestPayload(payload){
+  if(!qRun || qLock) return;
+  qLock = true;
+  const r = QUESTS.submit(qRun, payload);
+  if(!r.ok){
+    if(typeof playWrong==='function') playWrong();
+    setTimeout(()=>{ qLock = false; renderQuestStep(); }, 620);
+    return;
+  }
+  if(typeof playCorrect==='function') playCorrect();
+  setTimeout(()=>{
+    qLock = false;
+    if(r.done) finishQuest(); else renderQuestStep();
+  }, 620);
+}
 function checkSortBoard(it, tray, tiles){
   if(!qRun || qLock) return;
   qLock = true;
@@ -12329,6 +12430,48 @@ function decorInteract(g){
   if(!adj) return;
   walkTo(adj.x, adj.z, {action:{type:'decor', group:g, item, act:item.action||'bounce'}});
 }
+/* ============================================================
+   เฟส 9 — แตะเครื่องดนตรีแล้วมีเสียงจริง (ข้อ 31 ของ QUEST-DESIGN.md)
+
+   ใช้ Web Audio ชุดเดิมทั้งหมด: `playPianoNote()` / `playMusicSequence()` (js/shared/piano.js
+   + js/games-art.js) กับความถี่จาก MUSIC_WHITE_KEYS ⇒ **ไม่โหลดไฟล์เสียงเพิ่มเลยแม้แต่ไฟล์เดียว**
+
+   3 ระดับตามฟิลด์ `item.music`:
+     1 = เคาะทีเดียวดัง 1 เสียง (ฉิ่ง/แทมบูริน/กรับ/ระฆังลม) — เด็กเล็กสุดเล่นได้
+     2 = เล่นทำนองสั้นที่ติดมากับชิ้นนั้น + โน้ตลอยขึ้น (กล่องดนตรี/ระนาด/ขลุ่ย)
+     3 = เปิดหน้าเล่นเต็มแบบ "เปียโนของหนู" (เปียโน/คีย์บอร์ด/กีตาร์/อูคูเลเล่)
+
+   ⚠ **ต้องส่ง noFlash = true ให้ playMusicSequence เสมอ** — ฟังก์ชันนั้นจะไปสั่ง flash คีย์ผ่าน
+     `$('music-piano')` ซึ่งในโหมดบ้านไม่มีอยู่บนจอ (กับดักเดียวกับเกมทายเสียงของเฟส 5 ที่ตกค้าง)
+   ⚠ ระดับ 3 เปิด modal ของหน้าหลักซึ่งอยู่ **นอก** `#house-view` ⇒ ต้องหยุดเพลงพื้นหลังของบ้าน
+     ให้เรียบร้อยก่อน ไม่งั้นเสียงซ้อนกัน 2 ชั้น
+   ============================================================ */
+function playInstrument(g, item){
+  const lv = item.music | 0;
+  decorBounce(g);                       /* เด้งเล็กน้อยทุกระดับ ให้รู้ว่าแตะโดนแล้วจริง */
+  if(typeof MUSIC_WHITE_KEYS === 'undefined') return;
+  if(lv >= 3){
+    /* เปิดหน้า "เปียโนของหนู" ของหน้าหลักมาใช้ซ้ำทั้งดุ้น (ไม่ได้เขียนหน้าใหม่) */
+    if(typeof openFreePiano === 'function'){ openFreePiano(); return; }
+    /* ไม่มีหน้านั้นด้วยเหตุผลใดก็ตาม → ถอยไปเล่นทำนองสั้นแทน ห้ามเงียบไปเฉยๆ */
+  }
+  if(lv === 2 && item.tune && item.tune.length && typeof playMusicSequence === 'function'){
+    playMusicSequence(item.tune, true);          /* ⚠ noFlash = true (ไม่มีเปียโนบนจอในโหมดบ้าน) */
+    spawnMusicNotes(g, item.tune.length);
+    return;
+  }
+  /* ระดับ 1 (และตัวสำรองของระดับอื่น) — เคาะทีเดียว 1 เสียง */
+  const k = MUSIC_WHITE_KEYS[(item.note | 0) % MUSIC_WHITE_KEYS.length];
+  if(k && typeof playPianoNote === 'function') playPianoNote(k.freq, .7);
+  spawnMusicNotes(g, 1);
+}
+/* ตัวโน้ตลอยขึ้นจากตัวเครื่อง — ใช้ระบบ particle เดิมของโหมดบ้าน ไม่ได้ทำระบบใหม่ */
+function spawnMusicNotes(g, n){
+  const p = g.position;
+  for(let i = 0; i < Math.min(6, n + 1); i++)
+    spawnParticle(p.x + (Math.random() - .5) * .6, 1.1 + Math.random() * .5,
+                  p.z + (Math.random() - .5) * .4, i % 2 ? 0xffd54f : 0xab47bc);
+}
 function startSit(g, item, act){
   questEvent('sit', null);
   /* เควสต์ "กินข้าวพร้อมหน้า": นั่งโต๊ะ/เก้าอี้ **ในบ้าน** แล้วถือว่าทำงานเสร็จ */
@@ -13414,6 +13557,9 @@ if(!homeView.hidden) houseBuddyRefresh();
        ⇒ เทสผ่านโดยไม่เคยรันโค้ดของกลไกนั้นเลยสักบรรทัด) */
   npcDefs: ()=> NPC_DEFS,
   closeQuest: ()=> closeQuestPanel(),
+  /* เฟส 9 — เครื่องดนตรี (ชุดเทสเรียกเล่นเสียงผ่านทางเดินโค้ดจริง แทนการเดินไปแตะในฉาก 3D) */
+  hasInstrument: ()=> hasInstrument(),
+  playInstrument: (g, it)=> playInstrument(g, it),
   /* จังหวะเฟรมของลูปวาด — ใช้วัดว่า "หรี่เฟรมตอนเปิดกล้อง" แล้วยังเดินสม่ำเสมอไหม
      (ผู้ใช้แจ้ง 2026-08-12 ว่าโลกกระตุกตอนเปิดกล้อง — ต้นเหตุคือหรี่แบบเว้นตามเวลา) */
   frameLog: ()=> frameLog.slice(),

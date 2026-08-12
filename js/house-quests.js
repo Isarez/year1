@@ -706,6 +706,10 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     const dayKey  = kit.dayKey  || function(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
     /* ตารางอาหารสัตว์ของจริงอยู่ที่ js/house-pet-care.js — ไฟล์นี้ขอมาทาง kit ไม่อ่าน global เอง */
     const petFoods = kit.petFoods || function(){ return []; };
+    /* เฟส 9 — คลังเครื่องดนตรี (ชื่อ/อิโมจิ/โน้ตของแต่ละชิ้น) + บ้านหลังนี้มีเครื่องดนตรีแล้วหรือยัง
+       ⚠ ข้อมูลจริงอยู่ในคลังเฟอร์นิเจอร์ (js/house-furniture.js) ไฟล์นี้ขอมาทาง kit ไม่อ่าน global เอง */
+    const instruments  = kit.instruments  || function(){ return []; };
+    const hasInstrument = kit.hasInstrument || function(){ return false; };
     /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม (เควสต์ "ไปนั่งกินข้าว") — ฝั่งหน้าจอเป็นคนตอบ */
     const hasIndoorSeat = kit.hasIndoorSeat || function(){ return false; };
     /* เกมของหน้าหลักตัวนี้พร้อมให้ยืมมาเล่นในบ้านไหม (เฟส 5) — ฝั่งหน้าจอถาม OwlGames/HouseGames ให้
@@ -836,10 +840,19 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     /* npcId = คนที่จะแจกงานนี้ (ถ้ามี) — เฟส 6 ใช้แยกว่าเป็นคนในตึกแล็บไหม
        ⚠ กลไกที่ยืม engine ต้องกรองด้วย engineReady เสมอ ไม่งั้นเด็กชั้นเล็กจะได้งาน
          วงจรไฟฟ้า/แท็งแกรมที่ไม่มีหมวดให้เล่น (ถอยไป quiz ให้เอง ไม่ปล่อยพัง) */
+    /* กลไกนี้บ้านหลังนี้เล่นได้จริงไหม — เฟส 9 เพิ่มเงื่อนไข "ต้องมีเครื่องดนตรีในบ้านก่อน"
+       ⚠ ต้องกรองทั้งตอนสุ่มแจกงาน **และ** ตอนสร้าง spec (เด็กอาจขายเครื่องทิ้งหลังรับงานไปแล้ว) */
+    function mechOk(m){
+      const spec = MECHS[m];
+      if(!spec) return false;
+      if(spec.music && !hasInstrument()) return false;
+      if(spec.engine && !engineReady(m)) return false;
+      return true;
+    }
     function rollWorkMech(rng, npcId){
       const lab = labMechsFor(npcId);
       if(lab){
-        const pool = lab.filter(m => !MECHS[m] || !MECHS[m].engine || engineReady(m));
+        const pool = lab.filter(m => mechOk(m));
         if(pool.length) return pool[(rng() * pool.length) | 0];
         return 'quiz';
       }
@@ -1557,6 +1570,71 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
         verify(){ return {ok:true}; },     /* หน้าจอเป็นคนตัดสินว่าเดินไปถึงตัวคนนั้นจริงแล้ว */
       };
     }
+    /* ================= เฟส 9 — เควสต์ดนตรี (ข้อ 31) =================
+       ⚠ **ทั้ง 2 แบบต้องมีเครื่องดนตรีในบ้านเด็กก่อนถึงจะแจก** (`hasInstrument()` ส่งมาทาง kit)
+         ไม่งั้นเด็กรับงานแล้วเล่นไม่ได้ = dead end แบบเดียวกับเควสต์ `dinner` ที่ต้องมีโต๊ะก่อน
+       ⚠ เสียงทั้งหมดใช้ Web Audio ชุดเดิม ไม่โหลดไฟล์เสียงเพิ่ม (หน้าจอเป็นคนเล่นเสียงจาก `it.sound`) */
+
+    /* ---------- เล่นตามทำนอง (play-along) ----------
+       ฟังทำนอง 4-6 โน้ตแล้วกดปุ่มโน้ตตามลำดับ · กดผิด = เริ่มกดใหม่ข้อนั้น (ไม่มีบทลงโทษอื่น) */
+    function playAlongMech(){
+      return {
+        id:'playalong', name:'เล่นตามทำนอง', fam:'A', music:true,
+        gen(rng, diff){
+          const out = [];
+          for(let k = 0; k < diff.qN; k++){
+            const dk = stepDiff(diff, k, diff.qN);
+            /* ชั้นเล็ก 3 โน้ตจากคีย์ 5 ตัว → ชั้นโต 6 โน้ตจากคีย์ 7 ตัว · ไล่ระดับในเควสต์ด้วย */
+            const keyN = diff.tier <= 2 ? 5 : 7;
+            const nLo = diff.tier <= 2 ? 3 : 4;
+            const nHi = diff.tier <= 2 ? 4 : 6;
+            const n = Math.round(nLo + (nHi - nLo) * dk.p);
+            const seq = [];
+            for(let i = 0; i < n; i++) seq.push((rng() * keyN) | 0);
+            out.push({kind:'playalong', sound:{seq: seq.slice()}, seq: seq.slice(), keys: keyN,
+                      q:'ฟังทำนองนี้แล้วกดตามให้ถูกลำดับนะ', emoji:'🎵', show:'',
+                      choices:[], correct:0,
+                      explain:'เล่นตามได้ครบทุกตัวเลย เก่งมาก!'});
+          }
+          return out.length ? out : MECHS.count.gen(rng, diff, {id:'', job:'villager'});
+        },
+        /* payload = อาเรย์ลำดับคีย์ที่เด็กกด — หน้าจอส่งมาเมื่อกดครบจำนวนแล้ว */
+        verify(it, got){
+          got = got || [];
+          if(got.length !== it.seq.length) return {ok:false, bad:[]};
+          const bad = [];
+          it.seq.forEach((v, i) => { if(got[i] !== v) bad.push(i); });
+          return {ok: bad.length === 0, bad: bad};
+        },
+      };
+    }
+    /* ---------- ทายเสียงเครื่องดนตรี (find-sound) ----------
+       ⚠ เสียงของแต่ละเครื่องต่างกันที่ **โน้ต/จำนวนโน้ตที่ผูกกับชิ้นนั้นจริงๆ** (item.note/item.tune)
+         ไม่ใช่ timbre — Web Audio ชุดนี้เปลี่ยน timbre ไม่ได้ ⇒ เด็กที่เคยแตะเครื่องในบ้าน
+         จะจำเสียงได้จริง (เล่นเองได้ทุกเมื่อ) จึงยุติธรรม ไม่ใช่โจทย์เดา */
+    function findSoundMech(){
+      return {
+        id:'findsound', name:'ทายเสียงเครื่องดนตรี', fam:'A', music:true,
+        gen(rng, diff){
+          const all = instruments();
+          if(all.length < 4) return MECHS.count.gen(rng, diff, {id:'', job:'villager'});
+          const out = [];
+          for(let k = 0; k < diff.qN; k++){
+            const four = pickMany(rng, all, 4);
+            const ans = four[0];
+            const order = shuffled(rng, four);
+            out.push({kind:'sound',
+                      sound: ans.tune && ans.tune.length ? {seq: ans.tune} : {seq: [ans.note | 0]},
+                      q:'ฟังเสียงนี้แล้วทายสิว่าเครื่องดนตรีอะไร?', emoji:'👂', show:'',
+                      choices: order.map(x => x.emoji + ' ' + x.name),
+                      correct: order.indexOf(ans),
+                      explain:'เสียงนี้คือ' + ans.name + ' ' + ans.emoji});
+          }
+          return out.length ? out : MECHS.count.gen(rng, diff, {id:'', job:'villager'});
+        },
+      };
+    }
+
     /* ---------- ป้ายจราจร ---------- โจทย์ 4 ตัวเลือกจากคลังที่เขียนคำตอบไว้แล้ว */
     function trafficMech(){
       return {
@@ -1897,6 +1975,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       traffic:    trafficMech(),
       deliver:    deliverMech(),
       /* ---- เฟส 7 — กลไกกลุ่ม D (ข้อ 15.4 · ไอเดียจาก IDEA.md) ---- */
+      /* ---- เฟส 9 — เควสต์ดนตรี (พี่โน้ตที่ร้านเครื่องดนตรีเป็นคนแจก) ---- */
+      playalong:  playAlongMech(),
+      findsound:  findSoundMech(),
       spotdiff:   spotDiffMech(),
       flashcount: flashCountMech(),
       dressorder: dressMech(),
@@ -1942,7 +2023,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     /* ทายเสียง (เฟส 5 ตกค้าง) — ข้อ 15.3 ระบุ NPC ร้านเครื่องดนตรี
        เก็บเป็นตารางเดียวกับแล็บเพราะกติกาเหมือนกันเป๊ะ: กลไกที่ผูกกับ "คน" ไม่ใช่สุ่มทั้งเมือง */
     const SPOT_MECHS = [
-      [/^npc-music/, ['soundguess','melody','quiz','count']],
+      /* เฟส 9: พี่โน้ตแจกเควสต์ดนตรีด้วย — `playalong`/`findsound` ถูกกรองออกเองถ้าบ้านยังไม่มีเครื่องดนตรี
+         (ดู mechOk ด้านล่าง) ⇒ เด็กที่ยังไม่ได้ซื้อจะได้ quiz/count/ทายเสียงตามปกติ ไม่มีทางตัน */
+      [/^npc-music/, ['soundguess','melody','playalong','findsound','quiz','count']],
     ];
     function labMechsFor(npcId){
       if(!npcId) return null;
@@ -2006,7 +2089,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const rng = rngFrom(fnv(childId() + '|' + s.d + '|' + npcId));
       const mech = rec.m || rollWorkMech(rng, npcId);
       const done = rec.st === 'done';
-      const um = (MECHS[mech] && (!MECHS[mech].engine || engineReady(mech))) ? mech : 'quiz';
+      const um = mechOk(mech) ? mech : 'quiz';
       return { src:'npc', key:npcId, npc:npcId, mech: um,
                fam:'A', chal: done ? !!rec.chal : rollChal(npcId),
                done: done, stars: rec.stars | 0 };
@@ -2051,7 +2134,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const b = s.board.q[i];
       if(!b) return null;
       const done = s.board.done.indexOf(i) >= 0;
-      const bm = (MECHS[b.m] && (!MECHS[b.m].engine || engineReady(b.m))) ? b.m : 'quiz';
+      const bm = mechOk(b.m) ? b.m : 'quiz';
       return { src:'board', key:'b' + i, idx:i, npc:b.npc, mech: bm,
                fam:'board', chal: done ? false : rollChal('b' + i), done: done };
     }
@@ -2416,7 +2499,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       /* เฟส 7 — กลุ่ม D */
       SPOT_SCENES, DRESS_ITEMS, HIDDEN_ITEMS, HIDDEN_ZONES,
       SOUND_SONGS: (typeof MUSIC_LEVEL2_SONGS !== 'undefined') ? MUSIC_LEVEL2_SONGS : [],
-      labMechsFor, isLabNpc, engineReady, rollWorkMech,
+      labMechsFor, isLabNpc, engineReady, rollWorkMech, mechOk,
       /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
       catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
       ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */

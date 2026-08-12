@@ -27,6 +27,7 @@
     const T = k.THREE;
     const box = k.box, ball = k.ball, cyl = k.cyl, cone = k.cone, torus = k.torus;
     const mat = k.mat, shade = k.shade;
+    const petShadeF = shade;   /* ชื่อสั้นสำหรับบล็อกเครื่องดนตรีเฟส 9 (ตัวเดียวกับ shade) */
 
     /* พาเลตต์สีร่วม */
     const WOOD   = [0xc98d4e, 0xe0b878, 0x9c6238, 0xd7a86e, 0xb5835a];
@@ -774,8 +775,10 @@
           [[-.28,.66],[.3,.8],[.02,.6]].forEach(([x,y],i)=>{ const bb=ball(.025,0xe0f7fa,6);
             bb.position.set(x,y,.05); bb.userData.anim={kind:'bob', sp:2.4, amp:.12, ph:i*1.9}; g.add(bb); });
         } },
-      { id:'piano', wall:true, name:'เปียโน', cat:'decor', scope:'in', emoji:'🎹', fw:2, fd:1, colors:[0x37474f,0x8d4e2a,0xef9a9a],
-        action:'bounce',
+      /* ⚠ เฟส 9 ย้ายจากหมวด `decor` มา `music` + ให้แตะแล้วเปิดหน้าเล่นจริง
+         **id เดิมห้ามเปลี่ยน** — สิทธิ์ที่เด็กซื้อไว้ผูกกับ id นี้ (ย้ายหมวด = ย้ายแค่แท็บที่ขาย/ที่วาง) */
+      { id:'piano', wall:true, name:'เปียโน', cat:'music', scope:'in', emoji:'🎹', fw:2, fd:1,
+        action:'music', music:3, colors:[0x37474f,0x8d4e2a,0xef9a9a],
         build(g,col){
           const body=box(1.4,1.1,.5,col,.04); body.position.y=.72; g.add(body);
           const kb=box(1.3,.12,.24,0xfdfdf8,.02); kb.position.set(0,.74,.3); g.add(kb);
@@ -1717,6 +1720,118 @@
             const beard=ball(.07*sc,0xfffdf7,8); beard.scale.set(1,1.2,.6);
             beard.position.set(x,.28*sc,i*.06+.06*sc); g.add(beard); });
         } },
+
+      /* ============================================================
+         เฟส 9 — เครื่องดนตรี 11 ชิ้น (ข้อ 31 ของ QUEST-DESIGN.md · หมวดใหม่ `music`)
+         **แตะแล้วมีเสียงจริง** ใช้ Web Audio ชุดเดิมจาก js/shared/piano.js ไม่โหลดไฟล์เสียงเพิ่มเลย
+         3 ระดับ (ฟิลด์ `music`):
+           1 = เสียงเดียว ดังทันที (เด็กเล็กสุดเล่นได้)  · `note` = คีย์ใน MUSIC_WHITE_KEYS
+           2 = เล่นทำนองสั้น + ตัวโน้ตลอย               · `tune` = ลำดับคีย์
+           3 = เปิดหน้าเล่นเต็มแบบ "เปียโนของหนู"
+         ⚠ เป็นของแพงที่สุดในเกมโดยตั้งใจ (400-1,500 🪙) — ราคาอยู่ที่ FURN_TIER ใน js/house-shop.js
+         ⚠ ทุกชิ้น `action:'music'` ⇒ decorInteract ส่งไปที่ playInstrument() ใน js/house.js
+         ============================================================ */
+      /* ---- ระดับ 1: เสียงเดียว ---- */
+      { id:'ins-ching', name:'ฉิ่ง', cat:'music', scope:'in', emoji:'🔔', colors:[0xffd54f,0xffca28],
+        action:'music', music:1, note:9,
+        build(g,col){
+          [-1,1].forEach(s=>{ const cup=ball(.11,col,14); cup.scale.set(1,.5,1);
+            cup.position.set(s*.1,.14+Math.abs(s)*0,0); cup.rotation.z=s*.3; g.add(cup); });
+          const str=cyl(.012,.012,.16,0xfff3d0,6); str.rotation.z=Math.PI/2; str.position.y=.2; g.add(str);
+          const base=cyl(.14,.16,.06,0x8d6e63,14); base.position.y=.03; g.add(base);
+        } },
+      { id:'ins-tambourine', name:'แทมบูริน', cat:'music', scope:'in', emoji:'🪘', colors:[0xef5350,0x42a5f5,0xffca28],
+        action:'music', music:1, note:5,
+        build(g,col){
+          const rim=torus(.24,.045,col,18); rim.rotation.x=Math.PI/2; rim.position.y=.28; g.add(rim);
+          const skin=cyl(.22,.22,.02,0xfff3d0,18); skin.position.y=.28; g.add(skin);
+          for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const jg=cyl(.045,.045,.015,0xffd54f,10);
+            jg.position.set(Math.cos(a)*.24,.28,Math.sin(a)*.24); g.add(jg); }
+          const st=cyl(.05,.06,.28,0x8d6e63,10); st.position.y=.14; g.add(st);
+          const base=cyl(.16,.18,.05,0x8d6e63,14); base.position.y=.025; g.add(base);
+        } },
+      { id:'ins-krap', name:'กรับไม้', cat:'music', scope:'in', emoji:'🥢', colors:WOOD,
+        action:'music', music:1, note:2,
+        build(g,col){
+          [-1,1].forEach(s=>{ const bar=box(.1,.06,.42,col,.02);
+            bar.position.set(s*.07,.06,0); bar.rotation.z=s*.12; g.add(bar); });
+          const hinge=cyl(.02,.02,.1,0xfff3d0,8); hinge.rotation.z=Math.PI/2; hinge.position.set(0,.08,-.19); g.add(hinge);
+        } },
+      { id:'ins-windchime', name:'ระฆังลม', cat:'music', scope:'out', emoji:'🎐', colors:[0x90caf9,0xf8bbd0,0xa5d6a7],
+        action:'music', music:1, note:12,
+        build(g,col){
+          const top=cyl(.16,.16,.04,0x8d6e63,14); top.position.y=1.1; g.add(top);
+          const hook=torus(.05,.012,0x9e9e9e,10); hook.position.y=1.18; g.add(hook);
+          for(let i=0;i<5;i++){ const a=i/5*Math.PI*2;
+            const tube=cyl(.022,.022,.3+i*.05,col,8);
+            tube.position.set(Math.cos(a)*.11,.9-i*.025,Math.sin(a)*.11); g.add(tube); }
+          const disc=cyl(.09,.09,.02,0xfff3d0,12); disc.position.y=.62; g.add(disc);
+          const post=cyl(.05,.06,1.1,0x8d6e63,10); post.position.set(0,.55,-.24); g.add(post);
+          const arm=box(.3,.05,.05,0x8d6e63,.02); arm.position.set(-.12,1.12,-.24); g.add(arm);
+        } },
+      /* ---- ระดับ 2: เล่นทำนองสั้น ---- */
+      { id:'ins-musicbox', name:'กล่องดนตรี', cat:'music', scope:'in', emoji:'🎁', colors:[0xf8bbd0,0x90caf9,0xfff59d],
+        action:'music', music:2, tune:[0,2,4,2,0],
+        build(g,col){
+          const body=box(.34,.24,.28,col,.05); body.position.y=.13; g.add(body);
+          const lid=box(.36,.05,.3,petShadeF(col,.82),.03); lid.position.set(0,.27,-.02); lid.rotation.x=-.35; g.add(lid);
+          const key=cyl(.02,.02,.1,0xffd54f,8); key.rotation.z=Math.PI/2; key.position.set(.2,.1,0); g.add(key);
+          const dancer=ball(.05,0xfff3d0,10); dancer.position.set(0,.34,0); g.add(dancer);
+          const note=box(.04,.04,.01,0x7e57c2,.01); note.position.set(.1,.42,0); g.add(note);
+        } },
+      { id:'ins-ranat', name:'ระนาด', cat:'music', scope:'in', emoji:'🎼', fw:2, fd:1, colors:WOOD,
+        action:'music', music:2, tune:[0,1,2,3,4,5,6],
+        build(g,col){
+          const boat=box(1.1,.24,.4,col,.1); boat.position.y=.26; g.add(boat);
+          [-1,1].forEach(s=>{ const leg=box(.12,.26,.3,petShadeF(col,.82),.04); leg.position.set(s*.42,.13,0); g.add(leg); });
+          for(let i=0;i<9;i++){ const bar=box(.09,.03,.3-i*.018,0xffd54f,.01);
+            bar.position.set(-.44+i*.11,.4,0); g.add(bar); }
+          [-1,1].forEach(s=>{ const mal=cyl(.012,.012,.24,0xfff3d0,6); mal.rotation.x=Math.PI/2.6;
+            mal.position.set(s*.16,.5,.18); g.add(mal);
+            const hd=ball(.035,0xef5350,8); hd.position.set(s*.16,.44,.28); g.add(hd); });
+        } },
+      { id:'ins-flute', name:'ขลุ่ย', cat:'music', scope:'in', emoji:'🪈', colors:WOOD,
+        action:'music', music:2, tune:[4,5,6,7,6,4],
+        build(g,col){
+          const stand=cyl(.14,.16,.05,petShadeF(col,.75),14); stand.position.y=.025; g.add(stand);
+          const post=cyl(.03,.035,.5,petShadeF(col,.8),8); post.position.y=.26; g.add(post);
+          const tube=cyl(.045,.045,.66,col,12); tube.rotation.z=.35; tube.position.set(0,.6,0); g.add(tube);
+          for(let i=0;i<5;i++){ const h=cyl(.012,.012,.02,0x4a3a2a,8); h.rotation.x=Math.PI/2;
+            h.position.set(-.09+i*.05,.5+i*.115,.045); g.add(h); }
+        } },
+      /* ---- ระดับ 3: เปิดหน้าเล่นเต็ม (แบบ "เปียโนของหนู") ---- */
+      { id:'ins-keyboard', name:'คีย์บอร์ด', cat:'music', scope:'in', emoji:'🎛️', fw:2, fd:1, colors:[0x455a64,0x37474f],
+        action:'music', music:3,
+        build(g,col){
+          const body=box(1.2,.14,.42,col,.04); body.position.y=.7; g.add(body);
+          for(let i=0;i<12;i++){ const k=box(.085,.04,.26,0xfffdf7,.01); k.position.set(-.52+i*.095,.78,.06); g.add(k); }
+          for(let i=0;i<7;i++){ if(i===2||i===6) continue; const k=box(.05,.05,.16,0x2b2b2b,.01);
+            k.position.set(-.47+i*.095,.82,-.02); g.add(k); }
+          const panel=box(1.2,.06,.1,petShadeF(col,1.3),.02); panel.position.set(0,.78,-.2); g.add(panel);
+          [-1,1].forEach(s=>{ const leg=cyl(.03,.03,.7,0x9e9e9e,8); leg.position.set(s*.5,.35,0); g.add(leg); });
+        } },
+      { id:'ins-guitar', name:'กีตาร์', cat:'music', scope:'in', emoji:'🎸', colors:WOOD,
+        action:'music', music:3,
+        build(g,col){
+          const b1=ball(.24,col,16); b1.scale.set(1,1,.34); b1.position.y=.34; g.add(b1);
+          const b2=ball(.19,col,16); b2.scale.set(1,1,.34); b2.position.y=.58; g.add(b2);
+          const hole=cyl(.075,.075,.03,0x4a3a2a,14); hole.rotation.x=Math.PI/2; hole.position.set(0,.42,.09); g.add(hole);
+          const neck=box(.09,.6,.06,petShadeF(col,.75),.02); neck.position.y=.98; g.add(neck);
+          const head=box(.12,.16,.05,petShadeF(col,.7),.02); head.position.y=1.34; g.add(head);
+          for(let i=0;i<4;i++){ const st=cyl(.004,.004,1,0xfff3d0,4);
+            st.position.set(-.03+i*.02,.82,.05); g.add(st); }
+          const stand=cyl(.16,.18,.04,0x546e7a,14); stand.position.y=.02; g.add(stand);
+        } },
+      { id:'ins-ukulele', name:'อูคูเลเล่', cat:'music', scope:'in', emoji:'🪕', colors:[0xd7a86e,0xef9a9a,0x90caf9],
+        action:'music', music:3,
+        build(g,col){
+          const b1=ball(.17,col,14); b1.scale.set(1,1,.34); b1.position.y=.26; g.add(b1);
+          const b2=ball(.13,col,14); b2.scale.set(1,1,.34); b2.position.y=.42; g.add(b2);
+          const hole=cyl(.05,.05,.03,0x4a3a2a,12); hole.rotation.x=Math.PI/2; hole.position.set(0,.31,.06); g.add(hole);
+          const neck=box(.07,.4,.05,petShadeF(col,.78),.02); neck.position.y=.68; g.add(neck);
+          const head=box(.09,.12,.04,petShadeF(col,.7),.02); head.position.y=.92; g.add(head);
+          const stand=cyl(.13,.15,.04,0x8d6e63,12); stand.position.y=.02; g.add(stand);
+        } },
     ];
 
     /* หมวดหมู่ (แท็บในกล่อง edit) — แยกฉาก in/out */
@@ -1728,12 +1843,16 @@
         {id:'kitchen', label:'ครัว',      emoji:'🍳'},
         {id:'bath',    label:'ห้องน้ำ',   emoji:'🛁'},
         {id:'decor',   label:'ตกแต่ง',    emoji:'🪴'},
+        /* เฟส 9 — เครื่องดนตรี (แตะแล้วมีเสียงจริง) */
+        {id:'music',   label:'เครื่องดนตรี', emoji:'🎵'},
       ],
       out: [
         {id:'garden',   label:'ต้นไม้',    emoji:'🌳'},
         {id:'play',     label:'เครื่องเล่น', emoji:'🛝'},
         {id:'seatout',  label:'ที่นั่ง',    emoji:'🪑'},
         {id:'decorout', label:'ตกแต่งสวน',  emoji:'⛲'},
+        /* ระฆังลมเป็นเครื่องดนตรีที่แขวนนอกบ้าน ⇒ หมวด music ต้องมีในฝั่ง out ด้วย */
+        {id:'music',    label:'เครื่องดนตรี', emoji:'🎵'},
       ],
     };
 
