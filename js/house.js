@@ -5798,6 +5798,7 @@ function walkTo(gx, gz, opts){
     hChar.segFrom = {x:hChar.tile.x, z:hChar.tile.z};
   }
   hChar.walking = hChar.path.length > 0;
+  if(hChar.walking) showWalkMark(hChar.path, startTile);
   hChar.pendingEnter = !!opts.enter;
   hChar.pendingExit = !!opts.exit;
   hChar.action = opts.action || null;
@@ -5853,6 +5854,94 @@ function tileWorld(t){
   return hScene==='out'
     ? new THREE.Vector3(outWX(t.x), 0, outWZ(t.z))
     : new THREE.Vector3(inWX(t.x), 0, inWZ(t.z));
+}
+
+/* ---------- รอยเท้าบอกจุดหมาย (ผู้ใช้สั่ง 2026-08-13) ----------
+   แตะพื้น/แตะของให้เดิน = ปักรอยเท้าคู่หนึ่งไว้ที่ "ช่องที่ตัวละครจะไปหยุดจริง"
+   หันไปทางเดียวกับที่ตัวละครจะเดินเข้ามา เด็กจะได้รู้ล่วงหน้าว่าจะไปหยุดตรงไหน
+   ⚠ แขวนไว้กับ `scene` ไม่ใช่ `worldGroup` เพราะ
+     ① `buildWorld()` สร้าง worldGroup ใหม่ทั้งก้อน (รอยเท้าจะหลุด/ถูก dispose ไปด้วย)
+     ② raycast ของ `handleTap()` ยิงใส่ `worldGroup.children` ⇒ อยู่นอกก้อนนี้จึงไม่มีวันบังการแตะพื้น
+   การซ่อน/โชว์คุมเองทุกเฟรมที่ `updateWalkMark()` (ตามสถานะเดินจริง ไม่ต้องไปแก้ทุกจุดที่หยุดเดิน) */
+let walkMark = null, walkMarkMat = null, walkMarkT0 = 0;
+
+/* รอยเท้าคนจริง 1 ข้าง (เท้าขวา ปลายเท้าชี้ขึ้น) วาดเป็น SVG — นิ้วโป้ง 5 นิ้ว + ฝ่าเท้า + เว้าอุ้งเท้า + ส้น
+   ใช้พิกัดในกรอบ 136×190 จุดกึ่งกลางรูปอยู่ที่ (68,95) — ตัวเรียกเลื่อน/ย่อ/พลิกซ้าย-ขวาเอง
+   ⚠ ผู้ใช้สั่ง 2026-08-13: **ห้ามใส่วงกลม/กรอบรอบรอยเท้า และห้ามทำให้เด่น** — ให้เป็นเงาจางกลืนกับพื้น
+     แค่พอให้เด็กเห็นว่าตัวละครจะไปหยุดช่องไหน */
+const WALK_MARK_FOOT =
+  '<ellipse cx="41" cy="27" rx="11" ry="13"/>' +      /* นิ้วโป้ง (อยู่ด้านในของเท้า) */
+  '<ellipse cx="61" cy="22" rx="8.5" ry="10"/>' +
+  '<ellipse cx="77" cy="27" rx="7.5" ry="9"/>' +
+  '<ellipse cx="90" cy="36" rx="6.5" ry="7.5"/>' +
+  '<ellipse cx="100" cy="47" rx="5.5" ry="6.5"/>' +   /* นิ้วก้อย */
+  '<ellipse cx="66" cy="68" rx="33" ry="26"/>' +      /* ฝ่าเท้าส่วนหน้า */
+  '<path d="M58 84 C50 106 48 128 52 148 L84 150 C92 124 96 100 94 80 Z"/>' +   /* คอดตรงอุ้งเท้า */
+  '<ellipse cx="66" cy="152" rx="24" ry="27"/>';      /* ส้นเท้า */
+
+function walkMarkObj(){
+  if(walkMark) return walkMark;
+  /* ⚠ `opacity` ต้องอยู่ที่ <g> ก้อนเดียว ไม่ใช่รายชิ้น — ไม่งั้นตรงที่รูปทรงซ้อนกัน (นิ้ว/ฝ่าเท้า/ส้น)
+       จะเข้มเป็นสองเท่าจนเห็นรอยต่อ กลายเป็นรอยเท้าด่างๆ แทนที่จะเป็นเงาเรียบชิ้นเดียว */
+  const foot = (tf)=> '<g transform="'+tf+' translate(-68,-95)">'+WALK_MARK_FOOT+'</g>';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">'
+    + '<g fill="#24190f" opacity=".28">'
+    + foot('translate(88,150) rotate(-7) scale(-.85,.85)')     /* เท้าซ้าย (พลิกกลับด้าน) อยู่หลัง */
+    + foot('translate(168,104) rotate(7) scale(.85,.85)')      /* เท้าขวา ก้าวนำไปข้างหน้า */
+    + '</g></svg>';
+  const tex = new THREE.TextureLoader().load('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+  tex.minFilter = THREE.LinearFilter;
+  walkMarkMat = new THREE.MeshBasicMaterial({map:tex, transparent:true, depthWrite:false, opacity:1});
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(.9, .9), walkMarkMat);   /* พอดีในช่องเดียว (1 ช่อง = 1 หน่วย) */
+  plane.rotation.x = -Math.PI/2;        /* วางราบกับพื้น — ด้านบนของภาพชี้ไปทาง −z */
+  plane.renderOrder = 6;
+  /* ห่อ group อีกชั้นเพื่อหมุนทิศ: ตั้ง rotation.y ที่ตัว mesh ตรงๆ จะไปหมุนรอบแกนตั้งฉากของภาพแทน */
+  const g = new THREE.Group();
+  g.add(plane);
+  g.raycast = ()=>{};                   /* กันไว้อีกชั้น ห้ามกินการแตะจอไม่ว่ากรณีใด */
+  plane.raycast = ()=>{};
+  g.visible = false;
+  scene.add(g);
+  walkMark = g;
+  return g;
+}
+
+/* ความสูงที่ต้องวางรอยเท้า — ของบนพื้นแต่ละแบบสูงไม่เท่ากัน วางต่ำไปคือถูกทับ/จมหาย
+   ⚠ ทั้ง 2 เคสนี้เป็นบั๊กจริงที่ผู้ใช้เจอ 2026-08-13 ห้ามลดตัวเลขลงมาโดยไม่เช็คของพวกนี้ก่อน */
+function walkMarkY(t){
+  /* สะพานไม้: แผ่นพื้นหนา .14 วางที่ y=.05 ⇒ ผิวบน .12 — วางต่ำกว่านี้รอยเท้าจะอยู่ "ใต้สะพาน" มองไม่เห็นเลย */
+  if(hScene === 'out' && outGrid && outGrid[t.z] && outGrid[t.z][t.x] === 2) return .16;
+  /* พื้นถนน: ก้อนหินกลมแบนที่โรยเป็นลายพื้น (CylinderGeometry สูง .05 วางที่ y=.035) ⇒ ผิวบน .06
+     ของเดิมวางที่ .05 ลายหินเลยโผล่ทับรอยเท้าเป็นวงๆ */
+  return .10;
+}
+
+function showWalkMark(path, startTile){
+  if(!scene || hMode !== 'world') return;
+  const to = path[path.length-1];
+  if(!to) return;
+  const from = path.length > 1 ? path[path.length-2] : startTile;
+  const g = walkMarkObj();
+  const p = tileWorld(to);
+  g.position.set(p.x, walkMarkY(to), p.z);
+  /* ทิศเดียวกับที่ตัวละครจะหันตอนก้าวเข้าช่องสุดท้าย (+PI เพราะรอยเท้าในภาพชี้ไปทาง −z) */
+  const a = tileWorld(from), b = tileWorld(to);
+  if(a.x!==b.x || a.z!==b.z) g.rotation.y = Math.atan2(b.x-a.x, b.z-a.z) + Math.PI;
+  g.visible = true;
+  walkMarkT0 = performance.now();
+}
+
+function updateWalkMark(t){
+  if(!walkMark) return;
+  if(hMode !== 'world' || !hChar.walking || !hChar.path.length){
+    if(walkMark.visible) walkMark.visible = false;
+    return;
+  }
+  walkMark.visible = true;
+  /* จางเข้ามาเฉยๆ ไม่มีเต้น/ไม่มีวงเรืองแสง — ผู้ใช้สั่งให้กลืนไปกับพื้น ไม่ให้แย่งสายตาจากเมือง */
+  const e = Math.min(1, (t - walkMarkT0)/220);
+  walkMark.scale.setScalar(.88 + .12*e);
+  if(walkMarkMat) walkMarkMat.opacity = e;
 }
 
 /* fade ขาวคั่นกลางแล้วค่อยสลับ — ใช้กับทุกการสลับฉาก/โหมดให้ transition นุ่มสม่ำเสมอ */
@@ -9055,6 +9144,7 @@ function buildParents(){
                      path:[], to:null, wait:1 + Math.random()*2, busy:0, actCat:null, actNow:null};
   });
   refreshParentMark();        /* ตั้งสถานะป้ายทันทีตั้งแต่สร้างเสร็จ ไม่ต้องรอเฟรมแรกของลูป */
+  if(editMode) setParentsVisible(false);   /* สร้างใหม่ระหว่างตกแต่งอยู่ ต้องเกิดมาซ่อนไว้เลย */
 }
 /* ---------- กิจกรรมของพ่อแม่ (ผู้ใช้สั่งเพิ่ม 2026-08-09) ----------
    **สุ่มทำกิจกรรม "ตามอุปกรณ์ที่มีอยู่ในบ้านจริง" เท่านั้น** — อ่านจาก data.decor.in ที่เด็กวางเอง
@@ -9119,8 +9209,21 @@ function parentPickTarget(o){
   o.wait = o.path.length ? 0 : 1 + Math.random()*2;
 }
 /* เดิน + ทำกิจกรรม + หันหน้าหาเด็กเมื่อเข้าใกล้ (ให้บ้านดูมีชีวิต ไม่ใช่หุ่นยืนนิ่ง) */
+/* ซ่อน/คืนพ่อแม่ — ระหว่างตกแต่งบ้านต้องหายไปเหมือนตัวเด็กกับสัตว์เลี้ยง (ผู้ใช้สั่ง 2026-08-13)
+   ไม่งั้นพ่อแม่เดินไปมาบังของที่กำลังจัด ทั้งที่ตัวเด็ก/สัตว์หายไปแล้ว ดูไม่เข้าพวกกัน */
+function setParentsVisible(v){
+  Object.keys(parentObjs).forEach(w=>{
+    const o = parentObjs[w];
+    if(o && o.g) o.g.visible = v;
+    if(o && o.mk && !v) o.mk.open.visible = o.mk.done.visible = false;   /* ป้าย ! / ✓ เหนือหัวด้วย */
+  });
+}
+
 function updateParents(dt, t){
   if(!FAMILY || hScene !== 'in' || hMode !== 'world') return;
+  /* ตกแต่งอยู่ = หยุดทั้งการเดินและฟองคำพูด ไม่ใช่แค่ซ่อนตัว
+     (ถ้าปล่อยให้เดินต่อ ฟองคำพูดจะลอยขึ้นมากลางจอโดยไม่มีใครอยู่ใต้ฟอง) */
+  if(editMode) return;
   Object.keys(parentObjs).forEach(w=>{
     const o = parentObjs[w], g = o.g;
     if(!g) return;
@@ -10165,9 +10268,11 @@ function enterEditMode(){
   closeQuestPanel(); closeQuestBoard();
   editMode = true;
   document.body.classList.add('house-edit');
-  /* ซ่อนตัวละคร + สัตว์เลี้ยง + ป้ายชื่อ ระหว่างตกแต่ง (ไม่ให้บังของ/สับสน) */
+  /* ซ่อนตัวละคร + สัตว์เลี้ยง + พ่อแม่ + ป้ายชื่อ ระหว่างตกแต่ง (ไม่ให้บังของ/สับสน) */
   if(charGroup) charGroup.visible = false;
   if(hPet.group) hPet.group.visible = false;
+  setParentsVisible(false);
+  clearFloatLabels();             /* ฟองคำพูดที่ค้างอยู่ต้องหายไปพร้อมเจ้าของฟอง */
   const cn = $('house-char-name'); if(cn) cn.hidden = true;
   const pn = $('house-pet-name'); if(pn) pn.hidden = true;
   const first = (FURN.cats[hScene]||[])[0];
@@ -10194,9 +10299,10 @@ function exitEditMode(){
   deselectDecor();
   updateHomeZoneFrame();
   document.body.classList.remove('house-edit');
-  /* คืนตัวละคร + สัตว์เลี้ยง (ป้ายชื่อโชว์เองผ่าน frame loop) */
+  /* คืนตัวละคร + สัตว์เลี้ยง + พ่อแม่ (ป้ายชื่อ/ป้ายงานโชว์เองผ่าน frame loop) */
   if(charGroup) charGroup.visible = true;
   if(hPet.group) hPet.group.visible = true;
+  setParentsVisible(true);
   const p = $('house-edit-panel'); if(p) p.hidden = true;
   const d = $('house-edit-done'); if(d) d.hidden = true;
   const tb = $('house-edit-toolbar'); if(tb) tb.hidden = true;
@@ -10751,6 +10857,7 @@ function frame(t){
   /* เควสต์ "ไปตลาด": เช็คทุกเฟรม (ราคาถูกมาก — เทียบพิกัด 4 ครั้งเมื่อมีงานค้างเท่านั้น)
      ⚠ เช็คแค่ตอนก้าวถึงช่องใหม่ไม่พอ — เด็กอาจถูกวาร์ป/เริ่มเกมมาทั้งที่ยืนอยู่ในตลาดแล้ว */
   if(walkQuest) walkQuestTileCheck();
+  updateWalkMark(t);              /* รอยเท้าปลายทาง — ซ่อน/โชว์ตามสถานะเดินจริงทุกเฟรม */
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator' || hMode==='pet'){
@@ -11475,6 +11582,8 @@ window.HouseFamilyUI = {
     return (x > 40 && y > 40 && x < window.innerWidth-40 && y < window.innerHeight-40) ? {x, y} : null;
   },
   pos:   w => { const o = parentObjs[w]; return o && o.g ? {x:o.g.position.x, z:o.g.position.z} : null; },
+  /* โชว์อยู่ไหม — ชุดเทสตรวจว่าเข้าโหมดตกแต่งแล้วพ่อแม่หายจริง (ผู้ใช้สั่ง 2026-08-13) */
+  visible: w => { const o = parentObjs[w]; return o && o.g ? !!o.g.visible : null; },
 };
 window.HousePetUI = {
   feed:  () => feedNow(),
@@ -11622,6 +11731,9 @@ if(!homeView.hidden) houseBuddyRefresh();
   },
   /* งานเดินที่กำลังค้างอยู่ (ชุดเทสเควสต์ family-time / shopping-list) */
   walkQuest: ()=> walkQuest ? {target: walkQuest.target, idx: walkQuest.run.idx} : null,
+  /* รอยเท้าบอกจุดหมาย — ชุดเทสตรวจว่าปักตรงช่องปลายทางจริงและหายเมื่อเดินถึง */
+  walkMark: ()=> walkMark ? {on:walkMark.visible, x:walkMark.position.x, z:walkMark.position.z,
+                             ry:walkMark.rotation.y} : null,
   /* ตารางท่าประจำของพ่อแม่ (ชุดเทสตรวจว่าแต่ละกิจกรรมมีท่าของตัวเอง ไม่ใช่ท่าเดียวกันหมด) */
   pose: ()=> PARENT_POSE,
   /* เข้าบ้านเสร็จสมบูรณ์หรือยัง — **ชุดเทสต้องรอค่านี้ก่อนสั่งอะไรเสมอ** ไม่ใช่รอแค่ mode()==='world' */
