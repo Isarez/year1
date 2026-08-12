@@ -142,28 +142,44 @@ test('เอนจิน: วางผิดคืนรายชื่อชิ
   expect(errors).toEqual([]);
 });
 
-/* ⚠ อัปเดตตอนเฟส 5 (2026-08-11): NPC/กระดาน **สุ่มกลไกกลุ่ม C (ยืม engine หน้าหลัก) ได้แล้ว**
-   แต่ "มินิเกมครอบครัว" ของเฟส 4B ยังต้องเป็นของเควสต์ครอบครัวล้วนเหมือนเดิม */
-test('มินิเกมครอบครัว 4B โผล่เฉพาะเควสต์ครอบครัว — NPC/กระดานได้แค่ quiz/count/กลุ่ม engine', async ({ page }) => {
+/* ⚠ อัปเดต 2 รอบ — เจตนาของเทสนี้เปลี่ยนไปตามคำสั่งผู้ใช้ ไม่ได้ถูกลดทอน:
+     เฟส 5 (2026-08-11): NPC/กระดาน **สุ่มกลไกกลุ่ม C (ยืม engine หน้าหลัก) ได้แล้ว**
+     เฟส 7 (2026-08-12): **`petfeed` กับ `shopping` เปิดให้ NPC ที่เกี่ยวข้องหยิบไปใช้ได้ด้วย**
+       (ร้านสัตว์เลี้ยง/ฟาร์ม ↔ petfeed · ร้านสะดวกซื้อ/ตลาด ↔ shopping — ข้อ 15.2 กลุ่ม B)
+   ที่ยัง **ต้องเป็นของเควสต์ครอบครัวล้วน** คือมินิเกมที่เล่าเรื่องในบ้านโดยเฉพาะ
+   (เก็บของเข้าที่ · แยกผ้าซัก · ทำอาหาร · กิจวัตร · ใช้เงินให้พอ · ตื่นให้ตรงเวลา · กินข้าวพร้อมหน้า · ไปซื้อของให้แม่) */
+const FAM_ONLY = ['tidy', 'laundry', 'cook', 'routine', 'budget', 'clock', 'dinner', 'market',
+                  'orderlearn', 'sortcat'];
+test('มินิเกมของบ้านยังเป็นของเควสต์ครอบครัวล้วน — NPC/กระดานได้เฉพาะที่อนุญาตไว้', async ({ page }) => {
   const errors = await openHouse(page);
-  const r = await page.evaluate(() => {
+  const r = await page.evaluate((famOnly) => {
     const q = window.HouseQuests;
     const others = [];
     q.state().npcIds.forEach(id => { const s = q.specForNpc(id); if (s) others.push(s.mech); });
     for (let i = 0; i < q.BOARD_N; i++) { const s = q.specForBoard(i); if (s) others.push(s.mech); }
+    /* สุ่มให้เยอะกว่าชุดของวันนี้ จะได้เห็นกลไกที่ NPC "มีสิทธิ์ได้" ครบจริงๆ ไม่ใช่แค่ที่บังเอิญออกวันนี้ */
+    const wide = [];
+    q.questableIds().forEach(id => {
+      for (let i = 0; i < 40; i++) {
+        let h = (i * 2654435761 + id.length) >>> 0;
+        const rng = () => { h = (h * 1103515245 + 12345) >>> 0; return h / 4294967296; };
+        wide.push(q.rollWorkMech(rng, id));
+      }
+    });
     return { fam: q.FAM_MECHS, engines: q.ENGINE_MECHS,
-             others: others.filter((v, i, a) => a.indexOf(v) === i) };
-  });
+             others: others.filter((v, i, a) => a.indexOf(v) === i),
+             wide: wide.filter((v, i, a) => a.indexOf(v) === i),
+             leak: wide.filter(m => famOnly.indexOf(m) >= 0).filter((v, i, a) => a.indexOf(v) === i) };
+  }, FAM_ONLY);
   expect(r.fam).toContain('tidy');
   expect(r.fam).toContain('laundry');
   expect(r.fam).toContain('quiz');
-  /* มินิเกม 4B ต้องไม่หลุดไปอยู่กับ NPC/กระดาน */
-  const famOnly = r.fam.filter(m => m !== 'quiz' && m !== 'count');
-  const allowed = ['quiz', 'count'].concat(r.engines);
-  r.others.forEach(m => {
-    expect(famOnly).not.toContain(m);
-    expect(allowed).toContain(m);
-  });
+  /* ① มินิเกมที่เล่าเรื่องในบ้าน ต้องไม่หลุดไปอยู่กับ NPC/กระดานเด็ดขาด */
+  expect(r.leak).toEqual([]);
+  r.others.forEach(m => expect(FAM_ONLY).not.toContain(m));
+  /* ② เฟส 7: petfeed/shopping ต้อง "ถึงมือ NPC ได้จริง" แล้ว (ไม่ใช่แค่ไม่ห้าม) */
+  expect(r.wide).toContain('petfeed');
+  expect(r.wide).toContain('shopping');
   expect(errors).toEqual([]);
 });
 

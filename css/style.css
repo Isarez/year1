@@ -3209,6 +3209,38 @@
   /* ---- บีกเกอร์ตวงน้ำ (แล็บ measure-lab · เฟส 6) ---- */
   .hqz-beaker{display:flex; justify-content:center;}
   .hqz-beaker svg{width:min(168px,44vw); height:auto;}
+  /* ---- จับผิดภาพ (เฟส 7) ---- 2 แถวต้องเรียงตรงคอลัมน์กัน เด็กถึงจะเทียบได้ */
+  .hqz-spot{display:flex; flex-direction:column; gap:8px; width:100%;}
+  .hqz-spot-row{display:grid; gap:4px; background:#FFF6E6; border:3px solid #F0C58A;
+                border-radius:18px; padding:10px 8px;}
+  .hqz-spot-cell{font-size:30px; line-height:1.15; text-align:center;}
+  .hqz-spot-div{height:3px; background:#F0C58A; border-radius:2px; opacity:.5; margin:0 22%;}
+  /* ---- นับแว้บเดียว (เฟส 7) ---- ของกระจายเต็มกรอบให้กะจำนวนด้วยตา ไม่ใช่ไล่นับทีละชิ้น */
+  .hqz-flash{font-size:34px; line-height:1.5; letter-spacing:6px; word-spacing:10px;}
+  @media (max-width:480px){
+    .hqz-spot-cell{font-size:24px;}
+    .hqz-flash{font-size:28px; letter-spacing:4px;}
+  }
+  /* ---- ชิ้นเหรียญ (จ่ายเงินให้พอดี · เฟส 7) ---- */
+  .hqz-tile-coin{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;}
+  .hqz-tile-coin .hs-coin{width:26px; height:26px;}
+  .hqz-coin-n{font-size:19px; font-weight:900; color:#7A5A22; line-height:1;}
+  @media (max-width:480px){
+    .hqz-tile-coin .hs-coin{width:21px; height:21px;}
+    .hqz-coin-n{font-size:16px;}
+  }
+  /* ---- ปุ่มฟังเสียง (ทายเสียง · เฟส 5 ตกค้าง) ---- */
+  .hqz-sound{display:flex; justify-content:center;}
+  .hqz-sound-btn{
+    display:inline-flex; align-items:center; gap:10px;
+    background:#FFF1D6; border:3px solid #F0C58A; border-radius:22px;
+    padding:12px 22px; font-size:19px; font-weight:900; color:#6B5636;
+    font-family:inherit; cursor:pointer;
+  }
+  .hqz-sound-ic{font-size:26px; line-height:1;}
+  /* ⚠ ตอนกำลังเล่นเสียง **ห้ามขยับตัวปุ่ม** (ห้าม transform/scale) — Playwright รอ element นิ่ง
+     ก่อนคลิกจนหมดเวลา และเด็กกดพลาดง่าย (บทเรียนเดียวกับ .house-pet-bar เมื่อ 2026-08-09) */
+  .hqz-sound-btn.on{background:#FFE3B4; box-shadow:0 0 0 4px rgba(240,197,138,.45);}
   /* ---- รายการคำสั่งหุ่นยนต์ (แล็บ code-debug · เฟส 6) ---- */
   .hqz-code{display:flex; flex-direction:column; gap:7px; margin:2px auto; width:min(430px,100%);}
   .hqz-code-line{

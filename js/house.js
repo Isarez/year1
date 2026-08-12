@@ -7921,6 +7921,13 @@ function talkToNpc(n){
     setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerCure(d); }, 280);
     return;
   }
+  /* เฟส 7 — งาน "ส่งของถึงมือ": เดินมาถึงตัวคนที่ต้องส่งแล้ว = จบงานทันที
+     ⚠ ต้องมาก่อนการเช็คงานประจำวันของคนนี้ ไม่งั้นถ้าเขามีงานของตัวเองด้วย
+       การ์ดรับงานใหม่จะเด้งทับ แล้วของที่ถืออยู่ก็ส่งไม่ได้ (เด็กงงว่าทำไมทำไม่จบสักที) */
+  if(walkQuest && walkQuest.target === 'npc' && walkQuest.toNpc === d.id){
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkQuestArrive('npc'); }, 320);
+    return;
+  }
   const spec = QUESTS ? QUESTS.specForNpc(d.id) : null;
   if(spec && !spec.done){
     setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 280);
@@ -8233,7 +8240,7 @@ function startQuest(spec){
   if(!QUESTS || !spec) return;
   if(QUESTS.chalReady()){ offerChallenge(()=>startQuest(spec)); return; }
   qRun = QUESTS.buildRun(spec);
-  qLock = false; qMemShown = {};
+  qLock = false; qMemShown = {}; qFlashDone = {};
   qzShow();
   renderQuestStep();
 }
@@ -8265,6 +8272,11 @@ function renderQuestStep(){
   if(it.kind === 'clock') renderClockFace(st, it);   /* วาดหน้าปัดแล้วไปต่อทางโจทย์ 4 ตัวเลือกปกติ */
   if(it.kind === 'beaker') renderBeaker(st, it);     /* เฟส 6: บีกเกอร์ตวงน้ำ — ก็เป็นโจทย์ 4 ตัวเลือกเหมือนกัน */
   if(it.kind === 'code') renderCodeLines(st, it);    /* เฟส 6: รายการคำสั่งหุ่นยนต์ (หาบรรทัดที่ผิด) */
+  if(it.kind === 'sound') renderSoundPlay(st, it);   /* เฟส 5 ตกค้าง: ทายเสียง — ปุ่มฟังซ้ำได้ไม่จำกัด */
+  if(it.kind === 'spot') renderSpotRows(st, it);     /* เฟส 7: จับผิดภาพ — 2 แถวเทียบกัน */
+  if(it.kind === 'flash'){                           /* เฟส 7: นับแว้บเดียว — โชว์ของแล้วซ่อน */
+    if(!qFlashDone[qRun.idx]){ renderFlashShow(st, it); return; }
+  }
   /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
@@ -8397,7 +8409,8 @@ function renderWalkStep(st, it){
   row2.appendChild(qzBtn(it.go || 'ไปเลย!', 'hqz-yes', ()=>{
     if(typeof playClick==='function') playClick();
     const run = qRun;
-    walkQuest = {run: run, target: it.target};
+    /* `toNpc` = ปลายทางของงานส่งของ (เฟส 7) — เก็บไว้ที่นี่เพราะ closeQuestPanel() ล้าง qRun ทิ้ง */
+    walkQuest = {run: run, target: it.target, toNpc: it.toNpc || '', zone: it.zone || ''};
     closeQuestPanel();                       /* ⚠ ล้าง qRun ทิ้ง จึงต้องคว้า run ไว้ก่อนบรรทัดนี้ */
     walkHint();
   }));
@@ -8407,18 +8420,30 @@ function renderWalkStep(st, it){
 function walkHint(){
   if(!walkQuest) return;
   const it = walkQuest.run.items[walkQuest.run.idx];
-  const hint = $('house-hint');
-  if(hint){
-    hint.textContent = '📋 ' + (it && it.hint ? it.hint : 'ไปทำงานที่คุณแม่ฝากไว้กันนะ');
-    showHint();
+  let msg = (it && it.hint) ? it.hint : 'ไปทำงานที่คุณแม่ฝากไว้กันนะ';
+  /* เฟส 7 — งานส่งของ: ต้องบอก **ชื่อคน + สถานที่** เสมอ ไม่งั้นเด็กเดินหาทั้งเมืองไม่เจอ
+     (ข้อมูลนี้อยู่ฝั่งหน้าจอเท่านั้น — js/house-quests.js ไม่รู้จักผังเมือง ส่งมาแค่ id) */
+  if(walkQuest.target === 'npc' && walkQuest.toNpc){
+    const info = questItemInfo({src:'npc', id: walkQuest.toNpc});
+    msg += ' ' + info.icon + ' ' + info.name + ' ที่ ' + info.place;
   }
-  if(typeof showToast==='function') showToast('📋', (it && it.hint) || 'ไปทำงานที่ฝากไว้กันนะ');
+  const hint = $('house-hint');
+  if(hint){ hint.textContent = '📋 ' + msg; showHint(); }
+  if(typeof showToast==='function') showToast('📋', msg);
 }
 /* ไปถึงเป้าหมายแล้ว → เปิดรอบเล่นกลับมาทำต่อ (ตลาดมีกระดานซื้อของต่อ · โต๊ะจบเลย) */
 /* เรียกทุกครั้งที่ตัวละครก้าวถึงช่องใหม่ในฉากนอกบ้าน — ถึงตลาดแล้วเปิดกระดานซื้อของให้เลย */
 function walkQuestTileCheck(){
-  if(!walkQuest || walkQuest.target !== 'market') return;
+  if(!walkQuest) return;
   if(hScene !== 'out' || hMode !== 'world' || editMode) return;
+  /* เฟส 7 — "หาของที่หาย": เดินถึงย่านที่บอกไว้ = เจอของ
+     ⚠ ใช้ questZonesAt() ตัวเดียวกับภารกิจเดินสำรวจของเก่า ⇒ ชื่อย่านต้องตรงกับที่ฟังก์ชันนั้นรู้จัก
+       (js/house-quests.js มีคอมเมนต์เตือนไว้ที่ HIDDEN_ZONES แล้ว) */
+  if(walkQuest.target === 'zone'){
+    if(questZonesAt(hChar.tile.x, hChar.tile.z).indexOf(walkQuest.zone) >= 0) walkQuestArrive('zone');
+    return;
+  }
+  if(walkQuest.target !== 'market') return;
   if(inMarket(hChar.tile.x, hChar.tile.z)) walkQuestArrive('market');
 }
 function walkQuestArrive(target){
@@ -8503,6 +8528,79 @@ function renderBeaker(st, it){
     + '" rx="9" fill="none" stroke="#8AB6CC" stroke-width="4"/>'
     + ticks + '</svg>';
   st.appendChild(wrap);
+}
+/* ================= เฟส 7: จับผิดภาพ (spot-diff) =================
+   2 แถวจากฉากเดียวกัน ต่างกัน 1 ชิ้น — เด็กเลือกจากปุ่มตัวเลือกว่าชิ้นไหนหายไปจากแถวล่าง
+   ⚠ แถวต้อง **เรียงตรงคอลัมน์กัน** เด็กถึงจะเทียบได้ (ใช้ grid คอลัมน์เท่ากันทั้งสองแถว)
+     ถ้าปล่อยเป็น flex-wrap ธรรมดา ของจะเลื่อนไม่ตรงกันแล้วเทียบไม่ได้เลย */
+function renderSpotRows(st, it){
+  const box = document.createElement('div');
+  box.className = 'hqz-spot';
+  const n = Math.max(it.rows[0].length, it.rows[1].length);
+  it.rows.forEach((row, ri)=>{
+    const r = document.createElement('div');
+    r.className = 'hqz-spot-row';
+    r.style.gridTemplateColumns = 'repeat(' + n + ', minmax(0, 1fr))';
+    row.forEach(e=>{
+      const c = document.createElement('span'); c.className = 'hqz-spot-cell'; c.textContent = e;
+      r.appendChild(c);
+    });
+    box.appendChild(r);
+    if(ri === 0){
+      const div = document.createElement('div'); div.className = 'hqz-spot-div';
+      box.appendChild(div);
+    }
+  });
+  st.appendChild(box);
+}
+/* ================= เฟส 7: นับแว้บเดียว (flash-count) =================
+   หน้าแรกโชว์ของกระจาย 2-3 วิ แล้วไปหน้าถามเอง (ทางเดียวกับ renderMemoryList ของเกมจำรายการ)
+   ⚠ **ห้ามให้ย้อนกลับมาดูซ้ำ** — ตัวกลไกคือการจำภาพ แต่ **ตอบช้าแค่ไหนก็ได้** ไม่มีจับเวลาตอบ
+   ⚠ ต้องจำว่าโชว์ไปแล้วด้วย `qFlashDone` ไม่งั้นตอบผิดแล้ว renderQuestStep() วาดใหม่
+     จะย้อนไปโชว์ของอีกรอบ = เฉลยให้ฟรี */
+let qFlashDone = {};
+function renderFlashShow(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = 'ดูให้ดีนะ เดี๋ยวจะถาม!';
+  const show = document.createElement('div'); show.className = 'hqz-show hqz-flash';
+  show.textContent = it.flash.cells.join('');
+  st.appendChild(line); st.appendChild(show);
+  let done = false;
+  const go = ()=>{
+    if(done) return;
+    done = true;
+    clearTimeout(tid);
+    qFlashDone[qRun.idx] = 1;
+    renderQuestStep();
+  };
+  const tid = setTimeout(go, it.flash.showFor || 2600);
+}
+/* ================= เฟส 5 ตกค้าง: ทายเสียง (sound-guess) =================
+   ใช้ `playMusicSequence()` ของหน้าหลักตรงๆ (js/games-art.js) ไม่โหลดไฟล์เสียงเพิ่ม
+   ⚠ **ต้องส่ง noFlash = true เสมอ** — ฟังก์ชันนั้นจะไปสั่ง flash คีย์เปียโนผ่าน `$('music-piano')`
+     ซึ่งในโหมดบ้านไม่มีอยู่บนจอ (เกมเปียโนไม่ได้ถูก mount) ⇒ ปล่อยไว้จะพังทั้งการ์ด
+   ⚠ กดฟังซ้ำได้ไม่จำกัด (กติกาเหล็กข้อ 2: ห้ามลงโทษเด็ก — ฟังรอบเดียวไม่ทันคือเรื่องปกติ) */
+function renderSoundPlay(st, it){
+  const wrap = document.createElement('div');
+  wrap.className = 'hqz-sound';
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'hqz-sound-btn';
+  btn.dataset.hpClick = '1';                 /* โหมดมือ: ต้องชี้ค้างที่ปุ่มนี้ได้ด้วย */
+  btn.innerHTML = '<span class="hqz-sound-ic">🔊</span><span>ฟังอีกครั้ง</span>';
+  let playing = false;
+  const play = ()=>{
+    if(playing || typeof playMusicSequence !== 'function') return;
+    playing = true;
+    btn.classList.add('on');
+    playMusicSequence(it.sound.seq, true, it.sound.beats && it.sound.beats.length ? it.sound.beats : null,
+      {onStop: ()=>{ playing = false; btn.classList.remove('on'); }});
+  };
+  btn.addEventListener('click', play);
+  wrap.appendChild(btn);
+  st.appendChild(wrap);
+  /* เล่นให้ฟังรอบแรกอัตโนมัติ — เด็กอ่านโจทย์ไม่ออกก็ยังรู้ว่าต้องฟัง
+     หน่วงนิดหน่อยให้การ์ดวาดเสร็จก่อน ไม่งั้นเสียงมาก่อนภาพ */
+  setTimeout(()=>{ if(qRun && qRun.items[qRun.idx] === it) play(); }, 260);
 }
 /* ================= เฟส 6: รายการคำสั่งหุ่นยนต์ (แล็บ code-debug) =================
    วาดเป็นแถวมีเลขบรรทัดกำกับ เพราะตัวเลือกอ้างถึง "บรรทัดที่ N" ตรงๆ
@@ -8606,7 +8704,15 @@ function renderSortStep(st, it){
   function tile(t){
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'hqz-tile'; b.dataset.k = t.k;
-    if(t.label || t.price != null){
+    if(t.coin != null){
+      /* เฟส 7: ชิ้นที่เป็น "เหรียญ" (เกมจ่ายเงินให้พอดี) — วาดด้วยรูปเหรียญของเกม + ตัวเลข
+         ⚠ ห้ามใช้อิโมจิ 🪙 (บางเครื่องไม่มี glyph) กติกาเดียวกับราคาสินค้าในร้าน */
+      b.classList.add('hqz-tile-coin');
+      const ic = document.createElement('i'); ic.className = 'hs-coin';
+      const tx = document.createElement('span'); tx.className = 'hqz-coin-n';
+      tx.textContent = String(t.coin);
+      b.appendChild(ic); b.appendChild(tx);
+    }else if(t.label || t.price != null){
       /* ของที่มีชื่อ/ราคากำกับ (เรียงขั้นตอน · อาหารสัตว์ · ซื้อของ) — เด็กต้องอ่านได้ว่าคืออะไร */
       b.classList.add('hqz-tile-lab');
       const em = document.createElement('span'); em.className = 'hqz-tile-em'; em.textContent = t.e;
@@ -8814,7 +8920,7 @@ function playTestRun(opt, onClose){
   if(!QUESTS) return;
   if(onClose !== undefined) qzOnClose = onClose;
   qRun = QUESTS.testRun(opt);
-  qLock = false; qMemShown = {};
+  qLock = false; qMemShown = {}; qFlashDone = {};
   qzShow();
   renderQuestStep();
 }
