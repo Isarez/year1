@@ -197,11 +197,15 @@ test('เฟส 11G: ตกปลา — จุดตกปลาบนท่า
      ไม่ใช่ "ยืนตรงไหนก็ตกได้" แบบเดิมที่เด็กไม่มีทางรู้ว่าตกได้ตรงไหน */
   const spots = await page.evaluate(() => {
     const P = window.HousePlay, W = window.HouseWorld;
+    /* ⚠ เฟส 11 รอบแก้ 2026-08-14: **ทุ่นอยู่ในน้ำ ไม่ใช่ช่องที่เด็กยืน** (เดิมทุ่นทับตัวเด็ก)
+       `x/z` = ช่องน้ำที่ทุ่นลอย · `sx/sz` = ช่องบนท่าที่เด็กไปยืน */
     return P.fishSpots().map(s => ({
-      x: s.x, z: s.z, kind: s.kind,
-      walkable: W.walkable(s.x, s.z),
-      reach: W.pathLen(W.tile(), {x: s.x, z: s.z}),
+      x: s.x, z: s.z, sx: s.sx, sz: s.sz, kind: s.kind,
+      inWater: W.isWater(s.x, s.z),
+      walkable: W.walkable(s.sx, s.sz),
+      reach: W.pathLen(W.tile(), {x: s.sx, z: s.sz}),
       hasBubble: !!(s.obj && s.obj.userData.bubble),
+      rings: s.obj ? (s.obj.userData.rings || []).length : 0,
     }));
   });
   /* ⚠ ผู้ใช้สั่งเพิ่มท่าไม้ 2026-08-13: ท่าข้างลุงตกปลา (z20) + ท่าเหนือบ่อ (z15-16)
@@ -210,9 +214,12 @@ test('เฟส 11G: ตกปลา — จุดตกปลาบนท่า
   expect(spots.filter(s => s.kind === 'pond').length).toBe(2);
   expect(spots.filter(s => s.kind === 'sea').length).toBe(1);
   spots.forEach(s => {
-    expect(s.walkable, s.kind + ' ต้องเป็นช่องเดินได้จริง').toBe(true);
+    expect(s.walkable, s.kind + ' ช่องที่เด็กยืนต้องเดินได้จริง').toBe(true);
+    expect(s.inWater, s.kind + ' ทุ่นต้องอยู่ในน้ำ').toBe(true);
+    expect(s.x !== s.sx || s.z !== s.sz, s.kind + ' ทุ่นต้องไม่ทับช่องเด็ก').toBe(true);
     expect(s.reach, s.kind + ' ต้องเดินไปถึงได้จริง (วัดด้วย findPath)').toBeGreaterThan(0);
     expect(s.hasBubble, s.kind + ' ต้องมีป้ายลอยให้เด็กเห็น').toBe(true);
+    expect(s.rings, s.kind + ' ต้องมีวงคลื่นบอกจุด').toBe(3);
   });
 
   /* ยังไม่ไปถึงจุด = เหวี่ยงไม่ได้ (แต่ต้องไม่พังและไม่หักอะไร) */
@@ -224,7 +231,7 @@ test('เฟส 11G: ตกปลา — จุดตกปลาบนท่า
   /* วาร์ปไปที่จุดตกปลาจริง แล้วเล่นผ่านทางเดินโค้ดเดียวกับตอนแตะป้าย */
   await page.evaluate(() => {
     const s = window.HousePlay.fishSpots()[0];
-    window.__houseDbg.tp(s.x, s.z);
+    window.__houseDbg.tp(s.sx, s.sz);        /* ไปยืนบนท่า ไม่ใช่ลงไปในน้ำ */
   });
   const r = await page.evaluate(async () => {
     const P = window.HousePlay;

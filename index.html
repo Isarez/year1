@@ -988,14 +988,14 @@
       <!-- เฟส 11: ปุ่มเดียวเข้าถึงมินิเกมกลุ่ม A ทั้ง 5 เกม (ซ่อนแอบ · เก็บของ · ตกปลา · ช่างภาพ · แปลงผัก)
            ⚠ ตั้งใจให้เป็น **ปุ่มเดียว ไม่ใช่ 5 ทางเข้ากระจาย** — HUD ในโหมดบ้านต้องแน่นเสมอ
            ไอคอนลูกโป่ง+ใบไม้ วาดเป็น SVG พาเลตต์เดียวกับกระดานเช็คลิสต์ข้างๆ (ห้ามใช้ emoji) -->
-      <button type="button" class="house-quest-bar house-play-btn" id="house-play-btn" hidden aria-label="เล่นในเมือง">
+      <button type="button" class="house-quest-bar house-play-btn" id="house-play-btn" hidden aria-label="กิจกรรมในเมืองรายวัน">
         <svg class="hqb-ic" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 2.6c3.2 0 5.4 2.5 5.4 5.7 0 3.4-2.6 6.4-5.4 7.6-2.8-1.2-5.4-4.2-5.4-7.6 0-3.2 2.2-5.7 5.4-5.7z" fill="#FFD3E2" stroke="#C0527A" stroke-width="1.6" stroke-linejoin="round"/>
           <path d="M12 15.9v2.4" stroke="#C0527A" stroke-width="1.6" stroke-linecap="round"/>
           <path d="M12 18.3c-1.6 0-2.6.9-2.6 2.1h5.2c0-1.2-1-2.1-2.6-2.1z" fill="#5FAF52" stroke="#3E7C3A" stroke-width="1.3" stroke-linejoin="round"/>
           <circle cx="9.9" cy="7.3" r="1.5" fill="#FFF6E6"/>
         </svg>
-        <span class="hqb-play-lab">เล่น</span>
+        <span class="hqb-play-lab">กิจกรรม</span>
       </button>
     </div>
     <!-- แถบบอกระยะห่างตอนเล่นซ่อนแอบ — **อยู่กลางล่างของจอ** (ผู้ใช้สั่ง 2026-08-13)
@@ -1095,7 +1095,14 @@
     <i class="hpf-corner hpf-tl"></i><i class="hpf-corner hpf-tr"></i>
     <i class="hpf-corner hpf-bl"></i><i class="hpf-corner hpf-br"></i>
     <button type="button" class="hpf-exit" id="house-photo-exit" aria-label="ออกจากโหมดถ่ายรูป">✕</button>
-    <button type="button" class="hpf-album" id="house-album-btn" aria-label="เปิดอัลบั้มรูป">🖼️</button>
+    <!-- ปุ่มอัลบั้มวาดเป็น SVG (ผู้ใช้สั่ง 2026-08-14 · emoji บางเครื่องไม่มี glyph — กับดักเดิม) -->
+    <button type="button" class="hpf-album" id="house-album-btn" aria-label="เปิดอัลบั้มรูป">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.2" y="5.4" width="17.6" height="13.2" rx="2.6" fill="#FFF6E6" stroke="#2E6F9E" stroke-width="1.7"/>
+        <path d="M4.6 16.4 9 11.6l3.1 3.3 2.6-2.3 4.7 3.8z" fill="#8FC4E8" stroke="#2E6F9E" stroke-width="1.4" stroke-linejoin="round"/>
+        <circle cx="9.1" cy="9.4" r="1.5" fill="#F0A14B" stroke="#2E6F9E" stroke-width="1.2"/>
+      </svg>
+    </button>
     <button type="button" class="hpf-shutter" id="house-shutter" aria-label="กดถ่ายรูป"><i></i></button>
   </div>
 
@@ -1114,6 +1121,21 @@
     </div>
   </div>
 
+  <!-- เลือกเมล็ดพันธุ์ก่อนปลูก (โผล่เฉพาะตอนมีหลายพันธุ์ในกระเป๋า) -->
+  <div class="house-creator house-qz house-qsum house-seedpick" id="house-seedpick" hidden>
+    <div class="house-creator-panel hqz-panel hqsum-panel">
+      <div class="hqz-top"><div class="hqz-who">🌰 จะปลูกอะไรดี?</div></div>
+      <div class="hqz-sub">แตะเลือกเมล็ดที่อยากปลูกลงแปลงนี้ได้เลย</div>
+      <div class="hqsum-list hsp-list" id="house-seedpick-list"></div>
+      <button class="house-pet-alt-btn hqz-close-btn" id="house-seedpick-close">ยังไม่ปลูก</button>
+    </div>
+  </div>
+
+  <!-- ดูรูปใหญ่ทีละใบ (แตะที่รูปในอัลบั้ม) — แตะที่ไหนก็ปิด -->
+  <div class="house-photo-big" id="house-photo-big" hidden>
+    <div class="hpbig-frame"><img id="house-photo-big-img" alt="รูปที่ถ่ายไว้"></div>
+  </div>
+
   <!-- อัลบั้มรูป — เปิดดู/ลบได้ (รูปเก็บใน localStorage จึงต้องลบได้จริง) -->
   <div class="house-creator house-qz house-qsum house-album" id="house-album" hidden>
     <div class="house-creator-panel hqz-panel hqsum-panel">
@@ -1128,8 +1150,8 @@
   <!-- เฟส 11: แผง "เล่นในเมือง" — รายการมินิเกมกลุ่ม A พร้อมสถานะของวันนี้ -->
   <div class="house-creator house-qz house-qsum house-playpanel" id="house-playpanel" hidden>
     <div class="house-creator-panel hqz-panel hqsum-panel">
-      <div class="hqz-top"><div class="hqz-who">🎈 เล่นในเมือง</div></div>
-      <div class="hqz-sub">เกมพวกนี้ไม่มีถูกผิด ไม่มีเวลาจำกัด เล่นเพลินๆ ได้เลยนะ</div>
+      <div class="hqz-top"><div class="hqz-who">🎈 กิจกรรมในเมืองรายวัน</div></div>
+      <div class="hqz-sub">กิจกรรมพวกนี้ไม่มีถูกผิด ไม่มีเวลาจำกัด · ออกไปแตะของจริงในเมืองได้เลยนะ</div>
       <div class="hqsum-list hpl-list" id="hpl-list"></div>
       <button class="house-pet-alt-btn hqz-close-btn" id="hpl-close">ปิด</button>
     </div>

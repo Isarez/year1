@@ -3503,6 +3503,22 @@
   .he-item.he-used{opacity:.5;}
   .he-item.he-used .he-item-left{color:#9A8B74; background:#E7DCC8;}
 
+  /* เลือกเมล็ดก่อนปลูก */
+  .house-seedpick{width:min(460px,94vw);}
+  .hsp-list{display:flex; flex-direction:column; gap:8px;}
+  .hsp-item{
+    font-family:inherit; cursor:pointer; border:none; text-align:left;
+    display:flex; align-items:center; gap:10px; width:100%;
+    background:#FFF6E6; border-radius:16px; padding:10px 12px;
+  }
+  .hsp-item:active{transform:translateY(2px);}
+  .hsp-e{font-size:26px; line-height:1; flex:0 0 auto;}
+  .hsp-tx{display:flex; flex-direction:column; gap:2px; flex:1 1 auto; min-width:0;}
+  .hsp-tx b{font-size:15px; font-weight:900; color:var(--ink);}
+  .hsp-tx i{font-size:12.5px; font-weight:800; color:var(--ink-soft); font-style:normal;}
+  .hsp-n{font-size:14px; font-weight:900; color:#3B8F45; background:#D6EFD0;
+         border-radius:999px; padding:2px 10px; flex:0 0 auto;}
+
   /* ---------- แถวซื้อ-ขายในร้าน (เมล็ด/ผัก/ปลา · เฟส 11) ----------
      ใช้โทนเดียวกับแถวในแผงเล่นในเมือง เด็กจะได้ไม่ต้องเรียนรู้หน้าตาใหม่ */
   .hpt-note{font-size:13px; font-weight:800; color:var(--ink-soft); line-height:1.45;
@@ -3535,12 +3551,16 @@
   body.house-photo #house-hint{display:none !important;}
   .house-photo-ui{position:fixed; inset:0; z-index:60; pointer-events:none;}
   .house-photo-ui[hidden]{display:none;}
-  .hpf-corner{position:absolute; width:56px; height:56px; border:5px solid rgba(255,255,255,.95);
-              border-radius:6px; box-shadow:0 0 0 2px rgba(70,40,10,.18);}
-  .hpf-tl{top:24px; left:24px; border-right:none; border-bottom:none;}
-  .hpf-tr{top:24px; right:24px; border-left:none; border-bottom:none;}
-  .hpf-bl{bottom:112px; left:24px; border-right:none; border-top:none;}
-  .hpf-br{bottom:112px; right:24px; border-left:none; border-top:none;}
+  /* ⚠ กรอบโฟกัส **ต้องหนาและใหญ่พอให้เห็นชัดบนฉากสีสด** (ผู้ใช้แจ้ง 2026-08-14 ว่ามองแทบไม่เห็น)
+     ใช้เส้นขาวหนา + เงาดำนุ่มรอบเส้น เพื่อให้อ่านออกทั้งบนพื้นสว่าง (ทราย/ฟ้า) และพื้นเข้ม (น้ำ/เงา) */
+  .hpf-corner{
+    position:absolute; width:92px; height:92px; border:9px solid #fff; border-radius:10px;
+    filter:drop-shadow(0 2px 6px rgba(20,10,0,.55));
+  }
+  .hpf-tl{top:34px; left:34px; border-right:none; border-bottom:none;}
+  .hpf-tr{top:34px; right:34px; border-left:none; border-bottom:none;}
+  .hpf-bl{bottom:126px; left:34px; border-right:none; border-top:none;}
+  .hpf-br{bottom:126px; right:34px; border-left:none; border-top:none;}
   .hpf-shutter{
     position:absolute; left:50%; transform:translateX(-50%); bottom:26px; pointer-events:auto;
     width:76px; height:76px; border-radius:50%; border:5px solid rgba(255,255,255,.95);
@@ -3551,15 +3571,17 @@
   .hpf-shutter:active i{transform:scale(.9);}
   .hpf-album{
     position:absolute; left:50%; margin-left:64px; bottom:38px; pointer-events:auto;
-    width:52px; height:52px; border-radius:50%; border:none; cursor:pointer;
-    background:rgba(255,255,255,.92); font-size:23px; box-shadow:var(--shadow-btn);
+    width:54px; height:54px; border-radius:50%; border:none; cursor:pointer; padding:0;
+    background:rgba(255,255,255,.94); box-shadow:0 3px 10px rgba(20,10,0,.4);
+    display:flex; align-items:center; justify-content:center;
   }
+  .hpf-album svg{width:30px; height:30px; display:block;}
   /* พรีวิวรูปที่เพิ่งถ่าย — ทรง "รูปถ่าย" (ขอบขาวหนา เอียงนิดๆ) เด้งเข้าแล้วจางออก */
   .house-photo-pv{position:fixed; inset:0; z-index:70; pointer-events:none;
                   display:flex; align-items:center; justify-content:center;}
   .house-photo-pv[hidden]{display:none;}
   .hppv-frame{
-    background:#fff; padding:12px 12px 34px; border-radius:6px;
+    background:#fff; padding:16px 16px 46px; border-radius:8px;
     box-shadow:0 14px 40px rgba(40,25,5,.4); transform:scale(.6) rotate(-4deg); opacity:0;
   }
   .house-photo-pv.on .hppv-frame{
@@ -3567,7 +3589,8 @@
   }
   @keyframes hppvIn{to{transform:scale(1) rotate(-3deg); opacity:1;}}
   @keyframes hppvOut{to{transform:scale(.94) rotate(-3deg) translateY(-14px); opacity:0;}}
-  .hppv-frame img{display:block; width:min(320px,64vw); height:auto; border-radius:3px; background:#eee;}
+  .hppv-frame img{display:block; width:min(520px,78vw); height:auto; border-radius:3px; background:#eee;
+                  image-rendering:auto;}
   /* ---------- หน้าตู้ปลา (เฟส 11) ----------
      กรอบกระจก + น้ำไล่เฉด + ทรายก้นตู้ · ปลาว่ายข้ามจอวนไปเรื่อยๆ ด้วย CSS ล้วน */
   .house-tank{width:min(520px,94vw);}
@@ -3602,11 +3625,23 @@
   .halb-card img{display:block; width:100%; height:auto; border-radius:3px; background:#eee;}
   .halb-cap{position:absolute; left:0; right:0; bottom:4px; text-align:center;
             font-size:10.5px; font-weight:800; color:var(--ink-soft);}
+  /* ⚠ ปุ่มลบเคย "วงกลมขาด" เพราะยื่นออกนอกการ์ดแล้วโดน overflow ของรายการตัด
+     ⇒ ขยับเข้ามาอยู่ในกรอบการ์ด + จัดกึ่งกลางด้วย flex (ไม่พึ่ง line-height) */
+  .halb-card{overflow:visible;}
   .halb-del{
-    position:absolute; top:-6px; right:-6px; width:26px; height:26px; border-radius:50%;
-    border:none; cursor:pointer; background:#F2726B; color:#fff; font-size:13px; font-weight:900;
-    box-shadow:var(--shadow-btn); line-height:1;
+    position:absolute; top:3px; right:3px; width:26px; height:26px; border-radius:50%;
+    border:2px solid #fff; cursor:pointer; background:#F2726B; color:#fff; font-size:13px; font-weight:900;
+    box-shadow:0 2px 6px rgba(20,10,0,.35); padding:0;
+    display:flex; align-items:center; justify-content:center;
   }
+  .halb-card img{cursor:pointer;}
+  /* ดูรูปใหญ่ */
+  .house-photo-big{position:fixed; inset:0; z-index:80; background:rgba(20,12,0,.62);
+                   display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .house-photo-big[hidden]{display:none;}
+  .hpbig-frame{background:#fff; padding:14px 14px 40px; border-radius:8px;
+               box-shadow:0 18px 50px rgba(20,10,0,.5);}
+  .hpbig-frame img{display:block; width:min(680px,86vw); height:auto; border-radius:4px; background:#eee;}
   @media (max-width:480px){
     .halb-list{grid-template-columns:repeat(2,minmax(0,1fr));}
     .hpf-album{width:46px; height:46px; margin-left:54px; bottom:34px; font-size:20px;}
@@ -3618,8 +3653,9 @@
     box-shadow:var(--shadow-btn);
   }
   @media (max-width:480px){
-    .hpf-corner{width:40px; height:40px; border-width:4px;}
-    .hpf-bl,.hpf-br{bottom:104px;}
+    .hpf-corner{width:64px; height:64px; border-width:7px;}
+    .hpf-tl,.hpf-tr{top:22px;} .hpf-tl,.hpf-bl{left:22px;} .hpf-tr,.hpf-br{right:22px;}
+    .hpf-bl,.hpf-br{bottom:112px;}
     .hpf-shutter{width:66px; height:66px;} .hpf-shutter i{width:46px; height:46px;}
     .house-seek-hud{bottom:18px; padding:8px 14px;}
     .hsk-seg{width:26px; height:10px;}

@@ -295,6 +295,51 @@
     return COL_THEMES[m % COL_THEMES.length];
   }
   let colObjs = [];
+  /* ทรงของแต่ละธีม — เล็กแต่ต้องอ่านออกจากเงารวมตอนมองมุม iso
+     🌸 กลีบดอกไม้ = กลีบ 5 แฉกวางแบนซ้อนเกสรกลาง (เดิมเป็นก้อนกลม เด็กดูไม่รู้ว่าคืออะไร)
+     🍃 ใบไม้ = แผ่นรี + ก้านกลาง · 🐚 เปลือกหอย = พัดซี่ · ⭐ ดาวตก = ดาว 5 แฉก + หาง */
+  function buildCollectible(g, th, k){
+    if(th.id === 'flower'){
+      for(let i = 0; i < 5; i++){
+        const pet = k.sphere(.12, th.col, 10);
+        pet.scale.set(1, .34, 1.55);
+        const a = i / 5 * Math.PI * 2;
+        pet.position.set(Math.sin(a) * .12, .19, Math.cos(a) * .12);
+        pet.rotation.y = a;
+        g.add(pet);
+      }
+      const mid = k.sphere(.07, th.alt, 10); mid.scale.set(1, .6, 1); mid.position.y = .23; g.add(mid);
+      return;
+    }
+    if(th.id === 'leaf'){
+      const bl = k.sphere(.15, th.col, 10);
+      bl.scale.set(.6, .22, 1.5); bl.position.y = .19; bl.rotation.y = .5; g.add(bl);
+      const vein = k.cyl(.018, .018, .42, th.alt, 6);
+      vein.rotation.set(Math.PI/2, 0, .5); vein.position.y = .21; g.add(vein);
+      return;
+    }
+    if(th.id === 'shell'){
+      for(let i = 0; i < 4; i++){
+        const rb = k.sphere(.13, i % 2 ? th.col : th.alt, 10);
+        rb.scale.set(.34, .3, 1.15);
+        rb.position.set((i - 1.5) * .07, .18, 0);
+        rb.rotation.y = (i - 1.5) * .17;
+        g.add(rb);
+      }
+      const base = k.sphere(.08, th.alt, 8); base.scale.set(1.5, .5, .5); base.position.y = .15; g.add(base);
+      return;
+    }
+    /* ⭐ ดาวตก */
+    for(let i = 0; i < 5; i++){
+      const sp = k.sphere(.1, th.col, 8);
+      sp.scale.set(.42, .26, 1.25);
+      const a = i / 5 * Math.PI * 2;
+      sp.position.set(Math.sin(a) * .1, .2, Math.cos(a) * .1);
+      sp.rotation.y = a;
+      g.add(sp);
+    }
+    const core = k.sphere(.09, th.alt, 10); core.scale.set(1, .55, 1); core.position.y = .21; g.add(core);
+  }
   function colEnsure(){
     if(!P) return;
     if(P.col.items && P.col.items.length) return;
@@ -315,10 +360,10 @@
          ⚠ **ต้อง merge ทุกก้อน** — เฟรมเรตในโหมดบ้าน = จำนวน draw call ไม่ใช่จำนวนสามเหลี่ยม
            ของ 8 ชิ้น × 3 mesh = 24 draw call ซึ่งพอจะทำให้ MediaPipe ในโหมดมือ
            ไม่ได้รันเลยใน 2-3 วินาทีแรกหลังเข้าบ้าน (เทส handplay-camera จับได้จริง 2026-08-13) */
-      const body = k.sphere(.17, th.col, 12);
-      body.scale.set(1.25, .55, 1); body.position.y = .2; g.add(body);
-      const top = k.sphere(.11, th.alt, 10); top.position.y = .34; g.add(top);
-      const ring = k.cyl(.32, .32, .02, th.alt, 16); ring.position.y = .03; g.add(ring);
+      /* ⚠ **ต้องดูออกด้วยเงารวมว่าเป็นของอะไร** (ผู้ใช้แจ้ง 2026-08-14 ว่ากลีบดอกไม้ดูไม่รู้เรื่อง)
+         ⇒ วาดทรงจริงของแต่ละธีม ไม่ใช่ก้อนกลมสีต่างกันเฉยๆ — บทเรียนเดียวกับไอคอนเฟส 8 */
+      buildCollectible(g, th, k);
+      const ring = k.cyl(.3, .3, .02, th.alt, 16); ring.position.y = .03; g.add(ring);
       k.merge(g);
       g.position.set(w.wx(it.x), w.groundY(it.x, it.z), w.wz(it.z));
       g.userData.hPick = {game:'col', i:i, x:it.x, z:it.z};
@@ -446,7 +491,7 @@
   function atFishSpot(){
     const w = W(); if(!w) return false;
     const t = w.tile();
-    return fishSpots.some(s => Math.abs(s.x - t.x) <= 1 && Math.abs(s.z - t.z) <= 1);
+    return fishSpots.some(s => Math.abs(s.sx - t.x) <= 1 && Math.abs(s.sz - t.z) <= 1);
   }
 
   let fishState = null;      /* {phase:'wait'|'bite', t, fish} */
@@ -460,10 +505,11 @@
   function findFishSpots(){
     const w = W(); if(!w) return [];
     const out = [];
-    /* จุดในบ่อน้ำ = ปลายท่าไม้ที่ผังประกาศไว้ (ข้างลุงตกปลา + ท่าเหนือ) */
+    /* จุดในบ่อน้ำ = ปลายท่าไม้ที่ผังประกาศไว้ (ข้างลุงตกปลา + ท่าเหนือ)
+       ⚠ `x/z` = ช่องน้ำที่ทุ่นลอย · `sx/sz` = ช่องที่เด็กไปยืน (บนท่า) — **คนละช่องกันเสมอ** */
     (w.pondFishSpots() || []).forEach(sp=>{
-      if(!w.walkable(sp.x, sp.z)) return;
-      out.push({x:sp.x, z:sp.z, kind:'pond', name:sp.name});
+      if(!w.walkable(sp.stand.x, sp.stand.z)) return;
+      out.push({x:sp.water.x, z:sp.water.z, sx:sp.stand.x, sz:sp.stand.z, kind:'pond', name:sp.name});
     });
     /* ทะเล: ช่องเดินได้ที่มีน้ำทะเลติดอยู่ข้างๆ — เลือกช่องที่เดินถึงได้จริงช่องแรก */
     const g = w.grid(), OW = w.OUT_W(), OD = w.OUT_D();
@@ -471,10 +517,11 @@
     for(let x = OW - 1; x >= 0 && out.length < wantSea; x--){
       for(let z = 0; z < OD; z++){
         if(!w.walkable(x, z) || !w.visibleSpot(x, z)) continue;
-        const touchesSea = [[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dz]) => w.isSea(x+dx, z+dz));
-        if(!touchesSea) continue;
+        const dir = [[1,0],[-1,0],[0,1],[0,-1]].find(([dx,dz]) => w.isSea(x+dx, z+dz));
+        if(!dir) continue;
         if(w.pathLen(w.tile(), {x, z}) <= 0) continue;    /* เดินไปไม่ถึง = ไม่นับ */
-        out.push({x, z, kind:'sea', name:'ริมทะเล'});
+        /* ทุ่นลอยในน้ำ 1 ช่องถัดไป เด็กยืนบนหาด */
+        out.push({x:x + dir[0], z:z + dir[1], sx:x, sz:z, kind:'sea', name:'ริมทะเล'});
         break;
       }
     }
@@ -489,14 +536,26 @@
     const w = W(); if(!w) return;
     fishSpotsClear();
     fishSpots = findFishSpots();
+    const k = w.kit();
     fishSpots.forEach((sp, i)=>{
       const g = new THREE.Group();
+      /* วงคลื่นบนผิวน้ำ 3 วง — บอกว่า "ตรงนี้ตกปลาได้" และตอนตกจะใช้บอกว่าปลาใกล้มาแค่ไหน */
+      const rings = [];
+      for(let r = 0; r < 3; r++){
+        const ring = k.torus(.34, .045, 0xffffff, 18);
+        ring.rotation.x = Math.PI/2;          /* ⚠ torus() คืนวงตั้งฉาก ต้องพลิกเองให้วางแบน */
+        ring.position.y = .04;
+        ring.userData.ph = r / 3;
+        g.add(ring); rings.push(ring);
+      }
       const b = makeBubble('🎣');
       b.position.y = 1.35;
       g.add(b);
-      g.position.set(w.wx(sp.x), w.groundY(sp.x, sp.z), w.wz(sp.z));
-      g.userData.hPick = {game:'fishspot', i:i, x:sp.x, z:sp.z};
+      /* ⚠ ทุ่นอยู่ "ในน้ำ" ⇒ ไม่ยกตามท่าไม้ (groundY ของช่องน้ำ = 0) */
+      g.position.set(w.wx(sp.x), 0, w.wz(sp.z));
+      g.userData.hPick = {game:'fishspot', i:i, x:sp.sx, z:sp.sz};
       g.userData.bubble = b;
+      g.userData.rings = rings;
       w.spawn(g);
       sp.obj = g;
     });
@@ -512,8 +571,13 @@
     const rng = rngFrom(fnv(childKey() + '|' + Date.now() + '|fish'));
     /* เวลาที่ปลาจะกิน 1.2-3.4 วิ — เป็น "จังหวะของเกม" ไม่ใช่ตัวจับเวลากดดันเด็ก
        (ไม่มีนับถอยหลังบนจอ ไม่มีบทลงโทษถ้าพลาด กดใหม่ได้ทันที) */
-    fishState = {phase:'wait', t: 1.2 + rng() * 2.2, fish: rollFish(rng, whereNow())};
-    fishBobBuild();
+    const t = w.tile();
+    const sp = fishSpots.find(x => Math.abs(x.sx - t.x) <= 1 && Math.abs(x.sz - t.z) <= 1) || fishSpots[0];
+    const wait = 1.2 + rng() * 2.2;
+    fishState = {phase:'wait', t: wait, wait: wait, fish: rollFish(rng, whereNow()), spot: sp};
+    fishBobBuild(sp);
+    /* ⚠ ป้าย 🎣 ต้องหายระหว่างตก (ผู้ใช้สั่ง 2026-08-14) — ไม่งั้นเด็กแตะซ้ำแล้วงงว่าทำไมไม่มีอะไรเกิด */
+    fishSpots.forEach(x => { if(x.obj && x.obj.userData.bubble) x.obj.userData.bubble.visible = false; });
     renderPanel();
     return true;
   }
@@ -521,7 +585,7 @@
   function whereNow(){
     const w = W(); if(!w) return 'pond';
     const t = w.tile();
-    const sp = fishSpots.find(s => Math.abs(s.x - t.x) <= 1 && Math.abs(s.z - t.z) <= 1);
+    const sp = fishSpots.find(s => Math.abs(s.sx - t.x) <= 1 && Math.abs(s.sz - t.z) <= 1);
     return sp ? sp.kind : 'pond';
   }
   function rollFish(rng, where){
@@ -531,7 +595,9 @@
     const pool = here.filter(f => f.rare === want);
     return pool[(rng() * pool.length) | 0] || here[0] || FISH[0];
   }
-  function fishBobBuild(){
+  /* ทุ่นลอย **ที่ช่องน้ำของจุดนั้น** (ไม่ใช่ช่องที่เด็กยืน — ผู้ใช้แจ้ง 2026-08-14 ว่าทุ่นทับตัวเด็ก)
+     + อนิเมชันเหวี่ยง: ทุ่นพุ่งเป็นเส้นโค้งจากมือเด็กไปลงน้ำ ~0.55 วิ */
+  function fishBobBuild(sp){
     const w = W(); if(!w) return;
     fishBobClear();
     const k = w.kit(), t = w.tile();
@@ -539,12 +605,23 @@
     const ball = k.sphere(.16, 0xf2544b, 12); ball.position.y = .12; g.add(ball);
     const cap = k.sphere(.16, 0xfff6e6, 12); cap.scale.set(1, .5, 1); cap.position.y = .22; g.add(cap);
     k.merge(g);
-    g.position.set(w.wx(t.x), .02, w.wz(t.z));
+    const from = {x: w.wx(t.x), z: w.wz(t.z)};
+    const to   = {x: w.wx(sp.x), z: w.wz(sp.z)};
+    g.position.set(from.x, .5, from.z);
     g.userData.hPick = {game:'fish'};
+    g.userData.cast = {from, to, t:0, dur:.55};
     w.spawn(g);
     fishBob = g;
+    /* หันหน้าเด็กไปทางน้ำก่อนเหวี่ยง — เห็นแล้วรู้ว่ากำลังตกปลาอยู่ */
+    if(w.faceTo) w.faceTo(sp.x, sp.z);
   }
-  function fishBobClear(){ const w = W(); if(fishBob && w) w.despawn(fishBob); fishBob = null; }
+  function fishBobClear(){
+    const w = W();
+    if(fishBob && w) w.despawn(fishBob);
+    fishBob = null;
+    /* คืนป้าย 🎣 ให้ทุกจุดเมื่อเลิกตก */
+    fishSpots.forEach(x => { if(x.obj && x.obj.userData.bubble) x.obj.userData.bubble.visible = true; });
+  }
   /* กด "ดึง!" — ถูกจังหวะได้ปลา · ไม่ถูกจังหวะ = ปลาหนี ลองใหม่ได้เลย ไม่เสียอะไร */
   function fishPull(){
     const w = W();
@@ -580,8 +657,9 @@
      ============================================================ */
   /* เก็บได้กี่รูป — รูปละ ~8-14 KB (jpeg กว้าง 160px) ⇒ 12 รูป ≈ 170 KB
      ยังห่างจากเพดาน localStorage (~5 MB/โดเมน) มาก แต่ไม่ปล่อยให้โตไม่จำกัด
-     ⚠ **เต็มแล้วไม่ทับรูปเก่าอัตโนมัติ** — เด้งอัลบั้มให้เด็กเลือกลบเอง (รูปเป็นของที่เด็กตั้งใจถ่าย) */
-  const PHOTO_MAX = 12;
+     ⚠ **เต็มแล้วไม่ทับรูปเก่าอัตโนมัติ** — เด้งอัลบั้มให้เด็กเลือกลบเอง (รูปเป็นของที่เด็กตั้งใจถ่าย)
+     ⚠ ผู้ใช้สั่งเพิ่มเป็น 20 รูป 2026-08-14 ⇒ ~280 KB ยังห่างเพดาน localStorage (~5 MB) มาก */
+  const PHOTO_MAX = 20;
   const PHOTO_W = 160;             /* ความกว้างที่ย่อเก็บ — ~8-14 KB/รูป */
   const PHOTO_ORDERS = [
     {id:'water',  name:'ถ่ายรูปริมน้ำ',        hint:'ไปยืนใกล้แม่น้ำหรือสะพานแล้วกดถ่าย'},
@@ -655,14 +733,22 @@
   /* ---------- อัลบั้มรูป — เปิดดู/ลบได้ ----------
      ⚠ **ต้องลบได้จริง** เพราะรูปเก็บเป็น dataURL ใน localStorage ซึ่งมีเพดาน ~5MB ต่อโดเมน
        ถ้าลบไม่ได้ เด็กถ่ายจนเต็มแล้วเซฟทั้งก้อนจะเขียนไม่ลง = ข้อมูลบ้านหายทั้งหมด */
+  /* ⚠ **เปิดอัลบั้มจากในโหมดถ่ายรูปแล้วห้ามหลุดออกจากโหมด** (ผู้ใช้สั่ง 2026-08-14)
+     เด็กเปิดดูรูปเก่าแล้วปิด ต้องได้เล็งกล้องต่อทันที ไม่ต้องกดเข้าโหมดใหม่ */
   function photoAlbumOpen(){
     const el = $('house-album');
     if(!el) return;
-    photoExit();
     el.hidden = false;
     renderAlbum();
   }
-  function photoAlbumClose(){ const el = $('house-album'); if(el) el.hidden = true; }
+  function photoAlbumClose(){ const el = $('house-album'); if(el) el.hidden = true; photoBigClose(); }
+  /* ดูรูปใหญ่ทีละใบ */
+  function photoBig(url){
+    const el = $('house-photo-big'), im = $('house-photo-big-img');
+    if(!el || !im) return;
+    im.src = url; el.hidden = false;
+  }
+  function photoBigClose(){ const el = $('house-photo-big'); if(el) el.hidden = true; }
   function photoAlbumIsOpen(){ const el = $('house-album'); return !!el && !el.hidden; }
   function renderAlbum(){
     const list = $('house-album-list');
@@ -688,10 +774,13 @@
       cap.className = 'halb-cap';
       cap.textContent = sh.d;
       c.appendChild(cap);
+      /* แตะที่รูป = ดูใหญ่ (ผู้ใช้สั่ง 2026-08-14) */
+      c.onclick = ()=>{ if(typeof playClick === 'function') playClick(); photoBig(sh.u); };
       const del = document.createElement('button');
       del.type = 'button'; del.className = 'halb-del'; del.textContent = '✕';
       del.setAttribute('aria-label', 'ลบรูปนี้');
-      del.onclick = ()=>{
+      del.onclick = (ev)=>{
+        ev.stopPropagation();                 /* ไม่งั้นกดลบแล้วเปิดรูปใหญ่ตามมาด้วย */
         if(typeof playClick === 'function') playClick();
         P.photo.shots = (P.photo.shots || []).filter((_, k) => k !== i);
         persist();
@@ -793,9 +882,19 @@
     if(slotAt(i)){ w.toast('🌱', 'แปลงนี้มีต้นไม้อยู่แล้วนะ'); return false; }
     /* ⚠ **ต้องมีเมล็ดในคลังก่อนถึงจะปลูกได้** (ผู้ใช้สั่ง 2026-08-13) — ซื้อกี่เม็ดปลูกได้เท่านั้น
        ⚠ ไม่ใช่ dead end: เมล็ดถูกสุด 6 🪙 ซึ่งเด็กหาได้จากเควสต์ชุดเดียว และร้านบอกทางไว้ชัด */
-    if(seedId == null) seedId = SEEDS.map(x => x.id).find(id => seedCount(id) > 0);
-    if(seedId == null || seedCount(seedId) <= 0){
+    const kinds = SEEDS.filter(x => seedCount(x.id) > 0);
+    if(!kinds.length){
       w.toast('🌰', 'ยังไม่มีเมล็ดพันธุ์เลย ไปซื้อที่ร้านต้นไม้ก่อนนะ');
+      return false;
+    }
+    /* ⚠ **มีเมล็ดหลายพันธุ์ต้องให้เด็กเลือกเอง** (ผู้ใช้แจ้ง 2026-08-14 ว่าเลือกไม่ได้)
+       มีพันธุ์เดียว = ปลูกเลย ไม่ต้องถาม (อย่าให้เด็กกดเกินจำเป็น) */
+    if(seedId == null){
+      if(kinds.length === 1) seedId = kinds[0].id;
+      else { seedPick(i, kinds); return false; }
+    }
+    if(seedCount(seedId) <= 0){
+      w.toast('🌰', 'เมล็ดพันธุ์นี้หมดแล้ว ไปซื้อเพิ่มที่ร้านต้นไม้นะ');
       return false;
     }
     const sd = seedById(seedId);
@@ -803,9 +902,68 @@
     setSlot(i, {seed: sd.id, stage: 0});
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
+    gardenFx(i, 'plant', sd);
     w.toast(sd.e, 'ปลูก' + sd.n + 'แล้ว! อย่าลืมมารดน้ำทุกวันนะ');
     return true;
   }
+  /* หน้าต่างเลือกเมล็ด — ใช้แผงเดียวกับรายการกิจกรรม (เด็กไม่ต้องเรียนรู้หน้าตาใหม่) */
+  function seedPick(i, kinds){
+    const el = $('house-seedpick'), list = $('house-seedpick-list');
+    if(!el || !list) return;
+    list.innerHTML = '';
+    kinds.forEach(sd=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hsp-item';
+      b.innerHTML = '<span class="hsp-e">' + sd.e + '</span>'
+        + '<span class="hsp-tx"><b>' + sd.n + '</b><i>รดน้ำ ' + sd.days + ' วัน · ขายได้ ' + sd.pay + '</i></span>'
+        + '<span class="hsp-n">×' + seedCount(sd.id) + '</span>';
+      b.onclick = ()=>{
+        if(typeof playClick === 'function') playClick();
+        el.hidden = true;
+        gardenPlant(i, sd.id);
+      };
+      list.appendChild(b);
+    });
+    el.hidden = false;
+  }
+  function seedPickClose(){ const el = $('house-seedpick'); if(el) el.hidden = true; }
+
+  /* ---------- อนิเมชันตอนปลูก / รดน้ำ / เก็บ (ผู้ใช้สั่ง 2026-08-14) ----------
+     อนุภาคเล็กๆ ลอยขึ้นเหนือแปลง แล้วหายไปเอง — บอกเด็กว่า "สิ่งที่กดมีผลจริง"
+     ⚠ อายุสั้น (~0.9 วิ) และไม่กันการกดต่อ ไม่ใช่ cutscene ที่ต้องรอ */
+  let gfx = [];
+  function gardenFx(i, kind, sd){
+    const w = W(); if(!w) return;
+    const bed = beds()[i]; if(!bed) return;
+    const k = w.kit();
+    const col = kind === 'water' ? 0x6ec6f0 : (kind === 'harvest' ? ((sd && sd.col) || 0xf3c53f) : 0x8d6e63);
+    const n = kind === 'water' ? 7 : 5;
+    const g = new THREE.Group();
+    for(let j = 0; j < n; j++){
+      const p = k.sphere(kind === 'water' ? .05 : .07, col, 6);
+      p.position.set((Math.random() - .5) * .6, .3 + Math.random() * .15, (Math.random() - .5) * .6);
+      p.userData.vy = .5 + Math.random() * .5;
+      g.add(p);
+    }
+    g.position.set(w.wx(bed.x), w.groundY(bed.x, bed.z), w.wz(bed.z));
+    w.spawn(g);
+    gfx.push({g, t:0, kind});
+  }
+  function updateGardenFx(dt){
+    for(let i = gfx.length - 1; i >= 0; i--){
+      const f = gfx[i];
+      f.t += dt;
+      f.g.children.forEach(p=>{
+        /* รดน้ำ = ตกลง · ปลูก/เก็บ = ลอยขึ้น */
+        p.position.y += (f.kind === 'water' ? -1 : 1) * (p.userData.vy || .6) * dt;
+      });
+      f.g.scale.setScalar(Math.max(.01, 1 - f.t / .9));
+      if(f.t > .9){ W().despawn(f.g); gfx.splice(i, 1); }
+    }
+  }
+  function gardenFxClear(){ const w = W(); gfx.forEach(f => { if(w) w.despawn(f.g); }); gfx = []; }
+
   function gardenWater(i){
     const w = W();
     if(!P) return false;
@@ -820,6 +978,7 @@
     growing.forEach(k => { const s = slotAt(k); setSlot(k, {seed:s.seed, stage:s.stage + 1}); });
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
+    growing.forEach(k2 => gardenFx(k2, 'water'));
     w.toast('💧', 'รดน้ำแล้ว! ต้นไม้โตขึ้นอีกขั้น ' + growing.length + ' ต้น');
     return true;
   }
@@ -836,6 +995,7 @@
     take.forEach(k => {
       const s = slotAt(k);
       P.garden.crop[s.seed] = (P.garden.crop[s.seed] | 0) + 1;
+      gardenFx(k, 'harvest', seedById(s.seed));
       setSlot(k, null);
     });
     persist(); gardenBuild(); renderPanel();
@@ -843,7 +1003,7 @@
     w.toast('🧺', 'เก็บผักได้ ' + take.length + ' ต้น! เอาไปขายที่ร้านต้นไม้ได้เลย');
     return true;
   }
-  function gardenClear(){ const w = W(); gardenObjs.forEach(o => { if(w) w.despawn(o); }); gardenObjs = []; }
+  function gardenClear(){ const w = W(); gardenObjs.forEach(o => { if(w) w.despawn(o); }); gardenObjs = []; gardenFxClear(); }
   /* วาด "ต้นพืช + ป้ายบอกสิ่งที่ทำได้" ทับบนเบาะดินที่เป็นเฟอร์นิเจอร์จริง
      ⚠ ตัวเบาะดินไม่ได้วาดที่นี่ (เป็น decor `veg-plot`) — ที่นี่วาดเฉพาะของที่เปลี่ยนตามสถานะ */
   function gardenBuild(){
@@ -958,8 +1118,7 @@
       const h = seekHint();
       const r = row('🙈', 'ซ่อนแอบกับเพื่อนบ้าน',
         'เจอแล้ว ' + P.seek.found.length + '/' + P.seek.spots.length + ' คน · ' + (h ? h.text : ''),
-        [{label:'ไปหาต่อ', fn: closePanel},
-         {label:'พักก่อน', alt:true, id:'hpl-seek-pause', fn: seekPause}]);
+        [{label:'พักก่อน', alt:true, id:'hpl-seek-pause', fn: seekPause}]);
       r.insertBefore(seekFaces(), r.querySelector('.hpl-btns'));
       list.appendChild(r);
     }else if(seekPaused()){
@@ -986,23 +1145,19 @@
     /* 🎣 ตกปลา */
     const fishSub = 'สมุดปลา ' + ((P.fish.book || []).length) + '/' + FISH.length
                   + ' ชนิด · วันนี้ได้ ' + (P.fish.today | 0) + ' ตัว';
-    if(fishState){
-      list.appendChild(row('🎣', 'ตกปลา',
-        fishState.phase === 'bite' ? '‼️ ทุ่นจมแล้ว! รีบดึง!' : 'เหวี่ยงเบ็ดแล้ว รอทุ่นจม…',
-        [{label:'ดึง!', id:'hpl-pull', fn: fishPull}]));
-    }else{
-      list.appendChild(row('🎣', 'ตกปลา',
-        fishSub + ' · มีจุดตกปลาที่บ่อน้ำใหญ่กับริมทะเล มองหาป้าย 🎣 นะ',
-        [{label:'เหวี่ยงเบ็ด', id:'hpl-cast', off: !atFishSpot(), fn: fishCast}]));
-    }
+    /* ⚠ **ไม่มีปุ่มลงมือทำในแผงนี้แล้ว** (ผู้ใช้สั่ง 2026-08-14) — แผงนี้ทำหน้าที่ "บอกว่าวันนี้มีอะไรให้ทำ"
+       อย่างเดียว ส่วนการลงมือให้เด็กออกไปแตะของจริงในเมือง (ป้ายลอย 🎣/🌱 · ปุ่มกล้องมุมขวาบน)
+       เหตุผล: ถ้ากดจากแผงได้หมด เด็กจะไม่ได้ออกไปเดินเล่นในเมืองเลย ซึ่งขัดเจตนาของกลุ่ม A */
+    list.appendChild(row('🎣', 'ตกปลา',
+      fishState
+        ? (fishState.phase === 'bite' ? '‼️ ทุ่นจมแล้ว! รีบแตะทุ่นเลย!' : 'กำลังตกอยู่ · รอทุ่นจม…')
+        : (fishSub + ' · มีจุดตกปลาที่บ่อน้ำใหญ่กับริมทะเล มองหาป้าย 🎣 แล้วแตะได้เลย'), []));
 
     /* 📷 ช่างภาพ */
     const po = photoOrder();
     list.appendChild(row('📷', po.name,
       (P.photo.done ? 'วันนี้ถ่ายแล้ว · ' : '') + po.hint
-      + ' · อัลบั้ม ' + ((P.photo.shots || []).length) + '/' + PHOTO_MAX,
-      [{label:'ถ่ายรูป', id:'hpl-shot', fn: ()=>{ closePanel(); photoEnter(); }},
-       {label:'อัลบั้ม', id:'hpl-album', alt:true, fn: ()=>{ closePanel(); photoAlbumOpen(); }}]));
+      + ' · กดปุ่มกล้องมุมขวาบนเพื่อเข้าโหมดถ่ายรูป · อัลบั้ม ' + ((P.photo.shots || []).length) + '/' + PHOTO_MAX, []));
 
     /* 🌱 แปลงผัก — แตะที่แปลงในเมืองได้เลย ปุ่มในแผงเป็นทางลัดสำรอง */
     const nb = beds().length;
@@ -1010,11 +1165,8 @@
     const ripe = growing.filter(x => x.stage >= GROW_MAX).length;
     list.appendChild(row('🌱', 'แปลงผักหน้าบ้าน',
       nb ? ('มี ' + nb + ' แปลง · ปลูกแล้ว ' + growing.length + ' · โตพร้อมเก็บ ' + ripe
-            + ' · แตะที่แปลงในเมืองได้เลย (ดูป้ายเหนือแปลง)')
-         : 'ไม่มีแปลงผักในบริเวณบ้าน ลองหยิบกลับมาวางในโหมดตกแต่งนะ',
-      [{label:'ปลูก', id:'hpl-plant', off: !nb, fn: ()=>gardenPlant(null)},
-       {label:'รดน้ำ', id:'hpl-water', alt:true, off: !nb, fn: ()=>gardenWater(null)},
-       {label:'เก็บผัก', id:'hpl-harvest', alt:true, off: !ripe, fn: ()=>gardenHarvest(null)}]));
+            + ' · เมล็ดในกระเป๋า ' + seedTotal() + ' เม็ด · แตะที่แปลงหน้าบ้านได้เลย (ดูป้ายเหนือแปลง)')
+         : 'ไม่มีแปลงผักในบริเวณบ้าน ลองหยิบกลับมาวางในโหมดตกแต่งนะ', []));
   }
 
   /* ============================================================
@@ -1282,6 +1434,7 @@
     photoExit();
     photoAlbumClose();
     closeTank();
+    seedPickClose();
     const el = $('house-seek-hud'); if(el) el.hidden = true;
   }
   function onScene(to){
@@ -1317,13 +1470,51 @@
         W().toast('🐟', 'ปลาว่ายหนีไปแล้ว ไม่เป็นไรนะ ลองใหม่ได้เลย');
         renderPanel();
       }
-      if(fishBob){
-        fishBob.position.y = fishState && fishState.phase === 'bite'
-          ? -.12 + Math.sin(t * .02) * .04
-          : .02 + Math.sin(t * .004) * .05;
+      /* ⚠ **ต้องเช็คซ้ำ** — สาขา "ปลาหนี" ข้างบนเคลียร์ `fishState` ทิ้งไปแล้วในเฟรมเดียวกัน
+         ถ้าอ่านต่อจะ throw ทุกเฟรมที่ปลาหนี (เจอจากเทส 2026-08-14) */
+      if(fishState && fishBob){
+        const cs = fishBob.userData.cast;
+        if(cs && cs.t < cs.dur){
+          /* กำลังเหวี่ยง — พุ่งเป็นเส้นโค้งจากมือเด็กไปลงน้ำ */
+          cs.t += dt;
+          const p = Math.min(1, cs.t / cs.dur);
+          fishBob.position.x = cs.from.x + (cs.to.x - cs.from.x) * p;
+          fishBob.position.z = cs.from.z + (cs.to.z - cs.from.z) * p;
+          fishBob.position.y = .5 + Math.sin(p * Math.PI) * 1.1 - p * .48;
+        }else{
+          fishBob.position.y = fishState.phase === 'bite'
+            ? -.12 + Math.sin(t * .02) * .04     /* ปลากินเหยื่อ = ทุ่นกระตุกถี่ๆ */
+            : .02 + Math.sin(t * .004) * .05;
+        }
+      }
+      /* วงคลื่น "เข้าใกล้ทุ่น" ตามเวลาที่เหลือก่อนปลากิน — เด็กดูแล้วรู้ว่าใกล้ได้แล้ว
+         ⚠ เป็นการ "บอกใบ้" ไม่ใช่ตัวจับเวลากดดัน (ไม่มีตัวเลขนับถอยหลัง ไม่มีบทลงโทษ) */
+      const sp = fishState && fishState.spot;
+      if(sp && sp.obj){
+        const near = fishState.phase === 'bite' ? 1
+                   : 1 - Math.max(0, Math.min(1, fishState.t / (fishState.wait || 1)));
+        (sp.obj.userData.rings || []).forEach((r, ri)=>{
+          const k2 = ((t * .0006 + (r.userData.ph || 0)) % 1);
+          const wide = 1.9 - near * 1.25;                 /* ปลาใกล้ = วงแคบลงเข้าหาทุ่น */
+          r.scale.setScalar(.35 + k2 * wide);
+          r.material.opacity = 1;
+          r.visible = true;
+          r.position.y = .04;
+        });
       }
     }
+    /* วงคลื่นตอนยังไม่ได้ตก — กระเพื่อมช้าๆ บอกว่า "ตรงนี้ตกปลาได้" */
+    if(!fishState){
+      fishSpots.forEach(spx=>{
+        if(!spx.obj) return;
+        (spx.obj.userData.rings || []).forEach(r=>{
+          const k2 = ((t * .0004 + (r.userData.ph || 0)) % 1);
+          r.scale.setScalar(.35 + k2 * 1.5);
+        });
+      });
+    }
     /* ป้ายลอยทุกใบต้องหันเข้าหากล้อง (แปลงผัก + จุดตกปลา) */
+    updateGardenFx(dt);
     billboards(gardenObjs);
     billboards(fishSpots.map(x => x.obj).filter(Boolean));
     hintT += dt;
@@ -1334,6 +1525,7 @@
   function tapPick(pick){
     const w = W(); if(!w || !pick) return false;
     if(pick.game === 'fish'){ fishPull(); return true; }
+    if(pick.game === 'fishspot' && fishState){ fishPull(); return true; }   /* กำลังตกอยู่ = แตะเพื่อดึง */
     const t = w.nearWalkable(pick.x, pick.z);
     if(!t) return false;
     w.walkTo(t.x, t.z, {type:'play2', pick: pick, pos: new THREE.Vector3(w.wx(pick.x), 0, w.wz(pick.z))});
@@ -1360,13 +1552,13 @@
     open: openPanel, close: closePanel, isOpen: panelOpen,
     /* ---- จุดต่อชุดเทส (ไม่มีอะไรที่เกมจริงไม่ผ่าน) ---- */
     state: () => P,
-    seekStart, seekHint, seekPause, seekResume, seekPaused,
+    seekStart, seekHint, seekPause, seekResume, seekPaused, seedPick, seedPickClose,
     tradeAvailable, tradeLabel, tradeEmoji, renderTrade,
     SEEDS, seedCount, cropCount, seedTotal, addSeed, growMax, fishById,
     beds, bedAction, fishSpots: () => fishSpots, atFishSpot,
     fishCast, fishPull, fishState: () => fishState,
     photoShoot, photoOrder, grabShot, photoEnter, photoExit, photoMode,
-    photoAlbumOpen, photoAlbumClose, photoAlbumIsOpen, playShutter,
+    photoAlbumOpen, photoAlbumClose, photoAlbumIsOpen, playShutter, photoBig, photoBigClose,
     openTank, closeTank, tankIsOpen, tankFish, TANK_MAX, TANK_PER_KIND,
     gardenPlant, gardenWater, gardenHarvest,
     objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
@@ -1393,6 +1585,10 @@
     if(tc) tc.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); closeTank(); });
     const ab = $('house-album-btn');
     if(ab) ab.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); photoAlbumOpen(); });
+    const sc = $('house-seedpick-close');
+    if(sc) sc.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); seedPickClose(); });
+    const bg = $('house-photo-big');
+    if(bg) bg.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); photoBigClose(); });
     const ac = $('house-album-close');
     if(ac) ac.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); photoAlbumClose(); });
     const px = $('house-photo-exit');

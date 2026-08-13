@@ -10404,6 +10404,9 @@ function placedFurnCount(id){
   });
   return n;
 }
+/* ⚠ **แปลงผักวางได้สูงสุด 8 แปลง** (ผู้ใช้สั่ง 2026-08-14 · กันเงินเฟ้อ)
+   แปลงเยอะ = ปลูกขายได้ไม่จำกัด ⇒ รายได้แซงเควสต์ ซึ่งผิดเจตนาของกลุ่ม A */
+const VEG_PLOT_MAX = 8;
 function renderEditItems(){
   const wrap = $('house-edit-items'); if(!wrap) return;
   wrap.innerHTML = '';
@@ -10413,7 +10416,8 @@ function renderEditItems(){
        แตะแล้วบอกว่าไปซื้อได้ที่ไหน ไม่ใช่เงียบเฉยจนนึกว่าแอปเสีย
        ⚠ เฟส 11: **ซื้อ 1 ชิ้นวางได้ 1 อัน** (ผู้ใช้สั่ง 2026-08-13) ⇒ ต้องโชว์ "เหลือกี่ชิ้น"
          และปิดปุ่มเมื่อวางครบแล้ว ไม่งั้นเด็กกดแล้วไม่มีอะไรเกิดขึ้นโดยไม่รู้สาเหตุ */
-    const own = SHOP ? SHOP.furnCount(it.id) : 1;
+    const own = it.id === 'veg-plot' ? Math.min(VEG_PLOT_MAX, SHOP ? SHOP.furnCount(it.id) : 1)
+              : (SHOP ? SHOP.furnCount(it.id) : 1);
     const used = placedFurnCount(it.id);
     const left = Math.max(0, own - used);
     const locked = own <= 0;
@@ -11724,9 +11728,16 @@ window.HouseWorld = {
     return true;
   },
   camRot: () => camera ? camera.rotation : null,      /* ป้ายลอยหันเข้าหากล้อง (ชุดเดียวกับป้าย "!") */
+  /* หันหน้าตัวเด็กไปทางช่องนี้ (ใช้ตอนเหวี่ยงเบ็ด — เห็นแล้วรู้ว่ากำลังตกปลาอยู่) */
+  faceTo: (x, z) => {
+    if(!charGroup) return;
+    hChar.targetRotY = Math.atan2(outWX(x) - charGroup.position.x, outWZ(z) - charGroup.position.z);
+  },
   /* จุดตกปลาที่ผังประกาศไว้จริง — ⚠ **ห้ามเดาพิกัดเอง** (กติกาเดียวกับตอนแก้ผังเมือง) */
   pondPier: () => ({x: POND_PIER.x, z: POND_PIER.z, len: POND_PIER.len, rot: POND_PIER.rot}),
-  pondFishSpots: () => POND_FISH_SPOTS.map(s => ({x:s.x, z:s.z, name:s.name})),
+  pondFishSpots: () => POND_FISH_SPOTS.map(s => ({stand:{x:s.stand.x, z:s.stand.z},
+                                                  water:{x:s.water.x, z:s.water.z}, name:s.name})),
+  isWater: (x, z) => !!(outGrid && outGrid[z] && outGrid[z][x] === 1),
   isSea:  (x, z) => isSeaTile(x, z),
   isSand: (x, z) => isSandTile(x, z),
   isPond: (x, z) => isPondTile(x, z),
