@@ -217,8 +217,8 @@ function saveHouseData(patch){
    จะ throw ตั้งแต่เฟรมแรก ⇒ **เด็กเข้าโหมดบ้านไม่ได้เลยทั้งโหมด** ซึ่งแย่กว่าการไม่มีท่าไม้มาก
    ⇒ ไม่มีของใหม่ = ถอยไปใช้ค่าว่าง (ไม่มีท่าเพิ่ม/ไม่มีจุดตกปลาในบ่อ) แต่เมืองยังเข้าได้ปกติ */
 const POND_PIERS      = HM.POND_PIERS || [];
-const SEA_PIERS       = HM.SEA_PIERS || [];
-const seaPierZ0       = HM.seaPierZ0 || function(){ return 0; };
+const SEA_SPITS       = HM.SEA_SPITS || [];
+const isSeaSpitTile   = HM.isSeaSpitTile || function(){ return false; };
 const POND_FISH_SPOTS = HM.POND_FISH_SPOTS || [];
 const seaFishSpots    = HM.seaFishSpots || function(){ return []; };
 const isPierTile      = HM.isPierTile || function(){ return false; };
@@ -4749,13 +4749,6 @@ function buildStaticScenery(){
     p2.rotation.y = (pp.rot||0) * Math.PI/2;
     mergeCollectFx(p2, parts, chunkKeyOf(pp.x, pp.z));
   });
-  /* ท่าไม้ยื่นลงทะเล (เพิ่ม 2026-08-14) — เริ่มที่ช่องทรายสุดท้ายแล้วยื่นไปทาง −z */
-  SEA_PIERS.forEach(sp=>{
-    const p3 = buildPier(sp.len);
-    p3.position.set(outWX(sp.x), 0, outWZ(seaPierZ0(sp.x)));
-    p3.rotation.y = (sp.rot || 0) * Math.PI/2;
-    mergeCollectFx(p3, parts, chunkKeyOf(sp.x, seaPierZ0(sp.x)));
-  });
   const pier = buildPier(POND_PIER.len);
   pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
@@ -4900,6 +4893,8 @@ function buildOutGrid(noWild){
       /* พื้นไม้ของท่าเดินได้ (ค่า 2 เหมือนสะพาน — ระบบเดิน/หาเส้นทางรู้จักค่านี้อยู่แล้ว)
          ⚠ ต้องมาหลังบรรทัดน้ำเสมอ ไม่งั้นถูกทับกลับเป็นน้ำ */
       if(isPierTile(x, z)) t = 2;
+      /* สันทรายยื่นลงทะเล — เดินได้เหมือนหาด (ค่า 0) ⇒ ตัววาดพื้นจะปูทรายให้เองตาม isSandTile */
+      if(isSeaSpitTile(x, z)) t = 0;
       if(isCanalTile(x, z)) t = isCanalBridgeTile(x, z) ? 2 : 1;      /* คลองส่งน้ำ + สะพานเล็ก */
       if(RIVER_X.includes(x)) t = isBridgeZ(z) ? 2 : 1;
       if(isCropTile(x, z)) t = 3;                                     /* ร่องต้นพืชในแปลงผัก */
@@ -11725,6 +11720,9 @@ window.HouseWorld = {
   despawn: g => { if(!g) return; playObjs.delete(g); if(g.parent) g.parent.remove(g); disposeGroup(g); },
   /* ชิ้นส่วนพื้นฐาน (ใช้วัสดุ toon ชุดเดียวกับทั้งเมือง ⇒ ของใหม่กลืนกับฉากเดิมเสมอ) */
   kit: () => ({box, sphere, cyl, cone, torus, toonMat, merge: mergeDecorGroup, shadows: () => hShadows}),
+  /* ของกลุ่ม A ที่ต้องอยู่ "เหนือทุกอย่าง" ชั่วคราว (อนุภาคอนิเมชัน) — วางใน scene ไม่ใช่ worldGroup
+     ⇒ ไม่ถูก merge/ถูกบังโดยของฉาก และหายพร้อมกันตอนออกจากบ้าน */
+  spawnFx: g => { if(!g || !scene) return null; scene.add(g); playObjs.add(g); return g; },
   /* --- ข้อมูล/เงิน/HUD --- */
   load: () => loadHouseData(), save: p => saveHouseData(p),
   award: n => awardCoins(n),               /* ⚠ เงินในโหมดบ้านจ่ายผ่านตัวนี้จุดเดียวเท่านั้น (ข้อ 5) */

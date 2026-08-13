@@ -336,10 +336,11 @@ test('เฟส 11I: แปลงผัก — 4 แปลงถาวรที�
     const stage1 = P.state().garden.plots[0].stage;
     const wateredAct = P.bedAction(0);
     /* จำลองลืมรดหลายวัน — ผักต้องไม่ตายและไม่ถอยขั้น */
-    P.state().garden.watered = '';
+    P.state().garden.plots[0].wd = '';
     const survived = { has: !!P.state().garden.plots[0], stage: P.state().garden.plots[0].stage };
-    /* รดจนโตเต็มแล้วแตะเก็บ */
-    for (let i = 0; i < P.GROW_MAX + 2; i++) { P.state().garden.watered = ''; P.gardenWater(null); }
+    /* ⚠ **รดน้ำเป็นรายแปลงแล้ว** (แก้บั๊ก 2026-08-14: เดิมใช้ garden.watered ก้อนเดียว ทำให้
+       ปลูกแปลงใหม่วันเดียวกันแล้วรดไม่ได้) ⇒ รีเซ็ต `wd` ของแปลงนั้นแทน */
+    for (let i = 0; i < 9; i++) { const sl = P.state().garden.plots[0]; if (sl) sl.wd = ''; P.gardenWater(0); }
     const ripeAct = P.bedAction(0);
     P.arrive({ game:'garden', i:0 });
     return { afterPlant, stage1, wateredAct, survived, ripeAct, noSeed,
@@ -372,7 +373,7 @@ test('เฟส 11J: ขึ้นวันใหม่ — ของรายว
       col:  { items: [{ x: 5, z: 5 }], got: [0], sets: 4, prizes: ['birdhouse'] },
       fish: { book: ['nil', 'gold'], today: 9, spot: null },
       photo:{ order: 'water', done: true, shots: [{ u: 'x', d: '1999-1-1' }] },
-      garden:{ plots: [{ seed: 'carrot', stage: 2 }], watered: '1999-1-1' },
+      garden:{ plots: [{ seed: 'carrot', stage: 2 }], watered: '1999-1-1' },   /* คีย์เก่า — ต้องถูก migrate */
     },
   });
   const r = await page.evaluate(() => {
@@ -383,7 +384,7 @@ test('เฟส 11J: ขึ้นวันใหม่ — ของรายว
       colGot: s.col.got.length, colSets: s.col.sets, prizes: s.col.prizes,
       fishToday: s.fish.today, book: s.fish.book,
       photoDone: s.photo.done, shots: s.photo.shots.length,
-      plots: s.garden.plots, watered: s.garden.watered,
+      plots: s.garden.plots, watered: s.garden.watered, wd: s.garden.plots[0].wd,
     };
   });
   /* รีเซ็ตรายวัน */
@@ -393,7 +394,10 @@ test('เฟส 11J: ขึ้นวันใหม่ — ของรายว
   expect(r.colGot).toBe(0);
   expect(r.fishToday).toBe(0);
   expect(r.photoDone).toBe(false);
-  expect(r.watered).toBe('');
+  /* ⚠ `garden.watered` (รายวันทั้งสวน) ถูกแทนด้วย `wd` รายแปลงแล้ว — migration ต้องย้ายค่าให้
+     และ **ห้ามล้าง `wd` ตอนขึ้นวันใหม่** (เทียบกับวันปัจจุบันตอนใช้งานอยู่แล้ว) */
+  expect(r.watered, 'คีย์เก่าต้องถูกลบหลัง migrate').toBe(undefined);
+  expect(r.wd, 'ค่าที่รดไว้ต้องย้ายมาอยู่ที่ตัวแปลง').toBe('1999-1-1');
   /* ⚠ ของถาวรห้ามหายเด็ดขาด */
   expect(r.colSets, 'จำนวนวันที่เก็บครบ').toBe(4);
   expect(r.prizes).toEqual(['birdhouse']);

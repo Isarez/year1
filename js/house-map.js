@@ -691,8 +691,30 @@ function seaEdgeZ(x){
   return x < SEA_X0 ? -1 : Math.min(SEA_MAX_Z, SEA_BASE_Z + Math.round((x - SEA_X0) * SEA_SLOPE));
 }
 function isSeaTile(x, z){ return z <= seaEdgeZ(x); }
+/* ⚠ **ทะเลใช้ "สันทราย" ไม่ใช่ท่าไม้** (ผู้ใช้สั่ง 2026-08-14) — ท่าไม้ในทะเลแสดงผลไม่ถูก
+   (ยาว 5 ช่องแล้วเสาลอยอยู่กลางน้ำลึก ดูไม่เข้ากับหาด) ⇒ ทำเป็นแนวทรายยื่นลงทะเลแทน
+   พื้นเป็นแบบเดียวกับหาดทราย เดินได้ปกติ · x51-52 คู่กัน · x31 เป็นสันเดี่ยว */
+/* ⚠ **x51 ต้องยาวกว่า x52** — ไม่งั้นปลายสันของ x51 จะมี x52 เดินได้อยู่ข้างๆ
+   ผิดกติกาที่ผู้ใช้สั่งว่า "จุดตกปลาต้องห่างจากขอบพื้นเดินได้" (เจอจากเทส 2026-08-14)
+   ยาวต่างกัน 2 ช่อง ⇒ ปลายสันของ x51 มีน้ำล้อม 3 ด้าน เหลือทางเดินกลับด้านเดียว */
+const SEA_SPITS = [
+  {x:51, len:6},
+  {x:52, len:4},
+  {x:31, len:4},
+];
+function isSeaSpitTile(x, z){
+  for(let i=0; i<SEA_SPITS.length; i++){
+    const p = SEA_SPITS[i];
+    if(x !== p.x) continue;
+    const z0 = seaEdgeZ(x) + 1;                 /* ช่องทรายสุดท้ายก่อนถึงน้ำ */
+    if(z <= z0 && z > z0 - p.len) return true;
+  }
+  return false;
+}
 function isSandTile(x, z){
   if(RIVER_X.indexOf(x) >= 0) return false;              /* ปากคลองใหญ่ไหลลงทะเล ไม่มีทรายคั่น */
+  /* สันทรายที่ยื่นลงทะเล = พื้นหาดเหมือนกัน (ผู้ใช้สั่ง 2026-08-14 ว่าพื้นตรงนั้นต้องเป็นแบบหาด) */
+  if(isSeaSpitTile(x, z)) return true;
   const e = seaEdgeZ(x); return e >= 0 && z > e && z <= e + BEACH_W;
 }
 function isWetSandTile(x, z){ return z === seaEdgeZ(x) + 1; }
@@ -794,27 +816,13 @@ const POND_PIERS = [
   {x:11, z:15, len:3, rot:2},      /* ท่าเหนือ (คู่ z15-16) */
   {x:11, z:16, len:3, rot:2},
 ];
-/* ท่าไม้ยื่นลงทะเล (ผู้ใช้กำหนดพิกัดเอง 2026-08-14) — ทะเลอยู่ทาง −z ⇒ ท่ายื่นไปทาง −z
-   `rot:3` = หมุน 270° ทำให้ทิศ "ยาว" ของ buildPier (+x) ชี้ไปทาง −z
-   ⚠ ยาว 5 ช่อง วางที่ x51-52 (2 แถวคู่กัน) และอีกจุดที่ x31 */
-const SEA_PIERS = [
-  {x:51, len:5, rot:3},
-  {x:52, len:5, rot:3},
-  {x:31, len:5, rot:3},
-];
 /* ช่องที่เป็น "พื้นไม้ของท่า" — เดินได้ และผิวบนสูงกว่าพื้นดิน (ดู groundY ใน house.js) */
-/* ท่าทะเลเริ่มที่ "ช่องทรายสุดท้ายก่อนถึงน้ำ" ของแถว x นั้น แล้วยื่นลงทะเลไปทาง −z */
 function seaPierZ0(x){ return seaEdgeZ(x) + 1; }
+/* พื้นไม้ของท่า — **เฉพาะท่าในบ่อน้ำ** (สันทรายในทะเลเป็นพื้นหาด ไม่ใช่ไม้) */
 function isPierTile(x, z){
   for(let i=0; i<POND_PIERS.length; i++){
     const p = POND_PIERS[i];
     if(z === p.z && x <= p.x && x > p.x - p.len) return true;
-  }
-  for(let i=0; i<SEA_PIERS.length; i++){
-    const p = SEA_PIERS[i];
-    if(x !== p.x) continue;
-    const z0 = seaPierZ0(x);
-    if(z <= z0 && z > z0 - p.len) return true;
   }
   return false;
 }
@@ -828,11 +836,14 @@ const POND_FISH_SPOTS = [
 ];
 /* จุดตกปลาในทะเล — ยืนที่ **ปลายท่า ห่างจากขอบพื้น 1 ช่อง** แล้วทุ่นลอยถัดไปอีก 1 ช่อง
    (ผู้ใช้สั่ง 2026-08-14: ทุกจุดต้องห่างขอบพื้นอย่างน้อย 1 ช่อง จะได้ไม่ดูเหมือนยืนตกบนบก) */
+/* ⚠ **จุดตกปลาต้องอยู่ปลายสันทราย ห่างจากขอบพื้นเดินได้อย่างน้อย 1 ช่องทุกด้าน**
+   (ผู้ใช้แจ้ง 2026-08-14 ว่ายังชิดขอบอยู่) — ปลายสันมีน้ำล้อม 3 ด้านอยู่แล้วโดยธรรมชาติ
+   เพราะสันกว้าง 1 ช่อง ยกเว้น x51/x52 ที่ติดกัน ⇒ ให้จุดอยู่ที่ x51 ปลายสุดเท่านั้น */
 function seaFishSpots(){
-  return SEA_PIERS.filter(p => p.x !== 52).map(p=>{   /* x52 เป็นท่าคู่ของ x51 ไม่ต้องมีจุดซ้ำ */
-    const z0 = seaPierZ0(p.x);
-    const stand = {x:p.x, z:z0 - (p.len - 1)};        /* ปลายท่าสุด */
-    return {stand, water:{x:p.x, z:stand.z - 1}, name:'ท่าน้ำริมทะเล'};
+  return SEA_SPITS.filter(p => p.x !== 52).map(p=>{
+    const z0 = seaEdgeZ(p.x) + 1;
+    const stand = {x:p.x, z:z0 - (p.len - 1)};        /* ปลายสันทราย */
+    return {stand, water:{x:p.x, z:stand.z - 1}, name:'ปลายสันทราย'};
   });
 }
 const FISHER_TILE = {x:9, z:19, rot:2};    /* ปลายท่า นั่งหันหน้าเข้าบ่อ (ทิศเหนือ) */
@@ -1656,7 +1667,7 @@ return {
   BOAT_SPOTS, BEACH_RACKS, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
   SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN, POT_SPOTS,
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
-  POND_DUCKS, POND_PIER, POND_PIERS, SEA_PIERS, seaPierZ0, isPierTile, POND_FISH_SPOTS, seaFishSpots,
+  POND_DUCKS, POND_PIER, POND_PIERS, SEA_SPITS, isSeaSpitTile, seaPierZ0, isPierTile, POND_FISH_SPOTS, seaFishSpots,
   FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,

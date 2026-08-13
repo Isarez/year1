@@ -53,7 +53,7 @@
       col:    {items:[], got:[], sets:0, prizes:[]},     /* sets = เก็บครบมากี่วัน · prizes = ของที่ปลดแล้ว */
       fish:   {book:[], bag:{}, today:0, spot:null},     /* book = เคยได้อะไรบ้าง (ถาวร) · bag = ตัวที่ยังไม่ได้ขาย */
       photo:  {order:'', done:false, shots:[]},          /* shots = รูปที่เก็บไว้ (จำกัดจำนวน+ย่อเล็ก) */
-      garden: {plots:[], watered:'', seeds:{}, crop:{}}, /* plots = ช่องปลูกตามลำดับแปลง · seeds/crop = คลัง */
+      garden: {plots:[], seeds:{}, crop:{}},             /* plots = ช่องปลูกตามลำดับแปลง (มี wd = วันที่รดล่าสุด) */
     };
   }
   let P = null;                     /* state ที่ sync แล้วของวันนี้ */
@@ -76,6 +76,13 @@
       if(k === 'v' || k === 'day') return;
       if(!p[k] || typeof p[k] !== 'object'){ p[k] = base[k]; dirty = true; }
     });
+    /* ย้ายจาก "รดรายวันทั้งสวน" มาเป็น "รดรายแปลง" — เซฟเก่าที่รดไปแล้ววันนี้ให้ถือว่ารดทุกแปลง
+       (ไม่งั้นเด็กที่เพิ่งรดจะรดซ้ำได้ทันทีในวันเดียวกัน = โตเร็วเกิน) */
+    if(p.garden && p.garden.watered && Array.isArray(p.garden.plots)){
+      p.garden.plots.forEach(pl=>{ if(pl && pl.wd == null) pl.wd = p.garden.watered; });
+      delete p.garden.watered;
+      dirty = true;
+    }
     const today = dayKey();
     if(p.day !== today){
       p.day = today;
@@ -92,7 +99,8 @@
     p.col   = Object.assign({}, p.col, {items:[], got:[]});
     p.fish  = Object.assign({}, p.fish, {today:0});
     p.photo = Object.assign({}, p.photo, {order:'', done:false});
-    p.garden = Object.assign({}, p.garden, {watered:''});
+    /* ⚠ ขึ้นวันใหม่ **ห้ามล้าง `wd` ทิ้ง** — เทียบกับ dayKey() ตอนใช้งานอยู่แล้ว
+       (ถ้าล้างจะกลายเป็นว่าเด็กที่ไม่ได้เข้าเล่นหลายวันรดรวดเดียวแล้วโตพรวด) */
   }
   function seedRng(tag){ return rngFrom(fnv(childKey() + '|' + dayKey() + '|play|' + tag)); }
 
@@ -638,6 +646,9 @@
     P.fish.bag[f.id] = (P.fish.bag[f.id] | 0) + 1;
     persist();
     if(typeof playCongrats === 'function') playCongrats();
+    { const t2 = w.tile();
+      spawnFx({x:w.wx(t2.x), y:w.groundY(t2.x, t2.z), z:w.wz(t2.z)},
+              {col:0xffd166, col2:0xfff3b0, up:true, h:1.1, n:12}); }
     w.toast(f.e, (isNew ? 'ได้ตัวใหม่! ' : 'ได้ ') + f.n + ' แล้ว (สมุดปลา ' + P.fish.book.length + '/' + FISH.length + ')');
     renderPanel();
     return true;
@@ -655,13 +666,13 @@
      ยังห่างจากเพดาน localStorage (~5 MB/โดเมน) มาก แต่ไม่ปล่อยให้โตไม่จำกัด
      ⚠ **เต็มแล้วไม่ทับรูปเก่าอัตโนมัติ** — เด้งอัลบั้มให้เด็กเลือกลบเอง (รูปเป็นของที่เด็กตั้งใจถ่าย)
      ⚠ ผู้ใช้สั่งเพิ่มเป็น 20 รูป 2026-08-14 ⇒ ~280 KB ยังห่างเพดาน localStorage (~5 MB) มาก */
-  const PHOTO_MAX = 20;
+  const PHOTO_MAX = 12;
   /* ความกว้างที่ย่อเก็บ — ผู้ใช้แจ้ง 2026-08-14 ว่า 160px เบลอมากตอนกดดูรูปใหญ่
-     ⚠ 560px (~35-45 KB/รูป × 20 รูป ≈ 700-900 KB ต่อเด็ก 1 คน)
-       **ต้องคิดเผื่อครอบครัวที่มีลูกหลายคน** — 3 คน ≈ 2.5 MB ซึ่งยังใต้เพดาน localStorage (~5 MB)
-       แต่ถ้าดันขึ้นเป็น 640px จะกลายเป็น ~3.4 MB = เสี่ยงเซฟเขียนไม่ลงแล้วข้อมูลบ้านหายทั้งหมด
-       ⚠ **ห้ามเพิ่มความกว้างโดยไม่ลดจำนวนรูปลงพร้อมกัน** */
-  const PHOTO_W = 560;
+     ⚠ ผู้ใช้เลือกเอง 2026-08-14: **ลดเหลือ 12 รูป แล้วเพิ่มความคมเป็น 760px**
+       (~65-80 KB/รูป × 12 ≈ 800-960 KB ต่อเด็ก 1 คน · ครอบครัวลูก 3 คน ≈ 2.9 MB
+        ยังใต้เพดาน localStorage ~5 MB)
+     ⚠ **ห้ามเพิ่มความกว้างโดยไม่ลดจำนวนรูปลงพร้อมกัน** — มีเทสคุมขนาดเซฟไว้ */
+  const PHOTO_W = 760;
   const PHOTO_ORDERS = [
     {id:'water',  name:'ถ่ายรูปริมน้ำ',        hint:'ไปยืนใกล้แม่น้ำหรือสะพานแล้วกดถ่าย'},
     {id:'home',   name:'ถ่ายรูปหน้าบ้านของหนู', hint:'กลับไปที่บริเวณบ้านแล้วกดถ่าย'},
@@ -855,11 +866,15 @@
     P.garden.plots = arr;
   }
   /* ตอนนี้แปลงนี้ทำอะไรได้ — ใช้ทั้งเลือกไอคอนป้ายและตัดสินใจตอนแตะ */
+  /* ⚠ **รดน้ำนับ "รายแปลง" ไม่ใช่รายวันทั้งสวน** (บั๊กจริงที่ผู้ใช้เจอ 2026-08-14):
+     ของเดิมใช้ `garden.watered` ก้อนเดียว ⇒ รดแปลงเก่าไปแล้ว พอปลูกแปลงใหม่วันเดียวกัน
+     แปลงใหม่จะรดไม่ได้เลยทั้งที่ยังไม่เคยรด ⇒ ต้องรอข้ามวันโดยไม่มีเหตุผล
+     ⇒ เก็บวันที่รดล่าสุดไว้ที่ตัวแปลงเอง (`sl.wd`) */
   function bedAction(i){
     const sl = slotAt(i);
     if(!sl) return 'plant';
     if(sl.stage >= growMax(sl.seed)) return 'harvest';
-    return (P.garden.watered === dayKey()) ? 'wait' : 'water';
+    return (sl.wd === dayKey()) ? 'wait' : 'water';
   }
   /* ---------- คลังเมล็ด / คลังผลผลิต ---------- */
   function seedCount(id){ return ((P && P.garden.seeds) || {})[id] | 0; }
@@ -900,7 +915,7 @@
     }
     const sd = seedById(seedId);
     addSeed(sd.id, -1);
-    setSlot(i, {seed: sd.id, stage: 0});
+    setSlot(i, {seed: sd.id, stage: 0, wd: ''});
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
     gardenFx(i, 'plant', sd);
@@ -933,34 +948,57 @@
   /* ---------- อนิเมชันตอนปลูก / รดน้ำ / เก็บ (ผู้ใช้สั่ง 2026-08-14) ----------
      อนุภาคเล็กๆ ลอยขึ้นเหนือแปลง แล้วหายไปเอง — บอกเด็กว่า "สิ่งที่กดมีผลจริง"
      ⚠ อายุสั้น (~0.9 วิ) และไม่กันการกดต่อ ไม่ใช่ cutscene ที่ต้องรอ */
+  /* ---------- อนุภาคบอกผลของการกระทำ (ปลูก / รดน้ำ / เก็บ / ตกปลา) ----------
+     ⚠ ผู้ใช้แจ้ง 2026-08-14 ว่า "ยังไม่เห็นอนิเมชันเลย" — ของเดิมเล็กเกิน (r .05-.07)
+       สั้นเกิน (.9 วิ) และเกิดที่ระดับพื้นซึ่งโดนต้นไม้/แปลงบัง
+     ⇒ ทำใหม่: ชิ้นใหญ่ขึ้น 2 เท่า · อยู่นานขึ้น (1.6 วิ) · เริ่มสูงเหนือของ · พุ่งออกเป็นวงแล้วตก
+       และแขวนไว้ที่ `scene` (spawnFx) เพื่อไม่ให้ของฉากบัง
+     📌 **กติกาที่ผู้ใช้สั่งไว้ 2026-08-14: ระบบใหม่ทุกอย่างต้องมีอนิเมชันบอกผลเสมอ** */
   let gfx = [];
+  const FX_LIFE = 1.6;
+  function spawnFx(pos, opt){
+    const w = W(); if(!w) return;
+    const k = w.kit();
+    const g = new THREE.Group();
+    const n = opt.n || 9;
+    for(let j = 0; j < n; j++){
+      const p = opt.shape === 'drop'
+        ? k.sphere(.085, opt.col, 8)
+        : k.sphere(.11, j % 2 ? opt.col : (opt.col2 || opt.col), 8);
+      if(opt.shape === 'drop') p.scale.set(.75, 1.5, .75);
+      const a = j / n * Math.PI * 2;
+      const rr = .12 + Math.random() * .2;
+      p.position.set(Math.sin(a) * rr, .1 + Math.random() * .2, Math.cos(a) * rr);
+      p.userData.vx = Math.sin(a) * (.5 + Math.random() * .5);
+      p.userData.vz = Math.cos(a) * (.5 + Math.random() * .5);
+      p.userData.vy = opt.up ? (1.5 + Math.random() * .9) : (-.2 - Math.random() * .5);
+      g.add(p);
+    }
+    g.position.set(pos.x, pos.y + (opt.h || .9), pos.z);
+    w.spawnFx(g);
+    gfx.push({g, t:0, up:!!opt.up});
+  }
   function gardenFx(i, kind, sd){
     const w = W(); if(!w) return;
     const bed = beds()[i]; if(!bed) return;
-    const k = w.kit();
-    const col = kind === 'water' ? 0x6ec6f0 : (kind === 'harvest' ? ((sd && sd.col) || 0xf3c53f) : 0x8d6e63);
-    const n = kind === 'water' ? 7 : 5;
-    const g = new THREE.Group();
-    for(let j = 0; j < n; j++){
-      const p = k.sphere(kind === 'water' ? .05 : .07, col, 6);
-      p.position.set((Math.random() - .5) * .6, .3 + Math.random() * .15, (Math.random() - .5) * .6);
-      p.userData.vy = .5 + Math.random() * .5;
-      g.add(p);
-    }
-    g.position.set(w.wx(bed.x), w.groundY(bed.x, bed.z), w.wz(bed.z));
-    w.spawn(g);
-    gfx.push({g, t:0, kind});
+    const pos = {x:w.wx(bed.x), y:w.groundY(bed.x, bed.z), z:w.wz(bed.z)};
+    if(kind === 'water')        spawnFx(pos, {col:0x4fc3f7, col2:0xb3e5fc, shape:'drop', up:false, h:1.5, n:11});
+    else if(kind === 'harvest') spawnFx(pos, {col:(sd && sd.col) || 0xf3c53f, col2:0xfff3b0, up:true, h:.7, n:10});
+    else                        spawnFx(pos, {col:0x8d6e63, col2:0xc8a27a, up:true, h:.6, n:8});
   }
   function updateGardenFx(dt){
     for(let i = gfx.length - 1; i >= 0; i--){
       const f = gfx[i];
       f.t += dt;
       f.g.children.forEach(p=>{
-        /* รดน้ำ = ตกลง · ปลูก/เก็บ = ลอยขึ้น */
-        p.position.y += (f.kind === 'water' ? -1 : 1) * (p.userData.vy || .6) * dt;
+        p.position.x += (p.userData.vx || 0) * dt;
+        p.position.z += (p.userData.vz || 0) * dt;
+        p.userData.vy = (p.userData.vy || 0) - 3.4 * dt;      /* แรงโน้มถ่วง — ตกลงเป็นเส้นโค้ง */
+        p.position.y += p.userData.vy * dt;
       });
-      f.g.scale.setScalar(Math.max(.01, 1 - f.t / .9));
-      if(f.t > .9){ W().despawn(f.g); gfx.splice(i, 1); }
+      const k2 = f.t / FX_LIFE;
+      f.g.scale.setScalar(Math.max(.01, 1 - k2 * k2));         /* หดช้าตอนต้น เห็นชัดกว่าเดิม */
+      if(f.t > FX_LIFE){ W().despawn(f.g); gfx.splice(i, 1); }
     }
   }
   function gardenFxClear(){ const w = W(); gfx.forEach(f => { if(w) w.despawn(f.g); }); gfx = []; }
@@ -968,15 +1006,15 @@
   function gardenWater(i){
     const w = W();
     if(!P) return false;
-    const growing = beds().map((_, k) => k).filter(k => { const s = slotAt(k); return s && s.stage < growMax(s.seed); });
-    if(!growing.length){ w.toast('🌱', 'ยังไม่มีต้นไม้ให้รดน้ำเลย ลองปลูกดูสิ'); return false; }
-    if(P.garden.watered === dayKey()){
-      w.toast('💧', 'วันนี้รดน้ำไปแล้วนะ พรุ่งนี้ค่อยมารดใหม่');
+    /* รดได้เฉพาะแปลงที่ยังไม่โตเต็ม **และยังไม่ได้รดวันนี้** */
+    const all = beds().map((_, k) => k).filter(k => { const s = slotAt(k); return s && s.stage < growMax(s.seed); });
+    const growing = (i != null && all.indexOf(i) >= 0) ? [i] : all.filter(k => slotAt(k).wd !== dayKey());
+    if(!all.length){ w.toast('🌱', 'ยังไม่มีต้นไม้ให้รดน้ำเลย ลองปลูกดูสิ'); return false; }
+    if(!growing.length || (i != null && slotAt(i).wd === dayKey())){
+      w.toast('💧', 'แปลงนี้รดน้ำไปแล้ววันนี้ พรุ่งนี้ค่อยมารดใหม่นะ');
       return false;
     }
-    /* รดครั้งเดียวได้ทั้งสวน — เด็ก 5 ขวบไม่ควรต้องเดินรดทีละแปลง 4 รอบ */
-    P.garden.watered = dayKey();
-    growing.forEach(k => { const s = slotAt(k); setSlot(k, {seed:s.seed, stage:s.stage + 1}); });
+    growing.forEach(k => { const s = slotAt(k); setSlot(k, {seed:s.seed, stage:s.stage + 1, wd:dayKey()}); });
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
     growing.forEach(k2 => gardenFx(k2, 'water'));
@@ -1004,7 +1042,71 @@
     w.toast('🧺', 'เก็บผักได้ ' + take.length + ' ต้น! เอาไปขายที่ร้านต้นไม้ได้เลย');
     return true;
   }
-  function gardenClear(){ const w = W(); gardenObjs.forEach(o => { if(w) w.despawn(o); }); gardenObjs = []; gardenFxClear(); }
+  /* ---------- ทรงต้นผักแยกตามพันธุ์ (ผู้ใช้สั่ง 2026-08-14) ----------
+     ⚠ **ต้องดูออกจากเงารวมว่าแปลงไหนปลูกอะไร** ไม่ใช่ต่างกันแค่สีลูก
+       (บทเรียนเดียวกับไอคอนเฟส 8 และกลีบดอกไม้) */
+  function buildCrop(g, k, sl){
+    const sd = seedById(sl.seed);
+    const st = sl.stage, full = growMax(sl.seed);
+    if(st < 1){                                   /* ยังเป็นเมล็ดในดิน */
+      const sb = k.sphere(.075, 0x6d4c41, 8); sb.position.y = .25; g.add(sb);
+      return;
+    }
+    const p = Math.min(1, st / full);             /* ความคืบหน้าการโต 0-1 */
+    const h = .18 + p * .34;
+    if(sd.id === 'corn'){                         /* 🌽 ต้นสูง ใบยาวชี้ขึ้น */
+      const stem = k.cyl(.05, .06, h * 1.5, 0x5aa84f, 8); stem.position.y = .22 + h * .75; g.add(stem);
+      [-1, 1].forEach(sgn=>{
+        const lf = k.sphere(.1, 0x76c46a, 8);
+        lf.scale.set(.35, .2, 1.7); lf.position.set(sgn * .12, .3 + h, 0); lf.rotation.z = sgn * .5; g.add(lf);
+      });
+      if(st >= full){ const c = k.cyl(.08, .06, .26, sd.col, 8); c.position.set(.11, .55 + h, 0); g.add(c); }
+      return;
+    }
+    if(sd.id === 'carrot'){                       /* 🥕 พุ่มใบฝอยเตี้ย + หัวโผล่ดิน */
+      for(let j = 0; j < 5; j++){
+        const lf = k.cyl(.02, .03, h, 0x76c46a, 6);
+        const a = j / 5 * Math.PI * 2;
+        lf.position.set(Math.sin(a) * .09, .22 + h / 2, Math.cos(a) * .09);
+        lf.rotation.z = Math.sin(a) * .35; lf.rotation.x = Math.cos(a) * .35; g.add(lf);
+      }
+      if(st >= full){ const c = k.cone ? k.cone(.09, .2, sd.col, 8) : k.cyl(.09, .02, .2, sd.col, 8);
+        c.position.y = .3; c.rotation.x = Math.PI; g.add(c); }
+      return;
+    }
+    if(sd.id === 'lettuce'){                      /* 🥬 กอใบซ้อนเป็นชั้นเตี้ยๆ */
+      for(let j = 0; j < 3; j++){
+        const lf = k.sphere(.16 - j * .03, j ? 0x8fd06c : 0x76c46a, 10);
+        lf.scale.set(1.5, .3 + p * .2, 1.5); lf.position.y = .24 + j * .07 * (1 + p); g.add(lf);
+      }
+      return;
+    }
+    if(sd.id === 'tomato'){                       /* 🍅 ต้นพุ่มมีหลักค้ำ + ลูกกลมห้อย */
+      const stem = k.cyl(.035, .045, h, 0x5aa84f, 8); stem.position.y = .22 + h / 2; g.add(stem);
+      const pole = k.cyl(.022, .022, h * 1.25, 0xb98a52, 6); pole.position.set(.11, .22 + h * .62, 0); g.add(pole);
+      const bush = k.sphere(.15, 0x76c46a, 10); bush.scale.set(1, .8, 1); bush.position.y = .26 + h; g.add(bush);
+      if(st >= full) [[-.1, 0], [.09, .06]].forEach(([x, z])=>{
+        const fr = k.sphere(.075, sd.col, 10); fr.position.set(x, .24 + h, z); g.add(fr); });
+      return;
+    }
+    /* 🎃 ฟักทอง / 🍉 แตงโม — เถาเลื้อยแผ่กับดิน + ลูกใหญ่วางบนดิน */
+    for(let j = 0; j < 4; j++){
+      const vine = k.sphere(.12, 0x76c46a, 8);
+      const a = j / 4 * Math.PI * 2 + .4;
+      vine.scale.set(1.3, .22, .7);
+      vine.position.set(Math.sin(a) * .18 * p, .21, Math.cos(a) * .18 * p);
+      vine.rotation.y = a; g.add(vine);
+    }
+    if(st >= full){
+      const fr = k.sphere(.2, sd.col, 12); fr.scale.set(1, .82, 1); fr.position.y = .34; g.add(fr);
+      const st2 = k.cyl(.03, .03, .1, 0x5aa84f, 6); st2.position.y = .5; g.add(st2);
+    }
+  }
+  /* ⚠ **ห้ามล้างอนุภาคตรงนี้** — `gardenBuild()` เรียก `gardenClear()` ทุกครั้งที่ปลูก/รดน้ำ/เก็บ
+     ถ้าล้างด้วย อนุภาคที่เพิ่งสร้างจะถูกลบทิ้งในเฟรมเดียวกัน ⇒ **เด็กไม่เห็นอนิเมชันเลย**
+     (ผู้ใช้แจ้ง 2026-08-14 ว่ายังไม่เห็น — นี่คือต้นเหตุจริง) · อนุภาคหายเองเมื่อหมดอายุ
+     ส่วนการล้างทิ้งทำที่ `clearAll()` ตอนออกจากบ้าน/สลับฉากเท่านั้น */
+  function gardenClear(){ const w = W(); gardenObjs.forEach(o => { if(w) w.despawn(o); }); gardenObjs = []; }
   /* วาด "ต้นพืช + ป้ายบอกสิ่งที่ทำได้" ทับบนเบาะดินที่เป็นเฟอร์นิเจอร์จริง
      ⚠ ตัวเบาะดินไม่ได้วาดที่นี่ (เป็น decor `veg-plot`) — ที่นี่วาดเฉพาะของที่เปลี่ยนตามสถานะ */
   function gardenBuild(){
@@ -1014,23 +1116,17 @@
     beds().forEach((bed, i)=>{
       const sl = slotAt(i);
       const g = new THREE.Group();
-      if(sl){
-        const sd = seedById(sl.seed);
-        if(sl.stage >= 1){
-          const stem = k.cyl(.045, .06, .18 + sl.stage * .14, 0x5aa84f, 8);
-          stem.position.y = .22 + (.18 + sl.stage * .14) / 2; g.add(stem);
-          const leaf = k.sphere(.13 + sl.stage * .04, 0x76c46a, 10);
-          leaf.scale.set(1.4, .6, 1.4); leaf.position.y = .26 + sl.stage * .14; g.add(leaf);
-        }else{
-          const seedBall = k.sphere(.08, 0x8d6e63, 8); seedBall.position.y = .26; g.add(seedBall);
-        }
-        if(sl.stage >= growMax(sl.seed)){ const fr = k.sphere(.15, sd.col, 12); fr.position.y = .6; g.add(fr); }
-        k.merge(g);
+      if(sl){ buildCrop(g, k, sl); k.merge(g); }
+      /* ป้ายลอยบอกว่าแตะแล้วจะเกิดอะไร
+         ⚠ **ไม่มีอะไรให้ทำ = ไม่ต้องมีป้าย** (ผู้ใช้สั่ง 2026-08-14) — ป้ายที่กดแล้วไม่เกิดอะไร
+           ทำให้เด็กเดินไปกดเก้อ และรกสายตาเมื่อมีหลายแปลง */
+      const act = bedAction(i);
+      let b = null;
+      if(act !== 'wait'){
+        b = makeBubble(BED_ICON[act] || '🌱');
+        b.position.y = 1.25;
+        g.add(b);
       }
-      /* ป้ายลอยบอกว่าแตะแล้วจะเกิดอะไร (ผู้ใช้สั่ง 2026-08-13) */
-      const b = makeBubble(BED_ICON[bedAction(i)] || '🌱');
-      b.position.y = 1.25;
-      g.add(b);
       g.userData.bubble = b;
       g.position.set(w.wx(bed.x), w.groundY(bed.x, bed.z), w.wz(bed.z));
       g.userData.hPick = {game:'garden', i:i, x:bed.x, z:bed.z};
@@ -1217,6 +1313,9 @@
           emoji: sd.e, name: sd.n + ' (' + GRADE_NAME[sd.grade] + ')',
           sub: 'รดน้ำ ' + sd.days + ' วันก็เก็บได้ · ขายได้ ' + sd.pay + ' เหรียญ · มีอยู่ ' + seedCount(sd.id) + ' เม็ด',
           price: sd.cost, btn: 'ซื้อ 1 เม็ด', off: coins() < sd.cost,
+          /* ⚠ ผู้ใช้แจ้ง 2026-08-14: กดซื้อแล้วกดซ้ำไม่ได้ ต้องไปกดที่อื่นก่อน
+             ต้นเหตุ: `done()` วาดรายการใหม่ทั้งก้อน ปุ่มที่นิ้วยังจิ้มอยู่จึงถูกลบทิ้ง
+             ⇒ เลื่อนการวาดใหม่ไปหลังจบ event ปัจจุบัน ปุ่มใหม่จะพร้อมรับคลิกถัดไปทันที */
           fn: ()=>{
             if(!window.OwlCoins || !window.OwlCoins.spend(sd.cost)){
               W().toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!');
@@ -1224,7 +1323,7 @@
             }
             addSeed(sd.id, 1);
             W().toast(sd.e, 'ได้เมล็ด' + sd.n + ' 1 เม็ด! เอาไปปลูกที่แปลงหน้าบ้านได้เลย');
-            done();
+            setTimeout(done, 0);
           },
         }));
       });
@@ -1253,7 +1352,7 @@
             W().award(got);
             W().toast('🪙', 'ขาย' + sd.n + ' ' + n + ' ชิ้น ได้ ' + got + ' เหรียญ!');
             W().refreshHud();
-            done();
+            setTimeout(done, 0);
           },
         }));
       });
@@ -1284,11 +1383,71 @@
             W().award(got);
             W().toast('🪙', 'ขาย' + f.n + ' ' + n + ' ตัว ได้ ' + got + ' เหรียญ!');
             W().refreshHud();
-            done();
+            setTimeout(done, 0);
           },
         }));
       });
     }
+  }
+
+  /* ============================================================
+     🧺 ตะกร้าของที่เก็บได้ (ผู้ใช้สั่ง 2026-08-14) — วางที่ x17/z37 หน้าบ้าน
+     แตะแล้วดูว่าเก็บผัก/ปลาอะไรไว้บ้าง อย่างละกี่ชิ้น และขายได้ราคาเท่าไหร่
+     ⚠ **ดูอย่างเดียว ขายจริงต้องไปที่ร้าน** (ผัก→ร้านต้นไม้ · ปลา→ร้านสะดวกซื้อ)
+       เพื่อไม่ให้เด็กขายของได้จากหน้าบ้านโดยไม่ต้องออกไปไหนเลย
+     ============================================================ */
+  const BASKET_TILE = {x:17, z:37};
+  let basketObj = null;
+  function basketBuild(){
+    const w = W(); if(!w) return;
+    basketClear();
+    const k = w.kit();
+    const g = new THREE.Group();
+    /* ตะกร้าสาน: ตัวตะกร้าผายออก + ขอบปาก + หูจับ */
+    const body = k.cyl(.34, .24, .34, 0xc98d4e, 14); body.position.y = .17; g.add(body);
+    const rim  = k.torus(.34, .045, 0xa5744b, 16); rim.rotation.x = Math.PI/2; rim.position.y = .34; g.add(rim);
+    const hd   = k.torus(.2, .035, 0xa5744b, 14); hd.position.y = .44; g.add(hd);
+    k.merge(g);
+    const b = makeBubble('🧺'); b.position.y = 1.1; g.add(b);
+    g.position.set(w.wx(BASKET_TILE.x), w.groundY(BASKET_TILE.x, BASKET_TILE.z), w.wz(BASKET_TILE.z));
+    g.userData.hPick = {game:'basket', x:BASKET_TILE.x, z:BASKET_TILE.z};
+    g.userData.bubble = b;
+    w.spawn(g);
+    basketObj = g;
+  }
+  function basketClear(){ const w = W(); if(basketObj && w) w.despawn(basketObj); basketObj = null; }
+  function basketOpen(){
+    const el = $('house-basket');
+    if(!el || !P) return false;
+    closePanel();
+    el.hidden = false;
+    renderBasket();
+    return true;
+  }
+  function basketClose(){ const el = $('house-basket'); if(el) el.hidden = true; }
+  function basketIsOpen(){ const e = $('house-basket'); return !!e && !e.hidden; }
+  function renderBasket(){
+    const list = $('house-basket-list'), sub = $('house-basket-sub');
+    if(!list || !P) return;
+    list.innerHTML = '';
+    const rows = [];
+    SEEDS.forEach(sd=>{ const n = cropCount(sd.id);
+      if(n > 0) rows.push({e:sd.e, n:sd.n, cnt:n, pay:sd.pay, where:'ขายที่ร้านต้นไม้'}); });
+    const bag = (P.fish.bag) || {};
+    FISH.forEach(f=>{ const n = bag[f.id] | 0;
+      if(n > 0) rows.push({e:f.e, n:f.n, cnt:n, pay:f.pay, where:'ขายที่ร้านสะดวกซื้อ'}); });
+    const total = rows.reduce((a, r) => a + r.pay * r.cnt, 0);
+    if(sub) sub.textContent = rows.length
+      ? ('ถ้าขายหมดจะได้ ' + total + ' เหรียญ · เอาไปขายที่ร้านได้เลย')
+      : 'ตะกร้ายังว่างอยู่ ลองไปปลูกผักหรือตกปลาดูสิ';
+    rows.forEach(r=>{
+      const d = document.createElement('div');
+      d.className = 'hpt-row';
+      d.innerHTML = '<span class="hpt-e">' + r.e + '</span>'
+        + '<span class="hpt-tx"><b>' + r.n + ' ×' + r.cnt + '</b><i>ชิ้นละ ' + r.pay + ' · ' + r.where + '</i></span>'
+        + '<span class="hpt-price"><i class="hs-coin"></i>' + (r.pay * r.cnt) + '</span>';
+      list.appendChild(d);
+    });
   }
 
   /* ============================================================
@@ -1425,8 +1584,9 @@
     colBuild();
     gardenBuild();
     fishSpotsBuild();
+    basketBuild();
   }
-  function clearAll(){ seekClear(); colClear(); gardenClear(); fishBobClear(); fishSpotsClear(); }
+  function clearAll(){ seekClear(); colClear(); gardenClear(); gardenFxClear(); fishBobClear(); fishSpotsClear(); basketClear(); }
   function stop(){
     started = false;
     fishState = null;
@@ -1436,6 +1596,7 @@
     photoAlbumClose();
     closeTank();
     seedPickClose();
+    basketClose();
     const el = $('house-seek-hud'); if(el) el.hidden = true;
   }
   function onScene(to){
@@ -1482,6 +1643,11 @@
           fishBob.position.x = cs.from.x + (cs.to.x - cs.from.x) * p;
           fishBob.position.z = cs.from.z + (cs.to.z - cs.from.z) * p;
           fishBob.position.y = .5 + Math.sin(p * Math.PI) * 1.1 - p * .48;
+          /* ทุ่นแตะน้ำ = น้ำกระเซ็น (บอกว่าเหวี่ยงถึงแล้ว) */
+          if(p >= 1 && !cs.splash){
+            cs.splash = true;
+            spawnFx({x:cs.to.x, y:0, z:cs.to.z}, {col:0x8fd8f5, col2:0xffffff, up:true, h:.1, n:10});
+          }
         }else{
           fishBob.position.y = fishState.phase === 'bite'
             ? -.12 + Math.sin(t * .02) * .04     /* ปลากินเหยื่อ = ทุ่นกระตุกถี่ๆ */
@@ -1517,6 +1683,7 @@
     updateGardenFx(dt);
     billboards(gardenObjs);
     billboards(fishSpots.map(x => x.obj).filter(Boolean));
+    if(basketObj) billboards([basketObj]);
     hintT += dt;
     if(hintT > .35){ hintT = 0; refreshHint(); }
   }
@@ -1537,6 +1704,7 @@
     if(pick.game === 'seek')   seekFind(pick.i);
     else if(pick.game === 'col') colTake(pick.i);
     else if(pick.game === 'fishspot') fishCast();
+    else if(pick.game === 'basket') basketOpen();
     else if(pick.game === 'garden'){
       /* ทำกับ "แปลงที่แตะ" แปลงเดียว ตามที่ป้ายลอยบอกไว้ (ผู้ใช้สั่ง 2026-08-13) */
       const act = bedAction(pick.i);
@@ -1560,6 +1728,15 @@
     photoShoot, photoOrder, grabShot, photoEnter, photoExit, photoMode,
     photoAlbumOpen, photoAlbumClose, photoAlbumIsOpen, playShutter, photoBig, photoBigClose,
     openTank, closeTank, tankIsOpen, tankFish, TANK_MAX, TANK_PER_KIND,
+    basketOpen, basketClose, basketIsOpen, BASKET_TILE,
+    fxCount: () => gfx.length,          /* ชุดเทส: อนิเมชันถูกสร้างจริงและไม่ถูกลบทิ้งทันที */
+    /* เครื่องมือเทส: เร่งเวลาผัก (js/house-devtools.js) */
+    devGrow: (n)=>{ if(!P) return 0; let c = 0;
+      (P.garden.plots || []).forEach((pl, i2)=>{ if(!pl) return;
+        const m = growMax(pl.seed);
+        const st = Math.min(m, (pl.stage | 0) + (n || 1));
+        if(st !== pl.stage){ setSlot(i2, {seed:pl.seed, stage:st, wd:''}); c++; } });
+      persist(); gardenBuild(); renderPanel(); return c; },
     gardenPlant, gardenWater, gardenHarvest,
     objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
     FISH, SEEDS, COL_PRIZES, COL_N, PLOT_MAX, GROW_MAX, PHOTO_MAX,
@@ -1585,6 +1762,8 @@
     if(tc) tc.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); closeTank(); });
     const ab = $('house-album-btn');
     if(ab) ab.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); photoAlbumOpen(); });
+    const bk = $('house-basket-close');
+    if(bk) bk.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); basketClose(); });
     const sc = $('house-seedpick-close');
     if(sc) sc.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); seedPickClose(); });
     const bg = $('house-photo-big');

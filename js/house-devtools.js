@@ -35,6 +35,7 @@
     {id:'pet',    ic:'🐾', name:'ความหิวสัตว์'},
     {id:'coins',  ic:'🪙', name:'เงิน'},
     {id:'unlock', ic:'🔓', name:'ปลดล็อกของ'},
+    {id:'garden', ic:'🌱', name:'เร่งเวลาผัก'},
   ];
   let tab = 'pet';
 
@@ -92,6 +93,32 @@
     if(tab === 'pet')    return renderPet(body);
     if(tab === 'coins')  return renderCoins(body);
     if(tab === 'unlock') return renderUnlock(body);
+    if(tab === 'garden') return renderGarden(body);
+  }
+
+  /* ---------- แท็บเร่งเวลาผัก (ผู้ใช้สั่ง 2026-08-14) ----------
+     ผักโตตาม "วันที่เข้าเล่น" ⇒ เทสจริงต้องรอข้ามวัน ซึ่งทดสอบไม่ไหว
+     ⚠ ทำผ่าน API สาธารณะของ HousePlay เท่านั้น **ห้ามเขียน localStorage ตรงๆ**
+       (กติกาเดิมของหน้านี้ — ไม่งั้น migration/cache ภายในจะเพี้ยนแบบที่เกมจริงไม่มีทางเจอ) */
+  function renderGarden(body){
+    const PL = window.HousePlay;
+    if(!PL){ note(body, 'ระบบกิจกรรมยังโหลดไม่เสร็จ'); return; }
+    const beds = PL.beds() || [];
+    const planted = beds.map((_, i) => PL.state() && (PL.state().garden.plots || [])[i]).filter(Boolean);
+    note(body, 'แปลงทั้งหมด ' + beds.length + ' แปลง · ปลูกแล้ว ' + planted.length + ' แปลง'
+             + (planted.length ? '' : ' — ยังไม่มีอะไรให้เร่ง ลองไปปลูกก่อน'));
+    row(body, 'เร่งการเติบโต', [1, 2, 5].map(n=>({
+      label: '+' + n + ' วัน',
+      fn: ()=>{ const c = PL.devGrow(n); toast('🌱', 'เร่งให้ ' + c + ' แปลง'); renderBody(); },
+    })));
+    row(body, 'เมล็ดพันธุ์', (PL.SEEDS || []).slice(0, 3).map(sd=>({
+      label: sd.e + ' +5',
+      fn: ()=>{ PL.addSeed(sd.id, 5); toast(sd.e, 'ได้เมล็ด' + sd.n + ' 5 เม็ด'); renderBody(); },
+    })));
+    row(body, 'เมล็ดพันธุ์ (ต่อ)', (PL.SEEDS || []).slice(3).map(sd=>({
+      label: sd.e + ' +5',
+      fn: ()=>{ PL.addSeed(sd.id, 5); toast(sd.e, 'ได้เมล็ด' + sd.n + ' 5 เม็ด'); renderBody(); },
+    })));
   }
 
   /* ---------- แท็บความหิว: ยัดค่าความอิ่ม/ป่วยของสัตว์ตัวปัจจุบัน ---------- */
