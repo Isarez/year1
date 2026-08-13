@@ -623,19 +623,23 @@ test('แตะนอกกล่อง = ปิดกล่อง (รายก
 });
 
 /* ผู้ใช้สั่ง 2026-08-09: เพิ่มจำนวนข้อต่อเควสต์เป็น 5-10 ข้อ ไล่ตามระดับชั้น */
-test('จำนวนข้อต่อเควสต์: 5-10 ข้อ ไล่ตามชั้น และเกณฑ์ดาวยืดตามจำนวนข้อ (ไม่เข้มขึ้นเงียบๆ)', async ({ page }) => {
+test('จำนวนข้อต่อเควสต์: การ์ด 9-12 ไล่ตามชั้น และเกณฑ์ดาวยืดตามจำนวนข้อ (ไม่เข้มขึ้นเงียบๆ)', async ({ page }) => {
   const errors = await openHouse(page);
+  /* ⚠️ **ตัวเลขชุดนี้เปลี่ยนแล้วท้ายเฟส 11 (ข้อ 45.4)** — เดิม 5-10 ข้อไล่ตามชั้น
+     แต่ 5 ข้อ × 16 วิ = 80 วิ/ชุด คือ "ทำแป๊บเดียวเสร็จ" ซึ่งเป็นปัญหาที่เฟส 10-11 ตั้งใจแก้
+     ⇒ ค่าตั้งต้นของ difficulty() เป็นของ "ทรงการ์ด" = 9-12 ข้อ (ทรงลาก 6-8 ดูเทสเฟส 11) */
   const qn = await page.evaluate(() => {
     const q = window.HouseQuests, out = {};
     q.GRADES.forEach(g => { out[g.id] = q.difficulty(g.id).qN; });
     return out;
   });
   Object.keys(qn).forEach(g => {
-    expect(qn[g], 'จำนวนข้อของ ' + g).toBeGreaterThanOrEqual(5);
-    expect(qn[g], 'จำนวนข้อของ ' + g).toBeLessThanOrEqual(10);
+    expect(qn[g], 'จำนวนข้อของ ' + g).toBeGreaterThanOrEqual(9);
+    expect(qn[g], 'จำนวนข้อของ ' + g).toBeLessThanOrEqual(12);
   });
-  expect(qn['p6']).toBe(10);
-  expect(qn['p1']).toBe(5);
+  expect(qn['p6']).toBe(12);
+  expect(qn['p1']).toBe(9);
+  expect(qn['prep-p1'], 'เตรียม ป.1 กับ ป.1 อยู่ tier เดียวกัน').toBe(qn['p1']);
   /* ต้องไล่ขึ้นตามชั้น ไม่ลดลงกลางทาง */
   const seq = await page.evaluate(() => window.HouseQuests.GRADES.map(g => window.HouseQuests.difficulty(g.id).qN));
   for (let i = 1; i < seq.length; i++) expect(seq[i]).toBeGreaterThanOrEqual(seq[i - 1]);
@@ -651,6 +655,12 @@ test('จำนวนข้อต่อเควสต์: 5-10 ข้อ ไล
   expect(stars.long9).toBe(1);
   expect(stars.short2).toBe(2);      /* พฤติกรรมเดิมของเควสต์ 3 ข้อต้องไม่เปลี่ยน */
   expect(stars.perfect).toBe(3);
+  /* เฟส 10: พลาด 1 ข้อยังได้ 3 ดาวเสมอ ไม่ว่าเควสต์จะสั้นหรือยาว (ข้อ 45.9) */
+  const free = await page.evaluate(() => ([
+    window.HouseQuests.starsOf({wrong: 1, items: new Array(5)}),
+    window.HouseQuests.starsOf({wrong: 1, items: new Array(12)}),
+  ]));
+  expect(free).toEqual([3, 3]);
   expect(errors).toEqual([]);
 });
 

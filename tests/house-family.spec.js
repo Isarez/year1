@@ -97,7 +97,7 @@ test('เควสต์ครอบครัว: วันละ 1 ชุด ·
   expect(errors).toEqual([]);
 });
 
-test('เล่นเควสต์ครอบครัวจนจบ: ได้เหรียญ 16 (3 ดาว) · วันนี้ไม่มีงานอีก · โควตา NPC/กระดานไม่ถูกกิน', async ({ page }) => {
+test('เล่นเควสต์ครอบครัวจนจบ: ได้เหรียญตามสูตร (3 ดาว) · วันนี้ไม่มีงานอีก · โควตา NPC/กระดานไม่ถูกกิน', async ({ page }) => {
   const errors = await openHouse(page);
   const out = await page.evaluate(() => {
     const q = window.HouseQuests;
@@ -108,7 +108,10 @@ test('เล่นเควสต์ครอบครัวจนจบ: ได
              npcOpen: q.openNpcCount(), npcPerDay: q.NPC_PER_DAY, boardLeft: q.boardLeft(), boardN: q.BOARD_N };
   });
   expect(out.res.stars).toBe(3);
-  expect(out.res.coins).toBe(16);   /* ครอบครัว 3 ดาว = 16 🪙 เท่ากันทุกชั้น */
+  /* ⚠️ เฟส 10 (ข้อ 45.8): ครอบครัว 3 ดาว = base 10 × ดาว 1.6 × ตัวคูณระดับชั้น
+     เด็กเทสในไฟล์นี้เป็น ป.2 ⇒ ×1.05 ⇒ 16.8 ปัดเป็น 17 (เดิมทุกชั้นได้ 16 เท่ากัน)
+     **ห้ามแก้ฐาน 10/1.6 โดยไม่ถามผู้ใช้** — ตรงนี้คุมแค่ว่าสูตรถูกนำมาใช้จริง */
+  expect(out.res.coins).toBe(Math.round(10 * 1.6 * 1.05));
   expect(out.done).toBe(true);
   expect(out.spec.done).toBe(true);           /* วันนี้ทำแล้ว ขอซ้ำไม่ได้ */
   expect(out.npcOpen).toBe(out.npcPerDay);    /* โควตาแยกกันจริง */

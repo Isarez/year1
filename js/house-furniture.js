@@ -331,6 +331,19 @@
             const bl=ball(.09,i%2?col:shade(col,1.15),8); bl.position.set(x,.44,z); g.add(bl);
             const ct=ball(.04,0xfff59d,6); ct.position.set(x,.46,z); g.add(ct); });
         } },
+      /* แปลงผัก (เฟส 11) — วาดแค่ "เบาะดิน" เปล่าๆ ส่วนต้นพืชที่กำลังโตกับป้ายบอกสิ่งที่ทำได้
+         เป็นของ js/house-play.js ที่วาดทับลงไปตามสถานะจริงของแปลงนั้น
+         ⚠ ทำเป็นเฟอร์นิเจอร์จริงเพราะ **ผู้ใช้สั่งให้ย้ายได้ในโหมดตกแต่ง** (2026-08-13)
+           พอเป็น decor ปกติก็ได้ระบบลาก/หมุน/ลบของเดิมมาฟรีทั้งชุด ไม่ต้องเขียนกลไกย้ายใหม่ */
+      { id:'veg-plot', name:'แปลงผัก', cat:'garden', scope:'out', emoji:'🌱', colors:[0x8d6e63,0x795548,0xa1887f,0x6d4c41],
+        build(g,col){
+          const soil=box(.92,.16,.92,col,.03); soil.position.y=.08; g.add(soil);
+          /* ขอบไม้ 4 ด้าน ให้ดูเป็น "แปลง" ไม่ใช่กองดิน */
+          [[0,-.46],[0,.46]].forEach(([x,z])=>{ const b=box(.98,.12,.1,0xa5744b,.03); b.position.set(x,.14,z); g.add(b); });
+          [[-.46,0],[.46,0]].forEach(([x,z])=>{ const b=box(.1,.12,.98,0xa5744b,.03); b.position.set(x,.14,z); g.add(b); });
+          /* ร่องดิน 3 ร่อง — บอกด้วยสายตาว่าปลูกของได้ */
+          [-.26,0,.26].forEach(z=>{ const r=box(.76,.05,.1,shade(col,.86),.02); r.position.set(0,.17,z); g.add(r); });
+        } },
       { id:'mushroom', name:'เห็ดยักษ์', cat:'garden', scope:'out', emoji:'🍄', colors:[0xef5350,0xffca28,0x8d6e63,0xba68c8],
         action:'bounce',
         build(g,col){

@@ -896,6 +896,8 @@ function loadHouseMode(curtain){
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
     /* สะพานไปหา engine เกมของหน้าหลัก (เฟส 5) — ต้องมาหลัง house.js เพราะใช้ window.HouseQuestUI */
     .then(()=>loadScriptOnce('js/house-games.js'+v))
+    /* มินิเกมกลุ่ม A ที่เล่นในโลก 3D (เฟส 11) — ต้องมาหลัง house.js เพราะใช้ window.HouseWorld */
+    .then(()=>loadScriptOnce('js/house-play.js'+v))
     /* หน้าคลังคำถาม (เมนูเฟือง) — ต้องมาหลัง house.js เพราะเรียก window.HouseQuestUI ตอนกดเล่น */
     .then(()=>loadScriptOnce('js/house-qbrowse.js'+v))
     /* หน้าปรับค่าต่างๆ (เครื่องมือเทส) — ต้องมาหลัง house.js เช่นกัน เพราะเรียก window.HousePetCare/HouseShop */

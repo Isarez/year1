@@ -28,7 +28,14 @@
     - ไฟล์: `js/house.js` (ระบบเกม) + `house-map.js` (ผังเมือง) + `house-models.js` (โมเดลตึก/ร้าน) + `house-avatar.js` (ตัวละคร) + `house-furniture.js` (ของ 190 ชิ้น) + `house-shop.js` (ร้าน/เศรษฐกิจ) + `house-quest-data.js` (คลังโจทย์) + `house-quests.js` (engine เควสต์) + `house-pet-care.js` + `house-family.js` + `house-games.js` + `house-qbrowse.js`/`house-devtools.js` (เครื่องมือเทส) — **ทั้งชุดโหลดแบบ lazy จาก `js/games-ar.js` ตอนกดเข้าบ้าน ลำดับสำคัญ ห้ามสลับ**
     - 📖 **รายละเอียดทั้งหมดอยู่ใน skill `house-mode`** (โครงสร้างไฟล์ · ระบบเควสต์ · เศรษฐกิจ · กติกาที่ห้ามย้อนทุกข้อ) — เรียกด้วย Skill tool ก่อนแตะโค้ดโหมดบ้านทุกครั้ง
     - 📌 **แผนแม่บทคือ [`QUEST-DESIGN.md`](QUEST-DESIGN.md)** — ต้องอ่านหัวข้อ "⭐ สรุปบริบท" ให้จบก่อนลงมือ + ข้อ 40-43 (สิ่งที่เฟส 5-9 ทำต่างจากแผน)
-    - 🆕 **เพิ่มเฟส 10 + 11 เมื่อ 2026-08-12 (ยังไม่เริ่มทำ ทำคู่ขนานกันได้)**
+    - ✅ **เฟส 10 + 11 เสร็จแล้ว 2026-08-13** (จัดลำดับใหม่ 2026-08-13: 10 = จังหวะเวลา · 11 = มินิเกมกลุ่ม A · 12 = กลุ่ม C · 13 = กลุ่ม B+D · 14 = ฤดูกาล)
+      - **เฟส 10 — จังหวะเวลา**: `starsOf()` พลาดฟรี 1 ข้อ · `TIER_MUL` 1.00-1.15 (คูณโบนัสด้วย) · ทุกกลไกมี `shape`+`secPerQ` · `walkQCount()` · แยกงานหลัก 6 / งานรอง 8 (ตัวนับ ❗ นับเฉพาะงานหลัก)
+      - **เฟส 11 — มินิเกมกลุ่ม A 5 เกมใน `js/house-play.js`** (ไฟล์ใหม่ · คุยผ่านประตูใหม่ `window.HouseWorld`): 🙈 ซ่อนแอบ · 🍃 เก็บของประจำวัน · 🎣 ตกปลา · 📷 ช่างภาพ · 🌱 แปลงผัก — **ทางเข้าเดียวคือปุ่ม 🎈 `#house-play-btn` + แผง `#house-playpanel`** (ห้ามแตกเป็น 5 ทางเข้า) · โผล่เฉพาะฉากนอกบ้าน
+      - **ระลอก 2 เปิดตาราง `qN` ใหม่แล้ว**: การ์ด 9-12 · ลาก 6-8 ตามชั้น (`Q_CARD`/`Q_DRAG`) — **ทับมติ 2026-08-10 ที่ให้สุ่ม 5-10** · ⚠️ **แก้ตาราง `qN` เมื่อไหร่ต้องคำนวณ `TIER_MUL` ใหม่ทุกครั้ง**
+      - 📷 **ถ่ายรูปในเกมไม่ต้องเปิด `preserveDrawingBuffer`** — `window.__housePaint()` วาด 1 เฟรมแล้ว `toDataURL()` ในจังหวะเดียวกัน ⇒ ได้ภาพครบโดยไม่แลกเฟรมเรต **ห้ามเปลี่ยนกลับไปเปิด flag นั้น**
+      - 🧪 เทส: `tests/house-phase10.spec.js` (8×2) · `tests/house-phase11.spec.js` (11×2) · รายละเอียดที่ต่างจากแผนอยู่**ข้อ 47 ของ `QUEST-DESIGN.md`**
+    - 🆕 **เฟสที่ยังไม่ได้ทำ: 12 (กลุ่ม C สัตว์เลี้ยง 3 เกม) · 13 (กลุ่ม B+D 6 เกม) · 14 (ฤดูกาล — ยังไม่ตัดสินใจทำ)** รายละเอียดอยู่ `IDEA.md`
+    - 📌 **บันทึกเก่า (เก็บไว้อ้างอิง)**
       - **เฟส 10 — มินิเกมเบาสมองในโลก 3D 14 เกม (ลำดับ A→C→B→D)** · ภาพรวมข้อ 44 · รายละเอียดรายเกมอยู่ใน `IDEA.md` หัวข้อ "🏠 ไอเดียมินิเกมของโหมดบ้านของหนู" (ต้องรอ **"cf"** ก่อนลงมือตามกติกาของไฟล์นั้น) — เหตุผล: กลไก 49 ตัวที่มีอยู่เป็น "การ์ดลอยให้ตอบโจทย์" เกือบหมด เด็กจะเบื่อ
       - **เฟส 11 — จังหวะเวลา & งบเวลาเควสต์ (อนุมัติแล้ว)** · ข้อ 45 · เป้าเวลาเล่น **20-60 นาที/วัน** · จำนวนข้อใหม่ **การ์ด 9-12 · ลาก 6-8 · ทรงเดิน 5-10 ตามระยะที่วัดด้วย `findPath()` จริง (ห้ามใช้เส้นตรง)** ทับมติ 5-10 ข้อของ 2026-08-09 · `starsOf()` ให้ **พลาดฟรี 1 ข้อเสมอไม่ว่ากี่ข้อ** · แบ่ง **งานหลัก 6 ชุด (กระดาน 5 + ครอบครัว 1) / งานรอง 8 ชุด (NPC)** ตัวนับ ❗ นับเฉพาะงานหลัก
       - 💰 **ตัวคูณระดับชั้นกลับมาแล้ว (ข้อ 45.8 · อนุมัติ 2026-08-12)** — `1.00` (เตรียม ป.1/ป.1) · `1.05` (ป.2-3) · `1.10` (ป.4) · `1.15` (ป.5-6) ⇒ เงิน/วัน **206 → 237** · **ตัวเลขนี้ถอดจากอัตราส่วนเวลาเล่นจริง ไม่ใช่ตั้งลอยๆ** เพราะเฟส 11 ทำให้ ป.6 ทำ 12 ข้อ/ชุดแต่ ป.1 ทำ 9 ข้อ ⇒ **ไม่ขัดมติ 2026-08-09** ที่ห้ามใส่ตัวคูณกลับ (มตินั้นอิงเงื่อนไข "ทำงานเท่ากัน" ซึ่งไม่จริงแล้ว) · ⚠️ ต้องคูณ `STAR_BONUS`/`BOARD_BONUS` ด้วย ไม่งั้นปิดช่องว่างไม่สนิท · ⚠️ **เทสเดิมที่บังคับว่า "ทุกชั้นได้เท่ากันเป๊ะ" จะแดง ต้องเปลี่ยนเกณฑ์ ห้ามลบทิ้ง**
@@ -89,7 +96,7 @@
   ```bash
   node -e "
   const fs = require('fs');
-  const files = ['js/data-cats-prep.js','js/data-cats-p1.js','js/data-cats-p2.js','js/data-cats-p3.js','js/data-cats-p4.js','js/data-cats-p5.js','js/data-cats-p6.js','js/data-cats.js','js/data-pools.js','js/owl-messages.js','js/app-core.js','js/game-quiz.js','js/games-think.js','js/games-math.js','js/games-code.js','js/games-write.js','js/games-art.js','js/games-listen.js','js/games-ar.js','js/app-ui.js','js/house-shop.js','js/house-quests.js','js/house-pet-care.js','js/house-family.js','js/house.js','js/house-qbrowse.js','js/house-devtools.js'];
+  const files = ['js/data-cats-prep.js','js/data-cats-p1.js','js/data-cats-p2.js','js/data-cats-p3.js','js/data-cats-p4.js','js/data-cats-p5.js','js/data-cats-p6.js','js/data-cats.js','js/data-pools.js','js/owl-messages.js','js/app-core.js','js/game-quiz.js','js/games-think.js','js/games-math.js','js/games-code.js','js/games-write.js','js/games-art.js','js/games-listen.js','js/games-ar.js','js/app-ui.js','js/house-shop.js','js/house-quests.js','js/house-pet-care.js','js/house-family.js','js/house.js','js/house-play.js','js/house-qbrowse.js','js/house-devtools.js'];
   const combined = files.map(f=>fs.readFileSync(f,'utf8')).join('\n');
   try { new Function(combined); console.log('OK JS syntax'); } catch(e){ console.error('ERROR:', e.message); }
   "

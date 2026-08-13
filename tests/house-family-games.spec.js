@@ -716,7 +716,7 @@ test('เควสต์เดินไม่เข้ากติกาขั�
   expect(errors).toEqual([]);
 });
 
-test('จำนวนโจทย์สุ่ม 5-10 ข้อต่อเควสต์ · ไม่เท่ากันทุกเควสต์ · เปิดใหม่ได้ชุดเดิม', async ({ page }) => {
+test('จำนวนโจทย์ต่อเควสต์: ตามตาราง qN ของทรงนั้น · เปิดใหม่ได้ชุดเดิม', async ({ page }) => {
   const errors = await openHouse(page);
   const r = await page.evaluate(() => {
     const q = window.HouseQuests;
@@ -737,17 +737,30 @@ test('จำนวนโจทย์สุ่ม 5-10 ข้อต่อเค�
     const again = sp0 ? [q.buildRun(sp0).items.length, q.buildRun(sp0).items.length] : [1, 1];
     const engNs = specs.filter(sp => eng.indexOf(sp.mech) >= 0)
                        .map(sp => q.buildRun(sp).items.length);
-    return { ns, engNs, again, uniq: ns.filter((v, i, a) => a.indexOf(v) === i).length };
+    const byShape = specs.filter(sp => !oneShot(sp))
+      .map(sp => ({mech: sp.mech, shape: q.mechShape(sp.mech), n: q.buildRun(sp).items.length}));
+    return { ns, engNs, again, byShape };
   });
+  /* ⚠️ **กติกาเปลี่ยนแล้วท้ายเฟส 11 (ข้อ 45.4)** — เดิม "สุ่ม 5-10 ข้อ ไม่เท่ากันทุกเควสต์"
+     (มติ 2026-08-10) ถูกทับด้วยตาราง `qN` ตายตัวตามทรงของกลไก: **การ์ด 9-12 · ลาก 6-8 ตามชั้น**
+     เหตุผล: การสุ่มทำให้เควสต์เดียวกันบางวัน 80 วิ บางวัน 160 วิ ⇒ คุมงบเวลา 150-240 วิ/ชุดไม่ได้เลย
+     ⇒ เทสนี้เปลี่ยนจาก "ต้องไม่เท่ากัน" เป็น "ต้องตรงตารางของทรงนั้น" **ห้ามลบเทสทิ้ง** */
   r.ns.forEach(n => {
-    expect(n).toBeGreaterThanOrEqual(5);
-    expect(n).toBeLessThanOrEqual(10);
+    expect(n).toBeGreaterThanOrEqual(6);     /* ทรงลากน้อยสุด 6 ข้อ */
+    expect(n).toBeLessThanOrEqual(12);       /* ทรงการ์ดมากสุด 12 ข้อ */
   });
   /* กลุ่ม engine = ก้อนเดียวเสมอ (หน้าจอจะ mount เกมยาว 10 ด่านของหน้าหลักลงไปในนั้น) */
   r.engNs.forEach(n => expect(n).toBe(1));
-  if (r.ns.length >= 4) {
-    expect(r.uniq, 'เควสต์ในวันเดียวกันต้องไม่ยาวเท่ากันหมด').toBeGreaterThan(1);
-  }
+  /* ทุกชุดต้องยาวตรงตารางของทรงตัวเอง (ยอมสั้นกว่าได้ถ้า uniqueRun ตัดโจทย์ซ้ำจนคลังหมด) */
+  const want = await page.evaluate(() => {
+    const q = window.HouseQuests, t = q.difficulty().tier;
+    return { card: q.qNFor(t, 'card'), drag: q.qNFor(t, 'drag'), minQ: q.MIN_Q };
+  });
+  r.byShape.forEach(x => {
+    const cap = x.shape === 'drag' ? want.drag : want.card;
+    expect(x.n, x.mech + ' (' + x.shape + ')').toBeLessThanOrEqual(cap);
+    expect(x.n, x.mech + ' (' + x.shape + ')').toBeGreaterThanOrEqual(want.minQ);
+  });
   expect(r.again[0]).toBe(r.again[1]);
   expect(errors).toEqual([]);
 });

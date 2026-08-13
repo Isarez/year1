@@ -164,7 +164,7 @@ const creatorState = {dragging:false, lastX:0, rotY:0, rotTarget:0, fromWorld:fa
 /* เวอร์ชันแผนที่: 2 = ขยายทิศเหนือ/ตะวันออก (เลื่อน +NPAD/+EPAD), 3 = ขยายทิศตะวันออกอีกชั้น (เลื่อน +EPAD2)
    4 = ย่อกรอบบริเวณบ้านเหลือ x13-25/z27-38 + ย้ายรั้วไปล้อมกรอบทั้งผืน (2026-08-09)
    ของตกแต่งนอกบ้านที่เด็กวางไว้เก็บเป็น "พิกัดช่อง" → ต้องเลื่อนตามครั้งเดียว ไม่งั้นของจะย้ายที่เอง */
-const MAP_V = 4;
+const MAP_V = 5;
 function migrateHouseMap(d){
   const from = d.mapV || 1;
   const dx = from < 2 ? NPAD : 0;
@@ -173,6 +173,13 @@ function migrateHouseMap(d){
   /* mapV 4: รั้วเป็น decor ที่ seed ครั้งเดียวต่อเด็ก → เด็กที่เล่นอยู่แล้วจะค้างรั้วแนวเก่า (ล้อมแค่สนามรอบบ้าน)
      ⇒ ทิ้งรั้วเก่าทั้งแถวแล้ววางรั้วแนวใหม่ให้ + ดึงของที่ตกนอกกรอบบ้านที่ย่อลงกลับเข้ากรอบ
      (ถ้าปล่อยไว้ ของชิ้นนั้นจะกลายเป็นของที่เด็กย้าย/ลบไม่ได้ เพราะ decorCanPlace ห้ามแตะนอกกรอบ) */
+  /* mapV 5 (2026-08-13): แจกแปลงผัก 4 แปลงให้เด็กที่เล่นอยู่ก่อนเฟส 11
+     ⚠ เช็คก่อนว่ายังไม่มี — เด็กที่เพิ่งสร้างบ้านหลัง mapV 5 ได้จาก seedWorldDecor ไปแล้ว
+       ถ้าไม่เช็คจะได้ 8 แปลงซ้อนกัน */
+  if(from < 5 && d.decor && Array.isArray(d.decor.out)){
+    if(!d.decor.out.some(r => r && r.id === 'veg-plot'))
+      d.decor.out = d.decor.out.concat(vegPlotSeedRecs());
+  }
   if(from < 4 && d.decor && Array.isArray(d.decor.out)){
     const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));   /* ดึงเข้า "ในรั้ว" (เว้นแถวรั้วไว้ 1 ช่องทุกด้าน) */
     d.decor.out = d.decor.out
@@ -5727,6 +5734,7 @@ function handleTap(cx, cy){
   if(window.HouseQB && window.HouseQB.isOpen()){ window.HouseQB.close(); return; }
   if(questPlayOpen()){ closeQuestPanel(); return; }    /* การ์ดเควสต์/การ์ดคุยพ่อแม่ */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }   /* หน้าร้านเปิดอยู่ → แตะนอกกล่อง = ออกจากร้าน */
+  if(window.HousePlay && window.HousePlay.isOpen()){ window.HousePlay.close(); return; }   /* แผงเล่นในเมือง (เฟส 11) */
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
   if(hScene==='out'){
     /* ยิง ray ใส่ของทั้งฉากแล้วไล่หา tag ที่ ancestor: สัตว์ > บ้าน > ของตกแต่ง > ฉากตายตัว
@@ -5735,6 +5743,11 @@ function handleTap(cx, cy){
     if(hits.length){
       let o = hits[0].object;
       while(o && o !== worldGroup){
+        /* เฟส 11: ของของมินิเกมกลุ่ม A (ของสะสม/ทุ่นตกปลา/แปลงผัก) — เช็คก่อนใครเพราะเป็นของ
+           ชิ้นเล็กที่วางบนพื้น ถ้าไปอยู่ท้ายแถวจะถูกของฉากที่ใหญ่กว่าบังจนแตะไม่โดน */
+        if(o.userData.hPick && window.HousePlay){
+          if(window.HousePlay.tapPick(o.userData.hPick)) return;
+        }
         if(o.userData.hPet){ playWithPet(); return; }
         if(o.userData.hCritter){ startleCritter(o.userData.hCritter); return; }
         if(o.userData.hNpc){ tapNpc(o.userData.hNpc); return; }
@@ -5828,7 +5841,8 @@ function finishArrive(){
     if(charGroup && ap){
       hChar.targetRotY = Math.atan2(ap.x - charGroup.position.x, ap.z - charGroup.position.z);
     }
-    if(a.type==='wild') rustleWild(a);
+    if(a.type==='play2'){ if(window.HousePlay) window.HousePlay.arrive(a.pick); }
+    else if(a.type==='wild') rustleWild(a);
     else if(a.type==='lot') greetLot(a);
     else if(a.type==='npc'){ const n = npcs.find(k=>k.def.id===a.npc); if(n) talkToNpc(n); }
     else if(a.type==='parent'){ tapParent(a.who); }
@@ -5981,6 +5995,7 @@ function switchScene(to){
       hPet.group.rotation.set(0, hChar.targetRotY, 0);
     }
     updateHomeZoneFrame();     /* กรอบบริเวณบ้านมีเฉพาะฉากนอกบ้าน */
+    if(window.HousePlay) window.HousePlay.onScene(to);   /* มินิเกมกลุ่ม A อยู่ฉากนอกบ้านเท่านั้น */
     applyCamera();
   });
 }
@@ -9430,6 +9445,14 @@ function refreshQuestBar(){
   if(!b) return;
   const want = !!(QUESTS && houseOpen && hMode === 'world' && !editMode);
   if(b.hidden === want) b.hidden = !want;
+  /* ปุ่ม "เล่นในเมือง" (เฟส 11) อยู่แถวเดียวกัน โผล่/หายพร้อมกันเสมอ
+     ⚠ โผล่เฉพาะฉากนอกบ้าน — มินิเกมกลุ่ม A ทุกตัวเล่นในเมือง ไม่ใช่ในบ้าน */
+  { const pb = $('house-play-btn');
+    if(pb){
+      const pw = want && hScene === 'out' && !!window.HousePlay;
+      if(pb.hidden === pw) pb.hidden = !pw;
+      if(!pw && window.HousePlay && window.HousePlay.isOpen()) window.HousePlay.close();
+    } }
   if(!want) return;
   const sum = QUESTS.daySummary();
   const alert = QUESTS.starBonusReady();
@@ -10104,6 +10127,13 @@ function fenceSeedRecs(){
   [YARD.x0, YARD.x1].forEach(fx=>{ for(let z=YARD.z0+1; z<=YARD.z1-1; z++){ if(isFenceTile(fx,z)) out.push({id:'fence-seg', x:fx, z, rot:1, col:0}); } });
   return out;
 }
+/* แปลงผัก 4 แปลงหน้าบ้าน (เฟส 11 · ผู้ใช้กำหนดพิกัดเอง 2026-08-13: x14-15 / z33-34)
+   ⚠ อยู่ใน HOME_ZONE (x13-25 / z27-38) จึงย้าย/หมุน/ลบได้ในโหมดตกแต่งตามปกติ
+   ⚠ **เป็นแค่ "เบาะดิน"** — ต้นพืชกับป้ายบอกสิ่งที่ทำได้เป็นของ js/house-play.js ที่วาดทับตามสถานะ */
+const VEG_PLOT_TILES = [[14,33],[15,33],[14,34],[15,34]];
+function vegPlotSeedRecs(){
+  return VEG_PLOT_TILES.map(([x,z]) => ({id:'veg-plot', x, z, rot:0, col:0}));
+}
 /* seed ต้นไม้/รั้ว/บ้านสัตว์เลี้ยงเริ่มต้นเป็น decor ที่ย้าย/ลบได้ (ครั้งเดียวต่อเด็ก, ตำแหน่งเดิมเป๊ะ) */
 function seedWorldDecor(data){
   data = data || {};
@@ -10116,6 +10146,7 @@ function seedWorldDecor(data){
                           !inBox(HOUSE_FOOT, x, z) && !(x===PET_HOUSE_TILE.x && z===PET_HOUSE_TILE.z))
        .forEach(([x,z])=>{ seed.push({id:'tree', x, z, rot:(x*7+z*13)%4, col:(x+z)%4}); });
   fenceSeedRecs().forEach(r=>seed.push(r));
+  vegPlotSeedRecs().forEach(r=>seed.push(r));      /* แปลงผัก 4 แปลง (เฟส 11) */
   /* rot:0 = ประตูหันไปทาง +z ทิศเดียวกับประตูบ้านเด็ก (ทางเดินหน้าบ้านก็ทอดไป +z) และเป็นด้านที่
      กล้อง iso มองเห็น (ของเดิม rot:3 ประตูหันหลังให้กล้อง เด็กไม่เห็นทั้งประตูและตัวที่เข้าไปนอนรอ) */
   /* ⚠ เฟส 3A: **ไม่ seed บ้านสัตว์ให้ทุกคนแล้ว** (ข้อ 18.1 — ไม่มีสัตว์ = ไม่มีบ้านสัตว์)
@@ -10872,6 +10903,7 @@ function frame(t){
      ⚠ เช็คแค่ตอนก้าวถึงช่องใหม่ไม่พอ — เด็กอาจถูกวาร์ป/เริ่มเกมมาทั้งที่ยืนอยู่ในตลาดแล้ว */
   if(walkQuest) walkQuestTileCheck();
   updateWalkMark(t);              /* รอยเท้าปลายทาง — ซ่อน/โชว์ตามสถานะเดินจริงทุกเฟรม */
+  if(window.HousePlay) window.HousePlay.tick(dt, t);   /* มินิเกมกลุ่ม A (เฟส 11) */
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator' || hMode==='pet'){
@@ -11184,6 +11216,8 @@ function enterHouseGame(){
     }
   }
   lastT = performance.now();
+  /* เฟส 11 — มินิเกมกลุ่ม A ที่เล่นในโลก 3D (js/house-play.js) · ไฟล์นั้นอาจยังไม่โหลดก็ไม่พัง */
+  if(window.HousePlay) window.HousePlay.start();
   houseStarted = true;          /* ✅ เข้าบ้านเสร็จสมบูรณ์แล้ว (ชุดเทสรอสัญญาณนี้ ดู __houseDbg.ready) */
   rafId = requestAnimationFrame(frame);
 }
@@ -11201,6 +11235,8 @@ function stopHouseGame(){
   endFeedAnim();                 /* ออกจากบ้านกลางอนิเมชันป้อนอาหาร → เก็บชามทิ้ง ไม่ให้ค้างในฉาก */
   { const cv = $('house-canvas'); if(cv) cv.classList.remove('house-talk-hover'); }   /* กันเคอร์เซอร์ฟองคำพูดค้าง */
   houseOpen = false;
+  if(window.HousePlay) window.HousePlay.stop();
+  clearPlayObjs();               /* ของของมินิเกมกลุ่ม A ต้องไม่ค้างในฉากข้ามรอบการเล่น */
   qzOnClose = null;              /* ออกจากบ้านแล้ว ห้ามให้หน้าคลังคำถามเด้งกลับมาทับหน้าหลัก */
   closeQuestBoard();
   closeQuestPanel();
@@ -11571,6 +11607,85 @@ window.HouseQuestUI = {
   makeBtn: (label, cls, fn) => qzBtn(label, cls, fn),
   award: n => awardCoins(n),
 };
+
+/* ---------- ประตูสำหรับ js/house-play.js (เฟส 11: มินิเกมกลุ่ม A ที่เล่นในโลก 3D จริง) ----------
+   กลุ่ม A ไม่ได้เปิดการ์ดถาม-ตอบ แต่ไปวางของจริงในเมืองแล้วให้เด็กเดินไปแตะ ⇒ ต้องการของ
+   ที่ `HouseQuestUI` (ประตูของการ์ดเควสต์) ไม่มีให้: กริดเดินได้ · พิกัดโลก · การวางของในฉาก
+   ⚠ **เปิดเท่าที่จำเป็นจริงๆ เท่านั้น** อย่าเปิด worldGroup/scene ดิบๆ ออกไป ไม่งั้นการแยกไฟล์ไร้ความหมาย
+   ⚠ ของที่วางผ่าน `spawn()` จะถูกเก็บกวาดให้เองตอนออกจากบ้าน/สลับฉาก (ดู clearPlayObjs) */
+const playObjs = new Set();
+function clearPlayObjs(){
+  playObjs.forEach(g=>{ if(g.parent) g.parent.remove(g); disposeGroup(g); });
+  playObjs.clear();
+}
+/* วาดฉากเดี๋ยวนี้ 1 เฟรมแบบ synchronous — ใช้ตอนกดชัตเตอร์ในเกมช่างภาพ (เฟส 11)
+   ⚠ **ห้ามเปิด `preserveDrawingBuffer` เพื่อถ่ายภาพ** มันกินเฟรมเรตตลอดเวลาที่เล่น
+     วิธีนี้ถูกกว่ามาก: สั่งวาดแล้วอ่าน canvas ต่อทันทีในจังหวะเดียวกัน ก่อนเบราว์เซอร์เคลียร์บัฟเฟอร์ */
+window.__housePaint = function(){
+  if(renderer && scene && camera) renderer.render(scene, camera);
+};
+window.HouseWorld = {
+  /* --- ผัง/กริด (อ่านอย่างเดียว) --- */
+  OUT_W: () => OUT_W, OUT_D: () => OUT_D,
+  grid:  () => outGrid,
+  walkable: (x, z) => isWalk(outGrid, OUT_W, OUT_D, x, z),
+  nearWalkable: (x, z) => nearestWalkable(outGrid, OUT_W, OUT_D, x, z),
+  /* ⚠ **ระยะเดินต้องวัดด้วยตัวนี้เท่านั้น ห้ามใช้เส้นตรง** — แม่น้ำ/สะพานทำให้ 10 ช่องเส้นตรง
+     กลายเป็นเดินอ้อม 40 ช่อง (สูตรจำนวนข้อของเฟส 10 พังทันทีถ้าใช้เส้นตรง) */
+  pathLen: (from, to) => {
+    if(!from || !to) return -1;
+    const p = findPath(outGrid, OUT_W, OUT_D, from, to);
+    return p ? p.length : -1;
+  },
+  inHomeZone: (x, z) => inHomeZone(x, z),
+  lotAt: (x, z, m) => lotAt(x, z, m),
+  zoneName: (x, z) => zoneNameAt(x, z),
+  wx: gx => outWX(gx), wz: gz => outWZ(gz),
+  /* --- ตัวเด็ก --- */
+  tile: () => ({x: hChar.tile.x, z: hChar.tile.z}),
+  walkTo: (x, z, act) => walkTo(x, z, act ? {action: act} : {}),
+  scene:  () => hScene,
+  mode:   () => hMode,
+  editing:() => !!editMode,
+  /* --- วางของในฉากนอกบ้าน --- */
+  spawn: g => { if(!g || !worldGroup) return null; worldGroup.add(g); playObjs.add(g); return g; },
+  despawn: g => { if(!g) return; playObjs.delete(g); if(g.parent) g.parent.remove(g); disposeGroup(g); },
+  /* ชิ้นส่วนพื้นฐาน (ใช้วัสดุ toon ชุดเดียวกับทั้งเมือง ⇒ ของใหม่กลืนกับฉากเดิมเสมอ) */
+  kit: () => ({box, sphere, cyl, cone, torus, toonMat, merge: mergeDecorGroup, shadows: () => hShadows}),
+  /* --- ข้อมูล/เงิน/HUD --- */
+  load: () => loadHouseData(), save: p => saveHouseData(p),
+  award: n => awardCoins(n),               /* ⚠ เงินในโหมดบ้านจ่ายผ่านตัวนี้จุดเดียวเท่านั้น (ข้อ 5) */
+  toast: (ic, msg) => { if(typeof showToast === 'function') showToast(ic, msg); },
+  npcDefs: () => NPC_DEFS,
+  refreshHud: () => { questBarKey = ''; refreshQuestBar(); },
+
+  /* ---------- เพิ่มให้เฟส 11 รอบแก้ (2026-08-13) ---------- */
+  /* ความสูงพื้นจริงของช่องนั้น — **สะพานไม้ผิวบนอยู่ที่ .12 ไม่ใช่ 0**
+     ของที่วางที่ y=0 บนสะพานจะจมหายใต้แผ่นไม้ (บั๊กเดียวกับรอยเท้าบอกจุดหมาย) */
+  groundY: (x, z) => (outGrid && outGrid[z] && outGrid[z][x] === 2) ? .12 : 0,
+  /* ช่องนี้ "มองเห็นจากกล้อง" ไหม — กล้องมองจากทิศ +x,+z ลงมา (CAM_DIR)
+     ⇒ ตึกที่อยู่ในแนวทแยง (x+k, z+k) จะบังของที่วางตรงนี้จนเด็กหาไม่เจอ
+     อาคารสูง ~3 หน่วย ÷ ความชันกล้อง (1.15/√2 ≈ .81 ต่อ 1 ช่องทแยง) ⇒ บังได้ ~4 ช่อง
+     ⚠ ใช้กับของทุกชิ้นที่ "เด็กต้องมองหาให้เจอ" (คนซ่อน/ของสะสม) ไม่งั้นเกมกลายเป็นหาไม่เจอจริงๆ */
+  visibleSpot: (x, z) => {
+    if(lotAt(x, z, 1)) return false;            /* ยืนติดตัวอาคารเอง = โดนชายคาบัง */
+    for(let k = 1; k <= 4; k++) if(lotAt(x + k, z + k, 0)) return false;
+    return true;
+  },
+  camRot: () => camera ? camera.rotation : null,      /* ป้ายลอยหันเข้าหากล้อง (ชุดเดียวกับป้าย "!") */
+  /* จุดตกปลาที่ผังประกาศไว้จริง — ⚠ **ห้ามเดาพิกัดเอง** (กติกาเดียวกับตอนแก้ผังเมือง) */
+  pondPier: () => ({x: POND_PIER.x, z: POND_PIER.z, len: POND_PIER.len, rot: POND_PIER.rot}),
+  isSea:  (x, z) => isSeaTile(x, z),
+  isSand: (x, z) => isSandTile(x, z),
+  isPond: (x, z) => isPondTile(x, z),
+  homeZone: () => ({x0:HOME_ZONE.x0, x1:HOME_ZONE.x1, z0:HOME_ZONE.z0, z1:HOME_ZONE.z1}),
+  /* ตำแหน่งแปลงผัก = อ่านจาก decor ที่วางจริง ⇒ **เด็กย้ายแปลงในโหมดตกแต่งแล้วเกมตามไปเอง**
+     (ไม่ได้เก็บพิกัดซ้ำใน play state — ถ้าเก็บซ้ำจะเพี้ยนทันทีที่ย้าย) */
+  vegPlots: () => (decorGroups.out || [])
+    .map(g => (g.userData.deco || {}).rec)
+    .filter(r => r && r.id === 'veg-plot')
+    .map(r => ({x:r.x, z:r.z})),
+};
 /* จุดต่อชุดเทสของเฟส 3B — แผงให้อาหาร/การ์ดคุณหมอ (เดินไปหาหมอในฉาก 3D ทำในเทสไม่ไหวเหมือนกัน) */
 /* จุดต่อชุดเทสของเฟส 4A — แตะตัวพ่อแม่/เปิดหน้าแต่งตัวให้ตรงตัวใน 3D ทำในเทสไม่ไหว */
 window.HouseFamilyUI = {
@@ -11710,6 +11825,7 @@ if(!homeView.hidden) houseBuddyRefresh();
   scene:()=>hScene, creatorWho:()=>creatorWho, charLook:()=>charCfgNow,
   /* พาเด็กเข้าไปในบ้านทันที (ชุดเทสของเฟส 4A — เดินไปหน้าประตูเองในเทสช้ามาก) */
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
+  leaveHouse:()=>{ if(hScene!=='out') switchScene('out'); },
   /* รอบเล่นเควสต์ที่กำลังเปิดอยู่ (ชุดเทสมินิเกมเฟส 4B ต้องรู้ว่าของชิ้นไหนควรลงถังไหน) */
   qRun: ()=> qRun,
   /* ---- จุดต่อชุดเทสเฟส 8 (คลังเฟอร์นิเจอร์ 180 ชิ้น + ของแต่งตัว 114 แบบ) ----

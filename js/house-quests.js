@@ -100,6 +100,21 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
         จุดที่ห่างกัน 10 ช่องแบบเส้นตรงอาจต้องเดินอ้อม 40 ช่อง ⇒ จะแจก 10 ข้อให้เควสต์ที่เดินไกลที่สุด
         ซึ่งตรงข้ามกับที่ออกแบบไว้เป๊ะ (ผู้เรียกเป็นคนวัดระยะมาให้ ไฟล์นี้ไม่รู้จักผังเมือง) */
   const SEC_WALK_BASE = 12, SEC_WALK_PER_TILE = 0.6;
+  /* ---------- ตารางจำนวนข้อต่อเควสต์ (ข้อ 45.4 · เปิดใช้ท้ายเฟส 11) ----------
+     index = tier (1 = เตรียม ป.1/ป.1 … 6 = ป.6) · **เป็น lookup ตรงๆ ไม่ใช่สูตร**
+     ที่มา: งบเวลา 150-240 วิ/ชุด ÷ `secPerQ` ของแต่ละทรง
+       การ์ด 4 ตัวเลือก 16 วิ/ข้อ ⇒ 9-12 ข้อ = 144-192 วิ
+       ลากลงถัง/ช่อง/ตะกร้า 30 วิ/ข้อ ⇒ 6-8 ข้อ = 180-240 วิ
+     ⚠ **ทับมติ 2026-08-09 ที่ตั้งไว้ 5-10 ข้อ** (ผู้ใช้อนุมัติ 2026-08-12) — ตัวแก้ปัญหา
+       "เควสต์เด็กเล็กทำแป๊บเดียวเสร็จ" (เดิม 5 ข้อ × 16 วิ = 80 วิ/ชุด) โดยตรง
+     ⚠ **แก้ตารางนี้เมื่อไหร่ ต้องคำนวณ `TIER_MUL` ใหม่ทุกครั้ง** (ราวกันตกข้อ 2 ของ 45.8)
+       เพราะตัวคูณถอดมาจากอัตราส่วนเวลาเล่นที่ตารางนี้กำหนด ห้ามแก้ทีละอันแล้วปล่อยอีกอันค้าง */
+  const Q_CARD = [0, 9, 10, 10, 11, 12, 12];
+  const Q_DRAG = [0, 6, 6,  7,  7,  8,  8];
+  function qNFor(tier, shape){
+    const t = Math.max(1, Math.min(6, tier | 0));
+    return (shape === 'drag' ? Q_DRAG : Q_CARD)[t];
+  }
   function secWalk(d){ return SEC_WALK_BASE + Math.max(0, d || 0) * SEC_WALK_PER_TILE; }
   /* จำนวนข้อของทรงเดิน (ข้อ 45.5) — clamp 5-10 เสมอ · `jitter` = ±1 สุ่มด้วย seed ของเควสต์นั้น */
   function walkQCount(d, jitter){
@@ -238,13 +253,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const tier = Math.max(1, gradeIndex(gid || gradeId()));   /* เตรียม ป.1 กับ ป.1 = tier 1 */
       return {
         tier: tier,
-        /* จำนวนข้อต่อเควสต์ — **5-10 ข้อ ไล่ตามชั้น** (ผู้ใช้สั่งเพิ่มจาก 3-5 เมื่อ 2026-08-09)
-           เตรียม ป.1/ป.1 = 5 · ป.2 = 6 · ป.3 = 7 · ป.4 = 8 · ป.5 = 9 · ป.6 = 10
-           ⚠ ยาวขึ้นเท่าตัว แต่ **ค่าตอบแทนคิดต่อเควสต์เหมือนเดิม** ⇒ เหรียญต่อข้อลดลงครึ่งหนึ่ง
-             (ตั้งใจ: ยืดเวลาเล่นต่อวันโดยไม่ทำเงินเฟ้อ — ตัวเลขเหรียญเป็นค่าที่ผู้ใช้ล็อกไว้ ห้ามขยับเอง) */
-        /* ค่าตั้งต้น — **จำนวนข้อจริงสุ่มใหม่ทุกเควสต์ที่ buildRun() (5-10 ข้อ ไม่จำเป็นต้องเท่ากัน)**
-           ผู้ใช้สั่ง 2026-08-10 · ระดับชั้นยังมีผลกับ "ความยากของแต่ละข้อ" เหมือนเดิม ไม่ใช่จำนวนข้อ */
-        qN:      Math.min(10, 4 + tier),
+        /* จำนวนข้อต่อเควสต์ — ค่าตั้งต้นเป็นของ "ทรงการ์ด" (9-12 ตามชั้น)
+           `buildRun()` เป็นคนเลือกตารางจริงตามทรงของกลไกนั้นอีกที (การ์ด/ลาก)
+           ⚠ **ค่าตอบแทนคิดต่อเควสต์เหมือนเดิม ไม่ผูกกับจำนวนข้อ** (ดู coinsFor) ⇒ ยืดเวลาเล่น
+             โดยไม่ทำเงินเฟ้อ · ตัวเลขเหรียญเป็นค่าที่ผู้ใช้ล็อกไว้ ห้ามขยับเอง */
+        qN:      qNFor(tier, 'card'),
         countMax:tier <= 2 ? 9 : (tier <= 4 ? 15 : 24),/* จำนวนของสูงสุดในโจทย์นับ */
         kinds:   tier <= 2 ? 1 : (tier <= 4 ? 2 : 3),  /* ของกี่ชนิดปนกันในโจทย์นับ */
         hints:   tier <= 2,                            /* ป.1-2 มีคำใบ้/ตัวช่วย */
@@ -1710,9 +1723,12 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const chal = spec.chal && gradeIndex(own) < GR.length - 1;
       const gid  = chal ? gradeAt(gradeIndex(own) + 1) : own;
       const rng  = rngFrom(fnv(childId() + '|' + s.d + '|' + spec.key + '|run'));
-      /* **จำนวนข้อสุ่ม 5-10 ต่อเควสต์** (ผู้ใช้สั่ง 2026-08-10) — seed เดิม ⇒ เปิดใหม่ได้ชุดเดิมเสมอ
+      /* จำนวนข้อ = ตาราง 45.4 **ตามทรงของกลไก** (การ์ด 9-12 · ลาก 6-8 ตามชั้น)
+         ⚠ เลิกสุ่ม 5-10 แบบเดิมแล้ว (มติ 2026-08-10 ถูกทับด้วยข้อ 45.4 เมื่อ 2026-08-12) —
+           การสุ่มทำให้เควสต์เดียวกันบางวันสั้น 80 วิ บางวันยาว 160 วิ คุมงบเวลาไม่ได้เลย
          ⚠ จำนวนข้อ **ไม่มีผลกับเงิน** ค่าตอบแทนคิดต่อเควสต์เหมือนเดิมทุกประการ (ดู coinsFor) */
-      const diff = Object.assign({}, difficulty(gid), {qN: 5 + ((rng() * 6) | 0)});
+      const base = difficulty(gid);
+      const diff = Object.assign({}, base, {qN: qNFor(base.tier, mechShape(spec.mech))});
       const def  = defById[spec.npc] || {id:spec.npc || '', job:'villager'};
       let items  = MECHS[spec.mech].gen(rng, diff, def, gid);
       if(!items || !items.length) items = MECHS.count.gen(rng, diff, def, gid);
@@ -2021,6 +2037,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       TIER_MUL, TIER_MUL_MAX, tierMul,
       SEC_CARD, SEC_DRAG, SEC_ENGINE, QUEST_SEC_LO, QUEST_SEC_HI,
       SEC_WALK_BASE, SEC_WALK_PER_TILE, secWalk, walkQCount,
+      Q_CARD, Q_DRAG, qNFor,
       mechShape, mechSecPerQ, goalSets,
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,

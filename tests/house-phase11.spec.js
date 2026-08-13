@@ -1,0 +1,401 @@
+/* ============================================================
+   เฟส 11 — มินิเกมกลุ่ม A ที่เล่นในโลก 3D จริง (js/house-play.js)
+   🙈 ซ่อนแอบ · 🍃 เก็บของประจำวัน · 🎣 ตกปลา · 📷 ช่างภาพ · 🌱 แปลงผัก
+
+   ⚠ กติกาที่ชุดนี้คุมไว้ (ห้ามลดหย่อนโดยไม่ถามผู้ใช้):
+     1. **ห้ามมี dead end** — ตกปลาได้ตั้งแต่ยังไม่มีตู้ปลา · ปลูกผักได้ตั้งแต่ยังไม่มีเงิน
+     2. **ห้ามมีบทลงโทษ** — ดึงเบ็ดไม่ทัน/ลืมรดน้ำ ต้องไม่หักอะไรและผักต้องไม่ตาย
+     3. **โควตาแยกจากเควสต์ 14 ชุดเดิมเด็ดขาด** — เล่นกลุ่ม A แล้วเควสต์หาเงินต้องไม่ถูกกิน
+     4. **จุดวางของต้องมาจากกริดเดินได้จริง** (ห้ามเดาพิกัด) และคนซ่อนต้องอยู่นอกบริเวณบ้าน
+     5. **เงินทุกบาทผ่าน OwlCoins** และคิดจากสูตร `coinsFor()` เดียวกับเควสต์ (ไม่ตั้งเลขลอยๆ)
+     6. **state ใหม่ต้องมี migration** — เด็กก่อนเฟส 11 (ไม่มีคีย์ `play`) ต้องเข้าเล่นได้ปกติ
+     7. ของถาวร (สมุดปลา · ของรางวัล · แปลงผัก) **ห้ามหายตอนขึ้นวันใหม่**
+   ============================================================ */
+const { test, expect } = require('@playwright/test');
+
+const CHILD = { id: 'p11a', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
+
+/* seed = house save ที่อยากให้เด็กมีตั้งแต่แรก (null = เด็กก่อนเฟส 11 ที่ไม่มีคีย์ play เลย) */
+async function house(page, seed) {
+  const errs = [];
+  page.on('pageerror', e => errs.push(String(e)));
+  page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+  await page.addInitScript(([c, s]) => {
+    localStorage.setItem('p1quiz_children', JSON.stringify([c]));
+    localStorage.setItem('p1quiz_active_child', c.id);
+    localStorage.setItem('p1quiz_music', 'off');
+    localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify(Object.assign({
+      v: 1, mapV: 4, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
+    }, s || {})));
+  }, [CHILD, seed || null]);
+  await page.goto('/');
+  await page.locator('#child-select-view .child-card').first().click();
+  await page.locator('#landing-house').click();
+  await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
+  await page.waitForFunction(() => !!window.HousePlay && !!window.HouseWorld, null, { timeout: 30000 });
+  return errs;
+}
+const coins = page => page.evaluate(() => window.OwlCoins.get());
+
+test('เฟส 11A: เด็กก่อนเฟส 11 (ไม่มีคีย์ play) ต้องเข้าเล่นได้ + สร้าง state ให้เอง', async ({ page }) => {
+  const errs = await house(page);          /* save ไม่มีคีย์ play เลย = เด็กเก่า */
+  const r = await page.evaluate(() => {
+    const s = window.HousePlay.state();
+    const saved = JSON.parse(localStorage.getItem('p1quiz_house_p11a') || '{}');
+    return {
+      v: s.v, day: s.day,
+      keys: Object.keys(s).sort(),
+      colN: s.col.items.length,
+      persisted: !!saved.play,             /* ต้องเขียนลง house save ก้อนเดิม (export/import พาไปเอง) */
+      persistedDay: (saved.play || {}).day,
+    };
+  });
+  expect(r.v).toBe(1);
+  expect(r.keys).toEqual(['col', 'day', 'fish', 'garden', 'photo', 'seek', 'v']);
+  expect(r.colN).toBeGreaterThan(0);
+  expect(r.persisted, 'state ต้องอยู่ใน house save ก้อนเดียวกับของอื่น').toBe(true);
+  expect(r.persistedDay).toBe(r.day);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11B: ปุ่ม 🎈 + แผงรายการ — โผล่เฉพาะฉากนอกบ้าน · แตะนอกกล่องแล้วปิด', async ({ page }) => {
+  const errs = await house(page);
+  const btn = page.locator('#house-play-btn');
+  await expect(btn).toBeVisible();
+  /* ต้องสูงเท่าแถบสรุปเควสต์เป๊ะ — อยู่แถวเดียวกัน (กติกา HUD ที่ล็อกไว้ 2026-08-09) */
+  const h = await page.evaluate(() => [
+    document.getElementById('house-play-btn').getBoundingClientRect().height,
+    document.getElementById('house-quest-bar').getBoundingClientRect().height,
+  ]);
+  expect(h[0]).toBe(h[1]);
+
+  await btn.click();
+  await expect(page.locator('#house-playpanel')).toBeVisible();
+  /* ต้องมีครบทั้ง 5 เกมในแผงเดียว */
+  await expect(page.locator('#hpl-list .hpl-row')).toHaveCount(5);
+
+  /* แตะพื้นที่นอกกล่อง = ปิด (กติกาเดียวกับกล่องอื่นทุกใบในโหมดบ้าน) */
+  await page.mouse.click(60, 400);
+  await page.waitForTimeout(250);
+  await expect(page.locator('#house-playpanel')).toBeHidden();
+
+  /* เข้าไปในบ้าน → ปุ่มต้องหาย (กลุ่ม A เล่นในเมืองเท่านั้น) */
+  await page.evaluate(() => window.__houseDbg.enterHouse());
+  await expect.poll(() => page.evaluate(() =>
+    document.getElementById('house-play-btn').hidden), { timeout: 10000 }).toBe(true);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11C: ซ่อนแอบ — จุดแอบมาจากกริดจริง · เดินถึงได้ทุกจุด · ไม่อยู่ในบริเวณบ้าน', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay, W = window.HouseWorld;
+    const ok = P.seekStart();
+    const s = P.state().seek;
+    return {
+      ok, n: s.spots.length, on: s.on,
+      walkable: s.spots.every(t => W.walkable(t.x, t.z)),
+      /* ⚠ ชาวบ้านเข้าเขตบ้านเด็กไม่ได้ ⇒ ห้ามมีใครแอบในนั้น */
+      inHome: s.spots.filter(t => W.inHomeZone(t.x, t.z)).length,
+      /* ⚠ ระยะต้องวัดด้วย findPath จริง — ทุกจุดต้องเดินถึงได้ (ไม่ใช่เกาะกลางแม่น้ำ) */
+      reach: s.spots.map(t => W.pathLen(W.tile(), t)),
+      objs: P.objs().seek,
+      hint: P.seekHint(),
+      again: P.seekStart(),                /* วันละครั้ง — เริ่มซ้ำต้องไม่ได้ */
+    };
+  });
+  expect(r.ok).toBe(true);
+  expect(r.n).toBeGreaterThanOrEqual(3);
+  expect(r.n).toBeLessThanOrEqual(5);
+  expect(r.walkable, 'ทุกจุดต้องเป็นช่องเดินได้จริง').toBe(true);
+  expect(r.inHome, 'ห้ามแอบในบริเวณบ้านเด็ก').toBe(0);
+  r.reach.forEach(d => expect(d, 'ทุกจุดต้องเดินถึงได้').toBeGreaterThan(0));
+  expect(r.objs).toBe(r.n);                /* ต้องมีตัวคนโผล่ในฉากครบทุกจุด */
+  expect(r.hint).toBeTruthy();
+  expect(r.hint.level).toBeGreaterThanOrEqual(0);
+  expect(r.hint.level).toBeLessThanOrEqual(3);
+  expect(r.again, 'เริ่มซ้ำในวันเดียวกันต้องไม่ได้').toBe(false);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11D: ซ่อนแอบ — หาครบได้เหรียญตามสูตรเควสต์ · โควตาเควสต์ 14 ชุดไม่ถูกกิน', async ({ page }) => {
+  const errs = await house(page);
+  const before = await coins(page);
+  const sum0 = await page.evaluate(() => window.HouseQuests.daySummary());
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay, Q = window.HouseQuests;
+    P.seekStart();
+    const n = P.state().seek.spots.length;
+    /* "เจอ" ทีละคนผ่านทางเดินโค้ดจริง (ข้ามการเดินเพราะเทสเดินทั้งเมืองไม่ไหว) */
+    for (let i = 0; i < n; i++) P.arrive({ game: 'seek', i });
+    return { n, done: P.state().seek.done, objs: P.objs().seek,
+             want: Q.coinsFor('A', 3, Q.difficulty().tier, false) };
+  });
+  expect(r.done).toBe(true);
+  expect(r.objs, 'หาครบแล้วต้องเก็บตัวคนออกจากฉาก').toBe(0);
+  expect(await coins(page) - before, 'ต้องได้เท่าเควสต์ NPC 3 ดาว').toBe(r.want);
+  /* 🔒 โควตาเควสต์ต้องไม่ขยับเลยแม้แต่ชุดเดียว */
+  const sum1 = await page.evaluate(() => window.HouseQuests.daySummary());
+  expect(sum1.total).toBe(sum0.total);
+  expect(sum1.left).toBe(sum0.left);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11E: เก็บของประจำวัน — 8 ชิ้นบนช่องเดินได้ · เก็บครบแล้วได้ของรางวัล (ไม่ใช่เหรียญ)', async ({ page }) => {
+  const errs = await house(page);
+  const before = await coins(page);
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay, W = window.HouseWorld;
+    const st = P.state();
+    const walkable = st.col.items.every(t => W.walkable(t.x, t.z));
+    const n = st.col.items.length;
+    const objs0 = P.objs().col;
+    P.arrive({ game: 'col', i: 0 });
+    const after1 = { got: P.state().col.got.length, objs: P.objs().col };
+    for (let i = 1; i < n; i++) P.arrive({ game: 'col', i });
+    return { n, walkable, objs0, after1, sets: P.state().col.sets,
+             objsEnd: P.objs().col, colN: P.COL_N };
+  });
+  expect(r.n).toBe(r.colN);
+  expect(r.walkable, 'ของทุกชิ้นต้องอยู่บนช่องเดินได้จริง').toBe(true);
+  expect(r.objs0).toBe(r.n);
+  expect(r.after1.got).toBe(1);
+  expect(r.after1.objs, 'เก็บแล้วชิ้นนั้นต้องหายจากฉาก').toBe(r.n - 1);
+  expect(r.objsEnd).toBe(0);
+  expect(r.sets, 'เก็บครบ 1 ชุด').toBe(1);
+  /* ⚠ **ห้ามจ่ายเหรียญ** — ของสะสมเป็น reward loop ที่ไม่ทำเงินเฟ้อ (ข้อ 44.4) */
+  expect(await coins(page) - before, 'เก็บของต้องไม่ได้เหรียญ').toBe(0);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11F: ของรางวัลนักสะสม — ครบตามเกณฑ์แล้วปลดของแต่งบ้านให้ฟรี ไม่ตัดเงิน', async ({ page }) => {
+  /* ยัดให้สะสมมาแล้ว 2 วัน แล้วเก็บครบวันที่ 3 → ต้องปลดของชิ้นแรก */
+  const errs = await house(page, { play: { v: 1, day: '', col: { items: [], got: [], sets: 2, prizes: [] } } });
+  const before = await coins(page);
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay, S = window.HouseShop;
+    const first = P.COL_PRIZES[0];
+    const ownedBefore = S.ownsFurn(first.id);
+    const n = P.state().col.items.length;
+    for (let i = 0; i < n; i++) P.arrive({ game: 'col', i });
+    return { first, ownedBefore, ownedAfter: S.ownsFurn(first.id),
+             sets: P.state().col.sets, prizes: P.state().col.prizes };
+  });
+  expect(r.ownedBefore).toBe(false);
+  expect(r.sets).toBe(3);
+  expect(r.ownedAfter, 'ครบ 3 วันต้องปลดของชิ้นแรก').toBe(true);
+  expect(r.prizes).toContain(r.first.id);
+  expect(await coins(page) - before, 'ของรางวัลต้องไม่ตัดเงิน').toBe(0);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11G: ตกปลา — มีจุดตกปลา 2 จุด (บ่อน้ำ+ทะเล) · ดึงไม่ทันไม่มีบทลงโทษ · ได้ปลาแล้วลงสมุด', async ({ page }) => {
+  const errs = await house(page);
+  const before = await coins(page);
+
+  /* ⚠ ผู้ใช้สั่ง 2026-08-13: ต้องมีจุดตกปลาถาวร **บ่อน้ำ 1 · ทะเล 1** พร้อมป้ายลอยให้กดเริ่ม
+     ไม่ใช่ "ยืนตรงไหนก็ตกได้" แบบเดิมที่เด็กไม่มีทางรู้ว่าตกได้ตรงไหน */
+  const spots = await page.evaluate(() => {
+    const P = window.HousePlay, W = window.HouseWorld;
+    return P.fishSpots().map(s => ({
+      x: s.x, z: s.z, kind: s.kind,
+      walkable: W.walkable(s.x, s.z),
+      reach: W.pathLen(W.tile(), {x: s.x, z: s.z}),
+      hasBubble: !!(s.obj && s.obj.userData.bubble),
+    }));
+  });
+  expect(spots.length, 'ต้องมีจุดตกปลา 2 จุด').toBe(2);
+  expect(spots.map(s => s.kind).sort()).toEqual(['pond', 'sea']);
+  spots.forEach(s => {
+    expect(s.walkable, s.kind + ' ต้องเป็นช่องเดินได้จริง').toBe(true);
+    expect(s.reach, s.kind + ' ต้องเดินไปถึงได้จริง (วัดด้วย findPath)').toBeGreaterThan(0);
+    expect(s.hasBubble, s.kind + ' ต้องมีป้ายลอยให้เด็กเห็น').toBe(true);
+  });
+
+  /* ยังไม่ไปถึงจุด = เหวี่ยงไม่ได้ (แต่ต้องไม่พังและไม่หักอะไร) */
+  const dry = await page.evaluate(() => ({ cast: window.HousePlay.fishCast(),
+                                           st: window.HousePlay.fishState() }));
+  expect(dry.cast).toBe(false);
+  expect(dry.st).toBe(null);
+
+  /* วาร์ปไปที่จุดตกปลาจริง แล้วเล่นผ่านทางเดินโค้ดเดียวกับตอนแตะป้าย */
+  await page.evaluate(() => {
+    const s = window.HousePlay.fishSpots()[0];
+    window.__houseDbg.tp(s.x, s.z);
+  });
+  const r = await page.evaluate(async () => {
+    const P = window.HousePlay;
+    const atSpot = P.atFishSpot();
+    const cast = P.fishCast();
+    const bookBefore = P.state().fish.book.length;
+    /* ดึงก่อนปลากิน = ปลาหนี — ต้องไม่หักอะไรเลย และเหวี่ยงใหม่ได้ทันที */
+    const early = P.fishPull();
+    const afterEarly = { st: P.fishState(), book: P.state().fish.book.length };
+    P.fishCast();
+    /* ⚠ ต้องเผื่อเวลาเยอะ — engine clamp dt ที่ 50ms/เฟรม ตอนเฟรมตกเวลาในเกมเดินช้ากว่าจริงหลายเท่า */
+    await new Promise(res => {
+      const t0 = Date.now();
+      const iv = setInterval(() => {
+        const s = P.fishState();
+        if ((s && s.phase === 'bite') || Date.now() - t0 > 30000) { clearInterval(iv); res(); }
+      }, 50);
+    });
+    const bit = P.fishState() && P.fishState().phase === 'bite';
+    const got = bit ? P.fishPull() : false;
+    return { atSpot, cast, early, afterEarly, bookBefore, bit, got,
+             book: P.state().fish.book.length, today: P.state().fish.today, total: P.FISH.length };
+  });
+  expect(r.atSpot).toBe(true);
+  expect(r.cast).toBe(true);
+  expect(r.early, 'ดึงก่อนจังหวะ = ไม่ได้ปลา').toBe(false);
+  expect(r.afterEarly.st, 'ปลาหนีแล้วต้องเคลียร์สถานะให้เหวี่ยงใหม่ได้').toBe(null);
+  expect(r.afterEarly.book, 'ดึงพลาดต้องไม่ทำให้สมุดปลาหาย').toBe(r.bookBefore);
+  expect(r.bit, 'ต้องมีจังหวะปลากินจริง').toBe(true);
+  expect(r.got).toBe(true);
+  expect(r.book).toBe(r.bookBefore + 1);
+  expect(r.today).toBe(1);
+  expect(r.total).toBeGreaterThanOrEqual(15);
+  /* ตกปลาไม่จ่ายเหรียญ (ได้เป็น "ปลา") — และเล่นได้ทั้งที่ยังไม่มีตู้ปลา = ไม่มี dead end */
+  expect(await coins(page) - before).toBe(0);
+  expect(errs).toEqual([]);
+});
+
+
+test('เฟส 11H: ช่างภาพ — ได้ภาพจริงจากฉาก 3D · เก็บไม่เกินเพดาน · ไม่ต้องเปิด preserveDrawingBuffer', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay;
+    const u = P.grabShot();
+    /* ถ่ายรัวๆ เกินเพดาน — ต้องตัดของเก่าทิ้ง ไม่ใช่บวมจน localStorage เต็ม */
+    for (let i = 0; i < P.PHOTO_MAX + 4; i++) P.photoShoot();
+    const saved = JSON.parse(localStorage.getItem('p1quiz_house_p11a') || '{}');
+    return { head: (u || '').slice(0, 22), len: (u || '').length,
+             shots: P.state().photo.shots.length, max: P.PHOTO_MAX,
+             saveKB: Math.round(JSON.stringify(saved).length / 1024),
+             order: P.photoOrder().id };
+  });
+  expect(r.head, 'ต้องเป็นรูป jpeg ที่อ่านจาก canvas จริง').toContain('data:image/jpeg');
+  expect(r.len, 'ภาพต้องไม่ว่างเปล่า (ถ้าบัฟเฟอร์ถูกเคลียร์จะได้ภาพดำสั้นๆ)').toBeGreaterThan(1500);
+  expect(r.shots).toBe(r.max);
+  expect(r.saveKB, 'house save ต้องไม่บวมจนเสี่ยง localStorage เต็ม').toBeLessThan(220);
+  expect(r.order).toBeTruthy();
+  /* ⚠ ห้ามเปิด preserveDrawingBuffer — มันกินเฟรมเรตตลอดเวลาที่เด็กเล่น */
+  const ctxAttr = await page.evaluate(() => {
+    const cv = document.getElementById('house-canvas');
+    const gl = cv.getContext('webgl2') || cv.getContext('webgl');
+    return gl ? !!gl.getContextAttributes().preserveDrawingBuffer : null;
+  });
+  expect(ctxAttr).toBe(false);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11I: แปลงผัก — 4 แปลงถาวรที่ x14-15/z33-34 · ย้ายได้ในโหมดตกแต่ง · ทำทีละแปลงตามป้าย', async ({ page }) => {
+  const errs = await house(page);
+  const before = await coins(page);
+
+  /* ⚠ ผู้ใช้กำหนดพิกัดเอง 2026-08-13 — แปลงต้องมีให้ตั้งแต่แรก ไม่ใช่สุ่มที่ตอนกดปลูก */
+  const bed0 = await page.evaluate(() => {
+    const P = window.HousePlay, W = window.HouseWorld;
+    return { beds: P.beds(), inHome: P.beds().every(b => W.inHomeZone(b.x, b.z)),
+             acts: P.beds().map((_, i) => P.bedAction(i)),
+             bubbles: P.objs().garden };
+  });
+  expect(bed0.beds).toEqual([{x:14,z:33},{x:15,z:33},{x:14,z:34},{x:15,z:34}]);
+  expect(bed0.inHome, 'แปลงต้องอยู่ในบริเวณบ้าน (ย้ายได้ในโหมดตกแต่ง)').toBe(true);
+  expect(bed0.acts, 'ตอนแรกทุกแปลงว่าง = ปลูกได้').toEqual(['plant','plant','plant','plant']);
+  expect(bed0.bubbles, 'ทุกแปลงต้องมีป้ายลอยบอกว่าทำอะไรได้').toBe(4);
+
+  /* แปลงเป็นเฟอร์นิเจอร์จริง ⇒ ต้องอยู่ในคลังของที่เด็ก "มีสิทธิ์" อยู่แล้ว (ไม่ต้องซื้อ) */
+  expect(await page.evaluate(() => window.HouseShop.ownsFurn('veg-plot'))).toBe(true);
+
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay;
+    /* แตะแปลงที่ 1 → ปลูก · แปลงอื่นต้องยังว่าง (ทำทีละแปลงตามที่ผู้ใช้สั่ง) */
+    P.arrive({ game:'garden', i:0 });
+    const afterPlant = { acts: P.beds().map((_, i) => P.bedAction(i)) };
+    /* แตะแปลงเดิมอีกที → รดน้ำ (ป้ายเปลี่ยนเป็น 💧 แล้ว) */
+    P.arrive({ game:'garden', i:0 });
+    const stage1 = P.state().garden.plots[0].stage;
+    const wateredAct = P.bedAction(0);
+    /* จำลองลืมรดหลายวัน — ผักต้องไม่ตายและไม่ถอยขั้น */
+    P.state().garden.watered = '';
+    const survived = { has: !!P.state().garden.plots[0], stage: P.state().garden.plots[0].stage };
+    /* รดจนโตเต็มแล้วแตะเก็บ */
+    for (let i = 0; i < P.GROW_MAX + 2; i++) { P.state().garden.watered = ''; P.gardenWater(null); }
+    const ripeAct = P.bedAction(0);
+    P.arrive({ game:'garden', i:0 });
+    return { afterPlant, stage1, wateredAct, survived, ripeAct,
+             emptyAfter: P.bedAction(0), max: P.GROW_MAX, plotMax: P.PLOT_MAX };
+  });
+  expect(r.afterPlant.acts[0], 'ปลูกแปลงแรกแล้วป้ายเปลี่ยนเป็นรดน้ำ').toBe('water');
+  expect(r.afterPlant.acts.slice(1), 'แปลงอื่นต้องยังว่าง — ทำทีละแปลง').toEqual(['plant','plant','plant']);
+  expect(r.stage1).toBe(1);
+  expect(r.wateredAct, 'รดแล้ววันนี้ = รอวันพรุ่งนี้').toBe('wait');
+  expect(r.survived.has, '⚠ ลืมรดน้ำแล้วผักต้องไม่ตาย').toBe(true);
+  expect(r.survived.stage, 'และต้องไม่ถอยขั้นด้วย').toBe(1);
+  expect(r.ripeAct, 'โตเต็มแล้วป้ายต้องเปลี่ยนเป็นเก็บ').toBe('harvest');
+  expect(r.emptyAfter, 'เก็บแล้วแปลงว่างอีกครั้ง').toBe('plant');
+  expect(r.plotMax).toBe(4);
+  expect(await coins(page) - before, 'ขายผักได้เงินเล็กน้อย').toBeGreaterThan(0);
+  expect(errs).toEqual([]);
+});
+
+
+test('เฟส 11J: ขึ้นวันใหม่ — ของรายวันรีเซ็ต แต่ของถาวรห้ามหาย', async ({ page }) => {
+  const errs = await house(page, {
+    play: {
+      v: 1, day: '1999-1-1',                        /* วันเก่า ⇒ ต้องถูกม้วนวันทันทีที่เข้าเกม */
+      seek: { on: true, spots: [{ x: 5, z: 5 }], found: [0], done: true },
+      col:  { items: [{ x: 5, z: 5 }], got: [0], sets: 4, prizes: ['birdhouse'] },
+      fish: { book: ['nil', 'gold'], today: 9, spot: null },
+      photo:{ order: 'water', done: true, shots: [{ u: 'x', d: '1999-1-1' }] },
+      garden:{ plots: [{ seed: 'carrot', stage: 2 }], watered: '1999-1-1' },
+    },
+  });
+  const r = await page.evaluate(() => {
+    const s = window.HousePlay.state();
+    return {
+      day: s.day,
+      seekDone: s.seek.done, seekOn: s.seek.on,
+      colGot: s.col.got.length, colSets: s.col.sets, prizes: s.col.prizes,
+      fishToday: s.fish.today, book: s.fish.book,
+      photoDone: s.photo.done, shots: s.photo.shots.length,
+      plots: s.garden.plots, watered: s.garden.watered,
+    };
+  });
+  /* รีเซ็ตรายวัน */
+  expect(r.day).not.toBe('1999-1-1');
+  expect(r.seekDone, 'ซ่อนแอบเล่นได้ใหม่ในวันใหม่').toBe(false);
+  expect(r.seekOn).toBe(false);
+  expect(r.colGot).toBe(0);
+  expect(r.fishToday).toBe(0);
+  expect(r.photoDone).toBe(false);
+  expect(r.watered).toBe('');
+  /* ⚠ ของถาวรห้ามหายเด็ดขาด */
+  expect(r.colSets, 'จำนวนวันที่เก็บครบ').toBe(4);
+  expect(r.prizes).toEqual(['birdhouse']);
+  expect(r.book, 'สมุดปลา').toEqual(['nil', 'gold']);
+  expect(r.shots, 'อัลบั้มรูป').toBe(1);
+  expect(r.plots.length, 'ต้นผักที่ปลูกไว้').toBe(1);
+  expect(r.plots[0].stage, 'และขั้นการเติบโตต้องคงเดิม').toBe(2);
+  expect(r.plots[0].seed).toBe('carrot');
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11K: ของในฉากต้องถูกเก็บกวาด — เข้าบ้าน/ออกจากบ้านแล้วไม่ค้าง', async ({ page }) => {
+  const errs = await house(page);
+  const out0 = await page.evaluate(() => { window.HousePlay.seekStart(); return window.HousePlay.objs(); });
+  expect(out0.col).toBeGreaterThan(0);
+  expect(out0.seek).toBeGreaterThan(0);
+
+  await page.evaluate(() => window.__houseDbg.enterHouse());
+  await page.waitForTimeout(1200);
+  const inside = await page.evaluate(() => window.HousePlay.objs());
+  expect(inside, 'อยู่ในบ้าน = ต้องไม่มีของกลุ่ม A ค้างในฉาก').toEqual({ seek: 0, col: 0, garden: 0 });
+
+  /* ออกมาข้างนอกต้องกลับมาครบ (ของที่ยังไม่ได้เก็บ) */
+  await page.evaluate(() => window.__houseDbg.leaveHouse());
+  await expect.poll(() => page.evaluate(() => window.HousePlay.objs().col), { timeout: 15000 })
+    .toBeGreaterThan(0);
+  expect(errs).toEqual([]);
+});

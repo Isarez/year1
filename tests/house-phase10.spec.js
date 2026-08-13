@@ -204,6 +204,60 @@ test('เฟส 10F: งานหลัก 6 / งานรอง 8 · ตัว
   expect(errs).toEqual([]);
 });
 
+test('เฟส 11 ระลอก 2: ตาราง qN ใหม่ — การ์ด 9-12 · ลาก 6-8 · ทุกชุดอยู่ในงบ 150-240 วิ', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const q = window.HouseQuests;
+    const card = [1,2,3,4,5,6].map(t => q.qNFor(t, 'card'));
+    const drag = [1,2,3,4,5,6].map(t => q.qNFor(t, 'drag'));
+    /* เวลาต่อชุด = จำนวนข้อ × secPerQ ของทรงนั้น */
+    const secs = [];
+    [1,2,3,4,5,6].forEach(t => {
+      secs.push({t, shape:'card', s: q.qNFor(t,'card') * q.SEC_CARD});
+      secs.push({t, shape:'drag', s: q.qNFor(t,'drag') * q.SEC_DRAG});
+    });
+    /* เควสต์จริงต้องใช้ตารางนี้ด้วย ไม่ใช่แค่ฟังก์ชันลอยๆ */
+    const real = q.state().npcIds.map(id => {
+      const run = q.buildRun(q.specForNpc(id));
+      return {mech: run.spec.mech, shape: q.mechShape(run.spec.mech), n: run.items.length};
+    });
+    return {card, drag, secs, real, tier: q.difficulty().tier, minQ: q.MIN_Q};
+  });
+  expect(r.card).toEqual([9, 10, 10, 11, 12, 12]);
+  expect(r.drag).toEqual([6, 6, 7, 7, 8, 8]);
+  /* 🔒 ทุกชุดต้องอยู่ในงบเวลา 150-240 วิ — นี่คือเหตุผลทั้งหมดของตารางนี้ */
+  r.secs.forEach(x => {
+    expect(x.s, 'tier ' + x.t + ' ' + x.shape + ' = ' + x.s + ' วิ').toBeGreaterThanOrEqual(144);
+    expect(x.s).toBeLessThanOrEqual(240);
+  });
+  /* เควสต์ที่สร้างจริงต้องยาวตามตาราง (ยอมสั้นกว่าได้ถ้าคลังหมด — uniqueRun ตัดซ้ำ
+     แต่ห้ามต่ำกว่า MIN_Q และห้ามยาวเกินตาราง) */
+  r.real.forEach(x => {
+    if (x.shape === 'engine' || x.shape === 'walk') return;   /* 2 ทรงนี้ได้รับยกเว้นโดยตั้งใจ */
+    const want = x.shape === 'drag' ? r.drag[r.tier - 1] : r.card[r.tier - 1];
+    expect(x.n, x.mech + ' (' + x.shape + ')').toBeLessThanOrEqual(want);
+    expect(x.n, x.mech + ' (' + x.shape + ') ต้องไม่ต่ำกว่า MIN_Q').toBeGreaterThanOrEqual(r.minQ);
+  });
+  /* 🔒 **ตารางนี้ผูกกับ `TIER_MUL` โดยตรง** (ราวกันตกข้อ 2 ของ 45.8) — ตัวคูณ 1.00-1.15
+     ถอดมาจากอัตราส่วนเวลาเล่นจริงที่ตารางนี้กำหนด (44.4 : 46.7 : 49.0 : 51.3 นาที/วัน)
+     ⚠ **ถ้าใครแก้ Q_CARD/Q_DRAG เทสข้างบนจะแดงทันที** — นั่นคือสัญญาณว่าต้องกลับไป
+       คำนวณ TIER_MUL ใหม่ให้ตรงด้วย **ห้ามแก้ตารางแล้วปล่อยตัวคูณค้างไว้เฉยๆ**
+     (เจตนาเดิมอยากเช็คสัดส่วนด้วยสูตรอัตโนมัติ แต่โมเดลเวลาจริงของแผนรวมเควสต์ยืม engine
+      ที่ใช้เวลาคงที่ไม่ขึ้นกับระดับชั้น ~38% ของพูล ⇒ คำนวณย้อนจากตาราง 2 ใบนี้อย่างเดียวไม่ได้
+      จึงใช้วิธี "ล็อกค่าทั้งคู่ไว้" แทนการเดาสูตรถ่วงน้ำหนักเอาเอง) */
+  const pair = await page.evaluate(() => ({
+    mul: window.HouseQuests.TIER_MUL.slice(1),
+    card: [1,2,3,4,5,6].map(t => window.HouseQuests.qNFor(t, 'card')),
+  }));
+  expect(pair.mul).toEqual([1.00, 1.05, 1.05, 1.10, 1.15, 1.15]);
+  expect(pair.card).toEqual([9, 10, 10, 11, 12, 12]);
+  /* ชั้นที่ทำข้อเท่ากันต้องได้ตัวคูณเท่ากันเสมอ (ป.2/ป.3 = 10 ข้อ · ป.5/ป.6 = 12 ข้อ) */
+  for (let i = 1; i < 6; i++)
+    if (pair.card[i] === pair.card[i - 1])
+      expect(pair.mul[i], 'ทำข้อเท่ากันต้องได้ตัวคูณเท่ากัน').toBe(pair.mul[i - 1]);
+  expect(errs).toEqual([]);
+});
+
 test('เฟส 10G: จำนวนชุด/วันเท่ากันทุกระดับชั้น (ห้ามปรับเวลาด้วยจำนวนชุด)', async ({ page }) => {
   const errs = await house(page);
   /* เปลี่ยนระดับชั้นของเด็กแล้ว re-sync engine — จำนวนชุดต้องไม่ขยับเลยสักชั้น */

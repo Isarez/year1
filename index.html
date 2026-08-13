@@ -981,13 +981,41 @@
         <!-- จุดแจ้งเตือน: มีโบนัสดาวรอให้กดรับอยู่ (refreshQuestBar ใน js/house.js) -->
         <span class="hqb-alert" id="hqbar-alert" hidden aria-label="มีของรางวัลรอรับ">🎁</span>
       </button>
+      <!-- เฟส 11: ปุ่มเดียวเข้าถึงมินิเกมกลุ่ม A ทั้ง 5 เกม (ซ่อนแอบ · เก็บของ · ตกปลา · ช่างภาพ · แปลงผัก)
+           ⚠ ตั้งใจให้เป็น **ปุ่มเดียว ไม่ใช่ 5 ทางเข้ากระจาย** — HUD ในโหมดบ้านต้องแน่นเสมอ
+           ไอคอนลูกโป่ง+ใบไม้ วาดเป็น SVG พาเลตต์เดียวกับกระดานเช็คลิสต์ข้างๆ (ห้ามใช้ emoji) -->
+      <button type="button" class="house-quest-bar house-play-btn" id="house-play-btn" hidden aria-label="เล่นในเมือง">
+        <svg class="hqb-ic" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2.6c3.2 0 5.4 2.5 5.4 5.7 0 3.4-2.6 6.4-5.4 7.6-2.8-1.2-5.4-4.2-5.4-7.6 0-3.2 2.2-5.7 5.4-5.7z" fill="#FFD3E2" stroke="#C0527A" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M12 15.9v2.4" stroke="#C0527A" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M12 18.3c-1.6 0-2.6.9-2.6 2.1h5.2c0-1.2-1-2.1-2.6-2.1z" fill="#5FAF52" stroke="#3E7C3A" stroke-width="1.3" stroke-linejoin="round"/>
+          <circle cx="9.9" cy="7.3" r="1.5" fill="#FFF6E6"/>
+        </svg>
+        <span class="hqb-play-lab">เล่น</span>
+      </button>
     </div>
+    <!-- แถบบอกระยะห่างตอนเล่นซ่อนแอบ — **อยู่กลางล่างของจอ** (ผู้ใช้สั่ง 2026-08-13)
+         เนื้อในวาดจาก js/house-play.js: ป้ายอธิบาย + หลอด 4 ขีด + คำบอกระยะ + จำนวนคนที่เหลือ -->
+    <div class="house-seek-hud" id="house-seek-hud" hidden></div>
     <!-- ปุ่มควบคุมชุดเดียวกับ header หลัก (header ถูกซ่อนในโหมดบ้าน) — เป็น proxy คลิกแทนปุ่มจริง icon mirror อัตโนมัติใน js/house.js ยกเว้น fullscreen ที่ผูกกับ fsBtns ใน js/app.js ตรงๆ -->
     <div class="house-ctrl-wrap">
+      <!-- แถวบนสุด: ปุ่มกล้อง + ปุ่มเฟือง **เรียงข้างกันแนวนอน** (ผู้ใช้สั่ง 2026-08-13 ว่ากล้อง
+           ต้องอยู่ "ข้างๆ" ปุ่มตั้งค่า ไม่ใช่ซ้อนบน) ส่วนเมนูย่อยยังกางลงมาด้านล่างเหมือนเดิม -->
+      <div class="house-ctrl-top">
+      <!-- เฟส 11: ปุ่มกล้อง — กดแล้วเข้าโหมดถ่ายรูป (ซ่อน UI ทุกมุม เหลือกรอบโฟกัส + ปุ่มชัตเตอร์) -->
+      <button class="icon-btn house-gear-btn house-cam-btn" id="house-photo-btn" aria-label="โหมดถ่ายรูป">
+        <svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.6 8.4h3.2l1.5-2.2h7.4l1.5 2.2h3.2a1.6 1.6 0 0 1 1.6 1.6v7.4a1.6 1.6 0 0 1-1.6 1.6H3.6A1.6 1.6 0 0 1 2 17.4V10a1.6 1.6 0 0 1 1.6-1.6z" fill="#D6ECFF" stroke="#2E6F9E" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="12" cy="13.6" r="3.9" fill="#FFF6E6" stroke="#2E6F9E" stroke-width="1.5"/>
+          <circle cx="12" cy="13.6" r="1.7" fill="#8FC4E8"/>
+          <circle cx="19.2" cy="10.6" r=".9" fill="#2E6F9E"/>
+        </svg>
+      </button>
       <!-- ปุ่มเฟือง: กดแล้วค่อยกางปุ่มธีม/เพลง/เสียง/เต็มจอ (มุมขวาบนจะได้โล่งๆ ไม่รกสายตาเด็ก) -->
       <button class="icon-btn house-gear-btn" id="house-ctrl-gear" aria-label="ตั้งค่า" aria-expanded="false">
         <svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2c.62 0 1.13.46 1.2 1.07l.1.86c.46.15.89.35 1.29.6l.7-.53a1.2 1.2 0 0 1 1.58.1l.94.94c.44.44.48 1.13.1 1.6l-.53.68c.25.4.45.84.6 1.3l.86.1c.6.08 1.06.59 1.06 1.2v1.33c0 .61-.46 1.12-1.06 1.2l-.86.1c-.15.46-.35.9-.6 1.3l.53.68c.38.47.34 1.16-.1 1.6l-.94.94c-.43.43-1.11.47-1.58.1l-.7-.53c-.4.25-.83.45-1.29.6l-.1.86A1.2 1.2 0 0 1 12 20.8h-.9a1.2 1.2 0 0 1-1.2-1.07l-.1-.86c-.46-.15-.9-.35-1.3-.6l-.68.53c-.47.37-1.16.33-1.6-.1l-.93-.94a1.2 1.2 0 0 1-.1-1.6l.53-.68c-.25-.4-.45-.84-.6-1.3l-.87-.1A1.2 1.2 0 0 1 3.2 12.9v-1.33c0-.61.46-1.12 1.06-1.2l.86-.1c.15-.46.35-.9.6-1.3l-.52-.68a1.2 1.2 0 0 1 .1-1.6l.93-.94c.44-.43 1.13-.47 1.6-.1l.68.53c.4-.25.84-.45 1.3-.6l.1-.86A1.2 1.2 0 0 1 11.1 3.2z" fill="#FFD6E8" stroke="#C0527A" stroke-width="1.5" stroke-linejoin="round"/><circle cx="11.55" cy="12" r="3.1" fill="#fff" stroke="#C0527A" stroke-width="1.5"/></svg>
       </button>
+      </div>
       <!-- แต่ละปุ่มเป็นแคปซูล ไอคอน + ข้อความ กว้างเท่ากันทุกปุ่ม (เด็กอ่านคำได้ ไม่ต้องเดาจากไอคอน)
            ไอคอนอยู่ใน .hc-ic เสมอ เพราะ syncHouseCtrls()/refreshFsBtn() เขียนทับเฉพาะช่องนั้น ป้ายข้อความจะได้ไม่หาย -->
       <div class="house-ctrl-list" id="house-ctrl-list" hidden>
@@ -1058,6 +1086,23 @@
     </div>
   </div>
   <!-- เฟส 4A: รายการเควสต์ที่ยังไม่ได้ทำวันนี้ — เนื้อในสร้างด้วย JS (renderQuestSummary ใน js/house.js) -->
+  <!-- เฟส 11: โหมดถ่ายรูป — กรอบโฟกัส 4 มุม + ปุ่มชัตเตอร์ (UI อื่นถูกซ่อนด้วย body.house-photo) -->
+  <div class="house-photo-ui" id="house-photo-ui" hidden>
+    <i class="hpf-corner hpf-tl"></i><i class="hpf-corner hpf-tr"></i>
+    <i class="hpf-corner hpf-bl"></i><i class="hpf-corner hpf-br"></i>
+    <button type="button" class="hpf-exit" id="house-photo-exit" aria-label="ออกจากโหมดถ่ายรูป">✕</button>
+    <button type="button" class="hpf-shutter" id="house-shutter" aria-label="กดถ่ายรูป"><i></i></button>
+  </div>
+
+  <!-- เฟส 11: แผง "เล่นในเมือง" — รายการมินิเกมกลุ่ม A พร้อมสถานะของวันนี้ -->
+  <div class="house-creator house-qz house-qsum house-playpanel" id="house-playpanel" hidden>
+    <div class="house-creator-panel hqz-panel hqsum-panel">
+      <div class="hqz-top"><div class="hqz-who">🎈 เล่นในเมือง</div></div>
+      <div class="hqz-sub">เกมพวกนี้ไม่มีถูกผิด ไม่มีเวลาจำกัด เล่นเพลินๆ ได้เลยนะ</div>
+      <div class="hqsum-list hpl-list" id="hpl-list"></div>
+      <button class="house-pet-alt-btn hqz-close-btn" id="hpl-close">ปิด</button>
+    </div>
+  </div>
   <div class="house-creator house-qz house-qsum" id="house-qsum" hidden>
     <div class="house-creator-panel hqz-panel hqsum-panel">
       <div class="hqz-top"><div class="hqz-who">📋 เควสต์วันนี้</div><div class="hqsum-count" id="hqsum-count"></div></div>

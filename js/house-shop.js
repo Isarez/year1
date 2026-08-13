@@ -56,7 +56,7 @@
     'bar-table':2, 'coffee-table':2, 'console-table':2, 'tv-stand':2,
     'desk':3, 'dining-table':3, 'round-table':3, 'table':3,
     /* ---- ต้นไม้/สวน ---- */
-    'bush':1, 'cactus':1, 'clover-patch':1, 'flowerbed':1, 'mushroom':1, 'rose-bush':1,
+    'bush':1, 'cactus':1, 'clover-patch':1, 'flowerbed':1, 'mushroom':1, 'rose-bush':1, 'veg-plot':1,
     'sunflower':1, 'tulip-pot':1,
     'hedge':2, 'palm-tall':2, 'pine':2, 'topiary':2, 'tree':2, 'tree-round':2,
     'flower-arch':3,
@@ -180,6 +180,7 @@
     'dining-table','chair','stove',         /* ครัว (เตาเป็นของมาตรฐานตั้งแต่ 2026-08-07) */
     'toilet',                               /* ห้องน้ำ */
     'tree','fence-corner','fence-seg','path','pet-house',   /* ของฉากนอกบ้าน */
+    'veg-plot',                             /* แปลงผัก 4 แปลงหน้าบ้าน (เฟส 11) — ติดมากับบ้าน ไม่ต้องซื้อ */
   ];
   /* ตำแหน่งชุดมาตรฐานในบ้าน (พิกัดช่องกริดในบ้าน **14×14**, anchor = มุมซ้ายบนของชิ้น, rot 0 = หันไป +z)
      ผังห้อง: z<=6 ครึ่งบน (x0-7 นั่งเล่น, x9-13 ครัว) · z>=8 ครึ่งล่าง (x0-9 นอน, x11-13 น้ำ)
@@ -429,6 +430,15 @@
       const it = FURN.byId[id];
       if(!it || ownsFurn(id)) return false;
       return buy(id, priceFurn(id), it.name);
+    }
+    /* ปลดของให้ฟรีโดย **ไม่ตัดเงิน** — ใช้กับ "ของรางวัลจากการสะสม" ของเฟส 11 เท่านั้น
+       (ของที่ซื้อด้วยเงินไม่ได้ ต้องเก็บของครบชุดถึงจะได้) ⚠ ไม่ใช่เครื่องมือเทส ห้ามสับสนกับ
+       `devUnlockAll` — ตัวนี้เกมจริงเรียกได้ แต่ต้องมี "เหตุผลว่าเด็กทำอะไรมาถึงได้" เสมอ */
+    function grantFree(id){
+      if(!FURN.byId[id] || ownsFurn(id)) return false;
+      grant([id]);
+      onChange();
+      return true;
     }
     function buyFit(row, i, label){
       if(ownsFit(row, i)) return false;
@@ -886,6 +896,7 @@
       pricePet, ownsPet, ownsPetColor, buyPet, buyPetColor,
       petTypes,        /* PET_TYPES อยู่ใน IIFE ของ house.js — ทางเดียวที่เทสมองเห็นคือผ่านตรงนี้ */
       starterHome, starterFit, STARTER_FURN,
+      grantFree,                       /* เฟส 11: ของรางวัลจากการเก็บของสะสมครบชุด (ไม่ตัดเงิน) */
       devUnlockAll, devLockAll,        /* เครื่องมือเทสเท่านั้น — ห้ามเรียกจากโค้ดเกมจริง */
       shopForLot, open, close, isOpen, clearSelected,
       refresh: ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } },
