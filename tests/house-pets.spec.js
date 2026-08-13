@@ -98,7 +98,8 @@ test('ราคาสัตว์ + สีขน ตรงตารางข้�
 test('เด็กใหม่: ยังไม่มีสัตว์ ⇒ ไม่มีบ้านสัตว์ในสนาม + หน้าเลือกสัตว์ล็อกทุกตัวแต่ยังเห็นราคา', async ({ page }) => {
   const errors = await openHouse(page, null, 0);
   const d = await readHouse(page);
-  expect(d.econVer).toBe(4);
+  /* ⚠ ECON_VER 5 (2026-08-13): เฟอร์นิเจอร์นับเป็นจำนวนชิ้น (`d.owned`) แทนสิทธิ์ครั้งเดียว */
+  expect(d.econVer).toBe(5);
   expect(petHouses(d), 'เด็กใหม่ต้องยังไม่มีบ้านสัตว์ (ข้อ 18.1)').toBe(0);
   expect(d.pet == null).toBe(true);
 
@@ -124,7 +125,8 @@ test('migration: เด็กที่เลี้ยงสัตว์อยู
   };
   const errors = await openHouse(page, legacy, 0);
   const d = await readHouse(page);
-  expect(d.econVer).toBe(4);
+  /* ⚠ ECON_VER 5 (2026-08-13): เฟอร์นิเจอร์นับเป็นจำนวนชิ้น (`d.owned`) แทนสิทธิ์ครั้งเดียว */
+  expect(d.econVer).toBe(5);
   expect(d.pet).toEqual({ type: 'panda', name: 'ไผ่หวาน', color: 1 });
   expect(petHouses(d), 'บ้านสัตว์ที่วางอยู่แล้วห้ามหาย').toBe(1);
 

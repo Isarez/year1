@@ -217,7 +217,10 @@ function saveHouseData(patch){
    จะ throw ตั้งแต่เฟรมแรก ⇒ **เด็กเข้าโหมดบ้านไม่ได้เลยทั้งโหมด** ซึ่งแย่กว่าการไม่มีท่าไม้มาก
    ⇒ ไม่มีของใหม่ = ถอยไปใช้ค่าว่าง (ไม่มีท่าเพิ่ม/ไม่มีจุดตกปลาในบ่อ) แต่เมืองยังเข้าได้ปกติ */
 const POND_PIERS      = HM.POND_PIERS || [];
+const SEA_PIERS       = HM.SEA_PIERS || [];
+const seaPierZ0       = HM.seaPierZ0 || function(){ return 0; };
 const POND_FISH_SPOTS = HM.POND_FISH_SPOTS || [];
+const seaFishSpots    = HM.seaFishSpots || function(){ return []; };
 const isPierTile      = HM.isPierTile || function(){ return false; };
 
 /* ---------- โทน/วัสดุ ---------- */
@@ -4746,6 +4749,13 @@ function buildStaticScenery(){
     p2.rotation.y = (pp.rot||0) * Math.PI/2;
     mergeCollectFx(p2, parts, chunkKeyOf(pp.x, pp.z));
   });
+  /* ท่าไม้ยื่นลงทะเล (เพิ่ม 2026-08-14) — เริ่มที่ช่องทรายสุดท้ายแล้วยื่นไปทาง −z */
+  SEA_PIERS.forEach(sp=>{
+    const p3 = buildPier(sp.len);
+    p3.position.set(outWX(sp.x), 0, outWZ(seaPierZ0(sp.x)));
+    p3.rotation.y = (sp.rot || 0) * Math.PI/2;
+    mergeCollectFx(p3, parts, chunkKeyOf(sp.x, seaPierZ0(sp.x)));
+  });
   const pier = buildPier(POND_PIER.len);
   pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
@@ -5707,6 +5717,13 @@ function walkToPoint(pt){
   if(t2) walkTo(t2.x, t2.z, {});
 }
 function tapStaticScene(pt){
+  /* ⚠ **ท่าไม้ต้องเป็น "พื้นเดินได้ธรรมดา"** (ผู้ใช้สั่ง 2026-08-14) — เดิมแตะแล้วติด effect
+     ของฉาก (เขย่าหญ้า/ทักทายล็อต) ซึ่งไม่เข้ากับพื้นไม้ ⇒ เดินไปเฉยๆ พอ
+     ต้องเช็คก่อนทุกสาขา เพราะท่าอยู่บนผิวน้ำที่มีตรรกะของตัวเองอยู่แล้ว */
+  {
+    const g0 = Math.round(pt.x + (OUT_W-1)/2), gz0 = Math.round(pt.z + (OUT_D-1)/2);
+    if(isPierTile(g0, gz0)){ walkTo(g0, gz0, {}); return; }
+  }
   const gx = Math.round(pt.x + (OUT_W-1)/2), gz = Math.round(pt.z + (OUT_D-1)/2);
   if(gx<0 || gz<0 || gx>=OUT_W || gz>=OUT_D) return;
   if(shakeTreeLeaves(gx, gz)) return;               /* แตะโดนต้นไม้/พุ่ม → ใบไม้ร่วง (ไม่ต้องเดินไป) */
@@ -10516,6 +10533,7 @@ function addDecorItem(id){
   (sc==='out'?worldGroup:interiorGroup).add(g);
   decorGroups[sc].push(g);
   rebuildDecorGrid(sc); saveDecor();
+  renderEditItems();          /* ⚠ ตัวเลข "เหลือกี่ชิ้น" ในแผงต้องอัปเดตทันที ไม่งั้นค้างค่าเก่า */
   selectDecor(g);
   decorBounce(g);
 }
@@ -10619,6 +10637,7 @@ function deleteSel(){
   editSel.parent.remove(editSel); disposeGroup(editSel);
   if(idx>=0) decorGroups[sc].splice(idx,1);
   deselectDecor(); rebuildDecorGrid(sc); saveDecor();
+  renderEditItems();          /* ลบแล้วต้องคืนชิ้นให้เลือกวางใหม่ได้ทันที */
 }
 /* ---------- ลากวางในโหมด edit ---------- */
 function editRaycastDecor(cx, cy){
@@ -11735,8 +11754,10 @@ window.HouseWorld = {
   },
   /* จุดตกปลาที่ผังประกาศไว้จริง — ⚠ **ห้ามเดาพิกัดเอง** (กติกาเดียวกับตอนแก้ผังเมือง) */
   pondPier: () => ({x: POND_PIER.x, z: POND_PIER.z, len: POND_PIER.len, rot: POND_PIER.rot}),
-  pondFishSpots: () => POND_FISH_SPOTS.map(s => ({stand:{x:s.stand.x, z:s.stand.z},
-                                                  water:{x:s.water.x, z:s.water.z}, name:s.name})),
+  pondFishSpots: () => POND_FISH_SPOTS.concat(seaFishSpots())
+    .map(s => ({stand:{x:s.stand.x, z:s.stand.z}, water:{x:s.water.x, z:s.water.z},
+                /* ⚠ ธงนี้ตัดสินว่าจะได้ปลาน้ำจืดหรือปลาทะเล — ดูจากผืนน้ำจริงในกริด ไม่ใช่เดาจากชื่อ */
+                name:s.name, sea: isSeaTile(s.water.x, s.water.z)})),
   isWater: (x, z) => !!(outGrid && outGrid[z] && outGrid[z][x] === 1),
   isSea:  (x, z) => isSeaTile(x, z),
   isSand: (x, z) => isSandTile(x, z),

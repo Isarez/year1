@@ -794,11 +794,27 @@ const POND_PIERS = [
   {x:11, z:15, len:3, rot:2},      /* ท่าเหนือ (คู่ z15-16) */
   {x:11, z:16, len:3, rot:2},
 ];
+/* ท่าไม้ยื่นลงทะเล (ผู้ใช้กำหนดพิกัดเอง 2026-08-14) — ทะเลอยู่ทาง −z ⇒ ท่ายื่นไปทาง −z
+   `rot:3` = หมุน 270° ทำให้ทิศ "ยาว" ของ buildPier (+x) ชี้ไปทาง −z
+   ⚠ ยาว 5 ช่อง วางที่ x51-52 (2 แถวคู่กัน) และอีกจุดที่ x31 */
+const SEA_PIERS = [
+  {x:51, len:5, rot:3},
+  {x:52, len:5, rot:3},
+  {x:31, len:5, rot:3},
+];
 /* ช่องที่เป็น "พื้นไม้ของท่า" — เดินได้ และผิวบนสูงกว่าพื้นดิน (ดู groundY ใน house.js) */
+/* ท่าทะเลเริ่มที่ "ช่องทรายสุดท้ายก่อนถึงน้ำ" ของแถว x นั้น แล้วยื่นลงทะเลไปทาง −z */
+function seaPierZ0(x){ return seaEdgeZ(x) + 1; }
 function isPierTile(x, z){
   for(let i=0; i<POND_PIERS.length; i++){
     const p = POND_PIERS[i];
     if(z === p.z && x <= p.x && x > p.x - p.len) return true;
+  }
+  for(let i=0; i<SEA_PIERS.length; i++){
+    const p = SEA_PIERS[i];
+    if(x !== p.x) continue;
+    const z0 = seaPierZ0(x);
+    if(z <= z0 && z > z0 - p.len) return true;
   }
   return false;
 }
@@ -810,6 +826,15 @@ const POND_FISH_SPOTS = [
   {stand:{x:9, z:20}, water:{x:8, z:20}, name:'ท่าน้ำข้างลุงตกปลา'},
   {stand:{x:9, z:15}, water:{x:8, z:15}, name:'ท่าน้ำเหนือบ่อ'},
 ];
+/* จุดตกปลาในทะเล — ยืนที่ **ปลายท่า ห่างจากขอบพื้น 1 ช่อง** แล้วทุ่นลอยถัดไปอีก 1 ช่อง
+   (ผู้ใช้สั่ง 2026-08-14: ทุกจุดต้องห่างขอบพื้นอย่างน้อย 1 ช่อง จะได้ไม่ดูเหมือนยืนตกบนบก) */
+function seaFishSpots(){
+  return SEA_PIERS.filter(p => p.x !== 52).map(p=>{   /* x52 เป็นท่าคู่ของ x51 ไม่ต้องมีจุดซ้ำ */
+    const z0 = seaPierZ0(p.x);
+    const stand = {x:p.x, z:z0 - (p.len - 1)};        /* ปลายท่าสุด */
+    return {stand, water:{x:p.x, z:stand.z - 1}, name:'ท่าน้ำริมทะเล'};
+  });
+}
 const FISHER_TILE = {x:9, z:19, rot:2};    /* ปลายท่า นั่งหันหน้าเข้าบ่อ (ทิศเหนือ) */
 
 /* ---------- ลานกิจกรรมใหญ่ริมแม่น้ำ (ระหว่างสุดถนนชุมชนกับหาดทราย/ทะเล) ----------
@@ -1631,7 +1656,8 @@ return {
   BOAT_SPOTS, BEACH_RACKS, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
   SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN, POT_SPOTS,
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
-  POND_DUCKS, POND_PIER, POND_PIERS, isPierTile, POND_FISH_SPOTS, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
+  POND_DUCKS, POND_PIER, POND_PIERS, SEA_PIERS, seaPierZ0, isPierTile, POND_FISH_SPOTS, seaFishSpots,
+  FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, CAMP, CAMP_TENTS, CAMP_FIRE, CAMP_PROPS,

@@ -505,26 +505,17 @@
   function findFishSpots(){
     const w = W(); if(!w) return [];
     const out = [];
-    /* จุดในบ่อน้ำ = ปลายท่าไม้ที่ผังประกาศไว้ (ข้างลุงตกปลา + ท่าเหนือ)
-       ⚠ `x/z` = ช่องน้ำที่ทุ่นลอย · `sx/sz` = ช่องที่เด็กไปยืน (บนท่า) — **คนละช่องกันเสมอ** */
+    /* จุดตกปลาทั้งหมดมาจากท่าไม้ที่ผังประกาศไว้ (บ่อน้ำ 2 · ทะเล 2)
+       ⚠ `x/z` = ช่องน้ำที่ทุ่นลอย · `sx/sz` = ช่องที่เด็กไปยืน (บนท่า) — **คนละช่องกันเสมอ**
+       ⚠ **`kind` ต้องตรงกับผืนน้ำจริง** ไม่งั้นตกที่ทะเลแล้วได้ปลาน้ำจืด (เจอจากเทส 2026-08-14) */
     (w.pondFishSpots() || []).forEach(sp=>{
       if(!w.walkable(sp.stand.x, sp.stand.z)) return;
-      out.push({x:sp.water.x, z:sp.water.z, sx:sp.stand.x, sz:sp.stand.z, kind:'pond', name:sp.name});
+      out.push({x:sp.water.x, z:sp.water.z, sx:sp.stand.x, sz:sp.stand.z,
+                kind: sp.sea ? 'sea' : 'pond', name:sp.name});
     });
-    /* ทะเล: ช่องเดินได้ที่มีน้ำทะเลติดอยู่ข้างๆ — เลือกช่องที่เดินถึงได้จริงช่องแรก */
-    const g = w.grid(), OW = w.OUT_W(), OD = w.OUT_D();
-    const wantSea = out.length + 1;
-    for(let x = OW - 1; x >= 0 && out.length < wantSea; x--){
-      for(let z = 0; z < OD; z++){
-        if(!w.walkable(x, z) || !w.visibleSpot(x, z)) continue;
-        const dir = [[1,0],[-1,0],[0,1],[0,-1]].find(([dx,dz]) => w.isSea(x+dx, z+dz));
-        if(!dir) continue;
-        if(w.pathLen(w.tile(), {x, z}) <= 0) continue;    /* เดินไปไม่ถึง = ไม่นับ */
-        /* ทุ่นลอยในน้ำ 1 ช่องถัดไป เด็กยืนบนหาด */
-        out.push({x:x + dir[0], z:z + dir[1], sx:x, sz:z, kind:'sea', name:'ริมทะเล'});
-        break;
-      }
-    }
+    /* ⚠ **เลิกหาจุดทะเลอัตโนมัติแล้ว** (2026-08-14) — ของเดิมไปเจอช่องทรายริมน้ำ ซึ่งยืน
+       "ติดขอบพื้น" พอดี ผิดกติกาที่ผู้ใช้สั่งว่าทุกจุดต้องห่างขอบพื้นอย่างน้อย 1 ช่อง
+       ตอนนี้ใช้ท่าไม้ที่ยื่นลงทะเลจริงแทน (x51-52 และ x31) ซึ่งอยู่กลางน้ำชัดเจน */
     return out;
   }
   function fishSpotsClear(){
@@ -542,7 +533,12 @@
       /* วงคลื่นบนผิวน้ำ 3 วง — บอกว่า "ตรงนี้ตกปลาได้" และตอนตกจะใช้บอกว่าปลาใกล้มาแค่ไหน */
       const rings = [];
       for(let r = 0; r < 3; r++){
-        const ring = k.torus(.34, .045, 0xffffff, 18);
+        /* ⚠ สีต้อง **กลืนไปกับผิวน้ำ** ไม่ใช่ขาวโพลน (ผู้ใช้แจ้ง 2026-08-14 ว่าไม่เข้ากับน้ำ)
+           ฟ้าอ่อนอมขาว + โปร่งแสง ⇒ ดูเป็นระลอกคลื่นจริง ไม่ใช่วงแหวนพลาสติกลอยอยู่ */
+        const ring = k.torus(.34, .038, 0xd8f2ff, 18);
+        ring.material = ring.material.clone();
+        ring.material.transparent = true;
+        ring.material.opacity = .55;
         ring.rotation.x = Math.PI/2;          /* ⚠ torus() คืนวงตั้งฉาก ต้องพลิกเองให้วางแบน */
         ring.position.y = .04;
         ring.userData.ph = r / 3;
@@ -660,7 +656,12 @@
      ⚠ **เต็มแล้วไม่ทับรูปเก่าอัตโนมัติ** — เด้งอัลบั้มให้เด็กเลือกลบเอง (รูปเป็นของที่เด็กตั้งใจถ่าย)
      ⚠ ผู้ใช้สั่งเพิ่มเป็น 20 รูป 2026-08-14 ⇒ ~280 KB ยังห่างเพดาน localStorage (~5 MB) มาก */
   const PHOTO_MAX = 20;
-  const PHOTO_W = 160;             /* ความกว้างที่ย่อเก็บ — ~8-14 KB/รูป */
+  /* ความกว้างที่ย่อเก็บ — ผู้ใช้แจ้ง 2026-08-14 ว่า 160px เบลอมากตอนกดดูรูปใหญ่
+     ⚠ 560px (~35-45 KB/รูป × 20 รูป ≈ 700-900 KB ต่อเด็ก 1 คน)
+       **ต้องคิดเผื่อครอบครัวที่มีลูกหลายคน** — 3 คน ≈ 2.5 MB ซึ่งยังใต้เพดาน localStorage (~5 MB)
+       แต่ถ้าดันขึ้นเป็น 640px จะกลายเป็น ~3.4 MB = เสี่ยงเซฟเขียนไม่ลงแล้วข้อมูลบ้านหายทั้งหมด
+       ⚠ **ห้ามเพิ่มความกว้างโดยไม่ลดจำนวนรูปลงพร้อมกัน** */
+  const PHOTO_W = 560;
   const PHOTO_ORDERS = [
     {id:'water',  name:'ถ่ายรูปริมน้ำ',        hint:'ไปยืนใกล้แม่น้ำหรือสะพานแล้วกดถ่าย'},
     {id:'home',   name:'ถ่ายรูปหน้าบ้านของหนู', hint:'กลับไปที่บริเวณบ้านแล้วกดถ่าย'},
@@ -802,7 +803,7 @@
       const ratio = cv.height / cv.width;
       out.width = PHOTO_W; out.height = Math.max(1, Math.round(PHOTO_W * ratio));
       out.getContext('2d').drawImage(cv, 0, 0, out.width, out.height);
-      return out.toDataURL('image/jpeg', .72);
+      return out.toDataURL('image/jpeg', .74);
     }catch(e){ return null; }
   }
 
@@ -1497,7 +1498,6 @@
           const k2 = ((t * .0006 + (r.userData.ph || 0)) % 1);
           const wide = 1.9 - near * 1.25;                 /* ปลาใกล้ = วงแคบลงเข้าหาทุ่น */
           r.scale.setScalar(.35 + k2 * wide);
-          r.material.opacity = 1;
           r.visible = true;
           r.position.y = .04;
         });

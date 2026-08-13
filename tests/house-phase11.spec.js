@@ -210,9 +210,11 @@ test('เฟส 11G: ตกปลา — จุดตกปลาบนท่า
   });
   /* ⚠ ผู้ใช้สั่งเพิ่มท่าไม้ 2026-08-13: ท่าข้างลุงตกปลา (z20) + ท่าเหนือบ่อ (z15-16)
      ⇒ จุดในบ่อ 2 จุด + ทะเล 1 จุด = 3 จุด · ทุกจุดต้องอยู่บน "พื้นไม้ของท่า" ที่เดินได้จริง */
-  expect(spots.length, 'ต้องมีจุดตกปลา 3 จุด (บ่อ 2 + ทะเล 1)').toBe(3);
+  /* ⚠ 2026-08-14: ทะเลใช้ท่าไม้จริงที่ x51/x31 แทนการหาช่องริมหาดอัตโนมัติ
+     (ช่องริมหาดยืนติดขอบพื้นพอดี ผิดกติกา "ทุกจุดต้องห่างขอบพื้น 1 ช่อง") */
+  expect(spots.length, 'ต้องมีจุดตกปลา 4 จุด (บ่อ 2 + ทะเล 2)').toBe(4);
   expect(spots.filter(s => s.kind === 'pond').length).toBe(2);
-  expect(spots.filter(s => s.kind === 'sea').length).toBe(1);
+  expect(spots.filter(s => s.kind === 'sea').length).toBe(2);
   spots.forEach(s => {
     expect(s.walkable, s.kind + ' ช่องที่เด็กยืนต้องเดินได้จริง').toBe(true);
     expect(s.inWater, s.kind + ' ทุ่นต้องอยู่ในน้ำ').toBe(true);
@@ -287,7 +289,9 @@ test('เฟส 11H: ช่างภาพ — ได้ภาพจริงจ
   expect(r.head, 'ต้องเป็นรูป jpeg ที่อ่านจาก canvas จริง').toContain('data:image/jpeg');
   expect(r.len, 'ภาพต้องไม่ว่างเปล่า (ถ้าบัฟเฟอร์ถูกเคลียร์จะได้ภาพดำสั้นๆ)').toBeGreaterThan(1500);
   expect(r.shots).toBe(r.max);
-  expect(r.saveKB, 'house save ต้องไม่บวมจนเสี่ยง localStorage เต็ม').toBeLessThan(220);
+  /* ⚠ 20 รูป × ~40 KB ≈ 800 KB ต่อเด็ก 1 คน — **เกณฑ์นี้คุมไม่ให้ใครดันความละเอียด/จำนวนรูป
+     ขึ้นจนครอบครัวที่มีลูก 3 คนชน localStorage (~5 MB) แล้วเซฟบ้านหายทั้งก้อน** */
+  expect(r.saveKB, 'house save ต้องไม่บวมจนเสี่ยง localStorage เต็ม').toBeLessThan(1100);
   expect(r.order).toBeTruthy();
   /* ⚠ ห้ามเปิด preserveDrawingBuffer — มันกินเฟรมเรตตลอดเวลาที่เด็กเล่น */
   const ctxAttr = await page.evaluate(() => {

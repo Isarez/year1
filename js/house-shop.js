@@ -179,7 +179,10 @@
     'sofa','coffee-table','bookshelf',      /* ห้องนั่งเล่น */
     'dining-table','chair','stove',         /* ครัว (เตาเป็นของมาตรฐานตั้งแต่ 2026-08-07) */
     'toilet',                               /* ห้องน้ำ */
-    'tree','fence-corner','fence-seg','path','pet-house',   /* ของฉากนอกบ้าน */
+    'tree','fence-corner','fence-seg','path',               /* ของฉากนอกบ้าน */
+    /* ⚠ **`pet-house` ถูกเอาออกจากชุดเริ่มต้นแล้ว 2026-08-14 (ผู้ใช้สั่ง)** — ล็อกไว้จนกว่าจะ
+       ซื้อสัตว์เลี้ยงตัวแรก · ปลดให้อัตโนมัติใน buyPet() ⇒ ไม่มี dead end
+       เหตุผล: ยังไม่มีสัตว์แล้วมีบ้านสัตว์วางได้ เด็กจะงงว่าบ้านนี้ของใคร */
     'veg-plot',                             /* แปลงผัก 4 แปลงหน้าบ้าน (เฟส 11) — ติดมากับบ้าน ไม่ต้องซื้อ */
   ];
   /* ตำแหน่งชุดมาตรฐานในบ้าน (พิกัดช่องกริดในบ้าน **14×14**, anchor = มุมซ้ายบนของชิ้น, rot 0 = หันไป +z)
@@ -402,11 +405,17 @@
        ต้นไม้ · ทางเดิน · แปลงผัก 4) ไม่ได้ผ่านการซื้อ ถ้านับแค่ยอดที่ซื้อจะกลายเป็น "วางเกินสิทธิ์"
        แล้วแผงตกแต่งขึ้น 0/1 ทั้งที่ของวางอยู่เต็มสนาม (เจอจากเทส 2026-08-13)
        ⚠ ไม่เปิดช่องให้โกง: จะวางเพิ่มได้ก็ต่อเมื่อ "ที่มี > ที่วางอยู่" อยู่ดี */
+    /* ⚠ **ต้องบันทึกค่าที่ยกขึ้นด้วย** ไม่ใช่คำนวณสดทุกครั้ง — ถ้าคืน max() เฉยๆ พอเด็กลบของ
+       จำนวน "ที่วางอยู่" ลดลง ยอดรวมที่มีก็ลดตามไปด้วย ⇒ ตัวเลขในแผงตกแต่งนับผิด
+       (ผู้ใช้แจ้ง 2026-08-14: วางแล้วลบ counter เพี้ยน) ⇒ ยกครั้งเดียวแล้วจำไว้ถาวร */
     function furnCount(id){
       const m = ownedMap();
-      const own = Object.prototype.hasOwnProperty.call(m, id) ? (m[id] | 0)
-                : (ensureSet().has(id) ? 1 : 0);
-      return Math.max(own, placedInSave(id));
+      const has = Object.prototype.hasOwnProperty.call(m, id);
+      const own = has ? (m[id] | 0) : (ensureSet().has(id) ? 1 : 0);
+      const placed = placedInSave(id);
+      if(placed > own){ addFurnCount(id, placed - own); return placed; }
+      if(!has && own > 0) addFurnCount(id, 0);      /* ตรึงค่าเริ่มต้นลง owned ครั้งเดียว */
+      return own;
     }
     function addFurnCount(id, n){
       const d = load() || {};
@@ -438,6 +447,8 @@
       const ok = buy(petKey(type), pricePet(type), info.label);
       if(ok){
         grant([petColKey(type, 0)]);
+        /* ปลดบ้านสัตว์ให้ตอนซื้อสัตว์ตัวแรก (แจกฟรี 1 หลัง ไม่ตัดเงิน) */
+        if(furnCount('pet-house') <= 0) grantFree('pet-house');
         /* ซื้อแล้วพาไปตั้งชื่อ+รับเลี้ยงต่อทันที — เด็ก 5 ขวบไม่ควรต้องเดาว่าต้องไปกดปุ่มไหนต่อ
            (หน่วงไว้ให้ toast "ได้ ... แล้ว!" ขึ้นก่อน แล้วค่อยสลับฉาก) */
         if(kit.onPetBought) setTimeout(()=>kit.onPetBought(type), 700);
