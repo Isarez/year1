@@ -333,8 +333,11 @@
         } },
       /* ตะกร้าขายของ (เฟส 11 · ผู้ใช้สั่งให้ย้ายได้ในโหมดตกแต่ง 2026-08-14)
          ⚠ เป็น decor จริง ⇒ บล็อกช่องเดิน (เด็กไม่ยืนทับ) และได้ระบบลาก/หมุน/ลบมาฟรี
-           ส่วนป้ายลอย + หน้าต่างดูของอยู่ที่ js/house-play.js */
-      { id:'sell-basket', name:'ตะกร้าขายของ', cat:'decorout', scope:'out', emoji:'🧺',
+           ส่วนป้ายลอย + หน้าต่างดูของอยู่ที่ js/house-play.js
+         ⚠⚠ **`noShop` = ไม่มีขายในร้าน มีติดบ้านมาให้ใบเดียวเท่านั้น** (ผู้ใช้สั่ง 2026-08-14)
+           — อยู่ใน STARTER_FURN + เพดาน 1 ใบที่ `FURN_MAX` ของ js/house-shop.js
+           ห้ามลบชิ้นนี้ออกจากคลัง โหมดตกแต่งยังต้องหยิบมาวางใหม่ได้หลังเก็บทิ้ง */
+      { id:'sell-basket', name:'ตะกร้าขายของ', cat:'decorout', scope:'out', emoji:'🧺', noShop:true,
         colors:[0xd9a86c,0xc98d4e,0xa5744b,0xe8c08a], action:'basket',
         build(g,col){
           const body=cyl(.34,.24,.36,col,14); body.position.y=.18; g.add(body);
@@ -1585,7 +1588,9 @@
             const lf=ball(.1,i%2?col:shade(col,1.15),8); lf.scale.set(1,.5,1);
             lf.position.set(Math.cos(a)*.62,1.6+Math.sin(a)*.62,0); g.add(lf); }
         } },
-      { id:'veggie-plot', name:'แปลงผัก', cat:'garden', scope:'out', emoji:'🥕', fw:2, fd:1, colors:[0x8d6e63,0xa1887f],
+      /* ⚠ ของ **ตกแต่งอย่างเดียว ปลูกไม่ได้** — ห้ามใช้ชื่อ "แปลงผัก" เฉยๆ เพราะจะซ้ำกับ
+         `veg-plot` (เฟส 11) ที่ปลูกได้จริง และอยู่หมวด garden เดียวกัน เด็กซื้อผิดชิ้นแน่ */
+      { id:'veggie-plot', name:'แปลงผักตกแต่ง', cat:'garden', scope:'out', emoji:'🥕', fw:2, fd:1, colors:[0x8d6e63,0xa1887f],
         build(g,col){
           const soil=box(1.4,.16,.66,col,.03); soil.position.y=.08; g.add(soil);
           [-1,1].forEach(s=>{ const edge=box(1.5,.1,.06,0x8d6e63,.02); edge.position.set(0,.1,s*.34); g.add(edge); });

@@ -222,6 +222,23 @@ test('เฟส 11G: ตกปลา — จุดตกปลาบนท่า
     expect(s.reach, s.kind + ' ต้องเดินไปถึงได้จริง (วัดด้วย findPath)').toBeGreaterThan(0);
     expect(s.hasBubble, s.kind + ' ต้องมีป้ายลอยให้เด็กเห็น').toBe(true);
     expect(s.rings, s.kind + ' ต้องมีวงคลื่นบอกจุด').toBe(3);
+    /* 🔒 ผู้ใช้ล็อกไว้ 2026-08-14: **"จุดตกปลาห่างจากฝั่ง 1 ช่อง"**
+       = ระหว่างช่องที่เด็กยืนกับช่องที่ทุ่นลอย ต้องมีน้ำคั่นพอดี 1 ช่อง ⇒ ระยะรวม 2 ช่องเสมอ
+       (เคยแก้ให้ติดกัน = 1 ช่อง แล้วผู้ใช้สั่งย้ายกลับ **ห้ามย่อกลับอีก**) */
+    expect(Math.abs(s.x - s.sx) + Math.abs(s.z - s.sz), s.kind + ' ทุ่นต้องห่างที่ยืน 2 ช่องพอดี').toBe(2);
+  });
+  /* 🪵 ท่าน้ำ = "พื้นไม้ปูบนน้ำ" — ช่องท่าทุกช่องต้องเป็นน้ำจริง ไม่งั้นได้แผ่นไม้วางบนหญ้า
+     (ผู้ใช้แจ้งซ้ำหลายรอบ 2026-08-14 · ต้นเหตุคือตัววาดพื้นปูบล็อกหญ้าไว้ข้างใต้) */
+  const decks = await page.evaluate(() => {
+    const W = window.HouseWorld, out = [];
+    for (let z = 0; z < 68; z++) for (let x = 0; x < 68; x++)
+      if (W.isWaterDeck(x, z)) out.push({ x, z, wet: W.isPond(x, z) || W.isSea(x, z), walk: W.walkable(x, z) });
+    return out;
+  });
+  expect(decks.length, 'ต้องมีพื้นไม้ปูบนน้ำจริง (ท่าในบ่อ + ท่าน้ำทะเล)').toBeGreaterThan(0);
+  decks.forEach(d => {
+    expect(d.wet, 'ช่อง ' + d.x + ',' + d.z + ' เป็นแผ่นไม้แต่ข้างใต้ไม่ใช่น้ำ').toBe(true);
+    expect(d.walk, 'ช่อง ' + d.x + ',' + d.z + ' เป็นแผ่นไม้ต้องเดินได้').toBe(true);
   });
 
   /* ยังไม่ไปถึงจุด = เหวี่ยงไม่ได้ (แต่ต้องไม่พังและไม่หักอะไร) */
@@ -358,7 +375,26 @@ test('เฟส 11I: แปลงผัก — 4 แปลงถาวรที�
   expect(r.survived.stage, 'และต้องไม่ถอยขั้นด้วย').toBe(1);
   expect(r.ripeAct, 'โตเต็มแล้วป้ายต้องเปลี่ยนเป็นเก็บ').toBe('harvest');
   expect(r.emptyAfter, 'เก็บแล้วแปลงว่างอีกครั้ง').toBe('plant');
-  expect(r.plotMax).toBe(4);
+  /* 🔒 ผู้ใช้สั่ง 2026-08-14: **ซื้อแปลงเพิ่มได้สูงสุด 8 แปลง** (ชุดเริ่มต้นยังให้มา 4 เหมือนเดิม)
+     — เกณฑ์เดิมที่บังคับว่า PLOT_MAX ต้องเป็น 4 ถูกทับด้วยมตินี้ **ห้ามลบเทสทิ้ง ให้เปลี่ยนเกณฑ์** */
+  expect(r.plotMax, 'เพดานแปลงผัก = 8').toBe(8);
+  /* เพดานต้องบังคับใช้จริงทั้งตอนซื้อและตอนแจกฟรี ไม่ใช่แค่ตัวเลขลอยๆ */
+  const cap = await page.evaluate(() => {
+    const S = window.HouseShop;
+    let n = 0;
+    while (S.grantFree('veg-plot') && n < 40) n++;
+    return { plots: S.furnCount('veg-plot'), max: S.FURN_MAX['veg-plot'],
+             buyWhenFull: S.buyFurn('veg-plot'),
+             basket: S.furnCount('sell-basket'), basketMax: S.FURN_MAX['sell-basket'],
+             basketGrant: S.grantFree('sell-basket') };
+  });
+  expect(cap.max).toBe(8);
+  expect(cap.plots, 'แจกฟรีเกินเพดานไม่ได้').toBe(8);
+  expect(cap.buyWhenFull, 'ชนเพดานแล้วซื้อเพิ่มไม่ได้').toBe(false);
+  /* 🧺 ตะกร้าขายของ = ของ default 1 ใบ ไม่มีขายในร้าน (ผู้ใช้สั่ง 2026-08-14) */
+  expect(cap.basketMax).toBe(1);
+  expect(cap.basket, 'ตะกร้ามีได้ใบเดียว').toBe(1);
+  expect(cap.basketGrant, 'ตะกร้าเพิ่มใบที่ 2 ไม่ได้').toBe(false);
   /* ⚠ เก็บผักแล้ว **ยังไม่ได้เงิน** — ต้องเอาไปขายที่ร้านต้นไม้ก่อน (ผู้ใช้สั่ง 2026-08-13) */
   expect(await coins(page) - before, 'เก็บผักยังไม่ได้เงิน').toBe(0);
   expect(errs).toEqual([]);

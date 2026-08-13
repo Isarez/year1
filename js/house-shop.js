@@ -132,6 +132,19 @@
     'ins-keyboard':7, 'ins-guitar':7, 'ins-ukulele':7, 'piano':7,
   };
 
+  /* ---------- เพดานจำนวนชิ้นที่ "มีได้" ต่อ 1 ไอดี (ผู้ใช้สั่ง 2026-08-14) ----------
+     ⚠ เฟส 11 เปิดให้ซื้อเฟอร์นิเจอร์ซ้ำได้ไม่จำกัด ⇒ ของที่ระบบเกมอ่านจำนวนไปใช้ต่อจะพัง
+       ถ้าเด็กกดซื้อรัวๆ (แปลงผัก 50 แปลง = กดรดน้ำทีเดียวโตหมดทั้งสวน = เงินเฟ้อ)
+     📌 **ของที่ไม่อยู่ในตารางนี้ = ซื้อได้ไม่จำกัดเหมือนเดิม** (ของแต่งบ้านทั่วไป ยิ่งเยอะยิ่งสนุก)
+        ใส่เฉพาะของที่ "มีความหมายกับกลไกเกม" เท่านั้น
+     ⚠ เพดานนี้คุมทั้ง `buyFurn()` (ซื้อด้วยเงิน) และ `grantFree()` (ของรางวัล) — ห้ามคุมแค่ทางเดียว */
+  const FURN_MAX = {
+    'veg-plot': 8,      /* แปลงผัก — ผู้ใช้กำหนดเอง 8 แปลง (ชุดเริ่มต้นให้มา 4) */
+    'sell-basket': 1,   /* ตะกร้าขายของ — ของ default 1 ใบ **ไม่มีขายในร้าน** (ดู noShop) */
+    'pet-house': 1,     /* บ้านสัตว์ — เลี้ยงได้ทีละตัว มีหลายหลังก็ไม่มีความหมาย */
+  };
+  const furnMax = id => (Object.prototype.hasOwnProperty.call(FURN_MAX, id) ? FURN_MAX[id] : Infinity);
+
   /* ---------- ราคาชุดแต่งตัว (ต่อ 1 ตัวเลือกในแถวนั้น) ----------
      แถวที่ไม่อยู่ในตาราง = ฟรีทั้งแถว (เพศ/รูปทรงดวงตา = หน้าตาเด็กเอง ไม่ใช่ของซื้อ)
      สีของเครื่องแต่ง (hatC/glassC/bagC/holdC) **เปิดขายเมื่อ 2026-08-07 ตามคำขอผู้ใช้**
@@ -483,6 +496,12 @@
     function buyFurn(id){
       const it = FURN.byId[id];
       if(!it) return false;
+      /* ⚠ เช็คเพดาน **ก่อนตัดเงินเสมอ** ไม่งั้นเด็กจ่ายเงินแล้วไม่ได้ของ */
+      const cap = furnMax(id);
+      if(furnCount(id) >= cap){
+        toast('✋', 'มี' + it.name + 'ครบ ' + cap + ' ชิ้นแล้ว ซื้อเพิ่มไม่ได้นะ');
+        return false;
+      }
       const price = priceFurn(id);
       if(!window.OwlCoins) return false;
       if(coins() < price){
@@ -504,6 +523,7 @@
        `devUnlockAll` — ตัวนี้เกมจริงเรียกได้ แต่ต้องมี "เหตุผลว่าเด็กทำอะไรมาถึงได้" เสมอ */
     function grantFree(id){
       if(!FURN.byId[id]) return false;
+      if(furnCount(id) >= furnMax(id)) return false;   /* เพดานคุมของแจกด้วย ไม่ใช่แค่ของที่ซื้อ */
       addFurnCount(id, 1);               /* นับก่อน grant ด้วยเหตุผลเดียวกับ buyFurn */
       grant([id]);
       onChange();
@@ -749,6 +769,15 @@
     function hex(v){ return '#' + v.toString(16).padStart(6, '0'); }
     /* การ์ดสินค้า 1 ใบ — ของที่ซื้อแล้วขึ้น ✓, เงินไม่พอขึ้นราคาสีจางแต่ยังเห็น (ไม่ซ่อน)
        **แตะการ์ด = เลือกดู ไม่ใช่ซื้อทันที** (กันเด็กเผลอกดจนเงินหมด) — ซื้อที่แถบด้านล่างอีกที */
+    /* ป้ายชื่อเฟอร์นิเจอร์ + จำนวนที่มีจริงตอนนี้ (คิดสดทุกครั้ง ไม่งั้นตัวเลขค้างหลังซื้อ)
+       ของที่มีเพดาน (`FURN_MAX`) ต้องบอก "มี 4/8" ให้เด็กเห็นว่าซื้อได้อีกกี่ชิ้น ไม่ใช่ปล่อยให้กด
+       จนเจอ toast ปฏิเสธเอาเอง */
+    function furnLabel(it){
+      const n = furnCount(it.id), cap = furnMax(it.id);
+      if(cap !== Infinity) return it.name + ' (มี ' + n + '/' + cap + ')';
+      return it.name + (n > 0 ? ' (มี ' + n + ')' : '');
+    }
+    const furnFull = it => furnCount(it.id) >= furnMax(it.id);
     function makeCard(opts){
       const b = document.createElement('button');
       b.type = 'button';
@@ -820,6 +849,10 @@
       if(!sel){ bar.hidden = true; bar.innerHTML = ''; return; }
       bar.hidden = false;
       bar.innerHTML = '';
+      /* ⚠ `sel` เป็น opts ก้อนเดิมตั้งแต่ตอนกดเลือก — `renderItems()` สร้างการ์ดใหม่แต่ไม่ได้
+         อัปเดตก้อนนี้ ⇒ ของที่เพิ่งซื้อจนชนเพดานจะยังโชว์ปุ่ม "ซื้อเลย" อยู่
+         ⇒ ถามสถานะสดผ่าน `maxedFn()` ทุกครั้งที่วาดแถบ */
+      if(sel.maxedFn && sel.maxedFn()){ sel.owned = true; sel.repeat = false; sel.maxed = true; }
       /* (เคยมีปุ่ม ← กลับไปเลือกของอื่นตรงนี้ — เอาออก 2026-08-08 ตามคำขอผู้ใช้
          ตอนนี้ตารางสินค้าโชว์อยู่ตลอดแล้ว กดการ์ดใบอื่นได้เลย ไม่ต้องมีทางกลับแยก) */
       const nm = document.createElement('span');
@@ -831,8 +864,8 @@
       /* `repeat` = ของกินได้หมดไป (อาหารสัตว์ เฟส 3B) ซื้อซ้ำได้ไม่จำกัด ⇒ ไม่มีสถานะ "มีแล้ว" */
       if(sel.owned && !sel.repeat){
         btn.className = 'hs-buy-btn hs-buy-have';
-        btn.textContent = '✓ มีแล้ว';
-        btn.onclick = ()=>{ click(); toast('✓', sel.name + ' มีอยู่แล้วนะ'); };
+        btn.textContent = sel.maxed ? '✓ มีครบแล้ว' : '✓ มีแล้ว';
+        btn.onclick = ()=>{ click(); toast('✓', sel.name + (sel.maxed ? ' ครบเพดานแล้วนะ' : ' มีอยู่แล้วนะ')); };
       }else{
         const poor = coins() < sel.price;
         btn.className = 'hs-buy-btn' + (poor ? ' hs-buy-poor' : '');
@@ -841,6 +874,8 @@
           click();
           if(!sel.onBuy()) return;
           if(!sel.repeat) sel.owned = true; /* ซื้อสำเร็จ → แถบเปลี่ยนเป็น "มีแล้ว" ทันที ไม่ต้องปิดพรีวิว */
+          /* ของที่ซื้อซ้ำได้: อัปเดตจำนวนที่มีบนแถบ+การ์ดให้ตรงทันที (ไม่งั้นตัวเลขค้างค่าเก่า) */
+          if(sel.nameFn) sel.name = sel.nameFn();
           renderItems(); renderBuyBar();
         };
       }
@@ -981,13 +1016,21 @@
         return;
       }
       const parts = shopTab.split(':'), scope = parts[0], cat = parts[1];
-      FURN.items.filter(it => it.scope === scope && it.cat === cat).forEach(it=>{
+      /* ⚠ `noShop` = ของที่ **ติดมากับบ้านและไม่มีขาย** (ตะกร้าขายของ) — ต้องกรองที่นี่ที่เดียว
+         ห้ามลบออกจากคลัง `FURN` เพราะโหมดตกแต่งยังต้องหยิบมาวางได้ */
+      FURN.items.filter(it => it.scope === scope && it.cat === cat && !it.noShop).forEach(it=>{
         wrap.appendChild(makeCard({
           key: it.id,
-          /* ⚠ เฟส 11: เฟอร์นิเจอร์ซื้อซ้ำได้ ⇒ **ห้ามส่ง owned:true** ไม่งั้นการ์ดจะขึ้นว่า
-             "มีแล้ว" แล้วกดซื้อเพิ่มไม่ได้ · โชว์จำนวนที่มีต่อท้ายชื่อแทน */
-          name: it.name + (furnCount(it.id) > 0 ? ' (มี ' + furnCount(it.id) + ')' : ''),
-          price: priceFurn(it.id), owned: false, emoji: it.emoji,
+          /* ⚠ เฟส 11: เฟอร์นิเจอร์ซื้อซ้ำได้ ⇒ ต้องส่ง **`repeat:true`** ด้วย
+             ไม่งั้น `renderBuyBar()` จะตั้ง `sel.owned = true` หลังซื้อสำเร็จ แล้วแถบเปลี่ยนเป็น
+             "✓ มีแล้ว" ⇒ **กดซื้อซ้ำไม่ได้จนกว่าจะไปกดสินค้าชิ้นอื่นก่อน**
+             (ผู้ใช้แจ้งบั๊กนี้ 2026-08-14) · `nameFn` ให้แถบอัปเดตจำนวนที่มีหลังซื้อทันที
+             ⚠ ของที่ **ชนเพดานแล้ว** ส่ง `owned:true` เพื่อให้การ์ด/แถบขึ้น "✓ มีครบแล้ว"
+               และกดซื้อไม่ได้ (กันเด็กกดแล้วโดนปฏิเสธซ้ำๆ โดยไม่รู้ว่าทำไม) */
+          name: furnLabel(it),
+          nameFn: ()=> furnLabel(it),
+          price: priceFurn(it.id), owned: furnFull(it), repeat: !furnFull(it), emoji: it.emoji,
+          maxed: furnFull(it), maxedFn: ()=> furnFull(it),
           preview: {kind:'furn', id: it.id},
           onBuy: ()=> buyFurn(it.id),
         }));
@@ -1002,6 +1045,7 @@
       migrate, invalidate,
       priceFurn, priceFit, ownsFurn, ownsFit,
       furnCount, addFurnCount,          /* เฟส 11: เฟอร์นิเจอร์นับเป็นจำนวนชิ้น */
+      FURN_MAX, furnMax,                /* เพดานจำนวนต่อไอดี (js/house-play.js กับหน้าเทสอ่านค่านี้) */
       buyFurn, buyFit,
       /* สัตว์เลี้ยง (เฟส 3A) — house.js ใช้ล็อกหน้าเลือกสัตว์ + เทสเรียกตรวจสิทธิ์ */
       PET_PRICE, PET_COLOR_PRICE, PET_GROUPS,

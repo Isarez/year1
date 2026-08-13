@@ -689,11 +689,15 @@
     fishBob = g;
     /* หันหน้าเด็กไปทางน้ำก่อนเหวี่ยง — เห็นแล้วรู้ว่ากำลังตกปลาอยู่ */
     if(w.faceTo) w.faceTo(sp.x, sp.z);
+    /* ⚠ `0` = **ค้างท่าถือคันเบ็ดไว้จนกว่าจะเลิกตก** (ปล่อยกลับท่ายืนทันทีจะเห็นทุ่นลอยอยู่ในน้ำ
+       แต่ตัวเด็กยืนเฉยๆ เหมือนไม่ได้ตกปลา) — คลายที่ `fishBobClear()` ตอนดึงเบ็ด/เลิกเล่น */
+    if(w.pose) w.pose('cast', 0);
   }
   function fishBobClear(){
     const w = W();
     if(fishBob && w) w.despawn(fishBob);
     fishBob = null;
+    if(w && w.pose) w.pose(null);          /* คลายท่าถือคันเบ็ด กลับไปยืนปกติ */
     /* คืนป้าย 🎣 ให้ทุกจุดเมื่อเลิกตก */
     fishSpots.forEach(x => { if(x.obj && x.obj.userData.bubble) x.obj.userData.bubble.visible = true; });
   }
@@ -920,7 +924,10 @@
 
   const GROW_MAX = 3;              /* ค่าอ้างอิงเดิม (เมล็ดเกรด 1) — ของจริงดู growMax() ต่อเมล็ด */
   function growMax(seedId){ return seedById(seedId).days; }
-  const PLOT_MAX = 4;
+  /* เพดานจำนวนแปลงผัก — **แหล่งความจริงเดียวอยู่ที่ `FURN_MAX` ของ js/house-shop.js**
+     (ผู้ใช้สั่ง 2026-08-14: ซื้อเพิ่มได้สูงสุด 8 แปลง) อ่านมาเก็บไว้เฉยๆ กันเลขหลุดกัน 2 ที่ */
+  const PLOT_MAX = (window.HouseShop && window.HouseShop.FURN_MAX
+                    && window.HouseShop.FURN_MAX['veg-plot']) || 8;
   let gardenObjs = [];
 
   function beds(){ const w = W(); return w ? (w.vegPlots() || []) : []; }
@@ -990,6 +997,7 @@
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
     gardenFx(i, 'plant', sd);
+    actPose('plant', 1250, i);
     w.toast(sd.e, 'ปลูก' + sd.n + 'แล้ว! อย่าลืมมารดน้ำทุกวันนะ');
     return true;
   }
@@ -1049,6 +1057,14 @@
     w.spawnFx(g);
     gfx.push({g, t:0, up:!!opt.up});
   }
+  /* ท่าทางของเด็กตอนทำสวน — **ต้องหันหน้าเข้าหาแปลงก่อนเสมอ** ไม่งั้นเด็กก้มปลูกใส่อากาศ
+     ด้านหลังแปลง (เด็กเดินมาจากทางไหนก็หันค้างอยู่ทางนั้น) · `i` = แปลงที่กำลังทำ */
+  function actPose(kind, ms, i){
+    const w = W(); if(!w || !w.pose) return;
+    const bed = (i != null) ? beds()[i] : null;
+    if(bed && w.faceTo) w.faceTo(bed.x, bed.z);
+    w.pose(kind, ms);
+  }
   function gardenFx(i, kind, sd){
     const w = W(); if(!w) return;
     const bed = beds()[i]; if(!bed) return;
@@ -1089,6 +1105,7 @@
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
     growing.forEach(k2 => gardenFx(k2, 'water'));
+    actPose('water', 1500, growing[0]);
     w.toast('💧', 'รดน้ำแล้ว! ต้นไม้โตขึ้นอีกขั้น ' + growing.length + ' ต้น');
     return true;
   }
@@ -1108,6 +1125,7 @@
       gardenFx(k, 'harvest', seedById(s.seed));
       setSlot(k, null);
     });
+    actPose('harvest', 1400, take[0]);        /* ⚠ นอกลูป — อยู่ในลูปจะรีสตาร์ตท่าทุกแปลงที่เก็บ */
     persist(); gardenBuild(); renderPanel();
     if(typeof playCongrats === 'function') playCongrats();
     w.toast('🧺', 'เก็บผักได้ ' + take.length + ' ต้น! เอาไปขายที่ร้านต้นไม้ได้เลย');
@@ -1632,6 +1650,9 @@
   function photoExit(){
     document.body.classList.remove('house-photo');
     const f = $('house-photo-ui'); if(f) f.hidden = true;
+    /* ออกจากโหมดกล้องแล้วอัลบั้ม/รูปใหญ่ต้องปิดตามไปด้วย (ผู้ใช้สั่ง 2026-08-14)
+       ไม่งั้นเด็กกด ✕ แล้วยังมีหน้าต่างค้างบังจออยู่ */
+    photoAlbumClose();
     return true;
   }
 

@@ -107,18 +107,36 @@
     const planted = beds.map((_, i) => PL.state() && (PL.state().garden.plots || [])[i]).filter(Boolean);
     note(body, 'แปลงทั้งหมด ' + beds.length + ' แปลง · ปลูกแล้ว ' + planted.length + ' แปลง'
              + (planted.length ? '' : ' — ยังไม่มีอะไรให้เร่ง ลองไปปลูกก่อน'));
+    /* ⚠⚠ ปุ่มในแถวใช้คีย์ **`t`** เป็นข้อความ (ดู `row()` ข้างบน) — เคยเขียน `label:` มาแล้ว
+       ผลคือปุ่มขึ้นเป็นเม็ดเขียวเปล่าๆ ไม่มีตัวหนังสือ **เหมือนแท็บนี้ยังไม่ได้ทำ**
+       (ผู้ใช้แจ้ง 2026-08-14 ว่า "ยังไม่เห็น tab เร่งเวลาผัก") — เพิ่มปุ่มใหม่ต้องใช้ `t:` เสมอ */
     row(body, 'เร่งการเติบโต', [1, 2, 5].map(n=>({
-      label: '+' + n + ' วัน',
-      fn: ()=>{ const c = PL.devGrow(n); toast('🌱', 'เร่งให้ ' + c + ' แปลง'); renderBody(); },
+      t: '+' + n + ' วัน',
+      fn: ()=>{ const c = PL.devGrow(n); toast('🌱', 'เร่งให้ ' + c + ' แปลง'); },
     })));
     row(body, 'เมล็ดพันธุ์', (PL.SEEDS || []).slice(0, 3).map(sd=>({
-      label: sd.e + ' +5',
-      fn: ()=>{ PL.addSeed(sd.id, 5); toast(sd.e, 'ได้เมล็ด' + sd.n + ' 5 เม็ด'); renderBody(); },
+      t: sd.e + ' +5',
+      fn: ()=>{ PL.addSeed(sd.id, 5); toast(sd.e, 'ได้เมล็ด' + sd.n + ' 5 เม็ด'); },
     })));
     row(body, 'เมล็ดพันธุ์ (ต่อ)', (PL.SEEDS || []).slice(3).map(sd=>({
-      label: sd.e + ' +5',
-      fn: ()=>{ PL.addSeed(sd.id, 5); toast(sd.e, 'ได้เมล็ด' + sd.n + ' 5 เม็ด'); renderBody(); },
+      t: sd.e + ' +5',
+      fn: ()=>{ PL.addSeed(sd.id, 5); toast(sd.e, 'ได้เมล็ด' + sd.n + ' 5 เม็ด'); },
     })));
+    /* แปลงผักซื้อเพิ่มได้สูงสุด FURN_MAX['veg-plot'] แปลง — ปุ่มนี้ยัดให้เต็มเพดานไว้เทส */
+    const S = shop();
+    if(S && S.FURN_MAX){
+      const cap = S.FURN_MAX['veg-plot'] | 0;
+      row(body, 'แปลงผัก (มี ' + S.furnCount('veg-plot') + '/' + cap + ')', [
+        {t:'+1 แปลง (ฟรี)', fn: ()=>{ if(!S.grantFree('veg-plot')) toast('🌱', 'เต็มเพดานแล้ว'); }},
+        {t:'ให้เต็มเพดาน', fn: ()=>{
+          let n = 0;
+          while(S.furnCount('veg-plot') < cap && S.grantFree('veg-plot')) n++;
+          toast('🌱', n ? 'เพิ่มให้ ' + n + ' แปลง (ต้องไปวางในโหมดตกแต่งเอง)' : 'เต็มเพดานแล้ว');
+        }},
+      ]);
+      note(body, 'หมายเหตุ: ได้ "สิทธิ์" แปลงเพิ่มเฉยๆ ต้องเข้าโหมดตกแต่งไปวางลงสนามเองอีกที '
+               + 'ถึงจะปลูกได้ (เกมจริงก็ทำงานแบบนี้)');
+    }
   }
 
   /* ---------- แท็บความหิว: ยัดค่าความอิ่ม/ป่วยของสัตว์ตัวปัจจุบัน ---------- */

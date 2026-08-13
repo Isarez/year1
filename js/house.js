@@ -153,6 +153,7 @@ let editDrag = null;                 /* {group, moved, lastValid} ระหว�
 let editPan = null;                  /* {prev} ระหว่างแพนกล้องในโหมดตกแต่ง */
 let editCat = null;                  /* หมวดที่เปิดในกล่องเลือก */
 let sitState = null;                 /* {group,item,act,seat,ry} ตอนตัวละครนั่ง/นอนกับเฟอร์นิเจอร์ */
+let charAct = null;                  /* {kind,t0,dur} ท่าทางตอนทำกิจกรรม (ปลูก/รดน้ำ/เก็บ/เหวี่ยงเบ็ด) */
 
 const hChar = {                       /* สถานะตัวละครในฉาก */
   cfg: null, tile: {x:SPAWN_TILE.x, z:SPAWN_TILE.z},
@@ -226,6 +227,7 @@ const isSeaDeckTile   = HM.isSeaDeckTile || function(){ return false; };
 const POND_FISH_SPOTS = HM.POND_FISH_SPOTS || [];
 const seaFishSpots    = HM.seaFishSpots || function(){ return []; };
 const isPierTile      = HM.isPierTile || function(){ return false; };
+const isWaterDeckTile = HM.isWaterDeckTile || function(){ return false; };
 
 /* ---------- โทน/วัสดุ ---------- */
 let gradientMap = null;
@@ -3228,7 +3230,11 @@ const SCARECROW_TILES = s2List([[18,2],[21,6],[18,12]]);        /* ข้าง�
 const UMBRELLA_SPOTS = [[33,2],[40,2],[47,2],[54,2],[63,2],[37,3],[58,3]];
 const BEACH_CHAIRS = [[32,2],[34,2],[41,2],[46,2],[48,2],[53,2],[55,2],[62,2],[64,2],
                       [36,3],[38,3],[57,3],[59,3]];
-const POND_PADS = s2List([[3,4],[6,3],[2,9],[7,10],[5,12],[8,6],[4,7]]);
+/* ⚠ **ห้ามวางใบบัวทับจุดตกปลา** (ผู้ใช้แจ้ง 2026-08-14 ว่าดอกบัวทับทุ่น)
+   ⚠ พิกัดที่นี่เป็น "ก่อนเลื่อน" ต้อง +EPAD2 (10) บนแกน z ถึงจะเทียบกับ POND_FISH_SPOTS ได้
+   ทุ่นอยู่ที่ (7,20) กับ (7,15) ⇒ ห้ามมีใบบัวที่ [7,10] และ [7,5] (ของเดิมมี [7,10] ทับพอดี
+   ย้ายออกไปที่ [9,12] แล้ว) — **เพิ่ม/ย้ายใบบัวเมื่อไหร่ต้องเช็คซ้ำทุกครั้ง** */
+const POND_PADS = s2List([[3,4],[6,3],[2,9],[9,12],[5,12],[8,6],[4,7]]);
 /* ของประดับชายหาด: z คิดจากแนวชายฝั่งจริง (ชายฝั่งเฉียง เลยคำนวณให้ ไม่ต้องลิสต์ z เอง) */
 function beachPropTiles(){
   const out = [];
@@ -3903,20 +3909,51 @@ function buildWoodYard(w, d){
   });
   return g;
 }
-/* ⚠ **แผ่นไม้ของท่าคือ "ตัวพื้น" เอง ไม่ใช่แผ่นวางทับพื้นอีกที** (ผู้ใช้สั่ง 2026-08-14)
-   ของเดิมวางแผ่นไว้ที่ y=.16 (ผิวบน .21) ⇒ ตัวเด็กที่ยืนที่ y=0 เท้าจมลงไปในไม้
-   และรอยเท้าบอกจุดหมายที่วางตาม groundY ก็ไปโผล่ใต้แผ่น ⇒ ลดแผ่นลงมาให้ผิวบนอยู่ที่ ~0
-   แล้ว `groundY` ของช่องท่าก็เป็น 0 เหมือนพื้นปกติ ทุกอย่างจึงวางถูกที่เอง */
-function buildPier(len){                                 /* ท่าไม้ยื่นลงบ่อ (ยาวไปทาง +x) */
+/* ============ แผ่นไม้ปูบนน้ำ (ท่าน้ำในบ่อ + ท่าน้ำทะเล) ============
+   ⚠⚠ **กติกา 3 ข้อที่ทำให้ของนี้แก้ผิดซ้ำๆ มาหลายรอบ — ห้ามย้อนทุกข้อ (2026-08-14)**
+   ① **แผ่นไม้คือ "ตัวพื้น" เอง** ผิวบนอยู่ระดับพื้น (y≈0) เท่ากับหญ้า ⇒ `groundY` ของช่องท่า
+      เป็น 0 เหมือนพื้นปกติ ตัวเด็ก/รอยเท้าจุดหมาย/ทุ่นตกปลา จึงวางถูกที่เองโดยไม่ต้องมีเคสพิเศษ
+   ② **ปูได้เฉพาะช่องที่เป็นน้ำจริง** (`isWaterDeckTile`) — ปูบนดินเมื่อไหร่จะเห็นเป็น
+      "แผ่นไม้วางบนสนามหญ้า" ทันที เพราะบล็อกหญ้าผิวบนอยู่ที่ y=0 เท่ากันเป๊ะ
+   ③ **ปูทีละช่องตามกริดจริง ห้ามสร้างเป็นแถบยาวแล้วหมุนเอา** — ของเดิมสร้าง `buildPier(len)`
+      ที่ยาวไปทาง +x แล้วหมุน 90° ให้เป็นแนว z **แต่หมุนแล้ว +x กลายเป็น −z** ⇒ ท่าน้ำทะเล
+      ถูกวาดเหลื่อมออกไปกลางทะเล 3 ช่อง คนละที่กับช่องที่เดินได้จริง (บั๊กที่ผู้ใช้เจอ)
+   ⇒ ตอนนี้แผ่นไม้กับช่องเดินได้มาจากลิสต์เดียวกัน เหลื่อมกันไม่ได้อีกแล้ว */
+const DECK_Y = -.03;                       /* กลางแผ่น (หนา .1) ⇒ ผิวบน .02 ≈ ระดับพื้นหญ้า */
+/* พื้นไม้ 1 ช่อง — `alongZ` = แนวยาวของท่าไปทางแกน z (ไม้ปูขวางแนวเดิน เหมือนสะพานไม้จริง)
+   เสาค้ำใส่เฉพาะ "ด้านที่ติดน้ำ" (ด้านที่ต่อกับช่องท่าด้วยกันไม่ต้องมีเสาคั่นกลางท่า) */
+function buildDeckTile(x, z, alongZ){
   const g = new THREE.Group();
-  for(let i=0;i<len;i++){
-    for(let k=0;k<3;k++){
-      const pl = box(.94,.12,.32,k===1?0xd9a86c:0xc98d4e,.03);
-      pl.position.set(i, -.05, (k-1)*.33); g.add(pl);     /* ผิวบน ≈ .01 = ระดับพื้น */
-    }
-    [-1,1].forEach(s=>{ const ps = cyl(.07,.07,.5,0x8f6231,8); ps.position.set(i, -.34, s*.34); g.add(ps); });
+  for(let k=0;k<3;k++){
+    const c = k===1 ? 0xd9a86c : 0xc98d4e;
+    const pl = alongZ ? box(.3,.1,.98,c,.03) : box(.98,.1,.3,c,.03);
+    pl.position.set(alongZ ? (k-1)*.335 : 0, DECK_Y, alongZ ? 0 : (k-1)*.335);
+    g.add(pl);
   }
+  [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dz])=>{
+    if(isWaterDeckTile(x+dx, z+dz)) return;
+    const ps = cyl(.07,.07,.8,0x8f6231,8);
+    ps.position.set(dx*.42, DECK_Y-.44, dz*.42); g.add(ps);
+  });
   return g;
+}
+/* ทุกช่องที่ต้องปูไม้ + แนวไม้ของช่องนั้น — คืน [[x, z, alongZ], ...]
+   ⚠ อ่านจากผังชุดเดียวกับ `isWaterDeckTile` เท่านั้น **ห้ามเดาพิกัด/ห้ามคำนวณความยาวเอง** */
+function waterDeckTiles(){
+  const out = [], seen = new Set();
+  const add = (x, z, alongZ) => {
+    const k = x + ',' + z;
+    if(seen.has(k) || !isWaterDeckTile(x, z)) return;
+    seen.add(k); out.push([x, z, alongZ]);
+  };
+  /* ท่าในบ่อยื่นไปทาง −x เสมอ (กติกาเดียวกับ `isPierTile` — ช่องคือ p.x ถอยหลังไป len ช่อง)
+     ⚠ ถ้าจะทำท่าแนว z ต้องแก้ `isPierTile` ให้รู้จักก่อน ไม่ใช่แก้แค่ตรงนี้ */
+  POND_PIERS.forEach(p=>{ for(let i=0; i<p.len; i++) add(p.x - i, p.z, false); });
+  /* ท่าน้ำทะเล: กรอบสี่เหลี่ยม ยาวตามแกน z (ยื่นจากหาดออกไปในทะเล) */
+  SEA_DECKS.forEach(d=>{
+    for(let x=d.x0; x<=d.x1; x++) for(let z=d.z0; z<=d.z1; z++) add(x, z, true);
+  });
+  return out;
 }
 /* เรือ: sail = เรือใบ (เสา+ใบเรือลายขวาง+ธงยอดเสา), row = เรือประมงลำเล็ก (ที่นั่ง+ไม้พาย+ลังปลา),
    net = เรือประมงกำลังจับปลา (row + เสาค้ำอวน + ผืนอวนหย่อนลงน้ำ + ทุ่นลอย + ปลาในลัง) */
@@ -4747,28 +4784,14 @@ function buildStaticScenery(){
     pt.position.set(outWX(x), 0, outWZ(z));
     mergeCollectFx(pt, parts, chunkKeyOf(x, z));
   });
-  /* ท่าไม้ + คนตกปลาริมบ่อ (ฝั่งบ้านเด็ก) + เป็ดลอยน้ำ — rot 2 = ยื่น/หันไปทางทิศเหนือ (-x) */
-  /* ท่าไม้ทุกตัวในผัง (เดิม 1 + ที่เพิ่ม 2026-08-13 อีก 3) */
-  POND_PIERS.forEach(pp=>{
-    if(pp.x === POND_PIER.x && pp.z === POND_PIER.z) return;   /* ท่าเดิมวาดด้านล่างพร้อมลุง */
-    const p2 = buildPier(pp.len);
-    p2.position.set(outWX(pp.x), 0, outWZ(pp.z));
-    p2.rotation.y = (pp.rot||0) * Math.PI/2;
-    mergeCollectFx(p2, parts, chunkKeyOf(pp.x, pp.z));
+  /* ท่าน้ำทั้งหมด (ในบ่อ + ในทะเล) — **ปูทีละช่องจากผังเดียวกับกริดเดินได้**
+     ⚠ ห้ามกลับไปสร้างเป็นแถบยาวแล้วหมุน (หมุนแล้ว +x → −z ทำให้ท่าทะเลเหลื่อมไป 3 ช่อง)
+     ⚠ ช่องริมฝั่งที่เป็นดินจะไม่อยู่ในลิสต์นี้ = ไม่มีแผ่นไม้วางบนหญ้าอีกต่อไป */
+  waterDeckTiles().forEach(([x, z, alongZ])=>{
+    const dk = buildDeckTile(x, z, alongZ);
+    dk.position.set(outWX(x), 0, outWZ(z));
+    mergeCollectFx(dk, parts, chunkKeyOf(x, z));
   });
-  /* พื้นไม้ของท่าน้ำทะเล (ผู้ใช้กำหนดพิกัดเอง x51-52/z12-15) — ปูทีละช่อง ผิวบนอยู่ระดับพื้น */
-  SEA_DECKS.forEach(d=>{
-    for(let x = d.x0; x <= d.x1; x++){
-      const strip = buildPier(d.z1 - d.z0 + 1);
-      strip.position.set(outWX(x), 0, outWZ(d.z0));
-      strip.rotation.y = Math.PI/2;                    /* ยาวไปทาง +z */
-      mergeCollectFx(strip, parts, chunkKeyOf(x, d.z0));
-    }
-  });
-  const pier = buildPier(POND_PIER.len);
-  pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
-  pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
-  mergeCollectFx(pier, parts, chunkKeyOf(POND_PIER.x, POND_PIER.z));
   /* ลุงตกปลาย้ายไปเป็น NPC เต็มตัวแล้ว (ดู npc-fisher ใน NPC_DEFS) จึงไม่สร้างเป็นฉากตายตัวที่นี่ */
   /* เป็ดประจำบ่อ 2 ตัว — ใช้โมเดลเดียวกับเป็ดที่ว่ายในแหล่งน้ำอื่น (buildCritter) และว่ายเปะปะ
      ไปเรื่อยๆ ในบ่อ (สุ่มจุดหมายทีละจุด ไม่ใช่วนเป็นวงกลม) อยู่ในบ่อตลอด ไม่มีวันหายไป */
@@ -4910,8 +4933,9 @@ function buildOutGrid(noWild){
          ⚠ ต้องมาหลังบรรทัดน้ำเสมอ ไม่งั้นถูกทับกลับเป็นน้ำ */
       if(isPierTile(x, z)) t = 2;
       /* สันทรายยื่นลงทะเล — เดินได้เหมือนหาด (ค่า 0) ⇒ ตัววาดพื้นจะปูทรายให้เองตาม isSandTile */
-      if(isSeaSpitTile(x, z)) t = 0;
-      if(isSeaDeckTile(x, z)) t = 0;                 /* พื้นไม้ท่าน้ำทะเล — เดินได้เหมือนพื้นปกติ */
+      /* ⚠ **ทะเลไม่มีสันทรายแล้ว** (ผู้ใช้สั่งลบทิ้งแล้วเริ่มใหม่ 2026-08-14)
+         เหลือแค่พื้นไม้ที่ปูบนน้ำช่วง x51-52 / z12-15 ซึ่ง "เดินได้" เหมือนพื้นปกติ */
+      if(isSeaDeckTile(x, z)) t = 0;
       if(isCanalTile(x, z)) t = isCanalBridgeTile(x, z) ? 2 : 1;      /* คลองส่งน้ำ + สะพานเล็ก */
       if(RIVER_X.includes(x)) t = isBridgeZ(z) ? 2 : 1;
       if(isCropTile(x, z)) t = 3;                                     /* ร่องต้นพืชในแปลงผัก */
@@ -5011,8 +5035,13 @@ function buildWorld(){
   const tileKind = (x,z) => !isSandTile(x,z) ? ((x+z)%2 ? 'g2' : 'g1')
                           : (isWetSandTile(x,z) ? 's3' : ((x+z)%2 ? 's2' : 's1'));
   const counts = {g1:0,g2:0,s1:0,s2:0,s3:0};
+  /* ⚠⚠ **ช่องท่าไม้ที่ปูบนน้ำห้ามมีบล็อกพื้นอยู่ข้างใต้** (ผู้ใช้แจ้งซ้ำหลายรอบ 2026-08-14)
+     ช่องท่าเดินได้จึงมีค่ากริดเป็น 2 (ท่าในบ่อ) กับ 0 (พื้นไม้ทะเล) **ไม่ใช่ 1**
+     ตัวกรองเดิมข้ามแค่ `!== 1` ⇒ ปูบล็อกหญ้าลงไปเต็มๆ ทั้งกลางบ่อและกลางทะเล
+     ผลคือแผ่นไม้ดู "วางบนสนามหญ้า" และทะเลมีลิ้นหญ้าเขียวยื่นออกไป — นี่คือต้นเหตุจริง
+     ⇒ ใช้ isWaterDeckTile ตัวเดียวกับตอนวาดแผ่นไม้ (ดู js/house-map.js) ทั้ง 2 ลูปด้านล่าง */
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
-    if(outGrid[z][x]!==1) counts[tileKind(x,z)]++;
+    if(outGrid[z][x]!==1 && !isWaterDeckTile(x,z)) counts[tileKind(x,z)]++;
   }
   const grassMat1 = toonMat(0x8fd06c); /* เขียวอ่อน — เรียกก่อนเพื่อให้ gradientMap ถูกสร้างก่อนใช้กับ waterMat */
   const inst = {
@@ -5025,7 +5054,7 @@ function buildWorld(){
   const idx = {g1:0,g2:0,s1:0,s2:0,s3:0};
   const m4 = new THREE.Matrix4();
   for(let z=0; z<OUT_D; z++) for(let x=0; x<OUT_W; x++){
-    if(outGrid[z][x]===1) continue;
+    if(outGrid[z][x]===1 || isWaterDeckTile(x,z)) continue;
     const key = tileKind(x,z);
     m4.makeTranslation(outWX(x), -.12, outWZ(z));
     inst[key].setMatrixAt(idx[key]++, m4);
@@ -10980,6 +11009,92 @@ const WALK_SPEED = 3;      /* ช่อง/วินาที */
 let houseFrameThrottle = false, frameOdd = false;
 const frameLog = [];        /* เวลาที่ "วาดจริง" 120 เฟรมหลังสุด (เทสอ่านผ่าน __houseDbg.frameLog) */
 window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; frameOdd = false; };
+
+/* ============ ท่าทางของเด็กตอนทำกิจกรรม (ปลูก · รดน้ำ · เก็บ · เหวี่ยงเบ็ด) ============
+   ⚠⚠⚠ **`rig` หมุนรอบ "ฝ่าเท้า" ไม่ใช่รอบเอว** — ชิ้นส่วนทุกชิ้นถูกวางที่ y บวก (ขา .44 · หัว 1.26)
+     โดย rig เองอยู่ที่ y=0 ⇒ `rig.rotation.x` = เอียงทั้งตัวเหมือนต้นไม้ล้ม
+     ตอนแรกตั้ง .66 rad (38°) แล้วถ่ายภาพจริงมาดู: **เด็กนอนคว่ำหน้าจมพื้น** ขาหายไปใต้ดิน
+     ⇒ 🔒 **เพดานมุมเอนคือ ~.26 rad (15°)** ห้ามเกินนี้ · ความรู้สึก "ก้มลงต่ำ" ต้องได้มาจาก
+        **ย่อขา (`legX`) + ลดความสูงสะโพก (`drop`)** ไม่ใช่จากการเอนตัว
+   📐 สูตรย่อตัวที่ทำให้ **เท้าไม่จมดิน**: ขาเป็นแท่งตรงหมุนรอบสะโพกที่ y = LEG_LEN
+      หมุนขาไป θ ⇒ ปลายเท้าลอยขึ้น LEG_LEN·(1−cos θ) ⇒ ต้องลดสะโพกลงเท่ากันพอดี
+      (ค่านี้คิดให้แล้วใน `applyCharPose` ไม่ต้องกรอก `drop` เอง เว้นแต่อยากให้ "เขย่ง/กระโดด")
+   ⚠ ท่าทั้งหมดต้อง **หมุนตัวหันไปทางเป้าหมายก่อน** (ผู้เรียกยิง `faceTo()` เอง) ไม่งั้นเด็ก
+     จะก้มปลูกใส่อากาศด้านหลังแปลง
+   📌 ค่ามุมอ่านแบบนี้: แขน `rotation.x` **ลบ = ยกไปข้างหน้า** (-1.57 ≈ ขนานพื้น · -2.7 ≈ เหนือหัว)
+      เพราะตัวละครหันหน้าไปทาง +z ในพิกัดของตัวเอง (ชุดเดียวกับท่าเดิน) */
+const CH_ARM_Z = [-.16, .16];        /* มุมกางไหล่ตอนยืนเฉยๆ (ตรงกับที่ buildCharacter ตั้งไว้) */
+const CH_LEG_LEN = .44;              /* ระยะสะโพก→พื้น (buildCharacter วาง pivot ขาที่ y .44) */
+const CH_LEAN_MAX = .26;             /* 🔒 เพดานมุมเอนตัว — เกินนี้เห็นเป็น "ล้ม" ไม่ใช่ "ก้ม" */
+/* คืนค่าท่าของเฟรมนั้น: {lean, legX, hop, aL, aR, zL, zR} */
+function charPoseAt(kind, pr){
+  const p = {lean:0, legX:0, hop:0, aL:0, aR:0, zL:CH_ARM_Z[0], zR:CH_ARM_Z[1]};
+  if(kind === 'plant'){
+    /* ย่อเข่าลงไปจิ้มเมล็ดลงดิน — ค้างท่าย่อช่วงกลางให้เห็นชัด แล้วค่อยลุก */
+    const c = pr < .3 ? pr/.3 : (pr < .68 ? 1 : 1 - (pr-.68)/.32);
+    p.legX = c*.34; p.lean = c*.20; p.hop = -c*.10;
+    p.aL = -c*1.5; p.aR = -c*1.5;
+    p.zL = CH_ARM_Z[0] + c*.11; p.zR = CH_ARM_Z[1] - c*.11;   /* มือ 2 ข้างชิดเข้ากลางเหมือนกำเมล็ด */
+  }else if(kind === 'water'){
+    /* ยกบัวรดน้ำด้วย 2 มือแล้วเอียงรด — มีสะบัดข้อมือไปมาให้เห็นว่ากำลังรด ไม่ใช่ยื่นแขนค้าง
+       ไม่ย่อขา (ยืนรดน้ำ) แต่ถ่ายน้ำหนักไปข้างหน้านิดหน่อย */
+    const c = pr < .18 ? pr/.18 : (pr < .84 ? 1 : 1 - (pr-.84)/.16);
+    const wob = Math.sin(pr*Math.PI*6) * .17 * c;
+    p.lean = c*.15; p.legX = c*.18;
+    p.aL = -c*1.62 + wob; p.aR = -c*1.44 + wob;
+    p.zL = CH_ARM_Z[0] - c*.26; p.zR = CH_ARM_Z[1] + c*.10;
+  }else if(kind === 'harvest'){
+    /* 2 จังหวะ: ย่อลงดึงผักขึ้นจากดิน → ยืดตัวชูของขึ้นเหนือหัวดีใจ (เขย่งขึ้นด้วย) */
+    if(pr < .42){
+      const c = Math.sin(pr/.42 * Math.PI);
+      p.legX = c*.32; p.lean = c*.19; p.hop = -c*.09;
+      p.aL = -c*1.55; p.aR = -c*1.55;
+    }else{
+      const c = Math.sin((pr-.42)/.58 * Math.PI);
+      p.lean = -c*.12; p.hop = c*.15;                         /* เขย่งลอยขึ้นตอนชูของ */
+      p.aL = -c*2.75; p.aR = -c*2.75;
+      p.zL = CH_ARM_Z[0] - c*.20; p.zR = CH_ARM_Z[1] + c*.20;
+      p.legX = -c*.14;                                        /* ปลายเท้าชี้ลงเล็กน้อยตอนลอย */
+    }
+  }else if(kind === 'cast'){
+    /* 3 จังหวะ: ยกคันขึ้นข้ามไหล่ (เอนหลัง) → สะบัดไปข้างหน้าเร็วๆ → ค้างท่าถือคันรอปลา
+       ⚠ จังหวะสะบัดต้องสั้นกว่าจังหวะยก ไม่งั้นดูเป็น "ยกแขนช้าๆ" ไม่ใช่ "เหวี่ยง" */
+    if(pr < .36){
+      const c = pr/.36;
+      p.lean = -c*.16; p.aR = c*1.15; p.aL = c*.30;
+    }else if(pr < .56){
+      const c = (pr-.36)/.20;
+      p.lean = -.16 + c*.38; p.aR = 1.15 - c*2.95; p.aL = .30 - c*1.25;
+    }else{
+      const c = Math.min(1, (pr-.56)/.30);
+      p.lean = .22 - c*.16; p.aR = -1.80 + c*.72; p.aL = -.95 + c*.30;
+      p.legX = c*.12;                                         /* ย่อเข่านิดๆ ท่ายืนถือคันเบ็ด */
+    }
+    p.zR = CH_ARM_Z[1] - .09;                                 /* มือขวาเข้าใกล้ลำตัวเหมือนกำคันเบ็ด */
+  }
+  p.lean = Math.max(-CH_LEAN_MAX, Math.min(CH_LEAN_MAX, p.lean));
+  return p;
+}
+function applyCharPose(u, kind, pr){
+  const p = charPoseAt(kind, pr);
+  u.rig.rotation.x = p.lean;
+  /* สะโพกลดลงพอดีกับที่ปลายเท้าลอยขึ้นจากการหมุนขา ⇒ เท้าอยู่ระดับพื้นเสมอ ไม่จมไม่ลอย
+     (`hop` คือส่วนที่ "ตั้งใจให้ลอย" เช่นตอนกระโดดดีใจ — บวกทับทีหลัง) */
+  u.rig.position.y = -CH_LEG_LEN * (1 - Math.cos(p.legX)) + p.hop;
+  /* ⚠ ขาเป็นลูกของ rig ⇒ มุมจริงบนโลก = lean + rotation.x ⇒ ต้องหักลบ lean ออกก่อน */
+  u.legs[0].rotation.x = p.legX - p.lean; u.legs[1].rotation.x = p.legX - p.lean;
+  u.arms[0].rotation.x = p.aL; u.arms[0].rotation.z = p.zL;
+  u.arms[1].rotation.x = p.aR; u.arms[1].rotation.z = p.zR;
+}
+/* คืนทุกข้อต่อกลับท่ายืน — ต้องเรียกทุกครั้งที่เลิกท่า ไม่งั้นตัวเอียงค้าง
+   (สาขา "เดิน" กับ "ยืนเฉยๆ" เขียนทับแค่ `rotation.x` ของแขน/ขา ไม่ได้แตะ rig/rotation.z) */
+function clearCharPose(u){
+  if(!u) return;
+  u.rig.rotation.x = 0; u.rig.position.y = 0;
+  u.legs[0].rotation.x = 0; u.legs[1].rotation.x = 0;
+  u.arms[0].rotation.set(0, 0, CH_ARM_Z[0]);
+  u.arms[1].rotation.set(0, 0, CH_ARM_Z[1]);
+}
 function frame(t){
   if(!houseOpen) return;
   rafId = requestAnimationFrame(frame);
@@ -11048,6 +11163,17 @@ function frame(t){
         u.arms[0].rotation.x = -sw*.8; u.arms[1].rotation.x = sw*.8;
         u.rig.position.y = Math.abs(Math.sin(t*.014))*.05;
       }
+      /* เดินอยู่ = ยกเลิกท่ากิจกรรมที่ค้าง ⚠ ต้องล้างข้อต่อด้วย ไม่ใช่แค่ทิ้ง charAct
+         (สาขาเดินเขียนทับแค่ rotation.x ของแขน/ขา ตัวจะเอียงค้างตามท่าเดิม) */
+      if(charAct){ charAct = null; clearCharPose(u); }
+    }else if(u && charAct){
+      /* ---------- ท่าทางตอนทำกิจกรรม (เฟส 11) ----------
+         ⚠ ต้องอยู่ **ก่อน** สาขา sitState/ยืนเฉยๆ ไม่งั้นท่ายืนจะเขียนทับทุกเฟรมจนไม่เห็นอะไร */
+      const pr = Math.min(1, (performance.now() - charAct.t0) / charAct.dur);
+      applyCharPose(u, charAct.kind, pr);
+      /* `hold` = ค้างท่าสุดท้ายไว้จนกว่าจะสั่งเลิก (ใช้กับ 'cast' — เหวี่ยงแล้วต้องถือคันรอปลาอยู่
+         ถ้าปล่อยกลับท่ายืนทันที เด็กจะเห็นทุ่นลอยอยู่ในน้ำแต่ตัวเองยืนเฉยๆ เหมือนไม่ได้ตกปลา) */
+      if(pr >= 1 && !charAct.hold){ charAct = null; clearCharPose(u); }
     }else if(u && sitState){
       hChar.targetRotY = sitState.ry;
       const kk = Math.min(1, dt*10);
@@ -11774,6 +11900,17 @@ window.HouseWorld = {
     if(!charGroup) return;
     hChar.targetRotY = Math.atan2(outWX(x) - charGroup.position.x, outWZ(z) - charGroup.position.z);
   },
+  /* ⚠ **ทุก action ต้องมีท่าทางของตัวเด็กด้วย** ไม่ใช่แค่อนุภาคลอยขึ้น (ผู้ใช้สั่ง 2026-08-14)
+     เด็กจะได้เห็นว่า "ตัวเราเป็นคนทำ" ไม่ใช่ของขยับเองลอยๆ
+     kind: 'plant' ย่อตัวปลูก · 'water' ยกบัวรดน้ำ · 'harvest' ก้มเก็บแล้วชูขึ้น · 'cast' เหวี่ยงเบ็ด
+     ms = 0 ⇒ **ค้างท่าสุดท้ายไว้** จนกว่าจะเรียก `pose(null)` (ใช้กับตกปลา: เหวี่ยงแล้วถือคันรออยู่)
+     ⚠ ผู้เรียกควรยิง `faceTo()` ให้เด็กหันไปทางเป้าหมายก่อนเสมอ */
+  pose: (kind, ms) => {
+    const u = charGroup && charGroup.userData;
+    if(!kind){ if(charAct){ charAct = null; clearCharPose(u); } return; }
+    const hold = ms === 0;
+    charAct = {kind, t0: performance.now(), dur: hold ? 760 : (ms || 900), hold};
+  },
   /* จุดตกปลาที่ผังประกาศไว้จริง — ⚠ **ห้ามเดาพิกัดเอง** (กติกาเดียวกับตอนแก้ผังเมือง) */
   pondPier: () => ({x: POND_PIER.x, z: POND_PIER.z, len: POND_PIER.len, rot: POND_PIER.rot}),
   pondFishSpots: () => POND_FISH_SPOTS.concat(seaFishSpots())
@@ -11781,6 +11918,8 @@ window.HouseWorld = {
                 /* ⚠ ธงนี้ตัดสินว่าจะได้ปลาน้ำจืดหรือปลาทะเล — ดูจากผืนน้ำจริงในกริด ไม่ใช่เดาจากชื่อ */
                 name:s.name, sea: isSeaTile(s.water.x, s.water.z)})),
   isWater: (x, z) => !!(outGrid && outGrid[z] && outGrid[z][x] === 1),
+  /* ช่องที่ปูแผ่นไม้บนน้ำ (ท่าในบ่อ + ท่าน้ำทะเล) — ชุดเทสใช้ยืนยันว่าไม้ทุกแผ่นอยู่บนน้ำจริง */
+  isWaterDeck: (x, z) => isWaterDeckTile(x, z),
   isSea:  (x, z) => isSeaTile(x, z),
   isSand: (x, z) => isSandTile(x, z),
   isPond: (x, z) => isPondTile(x, z),
@@ -11978,6 +12117,19 @@ if(!homeView.hidden) houseBuddyRefresh();
                              ry:walkMark.rotation.y} : null,
   /* ตารางท่าประจำของพ่อแม่ (ชุดเทสตรวจว่าแต่ละกิจกรรมมีท่าของตัวเอง ไม่ใช่ท่าเดียวกันหมด) */
   pose: ()=> PARENT_POSE,
+  /* ท่าทางของ "ตัวเด็ก" ที่กำลังเล่นอยู่ (เฟส 11 — ปลูก/รดน้ำ/เก็บ/เหวี่ยงเบ็ด)
+     ⚠ ดูค่ามุมจริงบนโมเดล ไม่ใช่ดูแค่ว่า charAct ถูกตั้ง — เคยตั้งค่าแล้วแต่ไม่มีผลบนตัวโมเดล */
+  charPose: ()=>{
+    const u = charGroup && charGroup.userData;
+    if(!u || !u.rig) return null;
+    return {act: charAct ? charAct.kind : null, hold: !!(charAct && charAct.hold),
+            rigX: u.rig.rotation.x, rigY: u.rig.position.y,
+            legX: u.legs[0].rotation.x,
+            armL: u.arms[0].rotation.x, armR: u.arms[1].rotation.x};
+  },
+  /* กระโดดไปที่ p (0-1) ของท่าที่กำลังเล่น — ใช้ตรวจ "ท่าที่จังหวะนั้นหน้าตาเป็นยังไง" ด้วยภาพจริง
+     (ถ่าย screenshot กินเวลาเองหลายร้อย ms จับจังหวะของอนิเมชันสั้นๆ ตรงๆ ไม่ได้) */
+  poseSeek: p => { if(charAct) charAct.t0 = performance.now() - charAct.dur * p; },
   /* เข้าบ้านเสร็จสมบูรณ์หรือยัง — **ชุดเทสต้องรอค่านี้ก่อนสั่งอะไรเสมอ** ไม่ใช่รอแค่ mode()==='world' */
   ready: ()=> houseStarted,
   npcPos:id=>{ const n = npcs.find(k=>k.def.id===id); return n ? {x:n.g.position.x, z:n.g.position.z} : null; },
