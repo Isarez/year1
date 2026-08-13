@@ -331,6 +331,19 @@
             const bl=ball(.09,i%2?col:shade(col,1.15),8); bl.position.set(x,.44,z); g.add(bl);
             const ct=ball(.04,0xfff59d,6); ct.position.set(x,.46,z); g.add(ct); });
         } },
+      /* ตะกร้าขายของ (เฟส 11 · ผู้ใช้สั่งให้ย้ายได้ในโหมดตกแต่ง 2026-08-14)
+         ⚠ เป็น decor จริง ⇒ บล็อกช่องเดิน (เด็กไม่ยืนทับ) และได้ระบบลาก/หมุน/ลบมาฟรี
+           ส่วนป้ายลอย + หน้าต่างดูของอยู่ที่ js/house-play.js */
+      { id:'sell-basket', name:'ตะกร้าขายของ', cat:'decorout', scope:'out', emoji:'🧺',
+        colors:[0xd9a86c,0xc98d4e,0xa5744b,0xe8c08a], action:'basket',
+        build(g,col){
+          const body=cyl(.34,.24,.36,col,14); body.position.y=.18; g.add(body);
+          const rim=torus(.34,.05,shade(col,.8),16); rim.rotation.x=Math.PI/2; rim.position.y=.36; g.add(rim);
+          const hd=torus(.2,.038,shade(col,.8),14); hd.position.y=.47; g.add(hd);
+          /* ผัก/ปลาโผล่ปากตะกร้า ให้รู้ว่าเอาไว้ใส่ของที่เก็บได้ */
+          const veg=ball(.09,0xf08a3c,8); veg.position.set(-.1,.4,.05); g.add(veg);
+          const leaf=ball(.1,0x7cc46a,8); leaf.scale.set(1.3,.6,1); leaf.position.set(.1,.39,-.03); g.add(leaf);
+        } },
       /* แปลงผัก (เฟส 11) — วาดแค่ "เบาะดิน" เปล่าๆ ส่วนต้นพืชที่กำลังโตกับป้ายบอกสิ่งที่ทำได้
          เป็นของ js/house-play.js ที่วาดทับลงไปตามสถานะจริงของแปลงนั้น
          ⚠ ทำเป็นเฟอร์นิเจอร์จริงเพราะ **ผู้ใช้สั่งให้ย้ายได้ในโหมดตกแต่ง** (2026-08-13)

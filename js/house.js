@@ -180,6 +180,8 @@ function migrateHouseMap(d){
   if(from < 5 && d.decor && Array.isArray(d.decor.out)){
     if(!d.decor.out.some(r => r && r.id === 'veg-plot'))
       d.decor.out = d.decor.out.concat(vegPlotSeedRecs());
+    else if(!d.decor.out.some(r => r && r.id === 'sell-basket'))
+      d.decor.out = d.decor.out.concat([{id:'sell-basket', x:17, z:37, rot:0, col:0}]);
   }
   if(from < 4 && d.decor && Array.isArray(d.decor.out)){
     const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));   /* ดึงเข้า "ในรั้ว" (เว้นแถวรั้วไว้ 1 ช่องทุกด้าน) */
@@ -219,6 +221,8 @@ function saveHouseData(patch){
 const POND_PIERS      = HM.POND_PIERS || [];
 const SEA_SPITS       = HM.SEA_SPITS || [];
 const isSeaSpitTile   = HM.isSeaSpitTile || function(){ return false; };
+const SEA_DECKS       = HM.SEA_DECKS || [];
+const isSeaDeckTile   = HM.isSeaDeckTile || function(){ return false; };
 const POND_FISH_SPOTS = HM.POND_FISH_SPOTS || [];
 const seaFishSpots    = HM.seaFishSpots || function(){ return []; };
 const isPierTile      = HM.isPierTile || function(){ return false; };
@@ -3899,16 +3903,19 @@ function buildWoodYard(w, d){
   });
   return g;
 }
+/* ⚠ **แผ่นไม้ของท่าคือ "ตัวพื้น" เอง ไม่ใช่แผ่นวางทับพื้นอีกที** (ผู้ใช้สั่ง 2026-08-14)
+   ของเดิมวางแผ่นไว้ที่ y=.16 (ผิวบน .21) ⇒ ตัวเด็กที่ยืนที่ y=0 เท้าจมลงไปในไม้
+   และรอยเท้าบอกจุดหมายที่วางตาม groundY ก็ไปโผล่ใต้แผ่น ⇒ ลดแผ่นลงมาให้ผิวบนอยู่ที่ ~0
+   แล้ว `groundY` ของช่องท่าก็เป็น 0 เหมือนพื้นปกติ ทุกอย่างจึงวางถูกที่เอง */
 function buildPier(len){                                 /* ท่าไม้ยื่นลงบ่อ (ยาวไปทาง +x) */
   const g = new THREE.Group();
   for(let i=0;i<len;i++){
     for(let k=0;k<3;k++){
-      const pl = box(.94,.1,.3,k===1?0xd9a86c:0xc98d4e,.03);
-      pl.position.set(i, .16, (k-1)*.34); g.add(pl);
+      const pl = box(.94,.12,.32,k===1?0xd9a86c:0xc98d4e,.03);
+      pl.position.set(i, -.05, (k-1)*.33); g.add(pl);     /* ผิวบน ≈ .01 = ระดับพื้น */
     }
-    [-1,1].forEach(s=>{ const ps = cyl(.07,.07,.7,0x8f6231,8); ps.position.set(i, -.18, s*.34); g.add(ps); });
+    [-1,1].forEach(s=>{ const ps = cyl(.07,.07,.5,0x8f6231,8); ps.position.set(i, -.34, s*.34); g.add(ps); });
   }
-  const rail = box(.1,.1,.08,0xb4763a,.03); rail.position.set(len-1+.4,.5,-.34); g.add(rail);
   return g;
 }
 /* เรือ: sail = เรือใบ (เสา+ใบเรือลายขวาง+ธงยอดเสา), row = เรือประมงลำเล็ก (ที่นั่ง+ไม้พาย+ลังปลา),
@@ -4749,6 +4756,15 @@ function buildStaticScenery(){
     p2.rotation.y = (pp.rot||0) * Math.PI/2;
     mergeCollectFx(p2, parts, chunkKeyOf(pp.x, pp.z));
   });
+  /* พื้นไม้ของท่าน้ำทะเล (ผู้ใช้กำหนดพิกัดเอง x51-52/z12-15) — ปูทีละช่อง ผิวบนอยู่ระดับพื้น */
+  SEA_DECKS.forEach(d=>{
+    for(let x = d.x0; x <= d.x1; x++){
+      const strip = buildPier(d.z1 - d.z0 + 1);
+      strip.position.set(outWX(x), 0, outWZ(d.z0));
+      strip.rotation.y = Math.PI/2;                    /* ยาวไปทาง +z */
+      mergeCollectFx(strip, parts, chunkKeyOf(x, d.z0));
+    }
+  });
   const pier = buildPier(POND_PIER.len);
   pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
@@ -4895,6 +4911,7 @@ function buildOutGrid(noWild){
       if(isPierTile(x, z)) t = 2;
       /* สันทรายยื่นลงทะเล — เดินได้เหมือนหาด (ค่า 0) ⇒ ตัววาดพื้นจะปูทรายให้เองตาม isSandTile */
       if(isSeaSpitTile(x, z)) t = 0;
+      if(isSeaDeckTile(x, z)) t = 0;                 /* พื้นไม้ท่าน้ำทะเล — เดินได้เหมือนพื้นปกติ */
       if(isCanalTile(x, z)) t = isCanalBridgeTile(x, z) ? 2 : 1;      /* คลองส่งน้ำ + สะพานเล็ก */
       if(RIVER_X.includes(x)) t = isBridgeZ(z) ? 2 : 1;
       if(isCropTile(x, z)) t = 3;                                     /* ร่องต้นพืชในแปลงผัก */
@@ -5653,6 +5670,7 @@ function bindCanvasInput(canvas){
   function hoverCheck(){
     hoverT = performance.now();
     setTalkHover(houseOpen && hMode === 'world' && !editMode
+      && !document.body.classList.contains('house-photo')
                  && npcUnderPointer(hoverX, hoverY));
   }
   canvas.addEventListener('pointermove', e=>{
@@ -5717,7 +5735,7 @@ function tapStaticScene(pt){
      ต้องเช็คก่อนทุกสาขา เพราะท่าอยู่บนผิวน้ำที่มีตรรกะของตัวเองอยู่แล้ว */
   {
     const g0 = Math.round(pt.x + (OUT_W-1)/2), gz0 = Math.round(pt.z + (OUT_D-1)/2);
-    if(isPierTile(g0, gz0)){ walkTo(g0, gz0, {}); return; }
+    if(isPierTile(g0, gz0) || isSeaDeckTile(g0, gz0)){ walkTo(g0, gz0, {}); return; }
   }
   const gx = Math.round(pt.x + (OUT_W-1)/2), gz = Math.round(pt.z + (OUT_D-1)/2);
   if(gx<0 || gz<0 || gx>=OUT_W || gz>=OUT_D) return;
@@ -5756,6 +5774,9 @@ function ndcFromClient(cx, cy){
 }
 
 function handleTap(cx, cy){
+  /* ⚠ **โหมดถ่ายรูป = ห้ามคุย/เล่น/เดิน** (ผู้ใช้สั่ง 2026-08-14) — ต้องออกจากโหมดก่อน
+     ทำที่นี่จุดเดียวเพราะทุกการแตะฉากวิ่งผ่านฟังก์ชันนี้ทั้งหมด */
+  if(document.body.classList.contains('house-photo')) return;
   /* ---- แตะพื้นที่นอกกล่อง = ปิดกล่องที่เปิดอยู่ (ผู้ใช้สั่ง 2026-08-09) ----
      กล่องพวกนี้เป็น "การ์ดลอย" ไม่ได้คลุมทั้งจอ ⇒ แตะนอกกล่องจะตกมาถึง canvas เสมอ
      จัดการที่นี่จุดเดียวได้เลย ไม่ต้องทำ backdrop ให้แต่ละกล่อง (และไม่บังโลก 3D ด้วย)
@@ -5890,6 +5911,7 @@ function finishArrive(){
       else if(act==='music') playInstrument(g, item);   /* เฟส 9: เครื่องดนตรี — แตะแล้วมีเสียงจริง */
       /* เฟส 11: ตู้ปลา — แตะแล้วเปิดหน้าตู้ โชว์ปลาที่เด็กตกได้จริงว่ายอยู่ในนั้น */
       else if(act==='tank'){ if(window.HousePlay) window.HousePlay.openTank(item.tank || 'pond'); }
+      else if(act==='basket'){ if(window.HousePlay) window.HousePlay.basketOpen(); }
       else decorBounce(g);
       /* ต้นไม้/พุ่มที่เด็กปลูกเอง: เขย่าแล้วใบร่วงด้วย ให้เหมือนต้นไม้ในป่า
          (ธง leafy/leafyTall อยู่ในคลังเฟอร์นิเจอร์ js/house-furniture.js) */
@@ -10170,7 +10192,9 @@ function fenceSeedRecs(){
    ⚠ **เป็นแค่ "เบาะดิน"** — ต้นพืชกับป้ายบอกสิ่งที่ทำได้เป็นของ js/house-play.js ที่วาดทับตามสถานะ */
 const VEG_PLOT_TILES = [[14,33],[15,33],[14,34],[15,34]];
 function vegPlotSeedRecs(){
-  return VEG_PLOT_TILES.map(([x,z]) => ({id:'veg-plot', x, z, rot:0, col:0}));
+  return VEG_PLOT_TILES.map(([x,z]) => ({id:'veg-plot', x, z, rot:0, col:0}))
+    /* ตะกร้าขายของ (ผู้ใช้กำหนดพิกัดเอง x17/z37) — เป็น decor จึงบล็อกช่องเดิน ไม่ถูกยืนทับ */
+    .concat([{id:'sell-basket', x:17, z:37, rot:0, col:0}]);
 }
 /* seed ต้นไม้/รั้ว/บ้านสัตว์เลี้ยงเริ่มต้นเป็น decor ที่ย้าย/ลบได้ (ครั้งเดียวต่อเด็ก, ตำแหน่งเดิมเป๊ะ) */
 function seedWorldDecor(data){
@@ -11733,8 +11757,8 @@ window.HouseWorld = {
   /* ---------- เพิ่มให้เฟส 11 รอบแก้ (2026-08-13) ---------- */
   /* ความสูงพื้นจริงของช่องนั้น — **สะพานไม้ผิวบนอยู่ที่ .12 ไม่ใช่ 0**
      ของที่วางที่ y=0 บนสะพานจะจมหายใต้แผ่นไม้ (บั๊กเดียวกับรอยเท้าบอกจุดหมาย) */
-  groundY: (x, z) => isPierTile(x, z) ? .21
-                   : ((outGrid && outGrid[z] && outGrid[z][x] === 2) ? .12 : 0),
+  /* ⚠ ท่าไม้เป็นพื้นระดับเดียวกับพื้นดินแล้ว (2026-08-14) เหลือแค่สะพานที่ยังยกสูง */
+  groundY: (x, z) => (!isPierTile(x, z) && outGrid && outGrid[z] && outGrid[z][x] === 2) ? .12 : 0,
   /* ช่องนี้ "มองเห็นจากกล้อง" ไหม — กล้องมองจากทิศ +x,+z ลงมา (CAM_DIR)
      ⇒ ตึกที่อยู่ในแนวทแยง (x+k, z+k) จะบังของที่วางตรงนี้จนเด็กหาไม่เจอ
      อาคารสูง ~3 หน่วย ÷ ความชันกล้อง (1.15/√2 ≈ .81 ต่อ 1 ช่องทแยง) ⇒ บังได้ ~4 ช่อง
@@ -11767,6 +11791,12 @@ window.HouseWorld = {
     .map(g => (g.userData.deco || {}).rec)
     .filter(r => r && r.id === 'veg-plot')
     .map(r => ({x:r.x, z:r.z})),
+  /* ตำแหน่งตะกร้า = อ่านจาก decor จริง (ย้ายในโหมดตกแต่งแล้วป้ายตามไปเอง) */
+  basketTile: () => {
+    const r = (decorGroups.out || []).map(g => (g.userData.deco || {}).rec)
+      .filter(x => x && x.id === 'sell-basket')[0];
+    return r ? {x:r.x, z:r.z} : null;
+  },
 };
 /* จุดต่อชุดเทสของเฟส 3B — แผงให้อาหาร/การ์ดคุณหมอ (เดินไปหาหมอในฉาก 3D ทำในเทสไม่ไหวเหมือนกัน) */
 /* จุดต่อชุดเทสของเฟส 4A — แตะตัวพ่อแม่/เปิดหน้าแต่งตัวให้ตรงตัวใน 3D ทำในเทสไม่ไหว */

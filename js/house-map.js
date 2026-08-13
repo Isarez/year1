@@ -697,11 +697,21 @@ function isSeaTile(x, z){ return z <= seaEdgeZ(x); }
 /* ⚠ **x51 ต้องยาวกว่า x52** — ไม่งั้นปลายสันของ x51 จะมี x52 เดินได้อยู่ข้างๆ
    ผิดกติกาที่ผู้ใช้สั่งว่า "จุดตกปลาต้องห่างจากขอบพื้นเดินได้" (เจอจากเทส 2026-08-14)
    ยาวต่างกัน 2 ช่อง ⇒ ปลายสันของ x51 มีน้ำล้อม 3 ด้าน เหลือทางเดินกลับด้านเดียว */
+/* ⚠ x31 ไม่มีสันทรายแล้ว (ผู้ใช้สั่งลบพื้น x31/z6-8 ออก 2026-08-14) — ใช้หาดธรรมชาติยืนตกแทน */
 const SEA_SPITS = [
   {x:51, len:6},
   {x:52, len:4},
-  {x:31, len:4},
 ];
+/* ช่วงที่ปูเป็น "พื้นไม้ของท่า" แทนทราย (ผู้ใช้กำหนดเอง: x51-52 / z12-15)
+   ⚠ พื้นไม้เป็น **ตัวพื้นเอง** ไม่ใช่แผ่นวางทับพื้นอีกที (ดู buildPier ใน house.js) */
+const SEA_DECKS = [{x0:51, x1:52, z0:12, z1:15}];
+function isSeaDeckTile(x, z){
+  for(let i=0; i<SEA_DECKS.length; i++){
+    const d = SEA_DECKS[i];
+    if(x >= d.x0 && x <= d.x1 && z >= d.z0 && z <= d.z1) return true;
+  }
+  return false;
+}
 function isSeaSpitTile(x, z){
   for(let i=0; i<SEA_SPITS.length; i++){
     const p = SEA_SPITS[i];
@@ -715,6 +725,7 @@ function isSandTile(x, z){
   if(RIVER_X.indexOf(x) >= 0) return false;              /* ปากคลองใหญ่ไหลลงทะเล ไม่มีทรายคั่น */
   /* สันทรายที่ยื่นลงทะเล = พื้นหาดเหมือนกัน (ผู้ใช้สั่ง 2026-08-14 ว่าพื้นตรงนั้นต้องเป็นแบบหาด) */
   if(isSeaSpitTile(x, z)) return true;
+  if(isSeaDeckTile(x, z)) return false;                  /* ตรงนี้เป็นพื้นไม้ ไม่ใช่ทราย */
   const e = seaEdgeZ(x); return e >= 0 && z > e && z <= e + BEACH_W;
 }
 function isWetSandTile(x, z){ return z === seaEdgeZ(x) + 1; }
@@ -831,20 +842,20 @@ function isPierTile(x, z){
 /* ⚠ **จุดตกปลาต้องอยู่ "ในน้ำ" ไม่ใช่ช่องที่เด็กยืน** (ผู้ใช้แจ้ง 2026-08-14 ว่าทุ่นทับตัวเด็ก)
    `stand` = ปลายท่าไม้ที่เด็กไปยืน · `water` = ช่องน้ำถัดไปอีก 1 ช่อง (ที่ทุ่นกับวงคลื่นอยู่) */
 const POND_FISH_SPOTS = [
-  {stand:{x:9, z:20}, water:{x:8, z:20}, name:'ท่าน้ำข้างลุงตกปลา'},
-  {stand:{x:9, z:15}, water:{x:8, z:15}, name:'ท่าน้ำเหนือบ่อ'},
+  {stand:{x:9, z:20}, water:{x:7, z:20}, name:'ท่าน้ำข้างลุงตกปลา'},
+  {stand:{x:9, z:15}, water:{x:7, z:15}, name:'ท่าน้ำเหนือบ่อ'},
 ];
 /* จุดตกปลาในทะเล — ยืนที่ **ปลายท่า ห่างจากขอบพื้น 1 ช่อง** แล้วทุ่นลอยถัดไปอีก 1 ช่อง
    (ผู้ใช้สั่ง 2026-08-14: ทุกจุดต้องห่างขอบพื้นอย่างน้อย 1 ช่อง จะได้ไม่ดูเหมือนยืนตกบนบก) */
 /* ⚠ **จุดตกปลาต้องอยู่ปลายสันทราย ห่างจากขอบพื้นเดินได้อย่างน้อย 1 ช่องทุกด้าน**
    (ผู้ใช้แจ้ง 2026-08-14 ว่ายังชิดขอบอยู่) — ปลายสันมีน้ำล้อม 3 ด้านอยู่แล้วโดยธรรมชาติ
    เพราะสันกว้าง 1 ช่อง ยกเว้น x51/x52 ที่ติดกัน ⇒ ให้จุดอยู่ที่ x51 ปลายสุดเท่านั้น */
+/* ⚠ **พิกัดจุดตกปลาผู้ใช้กำหนดเองทั้งหมด 2026-08-14 ห้ามคำนวณเอง** */
 function seaFishSpots(){
-  return SEA_SPITS.filter(p => p.x !== 52).map(p=>{
-    const z0 = seaEdgeZ(p.x) + 1;
-    const stand = {x:p.x, z:z0 - (p.len - 1)};        /* ปลายสันทราย */
-    return {stand, water:{x:p.x, z:stand.z - 1}, name:'ปลายสันทราย'};
-  });
+  return [
+    {stand:{x:51, z:11}, water:{x:51, z:10}, name:'ปลายท่าน้ำทะเล'},
+    {stand:{x:31, z:9},  water:{x:31, z:7},  name:'ริมหาด'},
+  ];
 }
 const FISHER_TILE = {x:9, z:19, rot:2};    /* ปลายท่า นั่งหันหน้าเข้าบ่อ (ทิศเหนือ) */
 
@@ -1667,7 +1678,8 @@ return {
   BOAT_SPOTS, BEACH_RACKS, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
   SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN, POT_SPOTS,
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
-  POND_DUCKS, POND_PIER, POND_PIERS, SEA_SPITS, isSeaSpitTile, seaPierZ0, isPierTile, POND_FISH_SPOTS, seaFishSpots,
+  POND_DUCKS, POND_PIER, POND_PIERS, SEA_SPITS, isSeaSpitTile, SEA_DECKS, isSeaDeckTile,
+  seaPierZ0, isPierTile, POND_FISH_SPOTS, seaFishSpots,
   FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,

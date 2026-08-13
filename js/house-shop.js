@@ -56,7 +56,7 @@
     'bar-table':2, 'coffee-table':2, 'console-table':2, 'tv-stand':2,
     'desk':3, 'dining-table':3, 'round-table':3, 'table':3,
     /* ---- ต้นไม้/สวน ---- */
-    'bush':1, 'cactus':1, 'clover-patch':1, 'flowerbed':1, 'mushroom':1, 'rose-bush':1, 'veg-plot':1,
+    'bush':1, 'cactus':1, 'clover-patch':1, 'flowerbed':1, 'mushroom':1, 'rose-bush':1, 'veg-plot':1, 'sell-basket':1,
     'sunflower':1, 'tulip-pot':1,
     'hedge':2, 'palm-tall':2, 'pine':2, 'topiary':2, 'tree':2, 'tree-round':2,
     'flower-arch':3,
@@ -183,7 +183,7 @@
     /* ⚠ **`pet-house` ถูกเอาออกจากชุดเริ่มต้นแล้ว 2026-08-14 (ผู้ใช้สั่ง)** — ล็อกไว้จนกว่าจะ
        ซื้อสัตว์เลี้ยงตัวแรก · ปลดให้อัตโนมัติใน buyPet() ⇒ ไม่มี dead end
        เหตุผล: ยังไม่มีสัตว์แล้วมีบ้านสัตว์วางได้ เด็กจะงงว่าบ้านนี้ของใคร */
-    'veg-plot',                             /* แปลงผัก 4 แปลงหน้าบ้าน (เฟส 11) — ติดมากับบ้าน ไม่ต้องซื้อ */
+    'veg-plot', 'sell-basket',              /* แปลงผัก 4 แปลง + ตะกร้าขายของ (เฟส 11) — ติดมากับบ้าน */
   ];
   /* ตำแหน่งชุดมาตรฐานในบ้าน (พิกัดช่องกริดในบ้าน **14×14**, anchor = มุมซ้ายบนของชิ้น, rot 0 = หันไป +z)
      ผังห้อง: z<=6 ครึ่งบน (x0-7 นั่งเล่น, x9-13 ครัว) · z>=8 ครึ่งล่าง (x0-9 นอน, x11-13 น้ำ)

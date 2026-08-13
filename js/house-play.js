@@ -463,29 +463,100 @@
      ⚠ วัสดุ cache ตามไอคอน ⇒ ป้ายชนิดเดียวกันใช้ draw call ร่วมกัน */
   const bubbleMats = {};
   let BUBBLE_GEO = null;
-  function bubbleMat(icon){
-    if(bubbleMats[icon]) return bubbleMats[icon];
+  /* ⚠ **ไอคอนในป้ายวาดเองด้วยเส้น ไม่ใช้ emoji** (ผู้ใช้สั่ง 2026-08-14)
+     เหตุผลเดียวกับที่โปรเจคนี้เลี่ยง emoji มาตลอด: บางเครื่องไม่มี glyph แล้วขึ้นเป็นกล่องเทา
+     และรูปทรง/สีคุมไม่ได้ ⇒ ป้ายแต่ละแบบเลยดูไม่ต่างกันพอตอนย่อเหลือ ~40px บนจอจริง */
+  const BUBBLE_ART = {
+    fish: (c)=>{                                  /* 🎣 คันเบ็ด + ทุ่น */
+      c.strokeStyle = '#8B5A2B'; c.lineWidth = 7; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(38, 86); c.lineTo(84, 30); c.stroke();
+      c.strokeStyle = '#5A7D96'; c.lineWidth = 3.5;
+      c.beginPath(); c.moveTo(84, 30); c.quadraticCurveTo(92, 52, 74, 62); c.stroke();
+      c.beginPath(); c.arc(74, 68, 8, 0, Math.PI*2);
+      c.fillStyle = '#F2544B'; c.fill();
+      c.lineWidth = 3; c.strokeStyle = '#fff'; c.stroke();
+      c.beginPath(); c.arc(74, 68, 8, Math.PI, Math.PI*2);
+      c.fillStyle = '#FFF6E6'; c.fill();
+    },
+    seed: (c)=>{                                  /* 🌱 ต้นอ่อน 2 ใบ */
+      c.strokeStyle = '#5AA84F'; c.lineWidth = 8; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(64, 92); c.lineTo(64, 52); c.stroke();
+      c.fillStyle = '#76C46A';
+      [[-1, 0], [1, 0]].forEach(([sgn])=>{
+        c.beginPath();
+        c.ellipse(64 + sgn*20, 50, 20, 12, sgn * .5, 0, Math.PI*2);
+        c.fill();
+      });
+      c.fillStyle = '#8FD06C';
+      c.beginPath(); c.ellipse(64, 34, 13, 9, 0, 0, Math.PI*2); c.fill();
+    },
+    water: (c)=>{                                 /* 💧 หยดน้ำ */
+      c.beginPath();
+      c.moveTo(64, 26);
+      c.bezierCurveTo(96, 62, 92, 96, 64, 96);
+      c.bezierCurveTo(36, 96, 32, 62, 64, 26);
+      c.closePath();
+      c.fillStyle = '#4FC3F7'; c.fill();
+      c.lineWidth = 5; c.strokeStyle = '#2E6F9E'; c.stroke();
+      c.beginPath(); c.ellipse(54, 74, 7, 10, -.3, 0, Math.PI*2);
+      c.fillStyle = 'rgba(255,255,255,.75)'; c.fill();
+    },
+    harvest: (c)=>{                               /* 🧺 ตะกร้า */
+      c.strokeStyle = '#A5744B'; c.lineWidth = 6; c.lineCap = 'round';
+      c.beginPath(); c.arc(64, 66, 24, Math.PI, 0); c.stroke();
+      c.beginPath();
+      c.moveTo(34, 66); c.lineTo(42, 100); c.lineTo(86, 100); c.lineTo(94, 66);
+      c.closePath();
+      c.fillStyle = '#D9A86C'; c.fill();
+      c.lineWidth = 5; c.strokeStyle = '#A5744B'; c.stroke();
+      c.strokeStyle = '#A5744B'; c.lineWidth = 3.5;
+      [50, 64, 78].forEach(x=>{ c.beginPath(); c.moveTo(x - 2, 68); c.lineTo(x + 2, 100); c.stroke(); });
+    },
+    basket: (c)=>{                                /* ตะกร้าขายของ — มีผัก/ปลาโผล่ */
+      c.fillStyle = '#F0A14B';
+      c.beginPath(); c.ellipse(50, 52, 11, 16, -.35, 0, Math.PI*2); c.fill();
+      c.fillStyle = '#7CC46A';
+      c.beginPath(); c.ellipse(78, 52, 15, 10, .3, 0, Math.PI*2); c.fill();
+      c.beginPath();
+      c.moveTo(30, 64); c.lineTo(40, 104); c.lineTo(88, 104); c.lineTo(98, 64);
+      c.closePath();
+      c.fillStyle = '#D9A86C'; c.fill();
+      c.lineWidth = 5; c.strokeStyle = '#A5744B'; c.stroke();
+      c.lineWidth = 4;
+      c.beginPath(); c.moveTo(30, 64); c.lineTo(98, 64); c.stroke();
+    },
+  };
+  function bubbleMat(kind){
+    if(bubbleMats[kind]) return bubbleMats[kind];
     const cv = document.createElement('canvas');
     cv.width = cv.height = 128;
     const c = cv.getContext('2d');
-    c.beginPath(); c.arc(64, 58, 46, 0, Math.PI*2);
+    /* ฟองคำพูดทรงมน + หางชี้ลง (โทนเดียวกับป้าย "!" ของชาวบ้าน) */
+    c.beginPath(); c.moveTo(64, 100); c.lineTo(52, 84); c.lineTo(76, 84); c.closePath();
+    c.beginPath();
+    c.moveTo(20, 12); c.lineTo(108, 12);
+    c.quadraticCurveTo(118, 12, 118, 24); c.lineTo(118, 76);
+    c.quadraticCurveTo(118, 88, 108, 88); c.lineTo(76, 88);
+    c.lineTo(64, 106); c.lineTo(52, 88); c.lineTo(20, 88);
+    c.quadraticCurveTo(10, 88, 10, 76); c.lineTo(10, 24);
+    c.quadraticCurveTo(10, 12, 20, 12); c.closePath();
     c.fillStyle = '#FFFDF5'; c.fill();
-    c.lineWidth = 7; c.strokeStyle = '#C08340'; c.stroke();
-    c.beginPath(); c.moveTo(52, 96); c.lineTo(64, 122); c.lineTo(76, 96); c.closePath();
-    c.fillStyle = '#FFFDF5'; c.fill();
-    c.lineWidth = 6; c.strokeStyle = '#C08340'; c.stroke();
-    c.beginPath(); c.moveTo(54, 95); c.lineTo(74, 95); c.strokeStyle = '#FFFDF5'; c.lineWidth = 7; c.stroke();
-    c.font = '54px system-ui, "Apple Color Emoji", sans-serif';
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(icon, 64, 60);
+    c.lineWidth = 7; c.strokeStyle = '#C08340'; c.lineJoin = 'round'; c.stroke();
+    /* วาดไอคอนไว้กลางฟอง (ย่อลงให้อยู่ในกรอบ) */
+    const art = BUBBLE_ART[kind] || BUBBLE_ART.seed;
+    c.save();
+    c.translate(64, 48); c.scale(.62, .62); c.translate(-64, -60);
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    art(c);
+    c.restore();
     const tex = new THREE.CanvasTexture(cv);
     tex.minFilter = THREE.LinearFilter;
-    bubbleMats[icon] = new THREE.MeshBasicMaterial({map:tex, transparent:true, depthWrite:false, alphaTest:.15});
-    return bubbleMats[icon];
+    bubbleMats[kind] = new THREE.MeshBasicMaterial({map:tex, transparent:true, depthWrite:false, alphaTest:.12});
+    return bubbleMats[kind];
   }
-  function makeBubble(icon){
-    if(!BUBBLE_GEO) BUBBLE_GEO = new THREE.PlaneGeometry(.86, .86);
-    const m = new THREE.Mesh(BUBBLE_GEO, bubbleMat(icon));
+  function makeBubble(kind){
+    if(!BUBBLE_GEO) BUBBLE_GEO = new THREE.PlaneGeometry(.95, .95);
+    const m = new THREE.Mesh(BUBBLE_GEO, bubbleMat(kind));
     m.renderOrder = 6;
     return m;
   }
@@ -552,7 +623,7 @@
         ring.userData.ph = r / 3;
         g.add(ring); rings.push(ring);
       }
-      const b = makeBubble('🎣');
+      const b = makeBubble('fish');
       b.position.y = 1.35;
       g.add(b);
       /* ⚠ ทุ่นอยู่ "ในน้ำ" ⇒ ไม่ยกตามท่าไม้ (groundY ของช่องน้ำ = 0) */
@@ -886,7 +957,7 @@
     P.garden.seeds[id] = Math.max(0, seedCount(id) + n);
     persist();
   }
-  const BED_ICON = {plant:'🌱', water:'💧', harvest:'🧺', wait:'😴'};
+  const BED_ICON = {plant:'seed', water:'water', harvest:'harvest'};
 
   function gardenPlant(i, seedId){
     const w = W();
@@ -1123,7 +1194,7 @@
       const act = bedAction(i);
       let b = null;
       if(act !== 'wait'){
-        b = makeBubble(BED_ICON[act] || '🌱');
+        b = makeBubble(BED_ICON[act] || 'seed');
         b.position.y = 1.25;
         g.add(b);
       }
@@ -1396,21 +1467,20 @@
      ⚠ **ดูอย่างเดียว ขายจริงต้องไปที่ร้าน** (ผัก→ร้านต้นไม้ · ปลา→ร้านสะดวกซื้อ)
        เพื่อไม่ให้เด็กขายของได้จากหน้าบ้านโดยไม่ต้องออกไปไหนเลย
      ============================================================ */
-  const BASKET_TILE = {x:17, z:37};
+  /* ⚠ ตัวตะกร้าเป็น **เฟอร์นิเจอร์จริง** (`sell-basket`) แล้ว ⇒ ที่นี่วาดแค่ป้ายลอยเหนือมัน
+     ตำแหน่งอ่านจาก decor ทุกครั้ง ⇒ เด็กย้ายตะกร้าในโหมดตกแต่งแล้วป้ายตามไปเอง
+     และเด็กยืนทับไม่ได้เพราะ decor บล็อกช่องเดินอยู่แล้ว (ผู้ใช้สั่ง 2026-08-14) */
   let basketObj = null;
+  function basketTile(){ const w = W(); return w && w.basketTile ? w.basketTile() : null; }
   function basketBuild(){
     const w = W(); if(!w) return;
     basketClear();
-    const k = w.kit();
+    const t = basketTile();
+    if(!t) return;                        /* เด็กลบตะกร้าทิ้ง = ไม่มีป้าย (หยิบกลับมาวางได้เสมอ) */
     const g = new THREE.Group();
-    /* ตะกร้าสาน: ตัวตะกร้าผายออก + ขอบปาก + หูจับ */
-    const body = k.cyl(.34, .24, .34, 0xc98d4e, 14); body.position.y = .17; g.add(body);
-    const rim  = k.torus(.34, .045, 0xa5744b, 16); rim.rotation.x = Math.PI/2; rim.position.y = .34; g.add(rim);
-    const hd   = k.torus(.2, .035, 0xa5744b, 14); hd.position.y = .44; g.add(hd);
-    k.merge(g);
-    const b = makeBubble('🧺'); b.position.y = 1.1; g.add(b);
-    g.position.set(w.wx(BASKET_TILE.x), w.groundY(BASKET_TILE.x, BASKET_TILE.z), w.wz(BASKET_TILE.z));
-    g.userData.hPick = {game:'basket', x:BASKET_TILE.x, z:BASKET_TILE.z};
+    const b = makeBubble('basket'); b.position.y = 1.15; g.add(b);
+    g.position.set(w.wx(t.x), w.groundY(t.x, t.z), w.wz(t.z));
+    g.userData.hPick = {game:'basket', x:t.x, z:t.z};
     g.userData.bubble = b;
     w.spawn(g);
     basketObj = g;
@@ -1691,6 +1761,9 @@
      เดินไปหาก่อนแล้วค่อยทำ (เหมือนแตะชาวบ้าน) เด็กจะได้เห็นตัวละครเดินไปเก็บจริงๆ */
   function tapPick(pick){
     const w = W(); if(!w || !pick) return false;
+    /* ⚠ **อยู่ในโหมดถ่ายรูปห้ามทำกิจกรรมใดๆ** (ผู้ใช้สั่ง 2026-08-14)
+       เด็กกำลังเล็งกล้องอยู่ ถ้าแตะโดนของแล้วเด้งหน้าต่างขึ้นมาจะเสียจังหวะถ่าย */
+    if(photoMode()){ w.toast('📷', 'กำลังถ่ายรูปอยู่นะ กดปุ่ม ✕ ออกจากโหมดถ่ายรูปก่อนได้เลย'); return true; }
     if(pick.game === 'fish'){ fishPull(); return true; }
     if(pick.game === 'fishspot' && fishState){ fishPull(); return true; }   /* กำลังตกอยู่ = แตะเพื่อดึง */
     const t = w.nearWalkable(pick.x, pick.z);
@@ -1728,7 +1801,7 @@
     photoShoot, photoOrder, grabShot, photoEnter, photoExit, photoMode,
     photoAlbumOpen, photoAlbumClose, photoAlbumIsOpen, playShutter, photoBig, photoBigClose,
     openTank, closeTank, tankIsOpen, tankFish, TANK_MAX, TANK_PER_KIND,
-    basketOpen, basketClose, basketIsOpen, BASKET_TILE,
+    basketOpen, basketClose, basketIsOpen, basketTile,
     fxCount: () => gfx.length,          /* ชุดเทส: อนิเมชันถูกสร้างจริงและไม่ถูกลบทิ้งทันที */
     /* เครื่องมือเทส: เร่งเวลาผัก (js/house-devtools.js) */
     devGrow: (n)=>{ if(!P) return 0; let c = 0;
