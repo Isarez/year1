@@ -40,7 +40,7 @@
     /* ---- ของแต่งในบ้าน ---- */
     'globe':1, 'plant':1, 'table-lamp':1, 'wall-clock':1, 'wall-picture':1, 'big-teddy':1, 'rug':1,
     'bookshelf':2, 'floor-lamp':2, 'toy-box':2,
-    'aquarium':3, 'tv':3,
+    'aquarium':3, 'aquarium-sea':3, 'tv':3,
     'piano':4,
     /* ---- ครัว ---- */
     'rice-cooker':1,
@@ -270,7 +270,10 @@
     decorout:'<svg viewBox="0 0 24 24"><path d="M6 20h12l-1-3.2H7z" fill="#BFD8E6" stroke="#4A7E9E" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 16.8V12h6v4.8z" fill="#D8ECF5" stroke="#4A7E9E" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 12V7.4" stroke="#4A7E9E" stroke-width="1.7" stroke-linecap="round"/><path d="M12 4.2c1.6 1.4 2.4 2.4 2.4 3.2a2.4 2.4 0 0 1-4.8 0c0-.8.8-1.8 2.4-3.2z" fill="#7FC7EC" stroke="#3A93C4" stroke-width="1.4"/></svg>',
   };
 
-  const ECON_VER = 4;
+  /* ECON_VER 5 (2026-08-13): **เฟอร์นิเจอร์นับเป็น "จำนวนชิ้น" แล้ว ไม่ใช่ "สิทธิ์ครั้งเดียววางได้ไม่จำกัด"**
+     (ผู้ใช้สั่ง — ซื้อ 1 ชิ้นต้องวางได้แค่ 1 อัน) จำนวนเก็บที่ `d.owned = {id: n}`
+     ⚠ `d.unlocked` ยังอยู่เหมือนเดิมสำหรับของแต่งตัว/สัตว์เลี้ยง ซึ่งเป็น "สิทธิ์" จริงๆ ไม่ใช่ของนับชิ้น */
+  const ECON_VER = 5;
 
   /* ---------- ผังร้าน ----------
      เฟส 1 เปิด 2 ร้าน: ห้างเฟอร์นิเจอร์ (ของตกแต่งทั้งหมด) + ห้างแฟชั่น (ชุดแต่งตัวทั้งหมด)
@@ -290,9 +293,16 @@
     /* เฟส 3A — ล็อต shop-pet มีอยู่ในแผนที่อยู่แล้ว (js/house-map.js) แค่ผูกร้านเข้าไป */
     'shop-pet':       {kind:'pet', icon:'🐾', title:'ร้านสัตว์เลี้ยง',
                        sub:'แตะที่เพื่อนตัวน้อยเพื่อดูตัวจริงก่อนได้เลย ซื้อแล้วตั้งชื่อรับมาเลี้ยงได้ทันที'},
+    /* เฟส 11: ร้านต้นไม้เป็นทั้งที่ **ซื้อเมล็ดพันธุ์** และ **ขายผักที่ปลูกเอง** (ผู้ใช้สั่ง 2026-08-13)
+       ส่วนร้านสะดวกซื้อรับซื้อปลาที่เด็กตกได้ — เนื้อในของ 2 แท็บนี้วาดโดย js/house-play.js
+       ผ่าน `HousePlay.renderTrade()` ⇒ ไฟล์ร้านค้าไม่ต้องรู้จักเมล็ด/ปลาเลย */
     'shop-garden':    {kind:'furn', icon:'🌷', title:'ร้านต้นไม้',
                        groups:[['out', null, ['garden','seatout','decorout']]],
-                       sub:'ต้นไม้ ดอกไม้ ของแต่งสวน เอาไปวางที่สนามหน้าบ้านได้เลย'},
+                       trade:['seed','crop'],
+                       sub:'ต้นไม้ ดอกไม้ ของแต่งสวน · ซื้อเมล็ดพันธุ์กับขายผักที่ปลูกเองได้ที่นี่'},
+    'shop-mart':      {kind:'trade', icon:'🏪', title:'ร้านสะดวกซื้อ',
+                       trade:['fish'],
+                       sub:'พี่รับซื้อปลาที่หนูตกได้นะ เอามาขายได้เลย'},
     'shop-toy':       {kind:'furn', icon:'🎠', title:'ร้านของเล่น',
                        groups:[['out', null, ['play']]],
                        sub:'เครื่องเล่นสนามสำหรับหน้าบ้านหนู แตะดูตัวอย่างก่อนซื้อได้นะ'},
@@ -375,7 +385,39 @@
     }
 
     /* ---------- สิทธิ์ ---------- */
-    function ownsFurn(id){ return ensureSet().has(id); }
+    /* ---------- จำนวนเฟอร์นิเจอร์ที่ "มี" (เฟส 11 · ผู้ใช้สั่ง 2026-08-13) ----------
+       ⚠ ของเก่าที่มีแต่ `unlocked` (ยังไม่ผ่าน migration รอบนี้) ให้ถือว่ามี 1 ชิ้น
+         จะได้ไม่มีใครของหายระหว่างทาง (กติกาเหล็กข้อ 3) */
+    function ownedMap(){ const d = load() || {}; return d.owned || {}; }
+    /* จำนวนชิ้นที่วางอยู่ในเซฟตอนนี้ (ทั้งในบ้านและนอกบ้าน) */
+    function placedInSave(id){
+      const d = load() || {};
+      let n = 0;
+      ['out','in'].forEach(sc=>{
+        ((d.decor && d.decor[sc]) || []).forEach(r=>{ if(r && r.id === id) n++; });
+      });
+      return n;
+    }
+    /* ⚠ **ต้องเป็น max(ที่ซื้อ, ที่วางอยู่จริง) เสมอ** — ของที่ระบบ seed ให้เอง (รั้ว ~40 ชิ้น ·
+       ต้นไม้ · ทางเดิน · แปลงผัก 4) ไม่ได้ผ่านการซื้อ ถ้านับแค่ยอดที่ซื้อจะกลายเป็น "วางเกินสิทธิ์"
+       แล้วแผงตกแต่งขึ้น 0/1 ทั้งที่ของวางอยู่เต็มสนาม (เจอจากเทส 2026-08-13)
+       ⚠ ไม่เปิดช่องให้โกง: จะวางเพิ่มได้ก็ต่อเมื่อ "ที่มี > ที่วางอยู่" อยู่ดี */
+    function furnCount(id){
+      const m = ownedMap();
+      const own = Object.prototype.hasOwnProperty.call(m, id) ? (m[id] | 0)
+                : (ensureSet().has(id) ? 1 : 0);
+      return Math.max(own, placedInSave(id));
+    }
+    function addFurnCount(id, n){
+      const d = load() || {};
+      const m = Object.assign({}, d.owned || {});
+      if(!Object.prototype.hasOwnProperty.call(m, id)) m[id] = ensureSet().has(id) ? 1 : 0;
+      m[id] = Math.max(0, (m[id] | 0) + n);
+      save({owned: m});
+      return m[id];
+    }
+    /* "มีอย่างน้อย 1 ชิ้น" — ผู้เรียกเดิมทั้งหมดยังใช้ความหมายนี้ได้เหมือนเดิม */
+    function ownsFurn(id){ return furnCount(id) > 0; }
     function ownsFit(row, i){
       if(priceFit(row, i) === 0) return true;      /* ของฟรีถือว่ามีสิทธิ์เสมอ ไม่ต้องจดลง save */
       return ensureSet().has(fitKey(row, i));
@@ -426,16 +468,32 @@
       onChange();
       return true;
     }
+    /* ⚠ **ซื้อซ้ำได้แล้ว** — ซื้อกี่ครั้งก็วางได้เท่านั้นชิ้น (เดิมซื้อครั้งเดียววางได้ไม่จำกัด) */
     function buyFurn(id){
       const it = FURN.byId[id];
-      if(!it || ownsFurn(id)) return false;
-      return buy(id, priceFurn(id), it.name);
+      if(!it) return false;
+      const price = priceFurn(id);
+      if(!window.OwlCoins) return false;
+      if(coins() < price){
+        toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!');
+        return false;
+      }
+      if(!window.OwlCoins.spend(price)) return false;
+      /* ⚠ **ต้องนับจำนวนก่อน `grant()` เสมอ** — `addFurnCount()` ใช้ `unlocked` เป็นค่าตั้งต้น
+         ตอนที่ยังไม่มีคีย์ใน `owned` ถ้า grant ไปก่อน ซื้อครั้งแรกจะกลายเป็น 0→1(จาก unlocked)→2
+         คือได้ฟรีไป 1 ชิ้น (เทสจับได้ 2026-08-13) */
+      const n = addFurnCount(id, 1);
+      grant([id]);                         /* คงสิทธิ์เดิมไว้ด้วย (โค้ดเก่าบางส่วนยังอ่าน unlocked) */
+      toast('🎉', 'ได้ ' + it.name + ' แล้ว! (มีทั้งหมด ' + n + ' ชิ้น)');
+      onChange();
+      return true;
     }
     /* ปลดของให้ฟรีโดย **ไม่ตัดเงิน** — ใช้กับ "ของรางวัลจากการสะสม" ของเฟส 11 เท่านั้น
        (ของที่ซื้อด้วยเงินไม่ได้ ต้องเก็บของครบชุดถึงจะได้) ⚠ ไม่ใช่เครื่องมือเทส ห้ามสับสนกับ
        `devUnlockAll` — ตัวนี้เกมจริงเรียกได้ แต่ต้องมี "เหตุผลว่าเด็กทำอะไรมาถึงได้" เสมอ */
     function grantFree(id){
-      if(!FURN.byId[id] || ownsFurn(id)) return false;
+      if(!FURN.byId[id]) return false;
+      addFurnCount(id, 1);               /* นับก่อน grant ด้วยเหตุผลเดียวกับ buyFurn */
       grant([id]);
       onChange();
       return true;
@@ -526,6 +584,22 @@
         s.add(petColKey(d.pet.type, d.pet.color | 0));
       }
       d.unlocked = Array.from(s);
+      /* ---------- econVer 5: แปลง "สิทธิ์" เป็น "จำนวนชิ้น" ----------
+         ⚠ **ห้ามให้ของที่เด็กวางอยู่แล้วหายเด็ดขาด** (กติกาเหล็กข้อ 3)
+           ⇒ จำนวนที่ให้ = max(จำนวนที่วางอยู่จริงตอนนี้, 1) สำหรับทุกชิ้นที่เคยมีสิทธิ์
+           เด็กที่เคยวางโซฟา 5 ตัวจากสิทธิ์ใบเดียว จะได้ 5 ชิ้นไปเลย ไม่ถูกริบ */
+      if(!d.owned){
+        const placed = {};
+        ['out','in'].forEach(sc=>{
+          ((d.decor && d.decor[sc]) || []).forEach(r=>{
+            if(r && r.id) placed[r.id] = (placed[r.id] | 0) + 1;
+          });
+        });
+        const own = {};
+        s.forEach(k=>{ if(FURN.byId[k]) own[k] = Math.max(1, placed[k] | 0); });
+        Object.keys(placed).forEach(k=>{ if(FURN.byId[k]) own[k] = Math.max(own[k] | 0, placed[k]); });
+        d.owned = own;
+      }
       d.econVer = ECON_VER;
       invalidate();
       return true;
@@ -601,6 +675,12 @@
         });
         return out;
       }
+      /* เฟส 11: แท็บซื้อ-ขายของสวน/ปลา — ต่อท้ายแท็บปกติของร้านนั้น */
+      const tradeTabs = ()=> (cfg.trade || [])
+        .filter(k => window.HousePlay && window.HousePlay.tradeAvailable(k))
+        .map(k => ({id:'trade:' + k, label: window.HousePlay.tradeLabel(k),
+                    emoji: window.HousePlay.tradeEmoji(k)}));
+      if(cfg.kind === 'trade') return tradeTabs();
       /* ร้านสัตว์เลี้ยง: แท็บตามกลุ่มราคา (สีขนของสัตว์แต่ละตัวไปต่อท้ายในแท็บเดียวกัน ไม่แยกหมวด
          ตามกติกา "ตัวของ + สีของมัน อยู่แท็บเดียวกัน" ข้อ 17.4) */
       if(cfg.kind === 'pet'){
@@ -619,6 +699,8 @@
         if(label) out.push({sec:label});
         cats.forEach(c => out.push({id:sc + ':' + c.id, label:c.label, svg:FURN_CAT_ICONS[c.id] || '', emoji:c.emoji}));
       });
+      const tt = tradeTabs();
+      if(tt.length){ out.push({sec:'🌱 สวนของหนู'}); tt.forEach(t => out.push(t)); }
       return out;
     }
     function renderTabs(){
@@ -644,7 +726,8 @@
                     + '<span>' + c.label + '</span>';
         /* เปลี่ยนหมวด → เลือกของชิ้นแรกของหมวดใหม่ต่อทันที **ห้ามปิดพรีวิว**
            (กรอบพรีวิวเป็นหน้าต่างลอยแล้ว รายการยังอยู่ครบ ถ้าปิดทิ้งเด็กจะงงว่าของหายไปไหน) */
-        b.onclick = ()=>{ click(); shopTab = c.id; renderTabs(); renderItems(); selectFirst(); };
+        b.onclick = ()=>{ click(); shopTab = c.id; renderTabs(); renderItems();
+                          if(shopTab.indexOf('trade:') !== 0) selectFirst(); };
         wrap.appendChild(b);
         /* แท็บขึ้นบรรทัดใหม่ได้ (ไม่เลื่อนแนวนอนแล้ว) แต่ถ้ากลุ่มยาวจนต้องเลื่อนแนวตั้ง
            ก็ยังต้องเลื่อนแท็บที่เลือกอยู่มาให้เห็น ไม่งั้นเด็กงงว่าดูหมวดไหนอยู่ */
@@ -776,6 +859,20 @@
       wrap.innerHTML = '';
       const cfg = SHOPS[openId];
       if(!cfg || !shopTab) return;
+      /* เฟส 11: แท็บซื้อเมล็ด/ขายผัก/ขายปลา — ให้ js/house-play.js วาดเนื้อในเอง */
+      if(shopTab.indexOf('trade:') === 0){
+        const head = $('house-shop-items-head');
+        const kind = shopTab.slice(6);
+        if(head) head.innerHTML = '<span>' + (window.HousePlay ? window.HousePlay.tradeEmoji(kind) : '🛍️')
+                                + ' ' + (window.HousePlay ? window.HousePlay.tradeLabel(kind) : '') + '</span>';
+        if(window.HousePlay) window.HousePlay.renderTrade(wrap, kind, ()=>{ renderItems(); });
+        /* แท็บนี้ไม่มี "ของที่เลือกอยู่" ⇒ ต้องเคลียร์แถบซื้อกับพรีวิว 3D ทิ้ง
+           ไม่งั้นของจากแท็บก่อนหน้าจะค้างอยู่แล้วเด็กกดซื้อผิดชิ้น */
+        sel = null; selKey = null;
+        if(kit.closePreview) kit.closePreview();
+        renderBuyBar();
+        return;
+      }
       /* ป้ายคั่นบอกชื่อหมวดที่กำลังดู — เด็กจะได้รู้ว่าของข้างล่างนี้คือหมวดไหน */
       const head = $('house-shop-items-head');
       if(head){
@@ -876,7 +973,10 @@
       FURN.items.filter(it => it.scope === scope && it.cat === cat).forEach(it=>{
         wrap.appendChild(makeCard({
           key: it.id,
-          name: it.name, price: priceFurn(it.id), owned: ownsFurn(it.id), emoji: it.emoji,
+          /* ⚠ เฟส 11: เฟอร์นิเจอร์ซื้อซ้ำได้ ⇒ **ห้ามส่ง owned:true** ไม่งั้นการ์ดจะขึ้นว่า
+             "มีแล้ว" แล้วกดซื้อเพิ่มไม่ได้ · โชว์จำนวนที่มีต่อท้ายชื่อแทน */
+          name: it.name + (furnCount(it.id) > 0 ? ' (มี ' + furnCount(it.id) + ')' : ''),
+          price: priceFurn(it.id), owned: false, emoji: it.emoji,
           preview: {kind:'furn', id: it.id},
           onBuy: ()=> buyFurn(it.id),
         }));
@@ -890,6 +990,7 @@
       ECON_VER, SHOPS, TIER_PRICE, FIT_PRICE, FIT_NAMES,   /* FIT_NAMES: ชุดเทสเฟส 8 ใช้ตรวจว่าชื่อไทยครบทุกแบบ */
       migrate, invalidate,
       priceFurn, priceFit, ownsFurn, ownsFit,
+      furnCount, addFurnCount,          /* เฟส 11: เฟอร์นิเจอร์นับเป็นจำนวนชิ้น */
       buyFurn, buyFit,
       /* สัตว์เลี้ยง (เฟส 3A) — house.js ใช้ล็อกหน้าเลือกสัตว์ + เทสเรียกตรวจสิทธิ์ */
       PET_PRICE, PET_COLOR_PRICE, PET_GROUPS,

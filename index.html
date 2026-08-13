@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.0.0">
+<link rel="stylesheet" href="css/style.css?v=2.1.0-dev6">
 </head>
 <body>
 
@@ -976,7 +976,11 @@
           <path d="M7.7 11.2 L9.2 12.8 L12 9.6" fill="none" stroke="#5FAF52" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M14 11.2h3.1M7.7 15.6h9.4M7.7 18.2h6.2" stroke="#E0B98A" stroke-width="1.7" stroke-linecap="round"/>
         </svg>
+        <!-- 3 ช่อง: ❗ งานหลักที่เหลือ · ⭐ งานรองที่ทำเพิ่มได้ · ✅ ทำเสร็จแล้ว
+             ⚠ ผู้ใช้แจ้ง 2026-08-13 ว่าถ้าไม่โชว์งานรองตรงนี้ เด็กจะไม่รู้เลยว่ามีงานรองอยู่
+                จนกว่าจะเปิดหน้าต่างดู ⇒ ต้องเห็นได้จากแถบเลย -->
         <span class="hqb-left" id="hqbar-left">0</span>
+        <span class="hqb-side" id="hqbar-side">0</span>
         <span class="hqb-done" id="hqbar-done">0</span>
         <!-- จุดแจ้งเตือน: มีโบนัสดาวรอให้กดรับอยู่ (refreshQuestBar ใน js/house.js) -->
         <span class="hqb-alert" id="hqbar-alert" hidden aria-label="มีของรางวัลรอรับ">🎁</span>
@@ -1091,7 +1095,34 @@
     <i class="hpf-corner hpf-tl"></i><i class="hpf-corner hpf-tr"></i>
     <i class="hpf-corner hpf-bl"></i><i class="hpf-corner hpf-br"></i>
     <button type="button" class="hpf-exit" id="house-photo-exit" aria-label="ออกจากโหมดถ่ายรูป">✕</button>
+    <button type="button" class="hpf-album" id="house-album-btn" aria-label="เปิดอัลบั้มรูป">🖼️</button>
     <button type="button" class="hpf-shutter" id="house-shutter" aria-label="กดถ่ายรูป"><i></i></button>
+  </div>
+
+  <!-- พรีวิวรูปที่เพิ่งถ่าย — โผล่เป็น "รูปถ่าย 1 ใบ" กลางจอ 2 วินาทีแล้วหายเอง -->
+  <div class="house-photo-pv" id="house-photo-pv" hidden>
+    <div class="hppv-frame"><img id="house-photo-pv-img" alt="รูปที่เพิ่งถ่าย"></div>
+  </div>
+
+  <!-- เฟส 11: หน้าตู้ปลา — แตะตู้ในบ้านแล้วเห็นปลาที่ตกได้จริงว่ายอยู่ -->
+  <div class="house-creator house-qz house-qsum house-tank" id="house-tank" hidden>
+    <div class="house-creator-panel hqz-panel hqsum-panel">
+      <div class="hqz-top"><div class="hqz-who" id="house-tank-title">🐠 ตู้ปลาน้ำจืด</div></div>
+      <div class="hqz-sub" id="house-tank-sub"></div>
+      <div class="htk-glass"><div class="htk-water" id="house-tank-water"></div><i class="htk-sand"></i></div>
+      <button class="house-pet-alt-btn hqz-close-btn" id="house-tank-close">ปิด</button>
+    </div>
+  </div>
+
+  <!-- อัลบั้มรูป — เปิดดู/ลบได้ (รูปเก็บใน localStorage จึงต้องลบได้จริง) -->
+  <div class="house-creator house-qz house-qsum house-album" id="house-album" hidden>
+    <div class="house-creator-panel hqz-panel hqsum-panel">
+      <div class="hqz-top"><div class="hqz-who">🖼️ อัลบั้มรูปของหนู</div>
+        <div class="hqsum-count" id="house-album-count"></div></div>
+      <div class="hqz-sub">แตะปุ่ม ✕ บนรูปเพื่อลบ · ถ่ายรูปใหม่ได้ที่ปุ่มกล้องมุมขวาบน</div>
+      <div class="hqsum-list halb-list" id="house-album-list"></div>
+      <button class="house-pet-alt-btn hqz-close-btn" id="house-album-close">ปิด</button>
+    </div>
   </div>
 
   <!-- เฟส 11: แผง "เล่นในเมือง" — รายการมินิเกมกลุ่ม A พร้อมสถานะของวันนี้ -->
@@ -1417,36 +1448,36 @@
 
 <!-- ข้อมูลหมวด: แยกไฟล์ตามระดับชั้น แล้วต่อกันเป็น CATS ใน data-cats.js
      (data-cats.js ต้องอยู่หลัง data-cats-*.js ทุกไฟล์) -->
-<script src="js/data-cats-prep.js?v=2.0.0"></script>
-<script src="js/data-cats-p1.js?v=2.0.0"></script>
-<script src="js/data-cats-p2.js?v=2.0.0"></script>
-<script src="js/data-cats-p3.js?v=2.0.0"></script>
-<script src="js/data-cats-p4.js?v=2.0.0"></script>
-<script src="js/data-cats-p5.js?v=2.0.0"></script>
-<script src="js/data-cats-p6.js?v=2.0.0"></script>
-<script src="js/data-cats.js?v=2.0.0"></script>
-<script src="js/data-pools.js?v=2.0.0"></script>
+<script src="js/data-cats-prep.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-p1.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-p2.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-p3.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-p4.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-p5.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-p6.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats.js?v=2.1.0-dev6"></script>
+<script src="js/data-pools.js?v=2.1.0-dev6"></script>
 <!-- โค้ดกลางที่ใช้ร่วมกับโหมดครู (teacher/) — แก้ที่นี่ที่เดียวมีผลทั้งสองหน้า -->
-<script src="js/shared/audio.js?v=2.0.0"></script>
-<script src="js/shared/ui.js?v=2.0.0"></script>
-<script src="js/shared/speech.js?v=2.0.0"></script>
-<script src="js/shared/piano.js?v=2.0.0"></script>
-<script src="js/shared/ar-core.js?v=2.0.0"></script>
-<script src="js/owl-messages.js?v=2.0.0"></script>
+<script src="js/shared/audio.js?v=2.1.0-dev6"></script>
+<script src="js/shared/ui.js?v=2.1.0-dev6"></script>
+<script src="js/shared/speech.js?v=2.1.0-dev6"></script>
+<script src="js/shared/piano.js?v=2.1.0-dev6"></script>
+<script src="js/shared/ar-core.js?v=2.1.0-dev6"></script>
+<script src="js/owl-messages.js?v=2.1.0-dev6"></script>
 <!-- ชุดไฟล์ของแอป: app-core ต้องมาก่อนไฟล์เกมทุกไฟล์ และ app-ui ต้องอยู่ท้ายสุด
      (บรรทัด INIT อยู่ท้าย app-ui และเรียกใช้ฟังก์ชันจากทุกไฟล์) -->
-<script src="js/owl-games.js?v=2.0.0"></script>
-<script src="js/app-core.js?v=2.0.0"></script>
-<script src="js/game-quiz.js?v=2.0.0"></script>
-<script src="js/games-think.js?v=2.0.0"></script>
-<script src="js/games-math.js?v=2.0.0"></script>
-<script src="js/games-code.js?v=2.0.0"></script>
-<script src="js/games-write.js?v=2.0.0"></script>
-<script src="js/games-art.js?v=2.0.0"></script>
-<script src="js/games-listen.js?v=2.0.0"></script>
-<script src="js/games-ar.js?v=2.0.0"></script>
-<script src="js/app-landing.js?v=2.0.0"></script>
-<script src="js/app-ui.js?v=2.0.0"></script>
+<script src="js/owl-games.js?v=2.1.0-dev6"></script>
+<script src="js/app-core.js?v=2.1.0-dev6"></script>
+<script src="js/game-quiz.js?v=2.1.0-dev6"></script>
+<script src="js/games-think.js?v=2.1.0-dev6"></script>
+<script src="js/games-math.js?v=2.1.0-dev6"></script>
+<script src="js/games-code.js?v=2.1.0-dev6"></script>
+<script src="js/games-write.js?v=2.1.0-dev6"></script>
+<script src="js/games-art.js?v=2.1.0-dev6"></script>
+<script src="js/games-listen.js?v=2.1.0-dev6"></script>
+<script src="js/games-ar.js?v=2.1.0-dev6"></script>
+<script src="js/app-landing.js?v=2.1.0-dev6"></script>
+<script src="js/app-ui.js?v=2.1.0-dev6"></script>
 <!-- โหมด "บ้านของหนู" (three.min.js + house-furniture.js + house.js) โหลดแบบ lazy จาก js/games-ar.js
      เฉพาะตอนกดเข้าบ้าน หรือตอนเด็กคนนี้มีบ้านอยู่แล้ว (ต้องโชว์เพื่อนซี้หน้าหลัก)
      ทำให้เด็กที่ไม่เคยเข้าบ้านไม่ต้องโหลด/แปลไฟล์ 3D ก้อนใหญ่ทุกครั้งที่เปิดแอป -->

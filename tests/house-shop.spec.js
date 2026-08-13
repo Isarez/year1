@@ -133,7 +133,7 @@ test('กล่องเลือกของ: ของที่ยังไม
   expect(s.priced).toBe(s.locked);            // ของที่ล็อกต้องมีป้ายราคาครบทุกชิ้น
 });
 
-test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เงินไม่พอซื้อไม่ได้ · ซื้อแล้วปลดล็อกถาวร', async ({ page }) => {
+test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เงินไม่พอซื้อไม่ได้ · **ซื้อซ้ำได้และนับเป็นจำนวนชิ้น**', async ({ page }) => {
   await openHouse(page);
   const r = await page.evaluate(() => {
     const S = window.HouseShop, C = window.OwlCoins;
@@ -141,12 +141,16 @@ test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เ�
     /* ⚠ เฟส 9 ย้าย `piano` ไปหมวดเครื่องดนตรี ราคาขึ้นเป็น 1,500 ⇒ ใช้ `tv` (ระดับ 3 = 140) แทน
        เพื่อทดสอบกลไกซื้อ-ตัดเงิน ส่วนราคาเครื่องดนตรีมีเทสของตัวเองที่ house-phase9.spec.js */
     const price = S.priceFurn('tv');                    // 140 (ระดับกลาง)
+    const own0 = S.furnCount('tv');                     // อาจมีติดมาจาก migration อยู่แล้ว
     const poor = S.buyFurn('tv');                       // เงิน 0 → ต้องซื้อไม่ได้
     C.set(500);
     const rich = S.buyFurn('tv');                       // เงินพอ → ซื้อได้
     const after = C.get();
-    const twice = S.buyFurn('tv');                      // ซื้อซ้ำไม่ได้ (มีแล้ว)
+    /* ⚠️ **เฟส 11 เปลี่ยนกติกา (ผู้ใช้สั่ง 2026-08-13)**: เฟอร์นิเจอร์นับเป็น "จำนวนชิ้น" แล้ว
+       ซื้อ 1 ครั้งวางได้ 1 อัน ⇒ **ซื้อซ้ำได้** และตัดเงินทุกครั้ง (เดิมซื้อครั้งเดียววางไม่จำกัด) */
+    const twice = S.buyFurn('tv');
     return { price, poor, rich, after, twice, owns: S.ownsFurn('tv'),
+             own0, count: S.furnCount('tv'), after2: C.get(),
              cheap: S.priceFurn('bath-mat'), mid: S.priceFurn('sofa') };
   });
   expect(r.price).toBe(140);
@@ -155,11 +159,15 @@ test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เ�
   expect(r.poor).toBe(false);
   expect(r.rich).toBe(true);
   expect(r.after).toBe(360);                            // 500 - 140
-  expect(r.twice).toBe(false);
+  expect(r.twice, 'ซื้อซ้ำได้แล้ว (นับเป็นชิ้น)').toBe(true);
+  /* วัดเป็น "เพิ่มขึ้นกี่ชิ้น" ไม่ใช่ค่าสัมบูรณ์ — เด็กอาจมีของชิ้นนี้ติดมาจาก migration อยู่แล้ว */
+  expect(r.count - r.own0, 'ซื้อ 2 ครั้ง = เพิ่มขึ้น 2 ชิ้น').toBe(2);
+  expect(r.after2, 'ตัดเงินครั้งที่สองด้วย').toBe(220);   // 360 - 140
   expect(r.owns).toBe(true);
-  /* สิทธิ์ต้องถูกบันทึกลง house save (export/import ย้ายเครื่องตามไปด้วย) */
+  /* สิทธิ์ + จำนวนต้องถูกบันทึกลง house save (export/import ย้ายเครื่องตามไปด้วย) */
   const d = await readHouse(page);
   expect(d.unlocked).toContain('tv');
+  expect(d.owned.tv, 'จำนวนชิ้นต้องถูกบันทึกลง house save').toBe(r.count);
 });
 
 test('หน้าแต่งตัว: แถวสีของเครื่องแต่งโผล่เฉพาะตอนใส่ชิ้นนั้นอยู่', async ({ page }) => {
@@ -442,7 +450,10 @@ test('ร้านต้นไม้/ร้านของเล่น: เป�
   expect(furn.t).not.toContain('ตกแต่งสวน');
 
   const gd = await shopTabs('shop-garden');
-  expect(gd.t).toEqual(['ต้นไม้', 'ที่นั่ง', 'ตกแต่งสวน']);
+  /* ⚠️ เฟส 11 เพิ่มแท็บซื้อ-ขายของสวน (เมล็ดพันธุ์ / ขายผัก) ต่อท้ายหมวดเฟอร์นิเจอร์เดิม */
+  expect(gd.t.slice(0, 3)).toEqual(['ต้นไม้', 'ที่นั่ง', 'ตกแต่งสวน']);
+  expect(gd.t.join(' ')).toContain('เมล็ดพันธุ์');
+  expect(gd.t.join(' ')).toContain('ขายผัก');
   expect(gd.n).toBeGreaterThan(0);
 
   const toy = await shopTabs('shop-toy');

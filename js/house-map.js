@@ -785,6 +785,29 @@ const POND_DUCKS = [[4,16],[5,14]];
 /* ท่า+คนตกปลาอยู่ชายบ่อด้านตะวันออก ฝั่งบ้านเด็ก (กระท่อมย้ายไปมุมเหนือสุดแล้ว คนละมุมบ่อ ไม่บังกัน)
    ท่ายื่นไปทางทิศเหนือ (-x) จึงหมุน 180° (rot 2) */
 const POND_PIER = {x:11, z:19, len:3, rot:2};
+/* ท่าไม้เพิ่มเติม (ผู้ใช้สั่ง 2026-08-13) — ท่าเดิมมีลุงตกปลานั่งอยู่ปลายท่า เด็กจึงไม่มีที่ยืนตก
+   ⇒ เพิ่มท่าข้างลุงที่ z20 (จุดตกปลาของเด็กอยู่ข้างๆ ลุงพอดี) + ท่าคู่ที่ z15-16 อีกจุด
+   ⚠ rot 2 = ยื่นไปทาง −x ⇒ ท่า x=11 len=3 กินช่อง x9-11 (FISHER_TILE.x = 9 คือปลายท่าพอดี) */
+const POND_PIERS = [
+  {x:11, z:19, len:3, rot:2},      /* ท่าเดิม — ลุงตกปลานั่งปลายท่า */
+  {x:11, z:20, len:3, rot:2},      /* ท่าข้างลุง */
+  {x:11, z:15, len:3, rot:2},      /* ท่าเหนือ (คู่ z15-16) */
+  {x:11, z:16, len:3, rot:2},
+];
+/* ช่องที่เป็น "พื้นไม้ของท่า" — เดินได้ และผิวบนสูงกว่าพื้นดิน (ดู groundY ใน house.js) */
+function isPierTile(x, z){
+  for(let i=0; i<POND_PIERS.length; i++){
+    const p = POND_PIERS[i];
+    if(z === p.z && x <= p.x && x > p.x - p.len) return true;
+  }
+  return false;
+}
+/* จุดตกปลาบนท่า — **ปลายท่า** เพื่อให้ยืนอยู่เหนือผิวน้ำจริง (เด็กจะได้รู้สึกว่ากำลังตกปลา)
+   ⚠ ท่าเดิม z19 ไม่มีจุด เพราะลุงนั่งอยู่ตรงนั้นแล้ว */
+const POND_FISH_SPOTS = [
+  {x:9, z:20, name:'ท่าน้ำข้างลุงตกปลา'},
+  {x:9, z:15, name:'ท่าน้ำเหนือบ่อ'},
+];
 const FISHER_TILE = {x:9, z:19, rot:2};    /* ปลายท่า นั่งหันหน้าเข้าบ่อ (ทิศเหนือ) */
 
 /* ---------- ลานกิจกรรมใหญ่ริมแม่น้ำ (ระหว่างสุดถนนชุมชนกับหาดทราย/ทะเล) ----------
@@ -1606,7 +1629,7 @@ return {
   BOAT_SPOTS, BEACH_RACKS, FISH_RACKS, ANIMAL_PENS, FARM_ANIMALS, FARM_PROPS, FIXED_PLANTS,
   SHOP_PETS, PET_PEN_PROPS, FOOD_SIGN, POT_SPOTS,
   PLAYGROUND, PLAY_SIGN, PLAY_GATE, PLAY_ITEMS, inPlayground, isPlayItemTile, isPlayFenceTile,
-  POND_DUCKS, POND_PIER, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
+  POND_DUCKS, POND_PIER, POND_PIERS, isPierTile, POND_FISH_SPOTS, FISHER_TILE, PLAZA2, STAGE, BANNER_POLES,
   BENCH_SPOTS, CART_SPOTS, SCHOOL_BOX, SCHOOL_LOT, SCHOOL_GATE, SCHOOL_FLAG,
   MARKET, inMarket, MARKET_SIGNS, MARKET_BUNTING,
   CARPENTER_PROPS, CARPENTER_YARD, CARPENTER_ROAM, CAMP, CAMP_TENTS, CAMP_FIRE, CAMP_PROPS,

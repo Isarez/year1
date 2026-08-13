@@ -19,6 +19,7 @@ const HOUSE_KEY = id => 'p1quiz_house_' + id;
 /* ---------- ผังเมือง/ข้อมูลแผนที่ทั้งหมดอยู่ใน js/house-map.js (โหลดก่อนไฟล์นี้เสมอ) ----------
    ดึงกลับมาเป็นตัวแปรชื่อเดิมทุกตัว โค้ดส่วนที่เหลือของไฟล์นี้จึงใช้งานได้เหมือนเดิมทุกบรรทัด */
 if(typeof HOUSE_MAP !== 'function') return;   /* แผนที่โหลดไม่สำเร็จ → ปิดโหมดบ้านเงียบๆ เหมือนกรณี THREE */
+const HM = HOUSE_MAP({ inBox });
 const {
   H_SKIN, H_HAIR_COLORS, H_EYE_COLORS, H_SHIRT_COLORS, H_BOTTOM_COLORS, H_SHOE_COLORS, H_ACC_COLORS,
   H_PATTERN_N, H_HAT_N, H_GLASS_N, H_BAG_N, H_HOLD_N,
@@ -51,7 +52,7 @@ const {
   isPenSoilTile, inSchoolYard, isSchoolFenceTile, inMeadowTrail, inPool, inPoolDeck,
   inPlazaYard, inPlazaGate, inFlowerBed, npcHash, npcFaceVariety, isQuestBoardTile,
   isLampTile, isHedgeTile,
-} = HOUSE_MAP({ inBox });
+} = HM;
 
 function isSceneryPropTile(x, z){
   const hit = a => a.some(p => p[0]===x && p[1]===z);
@@ -210,6 +211,14 @@ function saveHouseData(patch){
   Object.assign(cur, patch);
   try{ localStorage.setItem(HOUSE_KEY(activeChild.id), JSON.stringify(cur)); }catch(e){}
 }
+
+/* ⚠ **ของใหม่จาก house-map.js ต้องดึงแบบทนต่อ "cache ผสมรุ่น"** (บั๊กจริง 2026-08-13)
+   เบราว์เซอร์อาจถือ house-map.js รุ่นเก่า (ไม่มีของพวกนี้) คู่กับ house.js รุ่นใหม่ ถ้าเรียกตรงๆ
+   จะ throw ตั้งแต่เฟรมแรก ⇒ **เด็กเข้าโหมดบ้านไม่ได้เลยทั้งโหมด** ซึ่งแย่กว่าการไม่มีท่าไม้มาก
+   ⇒ ไม่มีของใหม่ = ถอยไปใช้ค่าว่าง (ไม่มีท่าเพิ่ม/ไม่มีจุดตกปลาในบ่อ) แต่เมืองยังเข้าได้ปกติ */
+const POND_PIERS      = HM.POND_PIERS || [];
+const POND_FISH_SPOTS = HM.POND_FISH_SPOTS || [];
+const isPierTile      = HM.isPierTile || function(){ return false; };
 
 /* ---------- โทน/วัสดุ ---------- */
 let gradientMap = null;
@@ -4729,6 +4738,14 @@ function buildStaticScenery(){
     mergeCollectFx(pt, parts, chunkKeyOf(x, z));
   });
   /* ท่าไม้ + คนตกปลาริมบ่อ (ฝั่งบ้านเด็ก) + เป็ดลอยน้ำ — rot 2 = ยื่น/หันไปทางทิศเหนือ (-x) */
+  /* ท่าไม้ทุกตัวในผัง (เดิม 1 + ที่เพิ่ม 2026-08-13 อีก 3) */
+  POND_PIERS.forEach(pp=>{
+    if(pp.x === POND_PIER.x && pp.z === POND_PIER.z) return;   /* ท่าเดิมวาดด้านล่างพร้อมลุง */
+    const p2 = buildPier(pp.len);
+    p2.position.set(outWX(pp.x), 0, outWZ(pp.z));
+    p2.rotation.y = (pp.rot||0) * Math.PI/2;
+    mergeCollectFx(p2, parts, chunkKeyOf(pp.x, pp.z));
+  });
   const pier = buildPier(POND_PIER.len);
   pier.position.set(outWX(POND_PIER.x), 0, outWZ(POND_PIER.z));
   pier.rotation.y = (POND_PIER.rot||0) * Math.PI/2;
@@ -4870,6 +4887,9 @@ function buildOutGrid(noWild){
     for(let x=0; x<OUT_W; x++){
       let t = 0;
       if(isPondTile(x, z) || isSeaTile(x, z)) t = 1;                  /* บ่อน้ำเหนือ + ทะเลใต้-ตะวันออก */
+      /* พื้นไม้ของท่าเดินได้ (ค่า 2 เหมือนสะพาน — ระบบเดิน/หาเส้นทางรู้จักค่านี้อยู่แล้ว)
+         ⚠ ต้องมาหลังบรรทัดน้ำเสมอ ไม่งั้นถูกทับกลับเป็นน้ำ */
+      if(isPierTile(x, z)) t = 2;
       if(isCanalTile(x, z)) t = isCanalBridgeTile(x, z) ? 2 : 1;      /* คลองส่งน้ำ + สะพานเล็ก */
       if(RIVER_X.includes(x)) t = isBridgeZ(z) ? 2 : 1;
       if(isCropTile(x, z)) t = 3;                                     /* ร่องต้นพืชในแปลงผัก */
@@ -5856,6 +5876,8 @@ function finishArrive(){
       else if(act==='toggle') decorToggle(g);
       else if(act==='spin') decorSpin(g);
       else if(act==='music') playInstrument(g, item);   /* เฟส 9: เครื่องดนตรี — แตะแล้วมีเสียงจริง */
+      /* เฟส 11: ตู้ปลา — แตะแล้วเปิดหน้าตู้ โชว์ปลาที่เด็กตกได้จริงว่ายอยู่ในนั้น */
+      else if(act==='tank'){ if(window.HousePlay) window.HousePlay.openTank(item.tank || 'pond'); }
       else decorBounce(g);
       /* ต้นไม้/พุ่มที่เด็กปลูกเอง: เขย่าแล้วใบร่วงด้วย ให้เหมือนต้นไม้ในป่า
          (ธง leafy/leafyTall อยู่ในคลังเฟอร์นิเจอร์ js/house-furniture.js) */
@@ -9459,12 +9481,16 @@ function refreshQuestBar(){
   /* 🎯 **ตัวนับ ❗ นับเฉพาะ "งานหลัก" (กระดาน 5 + ครอบครัว 1 = 6 ชุด)** — เฟส 10 · ข้อ 45.6
      งานรอง (NPC 8 คน) เป็นของแถมที่ทำเพิ่มได้ **ไม่ค้างเป็นหนี้** เด็กเล็กจึงจบวันได้ที่ ~20 นาที
      ส่วน ✅ ยังนับรวมทุกชุด เพื่อให้เด็กที่เล่นเยอะเห็นผลงานเต็มของตัวเอง */
-  const key = sum.mainLeft + '/' + sum.done + '/' + alert;
+  const key = sum.mainLeft + '/' + sum.sideLeft + '/' + sum.done + '/' + alert;
   if(key === questBarKey) return;
   questBarKey = key;
-  const l = $('hqbar-left'), d = $('hqbar-done');
+  const l = $('hqbar-left'), sd = $('hqbar-side'), d = $('hqbar-done');
   if(l) l.textContent = '❗ ' + sum.mainLeft;
+  if(sd){ sd.textContent = '⭐ ' + sum.sideLeft; sd.hidden = !sum.sideLeft; }
   if(d) d.textContent = '✅ ' + sum.done;
+  if(l) l.title = 'งานสำคัญของวันนี้ที่ยังไม่ได้ทำ';
+  if(sd) sd.title = 'งานช่วยเพื่อนบ้าน ทำเพิ่มได้ ไม่ทำก็ได้';
+  if(d) d.title = 'ทำเสร็จแล้ววันนี้';
   /* มีโบนัสดาวรอรับ → ขึ้นไอคอนของขวัญ + แถบเด้งเรียกให้เด็กกดเข้ามารับ */
   const al = $('hqbar-alert');
   if(al) al.hidden = !alert;
@@ -10146,7 +10172,10 @@ function seedWorldDecor(data){
                           !inBox(HOUSE_FOOT, x, z) && !(x===PET_HOUSE_TILE.x && z===PET_HOUSE_TILE.z))
        .forEach(([x,z])=>{ seed.push({id:'tree', x, z, rot:(x*7+z*13)%4, col:(x+z)%4}); });
   fenceSeedRecs().forEach(r=>seed.push(r));
-  vegPlotSeedRecs().forEach(r=>seed.push(r));      /* แปลงผัก 4 แปลง (เฟส 11) */
+  /* ⚠ **ต้องเช็คว่ายังไม่มีก่อนเสมอ** — เด็กที่ decor ว่างแต่ mapV เก่าจะวิ่งผ่านทั้ง
+     migration (mapV 5) และ seedWorldDecor ⇒ ได้แปลงซ้อนกัน 8 แปลง (เจอจริงจากเทส 2026-08-13) */
+  if(!(decor.out || []).some(r => r && r.id === 'veg-plot'))
+    vegPlotSeedRecs().forEach(r=>seed.push(r));    /* แปลงผัก 4 แปลง (เฟส 11) */
   /* rot:0 = ประตูหันไปทาง +z ทิศเดียวกับประตูบ้านเด็ก (ทางเดินหน้าบ้านก็ทอดไป +z) และเป็นด้านที่
      กล้อง iso มองเห็น (ของเดิม rot:3 ประตูหันหลังให้กล้อง เด็กไม่เห็นทั้งประตูและตัวที่เข้าไปนอนรอ) */
   /* ⚠ เฟส 3A: **ไม่ seed บ้านสัตว์ให้ทุกคนแล้ว** (ข้อ 18.1 — ไม่มีสัตว์ = ไม่มีบ้านสัตว์)
@@ -10364,21 +10393,42 @@ function renderEditTabs(){
     wrap.appendChild(b);
   });
 }
+/* จำนวนชิ้นของ id นี้ที่ "วางอยู่แล้ว" ทั้งในบ้านและนอกบ้าน (เฟส 11 · นับจำนวนชิ้น) */
+function placedFurnCount(id){
+  let n = 0;
+  ['out','in'].forEach(sc=>{
+    (decorGroups[sc] || []).forEach(g=>{
+      const d = g.userData && g.userData.deco;
+      if(d && d.rec && d.rec.id === id) n++;
+    });
+  });
+  return n;
+}
 function renderEditItems(){
   const wrap = $('house-edit-items'); if(!wrap) return;
   wrap.innerHTML = '';
   FURN.items.filter(it=>it.scope===hScene && it.cat===editCat).forEach(it=>{
     const b = document.createElement('button');
     /* เฟส 1: ของที่ยังไม่ได้ซื้อ **ยังโชว์อยู่** (สีจาง + ป้ายราคา) ไม่ซ่อน — ให้เด็กเห็นเป้าหมาย
-       แตะแล้วบอกว่าไปซื้อได้ที่ไหน ไม่ใช่เงียบเฉยจนนึกว่าแอปเสีย */
-    const locked = SHOP ? !SHOP.ownsFurn(it.id) : false;
-    b.className = 'he-item' + (locked ? ' he-locked' : '');
+       แตะแล้วบอกว่าไปซื้อได้ที่ไหน ไม่ใช่เงียบเฉยจนนึกว่าแอปเสีย
+       ⚠ เฟส 11: **ซื้อ 1 ชิ้นวางได้ 1 อัน** (ผู้ใช้สั่ง 2026-08-13) ⇒ ต้องโชว์ "เหลือกี่ชิ้น"
+         และปิดปุ่มเมื่อวางครบแล้ว ไม่งั้นเด็กกดแล้วไม่มีอะไรเกิดขึ้นโดยไม่รู้สาเหตุ */
+    const own = SHOP ? SHOP.furnCount(it.id) : 1;
+    const used = placedFurnCount(it.id);
+    const left = Math.max(0, own - used);
+    const locked = own <= 0;
+    const empty = !locked && left <= 0;
+    b.className = 'he-item' + (locked ? ' he-locked' : '') + (empty ? ' he-used' : '');
     b.innerHTML = '<span class="he-item-emoji">'+it.emoji+'</span><span class="he-item-name">'+it.name+'</span>'
-                + (locked ? '<span class="he-item-price"><i class="hs-coin"></i>'+SHOP.priceFurn(it.id)+'</span>' : '');
+                + (locked ? '<span class="he-item-price"><i class="hs-coin"></i>'+SHOP.priceFurn(it.id)+'</span>'
+                          : '<span class="he-item-left">'+left+'/'+own+'</span>');
     b.onclick = locked
       ? ()=>{ if(typeof playClick==='function') playClick();
               if(typeof showToast==='function') showToast('🛋️', it.name+' ยังไม่มีนะ ไปซื้อได้ที่ห้างเฟอร์นิเจอร์ในเมือง!'); }
-      : ()=>addDecorItem(it.id);
+      : (empty
+          ? ()=>{ if(typeof playClick==='function') playClick();
+                  if(typeof showToast==='function') showToast('🛒', 'วาง'+it.name+'ครบทุกชิ้นที่มีแล้ว ถ้าอยากวางอีกต้องไปซื้อเพิ่มนะ'); }
+          : ()=>addDecorItem(it.id));
     wrap.appendChild(b);
   });
   const rb = $('house-reset-home');
@@ -11662,7 +11712,8 @@ window.HouseWorld = {
   /* ---------- เพิ่มให้เฟส 11 รอบแก้ (2026-08-13) ---------- */
   /* ความสูงพื้นจริงของช่องนั้น — **สะพานไม้ผิวบนอยู่ที่ .12 ไม่ใช่ 0**
      ของที่วางที่ y=0 บนสะพานจะจมหายใต้แผ่นไม้ (บั๊กเดียวกับรอยเท้าบอกจุดหมาย) */
-  groundY: (x, z) => (outGrid && outGrid[z] && outGrid[z][x] === 2) ? .12 : 0,
+  groundY: (x, z) => isPierTile(x, z) ? .21
+                   : ((outGrid && outGrid[z] && outGrid[z][x] === 2) ? .12 : 0),
   /* ช่องนี้ "มองเห็นจากกล้อง" ไหม — กล้องมองจากทิศ +x,+z ลงมา (CAM_DIR)
      ⇒ ตึกที่อยู่ในแนวทแยง (x+k, z+k) จะบังของที่วางตรงนี้จนเด็กหาไม่เจอ
      อาคารสูง ~3 หน่วย ÷ ความชันกล้อง (1.15/√2 ≈ .81 ต่อ 1 ช่องทแยง) ⇒ บังได้ ~4 ช่อง
@@ -11675,6 +11726,7 @@ window.HouseWorld = {
   camRot: () => camera ? camera.rotation : null,      /* ป้ายลอยหันเข้าหากล้อง (ชุดเดียวกับป้าย "!") */
   /* จุดตกปลาที่ผังประกาศไว้จริง — ⚠ **ห้ามเดาพิกัดเอง** (กติกาเดียวกับตอนแก้ผังเมือง) */
   pondPier: () => ({x: POND_PIER.x, z: POND_PIER.z, len: POND_PIER.len, rot: POND_PIER.rot}),
+  pondFishSpots: () => POND_FISH_SPOTS.map(s => ({x:s.x, z:s.z, name:s.name})),
   isSea:  (x, z) => isSeaTile(x, z),
   isSand: (x, z) => isSandTile(x, z),
   isPond: (x, z) => isPondTile(x, z),

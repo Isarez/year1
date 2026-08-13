@@ -189,7 +189,7 @@ test('เฟส 11F: ของรางวัลนักสะสม — คร
   expect(errs).toEqual([]);
 });
 
-test('เฟส 11G: ตกปลา — มีจุดตกปลา 2 จุด (บ่อน้ำ+ทะเล) · ดึงไม่ทันไม่มีบทลงโทษ · ได้ปลาแล้วลงสมุด', async ({ page }) => {
+test('เฟส 11G: ตกปลา — จุดตกปลาบนท่าไม้ 2 จุด + ทะเล 1 · ดึงไม่ทันไม่มีบทลงโทษ · ได้ปลาแล้วลงสมุด', async ({ page }) => {
   const errs = await house(page);
   const before = await coins(page);
 
@@ -204,8 +204,11 @@ test('เฟส 11G: ตกปลา — มีจุดตกปลา 2 จุ
       hasBubble: !!(s.obj && s.obj.userData.bubble),
     }));
   });
-  expect(spots.length, 'ต้องมีจุดตกปลา 2 จุด').toBe(2);
-  expect(spots.map(s => s.kind).sort()).toEqual(['pond', 'sea']);
+  /* ⚠ ผู้ใช้สั่งเพิ่มท่าไม้ 2026-08-13: ท่าข้างลุงตกปลา (z20) + ท่าเหนือบ่อ (z15-16)
+     ⇒ จุดในบ่อ 2 จุด + ทะเล 1 จุด = 3 จุด · ทุกจุดต้องอยู่บน "พื้นไม้ของท่า" ที่เดินได้จริง */
+  expect(spots.length, 'ต้องมีจุดตกปลา 3 จุด (บ่อ 2 + ทะเล 1)').toBe(3);
+  expect(spots.filter(s => s.kind === 'pond').length).toBe(2);
+  expect(spots.filter(s => s.kind === 'sea').length).toBe(1);
   spots.forEach(s => {
     expect(s.walkable, s.kind + ' ต้องเป็นช่องเดินได้จริง').toBe(true);
     expect(s.reach, s.kind + ' ต้องเดินไปถึงได้จริง (วัดด้วย findPath)').toBeGreaterThan(0);
@@ -310,6 +313,10 @@ test('เฟส 11I: แปลงผัก — 4 แปลงถาวรที�
 
   const r = await page.evaluate(() => {
     const P = window.HousePlay;
+    /* ⚠️ เฟส 11 (รอบแก้ 2026-08-13): **ต้องมีเมล็ดในคลังก่อนถึงจะปลูกได้** — ซื้อกี่เม็ดปลูกได้เท่านั้น
+       (เทสจึงต้องเติมเมล็ดให้ก่อน แทนที่จะปลูกลอยๆ แบบเดิม) */
+    const noSeed = P.gardenPlant(0);
+    P.addSeed(P.SEEDS[0].id, 4);
     /* แตะแปลงที่ 1 → ปลูก · แปลงอื่นต้องยังว่าง (ทำทีละแปลงตามที่ผู้ใช้สั่ง) */
     P.arrive({ game:'garden', i:0 });
     const afterPlant = { acts: P.beds().map((_, i) => P.bedAction(i)) };
@@ -324,9 +331,13 @@ test('เฟส 11I: แปลงผัก — 4 แปลงถาวรที�
     for (let i = 0; i < P.GROW_MAX + 2; i++) { P.state().garden.watered = ''; P.gardenWater(null); }
     const ripeAct = P.bedAction(0);
     P.arrive({ game:'garden', i:0 });
-    return { afterPlant, stage1, wateredAct, survived, ripeAct,
+    return { afterPlant, stage1, wateredAct, survived, ripeAct, noSeed,
+             seedLeft: P.seedCount(P.SEEDS[0].id), crop: P.cropCount(P.SEEDS[0].id),
              emptyAfter: P.bedAction(0), max: P.GROW_MAX, plotMax: P.PLOT_MAX };
   });
+  expect(r.noSeed, 'ไม่มีเมล็ดต้องปลูกไม่ได้').toBe(false);
+  expect(r.seedLeft, 'ปลูก 1 แปลง = เมล็ดลด 1 เม็ด').toBe(3);
+  expect(r.crop, 'เก็บแล้วผลผลิตเข้าคลัง (ยังไม่ได้เงิน ต้องเอาไปขาย)').toBe(1);
   expect(r.afterPlant.acts[0], 'ปลูกแปลงแรกแล้วป้ายเปลี่ยนเป็นรดน้ำ').toBe('water');
   expect(r.afterPlant.acts.slice(1), 'แปลงอื่นต้องยังว่าง — ทำทีละแปลง').toEqual(['plant','plant','plant']);
   expect(r.stage1).toBe(1);
@@ -336,7 +347,8 @@ test('เฟส 11I: แปลงผัก — 4 แปลงถาวรที�
   expect(r.ripeAct, 'โตเต็มแล้วป้ายต้องเปลี่ยนเป็นเก็บ').toBe('harvest');
   expect(r.emptyAfter, 'เก็บแล้วแปลงว่างอีกครั้ง').toBe('plant');
   expect(r.plotMax).toBe(4);
-  expect(await coins(page) - before, 'ขายผักได้เงินเล็กน้อย').toBeGreaterThan(0);
+  /* ⚠ เก็บผักแล้ว **ยังไม่ได้เงิน** — ต้องเอาไปขายที่ร้านต้นไม้ก่อน (ผู้ใช้สั่ง 2026-08-13) */
+  expect(await coins(page) - before, 'เก็บผักยังไม่ได้เงิน').toBe(0);
   expect(errs).toEqual([]);
 });
 

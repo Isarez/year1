@@ -775,8 +775,11 @@
           const sun=ball(.08,0xffd54f,10); sun.position.set(.12,1.5,.05); g.add(sun);
           const hill=box(.5,.14,.01,0xa5d6a7,.04); hill.position.set(0,1.28,.05); g.add(hill);
         } },
-      { id:'aquarium', name:'ตู้ปลา', cat:'decor', scope:'in', emoji:'🐠', top:.9, colors:[0xb3e5fc,0x90caf9],
-        action:'bounce',
+      /* ⚠ **id `aquarium` ห้ามเปลี่ยน** — สิทธิ์ที่เด็กซื้อไว้ผูกกับ id นี้ (เปลี่ยนแค่ชื่อกับ action ได้)
+         เฟส 11: แตะแล้วเปิดหน้าตู้ปลา แสดงปลาที่เด็กตกได้จริงว่ายอยู่ (`action:'tank'`)
+         ⚠ `tank` บอกว่าตู้นี้รับปลาชนิดไหน — น้ำจืด/ทะเล ต้องแยกกัน (ผู้ใช้สั่ง 2026-08-13) */
+      { id:'aquarium', name:'ตู้ปลาน้ำจืด', cat:'decor', scope:'in', emoji:'🐠', top:.9, colors:[0xb3e5fc,0x90caf9],
+        action:'tank', tank:'pond',
         build(g,col){
           const stand=box(.9,.5,.4,shade(0xc98d4e,.9),.04); stand.position.y=.25; g.add(stand);
           const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);
@@ -787,6 +790,24 @@
           fish2.userData.anim={kind:'bob', sp:1.7, amp:.05, ph:2.4}; g.add(fish2);
           [[-.28,.66],[.3,.8],[.02,.6]].forEach(([x,y],i)=>{ const bb=ball(.025,0xe0f7fa,6);
             bb.position.set(x,y,.05); bb.userData.anim={kind:'bob', sp:2.4, amp:.12, ph:i*1.9}; g.add(bb); });
+        } },
+      /* ตู้ปลาทะเล (เฟส 11) — โทนน้ำเข้มกว่า + ปะการัง ให้แยกออกจากตู้น้ำจืดด้วยเงารวม */
+      { id:'aquarium-sea', name:'ตู้ปลาทะเล', cat:'decor', scope:'in', emoji:'🐡', top:.9, colors:[0x81d4fa,0x4fc3f7],
+        action:'tank', tank:'sea',
+        build(g,col){
+          const stand=box(.9,.5,.4,shade(0x6d4c41,.95),.04); stand.position.y=.25; g.add(stand);
+          const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);
+          const water=box(.8,.4,.32,0x0288d1,.02); water.position.y=.74; g.add(water);
+          /* ปะการัง 2 กอ + ทรายก้นตู้ ให้ดูเป็นทะเลชัดๆ */
+          const sand=box(.78,.06,.3,0xffe0b2,.02); sand.position.y=.57; g.add(sand);
+          [[-.22,0xff8a65],[.24,0xba68c8]].forEach(([x,c])=>{
+            const cor=cyl(.03,.05,.2,c,6); cor.position.set(x,.68,-.02); g.add(cor);
+            const cor2=cyl(.025,.04,.14,c,6); cor2.position.set(x+.07,.65,.04); g.add(cor2);
+          });
+          const fish=ball(.06,0xffd54f,8); fish.scale.set(1.4,1,.6); fish.position.set(-.08,.82,.1);
+          fish.userData.anim={kind:'bob', sp:1.5, amp:.05}; g.add(fish);
+          [[-.3,.7],[.28,.84]].forEach(([x,y],i)=>{ const bb=ball(.025,0xe1f5fe,6);
+            bb.position.set(x,y,.05); bb.userData.anim={kind:'bob', sp:2.2, amp:.12, ph:i*2.1}; g.add(bb); });
         } },
       /* ⚠ เฟส 9 ย้ายจากหมวด `decor` มา `music` + ให้แตะแล้วเปิดหน้าเล่นจริง
          **id เดิมห้ามเปลี่ยน** — สิทธิ์ที่เด็กซื้อไว้ผูกกับ id นี้ (ย้ายหมวด = ย้ายแค่แท็บที่ขาย/ที่วาง) */

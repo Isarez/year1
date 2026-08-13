@@ -3366,6 +3366,10 @@
   /* ⚠ ทุกแถวของ HUD ใช้ `.house-hud-row` ตัวเดียว ระยะห่างเท่ากันหมด (margin-top ข้างบน)
      เคยมี `.house-hud-row2` ให้แถบเควสต์ชิดขึ้น 7px — ผู้ใช้สั่งเอาออก 2026-08-12 **ห้ามใส่กลับ** */
   .house-hud-row > *{pointer-events:auto;}
+  /* ⚠ **แถวที่ลูกทุกตัวถูกซ่อนต้องยุบทั้งแถว** — ไม่งั้นตอนเด็กยังไม่มีสัตว์เลี้ยง แถวว่างของแถบสัตว์
+     ยังกิน margin-top อยู่ ทำให้แถบเควสต์ห่างจากแถวชื่อเด็ก 2 เท่าของตอนมีสัตว์ (ผู้ใช้แจ้ง 2026-08-13)
+     ระยะห่างของ HUD ในโหมดบ้านต้องเท่ากันเสมอไม่ว่าจะมีของครบหรือไม่ */
+  .house-hud-row:not(:has(> *:not([hidden]))){display:none;}
 
   /* ---------- แถบสรุปเควสต์วันนี้ (เฟส 4A) ---------- */
   .house-quest-bar{
@@ -3381,11 +3385,12 @@
   .hqb-ic{width:24px; height:24px; display:block; flex:0 0 auto;}
   /* ตัวเลข 2 ก้อน: เหลือ (ส้ม) · เสร็จ (เขียว) — อ่านออกด้วยสีโดยไม่ต้องอ่านตัวหนังสือ */
   /* ป้ายตัวเลข: ❗ = ยังไม่ได้ทำ (ส้ม) · ✅ = ทำแล้ว (เขียว) — เด็กอ่านออกจากสัญลักษณ์+สี ไม่ต้องอ่านคำ */
-  .hqb-left, .hqb-done{
+  .hqb-left, .hqb-side, .hqb-done{
     min-width:34px; text-align:center; border-radius:999px; padding:3px 8px;
     font-size:13.5px; font-weight:900; line-height:1.1; white-space:nowrap;
   }
   .hqb-left{background:#FFE2B8; color:#B4650F;}
+  .hqb-side{background:#E4DBF5; color:#6B4FA8;}   /* งานรอง — ม่วงอ่อน แยกจากงานหลักชัดเจน */
   .hqb-done{background:#D6EFD0; color:#3B8F45;}
   .house-quest-bar.hqbar-clear .hqb-left{background:#E7E0D2; color:#9A8B74;}
 
@@ -3492,6 +3497,27 @@
   .house-seek-hud.lv2 .hsk-seg.on{background:#F0A14B;} .house-seek-hud.lv2 .hsk-txt{color:#B4650F;}
   .house-seek-hud.lv3 .hsk-seg.on{background:#F2726B;} .house-seek-hud.lv3 .hsk-txt{color:#B33A3A;}
 
+  /* จำนวนชิ้นที่เหลือวางได้ (เฟส 11) — ของที่วางครบแล้วจางลงแต่ยังกดได้เพื่อบอกเหตุผล */
+  .he-item-left{font-size:11px; font-weight:900; color:#3B8F45; background:#D6EFD0;
+                border-radius:999px; padding:1px 7px; margin-top:2px;}
+  .he-item.he-used{opacity:.5;}
+  .he-item.he-used .he-item-left{color:#9A8B74; background:#E7DCC8;}
+
+  /* ---------- แถวซื้อ-ขายในร้าน (เมล็ด/ผัก/ปลา · เฟส 11) ----------
+     ใช้โทนเดียวกับแถวในแผงเล่นในเมือง เด็กจะได้ไม่ต้องเรียนรู้หน้าตาใหม่ */
+  .hpt-note{font-size:13px; font-weight:800; color:var(--ink-soft); line-height:1.45;
+            background:#FFF6E6; border-radius:14px; padding:9px 12px; grid-column:1/-1;}
+  .hpt-row{display:flex; align-items:center; gap:10px; grid-column:1/-1;
+           background:#FFF6E6; border-radius:16px; padding:9px 12px;}
+  .hpt-e{font-size:24px; line-height:1; flex:0 0 auto;}
+  .hpt-tx{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto;}
+  .hpt-tx b{font-size:14.5px; font-weight:900; color:var(--ink);}
+  /* ⚠ ห้ามใช้ word-break กับข้อความไทย (เบราว์เซอร์ตัดกลางคำ) */
+  .hpt-tx i{font-size:12.5px; font-weight:800; color:var(--ink-soft); font-style:normal; line-height:1.35;}
+  .hpt-price{display:inline-flex; align-items:center; gap:3px; font-size:14.5px; font-weight:900;
+             color:#B4650F; flex:0 0 auto; white-space:nowrap;}
+  .hpt-row.dim{opacity:.55;}
+
   /* รูปตัวอย่างเพื่อนที่ไปแอบ (ในแผงเล่นในเมือง) — สีต้องตรงกับตัวจริงใน 3D */
   .hpl-faces{display:flex; gap:4px; flex:0 0 auto;}
   .hpl-face{position:relative; width:30px; height:30px; display:block;}
@@ -3523,6 +3549,68 @@
   }
   .hpf-shutter i{width:54px; height:54px; border-radius:50%; background:#fff; display:block;}
   .hpf-shutter:active i{transform:scale(.9);}
+  .hpf-album{
+    position:absolute; left:50%; margin-left:64px; bottom:38px; pointer-events:auto;
+    width:52px; height:52px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,.92); font-size:23px; box-shadow:var(--shadow-btn);
+  }
+  /* พรีวิวรูปที่เพิ่งถ่าย — ทรง "รูปถ่าย" (ขอบขาวหนา เอียงนิดๆ) เด้งเข้าแล้วจางออก */
+  .house-photo-pv{position:fixed; inset:0; z-index:70; pointer-events:none;
+                  display:flex; align-items:center; justify-content:center;}
+  .house-photo-pv[hidden]{display:none;}
+  .hppv-frame{
+    background:#fff; padding:12px 12px 34px; border-radius:6px;
+    box-shadow:0 14px 40px rgba(40,25,5,.4); transform:scale(.6) rotate(-4deg); opacity:0;
+  }
+  .house-photo-pv.on .hppv-frame{
+    animation:hppvIn .28s cubic-bezier(.2,1.4,.5,1) forwards, hppvOut .35s ease 1.65s forwards;
+  }
+  @keyframes hppvIn{to{transform:scale(1) rotate(-3deg); opacity:1;}}
+  @keyframes hppvOut{to{transform:scale(.94) rotate(-3deg) translateY(-14px); opacity:0;}}
+  .hppv-frame img{display:block; width:min(320px,64vw); height:auto; border-radius:3px; background:#eee;}
+  /* ---------- หน้าตู้ปลา (เฟส 11) ----------
+     กรอบกระจก + น้ำไล่เฉด + ทรายก้นตู้ · ปลาว่ายข้ามจอวนไปเรื่อยๆ ด้วย CSS ล้วน */
+  .house-tank{width:min(520px,94vw);}
+  .htk-glass{
+    position:relative; height:210px; border-radius:16px; overflow:hidden;
+    border:6px solid #C9E7F5; box-shadow:inset 0 0 0 3px rgba(255,255,255,.75);
+  }
+  .htk-water{position:absolute; inset:0; background:linear-gradient(180deg,#BDE9F7 0%,#7FD3EE 60%,#5CBFE0 100%);}
+  .htk-water.sea{background:linear-gradient(180deg,#8FD8F5 0%,#3FB0DE 55%,#1C7FB5 100%);}
+  .htk-sand{position:absolute; left:0; right:0; bottom:0; height:26px;
+            background:linear-gradient(180deg,#F5DFB4,#E8C88C); border-radius:0 0 10px 10px;}
+  /* ⚠ **ต้องอนิเมต `left` ไม่ใช่ `translateX(%)`** — เปอร์เซ็นต์ของ transform อิงความกว้าง
+     "ของตัวปลาเอง" (ไม่กี่สิบพิกเซล) ปลาจึงขยับนิดเดียวไม่ข้ามตู้ ส่วน `left` อิงความกว้างของตู้ */
+  .htk-fish{
+    position:absolute; line-height:1; white-space:nowrap;
+    animation-name:htkSwim; animation-timing-function:linear; animation-iteration-count:infinite;
+  }
+  @keyframes htkSwim{
+    0%  {left:-9%;  transform:scaleX(1);}
+    47% {left:101%; transform:scaleX(1);}
+    50% {left:101%; transform:scaleX(-1);}
+    97% {left:-9%;  transform:scaleX(-1);}
+    100%{left:-9%;  transform:scaleX(1);}
+  }
+  @media (prefers-reduced-motion:reduce){ .htk-fish{animation:none;} }
+
+  /* อัลบั้ม */
+  .house-album{width:min(560px,94vw);}
+  .halb-list{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;}
+  .halb-card{position:relative; background:#fff; padding:6px 6px 20px; border-radius:5px;
+             box-shadow:var(--shadow-btn);}
+  .halb-card img{display:block; width:100%; height:auto; border-radius:3px; background:#eee;}
+  .halb-cap{position:absolute; left:0; right:0; bottom:4px; text-align:center;
+            font-size:10.5px; font-weight:800; color:var(--ink-soft);}
+  .halb-del{
+    position:absolute; top:-6px; right:-6px; width:26px; height:26px; border-radius:50%;
+    border:none; cursor:pointer; background:#F2726B; color:#fff; font-size:13px; font-weight:900;
+    box-shadow:var(--shadow-btn); line-height:1;
+  }
+  @media (max-width:480px){
+    .halb-list{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .hpf-album{width:46px; height:46px; margin-left:54px; bottom:34px; font-size:20px;}
+  }
   .hpf-exit{
     position:absolute; top:22px; right:22px; pointer-events:auto;
     width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
