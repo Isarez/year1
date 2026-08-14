@@ -341,9 +341,19 @@ test('ปล่อยสัตว์คืน: สถานะสุขภาพ
   expect(errors).toEqual([]);
 });
 
-test('ไม่มีสัตว์เลี้ยง: ไม่มีแถบสถานะ/ปุ่มให้อาหาร และระบบดูแลไม่ทำงาน (ไม่มีอะไรให้ดูแล)', async ({ page }) => {
+test('ไม่มีสัตว์เลี้ยง: แถบขึ้นสถานะกุญแจล็อก และระบบดูแลไม่ทำงาน (ไม่มีอะไรให้ดูแล)', async ({ page }) => {
   const errors = await openHouse(page, { v: 1, mapV: 3, char: CHAR });
-  await expect(page.locator('#house-pet-bar')).toBeHidden();
+  /* 🔒 ผู้ใช้สั่ง 2026-08-14: **เลิกซ่อนแถบตอนยังไม่มีสัตว์** — ให้โชว์เป็นสถานะกุญแจล็อกแทน
+     เกณฑ์เดิม (`toBeHidden`) ถูกทับด้วยมตินี้ **ห้ามลบเทส ให้เปลี่ยนเกณฑ์**
+     เหตุผลของมติ: เด็กที่ยังไม่มีสัตว์จะไม่มีทางรู้เลยว่ามีระบบเลี้ยงสัตว์อยู่ในเกม */
+  await expect(page.locator('#house-pet-bar')).toBeVisible();
+  await expect(page.locator('#house-pet-bar')).toHaveClass(/hpb-locked/);
+  await expect(page.locator('#hpb-feed-label')).toHaveText(/รับเลี้ยง/);
+  /* ของที่ยังไม่มีความหมายต้องไม่โผล่ (หลอดความอิ่ม/ไอคอนอาหาร) */
+  expect(await page.evaluate(() => [
+    getComputedStyle(document.querySelector('#house-pet-bar .hpb-meter')).display,
+    getComputedStyle(document.getElementById('hpb-food')).display,
+  ])).toEqual(['none', 'none']);
   const out = await page.evaluate(() => ({
     st: window.HousePetCare.state(),
     fed: window.HousePetCare.feed('meat'),

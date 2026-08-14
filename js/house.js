@@ -5818,6 +5818,22 @@ function handleTap(cx, cy){
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }   /* หน้าร้านเปิดอยู่ → แตะนอกกล่อง = ออกจากร้าน */
   if(window.HousePlay && window.HousePlay.isOpen()){ window.HousePlay.close(); return; }   /* แผงเล่นในเมือง (เฟส 11) */
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
+  /* 🎣 **กำลังตกปลาอยู่ = แตะอย่างอื่นในโลกไม่ได้เลย** (ผู้ใช้สั่ง 2026-08-14)
+     ของเดิมเดินหนีไปได้ทั้งที่เบ็ดยังอยู่ในน้ำ ⇒ เห็นทุ่นลอยอยู่คนละมุมกับตัวเด็ก
+     ⚠ **ยกเว้นการแตะ "ทุ่น"** เพราะนั่นคือทางดึงเบ็ดในโลก 3D (อีกทางคือปุ่ม "ดึง!" ในแผง)
+     ⚠ ไม่มีทางค้าง: ปลาหนีเองใน 1.6 วิถ้าไม่ดึง แล้ว `fishState` เคลียร์ตัวเองที่ tick() */
+  if(fishingNow()){
+    const fh = raycaster.intersectObjects(worldGroup.children, true);
+    for(let i = 0; i < fh.length; i++){
+      let o = fh[i].object;
+      while(o && o !== worldGroup){
+        if(o.userData.hPick && window.HousePlay.tapPick(o.userData.hPick)) return;
+        o = o.parent;
+      }
+    }
+    showToast('🎣', 'กำลังตกปลาอยู่นะ แตะที่ทุ่นเพื่อดึงเบ็ดก่อน แล้วค่อยไปเดินเล่นต่อ');
+    return;
+  }
   if(hScene==='out'){
     /* ยิง ray ใส่ของทั้งฉากแล้วไล่หา tag ที่ ancestor: สัตว์ > บ้าน > ของตกแต่ง > ฉากตายตัว
        (ชนพื้น/ฐานดินจะไม่เจอ tag แล้วตกไปคำนวณช่องเดินจากระนาบพื้นด้านล่างแทน) */
@@ -5872,8 +5888,14 @@ function handleTap(cx, cy){
   walkTo(gx, gz, {});
 }
 
+/* 🎣 กำลังตกปลาอยู่ไหม — เช็คผ่านประตูสาธารณะของ js/house-play.js (house.js ไม่รู้จัก state ข้างใน) */
+function fishingNow(){ return !!(window.HousePlay && window.HousePlay.fishState && window.HousePlay.fishState()); }
 function walkTo(gx, gz, opts){
   opts = opts || {};
+  /* 🎣 **ตกปลาอยู่ = เดินไม่ได้** — กันที่นี่เพราะเป็นทางเดียวที่ทุกอย่างวิ่งผ่าน
+     (แตะพื้น · แตะชาวบ้าน · ปุ่มเข็มทิศกลับบ้าน · เควสต์สั่งเดิน) `handleTap` กันไว้อีกชั้นเพื่อ
+     ให้ได้ toast อธิบาย ส่วนตรงนี้เป็นตะแกรงสุดท้ายกันทางที่ไม่ผ่าน handleTap */
+  if(fishingNow()) return;
   slideRide = null;              /* สั่งเดินใหม่ระหว่างเล่นสไลเดอร์ = เลิกเล่นก่อน */
   const out = hScene==='out';
   const grid = out?outGrid:inGrid, W = out?OUT_W:IN_W, D = out?OUT_D:IN_D;
@@ -9009,6 +9031,7 @@ function updatePetLabels(){
   refreshQuestBar();
   refreshBackBtn();
   refreshParentBtn();
+  refreshHomeBtns();
   if(!hPet.group || !houseOpen || hMode!=='world' || editMode){
     nameEl.hidden = true;
     return;
@@ -9717,6 +9740,26 @@ function refreshParentBtn(){
   if(b.hidden !== want) return;
   b.hidden = !want;
 }
+/* ---------- ปุ่มชุด "ของที่บ้าน" (สัตว์เลี้ยง · แต่งตัว · แต่งบ้าน) ----------
+   ผู้ใช้สั่ง 2026-08-14: ย้ายไปอยู่ **ข้างปุ่มกล้องมุมขวาบน** และ **โผล่เฉพาะตอนอยู่ที่บ้าน**
+   "ที่บ้าน" = อยู่ในตัวบ้าน (hScene 'in') **หรือ** ยืนอยู่ในกรอบบริเวณบ้าน (inHomeZone)
+   ⚠ ที่ตรงนี้เขียนทับค่าที่ฟังก์ชันอื่นตั้งไว้ได้ เพราะถูกเรียกทุกเฟรมจาก updatePetLabels()
+     ⇒ จุดที่สั่ง `.hidden = false` ตอนกลับเข้าโหมดเดิน (exitCreator / exitPetMode / startHouseGame)
+        ยังต้องมีอยู่ ไม่ต้องลบ แต่ค่าสุดท้ายมาจากที่นี่เสมอ
+   ⚠ ปุ่มแต่งตัวพ่อแม่ (#house-parent-btn) มีเงื่อนไขเข้มกว่า (ต้องอยู่ "ในตัวบ้าน") อยู่ที่
+     refreshParentBtn() ของมันเอง จึงไม่รวมในลิสต์นี้ */
+const HOME_BTN_IDS = ['house-pet-btn', 'house-edit-btn', 'house-decorate-btn'];
+function atHomeNow(){
+  if(!houseOpen) return false;
+  if(hScene === 'in') return true;
+  return !!inHomeZone(hChar.tile.x, hChar.tile.z);
+}
+function refreshHomeBtns(){
+  const want = !!(atHomeNow() && hMode === 'world' && !editMode);
+  HOME_BTN_IDS.forEach(id=>{ const b = $(id); if(b && b.hidden === want) b.hidden = !want; });
+  /* บอก CSS ว่าตอนนี้แถวปุ่มมุมขวาบนยาวขึ้น ⇒ กันแถวชื่อเด็กไหลไปชน (ดู .house-at-home ใน style.css) */
+  document.body.classList.toggle('house-at-home', want);
+}
 function refreshBackBtn(){
   const b = $('house-back');
   if(!b) return;
@@ -9725,16 +9768,37 @@ function refreshBackBtn(){
   b.hidden = !want;
 }
 let petBarKey = '';
+/* ---------- แถบเพื่อนตัวน้อย ----------
+   🔒 **โชว์เสมอตอนเดินเล่น** (ผู้ใช้สั่ง 2026-08-14) — ยังไม่มีสัตว์ก็ต้องเห็นแถบ แต่เป็น
+   **สถานะล็อกรูปกุญแจ** เพื่อบอกเด็กว่า "ตรงนี้มีของรออยู่ ไปรับเลี้ยงเพื่อนก่อนนะ"
+   (ของเดิมซ่อนทั้งแถบ ⇒ เด็กที่ยังไม่มีสัตว์ไม่มีทางรู้เลยว่ามีระบบนี้อยู่)
+   ⚠ แถบล็อกต้อง **กดได้** และบอกทางไปร้านสัตว์เลี้ยง ไม่ใช่กดแล้วเงียบ */
 function refreshPetBar(){
   const bar = $('house-pet-bar');
   if(!bar) return;
-  const want = !!(PETCARE && hPet.group && hPet.cfg && houseOpen && hMode === 'world' && !editMode
-                  );
-  if(bar.hidden === want) bar.hidden = !want;
-  if(want) petBarPaint();
+  const on = !!(houseOpen && hMode === 'world' && !editMode);
+  const has = !!(PETCARE && hPet.group && hPet.cfg);
+  if(bar.hidden === on) bar.hidden = !on;
+  bar.classList.toggle('hpb-locked', on && !has);
+  if(!on) return;
+  if(has) petBarPaint(); else petBarPaintLocked();
+}
+/* สถานะล็อก: กุญแจ + ข้อความชวนไปรับเลี้ยง (ซ่อนหลอดความอิ่ม/ไอคอนอาหารที่ยังไม่มีความหมาย) */
+function petBarPaintLocked(){
+  if(petBarKey === 'locked') return;          /* ค่าเดิม ไม่ต้องแตะ DOM ซ้ำทุกเฟรม */
+  petBarKey = 'locked';
+  const nm = $('hpb-pet');
+  if(nm) nm.textContent = 'ยังไม่มีเพื่อนตัวน้อย';
+  const lb = $('hpb-feed-label');
+  if(lb) lb.textContent = 'ไปรับเลี้ยง';
+  const bar = $('house-pet-bar');
+  if(bar) bar.classList.remove('hpb-warn');
+  const btn = $('hpb-feed');
+  if(btn) btn.classList.remove('hpb-feed-sick');
 }
 function petBarPaint(){
   if(!hPet.cfg) return;
+  if(petBarKey === 'locked') petBarKey = '';   /* เพิ่งรับเลี้ยงมา — บังคับให้วาดใหม่ทั้งแถบ */
   const full = petCareHud.full, sick = petCareHud.sick;
   const fid = PETCARE.foodForPet(hPet.cfg.type);
   const left = PETCARE.meals(fid);
@@ -11071,6 +11135,32 @@ function charPoseAt(kind, pr){
       p.legX = c*.12;                                         /* ย่อเข่านิดๆ ท่ายืนถือคันเบ็ด */
     }
     p.zR = CH_ARM_Z[1] - .09;                                 /* มือขวาเข้าใกล้ลำตัวเหมือนกำคันเบ็ด */
+  }else if(kind === 'pull'){
+    /* ดึงเบ็ด 3 จังหวะ (ผู้ใช้สั่งเพิ่ม 2026-08-14): กระตุกคันขึ้นแรงๆ → เอนหลังออกแรงดึง
+       → ยกปลาขึ้นมาดู · เริ่มจากท่า 'cast' ค้าง (แขนขวายื่นหน้า −1.08) จึงต้องต่อจากค่านั้น
+       ไม่ใช่เริ่มจาก 0 ไม่งั้นแขนจะกระตุกวาร์ปตอนสลับท่า */
+    /* ⚠ **แขนห้ามยกเลย ~2.0 rad** — กล้อง isometric มองลงเกือบจากบนหัว มือที่ยกสูงกว่านั้น
+       จะไปหลบอยู่หลังหัวจนมองไม่เห็นเลย (ถ่ายภาพจริงมาดูแล้ว 2026-08-14)
+       ท่า "ชูปลาขึ้นดู" จึงใช้วิธี **กางแขนออกข้าง (`z`)** แทนการยกให้สูงขึ้นอีก */
+    const A0 = -1.08, B0 = -.65;                              /* ท่าตั้งต้น = ปลายท่า 'cast' */
+    if(pr < .18){                                             /* กระตุกขึ้นเร็วมาก (ตกใจว่าปลากิน) */
+      const c = pr/.18;
+      p.aR = A0 - c*.92; p.aL = B0 - c*.85;
+      p.lean = -c*.12; p.legX = .12 + c*.20;
+      p.zR = CH_ARM_Z[1] - .09;
+    }else if(pr < .55){                                       /* เอนหลังออกแรงดึง + สั่นเป็นจังหวะ */
+      const c = (pr-.18)/.37;
+      const shake = Math.sin(c*Math.PI*5) * .17;
+      p.aR = -2.0 + shake; p.aL = -1.5 + shake;
+      p.lean = -.12 - c*.14; p.legX = .32 - c*.10;
+      p.zR = CH_ARM_Z[1] - .09;
+    }else{                                                    /* ชูปลาขึ้นมาดู — กางแขนออกข้าง + เขย่งดีใจ */
+      const c = (pr-.55)/.45;
+      const up = Math.sin(c*Math.PI);
+      p.aR = -2.0 + up*.55; p.aL = -1.5 + up*.05;
+      p.lean = -.26 + c*.26; p.hop = up*.11;
+      p.zR = CH_ARM_Z[1] - .09 + up*.52; p.zL = CH_ARM_Z[0] - up*.46;
+    }
   }
   p.lean = Math.max(-CH_LEAN_MAX, Math.min(CH_LEAN_MAX, p.lean));
   return p;
@@ -11977,7 +12067,17 @@ $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') 
   if(qc) qc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }); }
 /* เฟส 3B — ปุ่มให้อาหาร + ปิดแผง */
 { const fb = $('hpb-feed');
-  if(fb) fb.addEventListener('click', ()=> feedNow()); }
+  /* ⚠ ตอนแถบอยู่สถานะล็อก (ยังไม่มีสัตว์) ปุ่มนี้เป็น "ไปรับเลี้ยง" ไม่ใช่ "ให้อาหาร"
+     ⇒ ต้องบอกทางไปร้านสัตว์เลี้ยง ห้ามกดแล้วเงียบ (กติกาเหล็ก: ทุกปุ่มต้องมีทางไปต่อ) */
+  if(fb) fb.addEventListener('click', ()=>{
+    const bar = $('house-pet-bar');
+    if(bar && bar.classList.contains('hpb-locked')){
+      if(typeof playClick === 'function') playClick();
+      showToast('🐾', 'ยังไม่มีเพื่อนตัวน้อยเลย — ไปที่ร้านสัตว์เลี้ยงในหมู่บ้านแล้วเลือกรับเลี้ยงได้เลยนะ');
+      return;
+    }
+    feedNow();
+  }); }
 /* ปุ่มกลับ (←): ถ้าเปิดแผงอะไรค้างอยู่ = "ยกเลิก" กลับไปหน้าเกมก่อน ยังไม่ออกจากบ้าน
    ยกเว้นตอนสร้างตัวละครครั้งแรก (ยังไม่มีตัวละคร/โลกให้กลับไป) ให้ออกจากบ้านเหมือนเดิม */
 $('house-back').addEventListener('click', ()=>{

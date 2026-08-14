@@ -707,12 +707,15 @@
     if(!fishState) return false;
     if(fishState.phase !== 'bite'){
       fishState = null; fishBobClear();
+      /* ⚠ ต้องสั่งท่า **หลัง** fishBobClear() เพราะตัวนั้นเรียก pose(null) คลายท่าถือคันทิ้ง */
+      if(w.pose) w.pose('pull', 850);        /* ดึงเปล่าก็ยังต้องเห็นว่าเด็กกระตุกคันเบ็ดจริง */
       w.toast('🎣', 'ยังไม่ถึงจังหวะ ปลาว่ายหนีไปแล้ว — ลองใหม่ได้เลยนะ');
       renderPanel();
       return false;
     }
     const f = fishState.fish;
     fishState = null; fishBobClear();
+    if(w.pose) w.pose('pull', 1400);         /* ดึงติดปลา — จังหวะยาวกว่า มีตอนยกปลาขึ้นมาดูด้วย */
     P.fish.today = (P.fish.today | 0) + 1;
     const isNew = (P.fish.book || []).indexOf(f.id) < 0;
     if(isNew) P.fish.book = (P.fish.book || []).concat([f.id]);

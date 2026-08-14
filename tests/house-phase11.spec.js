@@ -462,3 +462,135 @@ test('เฟส 11K: ของในฉากต้องถูกเก็บ�
     .toBeGreaterThan(0);
   expect(errs).toEqual([]);
 });
+
+/* ============================================================
+   รอบแก้ 2026-08-14 — กติกาที่ผู้ใช้สั่งเพิ่ม
+   ① ตกปลาอยู่ = **เดินไม่ได้** (ของเดิมเดินหนีไปได้ทั้งที่เบ็ดยังอยู่ในน้ำ)
+   ② ดึงเบ็ดต้องมี **ท่าทางของตัวเด็ก** ไม่ใช่แค่ทุ่นหาย
+   ③ ปุ่มของที่บ้าน (สัตว์เลี้ยง/แต่งตัว/แต่งบ้าน) โผล่ **เฉพาะตอนอยู่ที่บ้าน**
+   ④ เข็มทิศเป็นคอลัมน์แรกของ HUD สูงเท่า 2 แถว · แถบเควสต์อยู่ใต้เข็มทิศ
+   ============================================================ */
+test('เฟส 11L: ตกปลาอยู่ = เดินไม่ได้ · ดึงเบ็ดแล้วมีท่าทาง · ดึงเสร็จเดินต่อได้', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(async () => {
+    const P = window.HousePlay, W = window.HouseWorld, D = window.__houseDbg;
+    const sp = P.fishSpots()[0];
+    D.tp(sp.sx, sp.sz);
+    const start = W.tile();
+    /* ⚠ **ห้าม hardcode ปลายทาง** — ช่องรอบบ่อน้ำเป็นน้ำ/ป่าเยอะ ถ้าเล็งไปช่องที่เดินไม่ได้
+       เทสจะแดงสลับไปมาโดยไม่เกี่ยวกับของที่คุมอยู่ ⇒ ไล่หาช่องที่ findPath บอกว่าเดินถึงจริง */
+    let dest = null;
+    for (let r = 3; r <= 8 && !dest; r++)
+      for (let dx = -r; dx <= r && !dest; dx++) for (let dz = -r; dz <= r && !dest; dz++) {
+        const t = { x: start.x + dx, z: start.z + dz };
+        if (Math.abs(dx) + Math.abs(dz) < 3) continue;
+        if (W.walkable(t.x, t.z) && W.pathLen(start, t) > 0) dest = t;
+      }
+    P.fishCast();
+    /* สั่งเดินทุกทางที่มี: ผ่าน HouseWorld.walkTo และผ่านการแตะฉากจริง */
+    W.walkTo(dest.x, dest.z);
+    D.tapScene(dest.x, dest.z);
+    await new Promise(res => setTimeout(res, 900));
+    const stuck = W.tile();
+    const posing = D.charPose();
+    /* ดึงเบ็ด (ยังไม่ถึงจังหวะก็ได้ — ต้องมีท่าดึงเหมือนกัน) แล้วต้องเดินได้อีกครั้ง */
+    P.fishPull();
+    const pulled = D.charPose();
+    const freed = P.fishState();
+    W.walkTo(dest.x, dest.z);
+    return { start, dest, stuck, posing, pulled, freed };
+  });
+  expect(r.stuck, '🎣 กำลังตกปลาอยู่ต้องเดินไม่ได้เลย').toEqual(r.start);
+  expect(r.posing.act, 'ระหว่างรอปลาต้องค้างท่าถือคันเบ็ดไว้').toBe('cast');
+  expect(r.posing.hold, 'ท่าถือคันเบ็ดต้องเป็นแบบค้างไว้ ไม่ใช่เล่นจบแล้วกลับท่ายืน').toBe(true);
+  expect(r.pulled.act, 'ดึงเบ็ดต้องมีท่าทางของตัวเด็ก').toBe('pull');
+  expect(r.freed, 'ดึงแล้วต้องเลิกสถานะตกปลา').toBe(null);
+  /* ⚠ **ต้อง poll ไม่ใช่ setTimeout ตายตัว** — เดิน 3 ช่องใช้ ~1 วิตอนเฟรมเต็ม แต่ตอนรันทั้งชุด
+     เฟรมตกจน engine clamp `dt` ที่ 50ms/เฟรม ⇒ "เวลาในเกม" เดินช้ากว่านาฬิกาจริงหลายเท่า
+     (เทสตัวนี้เคยผ่านตอนรันเดี่ยวแต่แดงตอนรันทั้งชุดด้วยเหตุนี้) */
+  await expect.poll(() => page.evaluate(() => window.HouseWorld.tile()), { timeout: 30000 })
+    .not.toEqual(r.start);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11M: ปุ่มของที่บ้านโผล่เฉพาะตอนอยู่บ้าน + เข็มทิศเป็นคอลัมน์แรกสูงเท่า 2 แถว', async ({ page }) => {
+  const errs = await house(page);
+  const IDS = ['house-pet-btn', 'house-edit-btn', 'house-decorate-btn'];
+  const snap = () => page.evaluate(ids => {
+    const rc = el => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; };
+    const cam = document.getElementById('house-photo-btn');
+    return {
+      shown: ids.map(i => !document.getElementById(i).hidden),
+      /* ปุ่มของที่บ้านต้องอยู่ "แถวเดียวกับปุ่มกล้อง" คือใน .house-ctrl-top เดียวกัน */
+      besideCam: ids.every(i => document.getElementById(i).parentElement === cam.parentElement),
+      atHome: document.body.classList.contains('house-at-home'),
+      compass: rc(document.getElementById('house-compass')),
+      chip: rc(document.getElementById('house-child-chip')),
+      quest: rc(document.getElementById('house-quest-bar')),
+    };
+  }, IDS);
+
+  /* กลางเมือง (ไกลบ้าน) — ต้องไม่มีปุ่มพวกนี้ */
+  await page.evaluate(() => window.__houseDbg.tp(40, 30));
+  await page.waitForTimeout(500);
+  const away = await snap();
+  expect(away.shown, 'อยู่ไกลบ้าน = ปุ่มของที่บ้านต้องหายหมด').toEqual([false, false, false]);
+  expect(away.atHome).toBe(false);
+
+  /* ในบริเวณบ้าน — ต้องโผล่ครบและอยู่ข้างปุ่มกล้อง */
+  await page.evaluate(() => window.__houseDbg.tp(20, 33));
+  await page.waitForTimeout(500);
+  const home = await snap();
+  expect(home.shown, 'อยู่บริเวณบ้าน = ปุ่มของที่บ้านต้องโผล่ครบ').toEqual([true, true, true]);
+  expect(home.besideCam, 'ปุ่มของที่บ้านต้องอยู่แถวเดียวกับปุ่มกล้อง (ผู้ใช้สั่ง 2026-08-14)').toBe(true);
+
+  /* ในตัวบ้านก็ถือว่าอยู่บ้าน */
+  await page.evaluate(() => window.__houseDbg.enterHouse());
+  await page.waitForTimeout(700);
+  expect((await snap()).shown, 'อยู่ในตัวบ้านก็ต้องเห็นปุ่มชุดนี้').toEqual([true, true, true]);
+  await page.evaluate(() => window.__houseDbg.leaveHouse());
+  await page.waitForTimeout(700);
+
+  /* 🧭 เข็มทิศ = คอลัมน์แรกของ HUD · สูงเท่า 2 แถวพอดี · แถบเควสต์อยู่ใต้เข็มทิศ */
+  const c = home.compass, chip = home.chip, q = home.quest;
+  expect(c.x, 'เข็มทิศต้องเป็นคอลัมน์ซ้ายสุด อยู่หน้าชื่อเด็ก').toBeLessThan(chip.x);
+  expect(c.y, 'เข็มทิศต้องเริ่มแถวเดียวกับชื่อเด็ก').toBe(chip.y);
+  /* สูง = แถวชื่อเด็ก + ระยะห่าง + แถบสัตว์เลี้ยง ⇒ ล่างสุดต้องพอดีกับก่อนแถบเควสต์ */
+  expect(c.h, 'เข็มทิศต้องสูงกว่า 1 แถว (ต้องเท่า 2 แถว)').toBeGreaterThan(chip.h * 1.8);
+  expect(q.y, 'แถบเควสต์ต้องอยู่ใต้เข็มทิศ').toBeGreaterThanOrEqual(c.y + c.h);
+  expect(q.x, 'แถบเควสต์ต้องเริ่มชิดซ้ายตรงกับเข็มทิศ').toBe(c.x);
+  expect(errs).toEqual([]);
+});
+
+test('เฟส 11N: แถบเพื่อนตัวน้อยโชว์เสมอ — ยังไม่มีสัตว์ = สถานะกุญแจล็อก กดแล้วบอกทางไปรับเลี้ยง', async ({ page }) => {
+  const errs = await house(page);          /* save ไม่มี pet = เด็กที่ยังไม่เคยรับเลี้ยง */
+  await page.evaluate(() => window.__houseDbg.tp(20, 33));
+  await page.waitForTimeout(500);
+  const r = await page.evaluate(() => {
+    const bar = document.getElementById('house-pet-bar');
+    const cs = id => getComputedStyle(document.getElementById(id)).display;
+    return {
+      hidden: bar.hidden, locked: bar.classList.contains('hpb-locked'),
+      lock: getComputedStyle(bar.querySelector('.hpb-lock')).display,
+      meter: cs('hpb-fill') === 'none' ? 'none' : getComputedStyle(bar.querySelector('.hpb-meter')).display,
+      food: cs('hpb-food'),
+      label: document.getElementById('hpb-feed-label').textContent,
+      name: document.getElementById('hpb-pet').textContent,
+      w: Math.round(bar.getBoundingClientRect().width),
+    };
+  });
+  /* 🔒 ผู้ใช้สั่ง 2026-08-14: **ห้ามซ่อนทั้งแถบตอนยังไม่มีสัตว์** — ต้องเห็นเป็นกุญแจล็อกไว้ */
+  expect(r.hidden, 'ยังไม่มีสัตว์ก็ต้องเห็นแถบ').toBe(false);
+  expect(r.locked).toBe(true);
+  expect(r.lock, 'ต้องมีรูปกุญแจ').not.toBe('none');
+  expect(r.meter, 'หลอดความอิ่มยังไม่มีความหมาย ต้องซ่อน').toBe('none');
+  expect(r.food, 'ไอคอนอาหารยังไม่มีความหมาย ต้องซ่อน').toBe('none');
+  expect(r.label, 'ปุ่มต้องชวนไปรับเลี้ยง ไม่ใช่ "ให้อาหาร"').toContain('รับเลี้ยง');
+  expect(r.name).toContain('ยังไม่มีเพื่อน');
+  expect(r.w, 'แถบต้องกว้างพออ่านออก').toBeGreaterThan(120);
+
+  /* กดแล้วต้องมีทางไปต่อ (toast บอกทาง) ไม่ใช่กดแล้วเงียบ */
+  await page.locator('#hpb-feed').click();
+  await expect(page.locator('#toast')).toContainText('ร้านสัตว์เลี้ยง', { timeout: 5000 });
+  expect(errs).toEqual([]);
+});

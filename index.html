@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.1.0-dev6">
+<link rel="stylesheet" href="css/style.css?v=2.1.0-dev7">
 </head>
 <body>
 
@@ -903,6 +903,33 @@
 <section id="house-view" hidden>
   <canvas id="house-canvas"></canvas>
   <div class="house-overlay-ui">
+    <!-- แถวบนของ HUD = [เข็มทิศคอลัมน์แรก สูงเท่า 2 แถว] + [แถวชื่อเด็ก / แถบสัตว์เลี้ยง]
+         (ผู้ใช้สั่งย้ายเข็มทิศจากมุมซ้ายล่างมาที่นี่ 2026-08-14)
+         ⚠ แถบสรุปเควสต์ (แถวที่ 3) อยู่ **นอก** กล่องนี้ จึงไหลไปอยู่ใต้เข็มทิศพอดี -->
+    <div class="house-hud-top">
+      <!-- เข็มทิศ: เข็มชี้ไปทางบ้านของหนูเสมอ กดแล้วเดินกลับบ้านอัตโนมัติ (แผนที่ใหญ่ เด็กหลงทางได้) -->
+      <button class="house-compass" id="house-compass" aria-label="เข็มทิศ กดเพื่อเดินกลับบ้าน" data-tooltip="กลับบ้าน" hidden>
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" fill="#fffaf0" stroke="#e0b784" stroke-width="3"/>
+        <circle cx="32" cy="32" r="23.5" fill="none" stroke="#f3e2c8" stroke-width="2"/>
+        <g class="hc-labels" text-anchor="middle" dominant-baseline="central">
+          <text id="hc-n" x="32" y="12" fill="#ef6a58">N</text>
+          <text id="hc-e" x="52" y="32" fill="#a9825c">E</text>
+          <text id="hc-s" x="32" y="52" fill="#a9825c">S</text>
+          <text id="hc-w" x="12" y="32" fill="#a9825c">W</text>
+        </g>
+        <g id="hc-needle">
+          <path d="M32 24.5 L36.6 36 L32 33.4 L27.4 36 Z" fill="#ef6a58"/>
+          <path d="M32 46 L27.4 32 L32 34.6 L36.6 32 Z" fill="#e8ddcc" stroke="#c9b79c" stroke-width="1"/>
+          <g id="hc-home">
+            <path d="M28.1 19.3 L32 15.7 L35.9 19.3 Z" fill="#ef8354"/>
+            <rect x="29.4" y="19.1" width="5.2" height="3.6" rx=".8" fill="#fff3e0" stroke="#e0b784" stroke-width="1"/>
+          </g>
+        </g>
+        <circle cx="32" cy="32" r="3.6" fill="#a9825c"/>
+      </svg>
+    </button>
+      <div class="house-hud-stack">
     <div class="quiz-top">
       <button class="back-btn" id="house-back" aria-label="กลับหน้าหลัก">←</button>
       <!-- ป้ายชื่อเด็กชุดเดียวกับ header หลัก (header ถูกซ่อนในโหมดบ้าน) — proxy คลิกแทนปุ่มจริง เนื้อหา sync จาก houseSyncChild() ใน js/house.js -->
@@ -912,12 +939,6 @@
         <div class="child-chip child-chip-static" id="house-child-btn"><span id="house-child-emoji"></span> <span id="house-child-name"></span><span id="house-child-age"></span></div>
         <button class="child-edit-btn" id="house-child-edit-btn" aria-label="แก้ไข Emoji" data-tooltip="แก้ไข Emoji"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="#FFD6E8"/><path d="M15 5l4 4" stroke-width="1.4"/></svg></button>
       </div>
-      <button class="back-btn" id="house-pet-btn" aria-label="สัตว์เลี้ยงของหนู" data-tooltip="สัตว์เลี้ยงของหนู"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15.5" rx="4.8" ry="3.9" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="5.8" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="12" cy="8.6" r="2.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="18.2" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/></svg></button>
-      <!-- เฟส 4A: แต่งตัวให้พ่อแม่ — ปุ่มเดียวเข้าหน้าแต่งตัว แล้วเลือกพ่อ/แม่จากแท็บข้างใน
-           โผล่เฉพาะตอนอยู่ในบ้าน (พ่อแม่อยู่แต่ชั้นใน) — refreshParentBtn ใน js/house.js -->
-      <button class="back-btn" id="house-parent-btn" hidden aria-label="แต่งตัวให้พ่อแม่" data-tooltip="แต่งตัวให้พ่อแม่"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="7.4" r="3.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><path d="M2.9 19.5c0-3 2.3-5.2 5.1-5.2s5.1 2.2 5.1 5.2z" fill="#8FC7F0" stroke="#3A79D8" stroke-width="1.5" stroke-linejoin="round"/><circle cx="16.6" cy="8.6" r="2.7" fill="#FFD9A0" stroke="#C0527A" stroke-width="1.5"/><path d="M12 19.5c0-2.6 2-4.6 4.6-4.6s4.6 2 4.6 4.6z" fill="#FFD6E8" stroke="#C0527A" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
-      <button class="back-btn" id="house-edit-btn" aria-label="แต่งตัวให้ตัวละคร" data-tooltip="แต่งตัวให้ตัวละคร"><svg class="house-btn-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 3.6L4 6.2L5.9 10.6L8.2 9.6L8.2 20L15.8 20L15.8 9.6L18.1 10.6L20 6.2L14.8 3.6Q12 7.2 9.2 3.6Z" fill="#FFD6E8"/><path d="M12 15.9c-1.8-1.3-2.6-2.1-2.6-3.1 0-.8.65-1.4 1.4-1.4.5 0 .9.25 1.2.65.3-.4.7-.65 1.2-.65.75 0 1.4.6 1.4 1.4 0 1-.8 1.8-2.6 3.1z" fill="#C0527A" stroke="none"/></svg></button>
-      <button class="back-btn" id="house-decorate-btn" aria-label="ตกแต่งบ้าน" data-tooltip="ตกแต่งบ้าน"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v.6a2.4 2.4 0 0 0-2.4 2.4V17H6.4v-2A2.4 2.4 0 0 0 4 12.6z" fill="#FFD6A0" stroke="#E59A5B" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 9V7.5A1.5 1.5 0 0 1 8.5 6h7A1.5 1.5 0 0 1 17 7.5V9" fill="#FFE9C8" stroke="#E59A5B" stroke-width="1.2"/><path d="M5.5 17v2M18.5 17v2" stroke="#E59A5B" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       <!-- ยอดเงินนกฮูกของเด็กคนนี้ — อยู่ท้ายแถวปุ่มบน ต่อจากปุ่มตกแต่งบ้าน (ตัวเลขอัปเดตจาก window.OwlCoins) -->
       <div class="house-coins" id="house-coins" hidden aria-live="polite">
         <svg class="owl-coin" viewBox="0 0 40 40" aria-hidden="true">
@@ -954,6 +975,14 @@
          ซ่อนไว้จนกว่าจะมีสัตว์เลี้ยงจริง (refreshPetBar ใน js/house.js) -->
     <div class="house-hud-row" id="house-hud-row">
     <div class="house-pet-bar" id="house-pet-bar" hidden>
+      <!-- 🔒 กุญแจ: โผล่เฉพาะตอนยังไม่มีสัตว์เลี้ยง (body ของแถบติดคลาส .hpb-locked)
+           วาดเป็น SVG ไม่ใช่ emoji 🔒 — บางเครื่องไม่มี glyph แล้วขึ้นเป็นกล่องเทา (กับดักเดิม 🪙/🍽️) -->
+      <svg class="hpb-lock" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4.8" y="10.4" width="14.4" height="10.2" rx="3" fill="#FFE1B0" stroke="#C08340" stroke-width="1.7"/>
+        <path d="M8.4 10.4V7.9a3.6 3.6 0 0 1 7.2 0v2.5" fill="none" stroke="#C08340" stroke-width="1.9" stroke-linecap="round"/>
+        <circle cx="12" cy="15.1" r="1.7" fill="#C08340"/>
+        <path d="M12 16.4v2.1" stroke="#C08340" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
       <span class="hpb-pet" id="hpb-pet"></span>
       <span class="hpb-meter"><i class="hpb-fill" id="hpb-fill"></i></span>
       <!-- อาหารของสัตว์ชนิดนี้ + จำนวนมื้อคงเหลือ (เด็กจะได้รู้ว่าต้องไปซื้อเพิ่มหรือยัง) -->
@@ -963,7 +992,9 @@
       <button type="button" class="hpb-feed" id="hpb-feed"><svg class="hpb-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h16a8 8 0 0 1-8 7 8 8 0 0 1-8-7z" fill="#FFF3D6" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 13h18" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 9.6c0-1.3 1.6-1.5 1.6-3M12 9.2c0-1.5 1.8-1.7 1.8-3.4M15.5 9.6c0-1.3 1.6-1.5 1.6-3" fill="none" stroke="#FFF3D6" stroke-width="1.5" stroke-linecap="round"/></svg><span id="hpb-feed-label">ให้อาหาร</span></button>
     </div>
     </div>
-    <!-- เฟส 4A: แถบสรุปเควสต์ของวันนี้ — **แถวที่ 3 ใต้แถบสัตว์เลี้ยง** (ผู้ใช้สั่ง 2026-08-09)
+    </div>
+    </div>
+    <!-- เฟส 4A: แถบสรุปเควสต์ของวันนี้ — **แถวที่ 3 ใต้เข็มทิศ/แถบสัตว์เลี้ยง** (ผู้ใช้สั่ง 2026-08-09)
          กดแล้วเปิดรายการว่าเหลืองานของใคร/ร้านไหน + อันที่ทำเสร็จแล้ว -->
     <div class="house-hud-row">
       <button type="button" class="house-quest-bar" id="house-quest-bar" hidden aria-label="สรุปเควสต์วันนี้">
@@ -1006,6 +1037,16 @@
       <!-- แถวบนสุด: ปุ่มกล้อง + ปุ่มเฟือง **เรียงข้างกันแนวนอน** (ผู้ใช้สั่ง 2026-08-13 ว่ากล้อง
            ต้องอยู่ "ข้างๆ" ปุ่มตั้งค่า ไม่ใช่ซ้อนบน) ส่วนเมนูย่อยยังกางลงมาด้านล่างเหมือนเดิม -->
       <div class="house-ctrl-top">
+      <!-- ⚠ ปุ่มชุด "ของที่บ้าน" (สัตว์เลี้ยง · แต่งตัวพ่อแม่ · แต่งตัว · แต่งบ้าน) —
+           ผู้ใช้สั่งย้ายมาไว้ **ข้างปุ่มกล้อง** 2026-08-14 และให้ **โผล่เฉพาะตอนอยู่ที่บ้าน**
+           (ในตัวบ้าน หรือในกรอบบริเวณบ้าน) — ตัวคุมคือ refreshHomeBtns() ใน js/house.js
+           เดิมอยู่แถวบนซ้ายข้างชื่อเด็ก แต่ที่ตรงนั้นถูกยกให้เข็มทิศแล้ว -->
+      <button class="back-btn house-home-btn" id="house-pet-btn" aria-label="สัตว์เลี้ยงของหนู" data-tooltip="สัตว์เลี้ยงของหนู"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="15.5" rx="4.8" ry="3.9" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="5.8" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="12" cy="8.6" r="2.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><circle cx="18.2" cy="10.8" r="2" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/></svg></button>
+      <!-- เฟส 4A: แต่งตัวให้พ่อแม่ — ปุ่มเดียวเข้าหน้าแต่งตัว แล้วเลือกพ่อ/แม่จากแท็บข้างใน
+           โผล่เฉพาะตอนอยู่ในบ้าน (พ่อแม่อยู่แต่ชั้นใน) — refreshParentBtn ใน js/house.js -->
+      <button class="back-btn house-home-btn" id="house-parent-btn" hidden aria-label="แต่งตัวให้พ่อแม่" data-tooltip="แต่งตัวให้พ่อแม่"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="7.4" r="3.1" fill="#FFD9A0" stroke="#E59A5B" stroke-width="1.5"/><path d="M2.9 19.5c0-3 2.3-5.2 5.1-5.2s5.1 2.2 5.1 5.2z" fill="#8FC7F0" stroke="#3A79D8" stroke-width="1.5" stroke-linejoin="round"/><circle cx="16.6" cy="8.6" r="2.7" fill="#FFD9A0" stroke="#C0527A" stroke-width="1.5"/><path d="M12 19.5c0-2.6 2-4.6 4.6-4.6s4.6 2 4.6 4.6z" fill="#FFD6E8" stroke="#C0527A" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
+      <button class="back-btn house-home-btn" id="house-edit-btn" aria-label="แต่งตัวให้ตัวละคร" data-tooltip="แต่งตัวให้ตัวละคร"><svg class="house-btn-ic" viewBox="0 0 24 24" fill="none" stroke="#C0527A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 3.6L4 6.2L5.9 10.6L8.2 9.6L8.2 20L15.8 20L15.8 9.6L18.1 10.6L20 6.2L14.8 3.6Q12 7.2 9.2 3.6Z" fill="#FFD6E8"/><path d="M12 15.9c-1.8-1.3-2.6-2.1-2.6-3.1 0-.8.65-1.4 1.4-1.4.5 0 .9.25 1.2.65.3-.4.7-.65 1.2-.65.75 0 1.4.6 1.4 1.4 0 1-.8 1.8-2.6 3.1z" fill="#C0527A" stroke="none"/></svg></button>
+      <button class="back-btn house-home-btn" id="house-decorate-btn" aria-label="ตกแต่งบ้าน" data-tooltip="ตกแต่งบ้าน"><svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v.6a2.4 2.4 0 0 0-2.4 2.4V17H6.4v-2A2.4 2.4 0 0 0 4 12.6z" fill="#FFD6A0" stroke="#E59A5B" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 9V7.5A1.5 1.5 0 0 1 8.5 6h7A1.5 1.5 0 0 1 17 7.5V9" fill="#FFE9C8" stroke="#E59A5B" stroke-width="1.2"/><path d="M5.5 17v2M18.5 17v2" stroke="#E59A5B" stroke-width="1.6" stroke-linecap="round"/></svg></button>
       <!-- เฟส 11: ปุ่มกล้อง — กดแล้วเข้าโหมดถ่ายรูป (ซ่อน UI ทุกมุม เหลือกรอบโฟกัส + ปุ่มชัตเตอร์) -->
       <button class="icon-btn house-gear-btn house-cam-btn" id="house-photo-btn" aria-label="โหมดถ่ายรูป">
         <svg class="house-btn-ic" viewBox="0 0 24 24" aria-hidden="true">
@@ -1038,28 +1079,6 @@
     <!-- ป้ายบอกช่องที่ตัวละครยืนอยู่ (มุมขวาล่าง) — ไว้ดูพิกัดตอนทดสอบเกม -->
     <div class="house-pos-chip" id="house-pos-chip" hidden>x– z–</div>
     <div class="ar-hint-chip house-hint" id="house-hint" hidden>👆 แตะพื้นเพื่อเดินเล่น ลองไปคุยกับชาวบ้าน และดูกระดานภารกิจข้างน้ำพุกลางหมู่บ้านนะ!</div>
-    <!-- เข็มทิศ: เข็มชี้ไปทางบ้านของหนูเสมอ กดแล้วเดินกลับบ้านอัตโนมัติ (แผนที่ใหญ่ เด็กหลงทางได้) -->
-    <button class="house-compass" id="house-compass" aria-label="เข็มทิศ กดเพื่อเดินกลับบ้าน" data-tooltip="กลับบ้าน" hidden>
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="29" fill="#fffaf0" stroke="#e0b784" stroke-width="3"/>
-        <circle cx="32" cy="32" r="23.5" fill="none" stroke="#f3e2c8" stroke-width="2"/>
-        <g class="hc-labels" text-anchor="middle" dominant-baseline="central">
-          <text id="hc-n" x="32" y="12" fill="#ef6a58">N</text>
-          <text id="hc-e" x="52" y="32" fill="#a9825c">E</text>
-          <text id="hc-s" x="32" y="52" fill="#a9825c">S</text>
-          <text id="hc-w" x="12" y="32" fill="#a9825c">W</text>
-        </g>
-        <g id="hc-needle">
-          <path d="M32 24.5 L36.6 36 L32 33.4 L27.4 36 Z" fill="#ef6a58"/>
-          <path d="M32 46 L27.4 32 L32 34.6 L36.6 32 Z" fill="#e8ddcc" stroke="#c9b79c" stroke-width="1"/>
-          <g id="hc-home">
-            <path d="M28.1 19.3 L32 15.7 L35.9 19.3 Z" fill="#ef8354"/>
-            <rect x="29.4" y="19.1" width="5.2" height="3.6" rx=".8" fill="#fff3e0" stroke="#e0b784" stroke-width="1"/>
-          </g>
-        </g>
-        <circle cx="32" cy="32" r="3.6" fill="#a9825c"/>
-      </svg>
-    </button>
   </div>
   <div class="house-char-name" id="house-char-name" hidden></div>
   <div class="house-char-name house-pet-name" id="house-pet-name" hidden></div>
@@ -1480,36 +1499,36 @@
 
 <!-- ข้อมูลหมวด: แยกไฟล์ตามระดับชั้น แล้วต่อกันเป็น CATS ใน data-cats.js
      (data-cats.js ต้องอยู่หลัง data-cats-*.js ทุกไฟล์) -->
-<script src="js/data-cats-prep.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats-p1.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats-p2.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats-p3.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats-p4.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats-p5.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats-p6.js?v=2.1.0-dev6"></script>
-<script src="js/data-cats.js?v=2.1.0-dev6"></script>
-<script src="js/data-pools.js?v=2.1.0-dev6"></script>
+<script src="js/data-cats-prep.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats-p1.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats-p2.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats-p3.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats-p4.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats-p5.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats-p6.js?v=2.1.0-dev7"></script>
+<script src="js/data-cats.js?v=2.1.0-dev7"></script>
+<script src="js/data-pools.js?v=2.1.0-dev7"></script>
 <!-- โค้ดกลางที่ใช้ร่วมกับโหมดครู (teacher/) — แก้ที่นี่ที่เดียวมีผลทั้งสองหน้า -->
-<script src="js/shared/audio.js?v=2.1.0-dev6"></script>
-<script src="js/shared/ui.js?v=2.1.0-dev6"></script>
-<script src="js/shared/speech.js?v=2.1.0-dev6"></script>
-<script src="js/shared/piano.js?v=2.1.0-dev6"></script>
-<script src="js/shared/ar-core.js?v=2.1.0-dev6"></script>
-<script src="js/owl-messages.js?v=2.1.0-dev6"></script>
+<script src="js/shared/audio.js?v=2.1.0-dev7"></script>
+<script src="js/shared/ui.js?v=2.1.0-dev7"></script>
+<script src="js/shared/speech.js?v=2.1.0-dev7"></script>
+<script src="js/shared/piano.js?v=2.1.0-dev7"></script>
+<script src="js/shared/ar-core.js?v=2.1.0-dev7"></script>
+<script src="js/owl-messages.js?v=2.1.0-dev7"></script>
 <!-- ชุดไฟล์ของแอป: app-core ต้องมาก่อนไฟล์เกมทุกไฟล์ และ app-ui ต้องอยู่ท้ายสุด
      (บรรทัด INIT อยู่ท้าย app-ui และเรียกใช้ฟังก์ชันจากทุกไฟล์) -->
-<script src="js/owl-games.js?v=2.1.0-dev6"></script>
-<script src="js/app-core.js?v=2.1.0-dev6"></script>
-<script src="js/game-quiz.js?v=2.1.0-dev6"></script>
-<script src="js/games-think.js?v=2.1.0-dev6"></script>
-<script src="js/games-math.js?v=2.1.0-dev6"></script>
-<script src="js/games-code.js?v=2.1.0-dev6"></script>
-<script src="js/games-write.js?v=2.1.0-dev6"></script>
-<script src="js/games-art.js?v=2.1.0-dev6"></script>
-<script src="js/games-listen.js?v=2.1.0-dev6"></script>
-<script src="js/games-ar.js?v=2.1.0-dev6"></script>
-<script src="js/app-landing.js?v=2.1.0-dev6"></script>
-<script src="js/app-ui.js?v=2.1.0-dev6"></script>
+<script src="js/owl-games.js?v=2.1.0-dev7"></script>
+<script src="js/app-core.js?v=2.1.0-dev7"></script>
+<script src="js/game-quiz.js?v=2.1.0-dev7"></script>
+<script src="js/games-think.js?v=2.1.0-dev7"></script>
+<script src="js/games-math.js?v=2.1.0-dev7"></script>
+<script src="js/games-code.js?v=2.1.0-dev7"></script>
+<script src="js/games-write.js?v=2.1.0-dev7"></script>
+<script src="js/games-art.js?v=2.1.0-dev7"></script>
+<script src="js/games-listen.js?v=2.1.0-dev7"></script>
+<script src="js/games-ar.js?v=2.1.0-dev7"></script>
+<script src="js/app-landing.js?v=2.1.0-dev7"></script>
+<script src="js/app-ui.js?v=2.1.0-dev7"></script>
 <!-- โหมด "บ้านของหนู" (three.min.js + house-furniture.js + house.js) โหลดแบบ lazy จาก js/games-ar.js
      เฉพาะตอนกดเข้าบ้าน หรือตอนเด็กคนนี้มีบ้านอยู่แล้ว (ต้องโชว์เพื่อนซี้หน้าหลัก)
      ทำให้เด็กที่ไม่เคยเข้าบ้านไม่ต้องโหลด/แปลไฟล์ 3D ก้อนใหญ่ทุกครั้งที่เปิดแอป -->

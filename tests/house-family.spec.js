@@ -411,10 +411,22 @@ test('แถบบนต้องคลิกทะลุได้: แตะช
   });
   expect(box.w, 'แถวนี้กว้างเต็มจอจริง').toBeGreaterThan(600);
 
-  /* จุดว่างท้ายแถว (เลยปุ่มสุดท้ายไปแล้ว) ต้องทะลุถึง canvas */
+  /* จุดว่างท้ายแถว (เลยปุ่มสุดท้ายไปแล้ว) ต้องทะลุถึง canvas
+     ⚠ **ห้าม hardcode ระยะจากขอบขวา** — มุมขวาบนมีปุ่มกล้อง/เฟือง (และปุ่มของที่บ้านตอนอยู่บ้าน)
+       ลอยอยู่คนละ container ที่ระดับความสูงเดียวกัน จุดที่เคยว่างตอนเขียนเทสจึงกลายเป็นตัวปุ่มไปแล้ว
+       (เทสแดงอยู่ก่อนแล้วตั้งแต่ย้ายปุ่มกล้องมามุมขวาบน) ⇒ ไล่หาจุดว่างจริงจากขวาไปซ้ายแทน */
   const hit = await page.evaluate(b => {
-    const el = document.elementFromPoint(Math.round(b.x + b.w - 90), Math.round(b.y + b.h / 2));
-    return el ? el.id || el.tagName : 'none';
+    const y = Math.round(b.y + b.h / 2);
+    for (let x = Math.round(b.x + b.w) - 4; x > b.x; x -= 8) {
+      const el = document.elementFromPoint(x, y);
+      if (!el) continue;
+      if (el.id === 'house-canvas') return 'house-canvas';
+      /* เจอปุ่มจริงก็ข้ามไป (ปุ่มมีสิทธิ์กินคลิกของตัวเอง) — ที่ห้ามคือ "ช่องว่าง" กินคลิก */
+      if (el.closest('button') || el.closest('.house-ctrl-wrap') || el.closest('.child-chip-group')
+          || el.closest('.house-coins')) continue;
+      return el.id || el.className || el.tagName;
+    }
+    return 'none';
   }, box);
   expect(hit, 'ช่องว่างในแถบบนต้องคลิกทะลุถึง canvas').toBe('house-canvas');
 
