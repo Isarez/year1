@@ -366,7 +366,8 @@ const PETCARE = (typeof window.HOUSE_PET_CARE === 'function')
   ? window.HOUSE_PET_CARE({
       load: loadHouseData, save: saveHouseData,
       dayKey: ()=> questDayKey(),
-      onChange: ()=>{ petBarKey = ''; },   /* สถานะเปลี่ยน → บังคับวาดแถบสถานะสัตว์ใหม่ */
+      /* สถานะเปลี่ยน → บังคับอ่านค่าใหม่ (petCareHud.t) แล้ววาดแถบสถานะสัตว์ใหม่ (petBarKey) */
+      onChange: ()=>{ petBarKey = ''; petCareHud.t = 0; },
     })
   : null;
 
@@ -374,6 +375,8 @@ const PETCARE = (typeof window.HOUSE_PET_CARE === 'function')
 function onShopChange(){
   if(editMode) renderEditItems();
   if(hMode === 'creator' && creatorCfg) buildCreatorRows(creatorCfg);
+  /* เฟส 12: เปลี่ยนปลอกคอในร้าน = ตัวน้องที่ยืนอยู่ในฉากต้องเปลี่ยนตามทันที (ปลอกคอถูกประกอบใน buildPet) */
+  if(typeof restylePet === 'function' && hPet.group) restylePet();
 }
 
 /* ---------- พรีวิวสินค้า 3D ในร้าน — "หน้าต่างลอย" ข้างกล่องร้าน ----------
@@ -441,7 +444,10 @@ function openShopPreview(spec){
     g = buildCharacter(cfg);          /* ตัวละครแยกก้อนของตัวเอง ไม่แตะ charGroup ที่เดินอยู่ในเมือง */
     fitPreviewModel(g, 2.0);
   }else if(spec.kind === 'pet'){      /* เฟส 3A: ดูตัวจริงของเพื่อนตัวน้อยก่อนซื้อ */
-    g = buildPet(spec.type, spec.color | 0);
+    /* เฟส 12: แท็บปลอกคอส่ง spec.collar มาด้วย ⇒ เห็นน้อง**ใส่ปลอกคออันนั้นจริงๆ** ก่อนจ่ายเงิน
+       (ไม่ส่งมา = ใช้ปลอกคอที่น้องใส่อยู่ตอนนี้ตามปกติ) · พรีวิวไม่โชว์รอยเปื้อนเสมอ */
+    g = buildPet(spec.type, spec.color | 0,
+                 {collar: spec.collar !== undefined ? spec.collar : undefined, dirty: false});
     /* ใช้เป้าหมายเท่าเฟอร์นิเจอร์ — เพดาน scale ใน fitPreviewModel จะทำให้ตัวจิ๋ว (ลูกเจี๊ยบ)
        ดูเล็กกว่าตัวใหญ่ (แพนด้า) จริงๆ ซึ่งเป็นผลพลอยได้ที่ดี ไม่ใช่บั๊ก */
     fitPreviewModel(g, 1.9);
@@ -5806,6 +5812,8 @@ function handleTap(cx, cy){
   /* ⚠ **โหมดถ่ายรูป = ห้ามคุย/เล่น/เดิน** (ผู้ใช้สั่ง 2026-08-14) — ต้องออกจากโหมดก่อน
      ทำที่นี่จุดเดียวเพราะทุกการแตะฉากวิ่งผ่านฟังก์ชันนี้ทั้งหมด */
   if(document.body.classList.contains('house-photo')) return;
+  /* กำลังเล่นกิจกรรมกับสัตว์เลี้ยงอยู่ (เฟส 12) = รอให้ท่าจบก่อน ไม่งั้นเด็กสั่งเดินกลางท่าแล้วภาพขาด */
+  if(petAct) return;
   /* ---- แตะพื้นที่นอกกล่อง = ปิดกล่องที่เปิดอยู่ (ผู้ใช้สั่ง 2026-08-09) ----
      กล่องพวกนี้เป็น "การ์ดลอย" ไม่ได้คลุมทั้งจอ ⇒ แตะนอกกล่องจะตกมาถึง canvas เสมอ
      จัดการที่นี่จุดเดียวได้เลย ไม่ต้องทำ backdrop ให้แต่ละกล่อง (และไม่บังโลก 3D ด้วย)
@@ -5817,6 +5825,7 @@ function handleTap(cx, cy){
   if(questPlayOpen()){ closeQuestPanel(); return; }    /* การ์ดเควสต์/การ์ดคุยพ่อแม่ */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }   /* หน้าร้านเปิดอยู่ → แตะนอกกล่อง = ออกจากร้าน */
   if(window.HousePlay && window.HousePlay.isOpen()){ window.HousePlay.close(); return; }   /* แผงเล่นในเมือง (เฟส 11) */
+  if(petMenuOn){ closePetMenu(); return; }             /* เมนูฟองของสัตว์เลี้ยง (เฟส 12) */
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
   /* 🎣 **กำลังตกปลาอยู่ = แตะอย่างอื่นในโลกไม่ได้เลย** (ผู้ใช้สั่ง 2026-08-14)
      ของเดิมเดินหนีไปได้ทั้งที่เบ็ดยังอยู่ในน้ำ ⇒ เห็นทุ่นลอยอยู่คนละมุมกับตัวเด็ก
@@ -8625,7 +8634,8 @@ const PET_IDLE_EMOJI = ['❤️','⭐','🎵','😊','🦋','💤'];
 const hPet = {cfg:null, group:null, tile:null, path:[], seg:0, segT:0, segFrom:null,
               t:0, repathT:0, behT:2.5, beh:null, behK:0, happy:0, happyDur:1, spin:false,
               sitK:0, bubbleTimer:null,
-              rest:null, restT:0};   /* rest = group ของบ้านสัตว์เลี้ยงที่กำลังนอนรออยู่ (null = เดินตามเด็กปกติ) */
+              rest:null, restT:0,   /* rest = group ของบ้านสัตว์เลี้ยงที่กำลังนอนรออยู่ (null = เดินตามเด็กปกติ) */
+              restLonely:false, show:null};   /* เฟส 12: งีบเพราะเหงา (เรียกออกมาไม่ได้) · ท่าที่กำลังโชว์เอง */
 
 function petTypeInfo(id){ return PET_TYPES.find(p=>p.id===id) || PET_TYPES[0]; }
 function curGridInfo(){
@@ -8645,9 +8655,120 @@ function petColor(type, idx){
   const p = petTypeInfo(type);
   return (p.colors[idx|0] || p.colors[0]).c;
 }
+/* ---------- ปลอกคอ (เฟส 12 · ผู้ใช้สั่งเอากลับมา 2026-08-14) ----------
+   ⚠ ตารางนี้กู้มาจาก commit 4b17532 ที่เคยลบปลอกคอทิ้ง — วัดจากสรีระของโมเดลแต่ละชนิดจริง
+     `y` ความสูงช่วงคอ · `z` เยื้องไปทางหัว · `r` รัศมีวง · `tilt` เอียงวงให้แนบคอ (ยกด้านหลังพ้นตัว)
+   ⚠ **ค่าพวกนี้อยู่ใน "พิกัดก่อนคูณ PET_SCALE"** เพราะ addPetCollar ถูกเรียกใน buildPet
+     ก่อนบรรทัด g.scale.setScalar(PET_SCALE) — เอาไปใช้ที่อื่นต้องคูณเอง */
+const PET_COLLAR_FIT = {
+  dog:    {y:.225, z:.2,   r:.12,  tilt:.3},
+  cat:    {y:.215, z:.17,  r:.11,  tilt:.28},
+  rabbit: {y:.215, z:.13,  r:.11,  tilt:.28},
+  chick:  {y:.21,  z:.05,  r:.09,  tilt:.12},
+  hamster:{y:.13,  z:.02,  r:.14,  tilt:.38},
+  turtle: {y:.09,  z:.24,  r:.078, tilt:.22},
+  pig:    {y:.245, z:.18,  r:.14,  tilt:.3},
+  sheep:  {y:.2,   z:.235, r:.1,   tilt:.25},
+  frog:   {y:.12,  z:.02,  r:.15,  tilt:.25},
+  penguin:{y:.27,  z:.03,  r:.12,  tilt:.18},
+  unicorn:{y:.3,   z:.21,  r:.095, tilt:.3},
+  panda:  {y:.26,  z:.09,  r:.13,  tilt:.22},
+};
+/* จี้/ของห้อยหน้าปลอกคอของแต่ละแบบ — วาดไว้ที่ตำแหน่ง (0,0,0) แล้วให้ addPetCollar ย้ายไปห้อยเอง
+   ⚠ **ทุกแบบต้องต่างกันที่ "เงารวม" ไม่ใช่รายละเอียดเล็ก** — เห็นบนจอจริงแค่ ~20px
+     (บทเรียนเดียวกับไอคอนของแต่งตัวเฟส 8 ที่วาดคล้ายกันจนแยกไม่ออก) */
+function collarCharm(style, col){
+  const gold = 0xffd54f;
+  const gg = new THREE.Group();
+  if(style === 'bone'){
+    const b = box(.055,.018,.016, 0xfff6e0); gg.add(b);
+    [-1,1].forEach(s=>{ [-1,1].forEach(t=>{
+      const k = sphere(.014, 0xfff6e0, 6); k.position.set(.028*s, .011*t, 0); gg.add(k); }); });
+  }else if(style === 'bow'){
+    [-1,1].forEach(s=>{
+      const w = box(.038,.032,.014, col); w.position.set(.026*s, 0, 0); w.rotation.z = .35*s; gg.add(w);
+    });
+    const knot = sphere(.014, petShade(col,.85), 6); gg.add(knot);
+  }else if(style === 'heart'){
+    /* หัวใจ = ลูกกลม 2 ลูก + กรวยคว่ำ (ทรงเดียวกับหัวใจในเอฟเฟกต์อนุภาคของเกม) */
+    [-1,1].forEach(s=>{ const l = sphere(.017, 0xf2557f, 7); l.position.set(.013*s, .012, 0); gg.add(l); });
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(.026,.036,7), toonMat(0xf2557f));
+    tip.castShadow = hShadows; tip.rotation.x = Math.PI; tip.position.y = -.016; gg.add(tip);
+  }else if(style === 'star'){
+    const st = new THREE.Mesh(new THREE.ConeGeometry(.028,.02,5), toonMat(gold));
+    st.castShadow = hShadows; st.rotation.x = -Math.PI/2; gg.add(st);
+    const st2 = new THREE.Mesh(new THREE.ConeGeometry(.028,.02,5), toonMat(gold));
+    st2.castShadow = hShadows; st2.rotation.x = Math.PI/2; gg.add(st2);
+  }else if(style === 'bell'){
+    const b = sphere(.026, gold, 8); b.scale.set(1,.9,1); gg.add(b);
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(.02,.006,6,12), toonMat(petShade(gold,.8)));
+    lip.castShadow = hShadows; lip.rotation.x = Math.PI/2; lip.position.y = -.016; gg.add(lip);
+    const dot = sphere(.008, 0x8d6e00, 6); dot.position.y = -.026; gg.add(dot);
+  }else if(style === 'flower'){
+    const mid = sphere(.014, 0xffe082, 7); gg.add(mid);
+    for(let i=0;i<5;i++){
+      const p = sphere(.015, col, 7); p.scale.set(1,.6,1);
+      p.position.set(Math.cos(i/5*Math.PI*2)*.026, 0, Math.sin(i/5*Math.PI*2)*.026);
+      gg.add(p);
+    }
+  }else if(style === 'bandana'){
+    const t = new THREE.Mesh(new THREE.ConeGeometry(.05,.075,3), toonMat(col));
+    t.castShadow = hShadows; t.rotation.x = Math.PI; t.position.y = -.03; gg.add(t);
+  }else{                                    /* classic — เหรียญกลมทองแบบเดิมของ commit 4b17532 */
+    const tag = sphere(.021, gold, 8); gg.add(tag);
+  }
+  return gg;
+}
+/* ใส่ปลอกคอให้โมเดลน้อง · `cl` = {s:แบบ, c:index สีจาก HouseShop.COLLAR_COLORS}
+   คืน mesh วงปลอกคอ (เก็บไว้ที่ u.collar เผื่ออนิเมชันกระดิ่งสั่นตอนน้องวิ่ง) */
+function addPetCollar(g, type, cl){
+  const o = PET_COLLAR_FIT[type] || PET_COLLAR_FIT.dog;
+  const S = window.HouseShop;
+  const cols = (S && S.COLLAR_COLORS) || [{c:0xe5533d}];
+  const style = (cl && cl.s) || 'classic';
+  const col = (cols[(cl && cl.c) | 0] || cols[0]).c;
+  /* ผ้าพันคอไม่ใช่ "วงแหวน" — ใช้ทรงกรวยคว่ำครอบรอบคอแทน ไม่งั้นดูเหมือนปลอกคอธรรมดาติดผ้า */
+  const band = style === 'bandana'
+    ? new THREE.Mesh(new THREE.TorusGeometry(o.r, .026, 6, 16), toonMat(col))
+    : new THREE.Mesh(new THREE.TorusGeometry(o.r, .017, 8, 18), toonMat(col));
+  band.rotation.x = Math.PI/2 + (o.tilt || 0);
+  band.position.set(0, o.y, o.z || 0);
+  band.castShadow = hShadows;
+  g.add(band);
+  const charm = collarCharm(style, col);
+  charm.position.set(0, o.y - Math.sin(o.tilt || 0) * o.r - .03, (o.z || 0) + o.r * .92);
+  g.add(charm);
+  return {band, charm, style};
+}
+/* ---------- ตัวเปื้อน (เฟส 12) ----------
+   ไม่ได้อาบน้ำติดกัน 2 วันเล่น ⇒ รอยโคลนน้ำตาล 5 จุด + ไอเหม็นเทา 2 เส้นลอยเหนือหัว
+   ⚠ **ห้ามผูกกับความป่วย/บทลงโทษใดๆ** (กติกาเหล็กข้อ 2) — ผลเดียวคือความสุขลดเร็วขึ้น
+     และเป็น "คำใบ้ทางสายตา" ให้เด็กรู้ว่าถึงเวลาอาบน้ำแล้ว */
+function addPetDirt(g){
+  const spots = [];
+  const at = [[.09,.2,.08],[-.1,.15,-.05],[.04,.31,.16],[-.07,.26,.12],[.11,.12,-.12]];
+  at.forEach(p=>{
+    const s = sphere(.038, 0x8d6e4e, 6);
+    s.scale.set(1,.35,1);
+    s.position.set(p[0], p[1], p[2]);
+    g.add(s); spots.push(s);
+  });
+  const stink = new THREE.Group();
+  [-1,1].forEach(k=>{
+    const w = new THREE.Mesh(new THREE.TorusGeometry(.035, .008, 5, 10, Math.PI), toonMat(0xb7c4a8));
+    w.castShadow = false;
+    w.position.set(.07*k, .52 + .07*(k>0?1:0), .04);
+    w.rotation.z = .4*k;
+    stink.add(w);
+  });
+  g.add(stink);
+  return {spots, stink};
+}
+
 /* โมเดลสัตว์เลี้ยงสไตล์เดียวกับ critter (บล็อกมน ไม่มีขา เด้งตามจังหวะ)
-   — colIdx = index สีขนใน PET_TYPES[].colors */
-function buildPet(type, colIdx){
+   — colIdx = index สีขนใน PET_TYPES[].colors
+   — opt.collar {s,c} / opt.dirty — ไม่ส่งมาก็อ่านจาก PETCARE ให้เอง (พรีวิวในร้านส่งค่าเองได้) */
+function buildPet(type, colIdx, opt){
   const g = new THREE.Group(); const u = {};
   const c = petColor(type, colIdx);
   if(type==='dog'){
@@ -8774,6 +8895,14 @@ function buildPet(type, colIdx){
     const nose = sphere(.02,0x3a3a3a,6); nose.position.set(0,.36,.225); g.add(nose);
     const tail = sphere(.04,0x3a3a3a,6); tail.position.set(0,.14,-.195); g.add(tail);
   }
+  /* ---------- เฟส 12: ปลอกคอ + รอยเปื้อน (ต้องใส่ก่อน setScalar เพราะตารางเป็นพิกัดก่อนย่อ) ---------- */
+  const o12 = opt || {};
+  const cl = o12.collar !== undefined ? o12.collar
+                                      : (PETCARE && PETCARE.collar ? PETCARE.collar() : null);
+  if(cl) u.collar = addPetCollar(g, type, cl);
+  const mucky = o12.dirty !== undefined ? o12.dirty
+                                        : !!(PETCARE && PETCARE.isDirty && PETCARE.isDirty());
+  if(mucky) u.dirt = addPetDirt(g);
   g.scale.setScalar(PET_SCALE);        /* ตัวใหญ่กว่าสัตว์ป่าในฉาก — ชี้ชัดว่าเป็นสัตว์เลี้ยงของหนู */
   g.userData.hPet = true;              /* tag ที่ group — ancestor walk ตอน raycast เจอแน่ */
   g.userData.anim = u;
@@ -8857,20 +8986,131 @@ function playWithPet(){
     return;
   }
   /* แตะตัวที่โผล่ครึ่งตัวอยู่ในบ้านสัตว์เลี้ยง = เรียกออกมาเดินเล่นต่อ (ไม่ต้องเดินไปแตะตัวบ้าน) */
-  if(hPet.rest){ if(typeof playClick==='function') playClick(); petLeaveHouse(); return; }
+  /* แตะตัวที่นอนอยู่ในบ้านสัตว์ "เพราะเด็กสั่งให้เข้าไปเอง" = เรียกออกมาเดินเล่นต่อทันที
+     แต่ถ้าเข้าไปเพราะ **เหงา** (ความสุข < 25%) เรียกไม่ออก ต้องลูบหัว/อาบน้ำให้อารมณ์ดีก่อน
+     ⇒ เปิดเมนูให้เลือกแทน จะได้ไม่กลายเป็นทางตัน (กติกาเหล็กข้อ 1) */
+  if(hPet.rest && !hPet.restLonely){
+    if(typeof playClick==='function') playClick();
+    petLeaveHouse();
+    return;
+  }
   questEvent('pet', null);
+  openPetMenu();
+}
+
+/* ==================== เมนูฟองเลือกกิจกรรม (เฟส 12) ====================
+   ปุ่มทั้งหมดกดได้เสมอ — กดตัวที่ยังไม่พร้อมจะ "บอกวิธีทำให้พร้อม" ไม่ใช่เงียบหรือดุ
+   (กติกาเหล็กข้อ 1 + 2: ไม่มีทางตัน · ไม่ลงโทษเด็ก) */
+let petMenuOn = false, petMenuPage = 'main';
+function petMenuEls(){
+  return {box:$('house-pet-menu'), grid:$('hpm-grid'), title:$('hpm-title'), note:$('hpm-note')};
+}
+function closePetMenu(){
+  const el = $('house-pet-menu');
+  if(el) el.hidden = true;
+  petMenuOn = false; petMenuPage = 'main';
+}
+function openPetMenu(page){
+  if(!hPet.group) return;
+  petMenuPage = page || 'main';
+  petMenuOn = true;
   if(typeof playClick==='function') playClick();
-  hPet.path = [];
-  petHappy(1.1, true);
-  petBubble(Math.random()<.5 ? '❤️' : '💖');
-  if(charGroup){
-    hPet.group.rotation.y = Math.atan2(charGroup.position.x-hPet.group.position.x, charGroup.position.z-hPet.group.position.z);
-    hChar.targetRotY = Math.atan2(hPet.group.position.x-charGroup.position.x, hPet.group.position.z-charGroup.position.z);
+  renderPetMenu();
+  updatePetLabels();
+}
+function hpmBtn(ic, lb, opt){
+  const o = opt || {};
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'hpm-btn' + (o.off ? ' off' : '') + (o.done ? ' done' : '');
+  b.setAttribute('data-hp-click', '1');       /* โหมดเล่นด้วยมือยิง pointerdown ไม่ใช่ click */
+  b.innerHTML = '<span class="hpm-ic">' + ic + '</span><span class="hpm-lb">' + lb + '</span>';
+  if(o.pips !== undefined){
+    const p = document.createElement('span');
+    p.className = 'hpm-pips';
+    for(let i=0;i<o.pipMax;i++) p.innerHTML += '<i class="' + (i < o.pips ? 'on' : '') + '"></i>';
+    b.appendChild(p);
   }
-  for(let i=0; i<6; i++){
-    spawnParticle(hPet.group.position.x+(Math.random()-.5)*.5, .5+Math.random()*.4,
-                  hPet.group.position.z+(Math.random()-.5)*.5, i%2 ? 0xf06292 : 0xff8fb3, petParent());
+  b.onclick = o.run;
+  return b;
+}
+function petMenuNote(txt){
+  const n = $('hpm-note');
+  if(!n) return;
+  n.textContent = txt || '';
+  n.hidden = !txt;
+}
+function renderPetMenu(){
+  const e = petMenuEls();
+  if(!e.box || !e.grid) return;
+  e.box.hidden = false;
+  e.grid.innerHTML = '';
+  petMenuNote('');
+  const home = petAtHome();
+  const lonely = !!(hPet.rest && hPet.restLonely);
+  const name = hPet.cfg ? hPet.cfg.name : 'น้อง';
+
+  if(petMenuPage === 'trick'){
+    e.title.textContent = 'สอนท่าอะไรดี?';
+    const list = (PETCARE && PETCARE.TRICKS) || [];
+    const need = (PETCARE && PETCARE.TRICK_NEED) || 5;
+    list.forEach(tk=>{
+      const pr = PETCARE ? PETCARE.trickProg(tk.id) : 0;
+      const got = PETCARE ? PETCARE.trickLearned(tk.id) : false;
+      e.grid.appendChild(hpmBtn(got ? tk.emoji : tk.emoji, got ? tk.name + ' ✓' : tk.name, {
+        pips: Math.min(need, pr), pipMax: need, done: got,
+        run: ()=>{ closePetMenu(); startPetAct('trick', tk.id); },
+      }));
+    });
+    petMenuNote('สอนซ้ำ ' + need + ' ครั้ง แล้ว' + name + 'จะทำท่านั้นเองได้เลย ⭐');
+    return;
   }
+  if(petMenuPage === 'toy'){
+    e.title.textContent = 'เล่นอะไรกับ' + name + 'ดี?';
+    const toys = (SHOP && SHOP.ownedToys) ? SHOP.ownedToys() : [];
+    toys.forEach(t=>{
+      e.grid.appendChild(hpmBtn(t.emoji, t.name, {
+        run: ()=>{ closePetMenu(); startPetAct('ball', t.id); },   /* เฟส 12.1 จะแยกท่าตามของเล่นแต่ละชิ้น */
+      }));
+    });
+    petMenuNote('อยากเล่นแบบอื่นอีก? ไปดูของเล่นใหม่ๆ ที่ร้านสัตว์เลี้ยงได้เลย 🐾');
+    return;
+  }
+
+  e.title.textContent = 'อยากทำอะไรกับ' + name + '?';
+  /* 🤚 ลูบหัว — ทำได้ทุกที่ ทุกเวลา แม้น้องกำลังงีบอยู่ (ผู้ใช้สั่ง 2026-08-14) */
+  e.grid.appendChild(hpmBtn('🤚', 'ลูบหัว', {
+    run: ()=>{ closePetMenu(); startPetAct('pat'); },
+  }));
+  const bathed = PETCARE ? PETCARE.bathedToday() : false;
+  e.grid.appendChild(hpmBtn('🫧', bathed ? 'อาบแล้ว ✓' : 'อาบน้ำ', {
+    off: bathed || !home, done: bathed,
+    run: ()=>{
+      if(bathed){ petMenuNote('วันนี้อาบน้ำให้' + name + 'แล้ว พรุ่งนี้มาอาบใหม่นะ 🫧'); return; }
+      if(!home){ petMenuNote('ออกไปที่สนามหน้าบ้านกันนะ แล้วค่อยอาบน้ำให้' + name + ' 🏡'); return; }
+      closePetMenu(); startPetAct('bath');
+    },
+  }));
+  e.grid.appendChild(hpmBtn('🎾', 'เล่นด้วยกัน', {
+    off: !home || lonely,
+    run: ()=>{
+      if(lonely){ petMenuNote(name + 'ยังไม่ค่อยมีแรงเล่น ลองลูบหัวหรืออาบน้ำให้ก่อนนะ 💗'); return; }
+      if(!home){ petMenuNote('ออกไปที่สนามหน้าบ้านกันนะ ที่นั่นกว้างพอให้เล่นได้ 🏡'); return; }
+      const toys = (SHOP && SHOP.ownedToys) ? SHOP.ownedToys() : [];
+      if(toys.length > 1){ openPetMenu('toy'); return; }
+      closePetMenu(); startPetAct('ball', 'ball');
+    },
+  }));
+  e.grid.appendChild(hpmBtn('🎪', 'สอนท่า', {
+    off: !home || lonely,
+    run: ()=>{
+      if(lonely){ petMenuNote(name + 'กำลังงีบอยู่ ลองลูบหัวหรืออาบน้ำให้ก่อนนะ 💗'); return; }
+      if(!home){ petMenuNote('ออกไปที่สนามหน้าบ้านกันนะ แล้วมาฝึกท่าใหม่ๆ กัน 🏡'); return; }
+      openPetMenu('trick');
+    },
+  }));
+  if(lonely) petMenuNote(name + 'กำลังงีบอยู่ในบ้าน ลูบหัวหรืออาบน้ำให้ก่อน เดี๋ยว' + name + 'ก็ออกมาเองนะ 💗');
+  else if(!home) petMenuNote('กลับไปที่สนามหน้าบ้านก่อนนะ แล้วจะเล่นกับ' + name + 'ได้ทุกอย่างเลย 🏡');
 }
 
 /* ---------- นอนรอในบ้านสัตว์เลี้ยง (แตะบ้านสัตว์เลี้ยง = สลับเข้า/ออก) ---------- */
@@ -8890,7 +9130,7 @@ function togglePetRest(g){
 /* พาน้องเข้าไปนอนรอ: จอดตรงประตู (ด้านหน้าโมเดล = +z ของ group) ให้ครึ่งตัวหลังจมอยู่ในบ้าน
    ตัวบ้านเป็นกล่องทึบ ส่วนที่จมจึงถูกบังด้วย depth ของ three.js เองโดยไม่ต้องตัดโมเดล */
 function petEnterHouse(g){
-  hPet.rest = g; hPet.restT = 2.5;
+  hPet.rest = g; hPet.restT = 2.5; hPet.show = null;
   hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
   hPet.beh = null; hPet.happy = 0; hPet.spin = false;
   /* กล้อง iso มองจากมุม +x/+z เสมอ → ต้องจอดน้องไว้ "ด้านที่กล้องมองเห็น" ไม่งั้นไปอยู่หลังบ้านมองไม่เห็นเลย
@@ -8904,6 +9144,7 @@ function petEnterHouse(g){
 }
 /* เรียกออกมาเดินตามต่อ — เซ็ต tile ให้ตรงกับช่องเดินได้ที่ใกล้ประตูที่สุด path ต่อไปจะได้ไม่วาร์ป */
 function petLeaveHouse(quiet){
+  hPet.restLonely = false;                 /* ออกมาแล้วไม่ใช่ "งีบเพราะเหงา" อีกต่อไป (เฟส 12) */
   if(!hPet.rest) return;
   hPet.rest = null;
   const {grid,W,D} = curGridInfo();
@@ -8934,6 +9175,7 @@ function updatePetRest(dt){
 function updatePet(dt){
   if(!hPet.group || hMode!=='world') return;
   if(feedAnim) return;             /* กำลังเล่นอนิเมชันป้อนอาหาร — updateFeedAnim() คุมน้องอยู่ ห้ามแย่ง */
+  if(petAct) return;               /* กำลังทำกิจกรรมเฟส 12 — updatePetAct() คุมอยู่ (กับดักเดียวกัน) */
   hPet.t += dt;
   if(hPet.rest){ updatePetRest(dt); return; }
   const u = hPet.group.userData.anim || {};
@@ -8983,12 +9225,33 @@ function updatePet(dt){
         }
       }
       else if(r < .8){ petHappy(.9, Math.random()<.35); if(Math.random()<.5) petBubble('😊'); } /* กระโดดดีใจ */
-      else { hPet.beh = null; petBubble(PET_IDLE_EMOJI[(Math.random()*PET_IDLE_EMOJI.length)|0]); }
+      else {
+        hPet.beh = null;
+        /* เรียนท่าจบแล้ว = น้องหยิบมาโชว์เองบ้างโดยไม่ต้องสั่ง (รางวัลของการฝึกจนครบ · เฟส 12) */
+        const got = (PETCARE && PETCARE.learnedTricks) ? PETCARE.learnedTricks() : [];
+        if(got.length && Math.random() < .45){
+          hPet.show = {id: got[(Math.random()*got.length)|0], t:0, dur:1.6, baseY: hPet.group.rotation.y};
+          petBubble('✨');
+        }else petBubble(PET_IDLE_EMOJI[(Math.random()*PET_IDLE_EMOJI.length)|0]);
+      }
       hPet.behT = 3 + Math.random()*3.5;
     }
     if(hPet.beh==='sit'){
       hPet.behK -= dt;
       if(hPet.behK <= 0) hPet.beh = null;
+    }
+  }
+  /* กำลังโชว์ท่าเอง = ยึดท่าทั้งตัวจนจบ (ถ้าเด็กเดินหนีระหว่างนั้นให้เลิกโชว์แล้ววิ่งตามทันที) */
+  if(hPet.show){
+    hPet.show.t += dt;
+    const k = hPet.show.t / hPet.show.dur;
+    if(k >= 1 || moving || following){
+      hPet.show = null;
+      hPet.group.rotation.set(0, hPet.group.rotation.y, 0);
+      hPet.group.position.y = 0;
+    }else{
+      petTrickAnim(hPet.show.id, k, hPet.group, u, hPet.show.baseY);
+      return;
     }
   }
 
@@ -9034,6 +9297,7 @@ function updatePetLabels(){
   refreshHomeBtns();
   if(!hPet.group || !houseOpen || hMode!=='world' || editMode){
     nameEl.hidden = true;
+    if(petMenuOn) closePetMenu();
     return;
   }
   _petV.set(hPet.group.position.x, hPet.group.position.y + 1.05, hPet.group.position.z).project(camera);  /* สูงขึ้นตาม PET_SCALE (ยูนิคอร์นมีเขาสูงสุด) */
@@ -9047,11 +9311,22 @@ function updatePetLabels(){
   /* แถบความอิ่มเป็น "หัวใจ" ไม่ใช่ตัวเลข — เด็ก 5 ขวบอ่านเปอร์เซ็นต์ไม่รู้เรื่อง (ข้อ 18.3)
      โชว์เฉพาะตอนเริ่มหิว (< LOW_AT) เพื่อไม่ให้รกจอตอนน้องสบายดี */
   nameEl.textContent = '🐾 ' + hPet.cfg.name + petCareHud.hearts;
+  /* เมนูฟองลอยเหนือหัวน้อง — ยึดขอบจอไว้ไม่ให้ปุ่มหลุดออกนอกจอเวลาน้องอยู่ริมภาพ */
+  if(petMenuOn){
+    const m = $('house-pet-menu');
+    if(m && !m.hidden){
+      const w = m.offsetWidth || 240, h = m.offsetHeight || 90;
+      const mx = Math.min(window.innerWidth - w/2 - 8, Math.max(w/2 + 8, px));
+      const my = Math.min(window.innerHeight - 8, Math.max(h + 8, py - 38));
+      m.style.left = mx.toFixed(1)+'px';
+      m.style.top  = my.toFixed(1)+'px';
+    }
+  }
 }
 /* ---------- เฟส 3B: ความหิว · อาหาร · ป่วย · คุณหมอ (ข้อ 18.2-18.4) ---------- */
 /* ⚠ PETCARE.* ทุกตัวอ่าน localStorage + JSON.parse ⇒ **ห้ามเรียกทุกเฟรม** เก็บผลไว้ที่นี่แล้ว
    ให้ลูปวาดภาพอ่านจากตัวแปรแทน (คำนวณใหม่ทุก ~1 วิ ก็ทันตาเด็กเหลือเฟือ) */
-const petCareHud = {hearts:'', sick:false, full:100, t:0};
+const petCareHud = {hearts:'', sick:false, full:100, happy:100, dirty:false, t:0};
 let petMoanT = 0;
 function updatePetCare(dt){
   if(!PETCARE || !hPet.group || hMode !== 'world' || editMode) return;
@@ -9061,6 +9336,11 @@ function updatePetCare(dt){
     const sick = PETCARE.isSick();
     petCareHud.sick = sick;
     petCareHud.full = PETCARE.fullness();
+    /* ⚠ ความสุข/ความเลอะต้องอ่านผ่านแคชวินาทีละครั้งเหมือนความอิ่ม **ห้ามให้ petBarPaint() ไปเรียก
+       PETCARE.happiness() ตรงๆ ทุกเฟรม** — ตัวอ่านของ pet-care วิ่งผ่าน sync() ซึ่ง JSON.parse
+       ทั้งก้อน save แล้วเขียนกลับได้ด้วย (เช่น สร้างสถานะใหม่ให้สัตว์ที่เพิ่งถูกปล่อยคืน) */
+    petCareHud.happy = PETCARE.happiness();
+    petCareHud.dirty = PETCARE.isDirty();
     if(sick) petCareHud.hearts = '  🤒';
     else if(petCareHud.full >= PETCARE.LOW_AT) petCareHud.hearts = '';
     else{
@@ -9219,6 +9499,363 @@ function updateFeedAnim(dt, u){
     }
   }
   if(a.t >= T4){ endFeedAnim(); petHappy(.7, false); }
+}
+/* ==================== เฟส 12: กิจกรรมกับเพื่อนตัวน้อย (ข้อ 48) ====================
+   แตะตัวน้อง → เมนูฟองเหนือหัว → เลือกกิจกรรม
+   🤚 ลูบหัว (ทำได้ทุกที่) · 🫧 อาบน้ำ · 🎾 เล่นด้วยกัน · 🎪 สอนท่า (3 อย่างหลังเฉพาะบริเวณบ้าน)
+   ⚠ **ทุกกิจกรรมไม่ให้เหรียญสักบาท** (ผู้ใช้สั่ง 2026-08-14) รางวัลคือ "ค่าความสุข" ซึ่งมีผลจริง
+     กับพฤติกรรมน้อง (ต่ำกว่า 25% = ไปนอนในบ้านสัตว์ ไม่เดินตามเด็กจนกว่าจะหายเหงา)
+   ⚠ ระหว่างเล่น **updatePet() ต้องหยุดคุมน้อง** (กับดักเดียวกับ feedAnim) และตอนจบต้อง sync
+     hPet.tile ให้ตรงช่องที่ยืนจริง ไม่งั้นก้าวต่อไปจะวาร์ปกลับช่องเดิม */
+const PET_ACTS = {
+  pat:   {dur:1.9, pose:'pat',   home:false},
+  bath:  {dur:4.0, pose:'scrub', home:true},
+  ball:  {dur:4.2, pose:'throw', home:true},
+  trick: {dur:3.6, pose:'cue',   home:true},
+};
+let petAct = null;
+/* "บริเวณบ้าน" = ในรั้วสนามหน้าบ้าน (HOME_ZONE = YARD เป๊ะๆ ตั้งแต่ 2026-08-09)
+   อยู่ในตัวบ้านไม่นับ — กิจกรรมทุกอย่างต้องใช้ที่โล่งกลางสนาม (อ่างอาบน้ำ/โยนบอล) */
+function petAtHome(){
+  return hScene === 'out' && !!hChar.tile && inBox(HOME_ZONE, hChar.tile.x, hChar.tile.z);
+}
+/* กระดิ่งบนปลอกคอดังตอนน้องกระโดด/วิ่งเข้ามาหา — เสียงเดียวกับเปียโนของหนู ไม่โหลดไฟล์เสียงเพิ่ม
+   ⚠ ห้ามดังทุกก้าวที่น้องเดิน จะกลายเป็นเสียงรบกวนตลอดเวลา (ดังเฉพาะจังหวะที่ "มีอะไรเกิดขึ้น") */
+let petBellT = 0;
+function petJingle(){
+  const u = hPet.group && hPet.group.userData.anim;
+  if(!u || !u.collar || u.collar.style !== 'bell') return;
+  const now = performance.now();
+  if(now - petBellT < 260) return;
+  petBellT = now;
+  if(typeof playPianoNote === 'function') playPianoNote(1568, .16);
+}
+/* สร้างตัวน้องใหม่ทั้งตัวโดยคงตำแหน่ง/ทิศทางเดิม — ใช้ตอนเปลี่ยนปลอกคอหรืออาบน้ำเสร็จ
+   (ปลอกคอ/รอยเปื้อนถูกประกอบเข้าโมเดลใน buildPet ⇒ เปลี่ยนแล้วต้องประกอบใหม่ ไม่มีทางลัด) */
+function restylePet(){
+  if(!hPet.group || !hPet.cfg) return;
+  const old = hPet.group, par = old.parent || petParent();
+  const g = buildPet(hPet.cfg.type, hPet.cfg.color);
+  g.position.copy(old.position);
+  g.rotation.copy(old.rotation);
+  par.add(g);
+  if(old.parent) old.parent.remove(old);
+  disposeGroup(old);
+  hPet.group = g;
+}
+/* ลูกบอลของน้อง — เขียวมะนาวมีเส้นโค้งขาวรอบตัวแบบลูกเทนนิส (เด็กจำได้ทันทีว่าเป็นลูกบอล) */
+function buildPetBall(){
+  const g = new THREE.Group();
+  g.add(sphere(.085, 0xd7ea52, 10));
+  [1,-1].forEach(s=>{
+    const ln = new THREE.Mesh(new THREE.TorusGeometry(.086, .009, 5, 16, Math.PI*1.1), toonMat(0xfdfdf5));
+    ln.rotation.set(Math.PI/2, 0, .9*s);
+    ln.position.x = .012*s;
+    g.add(ln);
+  });
+  return g;
+}
+/* อ่างอาบน้ำ + ฟองสบู่ — ทรงมนสีฟ้าพาสเทลเข้าชุดกับของตกแต่งในเกม */
+function buildPetTub(){
+  const g = new THREE.Group();
+  const tub = cyl(.42, .38, .26, 0x8fd6f2, 14); tub.position.y = .13; g.add(tub);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(.42, .035, 7, 18), toonMat(0xfdfdf5));
+  rim.rotation.x = Math.PI/2; rim.position.y = .26; g.add(rim);
+  const water = cyl(.37, .37, .02, 0xcdeffb, 14); water.position.y = .235; g.add(water);
+  const foam = [];
+  for(let i=0;i<7;i++){
+    const b = sphere(.06 + Math.random()*.05, 0xfdfdf5, 7);
+    b.position.set(Math.cos(i/7*Math.PI*2)*.26, .25 + Math.random()*.05, Math.sin(i/7*Math.PI*2)*.26);
+    g.add(b); foam.push(b);
+  }
+  g.userData.foam = foam;
+  return g;
+}
+/* ท่าโชว์ของน้อง (ใช้ทั้งตอนกำลังสอน และตอนโชว์เองหลังเรียนจบแล้ว) — k = 0..1 */
+function petTrickAnim(id, k, g, u, baseY){
+  const kk = Math.min(1, Math.max(0, k));
+  const ease = Math.sin(kk*Math.PI);
+  g.rotation.set(0, baseY, 0);
+  g.position.y = 0;
+  if(id === 'spin'){
+    g.rotation.y = baseY + kk*Math.PI*4;              /* หมุน 2 รอบเต็มพอดี ไม่ค้างเอียง */
+    g.position.y = ease*.06;
+  }else if(id === 'jump'){
+    g.position.y = Math.abs(Math.sin(kk*Math.PI*2.6))*.46;
+    g.rotation.x = -.14*ease;
+  }else if(id === 'high'){
+    g.rotation.x = -.66*ease;                          /* ตั้งตัวขึ้นแตะมือเด็ก */
+    g.position.y = ease*.2;
+  }else if(id === 'roll'){
+    g.rotation.z = kk*Math.PI*2;                       /* กลิ้งรอบตัวเอง 1 รอบ */
+    g.rotation.x = -.34*ease;
+    g.position.y = ease*.05;
+  }else{                                               /* sit — นั่งเอนตัวขึ้นแล้วค้าง */
+    g.rotation.x = -.5*Math.min(1, kk*3);
+  }
+  if(u && u.tail) u.tail.rotation.z = Math.sin(kk*34)*.55;
+  if(u && u.wings) u.wings.forEach((w,i)=>{ w.rotation.z = Math.sin(kk*40)*.6*(i?1:-1); });
+}
+function petTrickInfo(id){
+  const list = (PETCARE && PETCARE.TRICKS) || [];
+  for(let i=0;i<list.length;i++) if(list[i].id === id) return list[i];
+  return null;
+}
+/* ---------- เริ่มกิจกรรม ---------- */
+function startPetAct(kind, arg){
+  const spec = PET_ACTS[kind];
+  if(!spec || petAct || feedAnim) return false;
+  if(!hPet.group || !charGroup || hMode !== 'world' || editMode) return false;
+  if(hPet.rest) petLeaveHouse(true);        /* นอนอยู่ในบ้านสัตว์ → ออกมาเล่นก่อน */
+  hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null;
+  hPet.beh = null; hPet.happy = 0; hPet.spin = false; hPet.sitK = 0; hPet.show = null;
+  const cp = charGroup.position, pp = hPet.group.position;
+  let dx = pp.x - cp.x, dz = pp.z - cp.z;
+  let d = Math.hypot(dx, dz);
+  if(d < .05){ dx = Math.sin(hChar.targetRotY || 0); dz = Math.cos(hChar.targetRotY || 0); d = 1; }
+  dx /= d; dz /= d;
+  const near = kind === 'ball' ? 1.3 : 1.0;
+  hChar.targetRotY = Math.atan2(dx, dz);    /* เด็กหันหาน้องเสมอก่อนเริ่มท่า */
+  petAct = {kind, t:0, dur:spec.dur, arg: arg || null, dx, dz,
+            faceY: Math.atan2(-dx, -dz),    /* ทิศที่น้องหันกลับมามองเด็ก */
+            petFrom: pp.clone(),
+            petTo: new THREE.Vector3(cp.x + dx*near, 0, cp.z + dz*near),
+            props:[], flags:{}};
+  charAct = {kind: spec.pose, t0: performance.now(), dur: spec.dur*1000, hold:false};
+  if(typeof playClick === 'function') playClick();
+  if(kind === 'ball'){
+    const ball = buildPetBall();
+    ball.position.set(cp.x, .62, cp.z);
+    petParent().add(ball);
+    petAct.ball = ball;
+    petAct.props.push(ball);
+    petAct.ballTo = new THREE.Vector3(cp.x + dx*3.1, .085, cp.z + dz*3.1);
+  }else if(kind === 'bath'){
+    const tub = buildPetTub();
+    tub.position.set(cp.x + dx*1.1, 0, cp.z + dz*1.1);
+    tub.scale.setScalar(.01);
+    petParent().add(tub);
+    petAct.tub = tub;
+    petAct.props.push(tub);
+    petAct.petTo.set(tub.position.x, 0, tub.position.z);
+  }
+  return true;
+}
+function endPetAct(){
+  if(!petAct) return;
+  petAct.props.forEach(o=>{ if(o.parent) o.parent.remove(o); disposeGroup(o); });
+  if(hPet.group){
+    const gi = curGridInfo();
+    const p = hPet.group.position;
+    const t = nearestWalkable(gi.grid, gi.W, gi.D,
+                              Math.round(p.x + (gi.W-1)/2), Math.round(p.z + (gi.D-1)/2));
+    if(t) hPet.tile = {x:t.x, z:t.z};
+    hPet.path = []; hPet.seg = 0; hPet.segT = 0; hPet.segFrom = null; hPet.repathT = 0;
+    hPet.group.rotation.set(0, hPet.group.rotation.y, 0);
+    hPet.group.position.y = 0;
+    hPet.group.scale.setScalar(PET_SCALE);
+  }
+  petAct = null;
+  petCareHud.t = 0; petBarKey = '';       /* หลอดความสุขต้องขยับทันตา ไม่รอครบวินาที */
+  syncPetMood();                          /* ความสุขขึ้นแล้วอาจถึงเวลาออกมาเดินเล่นพอดี */
+}
+/* ปุยฟองสบู่/ประกายฟุ้งรอบตัวน้อง */
+function petPuff(n, color, spread, high){
+  if(!hPet.group) return;
+  const p = hPet.group.position;
+  for(let i=0;i<n;i++)
+    spawnParticle(p.x + (Math.random()-.5)*spread, (high||.35) + Math.random()*.45,
+                  p.z + (Math.random()-.5)*spread, color, petParent());
+}
+/* บันทึกผลการสอน + คำชม — **ห้ามมีคำว่า "ยังไม่ได้/ผิด"** ความคืบหน้าไม่มีวันถอยหลัง (กติกาเหล็กข้อ 2) */
+function finishTeach(id){
+  if(!PETCARE) return;
+  const r = PETCARE.teach(id);
+  if(!r.ok) return;
+  const tk = petTrickInfo(id);
+  petJingle();
+  if(typeof playCorrect === 'function') playCorrect();
+  if(r.justLearned){
+    petBubble('🏆');
+    petPuff(14, 0xffd54f, .9, .5);
+    charBubble((hPet.cfg ? hPet.cfg.name : 'น้อง') + 'ทำท่า "' + (tk ? tk.name : '') + '" เองได้แล้ว! 🏆', true);
+    if(typeof showToast === 'function')
+      showToast('🏆', 'เก่งมาก! ต่อไปน้องจะทำท่า' + (tk ? tk.name : '') + 'ให้ดูเองบ้างนะ');
+  }else{
+    petBubble('⭐');
+    petPuff(6, 0xfff3a8, .7, .45);
+    charBubble('เยี่ยม! อีก ' + Math.max(0, r.need - r.prog) + ' ครั้งก็ทำเองได้แล้ว ⭐', true);
+  }
+}
+function updatePetAct(dt){
+  const a = petAct;
+  if(!a) return;
+  if(!hPet.group || hMode !== 'world' || editMode){ endPetAct(); return; }
+  a.t += dt;
+  const g = hPet.group, u = g.userData.anim || {}, T = a.t;
+  g.rotation.set(0, a.faceY, 0);
+  g.position.y = 0;
+
+  if(a.kind === 'pat'){
+    /* 0-.5 น้องเดินเข้ามาหา · .5-1.5 หัวโยกรับการลูบ + หัวใจฟุ้ง · 1.5-1.9 กระโดดดีใจ */
+    const k = Math.min(1, T/.5), e = k*k*(3-2*k);
+    g.position.lerpVectors(a.petFrom, a.petTo, e);
+    if(k < 1) g.position.y = Math.abs(Math.sin(T*15))*.05;
+    if(T >= .5 && T < 1.5){
+      if(u.head) u.head.rotation.x = Math.sin(T*11)*.2;
+      g.rotation.z = Math.sin(T*7)*.07;
+      g.position.y = Math.abs(Math.sin(T*6))*.03;
+      if(!a.flags.h1 && T > .7){ a.flags.h1 = true; petBubble('💗'); petPuff(4, 0xf06292, .5); }
+      if(!a.flags.h2 && T > 1.15){ a.flags.h2 = true; petPuff(4, 0xff8fb3, .55); }
+    }
+    if(u.tail) u.tail.rotation.z = Math.sin(T*(T>=.5?16:11))*.42;
+    if(T >= 1.5){
+      g.position.y = Math.abs(Math.sin((T-1.5)*9))*.26;
+      if(!a.flags.done){
+        a.flags.done = true;
+        petJingle();
+        const r = PETCARE ? PETCARE.pat() : null;
+        if(typeof playCorrect === 'function') playCorrect();
+        /* ลูบครบโควตาวันนี้แล้วยังลูบได้เรื่อยๆ **แค่ไม่ได้ค่าความสุขเพิ่ม** ห้ามห้ามไม่ให้ลูบ */
+        charBubble(r && r.capped ? 'ชอบมากเลยยย 💗' : 'น่ารักที่สุดเลย 💗', true);
+      }
+    }
+  }else if(a.kind === 'bath'){
+    /* 0-.5 อ่างผุดขึ้น · .35-1.1 น้องลงอ่าง · 1.1-2.9 ถูตัวฟองฟุ้ง · 2.9-3.5 สะบัดตัว · 3.5-4.0 ขึ้นจากอ่างแวววาว */
+    const tub = a.tub;
+    if(tub){
+      const s = T < .5 ? Math.min(1, T/.4) : (T > 3.5 ? Math.max(.001, 1 - (T-3.5)/.5) : 1);
+      tub.scale.setScalar(s*s*(3-2*s) + .001);
+      (tub.userData.foam || []).forEach((f,i)=>{ f.position.y = .25 + Math.sin(T*3 + i)*.03; });
+    }
+    if(T < 1.1){
+      const k = Math.min(1, Math.max(0, (T-.35)/.75)), e = k*k*(3-2*k);
+      g.position.lerpVectors(a.petFrom, a.petTo, e);
+      g.position.y = k < 1 ? Math.abs(Math.sin(T*15))*.06 : .12;
+    }else if(T < 2.9){
+      g.position.set(a.petTo.x, .12 + Math.abs(Math.sin(T*5))*.03, a.petTo.z);
+      g.rotation.z = Math.sin(T*8)*.1;                    /* ตัวโยกไปมาตอนถูกถู */
+      if(u.head) u.head.rotation.x = Math.sin(T*9)*.16;
+      if(!a.flags.b || T > a.flags.b){
+        a.flags.b = T + .16;
+        petPuff(2, Math.random() < .5 ? 0xffffff : 0xcdeffb, .8, .45);
+      }
+      if(!a.flags.say){ a.flags.say = true; petBubble('🫧'); }
+    }else if(T < 3.5){
+      /* สะบัดขนไล่น้ำ — หมุนตัวซ้ายขวาเร็วๆ แล้วละอองน้ำกระเด็นรอบตัว */
+      g.position.set(a.petTo.x, .12, a.petTo.z);
+      g.rotation.y = a.faceY + Math.sin((T-2.9)*40)*.34;
+      if(!a.flags.shake){
+        a.flags.shake = true;
+        petPuff(12, 0xcdeffb, 1.1, .3);
+        const r = PETCARE ? PETCARE.bath() : {ok:false};
+        if(r.ok){
+          restylePet();                                   /* รอยเปื้อนหายทันตา */
+          if(typeof playCorrect === 'function') playCorrect();
+        }
+      }
+    }else{
+      const k = Math.min(1, (T-3.5)/.5), e = k*k*(3-2*k);
+      g.position.lerpVectors(a.petTo, a.petFrom, e*.55);
+      g.position.y = Math.abs(Math.sin(k*Math.PI))*.22;
+      if(!a.flags.done){
+        a.flags.done = true;
+        petBubble('✨'); petJingle();
+        petPuff(9, 0xfff3a8, .8, .5);
+        charBubble('สะอาดเอี่ยมเลย ✨', true);
+      }
+    }
+    if(u.tail) u.tail.rotation.z = Math.sin(T*14)*.4;
+  }else if(a.kind === 'ball'){
+    /* 0-.75 เด็กเหวี่ยงแขน บอลลอยเป็นวง · .75-2.15 น้องวิ่งไปเก็บ · 2.15-3.45 คาบกลับมา · 3.45-4.2 วางลงแล้วดีใจ */
+    const ball = a.ball;
+    if(T < .75){
+      if(ball){
+        const k = Math.min(1, Math.max(0, (T-.22)/.53));
+        ball.position.lerpVectors(new THREE.Vector3(charGroup.position.x, .62, charGroup.position.z), a.ballTo, k);
+        ball.position.y = .62 + Math.sin(k*Math.PI)*.85 - k*.535;
+        ball.rotation.x -= dt*11;
+        if(k > 0 && !a.flags.thrown){ a.flags.thrown = true; petBubble('👀'); }
+      }
+    }else if(T < 2.15){
+      const k = Math.min(1, (T-.75)/1.4), e = k*k*(3-2*k);
+      g.position.lerpVectors(a.petFrom, new THREE.Vector3(a.ballTo.x, 0, a.ballTo.z), e);
+      g.position.y = Math.abs(Math.sin(T*17))*.09;
+      g.rotation.y = Math.atan2(a.ballTo.x - g.position.x, a.ballTo.z - g.position.z);
+      if(ball && k >= 1) ball.position.set(a.ballTo.x, .085, a.ballTo.z);
+      if(k >= 1 && !a.flags.grab){
+        a.flags.grab = true; petBubble('🎾'); petJingle();
+        if(u.head) u.head.rotation.x = .4;
+      }
+    }else if(T < 3.45){
+      const k = Math.min(1, (T-2.15)/1.3), e = k*k*(3-2*k);
+      const from = new THREE.Vector3(a.ballTo.x, 0, a.ballTo.z);
+      g.position.lerpVectors(from, a.petTo, e);
+      g.position.y = Math.abs(Math.sin(T*17))*.09;
+      g.rotation.y = Math.atan2(a.petTo.x - g.position.x, a.petTo.z - g.position.z);
+      if(ball){                                    /* บอลลอยอยู่ตรงปากน้อง (คาบกลับมา) */
+        ball.position.set(g.position.x + Math.sin(g.rotation.y)*.34,
+                          g.position.y + .34,
+                          g.position.z + Math.cos(g.rotation.y)*.34);
+        ball.rotation.x -= dt*4;
+      }
+    }else{
+      g.position.set(a.petTo.x, Math.abs(Math.sin((T-3.45)*9))*.3, a.petTo.z);
+      g.rotation.y = a.faceY;
+      if(ball){
+        ball.position.y = Math.max(.085, ball.position.y - dt*2.2);
+        ball.scale.setScalar(Math.max(.001, 1 - Math.max(0, (T-3.8)/.4)));
+      }
+      if(!a.flags.done){
+        a.flags.done = true;
+        petJingle(); petBubble('❤️');
+        petPuff(7, 0xf06292, .7, .4);
+        const r = PETCARE ? PETCARE.ballFetched() : null;
+        if(typeof playCorrect === 'function') playCorrect();
+        charBubble(r && r.gain > 0 ? 'เก่งมากเลย! 🎾' : 'สนุกจังเลย 🎾', true);
+      }
+    }
+    if(u.tail) u.tail.rotation.z = Math.sin(T*15)*.5;
+  }else if(a.kind === 'trick'){
+    /* 0-.85 น้องนั่งตั้งใจฟังคำสั่ง · .85-2.6 ทำท่า · 2.6-3.6 สำเร็จ เด็กปรบมือ น้องกระโดดดีใจ */
+    const id = a.arg || 'sit';
+    if(T < .85){
+      const k = Math.min(1, T/.5), e = k*k*(3-2*k);
+      g.position.lerpVectors(a.petFrom, a.petTo, e);
+      g.rotation.x = -.34*Math.min(1, T/.6);
+      if(!a.flags.cue && T > .3){
+        a.flags.cue = true;
+        const tk = petTrickInfo(id);
+        petBubble('❓');
+        charBubble(tk ? tk.cue : 'มาลองกันเถอะ!', true);
+      }
+    }else if(T < 2.6){
+      petTrickAnim(id, (T-.85)/1.75, g, u, a.faceY);
+      g.position.x = a.petTo.x; g.position.z = a.petTo.z;
+    }else{
+      g.position.set(a.petTo.x, Math.abs(Math.sin((T-2.6)*8))*.3, a.petTo.z);
+      if(!a.flags.done){ a.flags.done = true; finishTeach(id); }
+    }
+    if(u.tail) u.tail.rotation.z = Math.sin(T*16)*.5;
+  }
+  if(T >= a.dur) endPetAct();
+}
+/* ---------- น้องเหงา (ความสุข < 25%) = ไปนอนพักในบ้านสัตว์ ----------
+   ⚠ **ไม่ใช่บทลงโทษ** — เรียกออกมาเดินเล่นไม่ได้ก็จริง แต่ลูบหัว/อาบน้ำได้ตลอด และพอความสุข
+     พ้น 25% น้องเดินออกมาเองทันที เด็กจึงมีทางแก้อยู่ในมือเสมอ (กติกาเหล็กข้อ 1 + 2) */
+function syncPetMood(){
+  if(!PETCARE || !hPet.group || hScene !== 'out' || feedAnim || petAct) return;
+  if(petCareHud.sick) return;                       /* ป่วยอยู่ ให้ syncPetSick() คุมแทน */
+  const sleepy = PETCARE.isSleepy();
+  if(sleepy && !hPet.rest){
+    const g = petHouseGroup();
+    if(g){ petEnterHouse(g); hPet.restLonely = true; }
+  }else if(sleepy && hPet.rest){
+    hPet.restLonely = true;
+  }else if(!sleepy && hPet.rest && hPet.restLonely){
+    hPet.restLonely = false;
+    petLeaveHouse();
+  }
 }
 /* ---------- พ่อ-แม่ในบ้าน (เฟส 4A · ข้อ 28) ----------
    ยืนอยู่ในบ้านชั้นใน ไม่ออกไปในเมือง · ตัวสูงกว่าเด็ก 1.25 เท่า (ใช้ buildCharacter ตัวเดียวกัน)
@@ -9802,7 +10439,10 @@ function petBarPaint(){
   const full = petCareHud.full, sick = petCareHud.sick;
   const fid = PETCARE.foodForPet(hPet.cfg.type);
   const left = PETCARE.meals(fid);
-  const key = hPet.cfg.type + '|' + hPet.cfg.name + '|' + full + '|' + sick + '|' + left;
+  /* ⚠ เฟส 12: ต้องมี happy/dirty อยู่ในกุญแจแคชด้วย ไม่งั้นหลอดความสุขจะไม่มีวันวาดใหม่เลย */
+  const happy = petCareHud.happy, dirty = petCareHud.dirty, nap = !!hPet.restLonely;
+  const key = hPet.cfg.type + '|' + hPet.cfg.name + '|' + full + '|' + sick + '|' + left
+              + '|' + happy + '|' + dirty + '|' + nap;
   if(key === petBarKey) return;               /* ค่าเดิม ไม่ต้องแตะ DOM ซ้ำทุกเฟรม */
   petBarKey = key;
   const info = petTypeInfo(hPet.cfg.type);
@@ -9823,6 +10463,21 @@ function petBarPaint(){
     /* ป่วย = หลอดว่างสีเทา ไม่ใช่สีแดงน่ากลัว (ธีมเด็ก ห้ามดูน่ากลัว) */
     fill.style.width = (sick ? 0 : Math.max(4, full)) + '%';
     fill.className = 'hpb-fill' + (sick ? ' hpb-sick' : full < 25 ? ' hpb-low' : full < PETCARE.LOW_AT ? ' hpb-mid' : '');
+  }
+  /* หลอดความสุข (เฟส 12) — ต่ำกว่า SLEEP_AT = น้องไปงีบในบ้าน จึงทำสีจืดลงให้เด็กเห็นสาเหตุ */
+  const hf = $('hpb-happy');
+  if(hf){
+    hf.style.width = Math.max(4, happy) + '%';
+    hf.className = 'hpb-fill hpb-fill-h'
+      + (happy < PETCARE.SLEEP_AT ? ' hpb-low' : happy < 55 ? ' hpb-mid' : '');
+  }
+  /* ป้ายบอกเหตุ 1 ตัวเท่านั้น เรียงตามความเร่งด่วน: กำลังงีบ > ตัวเลอะ */
+  const flag = $('hpb-flag');
+  if(flag){
+    const f = nap ? '💤' : (dirty ? '🫧' : '');
+    flag.textContent = f;
+    flag.title = nap ? 'กำลังงีบอยู่ ลูบหัวหรืออาบน้ำให้หน่อยนะ' : (dirty ? 'ตัวเลอะแล้ว อาบน้ำให้หน่อยนะ' : '');
+    flag.hidden = !f;
   }
   const bar = $('house-pet-bar');
   if(bar) bar.classList.toggle('hpb-warn', sick || full < PETCARE.LOW_AT);
@@ -11161,6 +11816,40 @@ function charPoseAt(kind, pr){
       p.lean = -.26 + c*.26; p.hop = up*.11;
       p.zR = CH_ARM_Z[1] - .09 + up*.52; p.zL = CH_ARM_Z[0] - up*.46;
     }
+  }else if(kind === 'pat'){
+    /* เฟส 12 · ลูบหัวน้อง: ย่อเข่าลงหาน้อง ยื่นมือขวาไปข้างหน้าแล้วลูบขึ้นลงเบาๆ
+       (มือซ้ายยกเล็กน้อยเหมือนประคอง ไม่ปล่อยห้อยข้างตัวจนดูแข็ง) */
+    const c = pr < .2 ? pr/.2 : (pr < .82 ? 1 : 1 - (pr-.82)/.18);
+    const rub = Math.sin(pr*Math.PI*5) * .22 * c;
+    p.legX = c*.24; p.lean = c*.17; p.hop = -c*.06;
+    p.aR = -c*1.35 + rub; p.aL = -c*.28;
+    p.zR = CH_ARM_Z[1] - c*.15;
+  }else if(kind === 'scrub'){
+    /* เฟส 12 · อาบน้ำ: ย่อตัวลงถูตัวน้องด้วย 2 มือ — แขนสลับหน้า-หลังคนละเฟส ให้เห็นเป็น "ถู" */
+    const c = pr < .15 ? pr/.15 : (pr < .88 ? 1 : 1 - (pr-.88)/.12);
+    const w = Math.sin(pr*Math.PI*8) * .3 * c;
+    p.legX = c*.3; p.lean = c*.2; p.hop = -c*.09;
+    p.aL = -c*1.5 + w; p.aR = -c*1.5 - w;
+    p.zL = CH_ARM_Z[0] - c*.2; p.zR = CH_ARM_Z[1] + c*.2;
+  }else if(kind === 'throw'){
+    /* เฟส 12 · โยนบอล: เอนหลังยกแขนข้ามไหล่ → สะบัดไปหน้าเร็วๆ → ค้างท่าชี้ตามบอล
+       ⚠ ช่วงสะบัดต้องสั้นกว่าช่วงยก (เหมือน 'cast') ไม่งั้นดูเป็นยกแขนช้าๆ ไม่ใช่ขว้าง */
+    if(pr < .34){ const c = pr/.34;        p.lean = -c*.15;      p.aR = c*1.25;       p.aL = c*.2; }
+    else if(pr < .52){ const c = (pr-.34)/.18; p.lean = -.15+c*.33; p.aR = 1.25-c*3.05; p.aL = .2-c*.9; }
+    else{ const c = Math.min(1,(pr-.52)/.4); p.lean = .18-c*.16; p.aR = -1.8+c*1.1; p.aL = -.7+c*.5; p.legX = c*.1; }
+  }else if(kind === 'cue'){
+    /* เฟส 12 · สอนท่า: ยกมือขวาขึ้นเหนือหัวเป็นสัญญาณให้น้องดู แล้วปรบมือชมตอนน้องทำได้ */
+    if(pr < .62){
+      const c = Math.min(1, pr/.18);
+      p.aR = -c*2.5 + Math.sin(pr*Math.PI*7)*.18*c;
+      p.zR = CH_ARM_Z[1] + c*.22; p.lean = -c*.06;
+    }else{
+      const c = Math.sin((pr-.62)/.38*Math.PI), cl = Math.sin(pr*Math.PI*16);
+      p.aL = -c*1.5; p.aR = -c*1.5;
+      p.zL = CH_ARM_Z[0] + c*(.26 + cl*.13);   /* มือ 2 ข้างชิดเข้ากลาง = ปรบมือ (ทิศเดียวกับท่า 'plant') */
+      p.zR = CH_ARM_Z[1] - c*(.26 + cl*.13);
+      p.hop = c*.05;
+    }
   }
   p.lean = Math.max(-CH_LEAN_MAX, Math.min(CH_LEAN_MAX, p.lean));
   return p;
@@ -11361,9 +12050,10 @@ function frame(t){
     checkQuestZone(dt);
     updateNpcMarks(t);
     updateFx(t, dt);
-    updatePet(dt);
+    if(petAct) updatePetAct(dt); else updatePet(dt);   /* กำลังทำกิจกรรมอยู่ = ยึดการควบคุมน้องไว้ทั้งตัว */
     updatePetCare(dt);
     syncPetSick();
+    syncPetMood();
     updateParents(dt, t);
     updateParentMarks(t);
   }
@@ -11846,7 +12536,9 @@ $('house-ctrl-gear').addEventListener('click', ()=>{
 }
 /* จุดต่อให้หน้าเทสสั่งวาด HUD ใหม่หลังยัดค่า (ไม่งั้นหลอด/จำนวนมื้อในแถบค้างค่าเก่าจนกว่าจะครบวินาที) */
 window.HouseDevHooks = {
-  petChanged: ()=>{ petCareHud.t = 0; petBarKey = ''; },
+  petChanged: ()=>{ petCareHud.t = 0; petBarKey = '';
+                    if(hPet.group) restylePet();   /* เฟส 12: รอยเปื้อน/ปลอกคออยู่ในโมเดล ต้องประกอบใหม่ */
+                    syncPetMood(); },
 };
 
 /* ---------- ป้ายชื่อเด็ก (child chip) ในโหมดบ้าน ----------
@@ -12078,6 +12770,9 @@ $('hq-close').addEventListener('click', ()=>{ if(typeof playClick==='function') 
     }
     feedNow();
   }); }
+/* เฟส 12 — ปุ่มปิดเมนูฟองของสัตว์เลี้ยง */
+{ const pmc = $('hpm-close');
+  if(pmc) pmc.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); closePetMenu(); }); }
 /* ปุ่มกลับ (←): ถ้าเปิดแผงอะไรค้างอยู่ = "ยกเลิก" กลับไปหน้าเกมก่อน ยังไม่ออกจากบ้าน
    ยกเว้นตอนสร้างตัวละครครั้งแรก (ยังไม่มีตัวละคร/โลกให้กลับไป) ให้ออกจากบ้านเหมือนเดิม */
 $('house-back').addEventListener('click', ()=>{
@@ -12179,6 +12874,19 @@ if(!homeView.hidden) houseBuddyRefresh();
   leaveHouse:()=>{ if(hScene!=='out') switchScene('out'); },
   /* รอบเล่นเควสต์ที่กำลังเปิดอยู่ (ชุดเทสมินิเกมเฟส 4B ต้องรู้ว่าของชิ้นไหนควรลงถังไหน) */
   qRun: ()=> qRun,
+  /* ---- จุดต่อชุดเทสเฟส 12 (กิจกรรมกับสัตว์เลี้ยง) ---- */
+  petMenu: ()=> petMenuOn,
+  petAct: ()=> petAct && petAct.kind,
+  /* ⚠ เวลาในเกมเดินตาม "เฟรมที่วาดจริง" และ dt ถูกจำกัดไว้ที่ .05 ⇒ บนเครื่องเทสที่วาดได้ ~10 fps
+     ท่ายาว 1.9 วิ จะกินเวลานาฬิกาจริง ~6 วิ **ชุดเทสต้องรอเงื่อนไข ห้ามนอนรอเป็นวินาที** */
+  petActT: ()=> petAct ? petAct.t : -1,
+  petRest: ()=> ({rest: !!hPet.rest, lonely: !!hPet.restLonely}),
+  petTap: ()=> playWithPet(),
+  petGear: ()=>{ const u = hPet.group && hPet.group.userData.anim;
+                 return {collar: !!(u && u.collar), style: u && u.collar ? u.collar.style : null,
+                         dirty: !!(u && u.dirt)}; },
+  restylePet: ()=> restylePet(),
+  buildPetAt: (type, col, opt)=> buildPet(type, col, opt),
   /* ---- จุดต่อชุดเทสเฟส 8 (คลังเฟอร์นิเจอร์ 180 ชิ้น + ของแต่งตัว 114 แบบ) ----
      สร้างของ/ตัวละครจริงผ่านทางเดินโค้ดเดียวกับในเกม เพื่อจับชิ้นที่วาดแล้วพัง
      (เดินไปซื้อ+วางทีละชิ้นในฉาก 3D ทำในเทสไม่ไหว) */

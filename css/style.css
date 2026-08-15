@@ -2635,6 +2635,65 @@
   100%{transform:translate(-50%,-100%) scale(1);}
 }
 
+/* ---------- เมนูฟองตอนแตะสัตว์เลี้ยง (เฟส 12) ----------
+   ลอยตามหัวน้องในโลก 3D เหมือนป้ายชื่อ (JS ตั้ง left/top ให้ทุกเฟรม)
+   ⚠ ห้ามใส่ animation ที่ทำให้ "ตำแหน่งปุ่ม" ขยับค้างไปมา — เทส Playwright รอให้ปุ่มนิ่งก่อนคลิก
+     (ตัวกล่องเด้งตอนเปิดครั้งเดียวแล้วจบ ไม่วนซ้ำ จึงปลอดภัย) */
+.house-pet-menu{
+  position:fixed; z-index:7; transform:translate(-50%,-100%);
+  background:rgba(255,255,255,.97); border:3px solid #ffd98a; border-radius:20px;
+  padding:9px 11px 10px; box-shadow:0 6px 18px rgba(70,40,10,.24);
+  animation:petMenuPop .22s ease forwards;
+}
+body.night-mode .house-pet-menu{background:rgba(38,44,72,.97); border-color:#6b7bb5;}
+@keyframes petMenuPop{
+  0%{transform:translate(-50%,-100%) scale(.6); opacity:0;}
+  70%{transform:translate(-50%,-100%) scale(1.05); opacity:1;}
+  100%{transform:translate(-50%,-100%) scale(1); opacity:1;}
+}
+.hpm-title{
+  font-size:13px; font-weight:800; color:var(--ink); text-align:center;
+  margin:0 16px 7px 0; white-space:nowrap;
+}
+body.night-mode .hpm-title{color:#f4f7ff;}
+.hpm-grid{display:flex; gap:7px;}
+.hpm-btn{
+  width:60px; padding:6px 2px 5px; border:2px solid #ffe3ae; border-radius:15px;
+  background:#fff8ea; color:var(--ink); cursor:pointer; font-family:inherit;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  transition:transform .12s ease, background .12s ease;
+}
+.hpm-btn .hpm-ic{font-size:22px; line-height:1;}
+.hpm-btn .hpm-lb{font-size:10.5px; font-weight:800; line-height:1.15; text-align:center;}
+.hpm-btn:active{transform:scale(.93);}
+.hpm-btn:hover{background:#ffeec9;}
+.hpm-btn.off{opacity:.42; filter:grayscale(.65);}
+body.night-mode .hpm-btn{background:#3a4270; border-color:#5d6ba6; color:#f4f7ff;}
+body.night-mode .hpm-btn:hover{background:#47507f;}
+/* จุดคืบหน้าการสอนท่า — เต็มแล้ว = น้องทำท่านั้นเองได้ */
+.hpm-pips{display:flex; gap:2px; margin-top:1px;}
+.hpm-pips i{width:5px; height:5px; border-radius:50%; background:#e6d9c2; display:block;}
+.hpm-pips i.on{background:#ffb300;}
+.hpm-btn.done .hpm-lb{color:#2e9e5b;}
+body.night-mode .hpm-btn.done .hpm-lb{color:#8ff0b6;}
+.hpm-note{
+  margin-top:7px; font-size:10.5px; font-weight:700; line-height:1.35;
+  color:var(--ink-soft); text-align:center; max-width:250px;
+}
+body.night-mode .hpm-note{color:#c9d2f0;}
+.hpm-close{
+  position:absolute; top:5px; right:6px; width:22px; height:22px; padding:0;
+  border:none; border-radius:50%; background:#ffe3ae; color:#8a6a2f;
+  font-size:12px; font-weight:900; line-height:1; cursor:pointer; font-family:inherit;
+}
+body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
+@media (max-width:480px){
+  .hpm-btn{width:53px;}
+  .hpm-btn .hpm-ic{font-size:19px;}
+  .hpm-btn .hpm-lb{font-size:9.5px;}
+  .hpm-note{max-width:210px;}
+}
+
 /* ม่าน fade ขาวตอนเปลี่ยนฉาก/สลับโหมด — .5s ให้รู้สึกนุ่ม ไม่กระตุก */
   .house-fade{
     position:absolute; inset:0; z-index:9; background:#FFF7E8; opacity:0;
@@ -3764,6 +3823,17 @@
   .hpb-fill.hpb-mid{background:linear-gradient(180deg,#FFCE6B,#F0A14B);}
   .hpb-fill.hpb-low{background:linear-gradient(180deg,#FFAE8F,#EF8E7A);}
   .hpb-fill.hpb-sick{background:#C9BCA8;}
+  /* ---------- หลอดความสุข (เฟส 12) ----------
+     ซ้อนใต้หลอดความอิ่มในแคปซูลเดียวกัน เตี้ยกว่าเล็กน้อยเพื่อไม่ให้แถบ HUD สูงขึ้น
+     สีชมพู-ม่วงแยกจากหลอดความอิ่มสีเขียวชัดเจน เด็กแยกออกด้วยสีโดยไม่ต้องอ่าน */
+  .hpb-meters{display:inline-flex; flex-direction:column; gap:3px; flex:0 0 auto;}
+  .hpb-meter-h{height:9px;}
+  .hpb-fill-h{background:linear-gradient(180deg,#FFA3C7,#E9639B);}
+  .hpb-fill-h.hpb-mid{background:linear-gradient(180deg,#FFC2DA,#F08CB4);}
+  .hpb-fill-h.hpb-low{background:linear-gradient(180deg,#D8CFE4,#A99BC0);}   /* เหงา = สีจืดลง ไม่ใช่สีแดงดุ */
+  /* ป้ายเตือน 🫧 สกปรก / 💤 กำลังงีบ */
+  .hpb-flag{font-size:16px; line-height:1; flex:0 0 auto;}
+  .hpb-flag[hidden]{display:none;}
   .hpb-feed{
     font-family:inherit; font-size:13.5px; font-weight:900; cursor:pointer; color:#fff; white-space:nowrap;
     border:none; border-radius:999px; padding:0 14px 0 11px; height:32px; flex:0 0 auto;
@@ -3777,14 +3847,17 @@
   /* น้องหิว/ไม่สบาย = **หลอด**กะพริบเบาๆ ให้เด็กเหลือบเห็น (ไม่ใช้สีแดงจัด/ไอคอนน่ากลัว)
      ⚠ ห้ามใส่ animation ที่ขยับตัวแถบ/ปุ่ม — ปุ่มที่ขยับตลอดเวลากดพลาดง่าย และทำให้ชุดเทสคลิกไม่โดน
        (Playwright รอ element นิ่งก่อนคลิก ถ้าเต้นไม่หยุดก็รอจนหมดเวลา) เจอมาแล้ว 2026-08-09 */
-  .house-pet-bar.hpb-warn .hpb-meter{animation:hpbPulse 1.8s ease-in-out infinite;}
+  .house-pet-bar.hpb-warn .hpb-meter:not(.hpb-meter-h){animation:hpbPulse 1.8s ease-in-out infinite;}
   @keyframes hpbPulse{0%,100%{box-shadow:inset 0 1px 2px rgba(70,40,10,.14);}
                       50%{box-shadow:inset 0 1px 2px rgba(70,40,10,.14), 0 0 0 4px rgba(240,161,75,.28);}}
-  @media (prefers-reduced-motion:reduce){.house-pet-bar.hpb-warn .hpb-meter{animation:none;}}
+  @media (prefers-reduced-motion:reduce){.house-pet-bar.hpb-warn .hpb-meter:not(.hpb-meter-h){animation:none;}}
   @media (max-width:480px){
     .house-pet-bar{gap:7px; padding:0 4px 0 11px; height:38px;}
     .hpb-pet{font-size:13px; max-width:78px;}
     .hpb-meter{width:58px; height:11px;}
+    .hpb-meter-h{height:8px;}
+    .hpb-meters{gap:2px;}
+    .hpb-flag{font-size:14px;}
     .hpb-feed{font-size:12.5px; padding:0 11px; height:30px;}
     .hpb-feed .hpb-ic{width:17px; height:17px;}
   }

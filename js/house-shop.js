@@ -261,6 +261,34 @@
     {id:'epic',  label:'หายาก',   emoji:'👑', ids:['panda','unicorn']},
   ];
 
+  /* ---------- เฟส 12: ปลอกคอ + ของเล่นสัตว์เลี้ยง (ข้อ 48 · ผู้ใช้สั่ง 2026-08-14) ----------
+     🎀 ปลอกคอ 8 แบบ — **แบบธรรมดากับป้ายกระดูกแถมฟรีตอนรับน้องมาเลี้ยง** ที่เหลือซื้อในร้าน
+       ⚠ **สีทั้ง 8 สีฟรีทุกสีเมื่อมีแบบนั้นแล้ว** (ต่างจากสีขนสัตว์ที่คิดเงินรายสี) —
+         ปลอกคอเป็นของแต่งตัวชิ้นเล็ก ถ้าเก็บเงินรายสีอีกจะกลายเป็นบิลยาวเหยียดโดยไม่ได้อะไรเพิ่ม
+     🎾 ของเล่น — **ลูกบอลแถมฟรีมากับสัตว์เลี้ยงเสมอ** (ผู้ใช้สั่ง: เริ่มต้นต้องเล่นโยนบอลได้เลย)
+       ของเล่นชิ้นอื่นเป็นของ **เฟส 12.1** มาต่อท้ายลิสต์นี้ — `gain` = ความสุขต่อรอบเล่น
+     ⚠ **ของเล่นเป็นคนละหมวดกับของตกแต่งบ้านโดยตั้งใจ** (ผู้ใช้สั่ง) ไม่ผ่าน FURN/โหมดตกแต่งเลย
+       ซื้อแล้วไปโผล่ในเมนูฟองของน้องแทน ⇒ ไม่ต้องหาที่วาง ไม่กินเพดาน FURN_MAX */
+  const PET_COLLARS = [
+    {id:'classic',  emoji:'⭕', name:'ปลอกคอธรรมดา', price:0,   free:true},
+    {id:'bone',     emoji:'🦴', name:'ป้ายกระดูก',   price:0,   free:true},
+    {id:'bow',      emoji:'🎀', name:'โบว์น่ารัก',    price:80},
+    {id:'heart',    emoji:'💗', name:'ป้ายหัวใจ',     price:80},
+    {id:'star',     emoji:'⭐', name:'หมุดดาว',      price:100},
+    {id:'bell',     emoji:'🔔', name:'กระดิ่ง',      price:120, jingle:true},
+    {id:'flower',   emoji:'🌸', name:'พวงมาลัยดอกไม้', price:130},
+    {id:'bandana',  emoji:'🧣', name:'ผ้าพันคอ',     price:150},
+  ];
+  const COLLAR_COLORS = [
+    {n:'แดง',   c:0xe5533d}, {n:'ส้ม',    c:0xf0913f}, {n:'เหลือง', c:0xf4c542},
+    {n:'เขียว', c:0x66bb6a}, {n:'ฟ้า',    c:0x4fc3f7}, {n:'น้ำเงิน', c:0x5c7cfa},
+    {n:'ม่วง',  c:0xab77dd}, {n:'ชมพู',  c:0xf279ae},
+  ];
+  const PET_TOYS = [
+    {id:'ball', emoji:'🎾', name:'ลูกบอล', price:0, free:true, gain:6,
+     sub:'แถมฟรีมากับน้อง · โยนให้น้องวิ่งไปคาบกลับมา'},
+  ];
+
   /* 2 = เริ่มระบบเศรษฐกิจ · 3 = เปิดขายสีของเครื่องแต่ง (2026-08-07)
      4 = เฟส 3A เปิดร้านสัตว์เลี้ยง (2026-08-08) — สัตว์ที่เด็กเลี้ยงอยู่ก่อนแล้วต้องได้ฟรีถาวร
      ⚠ ต้องปั๊มเลขทุกครั้งที่ "เพิ่มแถวที่มีราคา" — migrate() จะได้รันซ้ำแล้วแจกสิทธิ์ของแถวใหม่
@@ -289,6 +317,8 @@
   /* ECON_VER 5 (2026-08-13): **เฟอร์นิเจอร์นับเป็น "จำนวนชิ้น" แล้ว ไม่ใช่ "สิทธิ์ครั้งเดียววางได้ไม่จำกัด"**
      (ผู้ใช้สั่ง — ซื้อ 1 ชิ้นต้องวางได้แค่ 1 อัน) จำนวนเก็บที่ `d.owned = {id: n}`
      ⚠ `d.unlocked` ยังอยู่เหมือนเดิมสำหรับของแต่งตัว/สัตว์เลี้ยง ซึ่งเป็น "สิทธิ์" จริงๆ ไม่ใช่ของนับชิ้น */
+  /* ⚠ เฟส 12 **ไม่ต้องขยับเลขนี้** — ลูกบอลกับปลอกคอ 2 แบบแรกใช้ธง `free:true` คิดสดตอนถาม
+     (ไม่ได้จดลง `unlocked`) ⇒ เด็กที่เลี้ยงน้องมาก่อนเฟส 12 ได้ของแถมเองอัตโนมัติ ไม่ต้อง migrate */
   const ECON_VER = 5;
 
   /* ---------- ผังร้าน ----------
@@ -360,6 +390,10 @@
     function fitKey(row, i){ return 'fit:' + row + ':' + i; }
     function petKey(type){ return 'pet:' + type; }
     function petColKey(type, i){ return 'pet:' + type + ':' + i; }
+    /* เฟส 12 — ปลอกคอ/ของเล่นเป็นสิทธิ์รวม **ไม่ผูกกับสัตว์ตัวไหน** ซื้อครั้งเดียวใช้ได้กับน้องทุกตัว
+       (เปลี่ยนสัตว์แล้วต้องซื้อปลอกคอใหม่หมด = ลงโทษเด็กที่อยากลองเลี้ยงตัวอื่น ผิดกติกาเหล็กข้อ 2) */
+    function collarKey(id){ return 'collar:' + id; }
+    function toyKey(id){ return 'toy:' + id; }
     /* 'pet:dog' / 'pet:dog:2' → 'dog' (ใช้รู้ว่าตอนนี้เด็กเลือกดูสัตว์ตัวไหนอยู่ในร้าน) */
     function petTypeOfKey(k){
       const p = String(k || '').split(':');
@@ -477,6 +511,38 @@
       }
       const col = info.colors[i];
       return buy(petColKey(type, i), PET_COLOR_PRICE, 'สี' + ((col && col.n) || (i + 1)) + 'ของ' + info.label);
+    }
+
+    /* ---------- ปลอกคอ + ของเล่น (เฟส 12) ---------- */
+    const collarInfo = id => PET_COLLARS.filter(x => x.id === id)[0] || null;
+    const toyInfo    = id => PET_TOYS.filter(x => x.id === id)[0] || null;
+    function ownsCollar(id){
+      const it = collarInfo(id);
+      if(!it) return false;
+      return it.free || ensureSet().has(collarKey(id));
+    }
+    function ownsToy(id){
+      const it = toyInfo(id);
+      if(!it) return false;
+      return it.free ? hasAnyPet() : ensureSet().has(toyKey(id));
+    }
+    /* ของแถม "มากับน้อง" จะนับว่ามีก็ต่อเมื่อเด็กมีสัตว์เลี้ยงอยู่จริงเท่านั้น */
+    function hasAnyPet(){ const d = load() || {}; return !!(d.pet && d.pet.type); }
+    function ownedToys(){ return PET_TOYS.filter(t => ownsToy(t.id)); }
+    function ownedCollars(){ return PET_COLLARS.filter(t => ownsCollar(t.id)); }
+    function buyCollar(id){
+      const it = collarInfo(id);
+      if(!it || ownsCollar(id)) return false;
+      return buy(collarKey(id), it.price, it.name);
+    }
+    function buyToy(id){
+      const it = toyInfo(id);
+      if(!it || ownsToy(id)) return false;
+      if(!hasAnyPet()){                     /* ซื้อของเล่นไว้ก่อนมีน้องก็เล่นไม่ได้ ต้องบอกให้ชัด */
+        toast('🐾', 'รับเพื่อนตัวน้องมาเลี้ยงก่อนนะ แล้วค่อยเลือกของเล่นให้น้อง');
+        return false;
+      }
+      return buy(toyKey(id), it.price, it.name);
     }
 
     /* ---------- ซื้อ ---------- */
@@ -720,6 +786,9 @@
         });
         /* เฟส 3B — อาหารสัตว์อยู่แท็บสุดท้าย (ข้อ 18.2) ต่อท้ายกลุ่มราคาสัตว์ */
         if(care()) out.push({id:'petfood', label:'อาหาร', emoji:'🍖'});
+        /* เฟส 12 — ปลอกคอกับของเล่นของน้อง (คนละหมวดกับของตกแต่งบ้าน) */
+        out.push({id:'petgear', label:'ปลอกคอ', emoji:'🎀'});
+        out.push({id:'pettoy',  label:'ของเล่น', emoji:'🎾'});
         return out;
       }
       /* ร้านที่ขายเฟอร์นิเจอร์ — หมวดที่ขายมาจาก cfg.groups ของร้านนั้น (ห้างเฟอร์/ร้านต้นไม้/ร้านของเล่น) */
@@ -862,7 +931,13 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       /* `repeat` = ของกินได้หมดไป (อาหารสัตว์ เฟส 3B) ซื้อซ้ำได้ไม่จำกัด ⇒ ไม่มีสถานะ "มีแล้ว" */
-      if(sel.owned && !sel.repeat){
+      if(sel.owned && !sel.repeat && sel.action){
+        /* ของที่ "มีแล้ว" แต่ยังมีอะไรให้ทำต่อ (เฟส 12: ปลอกคอ → กดใส่ให้น้องได้เลยจากในร้าน)
+           ⚠ ปุ่มนี้ **ห้ามตัดเงิน** ไม่ว่ากรณีใด มันคือการหยิบของที่ซื้อไปแล้วมาใช้เฉยๆ */
+        btn.className = 'hs-buy-btn';
+        btn.textContent = sel.action.label ? sel.action.label() : 'ใช้เลย';
+        btn.onclick = ()=>{ click(); sel.action.run(); renderItems(); renderBuyBar(); };
+      }else if(sel.owned && !sel.repeat){
         btn.className = 'hs-buy-btn hs-buy-have';
         btn.textContent = sel.maxed ? '✓ มีครบแล้ว' : '✓ มีแล้ว';
         btn.onclick = ()=>{ click(); toast('✓', sel.name + (sel.maxed ? ' ครบเพดานแล้วนะ' : ' มีอยู่แล้วนะ')); };
@@ -973,6 +1048,68 @@
           });
           return;
         }
+        /* ---------- แท็บปลอกคอ (เฟส 12) ----------
+           พรีวิวเป็น "น้องตัวจริงที่ใส่ปลอกคออันนี้" ไม่ใช่รูปปลอกคอลอยๆ — เด็กจะได้เห็นว่าใส่แล้วสวยไหม
+           ⚠ ยังไม่มีน้องก็ดูได้ (พรีวิวใช้หมาเป็นตัวอย่าง) แต่ซื้อไปก็ยังใส่ไม่ได้จนกว่าจะมีน้อง */
+        if(shopTab === 'petgear'){
+          const d0 = load() || {}, myPet = d0.pet || null;
+          const C0 = care();
+          const worn = C0 && C0.collar ? C0.collar() : {s:'classic', c:0};
+          const shownType = myPet ? myPet.type : 'dog';
+          const shownCol  = myPet ? (myPet.color | 0) : 0;
+          const wearCollar = (sid, ci, msg)=>{
+            if(!C0 || !myPet){ toast('🐾', 'รับเพื่อนตัวน้องมาเลี้ยงก่อนนะ แล้วค่อยแต่งตัวให้น้อง'); return; }
+            C0.setCollar(sid, ci);
+            toast('🎀', msg);
+            onChange();
+          };
+          PET_COLLARS.forEach(it=>{
+            const own = ownsCollar(it.id), on = own && worn.s === it.id;
+            wrap.appendChild(makeCard({
+              key: collarKey(it.id),
+              name: it.name + (on ? ' (ใส่อยู่)' : ''),
+              sub: it.price === 0 ? 'แถมฟรีมากับน้อง' : 'ซื้อครั้งเดียว ใช้ได้กับน้องทุกตัว',
+              price: it.price, owned: own, emoji: it.emoji,
+              preview: {kind:'pet', type: shownType, color: shownCol,
+                        collar: {s: it.id, c: worn.c | 0}},
+              onBuy: ()=> buyCollar(it.id),
+              action: own ? {label: ()=> on ? '✓ ใส่อยู่' : '🎀 ใส่ให้น้อง',
+                             run: ()=> on ? toast('🎀', 'น้องใส่' + it.name + 'อยู่แล้วนะ')
+                                          : wearCollar(it.id, worn.c | 0, 'น้องใส่' + it.name + 'แล้ว น่ารักจัง!')}
+                          : null,
+            }));
+          });
+          /* สีของปลอกคอ — **ฟรีทุกสี** ⇒ แตะแล้วเปลี่ยนสีที่น้องใส่ทันที ไม่มีปุ่มซื้อ */
+          const h = document.createElement('div');
+          h.className = 'hs-subsec';
+          h.innerHTML = '<span>🎨 สีปลอกคอ (ฟรีทุกสี แตะเปลี่ยนได้เลย)</span>';
+          wrap.appendChild(h);
+          COLLAR_COLORS.forEach((col, i)=>{
+            wrap.appendChild(makeCard({
+              key: 'collarcol:' + i,
+              name: col.n, price: 0, owned: true, color: col.c,
+              preview: {kind:'pet', type: shownType, color: shownCol,
+                        collar: {s: worn.s, c: i}},
+              action: {label: ()=> (worn.c | 0) === i ? '✓ สีนี้อยู่' : '🎨 เปลี่ยนเป็นสีนี้',
+                       run: ()=> wearCollar(worn.s, i, 'เปลี่ยนปลอกคอเป็นสี' + col.n + 'แล้ว!')},
+            }));
+          });
+          return;
+        }
+        /* ---------- แท็บของเล่น (เฟส 12 · ของเล่นชิ้นอื่นมาเพิ่มในเฟส 12.1) ---------- */
+        if(shopTab === 'pettoy'){
+          PET_TOYS.forEach(it=>{
+            const own = ownsToy(it.id);
+            wrap.appendChild(makeCard({
+              key: toyKey(it.id),
+              name: it.name,
+              sub: it.sub || ('เล่นแล้วน้องมีความสุขขึ้น +' + (it.gain | 0)),
+              price: it.price, owned: own, emoji: it.emoji,
+              onBuy: ()=> buyToy(it.id),
+            }));
+          });
+          return;
+        }
         const g = PET_GROUPS.filter(x => 'petg:' + x.id === shopTab)[0];
         if(!g) return;
         g.ids.forEach(type=>{
@@ -1051,6 +1188,9 @@
       PET_PRICE, PET_COLOR_PRICE, PET_GROUPS,
       pricePet, ownsPet, ownsPetColor, buyPet, buyPetColor,
       petTypes,        /* PET_TYPES อยู่ใน IIFE ของ house.js — ทางเดียวที่เทสมองเห็นคือผ่านตรงนี้ */
+      /* ปลอกคอ + ของเล่นสัตว์เลี้ยง (เฟส 12) — house.js อ่านคลังนี้ไปวาดปลอกคอ 3D กับเมนูฟองของน้อง */
+      PET_COLLARS, COLLAR_COLORS, PET_TOYS,
+      ownsCollar, ownsToy, ownedCollars, ownedToys, buyCollar, buyToy,
       starterHome, starterFit, STARTER_FURN,
       grantFree,                       /* เฟส 11: ของรางวัลจากการเก็บของสะสมครบชุด (ไม่ตัดเงิน) */
       devUnlockAll, devLockAll,        /* เครื่องมือเทสเท่านั้น — ห้ามเรียกจากโค้ดเกมจริง */

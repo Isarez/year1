@@ -984,7 +984,14 @@
         <path d="M12 16.4v2.1" stroke="#C08340" stroke-width="1.7" stroke-linecap="round"/>
       </svg>
       <span class="hpb-pet" id="hpb-pet"></span>
-      <span class="hpb-meter"><i class="hpb-fill" id="hpb-fill"></i></span>
+      <!-- 2 หลอดซ้อนกัน: บน = ความอิ่ม · ล่าง = ความสุข (เฟส 12)
+           ไอคอนเป็น SVG ไม่ใช่ emoji เหมือนชามอาหารด้านล่าง (บางเครื่องไม่มี glyph) -->
+      <span class="hpb-meters">
+        <span class="hpb-meter"><i class="hpb-fill" id="hpb-fill"></i></span>
+        <span class="hpb-meter hpb-meter-h"><i class="hpb-fill hpb-fill-h" id="hpb-happy"></i></span>
+      </span>
+      <!-- ป้ายเตือนน้องสกปรก / กำลังงีบ — โผล่เฉพาะตอนที่ต้องบอกเด็กจริงๆ -->
+      <span class="hpb-flag" id="hpb-flag" hidden></span>
       <!-- อาหารของสัตว์ชนิดนี้ + จำนวนมื้อคงเหลือ (เด็กจะได้รู้ว่าต้องไปซื้อเพิ่มหรือยัง) -->
       <span class="hpb-food" id="hpb-food" title="อาหารที่น้องกิน"><span id="hpb-food-ic"></span><span class="hpb-left" id="hpb-left"></span></span>
       <!-- ไอคอนชามเป็น SVG ไม่ใช่ emoji 🍽️ — บางเครื่องไม่มี glyph ตัวนั้นแล้วขึ้นเป็นวงกลมเทาทึบ
@@ -1083,6 +1090,13 @@
   <div class="house-char-name" id="house-char-name" hidden></div>
   <div class="house-char-name house-pet-name" id="house-pet-name" hidden></div>
   <div class="house-pet-bubble" id="house-pet-bubble">❤️</div>
+  <!-- เมนูฟองตอนแตะตัวสัตว์เลี้ยง (เฟส 12) — ปุ่มถูกสร้างด้วย JS ใน js/house.js -->
+  <div class="house-pet-menu" id="house-pet-menu" hidden>
+    <div class="hpm-title" id="hpm-title">อยากเล่นอะไรดี?</div>
+    <div class="hpm-grid" id="hpm-grid"></div>
+    <div class="hpm-note" id="hpm-note" hidden></div>
+    <button class="hpm-close" id="hpm-close" type="button" aria-label="ปิด">✕</button>
+  </div>
   <div class="house-char-bubble" id="house-char-bubble">✨</div>
   <div class="house-npc-bubble" id="house-npc-bubble"></div>
   <div class="house-creator house-quest" id="house-quest" hidden>

@@ -324,17 +324,28 @@ test('ปล่อยสัตว์คืน: สถานะสุขภาพ
   await page.evaluate(() => { window.HousePetCare.addMeals('fish', 7); });
   await rollDays(page, 1);
 
-  await page.evaluate(() => { window.HousePetCare.onRelease(); });
+  /* ⚠ ต้องปล่อยคืนตามลำดับจริงของเกม (closePetPicker('remove') ใน js/house.js):
+     **ล้างตัวสัตว์ในไฟล์เซฟก่อน แล้วค่อยเรียก onRelease()** — ถ้าเรียก onRelease() ลอยๆ
+     ทั้งที่ยังมีสัตว์อยู่ ตัวอ่านของ pet-care (sync) จะสร้างสถานะดูแลใหม่ให้เองตามปกติ
+     ซึ่งถูกแล้ว เพราะ "มีสัตว์อยู่แต่ไม่มีสถานะดูแล" คือสภาพที่ต้องซ่อมให้เสมอ */
+  await page.evaluate(k => {
+    const d = JSON.parse(localStorage.getItem(k) || '{}');
+    d.pet = null; localStorage.setItem(k, JSON.stringify(d));
+    window.HousePetCare.onRelease();
+  }, HKEY);
   let d = await readHouse(page);
   expect(d.care).toBeFalsy();
   expect(d.petFood.fish).toBe(7);              /* อาหารเป็นของเด็ก ไม่ผูกกับตัวสัตว์ */
   expect(d.petFood.meat).toBe(5);
 
   /* รับกลับมาเลี้ยงใหม่ → เริ่มนับใหม่ที่อิ่มเต็ม แต่ไม่แจกอาหารซ้ำให้ฟรีอีกถุง */
-  const st = await page.evaluate(() => {
+  const st = await page.evaluate(k => {
+    const d = JSON.parse(localStorage.getItem(k) || '{}');
+    d.pet = {type:'dog', name:'บราวนี่', color:0};   /* รับกลับมาเลี้ยง = มีตัวสัตว์ในเซฟก่อน แล้วค่อย onAdopt() */
+    localStorage.setItem(k, JSON.stringify(d));
     window.HousePetCare.onAdopt();
     return { st: window.HousePetCare.state(), meat: window.HousePetCare.meals('meat') };
-  });
+  }, HKEY);
   expect(st.st.full).toBe(100);
   expect(st.st.sick).toBe(false);
   expect(st.meat).toBe(5);

@@ -155,9 +155,10 @@ test('ซื้อสัตว์: ตัดเงินผ่าน OwlCoins ·
 
   await page.evaluate(() => window.HouseShop.open('shop-pet'));
   await page.waitForTimeout(700);
-  /* 4 แท็บกลุ่มราคาสัตว์ + 1 แท็บอาหาร (เพิ่มในเฟส 3B) */
-  await expect(page.locator('#house-shop-tabs .he-tab')).toHaveCount(5);
-  await expect(page.locator('#house-shop-tabs .he-tab').last()).toContainText('อาหาร');
+  /* 4 แท็บกลุ่มราคาสัตว์ + อาหาร (เฟส 3B) + ปลอกคอ/ของเล่น (เฟส 12) */
+  await expect(page.locator('#house-shop-tabs .he-tab')).toHaveCount(7);
+  await expect(page.locator('#house-shop-tabs .he-tab').nth(4)).toContainText('อาหาร');
+  await expect(page.locator('#house-shop-tabs .he-tab').last()).toContainText('ของเล่น');
 
   /* เงิน 300 ซื้อแพนด้า 1,500 ไม่ได้ */
   const rich = await page.evaluate(() => window.HouseShop.buyPet('panda'));

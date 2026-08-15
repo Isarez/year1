@@ -170,6 +170,26 @@
         afterPetChange();
       }},
     ]);
+    /* ---- เฟส 12: ความสุข / ตัวเลอะ / ท่าที่สอนแล้ว ---- */
+    if(C.setHappy){
+      note(body, 'เฟส 12 — ความสุข ' + C.happiness() + '/' + C.HAPPY_MAX
+               + (C.isSleepy() ? ' · 💤 ไปงีบในบ้าน (ต่ำกว่า ' + C.SLEEP_AT + ')' : ' · อารมณ์ดี')
+               + (C.isDirty() ? ' · 🫧 ตัวเลอะ' : '')
+               + ' · ท่าที่ทำเองได้ ' + C.learnedTricks().length + '/' + C.TRICKS.length);
+      row(body, 'ตั้งความสุข', [0, 10, 24, 50, 100].map(v=>({
+        t: String(v), fn: ()=>{ C.setHappy(v); afterPetChange(); },
+      })));
+      row(body, 'ความสะอาด', [
+        {t:'ทำให้ตัวเลอะ 🫧', warn:true, fn: ()=>{ C.setDirty(true);  afterPetChange(); }},
+        {t:'ทำให้สะอาด',                 fn: ()=>{ C.setDirty(false); afterPetChange(); }},
+      ]);
+      row(body, 'ท่าที่สอนแล้ว', [
+        {t:'สอนครบทุกท่าทันที', fn: ()=>{
+          C.TRICKS.forEach(tk=>{ for(let i=0;i<C.TRICK_NEED;i++) C.teach(tk.id); });
+          afterPetChange();
+        }},
+      ]);
+    }
     note(body, 'หมายเหตุ: "ป่วย" ในเกมจริงต้องปล่อยให้หิวสนิท 2 วันเล่นติดกัน '
              + 'และหายได้ทางเดียวคือคุยคุณหมอ (จ่าย ' + C.CURE_COST + ' 🪙 หรือทำงานแทน)');
   }
