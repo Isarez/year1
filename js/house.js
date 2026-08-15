@@ -13245,6 +13245,7 @@ if(!homeView.hidden) houseBuddyRefresh();
   bandAt: (x, z)=> gatherCrowd({position:{x: outWX(x), y:0, z: outWZ(z)}}),
   npcShadow: id => buildNpcShadow(id),
   petTrick: id => startPetAct('trick', id),
+  petY: ()=> hPet.group ? hPet.group.position.y : -1,
   /* จังหวะเฟรมของลูปวาด — ใช้วัดว่า "หรี่เฟรมตอนเปิดกล้อง" แล้วยังเดินสม่ำเสมอไหม
      (ผู้ใช้แจ้ง 2026-08-12 ว่าโลกกระตุกตอนเปิดกล้อง — ต้นเหตุคือหรี่แบบเว้นตามเวลา) */
   frameLog: ()=> frameLog.slice(),

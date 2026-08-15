@@ -446,8 +446,10 @@
         c.a.bubbles = bs;
         /* ทิศกระจายของฟองแต่ละลูก (สลับซ้าย-ขวารอบแนวหน้าเด็ก) */
         c.a.bubbleSide = [0, -.55, .55, -.3, .3];
-        /* จุดออกตัวของน้องในรอบไล่ถัดไป — เก็บแยกจาก a.petFrom เพราะ endPetAct/สาขาอื่นใช้ค่านั้นอยู่ */
-        c.a.bubHome = c.a.petFrom.clone();
+        /* นาฬิกาของจังหวะกระโดด (แก้รอบ 3) — การกระโดดต้องมีเวลาของตัวเอง
+           **ห้ามผูกความสูงกับระยะห่างจากฟอง** ไม่งั้นฟองแตกปุ๊บตัวร่วงลงพื้นในเฟรมเดียว */
+        c.a.hopT = 0; c.a.hopH = .4; c.a.hopFor = null;
+        if(c.g) c.g.position.copy(c.a.petFrom);   /* ⚠ hook สร้างโมเดลล้วนส่ง g:null มา ต้องกันไว้ */
       },
       update(c){
         const a = c.a, g = c.g, T = c.T;
@@ -472,37 +474,59 @@
           if(life > .5 && life < GAP + .1 && target == null) target = {b, i};
         });
 
+        /* 🛠 แก้รอบ 3 (ผู้ใช้แจ้งว่า "แข็งมาก · หลังงับฟองแล้ว warp ลงพื้น")
+           รอบ 2 ผูก **ความสูงตัวน้องไว้กับระยะห่างจากฟอง** ⇒ พอฟองแตก เป้าหมายเปลี่ยนทันที
+           ระยะกระโดดจาก ~0 เป็นไกล ⇒ ความสูงร่วงจากยอดลงพื้นในเฟรมเดียว = วาร์ปลง
+
+           ⇒ ทำ **การกระโดดเป็น "สถานะ" ที่มีนาฬิกาของตัวเอง** (a.hopT) ไม่ผูกกับระยะเลย
+             เริ่มเมื่อเข้าใกล้ฟอง → ขึ้น-ลงเป็นเส้นโค้งเต็มจังหวะเสมอ → ตบฟองที่ "ยอด" ของการกระโดด
+             ⇒ ต่อให้ฟองแตกกลางคัน ขาลงก็ยังเล่นจนจบ ไม่มีอะไรกระตุก */
+        const HOP_DUR = .62;
+        if(a.hopT > 0) a.hopT = Math.max(0, a.hopT - c.dt);
+
         if(target){
-          /* 🛠 แก้ 2026-08-15 รอบ 2 (ผู้ใช้แจ้งว่าจังหวะลงของน้อง "warp")
-             ของเดิม lerp จาก `bubHome` ด้วย k ที่ **รีเซ็ตเป็น 0 ทุกครั้งที่เปลี่ยนลูกเป้าหมาย**
-             พอฟองแตกแล้วลูกถัดไปเข้าคิว น้องถูกดีดกลับไปจุดเริ่มทันที = วาร์ป
-             ⇒ เปลี่ยนเป็น **วิ่งไล่แบบต่อเนื่องตาม dt** ไม่มี k ไม่มีจุดเริ่มให้รีเซ็ต */
           const b = target.b;
-          const gx = b.position.x, gz = b.position.z;
-          const dxx = gx - g.position.x, dzz = gz - g.position.z;
+          const dxx = b.position.x - g.position.x, dzz = b.position.z - g.position.z;
           const dist = Math.hypot(dxx, dzz);
-          const SPD = 3.4;                                   /* ช่อง/วินาที */
+          /* วิ่งไล่ต่อเนื่องตาม dt — ชะลอลงตอนใกล้ ให้ดูเป็นการ "ย่องเข้าไป" ไม่ใช่พุ่งชน */
+          const SPD = 1.5 + 2.2 * clamp01(dist / 1.4);
           const step = Math.min(dist, SPD * c.dt);
-          if(dist > .02){
+          if(dist > .03){
             g.position.x += dxx / dist * step;
             g.position.z += dzz / dist * step;
-            g.rotation.set(0, Math.atan2(dxx, dzz), 0);
+            /* หันหน้าแบบค่อยๆ เลี้ยว ไม่กระตุกเปลี่ยนทิศทันที (ตัวที่ทำให้ดู "แข็ง") */
+            const want = Math.atan2(dxx, dzz);
+            let d2 = want - g.rotation.y;
+            while(d2 >  Math.PI) d2 -= Math.PI*2;
+            while(d2 < -Math.PI) d2 += Math.PI*2;
+            g.rotation.set(0, g.rotation.y + d2 * Math.min(1, c.dt * 9), 0);
           }
-          /* กระโดดตบเมื่อเข้าใกล้ — ความสูงผูกกับ "ระยะที่เหลือ" ไม่ใช่เวลา ⇒ ต่อเนื่องเสมอ */
-          const near = clamp01(1 - dist / 1.1);
-          g.position.y = near * near * Math.max(.15, b.position.y - .3);
-          if(c.u && c.u.head) c.u.head.rotation.x = -.4 * near;
-          if(dist < .42 && !b.userData.pop){
-            b.userData.pop = true;
-            b.visible = false;
-            c.puff(4, 0xcdeffb, .5, b.position.y);
+          /* ถึงระยะตะปบแล้วและยังไม่ได้กระโดดอยู่ → เริ่มจังหวะกระโดด */
+          if(dist < .85 && a.hopT <= 0 && !b.userData.pop && !b.userData.aimed){
+            b.userData.aimed = true;
+            a.hopT = HOP_DUR;
+            a.hopFor = b;
+            a.hopH = Math.max(.28, Math.min(.75, b.position.y - .22));
+          }
+        }
+
+        /* ---- จังหวะกระโดด: ขึ้น-ลงเป็นเส้นโค้งเต็ม ไม่ว่าฟองจะแตกไปแล้วหรือยัง ---- */
+        if(a.hopT > 0){
+          const k = 1 - a.hopT / HOP_DUR;              /* 0 → 1 ตลอดการกระโดด */
+          g.position.y = arc(k) * (a.hopH || .4);
+          if(c.u && c.u.head) c.u.head.rotation.x = -.45 * arc(k);
+          /* ตบโดนที่ "ยอด" ของการกระโดดพอดี */
+          const hb = a.hopFor;
+          if(k >= .5 && hb && !hb.userData.pop){
+            hb.userData.pop = true;
+            hb.visible = false;
+            c.puff(4, 0xcdeffb, .5, hb.position.y);
             c.bubble('🫧');
             if(!a.flags.first){ a.flags.first = true; c.jingle(); }
           }
         }else{
-          /* ไม่มีฟองให้ไล่ — ลงพื้นนุ่มๆ ไม่ใช่ตกทันที */
-          g.position.y = Math.max(0, g.position.y - c.dt*2.6) + Math.abs(Math.sin(T*8))*.03;
-          g.rotation.x = 0;
+          /* ยืน/วิ่งอยู่กับพื้น — เด้งตัวเบาๆ ตามจังหวะวิ่ง ไม่ใช่นิ่งแข็ง */
+          g.position.y = Math.abs(Math.sin(T * 13)) * (target ? .055 : .02);
           if(c.u && c.u.head) c.u.head.rotation.x = 0;
         }
 
