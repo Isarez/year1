@@ -212,8 +212,10 @@
           const pz = c.cp.z + Math.cos(lag)*(a.wandR + .30);
           const jump = Math.max(0, Math.sin(T*4.4));       /* กระโดดตะปบเป็นจังหวะ */
           g.position.set(px, jump*jump*.34, pz);
-          g.rotation.set(-jump*.3, Math.atan2(c.cp.x - px, c.cp.z - pz) + Math.PI, 0);
-          if(c.u && c.u.head) c.u.head.rotation.x = -.2 - jump*.25;
+          /* ⚠ ตัวตั้งตรงเสมอ — หันหน้า **เข้าหาขนนก** (ซึ่งอยู่ทางเด็ก) ความรู้สึกตะปบอยู่ที่หัว
+             ของเดิมใส่ pitch −.3 แล้วบวก PI ⇒ เห็นเป็นน้องนอนตะแคงหันก้นให้ขนนก */
+          g.rotation.set(0, Math.atan2(c.cp.x - px, c.cp.z - pz), 0);
+          if(c.u && c.u.head) c.u.head.rotation.x = -.3 - jump*.3;
           if(!a.flags.play && T > .5){ a.flags.play = true; c.bubble('🐾'); }
           if(!a.flags.mid && T > 1.9){ a.flags.mid = true; c.jingle(); c.puff(4, 0xf279ae, .6, .5); }
         }else{
@@ -221,6 +223,7 @@
           const k = clamp01((T - 3.5) / .9);
           g.position.y = Math.abs(Math.sin((T-3.5)*9))*.26*(1-k*.4);
           g.rotation.x = 0;
+          if(c.u && c.u.head) c.u.head.rotation.x = 0;
           if(wand) wand.rotation.z += Math.sin(T*40)*.06;
           if(!a.flags.done){
             a.flags.done = true;
@@ -276,10 +279,15 @@
           runTo(c, a.petFrom, a.catchAt, (T - .8) / 1.3);
           if(disc) disc.position.set(a.catchAt.x, .82, a.catchAt.z);
         }else if(T < 2.7){
-          /* กระโดดงับกลางอากาศ — จุดสูงสุดของท่านี้ */
+          /* กระโดดงับกลางอากาศ — จุดสูงสุดของท่านี้
+             ⚠ **ห้ามใส่ pitch (rotation.x) ให้ตัวสัตว์** — กล้อง isometric มองลงเฉียง
+               เอียงแค่ .3 rad ก็เห็นเป็น "นอนตะแคง" ไม่ใช่ "เงยหน้างับ" (ผู้ใช้แจ้ง 2026-08-15)
+               ความรู้สึกเงยหน้าให้ทำที่ **หัว** อย่างเดียว (u.head) ตัวยังตั้งตรงเสมอ
+             ⚠ และห้ามบวก PI ให้ faceY — น้องวิ่งออกไปทางเดียวกับจาน ต้องหันหน้าตามทางวิ่ง */
           const k = (T - 2.1) / .6;
           g.position.set(a.catchAt.x, arc(k)*.62, a.catchAt.z);
-          g.rotation.set(-arc(k)*.34, a.faceY + Math.PI, 0);
+          g.rotation.set(0, Math.atan2(a.dx, a.dz), 0);
+          if(c.u && c.u.head) c.u.head.rotation.x = -.45*arc(k);
           if(disc){
             disc.position.set(a.catchAt.x, .82 - arc(k)*.12, a.catchAt.z);
             if(k > .45) disc.position.copy(muzzleAt(g, .30));
@@ -290,6 +298,7 @@
           }
         }else if(T < 3.9){
           /* คาบกลับมาหาเด็ก */
+          if(c.u && c.u.head) c.u.head.rotation.x = .18;
           runTo(c, a.catchAt, a.petTo, (T - 2.7) / 1.2);
           if(disc) disc.position.copy(muzzleAt(g, .30));
         }else{
@@ -462,7 +471,9 @@
             home.x + (to.x - home.x)*ease(Math.min(1, k*1.6)),
             arc(k)*Math.max(.2, b.position.y - .28),
             home.z + (to.z - home.z)*ease(Math.min(1, k*1.6)));
-          g.rotation.set(-arc(k)*.3, Math.atan2(to.x - g.position.x, to.z - g.position.z) || g.rotation.y, 0);
+          /* ⚠ ตัวตั้งตรงเสมอ (ห้าม pitch) — เงยหน้าตบฟองทำที่หัวอย่างเดียว */
+          g.rotation.set(0, Math.atan2(to.x - g.position.x, to.z - g.position.z) || g.rotation.y, 0);
+          if(c.u && c.u.head) c.u.head.rotation.x = -.4*arc(k);
           home.set(g.position.x, 0, g.position.z);            /* รอบถัดไปออกตัวจากที่ยืนล่าสุด */
           if(k > .62 && !b.userData.pop){
             b.userData.pop = true;
@@ -474,6 +485,7 @@
         }else{
           g.position.y = Math.abs(Math.sin(T*8))*.05;
           g.rotation.x = 0;
+          if(c.u && c.u.head) c.u.head.rotation.x = 0;
         }
 
         if(T > a.dur - .55 && !a.flags.done){
@@ -489,42 +501,53 @@
     /* ================================================================
        6) 🛟 ห่วงกระโดด — เด็กถือห่วง น้องวิ่งลอดกลับไป-กลับมา
        ================================================================ */
+    /* ⚠ **ห่วงต้องใหญ่พอให้ตัวน้องลอดผ่านได้จริง** — ของเดิม r=.42 เท่าหัวหมา ดูเป็นห่วงลอยเฉยๆ
+       ตัวสัตว์กว้างราว .8 หน่วย ⇒ รัศมี .62 (เส้นผ่านศูนย์กลาง 1.24) ถึงจะ "ลอด" ได้จริงในสายตา */
+    const HOOP_R = .62;
     function buildHoop(){
       const g = new T3.Group();
       /* ⚠ **ไม่หมุน** — torus ตั้งฉากมาโดยปริยาย ซึ่งคือสิ่งที่ต้องการพอดี (น้องลอดผ่าน) */
-      const ring = new T3.Mesh(new T3.TorusGeometry(.42, .05, 8, 22), mat(0xf0913f));
+      const ring = new T3.Mesh(new T3.TorusGeometry(HOOP_R, .06, 8, 26), mat(0xf0913f));
       g.add(ring);
       /* แถบสีสลับให้ดูเป็นห่วงละครสัตว์ เด็กจำได้ว่าเป็นของเล่น ไม่ใช่ยางรถ */
       [0, 1, 2, 3].forEach(i=>{
-        const seg = new T3.Mesh(new T3.TorusGeometry(.42, .053, 6, 5, Math.PI/5), mat(0xfdfdf5));
+        const seg = new T3.Mesh(new T3.TorusGeometry(HOOP_R, .064, 6, 5, Math.PI/5), mat(0xfdfdf5));
         seg.rotation.z = i*Math.PI/2 + .3;
         g.add(seg);
       });
-      const grip = cyl(.035, .035, .16, 0xb98a52, 8);
-      grip.position.y = -.5;
+      /* ด้ามยาวถึงมือเด็ก — ไม่งั้นห่วงดูลอยอยู่กลางอากาศเฉยๆ */
+      const grip = cyl(.04, .04, .5, 0xb98a52, 8);
+      grip.position.y = -HOOP_R - .22;
       g.add(grip);
       return g;
     }
 
     const HOOP = {
-      id:'hoop', dur:4.6, pose:'hold', near:1.9,
+      id:'hoop', dur:4.6, pose:'hold', near:1.0,
       build(c){
         const hoop = buildHoop();
         hoop.scale.setScalar(.01);
         c.add(hoop);
-        c.a.toy = hoop;
-        /* ห่วงตั้งอยู่กึ่งกลางระหว่างเด็กกับน้อง เป็นแกนให้วิ่งลอดไป-กลับ */
-        c.a.hoopAt = new T3.Vector3(c.cp.x + c.a.dx*1.1, .62, c.cp.z + c.a.dz*1.1);
-        c.a.farAt  = new T3.Vector3(c.cp.x + c.a.dx*2.5, 0, c.cp.z + c.a.dz*2.5);
+        const a = c.a;
+        a.toy = hoop;
+        /* 🔑 **ห่วงต้องอยู่ "กึ่งกลางเส้นทางวิ่ง" ไม่ใช่ใกล้มือเด็ก**
+           ของเดิมวางห่วงที่ 1.1 แต่ให้น้องวิ่งระหว่าง 1.9 ↔ 2.5 ⇒ **น้องไม่เคยลอดผ่านห่วงเลย**
+           ตอนนี้: น้องวิ่ง 1.0 (ใกล้เด็ก) ↔ 2.8 (ไกล) · ห่วงอยู่ 1.9 = กึ่งกลางพอดี
+           และจังหวะกระโดดสูงสุด (กลางทาง) ตรงกับตอนอยู่ในห่วงเป๊ะ */
+        const fwd = new T3.Vector3(a.dx, 0, a.dz);
+        a.hoopAt = new T3.Vector3(c.cp.x + a.dx*1.9, HOOP_R + .16, c.cp.z + a.dz*1.9);
+        a.farAt  = new T3.Vector3(c.cp.x + a.dx*2.8, 0, c.cp.z + a.dz*2.8);
+        void fwd;
       },
       update(c){
         const a = c.a, g = c.g, T = c.T, hoop = a.toy;
         if(hoop){
-          const s = T < .5 ? ease(T/.45) : (T > a.dur - .45 ? Math.max(.001, 1 - (T - (a.dur - .45))/.45) : 1);
-          hoop.scale.setScalar(s + .001);
+          const s2 = T < .5 ? ease(T/.45) : (T > a.dur - .45 ? Math.max(.001, 1 - (T - (a.dur - .45))/.45) : 1);
+          hoop.scale.setScalar(s2 + .001);
           hoop.position.copy(a.hoopAt);
-          hoop.position.y = .62 + Math.sin(T*2.6)*.03;
-          hoop.rotation.set(0, Math.atan2(a.dx, a.dz) + Math.PI/2, Math.sin(T*2.2)*.05);
+          hoop.position.y = a.hoopAt.y + Math.sin(T*2.6)*.03;
+          /* ระนาบห่วงต้อง **ตั้งขวางทางวิ่ง** — หมุนรอบ Y ให้หน้าห่วงหันเข้าหาเส้นทาง */
+          hoop.rotation.set(0, Math.atan2(a.dx, a.dz) + Math.PI/2, Math.sin(T*2.2)*.04);
         }
 
         if(T < .6){
@@ -532,17 +555,17 @@
           g.rotation.set(0, a.faceY, 0);
           if(!a.flags.ready){ a.flags.ready = true; c.bubble('👀'); }
         }else if(T < 4.0){
-          /* วิ่งลอด 3 เที่ยว: ไกล→ใกล้→ไกล (สลับทุก ~1.13 วิ) */
+          /* วิ่งลอด 3 เที่ยว: ใกล้→ไกล→ใกล้ (สลับทุก ~1.13 วิ) */
           const k = (T - .6) / 3.4;
-          const leg = Math.floor(k*3);                  /* 0,1,2 */
+          const leg = Math.min(2, Math.floor(k*3));
           const kk  = (k*3) % 1;
-          const A = leg % 2 === 0 ? a.farAt : a.petTo;
-          const B = leg % 2 === 0 ? a.petTo : a.farAt;
-          if(leg === 0 && kk < .02) g.position.copy(a.petFrom);
+          const A = leg % 2 === 0 ? a.petTo : a.farAt;
+          const B = leg % 2 === 0 ? a.farAt : a.petTo;
           const p = A.clone().lerp(B, ease(kk));
-          /* กระโดดสูงสุดตอนอยู่กลางทาง = ตรงห่วงพอดี */
-          g.position.set(p.x, arc(kk)*.5 + Math.abs(Math.sin(T*16))*.04, p.z);
-          g.rotation.set(-arc(kk)*.26, Math.atan2(B.x - A.x, B.z - A.z), 0);
+          /* กระโดดสูงสุดตอนอยู่กลางทาง = ตรงห่วงพอดี · สูงพอให้ตัวอยู่ในวงห่วง */
+          g.position.set(p.x, arc(kk)*.55 + Math.abs(Math.sin(T*16))*.03, p.z);
+          /* ⚠ หันหน้าตาม "ทิศที่วิ่ง" เท่านั้น **ห้ามใส่ pitch (rotation.x)** — ตัวสัตว์จะดูตะแคง */
+          g.rotation.set(0, Math.atan2(B.x - A.x, B.z - A.z), 0);
           if(kk > .45 && a.flags.leg !== leg){
             a.flags.leg = leg;
             c.jingle();
@@ -550,7 +573,6 @@
             if(leg === 0) c.bubble('🛟');
           }
         }else{
-          const k = clamp01((T - 4.0)/.6);
           g.position.set(a.petTo.x, Math.abs(Math.sin((T-4.0)*9))*.28, a.petTo.z);
           g.rotation.set(0, a.faceY, 0);
           if(!a.flags.done){
@@ -558,7 +580,6 @@
             c.bubble('🏆'); c.puff(9, 0xffd54f, .85, .5);
             c.ok('ลอดห่วงได้สวยมาก! 🛟');
           }
-          void k;
         }
         wag(c, 18, .55);
       },
@@ -567,33 +588,40 @@
     /* ================================================================
        7) 🛝 สไลเดอร์เล็ก — น้องปีนขึ้นแล้วไถลลง 2 รอบ
        ================================================================ */
+    /* ⚠ **โมเดลหันหน้าไป +z เสมอ** (กติกาเดียวกับคลังเฟอร์นิเจอร์) — ปลายรางอยู่ทาง +z
+       ของเดิมวางรางเอียง .62 rad แล้วยังเลื่อน z อีก ⇒ ทรงบิดจนดูเป็นแผ่นไม้แบนๆ
+       ตอนนี้คำนวณให้ราง "เชื่อมแท่นบน (หลัง) กับพื้น (หน้า)" พอดีเป๊ะด้วยตรีโกณ */
+    const SL_TOP = .95;                    /* ความสูงแท่นบน */
+    const SL_RUN = 1.30;                   /* ระยะแนวราบของราง */
     function buildSlide(){
       const g = new T3.Group();
-      /* รางไถล — แผ่นเอียงจากบนซ้ายลงล่างขวา (ตามแกน z ท้องถิ่น) */
-      const ramp = box(.5, .06, 1.35, 0xf4c542, .04);
-      ramp.position.set(0, .52, .3);
-      ramp.rotation.x = -.62;
+      const len = Math.hypot(SL_TOP, SL_RUN);
+      const ang = Math.atan2(SL_TOP, SL_RUN);      /* มุมเอียงของราง */
+      /* รางไถล — กึ่งกลางรางอยู่กึ่งกลางระหว่างแท่นบนกับพื้นพอดี */
+      const ramp = box(.54, .07, len, 0xf4c542, .04);
+      ramp.position.set(0, SL_TOP/2, SL_RUN/2);
+      ramp.rotation.x = ang;                       /* +x หมุนให้ปลาย +z ต่ำลง */
       g.add(ramp);
-      [-1, 1].forEach(s=>{
-        const rail = box(.05, .16, 1.35, 0xf0913f, .03);
-        rail.position.set(.26*s, .60, .3);
-        rail.rotation.x = -.62;
+      [-1, 1].forEach(sd=>{                        /* ขอบกันตกสองข้าง */
+        const rail = box(.06, .18, len, 0xf0913f, .03);
+        rail.position.set(.28*sd, SL_TOP/2 + .1, SL_RUN/2);
+        rail.rotation.x = ang;
         g.add(rail);
       });
-      /* แท่นบนสุด + ขาตั้ง */
-      const top = box(.5, .07, .32, 0xf0913f, .03);
-      top.position.set(0, .92, -.42);
+      /* แท่นยืนด้านบน (อยู่ทาง −z) + ขาตั้ง */
+      const top = box(.54, .08, .36, 0xf0913f, .03);
+      top.position.set(0, SL_TOP, -.16);
       g.add(top);
-      [-1, 1].forEach(s=>{
-        const leg = cyl(.045, .045, .9, 0x7fd4e8, 8);
-        leg.position.set(.2*s, .45, -.5);
+      [-1, 1].forEach(sd=>{
+        const leg = cyl(.05, .05, SL_TOP, 0x7fd4e8, 8);
+        leg.position.set(.22*sd, SL_TOP/2, -.22);
         g.add(leg);
       });
-      /* บันได 3 ขั้นด้านหลัง */
+      /* บันได 3 ขั้นด้านหลังแท่น (−z ลึกกว่าแท่น) */
       [0, 1, 2].forEach(i=>{
-        const st = box(.36, .05, .12, 0x7fd4e8, .02);
-        st.position.set(0, .26 + i*.26, -.72 - i*.12);
-        g.add(st);
+        const st2 = box(.4, .06, .16, 0x7fd4e8, .02);
+        st2.position.set(0, .26 + i*.26, -.42 - i*.16);
+        g.add(st2);
       });
       return g;
     }
@@ -603,23 +631,26 @@
       build(c){
         const sl = buildSlide();
         const a = c.a;
-        sl.position.set(c.cp.x + a.dx*2.0, 0, c.cp.z + a.dz*2.0);
-        sl.rotation.y = Math.atan2(-a.dx, -a.dz);       /* หันปลายรางกลับมาทางเด็ก */
+        /* วางสไลเดอร์ไว้ข้างหน้าเด็ก แล้วหันปลายราง (+z ของโมเดล) กลับมาทางเด็ก
+           ⇒ เด็กเห็น "ด้านที่น้องไถลลงมา" เต็มๆ ไม่ใช่เห็นด้านหลังบันได */
+        sl.position.set(c.cp.x + a.dx*2.3, 0, c.cp.z + a.dz*2.3);
+        sl.rotation.y = Math.atan2(-a.dx, -a.dz);
         sl.scale.setScalar(.01);
         c.add(sl);
         a.toy = sl;
-        /* จุดสำคัญ 3 จุดบนราง (พิกัดโลก) — คำนวณครั้งเดียว ไม่ต้องคิดใหม่ทุกเฟรม */
-        const fx = -a.dx, fz = -a.dz;                   /* ทิศ "ลงราง" = จากสไลเดอร์กลับหาเด็ก */
-        a.slBack = new T3.Vector3(sl.position.x - fx*.85, 0,    sl.position.z - fz*.85);
-        a.slTop  = new T3.Vector3(sl.position.x - fx*.42, .99,  sl.position.z - fz*.42);
-        a.slFoot = new T3.Vector3(sl.position.x + fx*.95, .06,  sl.position.z + fz*.95);
-        a.slFace = Math.atan2(fx, fz);
+        /* จุดสำคัญบนราง (พิกัดโลก) — `fwd` = ทิศจากสไลเดอร์กลับหาเด็ก = ทิศที่ไถลลง */
+        const fx = -a.dx, fz = -a.dz;
+        a.slBack = new T3.Vector3(sl.position.x - fx*.90, 0,      sl.position.z - fz*.90);
+        a.slTop  = new T3.Vector3(sl.position.x - fx*.16, SL_TOP + .12, sl.position.z - fz*.16);
+        a.slFoot = new T3.Vector3(sl.position.x + fx*SL_RUN, .05,  sl.position.z + fz*SL_RUN);
+        a.slFace = Math.atan2(fx, fz);          /* หันหน้าไปทางที่ไถลลง (ทางเด็ก) */
+        a.slBackFace = Math.atan2(-fx, -fz);    /* ตอนเดินไปบันไดต้องหันเข้าหาสไลเดอร์ */
       },
       update(c){
         const a = c.a, g = c.g, T = c.T, sl = a.toy;
         if(sl){
-          const s = T < .5 ? ease(T/.45) : (T > a.dur - .4 ? Math.max(.001, 1 - (T - (a.dur - .4))/.4) : 1);
-          sl.scale.setScalar(s + .001);
+          const s2 = T < .5 ? ease(T/.45) : (T > a.dur - .4 ? Math.max(.001, 1 - (T - (a.dur - .4))/.4) : 1);
+          sl.scale.setScalar(s2 + .001);
         }
         /* 2 รอบ รอบละ 2.0 วิ: เดินอ้อมไปหลังบันได → ปีนขึ้น → ไถลลง */
         const LAP = 2.0, t = Math.max(0, T - .5);
@@ -632,22 +663,22 @@
           if(!a.flags.see){ a.flags.see = true; c.bubble('👀'); }
         }else if(t < LAP*2){
           if(kk < .34){
-            /* เดินไปที่บันได */
+            /* เดินไปที่บันได (หลังสไลเดอร์) */
             const from = lap === 0 ? a.petFrom : a.slFoot;
             runTo(c, from, a.slBack, kk/.34);
           }else if(kk < .56){
-            /* ปีนขึ้นแท่น — ตัวเงยขึ้นตามบันได */
+            /* ปีนขึ้นแท่น — ⚠ ตัวตั้งตรง หันหน้าเข้าหาสไลเดอร์ ไม่ใส่ pitch (จะดูล้มคว่ำ) */
             const k = (kk - .34)/.22;
             g.position.lerpVectors(a.slBack, a.slTop, ease(k));
             g.position.y = a.slBack.y + (a.slTop.y - a.slBack.y)*ease(k) + Math.abs(Math.sin(T*20))*.03;
-            g.rotation.set(-.4*ease(k), a.slFace, 0);
+            g.rotation.set(0, a.slBackFace, 0);
             if(a.flags.climb !== lap){ a.flags.climb = lap; c.bubble('🛝'); }
           }else{
-            /* ไถลลง — เร่งความเร็วช่วงท้ายให้รู้สึกลื่นจริง */
+            /* ไถลลง — เร่งความเร็วช่วงท้ายให้รู้สึกลื่นจริง · หันหน้าไปทางที่ไถล */
             const k = (kk - .56)/.44;
             const kq = k*k;
             g.position.lerpVectors(a.slTop, a.slFoot, kq);
-            g.rotation.set(.5 - kq*.5, a.slFace, Math.sin(k*Math.PI*3)*.1);
+            g.rotation.set(0, a.slFace, Math.sin(k*Math.PI*3)*.09);
             if(k > .8 && a.flags.slid !== lap){
               a.flags.slid = lap;
               c.jingle(); c.puff(5, 0xf4c542, .7, .3);

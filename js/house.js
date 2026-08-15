@@ -9787,9 +9787,15 @@ function petTrickAnim(id, k, g, u, baseY){
     g.rotation.x = -.66*ease;                          /* ตั้งตัวขึ้นแตะมือเด็ก */
     g.position.y = ease*.2;
   }else if(id === 'roll'){
-    g.rotation.z = kk*Math.PI*2;                       /* กลิ้งรอบตัวเอง 1 รอบ */
-    g.rotation.x = -.34*ease;
-    g.position.y = ease*.05;
+    /* 🛠 แก้ 2026-08-15 (ผู้ใช้แจ้งว่าท่านอนกลิ้งเพี้ยน)
+       ของเดิมใส่ **pitch (`rotation.x`) พร้อมกับ roll (`rotation.z`)** ⇒ euler XYZ เอา 2 แกนมาผสมกัน
+       เห็นเป็นตัวตีลังกามั่วๆ ไม่ใช่ "นอนกลิ้ง"
+       ⇒ กลิ้งรอบแกนหน้า-หลังของตัวเอง (`rotation.z`) **แกนเดียวล้วน** ไม่มี pitch เลย
+       ⚠ จุดหมุนอยู่ที่ฝ่าเท้า (y=0) ⇒ ตอนตะแคง 90°/270° ลำตัวจะจมพื้น
+         ต้องยกตัวขึ้นชดเชยตามระยะครึ่งความกว้างลำตัว ไม่งั้นเห็นครึ่งตัวหายไปในดิน */
+    const rollA = kk*Math.PI*2;
+    g.rotation.set(0, baseY, rollA);
+    g.position.y = Math.abs(Math.sin(rollA))*.17;      /* สูงสุดตอนตะแคงข้าง แตะพื้นตอนหงาย/คว่ำ */
   }else{                                               /* sit — นั่งเอนตัวขึ้นแล้วค้าง */
     g.rotation.x = -.5*Math.min(1, kk*3);
   }
@@ -13229,6 +13235,7 @@ if(!homeView.hidden) houseBuddyRefresh();
   dancers: ()=> npcs.filter(n => n.dance > 0).length,
   bandAt: (x, z)=> gatherCrowd({position:{x: outWX(x), y:0, z: outWZ(z)}}),
   npcShadow: id => buildNpcShadow(id),
+  petTrick: id => startPetAct('trick', id),
   /* จังหวะเฟรมของลูปวาด — ใช้วัดว่า "หรี่เฟรมตอนเปิดกล้อง" แล้วยังเดินสม่ำเสมอไหม
      (ผู้ใช้แจ้ง 2026-08-12 ว่าโลกกระตุกตอนเปิดกล้อง — ต้นเหตุคือหรี่แบบเว้นตามเวลา) */
   frameLog: ()=> frameLog.slice(),
