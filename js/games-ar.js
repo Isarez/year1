@@ -889,6 +889,8 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-quests.js'+v))
     .then(()=>loadScriptOnce('js/house-pet-care.js'+v))
     .then(()=>loadScriptOnce('js/house-family.js'+v))
+    /* ของเล่นสัตว์เลี้ยง (เฟส 12.1) — ต้องมาก่อน house.js (house.js เรียก HOUSE_PET_TOYS ตอนโหลด) */
+    .then(()=>loadScriptOnce('js/house-pet-toys.js'+v))
     /* ตัวละคร/ของแต่งตัว — ต้องมาก่อน house.js (house.js เรียก HOUSE_AVATAR ตอนโหลด) */
     .then(()=>loadScriptOnce('js/house-avatar.js'+v))
     /* โมเดลตึก/ร้านค้า — ต้องมาก่อน house.js (house.js เรียก HOUSE_MODELS ตอนโหลด) */

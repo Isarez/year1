@@ -307,6 +307,13 @@ const FURN = (typeof window.HOUSE_FURNITURE === 'function')
   ? window.HOUSE_FURNITURE({THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat, shade:petShade})
   : {items:[], byId:{}, cats:{in:[], out:[]}};
 
+/* ของเล่นสัตว์เลี้ยงเฟส 12.1 (js/house-pet-toys.js โหลดก่อนไฟล์นี้) — โมเดล + ท่าเล่นประจำชิ้น
+   ⚠ **ไม่มีไฟล์นี้ก็ต้องไม่พัง** — ของเล่นที่หา spec ไม่เจอจะถอยไปใช้ท่าลูกบอลเดิมให้เอง
+     (ดู startPetAct) เด็กยังเล่นได้ตามปกติ แค่ท่าไม่ตรงชิ้น */
+const PET_TOYS3D = (typeof window.HOUSE_PET_TOYS === 'function')
+  ? window.HOUSE_PET_TOYS({THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat})
+  : {SPECS:{}, pose:()=>null, POSE_KINDS:[]};
+
 /* ร้านค้า/เศรษฐกิจเฟส 1 (js/house-shop.js โหลดก่อนไฟล์นี้) — ตารางราคา + คลังสิทธิ์ + migration + หน้าร้าน
    ไฟล์นั้นไม่แตะ localStorage เอง ใช้ load/save ที่ส่งไปให้ตรงนี้ (ข้อมูลจึงอยู่ก้อนเดียวกับบ้าน export ตามไปเอง) */
 const SHOP = (typeof window.HOUSE_SHOP === 'function')
@@ -9070,7 +9077,8 @@ function renderPetMenu(){
     const toys = (SHOP && SHOP.ownedToys) ? SHOP.ownedToys() : [];
     toys.forEach(t=>{
       e.grid.appendChild(hpmBtn(t.emoji, t.name, {
-        run: ()=>{ closePetMenu(); startPetAct('ball', t.id); },   /* เฟส 12.1 จะแยกท่าตามของเล่นแต่ละชิ้น */
+        /* เฟส 12.1 — แต่ละชิ้นมีท่าของตัวเอง · ลูกบอลยังใช้ท่าเดิมของเฟส 12 */
+        run: ()=>{ closePetMenu(); startPetAct(t.id === 'ball' ? 'ball' : 'toy', t.id); },
       }));
     });
     petMenuNote('อยากเล่นแบบอื่นอีก? ไปดูของเล่นใหม่ๆ ที่ร้านสัตว์เลี้ยงได้เลย 🐾');
@@ -9098,7 +9106,10 @@ function renderPetMenu(){
       if(!home){ petMenuNote('ออกไปที่สนามหน้าบ้านกันนะ ที่นั่นกว้างพอให้เล่นได้ 🏡'); return; }
       const toys = (SHOP && SHOP.ownedToys) ? SHOP.ownedToys() : [];
       if(toys.length > 1){ openPetMenu('toy'); return; }
-      closePetMenu(); startPetAct('ball', 'ball');
+      /* มีของเล่นชิ้นเดียว = ข้ามหน้าเลือกไปเล่นเลย (ปกติคือลูกบอลแถมฟรี แต่ไม่ฮาร์ดโค้ดไว้
+         เผื่อวันหลังของแถมเปลี่ยนชิ้น จะได้ไม่เล่นผิดของแบบเงียบๆ) */
+      const only = toys[0] || {id:'ball'};
+      closePetMenu(); startPetAct(only.id === 'ball' ? 'ball' : 'toy', only.id);
     },
   }));
   e.grid.appendChild(hpmBtn('🎪', 'สอนท่า', {
@@ -9601,9 +9612,52 @@ function petTrickInfo(id){
   for(let i=0;i<list.length;i++) if(list[i].id === id) return list[i];
   return null;
 }
+/* คืน spec ท่าเล่นของของเล่นชิ้นนั้น (null = ไม่มีท่าประจำ ให้ถอยไปใช้ท่าลูกบอล) */
+function petToySpec(id){
+  return (PET_TOYS3D.SPECS && PET_TOYS3D.SPECS[id]) || null;
+}
+/* ข้อมูลของเล่นจากคลังร้าน — **แต้มความสุขอยู่ที่ PET_TOYS ใน js/house-shop.js ที่เดียว**
+   ไฟล์ท่าเล่นไม่รู้จักตัวเลขนี้เลย (กติกาเดียวกับที่ห้ามตั้งเลขเหรียญนอก coinsFor) */
+function petToyInfo(id){
+  const list = (SHOP && SHOP.PET_TOYS) || [];
+  for(let i = 0; i < list.length; i++) if(list[i].id === id) return list[i];
+  return null;
+}
+/* context ที่ส่งให้ spec ของเล่นใช้ — ห่อของภายในของ house.js ไว้ให้ไฟล์ท่าเล่นเรียกได้เท่าที่จำเป็น */
+function petToyCtx(dt){
+  const a = petAct, g = hPet.group;
+  return {
+    a, g, u: (g && g.userData.anim) || {}, T: a.t, dt: dt || 0,
+    cp: charGroup.position,
+    /* ⚠ ของทุกชิ้นต้องเข้าทางนี้เท่านั้น จะได้ถูกเก็บกวาดที่ endPetAct() อัตโนมัติ */
+    add(o){ petParent().add(o); a.props.push(o); },
+    bubble: petBubble,
+    puff: petPuff,
+    jingle: petJingle,
+    /* จบท่า = จ่ายความสุขตามค่า gain ของ "ชิ้นนั้น" (จุดเดียวที่ toyPlayed ถูกเรียก)
+       เต็มโควตาความสุขวันนี้แล้วยังเล่นได้เรื่อยๆ แค่ไม่ได้แต้มเพิ่ม — ห้ามห้ามไม่ให้เล่น */
+    ok(txt){
+      const info = petToyInfo(a.arg);
+      petJingle();
+      const r = PETCARE ? PETCARE.toyPlayed(info ? (info.gain | 0) : null) : null;
+      if(typeof playCorrect === 'function') playCorrect();
+      charBubble(r && r.gain > 0 ? txt : ('สนุกจังเลย ' + (info ? info.emoji : '😊')), true);
+    },
+  };
+}
 /* ---------- เริ่มกิจกรรม ---------- */
 function startPetAct(kind, arg){
-  const spec = PET_ACTS[kind];
+  /* เฟส 12.1: kind 'toy' = ของเล่นที่มีท่าประจำของตัวเอง (dur/pose/ระยะยืน มาจาก spec ของชิ้นนั้น)
+     หา spec ไม่เจอด้วยเหตุผลใดก็ตาม (ไฟล์ยังโหลดไม่เสร็จ / ของเล่นใหม่ที่ยังไม่มีท่า)
+     ⇒ **ถอยไปเล่นท่าลูกบอลเดิม ห้ามเงียบไม่ทำอะไร** เด็กกดปุ่มแล้วต้องมีอะไรเกิดขึ้นเสมอ */
+  let toySpec = null;
+  if(kind === 'toy'){
+    toySpec = petToySpec(arg);
+    if(!toySpec){ kind = 'ball'; }
+  }
+  const spec = toySpec
+    ? {dur: toySpec.dur, pose: toySpec.pose, home: true}
+    : PET_ACTS[kind];
   if(!spec || petAct || feedAnim) return false;
   if(!hPet.group || !charGroup || hMode !== 'world' || editMode) return false;
   if(hPet.rest) petLeaveHouse(true);        /* นอนอยู่ในบ้านสัตว์ → ออกมาเล่นก่อน */
@@ -9614,16 +9668,18 @@ function startPetAct(kind, arg){
   let d = Math.hypot(dx, dz);
   if(d < .05){ dx = Math.sin(hChar.targetRotY || 0); dz = Math.cos(hChar.targetRotY || 0); d = 1; }
   dx /= d; dz /= d;
-  const near = kind === 'ball' ? 1.3 : 1.0;
+  const near = toySpec ? (toySpec.near || 1.0) : (kind === 'ball' ? 1.3 : 1.0);
   hChar.targetRotY = Math.atan2(dx, dz);    /* เด็กหันหาน้องเสมอก่อนเริ่มท่า */
   petAct = {kind, t:0, dur:spec.dur, arg: arg || null, dx, dz,
             faceY: Math.atan2(-dx, -dz),    /* ทิศที่น้องหันกลับมามองเด็ก */
             petFrom: pp.clone(),
             petTo: new THREE.Vector3(cp.x + dx*near, 0, cp.z + dz*near),
-            props:[], flags:{}};
+            props:[], flags:{}, toySpec};
   charAct = {kind: spec.pose, t0: performance.now(), dur: spec.dur*1000, hold:false};
   if(typeof playClick === 'function') playClick();
-  if(kind === 'ball'){
+  if(toySpec){
+    toySpec.build(petToyCtx(0));
+  }else if(kind === 'ball'){
     const ball = buildPetBall();
     ball.position.set(cp.x, .62, cp.z);
     petParent().add(ball);
@@ -9816,6 +9872,10 @@ function updatePetAct(dt){
       }
     }
     if(u.tail) u.tail.rotation.z = Math.sin(T*15)*.5;
+  }else if(a.kind === 'toy' && a.toySpec){
+    /* เฟส 12.1 — ท่าเล่นประจำของเล่นแต่ละชิ้น (js/house-pet-toys.js)
+       ตัว spec คุมทั้ง prop และตัวน้องเอง ที่นี่แค่ส่ง context ให้ */
+    a.toySpec.update(petToyCtx(dt));
   }else if(a.kind === 'trick'){
     /* 0-.85 น้องนั่งตั้งใจฟังคำสั่ง · .85-2.6 ทำท่า · 2.6-3.6 สำเร็จ เด็กปรบมือ น้องกระโดดดีใจ */
     const id = a.arg || 'sit';
@@ -11748,7 +11808,12 @@ const CH_LEAN_MAX = .26;             /* 🔒 เพดานมุมเอน�
 /* คืนค่าท่าของเฟรมนั้น: {lean, legX, hop, aL, aR, zL, zR} */
 function charPoseAt(kind, pr){
   const p = {lean:0, legX:0, hop:0, aL:0, aR:0, zL:CH_ARM_Z[0], zR:CH_ARM_Z[1]};
-  if(kind === 'plant'){
+  /* เฟส 12.1 — ท่าประจำของเล่นสัตว์เลี้ยงอยู่ใน js/house-pet-toys.js ถามไฟล์นั้นก่อน
+     ไม่รู้จักชื่อท่านี้ = ตกมาใช้ตารางข้างล่างตามเดิม (เพดาน lean ยังหนีบให้ท้ายฟังก์ชันเหมือนกัน) */
+  const tp = PET_TOYS3D.pose ? PET_TOYS3D.pose(kind, pr, {ARM_Z: CH_ARM_Z}) : null;
+  if(tp){
+    Object.assign(p, tp);
+  }else if(kind === 'plant'){
     /* ย่อเข่าลงไปจิ้มเมล็ดลงดิน — ค้างท่าย่อช่วงกลางให้เห็นชัด แล้วค่อยลุก */
     const c = pr < .3 ? pr/.3 : (pr < .68 ? 1 : 1 - (pr-.68)/.32);
     p.legX = c*.34; p.lean = c*.20; p.hop = -c*.10;
@@ -12887,6 +12952,39 @@ if(!homeView.hidden) houseBuddyRefresh();
                          dirty: !!(u && u.dirt)}; },
   restylePet: ()=> restylePet(),
   buildPetAt: (type, col, opt)=> buildPet(type, col, opt),
+  /* ---- จุดต่อชุดเทสเฟส 12.1 (ของเล่นสัตว์เลี้ยง) ----
+     เดินไปซื้อ+เปิดเมนู+กดเล่นทีละชิ้นในฉาก 3D ทำในเทสไม่ไหว ⇒ เรียกผ่านทางเดินโค้ดจริงแทน */
+  petToySpecs: ()=> Object.keys(PET_TOYS3D.SPECS || {}),
+  petActArg:  ()=> petAct ? petAct.arg : null,
+  petActProps:()=> petAct ? petAct.props.length : -1,
+  /* เริ่มเล่นของเล่นชิ้นนั้นผ่าน startPetAct เส้นเดียวกับที่ปุ่มในเมนูฟองเรียก */
+  petPlayToy: id => startPetAct(id === 'ball' ? 'ball' : 'toy', id),
+  /* กรอเวลาในท่าไปข้างหน้า — **จำเป็นจริงสำหรับชุดเทส ไม่ใช่ของอำนวยความสะดวก**
+     เครื่องเทสวาดได้ ~3 fps (WebGL ซอฟต์แวร์) และ engine clamp dt ที่ 50ms/เฟรม
+     ⇒ ท่ายาว 4.5 วิในเกม กินนาฬิกาจริง ~30 วิ · เล่นครบ 8 ชิ้น = 4 นาที ต่อ 1 เทส
+     กรอไปใกล้จบแล้วปล่อยให้เดินเองต่อ ⇒ ยังได้รันทั้งช่วงต้น (สร้างของ) และช่วงจบ
+     (จ่ายความสุข + เก็บกวาดของ) ครบทุกบรรทัดที่สำคัญ */
+  petActSeek: sec => { if(petAct) petAct.t = sec; return petAct ? petAct.dur : -1; },
+  petActDur:  ()=> petAct ? petAct.dur : -1,
+  /* สร้างโมเดลของเล่นล้วนๆ (ไม่เริ่มท่า) — ใช้จับชิ้นที่วาดแล้วพัง แบบเดียวกับ buildFurn ของเฟส 8 */
+  buildPetToy: id => {
+    const sp = petToySpec(id);
+    if(!sp) throw new Error('ไม่พบ spec ของเล่น ' + id);
+    const g = new THREE.Group();
+    const fake = {t:0, dur:sp.dur, arg:id, dx:0, dz:1, faceY:Math.PI,
+                  petFrom:new THREE.Vector3(), petTo:new THREE.Vector3(0,0,1),
+                  props:[], flags:{}};
+    sp.build({a:fake, g:null, u:{}, T:0, dt:0, cp:new THREE.Vector3(),
+              add:o=>{ g.add(o); fake.props.push(o); },
+              bubble:()=>{}, puff:()=>{}, jingle:()=>{}, ok:()=>{}});
+    return g;
+  },
+  /* ค่ามุมข้อต่อของท่าเด็ก ณ ช่วงเวลา pr (0..1) — เทสใช้ตรวจว่าท่าต่างกันจริงและไม่ล้ำเพดาน
+     ⚠ **ห้ามตั้งชื่อว่า `charPose`** — คีย์นั้นถูกจองไว้แล้วท้ายอ็อบเจกต์นี้ (อ่านท่าที่กำลังเล่นอยู่จริง)
+       key ซ้ำใน object literal ตัวหลังชนะเสมอ ⇒ ตัวนี้จะเงียบหายโดยไม่มี error ให้จับ
+       (กับดักเดียวกับ `action` ของเปียโนในเฟส 9 — เจอซ้ำอีกรอบตอนทำเฟส 12.1) */
+  poseAt: (kind, pr)=> charPoseAt(kind, pr),
+  poseKinds: ()=> (PET_TOYS3D.POSE_KINDS || []).slice(),
   /* ---- จุดต่อชุดเทสเฟส 8 (คลังเฟอร์นิเจอร์ 180 ชิ้น + ของแต่งตัว 114 แบบ) ----
      สร้างของ/ตัวละครจริงผ่านทางเดินโค้ดเดียวกับในเกม เพื่อจับชิ้นที่วาดแล้วพัง
      (เดินไปซื้อ+วางทีละชิ้นในฉาก 3D ทำในเทสไม่ไหว) */

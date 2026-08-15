@@ -354,6 +354,12 @@
         <li><a href="#s28"><i>28</i>เฟส 15 &mdash; ระบบฤดูกาล 💤</a></li>
         <li><a href="#s29"><i>29</i>เฟส 14 &mdash; เพลงธีมฟาร์ม 🎵</a></li>
       </ol>
+      <p class="toc-h" style="margin-top:22px;">ทำเสร็จแล้ว &mdash; ต่างจากแผนตรงไหน</p>
+      <ol>
+        <li><a href="#s30"><i>30</i>เฟส 10 + 11 ✅</a></li>
+        <li><a href="#s31"><i>31</i>เฟส 12 &mdash; เพื่อนตัวน้อย ✅</a></li>
+        <li><a href="#s32"><i>32</i>เฟส 12.1 &mdash; ของเล่น ✅</a></li>
+      </ol>
     </nav>
 
     <main>
@@ -1850,6 +1856,140 @@
             <strong>ไฟล์เสียงจริง (.mp3/.ogg) &mdash; ผิดหลักการ static ของโปรเจค ทุกเสียงต้อง procedural Web Audio เหมือนของเดิมทั้งหมด</strong>
           </p>
         </div>
+      </section>
+
+      <section id="s30">
+        <div class="sec-head"><span class="sec-num mono">30</span><h2>เฟส 10 + 11 &mdash; สิ่งที่ทำจริงต่างจากแผน ✅</h2></div>
+        <p class="sec-sub">เสร็จทั้งคู่ 2026-08-13 &middot; ทำต่อกันในรอบเดียว &middot; ฉบับเต็มอยู่ <strong>ข้อ 47</strong> ของ <span class="mono">QUEST-DESIGN.md</span></p>
+
+        <p class="sec-sub" style="margin-top:22px;">⏱️ เฟส 10 &mdash; จังหวะเวลา (ทำครบตามข้อ 45 ไม่มีอะไรตัดออก)</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>หัวข้อ</th><th>ทำจริง</th></tr></thead>
+            <tbody>
+              <tr><td><code>starsOf()</code> พลาดฟรี 1 ข้อ</td><td>พลาดไม่เกิน 1 ข้อ = 3 ดาว &middot; เกณฑ์ 2 ดาวยังเป็นสัดส่วน ~2/3 เหมือนเดิม</td></tr>
+              <tr><td>ตัวคูณระดับชั้น</td><td><code>TIER_MUL</code> 1.00-1.15 + หนีบค่านอกช่วง &middot; <strong>คูณโบนัสดาว/โบนัสกระดานด้วย</strong></td></tr>
+              <tr><td><code>secPerQ</code></td><td>ติดป้าย <code>shape</code> ให้ทุกกลไกอัตโนมัติ &mdash; การ์ด 16 วิ &middot; ลาก 30 วิ &middot; ยืม engine 225 วิ &middot; เดินคำนวณจากระยะ</td></tr>
+              <tr><td>สูตรทรงเดิน</td><td>วัดระยะด้วย <code>findPath()</code> จริง <strong>ห้ามใช้เส้นตรง</strong> &middot; หนีบ 5-10 ข้อเสมอ</td></tr>
+              <tr><td>งานหลัก/งานรอง</td><td>หลัก 6 ชุด (กระดาน 5 + ครอบครัว 1) / รอง 8 ชุด (NPC) &middot; ตัวนับ ❗ นับเฉพาะงานหลัก</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="sec-sub" style="margin-top:22px;">🌍 เฟส 11 &mdash; มินิเกมกลุ่ม A 5 เกมในโลก 3D (ไฟล์ใหม่ <span class="mono">js/house-play.js</span>)</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>เกม</th><th>ทำจริง</th><th>ต่างจากแผน</th></tr></thead>
+            <tbody>
+              <tr><td>🙈 ซ่อนแอบ</td><td>เพื่อนบ้านไปแอบตามเมือง เด็กเดินตามคำใบ้ไปหา</td><td>ตัวพิสูจน์สูตรทรงเดินของเฟส 10 ก่อนลงทุนอีก 13 เกม</td></tr>
+              <tr><td>🍃 เก็บของประจำวัน</td><td>ของสุ่มรายวันแบบ seeded วางทั่วเมือง</td><td><strong>ไม่จ่ายเหรียญ</strong> &mdash; ปลดของรางวัลแทน กันเงินเฟ้อ</td></tr>
+              <tr><td>🎣 ตกปลา</td><td>เหวี่ยงเบ็ดที่ท่าน้ำ &middot; สมุดปลาสะสม</td><td><strong>ตกปลาอยู่ = เดินไม่ได้</strong> กันไว้ 2 ชั้น (<code>handleTap</code> + <code>walkTo</code>)</td></tr>
+              <tr><td>📷 ช่างภาพ</td><td>ใบสั่ง 4 แบบ/วัน &middot; เก็บได้ 6 รูป</td><td>⭐ <strong>ไม่ต้องเปิด <code>preserveDrawingBuffer</code> เลย</strong> &mdash; วาด 1 เฟรมแล้วดึงภาพในจังหวะเดียวกัน ⇒ ความเสี่ยงที่แผนกลัวไว้หายทั้งก้อน</td></tr>
+              <tr><td>🌱 แปลงผัก</td><td>4 แปลง &middot; โต 3 ขั้นตาม &ldquo;วันที่เข้าเล่น&rdquo; &middot; ลืมรดน้ำ = ไม่โต <strong>แต่ไม่ตาย</strong></td><td><strong>เมล็ดยังไม่ต้องซื้อ</strong> &mdash; เด็กใหม่มี 0 เหรียญ บังคับซื้อ = ทางตันตั้งแต่วันแรก</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note risk">
+          <p class="note-h">🐞 กับดักที่เจอจริงตอนทำ</p>
+          <p>
+            ① <strong>เกมซ่อนแอบต้องกัน &ldquo;เริ่มซ้ำ&rdquo; ตอนที่ยังเล่นค้างอยู่</strong> ไม่ใช่เช็คแค่ว่าทำจบหรือยัง
+            &mdash; กดปุ่มซ้ำแล้วสุ่มจุดแอบใหม่ทั้งชุด คนที่เด็กอุตส่าห์เดินไปเจอมาแล้วหายเกลี้ยง ·
+            ② <strong>เทสที่รอ &ldquo;จังหวะในเกม&rdquo; ต้องเผื่อเวลาเยอะกว่าที่คิดมาก</strong> &mdash; engine หนีบ
+            <code>dt</code> ที่ 50ms/เฟรม ตอนเฟรมตกเวลาในเกมเดินช้ากว่านาฬิกาจริงหลายเท่า ·
+            ③ <strong>ของกลุ่ม A ต้องแขวนกับฉากผ่าน <code>spawn()</code> เท่านั้น</strong> ไปเรียก <code>scene.add()</code> เองจะค้างข้ามรอบการเล่น ·
+            ④ <strong>ของชิ้นเล็กต้องถูกเช็คเป็นอันดับแรกใน <code>handleTap()</code></strong> ไม่งั้นถูกของฉากที่ใหญ่กว่าบังจนแตะไม่โดน
+          </p>
+        </div>
+
+        <div class="note coin">
+          <p class="note-h">ระลอก 2 &mdash; เปิดตาราง <code>qN</code> ใหม่แล้ว</p>
+          <p>
+            การ์ด <strong>9-12 ข้อ</strong> &middot; ลาก <strong>6-8 ข้อ</strong> ตามระดับชั้น &mdash;
+            <code>buildRun()</code> เลือกตารางจาก <strong>ทรงของกลไก</strong> ไม่ใช่สุ่ม 5-10 แบบเดิมอีกต่อไป<br><br>
+            ⚠️ <strong>มติเดิมที่ว่า &ldquo;จำนวนข้อสุ่มได้ ไม่ต้องเท่ากัน&rdquo; ถูกทับแล้ว</strong> &mdash;
+            การสุ่มทำให้เควสต์เดียวกันบางวัน 80 วิ บางวัน 160 วิ <strong>คุมงบเวลาไม่ได้เลย</strong>
+          </p>
+        </div>
+      </section>
+
+      <section id="s31">
+        <div class="sec-head"><span class="sec-num mono">31</span><h2>เฟส 12 &mdash; กิจกรรมกับเพื่อนตัวน้อย ✅</h2></div>
+        <p class="sec-sub">เสร็จ 2026-08-15 &middot; ฉบับเต็มอยู่ <strong>ข้อ 49</strong> ของ <span class="mono">QUEST-DESIGN.md</span></p>
+        <p class="sec-sub" style="margin-top:18px;">🤚 ลูบหัว &middot; 🫧 อาบน้ำ &middot; 🎾 เล่นด้วยกัน &middot; 🎪 สอนท่า 5 ท่า &middot; 🎀 ปลอกคอ 8 แบบ 8 สี &middot; ระบบความสุข &middot; รอยเปื้อน</p>
+
+        <div class="note coin">
+          <p class="note-h">🔒 กติกาที่ล็อกไว้</p>
+          <p>
+            ① <strong>ไม่ให้เหรียญสักบาท</strong> &mdash; ทุกกิจกรรมจ่ายเป็น &ldquo;ค่าความสุข&rdquo; เท่านั้น (ผู้ใช้สั่ง) ·
+            ② <strong>ห้ามมีทางตัน</strong> &mdash; น้องงีบเพราะเหงา ต้องลูบหัว/อาบน้ำได้เสมอ แล้วออกมาเองเมื่อพ้นเกณฑ์ ·
+            ③ <strong>ห้ามมีบทลงโทษ</strong> &mdash; ลูบครบโควตาวันนี้แล้ว <strong>ยังลูบได้เรื่อยๆ</strong> แค่ไม่ได้แต้มเพิ่ม ·
+            ความคืบหน้าการสอนท่า <strong>ไม่มีวันถอยหลัง</strong> ·
+            ④ <strong>ปลอกคอ/รอยเปื้อนต้องอยู่บนโมเดล 3D จริง</strong> ไม่ใช่แค่ค่าที่บันทึกไว้ ·
+            ⑤ <strong>เด็กก่อนเฟส 12 ต้องเล่นได้ปกติ</strong> ระบบเติมค่าที่ขาดให้เอง
+          </p>
+        </div>
+      </section>
+
+      <section id="s32">
+        <div class="sec-head"><span class="sec-num mono">32</span><h2>เฟส 12.1 &mdash; ของเล่นสัตว์เลี้ยง ✅</h2></div>
+        <p class="sec-sub">เสร็จ 2026-08-15 &middot; ฉบับเต็มอยู่ <strong>ข้อ 50-51</strong> &middot; แนวทางที่ผู้ใช้เลือก: ซื้อที่ร้าน &rarr; โผล่ในเมนูฟองของน้อง &rarr; กดเล่นแล้วของโผล่ในฉาก เล่นจบแล้วหายไป <strong>ไม่มีระบบวางของ</strong></p>
+
+        <div class="scroll">
+          <table>
+            <thead><tr><th>ของเล่น</th><th>ราคา</th><th>ความสุข</th><th>ท่าที่ทำจริง</th></tr></thead>
+            <tbody>
+              <tr><td>🎾 ลูกบอล</td><td class="num">ฟรี</td><td class="num">+6</td><td>แถมมากับน้อง &mdash; โยนให้วิ่งไปคาบกลับมา</td></tr>
+              <tr><td>🪢 เชือกดึง</td><td class="num">120</td><td class="num">+6</td><td>คาบคนละปลาย ดึงสู้กัน 4 จังหวะ แล้วน้องชนะถอยหลังพร้อมเชือก</td></tr>
+              <tr><td>🪶 ไม้ล่อขนนก</td><td class="num">150</td><td class="num">+7</td><td>เด็กแกว่งเป็นวง น้องวิ่งตาม<strong>แบบตามหลังนิดๆ</strong> แล้วกระโดดตะปบ</td></tr>
+              <tr><td>🥏 จานร่อน</td><td class="num">200</td><td class="num">+7</td><td>เหวี่ยงออกข้าง จานหมุนลอยโค้ง น้อง<strong>งับกลางอากาศ</strong> แล้วคาบกลับ</td></tr>
+              <tr><td>🧸 ตุ๊กตาผ้า</td><td class="num">240</td><td class="num">+8</td><td>ยื่นให้ &rarr; คาบสะบัดหัวแรงๆ &rarr; โยนขึ้นเองแล้วเงยหน้ามอง</td></tr>
+              <tr><td>🫧 เครื่องเป่าฟองสบู่</td><td class="num">290</td><td class="num">+8</td><td>ฟอง 5 ลูกทยอยลอย น้องไล่ตบทีละลูก &mdash; <strong>ชิ้นเดียวที่ไม่มีการคาบกลับ</strong></td></tr>
+              <tr><td>🛟 ห่วงกระโดด</td><td class="num">340</td><td class="num">+9</td><td>เด็กถือห่วงนิ่ง น้องวิ่งลอด 3 เที่ยว กระโดดสูงสุดตรงห่วงพอดี</td></tr>
+              <tr><td>🛝 สไลเดอร์เล็ก</td><td class="num">400</td><td class="num">+10</td><td>เดินอ้อมไปบันได &rarr; ปีนขึ้น &rarr; ไถลลง (เร่งช่วงท้าย) 2 รอบ</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note coin">
+          <p class="note-h">💰 ที่มาของราคา &mdash; คิดเทียบคลังของเดิมทั้งเกม ไม่ได้ตั้งลอยๆ</p>
+          <p>
+            ปลอกคอ 80-150 &middot; อาหาร 45-150/ถุง &middot; สัตว์ 250-1,500 &middot; รายได้เด็ก ~206-237 🪙/วัน<br>
+            &rArr; ชิ้นแรก <strong>120</strong> (ใกล้ปลอกคอแพงสุด &mdash; เก็บไม่กี่วันก็ซื้อชิ้นแรกได้ ไม่ต้องรอเป็นสัปดาห์) ·
+            ชิ้นสุดท้าย <strong>400</strong> (~2 วันของรายได้ ยังถูกกว่าสัตว์ตัวถูกสุด) ·
+            รวมทั้งชุด <strong>1,740 🪙 ≈ 8 วัน</strong> = ~6.5% ของมูลค่าของทั้งเกม<br><br>
+            🔒 <strong>ห้ามปรับราคาขึ้นโดยไม่ถามผู้ใช้</strong> &mdash; ของเล่นเป็น money sink ที่ไม่คืนเป็นเงินเลย
+            แพงกว่านี้จะไปแย่งงบกับของแต่งบ้านที่เด็กอยากได้จริงๆ (มีเทสคุมเพดานไว้)
+          </p>
+        </div>
+
+        <div class="note ok">
+          <p class="note-h">🔧 ต่างจากแผน 4 ข้อ (ตั้งใจ)</p>
+          <p>
+            ① <strong>ท่าเล่นแยกเป็นไฟล์ใหม่</strong> <span class="mono">js/house-pet-toys.js</span> ไม่ได้เขียนใน
+            <span class="mono">js/house.js</span> ตามที่แผนเขียนไว้ (ไฟล์นั้น ~12,900 บรรทัดแล้ว) ·
+            ② <strong>รหัสสไลเดอร์ต้องเป็น <code>pet-slide</code></strong> &mdash; คลังเฟอร์นิเจอร์มี <code>slide</code>
+            (สไลเดอร์สนามเด็กเล่น) อยู่ก่อนแล้ว ชนกันแล้วเทส &ldquo;ของเล่นห้ามปนกับของตกแต่ง&rdquo; แดงทันที ·
+            ③ <strong>ท่าของเด็กอยู่ไฟล์เดียวกับท่าของน้อง</strong> &rArr; เพิ่มของเล่นชิ้นใหม่ = แตะไฟล์เดียว ·
+            ④ <strong>เพิ่มทางถอยกันทางตัน</strong> &mdash; ของเล่นที่หาท่าประจำไม่เจอถอยไปเล่นท่าลูกบอลให้เอง
+            เด็กกดปุ่มแล้วต้องมีอะไรเกิดขึ้นเสมอ
+          </p>
+        </div>
+
+        <div class="note risk">
+          <p class="note-h">🐞 กับดักที่เจอจริง</p>
+          <p>
+            ① <strong>จุดต่อชุดเทสมีคีย์ชื่อซ้ำได้</strong> &mdash; เติมชื่อที่มีอยู่แล้วเข้าไป ตัวหลังชนะเสมอ
+            ของใหม่<strong>เงียบหายโดยไม่มีข้อความผิดพลาดให้จับ</strong> เทสอ่านค่าผิดตัวแล้วรายงานเป็นค่าว่างทุกท่า
+            &mdash; <strong>กับดักเดียวกับเปียโนในเฟส 9 เจอซ้ำเป็นรอบที่ 2</strong> &rArr; เพิ่มของใหม่ต้องค้นชื่อก่อนเสมอ ·
+            ② <strong>เครื่องเทสวาดได้ ~3 เฟรม/วินาทีจริงๆ (วัดแล้ว)</strong> &rArr; ท่ายาว 4.5 วิในเกม กินนาฬิกาจริง ~30 วิ
+            เล่นครบ 8 ชิ้น = 4 นาทีต่อ 1 เทส ⇒ ต้องมีทางกรอเวลาไปใกล้จบ <strong>ห้ามนอนรอเป็นวินาที</strong> ·
+            ③ <strong>วงแหวนที่วาดออกมาจะ &ldquo;ตั้งฉาก&rdquo; เสมอ</strong> &mdash; ห่วงกระโดดต้องการแบบนั้นพอดี
+            แต่ขอบจานร่อนต้องหมุนให้แบนเอง
+          </p>
+        </div>
+
+        <p class="sec-sub" style="margin-top:22px;">🧪 เทส <span class="mono">tests/house-phase12-1.spec.js</span> &mdash; 9 เทส &times; 2 จอ (ผ่านครบ พร้อมชุดเฟส 12 เดิม 22 + ชุดสัตว์เลี้ยง 48)</p>
       </section>
 
       <div class="foot">
