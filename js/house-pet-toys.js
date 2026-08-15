@@ -591,38 +591,58 @@
     /* ⚠ **โมเดลหันหน้าไป +z เสมอ** (กติกาเดียวกับคลังเฟอร์นิเจอร์) — ปลายรางอยู่ทาง +z
        ของเดิมวางรางเอียง .62 rad แล้วยังเลื่อน z อีก ⇒ ทรงบิดจนดูเป็นแผ่นไม้แบนๆ
        ตอนนี้คำนวณให้ราง "เชื่อมแท่นบน (หลัง) กับพื้น (หน้า)" พอดีเป๊ะด้วยตรีโกณ */
-    const SL_TOP = .95;                    /* ความสูงแท่นบน */
-    const SL_RUN = 1.30;                   /* ระยะแนวราบของราง */
+    /* ⚠ **ขนาดต้องใหญ่พอให้อ่านออกจากมุมกล้อง isometric**
+       รอบแรกตั้ง .95×1.30 แล้วผู้ใช้แจ้งว่า "แสดงผลไม่ถูก" — ภาพจริงอ่านเป็นแผ่นไม้แบนๆ
+       เพราะ ① เตี้ยกว่ารั้วรอบสนาม ② บันไดเป็นขั้นลอยๆ ไม่มีราวข้าง เลยดูเป็นเศษของ
+       ③ รางบางเกินจนมองจากบนลงมาเห็นเป็นแผ่นเดียว
+       ⇒ ขยายทั้งชุด + ใส่ราวบันได + ยกขอบรางให้เห็นความหนา */
+    const SL_TOP = 1.25;                   /* ความสูงแท่นบน (สูงกว่ารั้ว ~2 เท่า) */
+    const SL_RUN = 1.60;                   /* ระยะแนวราบของราง */
+    const SL_W   = .72;                    /* ความกว้างราง */
     function buildSlide(){
       const g = new T3.Group();
       const len = Math.hypot(SL_TOP, SL_RUN);
       const ang = Math.atan2(SL_TOP, SL_RUN);      /* มุมเอียงของราง */
-      /* รางไถล — กึ่งกลางรางอยู่กึ่งกลางระหว่างแท่นบนกับพื้นพอดี */
-      const ramp = box(.54, .07, len, 0xf4c542, .04);
+      /* ---- รางไถล: กึ่งกลางรางอยู่กึ่งกลางระหว่างแท่นบนกับพื้นพอดี (ตรีโกณ ไม่ใช่เดาค่าเอียง) ---- */
+      const ramp = box(SL_W, .12, len, 0xf4c542, .05);
       ramp.position.set(0, SL_TOP/2, SL_RUN/2);
       ramp.rotation.x = ang;                       /* +x หมุนให้ปลาย +z ต่ำลง */
       g.add(ramp);
-      [-1, 1].forEach(sd=>{                        /* ขอบกันตกสองข้าง */
-        const rail = box(.06, .18, len, 0xf0913f, .03);
-        rail.position.set(.28*sd, SL_TOP/2 + .1, SL_RUN/2);
+      [-1, 1].forEach(sd=>{                        /* ขอบกันตกสองข้าง — ตัวที่ทำให้ "อ่านออกว่าเป็นราง" */
+        const rail = box(.1, .3, len, 0xf0913f, .04);
+        rail.position.set((SL_W/2 - .04)*sd, SL_TOP/2 + .16, SL_RUN/2);
         rail.rotation.x = ang;
         g.add(rail);
       });
-      /* แท่นยืนด้านบน (อยู่ทาง −z) + ขาตั้ง */
-      const top = box(.54, .08, .36, 0xf0913f, .03);
-      top.position.set(0, SL_TOP, -.16);
+      /* ---- แท่นยืนด้านบน (ทาง −z) + เสา ---- */
+      const top = box(SL_W, .12, .46, 0xf0913f, .04);
+      top.position.set(0, SL_TOP, -.2);
       g.add(top);
       [-1, 1].forEach(sd=>{
-        const leg = cyl(.05, .05, SL_TOP, 0x7fd4e8, 8);
-        leg.position.set(.22*sd, SL_TOP/2, -.22);
+        const leg = cyl(.07, .07, SL_TOP, 0x7fd4e8, 8);
+        leg.position.set((SL_W/2 - .08)*sd, SL_TOP/2, -.3);
         g.add(leg);
       });
-      /* บันได 3 ขั้นด้านหลังแท่น (−z ลึกกว่าแท่น) */
-      [0, 1, 2].forEach(i=>{
-        const st2 = box(.4, .06, .16, 0x7fd4e8, .02);
-        st2.position.set(0, .26 + i*.26, -.42 - i*.16);
-        g.add(st2);
+      /* ---- บันไดหลังแท่น: **ต้องมีราวข้าง 2 เส้น** ไม่งั้นขั้นลอยๆ ดูเป็นเศษของ ---- */
+      const LAD_D = .78, LAD_A = Math.atan2(SL_TOP, LAD_D);
+      const ladLen = Math.hypot(SL_TOP, LAD_D);
+      [-1, 1].forEach(sd=>{
+        const side = box(.09, .09, ladLen, 0x4fb3d9, .03);
+        side.position.set((SL_W/2 - .06)*sd, SL_TOP/2, -.42 - LAD_D/2);
+        side.rotation.x = -LAD_A;                  /* เอียงกลับด้าน (ปลาย −z ต่ำลง) */
+        g.add(side);
       });
+      [1, 2, 3].forEach(i=>{
+        const step = box(SL_W - .1, .08, .18, 0x7fd4e8, .03);
+        const f = i/4;
+        step.position.set(0, SL_TOP*f, -.42 - LAD_D*(1 - f));
+        g.add(step);
+      });
+      /* ---- ปลายรางงอนขึ้นเล็กน้อย (เหมือนสไลเดอร์จริง) ให้เห็นว่านี่คือ "ปลายทาง" ---- */
+      const lip = box(SL_W, .12, .3, 0xffd166, .06);
+      lip.position.set(0, .06, SL_RUN + .12);
+      lip.rotation.x = -.22;
+      g.add(lip);
       return g;
     }
 
@@ -633,15 +653,15 @@
         const a = c.a;
         /* วางสไลเดอร์ไว้ข้างหน้าเด็ก แล้วหันปลายราง (+z ของโมเดล) กลับมาทางเด็ก
            ⇒ เด็กเห็น "ด้านที่น้องไถลลงมา" เต็มๆ ไม่ใช่เห็นด้านหลังบันได */
-        sl.position.set(c.cp.x + a.dx*2.3, 0, c.cp.z + a.dz*2.3);
+        sl.position.set(c.cp.x + a.dx*2.6, 0, c.cp.z + a.dz*2.6);
         sl.rotation.y = Math.atan2(-a.dx, -a.dz);
         sl.scale.setScalar(.01);
         c.add(sl);
         a.toy = sl;
         /* จุดสำคัญบนราง (พิกัดโลก) — `fwd` = ทิศจากสไลเดอร์กลับหาเด็ก = ทิศที่ไถลลง */
         const fx = -a.dx, fz = -a.dz;
-        a.slBack = new T3.Vector3(sl.position.x - fx*.90, 0,      sl.position.z - fz*.90);
-        a.slTop  = new T3.Vector3(sl.position.x - fx*.16, SL_TOP + .12, sl.position.z - fz*.16);
+        a.slBack = new T3.Vector3(sl.position.x - fx*1.20, 0,      sl.position.z - fz*1.20);
+        a.slTop  = new T3.Vector3(sl.position.x - fx*.20, SL_TOP + .16, sl.position.z - fz*.20);
         a.slFoot = new T3.Vector3(sl.position.x + fx*SL_RUN, .05,  sl.position.z + fz*SL_RUN);
         a.slFace = Math.atan2(fx, fz);          /* หันหน้าไปทางที่ไถลลง (ทางเด็ก) */
         a.slBackFace = Math.atan2(-fx, -fz);    /* ตอนเดินไปบันไดต้องหันเข้าหาสไลเดอร์ */
