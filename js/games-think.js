@@ -490,6 +490,10 @@ $('shadow-back').addEventListener('click', ()=>{
    + มีตัวจับเวลาต่อด่าน (หมดเวลานับเป็น "ไม่แตะ") — mechanic ใหม่ reuse ได้กับชั้น/วิชาอื่นผ่าน EF_CATEGORIES ============================= */
 let efGame = null;
 let efTimer = null;
+/* 🏠 ปิดตัวจับเวลาตอนถูก mount ไปเล่นในโหมดบ้าน (กติกาเหล็กข้อ 2: ห้ามกดดัน/ลงโทษ)
+   ตั้ง/ล้างที่ js/house-games.js จุดเดียว — หน้าหลักไม่เคยแตะค่านี้ จับเวลาเหมือนเดิมทุกประการ */
+let EF_NO_TIMER = false;
+window.setEfNoTimer = v => { EF_NO_TIMER = !!v; if(!v) return; clearTimeout(efTimer); efTimer = null; };
 const EF_ROUND_MS = 4500;   // เวลาต่อด่าน
 const EF_SWITCH_AT = 6;     // ด่านที่กติกาเปลี่ยน (cognitive flexibility)
 /* ป.5-6: เวลาสั้นลง เปลี่ยนกติกาเร็วขึ้น และ ป.6 มีกติกาปฏิเสธ ("แตะทุกอย่างที่ไม่ใช่ ...")
@@ -548,9 +552,16 @@ function renderEfRound(first){
   if(switched){ showToast('🔄','เปลี่ยนกติกาแล้ว! ตอนนี้แตะเฉพาะ '+ruleCat.name+' '+ruleCat.items[0]); flashEfRule(); }
   if(g.negate && g.level === efNegateFrom(g.hard) && !first){ showToast('🙃','กติกาพลิก! ตอนนี้ต้องแตะทุกอย่างที่ไม่ใช่'+ruleCat.name); flashEfRule(); }
 
-  /* ตัวจับเวลา: แถบหดจาก 100% → 0% ตาม EF_ROUND_MS, หมดเวลา = นับเป็น "ไม่แตะ" */
+  /* ตัวจับเวลา: แถบหดจาก 100% → 0% ตาม EF_ROUND_MS, หมดเวลา = นับเป็น "ไม่แตะ"
+     ⚠ **โหมดบ้านปิดตัวจับเวลาทิ้ง** (`EF_NO_TIMER`) — กติกาเหล็กข้อ 2 ของโหมดนั้นห้ามกดดัน/ลงโทษ
+       ทำแบบเดียวกับที่เฟส 7 ตัดจับเวลาออกจาก traffic/flashcount · หน้าหลักยังจับเวลาเหมือนเดิมทุกอย่าง */
   const bar = $('ef-timer-fill');
-  bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth;
+  bar.style.transition = 'none';
+  if(EF_NO_TIMER){
+    bar.style.width = '100%';          /* ค้างเต็มหลอดไว้ ไม่หด — ไม่ซ่อนทิ้งเพราะ layout จะกระตุก */
+    return;
+  }
+  bar.style.width = '100%'; void bar.offsetWidth;
   const roundMs = efRoundMs(g.hard);
   bar.style.transition = 'width '+roundMs+'ms linear'; bar.style.width = '0%';
   efTimer = setTimeout(()=>{ if(!g.answered) efAnswer(null); }, roundMs);
@@ -931,7 +942,11 @@ if(window.OwlGames){
     stop:() => { shadowGame = null; }});
   OwlGames.register('ef', {name:'นกฮูกสั่ง', view:'ef-view',
     start:o => startEfGame(o.catId),
-    stop:() => { efGame = null; }});
+    /* ⚠ ต้องล้าง EF_NO_TIMER ที่นี่ **ทางเดียว** — `unmount()` เรียก stop() ให้ทุกทางออก
+         (เล่นจบ · เด็กปิดการ์ดกลางเกม · สลับไปเกมอื่น) ถ้าไปล้างที่ callback ตอนจบเกมอย่างเดียว
+         เด็กปิดการ์ดหนีจะทำให้หน้าหลักเล่นเกมนี้แบบไม่มีเวลาตามไปด้วย */
+    stop:() => { efGame = null; clearTimeout(efTimer); efTimer = null; EF_NO_TIMER = false;
+                 const b = document.getElementById('ef-timer-fill'); if(b) b.style.transition = 'none'; }});
   OwlGames.register('science', {name:'นักวิทยาศาสตร์', view:'science-view',
     start:o => startScienceGame(o.catId),
     stop:() => { scienceGame = null; }});

@@ -3188,6 +3188,34 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .og-embedded > .quiz-top,
   .og-embedded > .back-btn,
   .og-embedded > .cat-label{ display:none; }
+  /* 🦉 ยกเว้น "นกฮูกสั่ง" — **กติกาของด่านอยู่ในแถบบน** (`#ef-rule` ซ้อนใน `.quiz-top-info`)
+     ซ่อนทั้งแถบแล้วเด็กจะไม่มีทางรู้เลยว่ารอบนี้ต้องแตะอะไร = เล่นไม่ได้
+     (เจอตอนเปิด engine ตัวนี้เข้าโหมดบ้าน 2026-08-15 — ภาพจริงโชว์แค่รูปกับปุ่ม ไม่มีคำสั่ง)
+     ⇒ โชว์เฉพาะบรรทัดกติกา ส่วนปุ่มย้อนกลับ/หลอดความคืบหน้า/ชื่อหมวด ยังซ่อนตามเดิม */
+  #ef-view.og-embedded > .quiz-top{
+    display:block; padding:0; margin:0 0 4px; background:none; box-shadow:none; border:0; min-height:0;
+  }
+  #ef-view.og-embedded > .quiz-top > .back-btn,
+  #ef-view.og-embedded > .quiz-top > .q-counter,
+  #ef-view.og-embedded .cat-label,
+  #ef-view.og-embedded .progress-track{ display:none; }
+
+  /* ---------- บีบระยะขอบของกระดานที่สูงเกินการ์ด (วัดจริง 2026-08-15) ----------
+     เกมพวกนี้เผื่อ padding ล่างไว้ 30-40px สำหรับหน้าเต็มจอ (กันชนกับนกฮูกมุมล่าง)
+     แต่ในการ์ดใบเล็กพื้นที่นั้นคือส่วนต่างที่ทำให้ **แถวคำตอบตกใต้ขอบการ์ดจนเด็กมองไม่เห็น**
+     ⚠ บีบได้แค่ระยะขอบเท่านั้น **ห้ามย่อขนาดของที่เด็กต้องกด** (นิ้วเด็กต้องกดโดนอยู่)
+     ⚠ ห้ามใช้ `transform:scale()` ย่อทั้งกระดาน — engine หลายตัววัดตำแหน่งจาก
+       `getBoundingClientRect()` จริงตอนลาก/หมุน (กติกาเดิมของ `.og-embedded`) */
+  .og-embedded .dots-board{ padding:6px 4px 10px; }
+  .og-embedded .dots-stage-card{ padding:10px; }
+  .og-embedded .coord-board{ margin:4px auto 8px; gap:10px; }
+  .og-embedded .coord-grid{ gap:4px; padding:6px; }
+  .og-embedded .chart-board,
+  .og-embedded .area-board,
+  .og-embedded .angle-board{ padding:6px 12px 10px; gap:10px; }
+  /* ตารางนับช่องของเกม "พื้นที่" — ย่อ **ช่องไฟ** ไม่ใช่ขนาดช่อง (ช่องคือของที่เด็กต้องแตะ) */
+  .og-embedded .area-grid-wrap{ padding:8px; }
+  .og-embedded .area-board{ gap:8px; }
 
   /* ---------- หน้าจอเล่นเควสต์ (บ้านของหนู เฟส 2) ----------
      การ์ดครีมมนๆ ลอยกลางจอ **ไม่เต็มจอ** — เด็กยังเห็นเมือง/ร้านข้างหลัง รู้สึกว่ายืนอยู่ในร้านจริง
@@ -3198,6 +3226,11 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     top:50%; bottom:auto; transform:translate(-50%,-50%);
     width:min(640px,96vw); max-height:90vh; max-height:90dvh;
   }
+  /* เกมที่ยืม engine หน้าหลักมาถูกออกแบบสำหรับเต็มจอ ⇒ ตอน mount ให้เพดานสูงขึ้นอีกนิด
+     ไม่งั้นแถวคำตอบ/ปุ่มตรวจของบางเกมตกอยู่ใต้ขอบการ์ด **เด็กมองไม่เห็นว่ามีอยู่**
+     (วัดจริง 2026-08-15: ปฏิทินตก 24px · หมุนโลกตก 31px)
+     ⚠ ยังเป็น "การ์ดลอย ไม่เต็มจอ" ตามข้อ 10 — เหลือขอบให้เห็นเมืองข้างหลัง 6% ทั้งบนและล่าง */
+  body.og-mounted .house-qz{ max-height:94vh; max-height:94dvh; }
   .house-qz .hqz-panel{
     border-radius:26px; gap:12px;
     padding:18px 22px 16px;
@@ -3977,7 +4010,7 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     /* เกมที่ยืม engine หน้าหลักมา (เฟส 5) ถูกออกแบบมาสำหรับ "ทั้งหน้าจอ" ไม่ใช่การ์ดใบเล็ก
        ⇒ ตอนถูก mount ให้การ์ดกว้างขึ้น ไม่งั้นกระดาน/คีย์เปียโนล้นจนต้องเลื่อนดู
        (ผู้ใช้แจ้ง 2026-08-12: เปียโน 15 คีย์ต้องการ 980px แต่การ์ดให้แค่ 708px) */
-    body.og-mounted .house-creator.house-qz{width:min(1040px,92vw);}
+    body.og-mounted .house-creator.house-qz{width:min(1040px,92vw); max-height:94vh;}
     .house-qz .hqz-panel{height:auto;}
     /* ร้านค้ากว้างกว่าแผงอื่นบนจอใหญ่ — ของเยอะ ถ้าแคบเท่ากันจะได้แค่ 3 ใบต่อแถว เลื่อนยาวมาก */
     .house-creator.house-shop{width:min(640px,56vw); max-height:none;}
