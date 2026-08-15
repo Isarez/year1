@@ -392,6 +392,8 @@
     P.col.got.push(i);
     const w = W(), th = colTheme();
     if(typeof playCorrect === 'function') playCorrect();
+    /* 🍃 เควสต์ "เก็บของไปส่ง" — บอกฝั่งเควสต์ว่าเก็บได้เพิ่ม 1 ชิ้น (ประตูเดียวกับตกปลา) */
+    if(w.questCaught) w.questCaught('leaf', '');
     const left = P.col.items.length - P.col.got.length;
     if(left > 0){
       w.toast(th.emoji, 'เก็บ' + th.name + 'ได้แล้ว ' + P.col.got.length + '/' + P.col.items.length);
@@ -432,30 +434,59 @@
         ตกปลาเป็นของแถมเพลินๆ ไม่ใช่ทางลัดหาเงิน (กติกา "ห้ามทำเงินเฟ้อ" ข้อ 44.4)
         ⇒ ตกทั้งวันได้ราวๆ 20-40 🪙 เท่านั้น **ห้ามปรับขึ้นโดยไม่ถามผู้ใช้** */
   const FISH = [
-    /* 🐟 ปลาน้ำจืด — เจอเฉพาะที่บ่อน้ำใหญ่ */
+    /* 🐟 ปลาน้ำจืด — เจอเฉพาะที่บ่อน้ำใหญ่ (ขยายจาก 11 เป็น 24 ชนิด 2026-08-16
+       เหตุผล: เควสต์ตกปลาจริงต้อง "สั่งชนิดปลา" ได้หลากหลาย ไม่งั้นเด็กเจอโจทย์ซ้ำเดิมทุกวัน) */
     {id:'nil',     n:'ปลานิล',        e:'🐟', rare:1, where:'pond', pay:3},
     {id:'carp',    n:'ปลาตะเพียน',    e:'🐠', rare:1, where:'pond', pay:3},
     {id:'catfish', n:'ปลาดุก',        e:'🐡', rare:1, where:'pond', pay:4},
     {id:'guppy',   n:'ปลาหางนกยูง',   e:'🐠', rare:1, where:'pond', pay:3},
-    {id:'boot',    n:'รองเท้าบูตเก่า', e:'🥾', rare:1, where:'pond', pay:1},   /* ของฮาๆ เด็กชอบ */
+    {id:'sew',     n:'ปลาซิว',        e:'🐟', rare:1, where:'pond', pay:2},
+    {id:'climb',   n:'ปลาหมอ',        e:'🐠', rare:1, where:'pond', pay:4},
+    {id:'sway',    n:'ปลาสวาย',       e:'🐟', rare:1, where:'pond', pay:4},
+    {id:'tadpole', n:'ลูกอ๊อด',        e:'🐸', rare:1, where:'pond', pay:2},
+    {id:'snail',   n:'หอยขม',          e:'🐚', rare:1, where:'pond', pay:2},
+    {id:'boot',    n:'รองเท้าบูตเก่า', e:'🥾', rare:1, where:'pond', pay:1, junk:true},  /* ของฮาๆ เด็กชอบ */
+    {id:'can',     n:'กระป๋องเก่า',    e:'🥫', rare:1, where:'pond', pay:1, junk:true},
     {id:'snake',   n:'ปลาช่อน',       e:'🐟', rare:2, where:'pond', pay:8},
     {id:'shrimp',  n:'กุ้งแม่น้ำ',     e:'🦐', rare:2, where:'pond', pay:9},
     {id:'crab',    n:'ปูนา',           e:'🦀', rare:2, where:'pond', pay:8},
+    {id:'feather', n:'ปลากราย',       e:'🐠', rare:2, where:'pond', pay:9},
+    {id:'gourami', n:'ปลาแรด',        e:'🐟', rare:2, where:'pond', pay:9},
+    {id:'goby',    n:'ปลาบู่',         e:'🐡', rare:2, where:'pond', pay:8},
+    {id:'eel',     n:'ปลาไหล',        e:'🐍', rare:2, where:'pond', pay:10},
+    {id:'betta',   n:'ปลากัด',        e:'🐠', rare:2, where:'pond', pay:11},
+    {id:'frog',    n:'กบนา',           e:'🐸', rare:2, where:'pond', pay:7},
     {id:'gold',    n:'ปลาทอง',        e:'🐠', rare:3, where:'pond', pay:16},
     {id:'koi',     n:'ปลาคาร์ป',      e:'🐟', rare:3, where:'pond', pay:18},
     {id:'turtle',  n:'เต่าน้อย',       e:'🐢', rare:3, where:'pond', pay:20},
-    /* 🌊 ปลาทะเล — เจอเฉพาะริมทะเล */
+    {id:'arowana', n:'ปลาตะพัด',      e:'🐉', rare:3, where:'pond', pay:24},
+    /* 🌊 ปลาทะเล — เจอเฉพาะริมทะเล (ขยายจาก 10 เป็น 24 ชนิด) */
     {id:'sardine', n:'ปลาซาร์ดีน',    e:'🐟', rare:1, where:'sea',  pay:3},
     {id:'mackerel',n:'ปลาทู',         e:'🐠', rare:1, where:'sea',  pay:4},
     {id:'anchovy', n:'ปลากะตัก',      e:'🐟', rare:1, where:'sea',  pay:3},
-    {id:'seaweed', n:'สาหร่ายพันเบ็ด', e:'🌿', rare:1, where:'sea',  pay:1},
+    {id:'seabass', n:'ปลากะพง',       e:'🐟', rare:1, where:'sea',  pay:4},
+    {id:'damsel',  n:'ปลาสลิดหิน',    e:'🐠', rare:1, where:'sea',  pay:3},
+    {id:'seashrimp',n:'กุ้งทะเล',      e:'🦐', rare:1, where:'sea',  pay:4},
+    {id:'scallop', n:'หอยเชลล์',       e:'🐚', rare:1, where:'sea',  pay:3},
+    {id:'conch',   n:'หอยสังข์',       e:'🐚', rare:1, where:'sea',  pay:4},
+    {id:'seaweed', n:'สาหร่ายพันเบ็ด', e:'🌿', rare:1, where:'sea',  pay:1, junk:true},
+    {id:'bottle',  n:'ขวดลอยน้ำ',      e:'🍶', rare:1, where:'sea',  pay:1, junk:true},
     {id:'squid',   n:'ปลาหมึกจิ๋ว',    e:'🦑', rare:2, where:'sea',  pay:9},
     {id:'clown',   n:'ปลาการ์ตูน',    e:'🐠', rare:2, where:'sea',  pay:10},
     {id:'puffer',  n:'ปลาปักเป้า',    e:'🐡', rare:2, where:'sea',  pay:9},
+    {id:'kingfish',n:'ปลาอินทรี',     e:'🐟', rare:2, where:'sea',  pay:10},
+    {id:'flat',    n:'ปลาลิ้นหมา',    e:'🐡', rare:2, where:'sea',  pay:9},
+    {id:'bluecrab',n:'ปูม้า',          e:'🦀', rare:2, where:'sea',  pay:10},
+    {id:'butterfly',n:'ปลาผีเสื้อ',    e:'🐠', rare:2, where:'sea',  pay:11},
+    {id:'parrot',  n:'ปลานกแก้ว',     e:'🐠', rare:2, where:'sea',  pay:11},
+    {id:'urchin',  n:'เม่นทะเล',       e:'🌰', rare:2, where:'sea',  pay:8},
+    {id:'octopus', n:'ปลาหมึกยักษ์น้อย', e:'🐙', rare:2, where:'sea', pay:12},
     {id:'star',    n:'ปลาดาว',        e:'⭐', rare:3, where:'sea',  pay:17},
     {id:'jelly',   n:'แมงกะพรุนเรืองแสง', e:'🪼', rare:3, where:'sea', pay:20},
     {id:'seahorse',n:'ม้าน้ำ',         e:'🐴', rare:3, where:'sea',  pay:22},
+    {id:'seaturtle',n:'เต่าทะเลน้อย',  e:'🐢', rare:3, where:'sea',  pay:24},
   ];
+
   const fishById = id => FISH.find(f => f.id === id) || null;
 
   /* ---------- ป้ายลอยเหนือของในฉาก (billboard) ----------
@@ -728,6 +759,9 @@
       spawnFx({x:w.wx(t2.x), y:w.groundY(t2.x, t2.z), z:w.wz(t2.z)},
               {col:0xffd166, col2:0xfff3b0, up:true, h:1.1, n:12}); }
     w.toast(f.e, (isNew ? 'ได้ตัวใหม่! ' : 'ได้ ') + f.n + ' แล้ว (สมุดปลา ' + P.fish.book.length + '/' + FISH.length + ')');
+    /* 🎣 เควสต์ "ตกปลาไปส่ง" (2026-08-16) — บอกฝั่งเควสต์ว่าได้ปลาเพิ่ม 1 ตัวแล้ว
+       ⚠ ต้องอยู่ **หลัง** toast ของเกม ไม่งั้น toast ความคืบหน้าเควสต์จะถูกทับทันที */
+    if(w.questCaught) w.questCaught('fish', f.id);
     renderPanel();
     return true;
   }
@@ -816,6 +850,8 @@
     P.photo.shots = (P.photo.shots || []).concat([{u:url, d:dayKey()}]);
     P.photo.done = true;
     persist();
+    /* 📷 เควสต์ "ถ่ายรูปไปให้ดู" — นับเมื่อกดชัตเตอร์สำเร็จจริงเท่านั้น (ผ่านด่านตำแหน่งมาแล้ว) */
+    if(w.questCaught) w.questCaught('photo', '');
     photoPreview(url);
     renderPanel();
     return true;
@@ -1108,6 +1144,8 @@
     persist(); gardenBuild(); renderPanel();
     if(typeof playCorrect === 'function') playCorrect();
     growing.forEach(k2 => gardenFx(k2, 'water'));
+    /* 🌱 เควสต์ "รดน้ำแปลงผัก" — นับตามจำนวนแปลงที่รดได้จริงในครั้งนี้ */
+    if(w.questCaught) growing.forEach(()=> w.questCaught('water', ''));
     actPose('water', 1500, growing[0]);
     w.toast('💧', 'รดน้ำแล้ว! ต้นไม้โตขึ้นอีกขั้น ' + growing.length + ' ต้น');
     return true;
@@ -1837,6 +1875,16 @@
     gardenPlant, gardenWater, gardenHarvest,
     objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
     FISH, SEEDS, COL_PRIZES, COL_N, PLOT_MAX, GROW_MAX, PHOTO_MAX,
+    /* ---- 🚪 ประตูเดียวที่ฝั่งเควสต์ใช้เช็คว่า "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" ----
+       ⚠ **ต้องเช็คก่อนแจกงานเสมอ** ไม่งั้นเด็กเก็บของครบไปแล้วแล้วเพิ่งได้งานให้เก็บ = ตันทั้งวัน
+         (กติกาเหล็กข้อ 1 ห้ามมี dead end) · เพิ่มงานแนวนี้ให้เติมคีย์ที่นี่ที่เดียว */
+    worldStock: ()=>{
+      if(!P) return {leaf:0, water:0, photo:0};
+      const left = Math.max(0, ((P.col.items || []).length) - ((P.col.got || []).length));
+      const wet  = beds().map((_, k) => k)
+        .filter(k => { const st = slotAt(k); return st && st.stage < growMax(st.seed) && st.wd !== dayKey(); });
+      return {leaf:left, water:wet.length, photo: Math.max(0, PHOTO_MAX - ((P.photo.shots || []).length))};
+    },
   };
 
   /* ---------- ผูกปุ่ม (element อยู่ใน index.html · โหลดมาก่อนไฟล์นี้เสมอ) ---------- */

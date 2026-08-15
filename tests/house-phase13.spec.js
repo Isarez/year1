@@ -145,11 +145,13 @@ test('🍰 ร้านขนม: เล่นในการ์ดได้จ�
 
 /* ---------------- 🫥 ของหายไปไหน ---------------- */
 
-test('🫥 ของหายไปไหน: ของบนถาดเป็นชุดเดิมทั้งหมด ไม่มีตัวลวง · มีคำตอบถูกเสมอ', async ({ page }) => {
+/* 🆕 2026-08-16 — ผู้ใช้สั่งให้ถาดมี "ตัวลวง" ที่ไม่เคยอยู่บนโต๊ะ (ทับกติกาเดิมที่ห้ามมีตัวลวง)
+   เกณฑ์จึงกลับด้าน: ต้อง**มี**ตัวลวง แต่ยังห้ามซ้ำกับของบนโต๊ะ (ไม่งั้นมีคำตอบถูก 2 ช่อง) */
+test('🫥 ของหายไปไหน: ถาดมีตัวลวงจริง · ตัวลวงห้ามซ้ำของบนโต๊ะ · มีคำตอบถูกเสมอ', async ({ page }) => {
   const errs = await house(page);
   const r = await page.evaluate(() => {
     const Q = window.HouseQuests;
-    const bad = { noAnswer: [], decoy: [], dupItem: [], gapCount: [], notInBefore: [] };
+    const bad = { noAnswer: [], noDecoy: [], dupItem: [], gapCount: [], notInBefore: [], missing: [] };
     ['prep-p1', 'p3', 'p6'].forEach(g => {
       for (let s = 0; s < 6; s++) {
         const run = Q.testRun({ mech: 'vanish', gid: g, seed: s });
@@ -157,9 +159,13 @@ test('🫥 ของหายไปไหน: ของบนถาดเป็�
           if (it.kind !== 'vanish') return;
           const gone = it.choices[it.correct];
           if (it.correct < 0 || !gone) bad.noAnswer.push(g + '#' + s);
-          /* ถาดต้องเป็นชุดเดิมเป๊ะ — ห้ามมีของที่ไม่เคยโผล่บนโต๊ะ */
-          it.choices.forEach(c => { if (it.before.indexOf(c) < 0) bad.decoy.push(c); });
-          if (it.choices.length !== it.before.length) bad.decoy.push('ขนาดถาดไม่เท่าของบนโต๊ะ');
+          /* ต้องมีตัวลวงอย่างน้อย 1 ชิ้น */
+          const decoys = it.choices.filter(c => it.before.indexOf(c) < 0);
+          if (!decoys.length) bad.noDecoy.push(g + '#' + s);
+          /* ของบนโต๊ะทุกชิ้นต้องอยู่บนถาดครบ ไม่งั้นชิ้นที่หายอาจไม่มีให้เลือก */
+          it.before.forEach(e => { if (it.choices.indexOf(e) < 0) bad.missing.push(e); });
+          /* ถาดห้ามมีของซ้ำ (ตัวลวงซ้ำของบนโต๊ะ = ถูก 2 ช่อง) */
+          if (new Set(it.choices).size !== it.choices.length) bad.dupItem.push(g + ' ถาด');
           /* ของห้ามซ้ำในกระดานเดียว ไม่งั้นชิ้นที่หายยังอยู่บนโต๊ะ = ไม่มีคำตอบถูก */
           if (new Set(it.before).size !== it.before.length) bad.dupItem.push(g);
           /* ต้องหายพอดี 1 ช่อง */
@@ -173,7 +179,8 @@ test('🫥 ของหายไปไหน: ของบนถาดเป็�
     return bad;
   });
   expect(r.noAnswer, 'ทุกกระดานต้องมีคำตอบที่ถูก').toEqual([]);
-  expect(r.decoy, 'ห้ามมีตัวลวงที่ไม่เคยโผล่บนโต๊ะ (เด็กจำครบก็ยังตอบผิดได้ = ลงโทษกลายๆ)').toEqual([]);
+  expect(r.noDecoy, 'ถาดต้องมีตัวลวงที่ไม่เคยอยู่บนโต๊ะอย่างน้อย 1 ชิ้น').toEqual([]);
+  expect(r.missing, 'ของบนโต๊ะต้องมีอยู่บนถาดครบทุกชิ้น').toEqual([]);
   expect(r.dupItem, 'ของห้ามซ้ำในกระดานเดียว').toEqual([]);
   expect(r.gapCount, 'ต้องหายพอดี 1 ชิ้น').toEqual([]);
   expect(r.notInBefore, 'ชิ้นที่หายต้องเคยอยู่บนโต๊ะและต้องหายไปจริง').toEqual([]);

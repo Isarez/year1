@@ -63,12 +63,26 @@ test('เปิดจากเมนูเฟือง: มีแท็บคร
   const nGrades = await page.evaluate(() => GRADES.length);
   await expect(page.locator('#hqb-grades .hqb-chip')).toHaveCount(nGrades);
   /* ⚠ **ต้องมีแท็บครบทุกกลไกที่เล่นได้จริง** — เพิ่มกลไกใหม่ใน MECHS แล้วลืมเติม MECH_TABS
-     = เทสโจทย์กลไกนั้นไม่ได้เลย (เดิม hardcode ไว้ 2 แท็บ พอเฟส 4B เพิ่มเป็น 14 ก็ไม่มีใครเตือน) */
+     = เทสโจทย์กลไกนั้นไม่ได้เลย (เดิม hardcode ไว้ 2 แท็บ พอเฟส 4B เพิ่มเป็น 14 ก็ไม่มีใครเตือน)
+     🆕 2026-08-16: แถบกลไกแบ่งเป็น "กลุ่ม" แล้ว (57 ตัวในแถบเดียวเลื่อนหาไม่เจอ) ⇒ นับจาก
+        MECH_TABS ที่เปิดออกมา ไม่ใช่จำนวนชิปบนจอ แล้วเช็คแยกว่าไล่กดทุกกลุ่มแล้วเจอครบจริง */
   const nMech = await page.evaluate(() => window.HouseQuests.MECH_IDS.length);
-  await expect(page.locator('#hqb-mechs .hqb-chip')).toHaveCount(nMech);
-  /* เด็กคนนี้เป็น ป.2 ⇒ ต้องเปิดมาที่ ป.2 ไม่ใช่แท็บแรกเสมอ */
+  expect(await page.evaluate(() => window.HouseQB.MECH_TABS.length)).toBe(nMech);
+  /* เด็กคนนี้เป็น ป.2 ⇒ ต้องเปิดมาที่ ป.2 ไม่ใช่แท็บแรกเสมอ (เช็คก่อนไล่กดกลุ่ม) */
   await expect(page.locator('#hqb-grades .hqb-chip.on')).toHaveText(/ป\.2/);
   await expect(page.locator('#hqb-mechs .hqb-chip.on')).toHaveText(/ตอบคำถาม/);
+  const seen = await page.evaluate(() => {
+    const out = new Set();
+    const n = document.querySelectorAll('#hqb-groups .hqb-chip').length;
+    /* ⚠ ต้อง query ใหม่ทุกรอบ — กดกลุ่มแล้ว render() วาดชิปทั้งแถวใหม่ ตัวที่คว้าไว้ก่อนหน้าหลุด DOM */
+    for (let i = 0; i < n; i++) {
+      document.querySelectorAll('#hqb-groups .hqb-chip')[i]
+        .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      document.querySelectorAll('#hqb-mechs .hqb-chip').forEach(c => out.add(c.textContent));
+    }
+    return out.size;
+  });
+  expect(seen, 'ไล่กดทุกกลุ่มแล้วต้องเจอแท็บกลไกครบทุกตัว').toBe(nMech);
 });
 
 test('ตารางกลไก "ตอบคำถาม" มีจำนวนข้อตรงกับคลัง CATS จริงของแต่ละชั้น', async ({ page }) => {

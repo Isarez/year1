@@ -3965,6 +3965,37 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   body.night-mode .house-pet-bar{background:rgba(255,255,255,.9);}
   body.house-edit .house-pet-bar{display:none;}
 
+  /* ---------- 🎶 หน้าฟังเพลงธีม (เฟส 14 · หน้าเทส · js/house-music-ui.js) ----------
+     แผงเล็กกว่าคลังคำถามมาก (มีแค่ 4 แถว) ⇒ ไม่ต้องมีตาราง/แถบเลื่อน */
+  .house-creator.house-mus{max-height:88vh; max-height:88dvh; width:min(520px,94vw);}
+  .hmus-panel{gap:12px;}
+  .hmus-sum{font-size:12.5px; font-weight:700; color:var(--ink-soft); text-align:center; line-height:1.5;}
+  .hmus-list{display:flex; flex-direction:column; gap:9px;}
+  .hmus-row{
+    display:flex; align-items:center; gap:11px; padding:10px 13px;
+    background:#FFFDF7; border:2px solid rgba(120,90,50,.12); border-radius:16px;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .hmus-row.on{background:#FFF1D8; border-color:#E59A5B;}
+  .hmus-n{
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:#F1E7D6;
+    color:#8A4B1E; font-weight:900; font-size:13px; display:flex; align-items:center; justify-content:center;
+  }
+  .hmus-row.on .hmus-n{background:#E59A5B; color:#fff;}
+  .hmus-info{flex:1 1 auto; min-width:0;}
+  .hmus-name{font-size:15px; font-weight:900; color:var(--ink);}
+  .hmus-meta{font-size:12px; font-weight:700; color:var(--ink-soft); margin-top:2px;}
+  .hmus-play{
+    flex:0 0 auto; width:42px; height:42px; border-radius:50%; cursor:pointer;
+    border:none; background:#FFD79B; color:#8A4B1E; font-size:17px; font-weight:900;
+    box-shadow:0 3px 0 rgba(0,0,0,.12); transition:transform .12s ease;
+  }
+  .hmus-play:active{transform:translateY(2px); box-shadow:none;}
+  .hmus-play.on{background:#E59A5B; color:#fff;}
+  .hmus-foot{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  .hmus-stop{margin:0;}
+  body.night-mode .hmus-row{background:rgba(255,255,255,.9);}
+
   /* ---------- คลังคำถาม (หน้าเทส · js/house-qbrowse.js) ----------
      เป็นหน้า "ดูของทั้งคลัง" จึงต้องสูงและกว้างกว่าแผงอื่นๆ ตัวหนังสือเล็กกว่าปกติได้
      (คนอ่านคือผู้ใหญ่ที่กำลังเทส ไม่ใช่เด็ก 5 ขวบ) แต่ยังใช้สี/ความมนชุดเดียวกับทั้งแอป */
@@ -3975,10 +4006,22 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   /* แถบหมวดยาวสุด (ถึง 24 หมวด) — สูงพอดี 2 แถวแล้วเลื่อนดูในตัวเอง ไม่ให้ดันตารางตกจอ
      (ตั้งเป็นทวีคูณของความสูงชิป ไม่งั้นจะเห็นแถวถูกตัดครึ่งดูเหมือนหน้าเพี้ยน) */
   .hqb-cats{max-height:74px; overflow-y:auto; padding:1px;}
-  /* ⚠ แถบกลไกก็ต้องจำกัดความสูงเหมือนกัน — เฟส 6-7 เพิ่มกลไกจาก 22 เป็น 37 อัน
+  /* ⚠ แถบกลไกก็ต้องจำกัดความสูงเหมือนกัน — เฟส 6-13 เพิ่มกลไกจาก 22 เป็น 57 อัน
      ปล่อยไว้แล้วมันกินพื้นที่เกือบทั้งกล่องจนตารางเหลือ 2 แถวและปุ่ม ▶ ตกจอ (เจอ 2026-08-12)
-     ตั้งเป็นทวีคูณของความสูงชิป (~39px) ไม่งั้นจะเห็นแถวถูกตัดครึ่งดูเหมือนหน้าเพี้ยน */
-  .hqb-mechs{max-height:86px; overflow-y:auto; padding:1px;}
+     🆕 2026-08-16 แบ่งเป็น "กลุ่ม" แล้ว (ดู MECH_GROUPS ใน js/house-qbrowse.js) ⇒ แถบนี้โชว์
+        แค่กลไกในกลุ่มที่เลือก กลุ่มใหญ่สุดมี 21 ตัว จึงขยายเป็น 3 แถวได้โดยไม่ดันตารางตกจอ
+     ตั้งเป็นทวีคูณของความสูงชิป (~43px) ไม่งั้นจะเห็นแถวถูกตัดครึ่งดูเหมือนหน้าเพี้ยน */
+  .hqb-mechs{max-height:135px; overflow-y:auto; padding:1px;}
+  /* แถวกลุ่ม — เด่นกว่าแถวกลไกเล็กน้อย (สีคนละโทน) จะได้เห็นว่าเป็นคนละชั้นของการเลือก */
+  .hqb-groups .hqb-chip{font-size:14px; padding:7px 15px; background:#EDE6F7; border-color:rgba(107,79,168,.18);}
+  .hqb-groups .hqb-chip.on{background:#C9B6EC; border-color:#6B4FA8; color:#3E2A6B;}
+  /* หมายเหตุใต้กติกา — ใช้บอกว่ากลไกที่ยืม engine เล่นได้ชั้นไหนบ้าง */
+  .hqb-note{
+    margin:0 14px 4px; padding:9px 13px; border-radius:13px; font-size:13px; font-weight:700;
+    line-height:1.5; text-align:center; background:#E8F4E4; color:#3B6B34;
+  }
+  .hqb-note.warn{background:#FFE7D2; color:#9A4B12;}
+  .hqb-go-btn:disabled{opacity:.45; cursor:not-allowed;}
   .hqb-chip{
     font-family:inherit; font-size:13px; font-weight:800; color:var(--ink); cursor:pointer;
     background:#F6EFE3; border:2px solid rgba(0,0,0,.08); border-radius:999px; padding:6px 12px;

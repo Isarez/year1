@@ -59,7 +59,12 @@ test('คลังเฟอร์นิเจอร์: ข้อมูลทุ
   const bad = meta.filter(m =>
     !m.id || !m.name || !m.cat || !m.emoji || !m.hasBuild ||
     !['in', 'out'].includes(m.scope) ||
-    !['sit', 'sleep', 'bounce', 'spin', 'toggle', 'slide', 'pethouse', 'music'].includes(m.action) ||   // slide = ปีนขึ้นแล้วลื่นลง (สไลเดอร์), pethouse = สั่งสัตว์เลี้ยงเข้า/ออกบ้านสัตว์เลี้ยง, music = เครื่องดนตรี (เฟส 9)
+    !['sit', 'sleep', 'bounce', 'spin', 'toggle', 'slide', 'pethouse', 'music',
+      'basket', 'tank'].includes(m.action) ||
+    /* slide = ปีนขึ้นแล้วลื่นลง (สไลเดอร์) · pethouse = สั่งสัตว์เลี้ยงเข้า/ออกบ้านสัตว์ · music = เครื่องดนตรี (เฟส 9)
+       basket = ตะกร้าขายของ · tank = ตู้ปลา (ทั้งคู่มาจากเฟส 11 — **ลิสต์นี้ค้างไม่ได้อัปเดตตามมาตั้งแต่ตอนนั้น**
+       เทสจึงแดงมาตลอดโดยไม่มีใครเห็น เพราะชุดเต็มถูกขัดจังหวะทุกครั้ง · แก้ 2026-08-16)
+       ⚠ **เพิ่ม action ใหม่ในคลังเฟอร์นิเจอร์ต้องมาเติมที่ลิสต์นี้ด้วยเสมอ** */
     !(m.fw >= 1 && m.fw <= 4) || !(m.fd >= 1 && m.fd <= 4));
   expect(bad).toEqual([]);
 

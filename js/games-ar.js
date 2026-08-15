@@ -900,6 +900,11 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-games.js'+v))
     /* มินิเกมกลุ่ม A ที่เล่นในโลก 3D (เฟส 11) — ต้องมาหลัง house.js เพราะใช้ window.HouseWorld */
     .then(()=>loadScriptOnce('js/house-play.js'+v))
+    /* 🎵 เพลงธีมฟาร์ม (เฟส 14) — ต้องมาหลัง house.js เพราะ enterHouseGame() เรียก window.HouseMusic
+       ⚠ ไฟล์นี้เก็บแต่โน้ต ไม่พึ่งอะไรจาก house.js ตอนโหลด ⇒ วางตรงไหนก็ได้หลัง shared/audio.js */
+    .then(()=>loadScriptOnce('js/house-music.js'+v))
+    /* หน้าฟังเพลงธีม (เมนูเฟือง · เครื่องมือเทส) — ต้องมาหลัง house-music.js */
+    .then(()=>loadScriptOnce('js/house-music-ui.js'+v))
     /* หน้าคลังคำถาม (เมนูเฟือง) — ต้องมาหลัง house.js เพราะเรียก window.HouseQuestUI ตอนกดเล่น */
     .then(()=>loadScriptOnce('js/house-qbrowse.js'+v))
     /* หน้าปรับค่าต่างๆ (เครื่องมือเทส) — ต้องมาหลัง house.js เช่นกัน เพราะเรียก window.HousePetCare/HouseShop */

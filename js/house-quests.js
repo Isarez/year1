@@ -209,6 +209,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
        ⚠ ข้อมูลจริงอยู่ในคลังเฟอร์นิเจอร์ (js/house-furniture.js) ไฟล์นี้ขอมาทาง kit ไม่อ่าน global เอง */
     const instruments  = kit.instruments  || function(){ return []; };
     const hasInstrument = kit.hasInstrument || function(){ return false; };
+    /* 🌍 "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" — {leaf, water, photo}
+       ⚠ ถ้าไม่มี kit ส่งมา ให้คืน 0 ทุกคีย์ ⇒ งานแนวนี้จะไม่ถูกแจกเลย (ปลอดภัยไว้ก่อน ไม่มีทางตัน) */
+    const worldStock = kit.worldStock || function(){ return {leaf:0, water:0, photo:0}; };
     /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม (เควสต์ "ไปนั่งกินข้าว") — ฝั่งหน้าจอเป็นคนตอบ */
     const hasIndoorSeat = kit.hasIndoorSeat || function(){ return false; };
     /* เกมของหน้าหลักตัวนี้พร้อมให้ยืมมาเล่นในบ้านไหม (เฟส 5) — ฝั่งหน้าจอถาม OwlGames/HouseGames ให้
@@ -342,6 +345,10 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     function mechOk(m){
       const spec = MECHS[m];
       if(!spec) return false;
+      /* 🔇 กลไกที่ถูกปิดชั่วคราว — เล่นทดสอบในคลังโจทย์ได้ แต่ห้ามถูกแจกเป็นเควสต์จริง */
+      if(spec.testOnly) return false;
+      /* 🌍 งานที่ต้องออกไปทำจริงในโลก — วันนี้ต้องยังเหลือของให้ทำ ไม่งั้นรับแล้วตันทั้งวัน */
+      if(spec.action && (worldStock()[spec.action] | 0) < 1) return false;
       if(spec.music && !hasInstrument()) return false;
       if(spec.engine && !engineReady(m)) return false;
       return true;
@@ -846,41 +853,108 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     }
     /* ---------- ตกปลาคิดเลข ----------
        ⚠ ต้องมีคำตอบเสมอ ⇒ สุ่ม "ปลาที่เป็นคำตอบ" ก่อน แล้วค่อยเติมปลาหลอก */
-    function fishMathMech(){
-      const FISH = ['🐟','🐠','🐡','🦐','🦀','🦞','🐙','🦑'];
+    /* 🗑️ `fishMathMech` (ตกปลาคิดเลข) ถูกถอดออก 2026-08-16 ตามคำสั่งผู้ใช้
+       เหตุผล: มี `fishcatch` ที่ให้เด็ก **ตกปลาจริงในโลก 3D** แล้ว การมีเวอร์ชันการ์ดลากอยู่ด้วย
+       ทำให้เด็กเจอ "ตกปลาปลอม" ที่จืดกว่าของจริง
+       🔒 **กติกาใหม่ที่ผู้ใช้ตั้ง: เกมไหนทำเป็น Action จริงในโลกแล้ว ให้ถอดเวอร์ชันการ์ดออกทันที** */
+    /* ================= 🎣 ตกปลาไปส่ง (ผู้ใช้เสนอเอง 2026-08-16 · ปรับรอบ 2 วันเดียวกัน) =================
+       แนวใหม่ที่ต่างจากทุกกลไกก่อนหน้า: **ไม่มีโจทย์ในการ์ดเลย** — รับงานแล้วการ์ดปิด
+       เด็กออกไปตกปลาด้วยระบบตกปลาจริงของเฟส 11 (js/house-play.js) ให้ครบตามที่สั่ง
+       แล้วเดินกลับไปหาคนที่สั่งงานเพื่อส่งของ
+
+       ปรับรอบ 2 ตามที่ผู้ใช้สั่ง:
+         ① **สุ่มว่าเป็นปลาบ่อหรือปลาทะเล** — เด็กต้องเดินไปให้ถูกแหล่งน้ำ
+         ② **ระบุชนิดปลาที่ต้องการ** ไม่ใช่ "ปลาอะไรก็ได้"
+         ③ **ห้ามสั่งปลาหายาก** (rare 3) — โผล่แค่ 10% เควสต์จะจบยากเกินไป และห้ามสั่งของขยะ
+         ④ **สั่งได้หลายชนิดต่อ 1 รอบ** (แบบเดียวกับที่ `fishmath` เคยทำ)
+         ⑤ **แจกโดยลุงตกปลา/ลุงชาวประมง** (ดู BONUS_MECHS)
+
+       ⚠ ตัวนับ/ตัวตัดสินว่า "ตกครบแล้ว" อยู่ฝั่งหน้าจอ (js/house.js) ไฟล์นี้ไม่รู้จักฉาก 3D
+       ⚠ ไม่เข้ากติกาขั้นต่ำ 5 ข้อ เหมือนงานเดินตัวอื่น */
+    function fishCatchMech(){
+      /* คลังปลาสำรอง — ใช้เฉพาะตอน js/house-play.js ยังไม่โหลด (ไฟล์นั้นโหลดทีหลังไฟล์นี้)
+         ⚠ ห้ามใส่ id ที่ไม่มีจริงในคลังตัวจริง ไม่งั้นเด็กตกยังไงก็ไม่มีวันตรง */
+      const FALLBACK = [
+        {id:'nil', n:'ปลานิล', e:'🐟', rare:1, where:'pond'},
+        {id:'carp', n:'ปลาตะเพียน', e:'🐠', rare:1, where:'pond'},
+        {id:'catfish', n:'ปลาดุก', e:'🐡', rare:1, where:'pond'},
+        {id:'sardine', n:'ปลาซาร์ดีน', e:'🐟', rare:1, where:'sea'},
+        {id:'mackerel', n:'ปลาทู', e:'🐠', rare:1, where:'sea'},
+        {id:'anchovy', n:'ปลากะตัก', e:'🐟', rare:1, where:'sea'},
+      ];
+      function fishAll(){
+        const P = window.HousePlay;
+        return (P && P.FISH && P.FISH.length) ? P.FISH : FALLBACK;
+      }
+      /* ปลาที่ "สั่งได้" — เฉพาะแหล่งน้ำนั้น · ไม่เอาของขยะ · **ไม่เอาปลาหายาก (rare 3)** */
+      function orderable(where, tierMax){
+        return fishAll().filter(f => f.where === where && !f.junk && (f.rare | 0) <= tierMax);
+      }
+      const PLACE = {pond:'บ่อน้ำใหญ่', sea:'ริมทะเล'};
       return {
-        id:'fishmath', name:'ตกปลาคิดเลข', fam:'A', basket:true,
-        gen(rng, diff){
-          const out = [];
-          const nR = sortRounds(diff);
-          for(let r = 0; r < nR; r++){
-            const p = (nR <= 1) ? 1 : r / (nR - 1);
-            const need = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 2 + ((rng() * 2) | 0) : 3);
-            const cap  = diff.tier <= 2 ? 9 : (diff.tier <= 4 ? 20 : 50);
-            const want = [];
-            for(let i = 0; i < need; i++) want.push(1 + ((rng() * Math.max(2, Math.round(cap * (.3 + .5 * p)) / need)) | 0));
-            const total = want.reduce((a, b) => a + b, 0);
-            const extra = diff.tier <= 2 ? 3 : (diff.tier <= 4 ? 4 : 5);
-            const nums = want.slice();
-            for(let i = 0; i < extra; i++) nums.push(1 + ((rng() * cap) | 0));
-            out.push({kind:'sort', basket:true, sumTo: total, need: need,
-                      q:'ตกปลาให้ตัวเลขรวมกันได้ ' + total + ' พอดี (' + need + ' ตัว)',
-                      emoji:'', choices:[], correct:0,
-                      bins:[{id:'basket', name:'ข้องใส่ปลา', emoji:'🪣'}],
-                      tiles: shuffled(rng, nums).map((n, i) => ({k:'f' + i, e: FISH[i % FISH.length],
-                                                                label: String(n), num: n})),
-                      explain:'รวมกันได้ ' + total + ' พอดีเลย!'});
-          }
-          return out.length ? out : MECHS.count.gen(rng, diff, {id:'', job:'villager'});
+        id:'fishcatch', name:'ตกปลาไปส่ง', fam:'A', walk:true,
+        gen(rng, diff, def){
+          const where = rng() < .5 ? 'pond' : 'sea';
+          const easy = orderable(where, 1);                    /* หาง่าย โผล่ 60% */
+          const mid  = orderable(where, 2).filter(f => (f.rare | 0) === 2);   /* โผล่ 30% */
+          if(!easy.length) return MECHS.count.gen(rng, diff, def || {id:'', job:'villager'});
+          /* จำนวนชนิดที่สั่ง: เด็กเล็ก 1 · ป.2-4 = 2 · ป.5-6 = 2-3 */
+          const kinds = diff.tier <= 2 ? 1 : (diff.tier <= 4 ? 2 : (rng() < .5 ? 2 : 3));
+          /* ⚠ ปลา rare 2 โผล่แค่ 30% ⇒ **สั่งได้ไม่เกิน 1 ชนิดต่อรอบ** และเฉพาะชั้นโต
+             ไม่งั้นเด็กต้องนั่งตกเป็นสิบครั้งกว่าจะครบ = ขัดกติกาเหล็กข้อ 2 (ห้ามกดดัน) */
+          const useMid = diff.tier >= 3 && mid.length && kinds >= 2 && rng() < .5;
+          const picked = pickMany(rng, easy, Math.min(kinds - (useMid ? 1 : 0), easy.length));
+          if(useMid) picked.push(pick(rng, mid));
+          /* จำนวนตัวรวมทั้งใบสั่ง — เพดานตามชั้น (ตกได้ ~8-14 วิ/ตัว + เวลาเดิน ยังอยู่ในงบ 240 วิ) */
+          const cap = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
+          const need = [];
+          let left = cap;
+          picked.forEach((f, i)=>{
+            const rest = picked.length - i - 1;                /* กันไม่ให้ชนิดท้ายๆ เหลือ 0 ตัว */
+            const n = Math.max(1, Math.min(left - rest, 1 + ((rng() * 2) | 0)));
+            need.push({k:'fish', id:f.id, e:f.e || '🐟', name:f.n || f.id, n:n});
+            left -= n;
+          });
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          const listTxt = need.map(r => r.e + ' ' + r.name + ' ' + r.n + ' ตัว').join(' · ');
+          return [{kind:'walk', target:'catch', where: where, need: need, toNpc: to,
+                   q:'ลุงอยากได้ปลาสดจาก' + PLACE[where] + 'จัง ช่วยไปตกให้หน่อยได้ไหม? — '
+                     + listTxt + ' · ตกครบแล้วเอากลับมาให้ลุงที่นี่เลยนะ',
+                   go:'ไปตกปลา 🎣',
+                   hint:'ไปตกปลาที่' + PLACE[where] + ' — ' + listTxt,
+                   /* แถวรูปของที่สั่ง (renderWalkStep วาดให้) — เด็กอ่านไม่ออกก็ดูรูปได้ */
+                   list: need.map(r => ({e:r.e, label:r.name + ' ×' + r.n})),
+                   emoji:'🎣', choices:[], correct:0,
+                   explain:'ปลาสดๆ ครบพอดีเลย ขอบใจมากนะ!'}];
         },
-        verify(it, placed){
-          placed = placed || {};
-          const inb = it.tiles.filter(t => placed[t.k] === 'basket');
-          const sum = inb.reduce((a, t) => a + t.num, 0);
-          /* ⚠ ยอมรับ **ทุกชุดที่รวมได้เท่าโจทย์** ไม่ใช่เฉพาะชุดที่ตั้งใจไว้ (เหมือนเกม budget)
-             เด็กคิดวิธีของตัวเองแล้วถูกก็ต้องผ่าน — บังคับจำนวนตัวไว้กันเดาแบบใส่หมดทั้งกระดาน */
-          return {ok: sum === it.sumTo && inb.length === it.need, bad: []};
+        verify(){ return {ok:true}; },     /* หน้าจอเป็นคนตัดสินว่าตกครบ + ส่งถึงมือแล้วจริง */
+      };
+    }
+    /* ================= 🌍 เควสต์ "ทำ Action จริงในโลกแล้วเอาไปส่ง" (ชุดที่ 2 · 2026-08-16) =================
+       โรงงานตัวเดียวสำหรับงานที่ **ไม่มีโจทย์ในการ์ดเลย** — รับงาน → การ์ดปิด → ออกไปทำของจริง
+       ในโลก 3D ให้ครบ → เดินกลับไปแตะคนที่สั่งงาน
+
+       ⚠ **ทุกตัวต้องเช็ค `worldStock()` ก่อนถูกแจกเสมอ** (ผ่าน `mechOk`) — ถ้าวันนี้เด็กเก็บของครบ
+         ไปแล้ว/ไม่มีแปลงให้รด/อัลบั้มเต็ม แล้วยังแจกงานนี้ = **ตันทั้งวัน** ขัดกติกาเหล็กข้อ 1
+       ⚠ ตัวนับอยู่ฝั่งหน้าจอ (`questCaught` ใน js/house.js) ไฟล์นี้ไม่รู้จักฉาก 3D
+       ⚠ เพิ่มงานแนวนี้ตัวใหม่: เติม `stock` ที่ js/house-play.js + เรียกใช้โรงงานนี้ **ห้ามเขียนใหม่ทั้งก้อน** */
+    function actionMech(o){
+      return {
+        id:o.id, name:o.name, fam:'A', walk:true, action:o.stock,
+        gen(rng, diff, def){
+          const stock = worldStock()[o.stock] | 0;
+          /* จำนวนที่สั่ง — ไล่ตามชั้น แต่ **ห้ามเกินของที่เหลือจริงวันนี้** */
+          const want = Math.min(o.max, Math.max(1, o.lo + (diff.tier >= 3 ? 1 : 0) + (diff.tier >= 5 ? 1 : 0)));
+          const n = Math.min(want, stock);
+          if(n < 1) return MECHS.count.gen(rng, diff, def || {id:'', job:'villager'});
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'walk', target:'catch', toNpc: to,
+                   need:[{k:o.stock, id:'', e:o.emoji, name:o.unit, n:n}],
+                   q: o.ask(n), go: o.go, hint: o.hint,
+                   list:[{e:o.emoji, label:o.unit + ' ×' + n}],
+                   emoji:o.emoji, choices:[], correct:0, explain:o.done}];
         },
+        verify(){ return {ok:true}; },
       };
     }
     /* ---------- ทำตามสูตร ---------- เรียงลำดับ + เห็นสูตรก่อนแล้วสูตรหาย */
@@ -1161,11 +1235,20 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
             const nLo = diff.tier <= 2 ? 4 : 5;
             const nHi = diff.tier <= 2 ? 5 : 7;
             const n = Math.round(nLo + (nHi - nLo) * dk.p);
-            const items = bag(rng).slice(0, n);
+            const pool  = bag(rng);
+            const items = pool.slice(0, n);
             if(items.length < 3) continue;
             const gi = (rng() * items.length) | 0;
             const gone = items[gi];
-            const tray = shuffled(rng, items.slice());
+            /* 🆕 2026-08-16 (ผู้ใช้สั่ง) — ถาดมี "ตัวลวง" ที่ไม่เคยอยู่บนโต๊ะปนมาด้วย
+               ⚠ ทับกติกาเดิมที่เขียนไว้ว่า "ถาดเป็นชุดเดิมทั้งหมด ไม่มีตัวลวง" — ของเดิมเด็กกวาดตา
+                 เทียบถาดกับโต๊ะทีละชิ้นก็ได้คำตอบโดยไม่ต้องจำอะไรเลย
+               ⚠ ตัวลวงต้องมาจากกองเดียวกัน (`pool`) จะได้เป็นของแนวเดียวกัน ไม่ใช่ของมั่วคนละโลก
+                 และ **ห้ามซ้ำกับของบนโต๊ะ** ไม่งั้นจะมีคำตอบถูก 2 ช่อง
+               เด็กเล็ก 1 ตัว · ชั้นโต 2 ตัว (ถาดยาวเกินไปกลายเป็นงานกวาดตาแทนงานจำ) */
+            const decoyN = diff.tier <= 2 ? 1 : 2;
+            const decoys = pool.filter(e => items.indexOf(e) < 0).slice(0, decoyN);
+            const tray = shuffled(rng, items.concat(decoys));
             out.push({
               kind:'vanish',
               before: items.slice(),                       /* จังหวะที่ 1 — ของครบบนโต๊ะ */
@@ -1243,6 +1326,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     function findSoundMech(){
       return {
         id:'findsound', name:'ทายเสียงเครื่องดนตรี', fam:'A', music:true,
+        /* 🔇 **ปิดไม่ให้ถูกแจกเป็นเควสต์จริง (ผู้ใช้สั่ง 2026-08-16)** — เสียงสังเคราะห์ยังไม่
+           เหมือนเครื่องจริงพอให้เด็กแยกออก ⇒ กลายเป็นโจทย์เดาสุ่ม ขัดกติกาเหล็กข้อ 2
+           ⚠ **ยังเปิดให้ทดสอบในหน้าคลังโจทย์ได้ตามปกติ** (`testRun` ไม่ผ่าน `mechOk`)
+           ⚠ ห้ามเปิดกลับจนกว่าเสียงจะดีพอจริง — ต้องให้ผู้ใช้ฟังแล้วยืนยันก่อน */
+        testOnly:true,
         gen(rng, diff){
           const all = instruments();
           if(all.length < 4) return MECHS.count.gen(rng, diff, {id:'', job:'villager'});
@@ -1251,8 +1339,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
             const four = pickMany(rng, all, 4);
             const ans = four[0];
             const order = shuffled(rng, four);
+            /* ⚠ ต้องส่ง `voice` ไปด้วยเสมอ — ไม่งั้นหน้าจอเล่นด้วยเสียงเปียโนทุกตัวเลือก
+               และเครื่องระดับ 3 ที่ไม่มี `note` จะดังโน้ตเดียวกันหมด = 4 ตัวเลือกเสียงเหมือนกันเป๊ะ */
             out.push({kind:'sound',
-                      sound: ans.tune && ans.tune.length ? {seq: ans.tune} : {seq: [ans.note | 0]},
+                      sound: {seq: (ans.tune && ans.tune.length) ? ans.tune : [ans.note | 0],
+                              voice: ans.voice || 'piano'},
                       q:'ฟังเสียงนี้แล้วทายสิว่าเครื่องดนตรีอะไร?', emoji:'👂', show:'',
                       choices: order.map(x => x.emoji + ' ' + x.name),
                       correct: order.indexOf(ans),
@@ -1626,7 +1717,23 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       payexact:   payExactMech(),
       changeback: changeBackMech(),
       stockshelf: stockShelfMech(),
-      fishmath:   fishMathMech(),
+      fishcatch:  fishCatchMech(),
+      /* ---- 🌍 งาน Action จริงชุดที่ 2 (2026-08-16) ---- */
+      collectgive: actionMech({
+        id:'collectgive', name:'เก็บของไปให้', stock:'leaf', emoji:'🍃', unit:'ชิ้น',
+        lo:2, max:4, go:'ไปเก็บของ 🍃',
+        ask:n => 'ช่วยเก็บของที่ร่วงอยู่รอบเมืองมาให้หน่อยได้ไหม? เอามา ' + n + ' ชิ้นนะ',
+        hint:'เดินเก็บของที่โผล่อยู่รอบเมือง', done:'ครบพอดีเลย ขอบใจมากนะ!'}),
+      watergarden: actionMech({
+        id:'watergarden', name:'ช่วยรดน้ำแปลงผัก', stock:'water', emoji:'💧', unit:'แปลง',
+        lo:1, max:3, go:'ไปรดน้ำ 💧',
+        ask:n => 'แปลงผักที่บ้านหนูเหี่ยวแล้วนะ ไปช่วยรดน้ำให้ ' + n + ' แปลงหน่อยสิ',
+        hint:'ไปรดน้ำแปลงผักที่บ้าน', done:'ต้นไม้ชุ่มฉ่ำเลย เก่งมาก!'}),
+      photogive: actionMech({
+        id:'photogive', name:'ถ่ายรูปมาให้ดู', stock:'photo', emoji:'📷', unit:'รูป',
+        lo:1, max:2, go:'ไปถ่ายรูป 📷',
+        ask:n => 'อยากเห็นวิวสวยๆ ในเมืองจัง ช่วยถ่ายรูปมาให้ดู ' + n + ' รูปได้ไหม?',
+        hint:'กดปุ่ม 🎈 แล้วเลือก 📷 ช่างภาพ เพื่อถ่ายรูป', done:'รูปสวยมากเลย ขอบใจนะ!'}),
       recipeseq:  recipeMech(),
       traffic:    trafficMech(),
       deliver:    deliverMech(),
@@ -1658,8 +1765,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
          ซึ่งถูกสำหรับกลไกส่วนใหญ่ แต่ถ้ากลไกใหม่เป็นทรงลากหรือทรงเดิน **ต้องมาเติมที่นี่**
          ไม่งั้นจำนวนข้อจะถูกคำนวณจากเวลาที่ผิด (เควสต์ยาวเกินงบ 240 วิ) — มีเทสคุมไว้ที่ house-phase10
        ⚠ `secPerQ` ใช้คำนวณจำนวนข้อเท่านั้น **ห้ามโชว์บนจอ ห้ามใช้ตัดจบเควสต์** (กติกาเหล็กข้อ 2) */
-    const DRAG_MECHS = ['petfeed', 'budget', 'shopping', 'payexact', 'fishmath', 'dressorder'];
-    const WALK_MECHS_SHAPE = ['findhidden', 'deliver', 'dinner', 'market'];
+    const DRAG_MECHS = ['petfeed', 'budget', 'shopping', 'payexact', 'dressorder'];
+    const WALK_MECHS_SHAPE = ['findhidden', 'deliver', 'dinner', 'market', 'fishcatch',
+                              'collectgive', 'watergarden', 'photogive'];
     Object.keys(MECHS).forEach(k=>{
       const m = MECHS[k];
       if(m.shape) return;                                        /* factory ติดป้ายมาแล้ว */
@@ -1730,7 +1838,15 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       /* ร้านอาหาร/ไอศกรีม/ตลาด: ทำตามสูตร */
       [/^npc-(food|ice|mk|cart)/,          ['recipeseq']],
       /* ริมน้ำ/ชาวประมง: ตกปลาคิดเลข */
-      [/^npc-(fisher|beach|camp)/,         ['fishmath']],
+      /* ---- 🌍 งาน Action จริง (2026-08-16) — ผูกกับคนที่งานนั้นเข้ากับบทบาทเขา ---- */
+      /* 🍃 เก็บของ = เด็กๆ/คุณยาย/ร้านต้นไม้ (คนที่ขอให้ช่วยเก็บของเข้าท่า) */
+      [/^npc-(kid|granny|garden|play|stu)/, ['collectgive']],
+      /* 💧 รดน้ำแปลงผัก = ชาวนา/ฟาร์ม/ร้านต้นไม้ */
+      [/^npc-(farm|cowboy|garden)/,        ['watergarden']],
+      /* 📷 ถ่ายรูป = นักเดินทาง/โรงแรม/ไปรษณีย์/ร้านเสื้อผ้า (คนที่อยากเห็นวิว) */
+      [/^npc-(traveler|hotel|post|mall-fash)/, ['photogive']],
+      /* 🎣 ลุงตกปลา/ลุงชาวประมง/ชายหาด/แคมป์ = คนที่สั่งให้ไปตกปลาจริง (ผู้ใช้สั่ง 2026-08-16) */
+      [/^npc-(fisher|beach|camp)/,         ['fishcatch']],
       /* ตำรวจ/เทศมนตรี: ป้ายจราจร + ของหายในเมือง (find-hidden — คนที่ชาวบ้านไปแจ้งของหาย) */
       [/^npc-(police|mayor|headman)/,      ['traffic','findhidden']],
       /* ---- เฟส 7 กลุ่ม D: เกมสังเกต/ความจำ แจกได้กว้างกว่าเพราะไม่ผูกกับอาชีพใครเป็นพิเศษ ---- */
@@ -1773,7 +1889,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       let out = [];
       for(let i = 0; i < BONUS_MECHS.length; i++)
         if(BONUS_MECHS[i][0].test(npcId)) out = out.concat(BONUS_MECHS[i][1]);
-      return out;
+      /* ⚠ ต้องกรองด้วย mechOk เสมอ — ทางนี้เคยเป็นช่องที่กลไกซึ่งถูกปิดไว้หลุดออกไปถูกแจกได้
+         (เควสต์ดนตรีที่ยังไม่มีเครื่องในบ้าน / กลไก testOnly) */
+      return out.filter(m => mechOk(m));
     }
     const MECH_IDS = Object.keys(MECHS);
     /* กลไกที่ **เควสต์ครอบครัวเท่านั้น**สุ่มได้ — NPC/กระดานยังเป็น quiz/count เหมือนเดิม

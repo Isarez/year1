@@ -35,7 +35,7 @@ const NEW_MECHS = [
   'sinkfloat','magnet','states','habitat','plantgrow','measure','codeorder','codedebug',   /* เฟส 6 เขียนใหม่ */
   'shapebuild','circuit','robot','codeloop','codecond',                                    /* เฟส 6 ยืม engine */
   'soundguess',                                                                            /* เฟส 5 ตกค้าง */
-  'payexact','changeback','stockshelf','fishmath','recipeseq','traffic','deliver',          /* เฟส 7 กลุ่ม B */
+  'payexact','changeback','stockshelf','recipeseq','traffic','deliver',          /* เฟส 7 กลุ่ม B */
   'spotdiff','flashcount','dressorder','findhidden',                                        /* เฟส 7 กลุ่ม D */
 ];
 

@@ -87,7 +87,10 @@
     {id:'payexact',   ic:'🧾', name:'จ่ายเงินให้พอดี'},
     {id:'changeback', ic:'💵', name:'ทอนเงิน'},
     {id:'stockshelf', ic:'🏪', name:'จัดชั้นวาง'},
-    {id:'fishmath',   ic:'🎣', name:'ตกปลาคิดเลข'},
+    {id:'fishcatch',  ic:'🎣', name:'ตกปลาไปส่ง (เดิน · ตกจริง)'},
+    {id:'collectgive',ic:'🍃', name:'เก็บของไปให้ (เดิน · เก็บจริง)'},
+    {id:'watergarden',ic:'💧', name:'ช่วยรดน้ำแปลงผัก (เดิน · รดจริง)'},
+    {id:'photogive',  ic:'📷', name:'ถ่ายรูปมาให้ดู (เดิน · ถ่ายจริง)'},
     {id:'recipeseq',  ic:'📋', name:'ทำตามสูตร'},
     {id:'traffic',    ic:'🚦', name:'ป้ายบอกทาง'},
     {id:'deliver',    ic:'📦', name:'ส่งของถึงมือ (เดิน)'},
@@ -97,13 +100,43 @@
     {id:'findhidden', ic:'🗺️', name:'หาของที่หาย (เดิน)'},
     /* เฟส 9 — เควสต์ดนตรี (พี่โน้ตที่ร้านเครื่องดนตรีแจก · ต้องมีเครื่องในบ้านก่อน) */
     {id:'playalong',  ic:'🎵', name:'เล่นตามทำนอง (ร้านดนตรี)'},
-    {id:'findsound',  ic:'🎺', name:'ทายเสียงเครื่องดนตรี (ร้านดนตรี)'},
+    {id:'findsound',  ic:'🎺', name:'ทายเสียงเครื่องดนตรี (🔇 ทดสอบเท่านั้น)'},
     {id:'shapebuild', ic:'🧩', name:'ต่อรูปทรงตามแบบ (แล็บ)'},
     {id:'circuit',    ic:'💡', name:'ต่อวงจรให้ไฟติด (แล็บ)'},
     {id:'robot',      ic:'🤖', name:'พาหุ่นยนต์เดิน (แล็บ)'},
     {id:'codeloop',   ic:'🔁', name:'สั่งให้วนซ้ำ (แล็บ)'},
     {id:'codecond',   ic:'🔀', name:'โปรแกรมมีเงื่อนไข (แล็บ)'},
   ];
+  /* ---------- กลุ่มกลไก (2026-08-16) ----------
+     ⚠ เดิมโยนชิปทั้ง 57 กลไกลงแถบเดียวสูง 86px ⇒ เห็นทีละ ~2 แถว เลื่อนหาไม่เจอ อ่านชื่อไม่ทัน
+       (ผู้ใช้แจ้ง 2026-08-16) ตอนนี้เลือก "กลุ่ม" ก่อน แล้วค่อยโชว์เฉพาะชิปของกลุ่มนั้น
+     ⚠ **เพิ่มกลไกใหม่ต้องเติมชื่อลงกลุ่มใดกลุ่มหนึ่งที่นี่ด้วย** ตัวที่ไม่อยู่กลุ่มไหนเลยจะตกไปกลุ่ม
+       "อื่นๆ" อัตโนมัติ (ไม่หายไปเงียบๆ) — มีเทสไล่ตรวจว่าทุกแท็บต้องมีกลุ่มจริง */
+  const MECH_GROUPS = [
+    {id:'core',  ic:'📋', name:'พื้นฐาน',
+     ids:['quiz', 'count']},
+    {id:'fam',   ic:'🏡', name:'ครอบครัว',
+     ids:['tidy','laundry','cook','routine','petfeed','budget','shopping','clock','dinner','market',
+          'orderlearn','sortcat']},
+    {id:'eng',   ic:'🎮', name:'ยืม engine หน้าหลัก',
+     ids:['mix','memory','balance','clockset','shadow','sortcat2','orderg','melody','shopmoney',
+          'slicefrac','caldays','timeorder','chartread','globespin','mirrorsym','owlsay',
+          'shapebuild','circuit','robot','codeloop','codecond']},
+    {id:'lab',   ic:'🔬', name:'ตึกแล็บ',
+     ids:['sinkfloat','magnet','states','habitat','plantgrow','measure','codeorder','codedebug']},
+    {id:'shop',  ic:'🏪', name:'ร้านค้า/ในเมือง',
+     ids:['payexact','changeback','stockshelf','recipeseq','traffic','deliver',
+          'findhidden','whois','fishcatch','collectgive','watergarden','photogive']},
+    {id:'fun',   ic:'🎲', name:'เบาสมอง',
+     ids:['spotdiff','flashcount','dressorder','dessert','vanish','colornum']},
+    {id:'music', ic:'🎶', name:'ดนตรี',
+     ids:['soundguess','playalong','findsound']},
+  ];
+  function groupOf(mid){
+    for(let i = 0; i < MECH_GROUPS.length; i++)
+      if(MECH_GROUPS[i].ids.indexOf(mid) >= 0) return MECH_GROUPS[i].id;
+    return 'etc';
+  }
   /* กลไกที่กางคลัง "ของ → ถัง" เป็นตารางให้ดูได้ (เฟส 6 เพิ่มคลัง STEM เข้ามา) */
   const SORT_MECHS = ['tidy', 'laundry', 'sinkfloat', 'magnet', 'states', 'habitat', 'stockshelf'];
   /* มินิเกมที่สร้างโจทย์เองล้วน ไม่มีคลังตายตัวให้กาง ⇒ หน้านี้บอกกติกา + ปุ่มสุ่มเล่นอย่างเดียว */
@@ -112,8 +145,9 @@
                       /* เฟส 6 — แล็บ: ตัวที่สร้างโจทย์เองไม่มีคลังตายตัวให้กาง */
                       'plantgrow', 'measure', 'codeorder', 'codedebug', 'soundguess',
                       /* เฟส 7 — กลุ่ม B + D */
-                      'payexact', 'changeback', 'fishmath', 'recipeseq', 'traffic', 'deliver',
-                      'spotdiff', 'flashcount', 'dressorder', 'findhidden',
+                      'payexact', 'changeback', 'recipeseq', 'traffic', 'deliver',
+                      'spotdiff', 'flashcount', 'dressorder', 'findhidden', 'fishcatch',
+                      'collectgive', 'watergarden', 'photogive',
                       /* เฟส 9 */
                       'playalong', 'findsound',
                       /* เฟส 5 — เกมที่ยืม engine หน้าหลักมา */
@@ -151,7 +185,7 @@
     mirrorsym:'ยืม engine เกม "กระจกเงา" — แจกโดยร้านเสื้อผ้า/นักมายากล/ตัวตลก (ป.4 ขึ้นไป)',
     whois:    'เควสต์เดิน: โชว์เงาดำของชาวบ้าน (วาดจาก look จริงใน NPC_DEFS) แล้วเด็กเดินไปหาคนนั้นในเมืองแล้วแตะ · คำใบ้บอกได้แค่ย่าน ห้ามบอกชื่อ',
     colornum: 'เลือกสีจากจานแล้วแตะช่องที่เลขตรงกัน · แตะช่องเลขไม่ตรง = ไม่มีอะไรเกิดขึ้น ไม่นับพลาด · ระบายครบได้กรอบรูปไปแขวนที่บ้าน',
-    vanish:   'โชว์ของบนโต๊ะ → ผ้าคลุมลงมา → เปิดออกมาหายไป 1 ชิ้น เด็กแตะของชิ้นนั้นบนถาดตรงๆ (ของบนถาดเป็นชุดเดิมทั้งหมด ไม่มีตัวลวง)',
+    vanish:   'โชว์ของบนโต๊ะ → ผ้าคลุมลงมา → เปิดออกมาหายไป 1 ชิ้น เด็กแตะของชิ้นนั้นบนถาดตรงๆ · **ถาดมีตัวลวงที่ไม่เคยอยู่บนโต๊ะปนมาด้วย** (เด็กเล็ก 1 · ชั้นโต 2 — ผู้ใช้สั่ง 2026-08-16)',
     dessert:  'ลากวัตถุดิบไปวางในช่อง 1-N ตามลำดับที่ลูกค้าสั่ง (ล่างขึ้นบนเสมอ) · คลัง 40 ใบสั่ง · ชั้นเล็กเล่น 3 ขั้นแรก',
     owlsay:   'ยืม engine เกม "นกฮูกสั่ง" — ⚠ ตัวจับเวลาถูกปิดตอนเล่นในโหมดบ้าน (กติกาเหล็กข้อ 2 ห้ามกดดัน)',
     soundguess:'ร้านเครื่องดนตรี: ฟังเสียงแล้วตอบ 4 แบบ — ทายชื่อเพลง (10 เพลงที่เด็กรู้จัก) · เสียงสูงขึ้น/ต่ำลง (30 ลาย) · นับจำนวนเสียง · ทายชื่อโน้ต (ป.4+) · กดฟังซ้ำได้ไม่จำกัด',
@@ -166,16 +200,19 @@
     payexact: 'ร้านค้า: หยิบเหรียญให้รวมได้พอดีราคา (มีชุดที่จ่ายพอดีได้เสมอ — สร้างคำตอบก่อนแล้วค่อยแจกเหรียญหลอก)',
     changeback:'ร้านค้า: จ่ายไปเท่านี้ ราคาเท่านี้ ต้องทอนเท่าไร (คลังของ 44 ชิ้น)',
     stockshelf:'ร้านสะดวกซื้อ/ห้าง: ลากของขึ้นชั้นให้ถูกหมวด (ผลไม้/เครื่องดื่ม/ขนมปัง/เครื่องเขียน/ของเล่น/ของใช้)',
-    fishmath: 'ริมน้ำ: เลือกปลาให้ตัวเลขรวมกันได้เท่าโจทย์ · ยอมรับทุกชุดที่รวมได้ถูก ไม่ใช่เฉพาะชุดที่ตั้งใจไว้',
     recipeseq:'ร้านอาหาร: เห็นสูตร 3 วิแล้วสูตรหาย ต้องเรียงขั้นตอนจากความจำ (40 สูตร)',
     traffic:  'ตำรวจ/เทศมนตรี: อ่านป้ายจราจรแล้วบอกว่าต้องทำอะไร (40 ใบ · **ไม่มีจับเวลา** ต่างจากไอเดียเดิมใน IDEA.md)',
     deliver:  'เควสต์เดิน: รับของจาก NPC คนหนึ่ง แล้วเดินไปแตะตัวอีกคนเพื่อส่งของ (คำใบ้บอกชื่อ + สถานที่)',
     spotdiff: 'จับผิดภาพย่อส่วน: 2 แถวจากฉากเดียวกัน ต่างกัน 1 ชิ้น เลือกว่าชิ้นไหนหายไป (40 ฉาก)',
     flashcount:'นับแว้บเดียว: ของโผล่ 2-3 วิแล้วหาย ถามว่ามีกี่ชิ้น · ป.4+ มีของ 2 ชนิดปนกัน · **ไม่จับเวลาตอบ**',
     dressorder:'แต่งตัวตามโจทย์: หยิบของตามชนิด+สีที่สั่ง · **แต่งหุ่นในการ์ด ไม่ผูกกับของที่เด็กซื้อจริง** (กัน dead end)',
+    fishcatch:'🆕 เควสต์ "ทำจริงแล้วเอาไปส่ง" ตัวแรก: รับงานแล้วการ์ดปิด เด็กออกไป**ตกปลาด้วยระบบตกปลาจริงของเฟส 11** · **สุ่มว่าเป็นปลาบ่อหรือปลาทะเล** และ**ระบุชนิดที่ต้องการ** (เด็กเล็ก 1 ชนิด · ชั้นโต 2-3 ชนิด รวมไม่เกิน 4 ตัว) · **ไม่สั่งปลาหายาก (rare 3) และไม่สั่งของขยะ** · ตกครบแล้วเดินกลับไปแตะลุงตกปลา · ปลายังเข้าถังเด็กตามปกติ ไม่ถูกริบ · **แทนที่เกม "ตกปลาคิดเลข" ที่ถูกถอดออก 2026-08-16**',
+    collectgive:'🌍 Action จริง: เดินเก็บของประจำวันที่โผล่รอบเมืองให้ครบจำนวน แล้วเอาไปส่งคนที่สั่ง · **ถูกกรองออกอัตโนมัติถ้าวันนี้เก็บครบไปแล้ว** (กันงานตัน)',
+    watergarden:'🌍 Action จริง: ไปรดน้ำแปลงผักที่บ้านให้ครบจำนวนแปลง แล้วกลับไปบอกคนที่สั่ง · **ถูกกรองออกถ้าไม่มีแปลงที่รดได้วันนี้**',
+    photogive:'🌍 Action จริง: กดปุ่ม 🎈 → 📷 ช่างภาพ ถ่ายรูปให้ครบ แล้วเอาไปให้คนที่สั่งดู · **ถูกกรองออกถ้าอัลบั้มเต็ม**',
     findhidden:'เควสต์เดิน: NPC บอกว่าทำของหายไว้ย่านไหน เด็กเดินไปที่ย่านนั้น = เจอ (6 ย่าน × 40 ชิ้น)',
     playalong:'ร้านดนตรี: ฟังทำนอง 3-6 โน้ตแล้วกดคีย์ตามลำดับ · กดผิดเริ่มกดใหม่ข้อนั้น ไม่มีบทลงโทษอื่น · **ต้องมีเครื่องดนตรีในบ้านก่อนถึงถูกแจก**',
-    findsound:'ร้านดนตรี: ฟังเสียงแล้วทายว่าเครื่องอะไร (11 ชิ้น) · เสียงต่างกันที่โน้ต/ทำนองที่ผูกกับชิ้นนั้นจริง เด็กเล่นเองที่บ้านได้ทุกเมื่อจึงจำได้ · **ต้องมีเครื่องดนตรีในบ้านก่อน**',
+    findsound:'🔇 **ปิดไม่ให้ถูกแจกเป็นเควสต์จริงแล้ว (ผู้ใช้สั่ง 2026-08-16)** — เสียงสังเคราะห์ยังไม่เหมือนเครื่องจริงพอให้เด็กแยกออก กลายเป็นโจทย์เดาสุ่ม · **เปิดไว้ที่หน้านี้อย่างเดียวเพื่อทดสอบเสียง** · ห้ามเปิดกลับจนกว่าผู้ใช้จะฟังแล้วยืนยันว่าดีพอ',
     shapebuild:'แล็บ: ยืม engine "แท็งแกรม" ของหน้าหลัก ⚠ มีหมวดแค่ ป.5-6 ⇒ ชั้นต่ำกว่าจะไม่ถูกแจกงานนี้',
     circuit:  'แล็บ: ยืม engine "ต่อวงจรไฟฟ้า" ของหน้าหลัก ⚠ มีหมวดแค่ ป.6 ⇒ ชั้นอื่นจะไม่ถูกแจกงานนี้',
     robot:    'แล็บ: ยืม engine "หุ่นยนต์" ของหน้าหลัก — ชุดด่านแบบเดินตามคำสั่งล้วน (ไม่มีวนซ้ำ/เงื่อนไข)',
@@ -192,6 +229,7 @@
                        dress:'เสื้อผ้า', town:'ของในเมือง'};
 
   let gid  = '';          /* ระดับชั้นที่เลือกอยู่ */
+  let grp  = 'core';      /* กลุ่มกลไกที่เลือกอยู่ */
   let mech = 'quiz';
   let catId = '';         /* '' = ทุกหมวด (แท็บกลไก quiz เท่านั้น) */
 
@@ -234,17 +272,35 @@
       gw.appendChild(chip((g.emoji ? g.emoji + ' ' : '') + (g.short || g.name || g.id), g.id === gid,
         ()=>{ gid = g.id; catId = ''; render(); }));
     });
+    /* แถวกลุ่ม — โชว์จำนวนกลไกในกลุ่มด้วย จะได้รู้ว่ากดเข้าไปแล้วเจออะไรบ้าง */
+    const grw = $('hqb-groups');
+    if(grw){
+      grw.innerHTML = '';
+      const etc = MECH_TABS.filter(t => groupOf(t.id) === 'etc');
+      const list = MECH_GROUPS.concat(etc.length ? [{id:'etc', ic:'❔', name:'อื่นๆ', ids:etc.map(t=>t.id)}] : []);
+      list.forEach(g=>{
+        const n = MECH_TABS.filter(t => groupOf(t.id) === g.id).length;
+        grw.appendChild(chip(g.ic + ' ' + g.name + ' (' + n + ')', g.id === grp, ()=>{
+          grp = g.id;
+          /* เปลี่ยนกลุ่มแล้วเด้งไปกลไกตัวแรกของกลุ่มนั้นทันที — ไม่ต้องกด 2 ที */
+          const first = MECH_TABS.filter(t => groupOf(t.id) === grp)[0];
+          if(first) mech = first.id;
+          catId = ''; render();
+        }));
+      });
+    }
     const mw = $('hqb-mechs');
     mw.innerHTML = '';
     let onChip = null;
-    MECH_TABS.forEach(m=>{
-      const c = chip(m.ic + ' ' + m.name, m.id === mech,
+    MECH_TABS.filter(m => groupOf(m.id) === grp).forEach(m=>{
+      /* 🚶 = งานที่ต้อง "เดินไปทำตามตำแหน่งในเมือง" ไม่ได้ตอบจบในการ์ด (ผู้ใช้ขอให้เห็นชัด 2026-08-16) */
+      const walk = !!((Q().MECHS[m.id] || {}).walk);
+      const c = chip(m.ic + ' ' + m.name + (walk ? ' 🚶' : ''), m.id === mech,
         ()=>{ mech = m.id; catId = ''; render(); });
       if(m.id === mech) onChip = c;
       mw.appendChild(c);
     });
-    /* ⚠ แถบนี้เลื่อนได้ (สูงแค่ ~2 แถวจาก 37 กลไก) ⇒ ต้องเลื่อนชิปที่เลือกอยู่เข้ามาให้เห็นเสมอ
-       ไม่งั้นเลือกกลไกแถวล่างแล้วแถบเด้งกลับไปบนสุด คนเทสมองไม่ออกว่ากำลังดูอะไรอยู่ */
+    /* กลุ่มใหญ่สุดยังยาวเกิน 2 แถวได้ ⇒ เลื่อนชิปที่เลือกอยู่เข้ามาให้เห็นเสมอ */
     if(onChip) onChip.scrollIntoView({block:'nearest'});
     /* แถบหมวดมีเฉพาะกลไก quiz (count ไม่ได้ดึงจากคลัง CATS) */
     const cw = $('hqb-cats');
@@ -387,24 +443,64 @@
       + '(ในเกมจริงโผล่เฉพาะเควสต์ครอบครัว วันละ 1 ชุด)'));
   }
 
+  /* ---------- กลไกที่ยืม engine หน้าหลัก: ชั้นไหนเล่นได้บ้าง ----------
+     🐞 บั๊กจริงที่ผู้ใช้เจอ 2026-08-16: กดเล่น "ตาชั่งวิเศษ/แผนภูมิ/วงจรไฟฟ้า/หุ่นยนต์ …" จากหน้านี้
+        แล้ว **การ์ดเด้งไปหน้าสรุปทันทีเหมือนเล่นจบแล้ว**
+        ต้นเหตุ: engine พวกนี้มีหมวดเฉพาะบางระดับชั้น (วงจรไฟฟ้ามีแต่ ป.6 · แท็งแกรม ป.5-6 · ตาชั่ง ป.3+ …)
+        ในเกมจริง `engineReady()` กรองไว้ไม่ให้แจกงานที่ชั้นนั้นเล่นไม่ได้ **แต่หน้าเทสนี้ข้ามด่านนั้น**
+        ⇒ `startEngineGame()` หา `pickCat()` ไม่เจอ เลยเรียก `finishEngineRound(0)` = จบชุดเงียบๆ
+     ⇒ หน้านี้ต้องเช็คเองก่อนโชว์ปุ่ม แล้วบอกตรงๆ ว่าชั้นไหนเล่นได้ พร้อมปุ่มกระโดดไปชั้นนั้น */
+  function engineGrades(mid){
+    const m = (Q().MECHS || {})[mid];
+    const G = window.HouseGames;
+    if(!m || !m.engine || !G || !G.pickCat) return null;   /* ไม่ใช่กลไกยืม engine */
+    const ok = grades().filter(g => !!G.pickCat(m.engine, g.id, m.pick || ''));
+    return {engine:m.engine, pick:m.pick || '', ok:ok};
+  }
   /* ---------- มินิเกมที่สร้างโจทย์เองล้วน: บอกกติกา + กดเล่นได้เลย ---------- */
   function renderPlayOnly(wrap, sum){
     const tab = MECH_TABS.filter(t => t.id === mech)[0] || {};
     const walk = (Q().MECHS[mech] || {}).walk;
     sum.textContent = (MECH_HOW[mech] || '')
-      + (walk ? ' · งานเดิน (ไม่เข้ากติกาขั้นต่ำ 5 ข้อ)' : ' · ' + Q().MIN_Q + ' ข้อ/เควสต์');
-    const box = el('div', 'hqb-empty',
+      + (walk ? ' · 🚶 งานเดิน — ต้องเดินไปทำตามตำแหน่งในเมือง (ไม่เข้ากติกาขั้นต่ำ 5 ข้อ)'
+              : ' · ' + Q().MIN_Q + ' ข้อ/เควสต์');
+
+    const eg = engineGrades(mech);
+    const playable = !eg || eg.ok.some(g => g.id === gid);
+    wrap.appendChild(el('div', 'hqb-empty',
       'กลไกนี้สุ่มโจทย์ใหม่ทุกครั้ง ไม่มีคลังคำถามตายตัวให้กาง — กดปุ่มข้างล่างเพื่อเล่นทดสอบได้เลย '
-      + '(ในเกมจริงโผล่เฉพาะเควสต์ครอบครัว วันละ 1 ชุด)');
-    wrap.appendChild(box);
+      + '(ในเกมจริงโผล่เฉพาะเควสต์ครอบครัว วันละ 1 ชุด)'));
+    if(eg){
+      wrap.appendChild(el('div', 'hqb-note' + (playable ? '' : ' warn'),
+        (playable ? '✅ ' : '⚠️ ')
+        + 'เกมนี้ยืม engine "' + eg.engine + '" ของหน้าหลัก'
+        + (eg.pick ? ' (ชุด ' + eg.pick + ')' : '')
+        + ' ⇒ เล่นได้เฉพาะชั้นที่มีหมวดของเกมนั้นจริง: '
+        + (eg.ok.length ? eg.ok.map(g => g.short || g.name || g.id).join(' · ') : 'ไม่มีเลย')
+        + (playable ? '' : ' — ชั้นที่เลือกอยู่ตอนนี้เล่นไม่ได้ (กดแล้วจะเด้งไปหน้าสรุปทันที)')));
+    }
     const row = el('div', 'hqb-playrow');
-    const b = el('button', 'hqb-go-btn', '▶ เล่นทดสอบ ' + (tab.ic || '') + ' ' + (tab.name || mech));
-    b.type = 'button';
-    b.addEventListener('click', ()=>{
-      if(typeof playClick === 'function') playClick();
-      play({mech:mech, gid:gid, title:'🧪 ' + (tab.ic || '') + ' ' + (tab.name || mech)});
-    });
-    row.appendChild(b);
+    if(!playable && eg && eg.ok.length){
+      /* ชั้นที่เลือกเล่นไม่ได้ → เปลี่ยนปุ่มเป็น "กระโดดไปชั้นที่เล่นได้" แทนการปล่อยให้กดแล้วพัง */
+      const g0 = eg.ok[0];
+      const jump = el('button', 'hqb-go-btn',
+        '↪ เปลี่ยนไปชั้น ' + (g0.short || g0.name || g0.id) + ' แล้วเล่น');
+      jump.type = 'button';
+      jump.addEventListener('click', ()=>{
+        if(typeof playClick === 'function') playClick();
+        gid = g0.id; catId = ''; render();
+      });
+      row.appendChild(jump);
+    }else{
+      const b = el('button', 'hqb-go-btn', '▶ เล่นทดสอบ ' + (tab.ic || '') + ' ' + (tab.name || mech));
+      b.type = 'button';
+      if(!playable) b.disabled = true;
+      b.addEventListener('click', ()=>{
+        if(typeof playClick === 'function') playClick();
+        play({mech:mech, gid:gid, title:'🧪 ' + (tab.ic || '') + ' ' + (tab.name || mech)});
+      });
+      row.appendChild(b);
+    }
     wrap.appendChild(row);
   }
 
@@ -443,6 +539,7 @@
       const own = q.ownGrade ? q.ownGrade() : '';
       gid = gs.some(g => g.id === own) ? own : ((gs[0] && gs[0].id) || '');
     }
+    grp = groupOf(mech);          /* เปิดใหม่แล้วแถบกลุ่มต้องตรงกับกลไกที่ค้างอยู่เสมอ */
     render();
     $('house-qb').hidden = false;
   }
@@ -457,6 +554,13 @@
     if(typeof playClick === 'function') playClick();
     if(PLAY_MECHS.indexOf(mech) >= 0 || SORT_MECHS.indexOf(mech) >= 0){
       const tab = MECH_TABS.filter(t => t.id === mech)[0];
+      /* กันกดแล้วเด้งหน้าสรุปทันที (ดูคอมเมนต์ที่ engineGrades) — ชั้นนี้เล่น engine นั้นไม่ได้ */
+      const eg = engineGrades(mech);
+      if(eg && !eg.ok.some(g => g.id === gid)){
+        if(typeof showToast === 'function')
+          showToast('⚠️', 'ชั้นนี้ยังไม่มีหมวดของเกมนี้ ลองเลือกชั้นอื่นก่อนนะ');
+        return;
+      }
       play({mech:mech, gid:gid, title:'🧪 สุ่มชุดเต็ม · ' + ((tab && tab.name) || mech)});
       return;
     }

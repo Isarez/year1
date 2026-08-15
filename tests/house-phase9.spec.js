@@ -83,11 +83,12 @@ test('เฟส 9A: เครื่องดนตรีทุกชิ้นส
 test('เฟส 9B: แตะเครื่องดนตรีแล้วเรียกเสียงจริง ไม่ใช้ไฟล์เสียงเพิ่ม', async ({ page }) => {
   const errs = await house(page, { withInstrument: true });
   const r = await page.evaluate(() => {
-    /* ดักฟังก์ชันเสียงของหน้าหลัก แล้วเรียก playInstrument ผ่านทางเดินโค้ดจริง */
-    const hits = { note: 0, seq: 0, piano: 0 };
-    const realNote = window.playPianoNote, realSeq = window.playMusicSequence, realFp = window.openFreePiano;
-    window.playPianoNote = (f, d) => { hits.note++; };
-    window.playMusicSequence = (s, noFlash) => { hits.seq++; hits.noFlash = noFlash === true; };
+    /* ดักฟังก์ชันเสียง แล้วเรียก playInstrument ผ่านทางเดินโค้ดจริง
+       🆕 2026-08-16: เสียงเครื่องดนตรีย้ายมาใช้ `playInstrumentNote(freq, dur, voice)`
+          (เดิมทุกเครื่องดังเป็นเสียงเปียโนเหมือนกันหมด) ⇒ ดักตัวใหม่แทน + เก็บ voice มาตรวจด้วย */
+    const hits = { note: 0, seq: 0, piano: 0, voices: [] };
+    const realNote = window.playInstrumentNote, realFp = window.openFreePiano;
+    window.playInstrumentNote = (f, d, v) => { hits.note++; hits.voices.push(v || ''); };
     window.openFreePiano = () => { hits.piano++; };
     const F = window.__houseDbg.furn();
     ['ins-ching', 'ins-musicbox', 'ins-guitar'].forEach(id => {
@@ -96,14 +97,15 @@ test('เฟส 9B: แตะเครื่องดนตรีแล้วเ
       g.position.set(0, 0, 0);
       window.__houseDbg.playInstrument(g, it);
     });
-    window.playPianoNote = realNote; window.playMusicSequence = realSeq; window.openFreePiano = realFp;
+    window.playInstrumentNote = realNote; window.openFreePiano = realFp;
     return hits;
   });
   console.log('เสียงที่ถูกเรียก: ' + JSON.stringify(r));
-  expect(r.note, 'ระดับ 1 ต้องเคาะ 1 เสียง').toBeGreaterThan(0);
-  expect(r.seq, 'ระดับ 2 ต้องเล่นทำนอง').toBeGreaterThan(0);
-  /* ⚠ ต้องส่ง noFlash = true เสมอ — ไม่มีเปียโนของหน้าหลักอยู่บนจอในโหมดบ้าน */
-  expect(r.noFlash, 'playMusicSequence ต้องถูกเรียกด้วย noFlash=true').toBe(true);
+  /* ฉิ่ง = เคาะ 1 เสียง · กล่องดนตรี = ทำนอง 5 โน้ต ⇒ รวมกันต้องมากกว่า 1 ครั้ง */
+  expect(r.note, 'ระดับ 1 ต้องเคาะเสียง · ระดับ 2 ต้องเล่นทำนองหลายโน้ต').toBeGreaterThan(1);
+  /* 🎺 แต่ละเครื่องต้องดังด้วยเสียงของตัวเอง ไม่ใช่เสียงเปียโนเหมือนกันหมด (ผู้ใช้แจ้ง 2026-08-16) */
+  expect(r.voices, 'ฉิ่งต้องเป็นเสียงระฆัง').toContain('bell');
+  expect(r.voices, 'กล่องดนตรีต้องเป็นเสียงกล่องดนตรี').toContain('box');
   expect(r.piano, 'ระดับ 3 ต้องเปิดหน้าเปียโนของหนู').toBeGreaterThan(0);
   expect(errs).toEqual([]);
 });
@@ -146,7 +148,10 @@ test('เฟส 9C: บ้านมีเครื่องดนตรีแล
   console.log('บ้านมีเครื่อง → พี่โน้ตแจก: ' + r.music.join(', '));
   expect(r.has).toBe(true);
   expect(r.music).toContain('playalong');
-  expect(r.music).toContain('findsound');
+  /* 🔇 2026-08-16 ผู้ใช้สั่งปิด `findsound` ไม่ให้ถูกแจกเป็นเควสต์จริง (เสียงยังไม่เหมือนเครื่องจริง
+     พอให้เด็กแยกออก = โจทย์เดาสุ่ม) ⇒ เกณฑ์กลับด้าน: **ต้องไม่โผล่เลย** แม้บ้านจะมีเครื่องดนตรีแล้ว
+     ⚠ ยังเล่นทดสอบในคลังโจทย์ได้ (มีเทสคุมที่ tests/house-fix-0816.spec.js) */
+  expect(r.music, 'findsound ถูกปิดไว้ ห้ามถูกแจกเป็นเควสต์จริง').not.toContain('findsound');
   expect(r.other, 'ชาวบ้านทั่วไปห้ามได้เควสต์ดนตรี').not.toContain('playalong');
   expect(r.other).not.toContain('findsound');
   expect(errs).toEqual([]);

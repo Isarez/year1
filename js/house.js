@@ -350,8 +350,17 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
          ⚠ เควสต์ดนตรีต้องมีเครื่องในบ้านก่อนถึงแจก ไม่งั้นเด็กรับงานแล้วเล่นไม่ได้ (กติกาเหล็กข้อ 1) */
       instruments: ()=> FURN.items.filter(it => it.cat === 'music')
                         .map(it => ({id:it.id, name:it.name, emoji:it.emoji,
-                                     note:it.note | 0, tune:it.tune || null})),
+                                     note:it.note | 0, tune:it.tune || null,
+                                     /* 🎺 เสียงประจำเครื่อง — เกมทายเสียงต้องได้ยินเสียงจริงของชิ้นนั้น
+                                        ไม่ใช่เสียงเปียโนเหมือนกันหมด (ผู้ใช้แจ้ง 2026-08-16) */
+                                     voice:it.voice || 'piano'})),
       hasInstrument: ()=> hasInstrument(),
+      /* 🚪 "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" — ใช้กันงานตัน (เก็บของหมดแล้ว/ไม่มีแปลงให้รด)
+         ⚠ ต้องอ่านจาก js/house-play.js ตัวจริง ไม่ใช่เดาจากของที่ซื้อไว้ */
+      worldStock: ()=>{
+        const P = window.HousePlay;
+        return (P && P.worldStock) ? P.worldStock() : {leaf:0, water:0, photo:0};
+      },
       /* เฟส 5: เกมของหน้าหลักตัวนี้ยืมมาเล่นได้ไหม (ต้องลงทะเบียนกับ OwlGames + อยู่ในรายการ ALLOW)
          เฟส 6 เพิ่มเงื่อนไขที่ 3: **ต้องมีหมวดที่ระดับชั้นเด็กเล่นได้จริงด้วย** — วงจรไฟฟ้ามีแต่ ป.6
          แท็งแกรมมีแต่ ป.5-6 ถ้าไม่เช็ค เด็ก ป.1 จะได้รับงานที่เปิดขึ้นมาแล้วเป็นโจทย์ ป.6 */
@@ -6576,6 +6585,18 @@ function talkToNpc(n){
     setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkQuestArrive('npc'); }, 320);
     return;
   }
+  /* 🎣 งาน "ตกปลาไปส่ง" (2026-08-16): มาถึงตัวคนที่สั่งงานแล้ว — ครบแล้วจบงาน ยังไม่ครบก็บอกยอด
+     ⚠ ต้อง `return` ทั้ง 2 ทาง ไม่งั้นการ์ดรับงานใหม่ของคนคนเดียวกันจะเด้งทับงานที่ทำค้างอยู่ */
+  if(walkQuest && walkQuest.target === 'catch' && walkQuest.toNpc === d.id){
+    if(catchDone()){
+      setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkQuestArrive('catch'); }, 320);
+    }else if(typeof showToast === 'function'){
+      const rest = walkQuest.need.filter(r => catchGot(r) < r.n)
+                     .map(r => r.e + ' ' + r.name + ' อีก ' + (r.n - catchGot(r))).join(' · ');
+      showToast('📋', 'ยังไม่ครบนะ — ' + rest);
+    }
+    return;
+  }
   const spec = QUESTS ? QUESTS.specForNpc(d.id) : null;
   if(spec && !spec.done){
     setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 280);
@@ -6809,6 +6830,7 @@ function closeQuestPanel(){
   if(typeof unmountHandPlay === 'function') unmountHandPlay();   /* ปิดการ์ด = ปิดกล้อง/ถอดปุ่ม */
   qRun = null; qLock = false; qzNpcId = null;   /* ปล่อยให้คนออกโจทย์เดินต่อได้ตามปกติ */
   if(window.OwlGames) OwlGames.unmount();   /* ปิดกลางเกมที่ยืมมา → คืน view กลับหน้าหลักให้เรียบร้อย */
+  stopHouseTune();                          /* ปิดกลางเสียงเครื่องดนตรี → ตัดโน้ตที่ยังรอเล่นทิ้ง */
   /* ปิดกลางกระดานมินิเกม → ถอด listener ลาก-วางที่ผูกไว้ที่ window ทิ้งด้วย ไม่งั้นค้างสะสม */
   if(qSortOff){ qSortOff(); qSortOff = null; }
   if(qDrag){ const b = qDrag.b; qDrag = null;
@@ -7010,6 +7032,11 @@ function startEngineGame(it){
   /* `it.pick` = หมวดย่อยของเกมเดียวกัน (เฟส 6: code เล่นได้ 3 แบบ plain/loop/cond) */
   const cat = HouseGames.pickCat(gid, qRun && qRun.gid ? qRun.gid : 'prep-p1', it.pick || '');
   const stage = qzStage();
+  /* ⚠ ไม่มีหมวดที่ชั้นนี้เล่นได้ → ต้องไม่เงียบ ในเกมจริง `engineReady()` กรองไว้แล้วจึงไม่มีทางมาถึง
+     แต่หน้าคลังคำถามข้ามด่านนั้นได้ ⇒ เคยกลายเป็น "กดเล่นแล้วเด้งหน้าสรุปทันที" หาสาเหตุไม่เจอ
+     (ผู้ใช้แจ้ง 2026-08-16) — ปล่อยให้จบชุดเหมือนเดิม (ห้ามค้างเป็น dead end) แต่บอกเหตุผลด้วย */
+  if(!cat && typeof showToast === 'function')
+    showToast('⚠️', 'เกมนี้ยังไม่มีชุดโจทย์สำหรับระดับชั้นนี้');
   if(!cat || !stage){ finishEngineRound(0); return; }
   const dots = $('hqz-dots'); if(dots) dots.innerHTML = '';
   const sub = $('hqz-sub'); if(sub) sub.textContent = cat.name || '';
@@ -7075,7 +7102,10 @@ function renderWalkStep(st, it){
     if(typeof playClick==='function') playClick();
     const run = qRun;
     /* `toNpc` = ปลายทางของงานส่งของ (เฟส 7) — เก็บไว้ที่นี่เพราะ closeQuestPanel() ล้าง qRun ทิ้ง */
-    walkQuest = {run: run, target: it.target, toNpc: it.toNpc || '', zone: it.zone || ''};
+    walkQuest = {run: run, target: it.target, toNpc: it.toNpc || '', zone: it.zone || '',
+                 /* 🎣 งานแบบ "ทำจริงแล้วค่อยเอาไปส่ง" — `need` เป็น **ใบสั่งรายชนิด**
+                    [{id, e, name, n}] · `got` = {ชนิด: ที่ได้แล้ว} · `where` = บ่อ/ทะเล */
+                 where: it.where || '', need: (it.need && it.need.length) ? it.need : [], got: {}};
     closeQuestPanel();                       /* ⚠ ล้าง qRun ทิ้ง จึงต้องคว้า run ไว้ก่อนบรรทัดนี้ */
     walkHint();
   }));
@@ -7195,15 +7225,54 @@ function walkHint(){
   if(!walkQuest) return;
   const it = walkQuest.run.items[walkQuest.run.idx];
   let msg = (it && it.hint) ? it.hint : 'ไปทำงานที่คุณแม่ฝากไว้กันนะ';
-  /* เฟส 7 — งานส่งของ: ต้องบอก **ชื่อคน + สถานที่** เสมอ ไม่งั้นเด็กเดินหาทั้งเมืองไม่เจอ
-     (ข้อมูลนี้อยู่ฝั่งหน้าจอเท่านั้น — js/house-quests.js ไม่รู้จักผังเมือง ส่งมาแค่ id) */
-  if(walkQuest.target === 'npc' && walkQuest.toNpc){
-    const info = questItemInfo({src:'npc', id: walkQuest.toNpc});
-    msg += ' ' + info.icon + ' ' + info.name + ' ที่ ' + info.place;
+  /* 🎣 งาน "ทำจริงแล้วเอาไปส่ง" มี 2 ช่วง — คำใบ้ต้องเปลี่ยนตามช่วงที่อยู่ ไม่งั้นเด็กตกครบแล้ว
+     ยังไม่รู้ว่าต้องเดินกลับไปหาใคร (ป้ายเดิมค้างว่า "ไปตกปลา" = ตกไปเรื่อยๆ ไม่มีวันจบ) */
+  if(walkQuest.target === 'catch'){
+    if(!catchDone()){
+      /* ⚠ ตกปลาต้องบอก **แหล่งน้ำ** ด้วยเสมอ — ปลาบ่อกับปลาทะเลคนละชุดกันสนิท
+         เด็กยืนตกผิดที่จะไม่มีวันได้ตัวที่สั่ง แล้วไม่รู้เลยว่าทำไม */
+      const where = walkQuest.where
+        ? ('ไปตกปลาที่' + (walkQuest.where === 'sea' ? 'ริมทะเล' : 'บ่อน้ำใหญ่') + ' — ')
+        : ((it && it.hint) ? it.hint + ' — ' : '');
+      msg = where + walkQuest.need.map(r =>
+        r.e + ' ' + r.name + ' ' + Math.min(r.n, catchGot(r)) + '/' + r.n).join(' · ');
+    }else{
+      msg = 'ทำครบแล้ว! เอาไปส่งที่';
+      const info = questItemInfo({src:'npc', id: walkQuest.toNpc});
+      msg += ' ' + info.icon + ' ' + info.name + ' ที่ ' + info.place;
+      const h2 = $('house-hint');
+      if(h2){ h2.textContent = '📋 ' + msg; showHint(); }
+      if(typeof showToast==='function') showToast('✅', msg);
+      return;
+    }
   }
   const hint = $('house-hint');
   if(hint){ hint.textContent = '📋 ' + msg; showHint(); }
   if(typeof showToast==='function') showToast('📋', msg);
+}
+/* 🎣 ตกปลาได้ 1 ตัว — js/house-play.js เรียกผ่าน `HouseWorld.questCaught('fish')` ตอนดึงเบ็ดติดปลา
+   ⚠ **ห้ามผูกกับ `questEvent()`** — ตัวนั้นเป็นภารกิจรายวันบนกระดาน คนละระบบกับเควสต์ของ NPC
+     (เคยคิดจะใช้ร่วมกัน แต่ questEvent มีตัวกันนับซ้ำรายชิ้น ซึ่งจะทำให้ตกปลาชนิดเดิม 2 ตัว
+      นับได้แค่ตัวเดียว = เควสต์ไม่มีวันจบ) */
+function questCaught(kind, id){
+  if(!walkQuest || walkQuest.target !== 'catch') return false;
+  /* ใบสั่ง 1 แถว = {k: ชนิดงาน, id: ชนิดย่อย (ปลา) หรือ '' , n: จำนวน}
+     ⚠ **แถวที่ `id` ว่าง = อะไรก็ได้ในงานชนิดนั้น** (เก็บของ/รดน้ำ/ถ่ายรูป ไม่มีชนิดย่อย) */
+  const row = walkQuest.need.filter(r => (r.k || 'fish') === kind && (!r.id || r.id === id))[0];
+  /* ทำได้ของที่ไม่ได้สั่ง = ไม่นับ แต่ **ห้ามดุ ห้ามหักอะไร** — ของชิ้นนั้นยังเข้าถังเด็กตามปกติ */
+  if(!row) return false;
+  const key = row.k + ':' + (row.id || '');
+  if((walkQuest.got[key] | 0) >= row.n) return false;     /* แถวนี้ครบแล้ว ทำเพิ่มไม่นับซ้ำ */
+  walkQuest.got[key] = (walkQuest.got[key] | 0) + 1;
+  walkHint();
+  return true;
+}
+/* จำนวนที่ทำได้แล้วของใบสั่งแถวหนึ่ง */
+function catchGot(r){ return walkQuest ? (walkQuest.got[r.k + ':' + (r.id || '')] | 0) : 0; }
+/* ใบสั่งครบทุกชนิดหรือยัง */
+function catchDone(){
+  if(!walkQuest || !walkQuest.need.length) return false;
+  return walkQuest.need.every(r => catchGot(r) >= r.n);
 }
 /* ไปถึงเป้าหมายแล้ว → เปิดรอบเล่นกลับมาทำต่อ (ตลาดมีกระดานซื้อของต่อ · โต๊ะจบเลย) */
 /* เรียกทุกครั้งที่ตัวละครก้าวถึงช่องใหม่ในฉากนอกบ้าน — ถึงตลาดแล้วเปิดกระดานซื้อของให้เลย */
@@ -7483,11 +7552,19 @@ function renderSoundPlay(st, it){
   btn.innerHTML = '<span class="hqz-sound-ic">🔊</span><span>ฟังอีกครั้ง</span>';
   let playing = false;
   const play = ()=>{
-    if(playing || typeof playMusicSequence !== 'function') return;
+    if(playing) return;
     playing = true;
     btn.classList.add('on');
+    const done = ()=>{ playing = false; btn.classList.remove('on'); };
+    /* 🎺 ข้อที่ระบุ `voice` มา = "ทายเสียงเครื่องดนตรี" ⇒ ต้องเล่นด้วยเสียงของเครื่องนั้นจริง
+       ข้ออื่น (ทายเพลง/เสียงสูงต่ำ/นับโน้ต) ยังใช้เสียงเปียโนเดิมของหน้าหลักเหมือนเดิม */
+    if(it.sound.voice && typeof playHouseTune === 'function'){
+      playHouseTune(it.sound.seq, it.sound.voice, done);
+      return;
+    }
+    if(typeof playMusicSequence !== 'function'){ done(); return; }
     playMusicSequence(it.sound.seq, true, it.sound.beats && it.sound.beats.length ? it.sound.beats : null,
-      {onStop: ()=>{ playing = false; btn.classList.remove('on'); }});
+      {onStop: done});
   };
   btn.addEventListener('click', play);
   wrap.appendChild(btn);
@@ -11773,6 +11850,37 @@ function decorInteract(g){
    ⚠ ระดับ 3 เปิด modal ของหน้าหลักซึ่งอยู่ **นอก** `#house-view` ⇒ ต้องหยุดเพลงพื้นหลังของบ้าน
      ให้เรียบร้อยก่อน ไม่งั้นเสียงซ้อนกัน 2 ชั้น
    ============================================================ */
+/* ================= เสียงประจำเครื่องดนตรี (2026-08-16) =================
+   เดิมทุกเครื่องออกเสียงเปียโนเหมือนกันหมด (วิ่งผ่าน `playMusicSequence`/`playPianoNote`)
+   ⇒ เกม "ทายเสียงเครื่องดนตรี" กลายเป็นเดาสุ่มล้วน (ผู้ใช้แจ้ง 2026-08-16)
+   ⚠ **ทางเดียวกันนี้ต้องถูกใช้ทั้งตอนแตะเครื่องที่บ้านและตอนเล่นเกมทายเสียง**
+     เด็กจำเสียงได้เพราะเคยเล่นเองที่บ้าน ถ้า 2 ที่เสียงคนละแบบ เกมทายจะไม่ยุติธรรม
+   ⚠ ตัวสังเคราะห์เสียงอยู่ที่ `playInstrumentNote()` ใน js/shared/piano.js (ไฟล์นั้นหน้าครูใช้ร่วม
+     แต่เพิ่มแบบต่อท้ายล้วน ของเดิมไม่เปลี่ยนพฤติกรรมแม้แต่นิดเดียว) */
+const HOUSE_TUNE_GAP = 300;          /* ระยะห่างระหว่างโน้ตในทำนองสั้นของเครื่องดนตรี (มิลลิวินาที) */
+let houseTuneTimers = [];
+function stopHouseTune(){ houseTuneTimers.forEach(clearTimeout); houseTuneTimers = []; }
+/* เล่นทำนองสั้นด้วยเสียงของเครื่องนั้น — คืนความยาวรวม (มิลลิวินาที) ให้คนเรียกรู้ว่าจบเมื่อไร */
+function playHouseTune(seq, voice, onStop){
+  stopHouseTune();
+  if(typeof MUSIC_WHITE_KEYS === 'undefined' || typeof playInstrumentNote !== 'function') return 0;
+  const notes = (seq && seq.length) ? seq : [0];
+  const one   = notes.length === 1;
+  const hit = wi =>{
+    const k = MUSIC_WHITE_KEYS[((wi | 0) % MUSIC_WHITE_KEYS.length + MUSIC_WHITE_KEYS.length)
+                               % MUSIC_WHITE_KEYS.length];
+    if(k) playInstrumentNote(k.freq, one ? .8 : .55, voice);
+  };
+  notes.forEach((wi, i)=>{
+    /* ⚠ โน้ตแรกต้องดัง **ทันทีแบบ synchronous** ไม่ผ่าน setTimeout — แตะเครื่องดนตรีแล้วต้องได้ยิน
+       ในเฟรมเดียวกัน ไม่งั้นรู้สึกหน่วง (และชุดเทสที่ดักฟังก์ชันเสียงจะจับไม่ได้เลย) */
+    if(i === 0){ hit(wi); return; }
+    houseTuneTimers.push(setTimeout(()=> hit(wi), i * HOUSE_TUNE_GAP));
+  });
+  const total = (notes.length - 1) * HOUSE_TUNE_GAP + 700;
+  if(onStop) houseTuneTimers.push(setTimeout(onStop, total));
+  return total;
+}
 function playInstrument(g, item){
   const lv = item.music | 0;
   decorBounce(g);                       /* เด้งเล็กน้อยทุกระดับ ให้รู้ว่าแตะโดนแล้วจริง */
@@ -11782,14 +11890,14 @@ function playInstrument(g, item){
     if(typeof openFreePiano === 'function'){ openFreePiano(); return; }
     /* ไม่มีหน้านั้นด้วยเหตุผลใดก็ตาม → ถอยไปเล่นทำนองสั้นแทน ห้ามเงียบไปเฉยๆ */
   }
-  if(lv === 2 && item.tune && item.tune.length && typeof playMusicSequence === 'function'){
-    playMusicSequence(item.tune, true);          /* ⚠ noFlash = true (ไม่มีเปียโนบนจอในโหมดบ้าน) */
+  if(lv === 2 && item.tune && item.tune.length){
+    playHouseTune(item.tune, item.voice);
     spawnMusicNotes(g, item.tune.length);
+    gatherCrowd(g);
     return;
   }
   /* ระดับ 1 (และตัวสำรองของระดับอื่น) — เคาะทีเดียว 1 เสียง */
-  const k = MUSIC_WHITE_KEYS[(item.note | 0) % MUSIC_WHITE_KEYS.length];
-  if(k && typeof playPianoNote === 'function') playPianoNote(k.freq, .7);
+  playHouseTune([item.note | 0], item.voice);
   spawnMusicNotes(g, 1);
   gatherCrowd(g);
 }
@@ -12479,6 +12587,10 @@ function enterHouseGame(){
   showOnlyView(houseView);
   document.body.classList.add('house-open');
   houseOpen = true;
+  /* 🎵 เฟส 14 — สลับมาใช้เพลงธีมฟาร์มของโหมดบ้าน (ปล่อยคืนที่ stopHouseGame)
+     ⚠ ตัวสลับ idempotent อยู่แล้ว (setMusicPlaylist เช็คว่าเป็นชุดเดิมไหม) ⇒ เรียกซ้ำได้
+     ⚠ **ห้ามย้ายไปผูกกับ switchScene()** — ตัวนั้นถูกเรียกทุกครั้งที่เดินเข้าประตู เพลงจะเริ่มใหม่รัวๆ */
+  if(window.HouseMusic) HouseMusic.use();
   $('house-char-name').textContent = activeChild.name;
   syncHouseCtrls();
   setHouseCtrlOpen(false);        /* เข้าบ้านใหม่ทุกครั้ง เริ่มที่เฟืองพับไว้เสมอ */
@@ -12553,6 +12665,7 @@ let houseStarted = false;
 
 function stopHouseGame(){
   walkQuest = null;      /* งานเดินที่ค้างอยู่ไม่ถือว่าทำเสร็จ — กลับมาคุยกับพ่อแม่รับใหม่ได้ */
+  if(window.HouseMusic) HouseMusic.release();   /* 🎵 คืน playlist ให้หน้าหลัก */
   if(editMode) exitEditMode();
   if(sitState) endSit();
   endFeedAnim();                 /* ออกจากบ้านกลางอนิเมชันป้อนอาหาร → เก็บชามทิ้ง ไม่ให้ค้างในฉาก */
@@ -12859,6 +12972,15 @@ $('house-ctrl-gear').addEventListener('click', ()=>{
     else if(typeof showToast==='function') showToast('🛠️', 'หน้าปรับค่ายังโหลดไม่เสร็จ ลองอีกครั้งนะ');
   });
 }
+/* 🎶 หน้าฟังเพลงธีม (เฟส 14 · เครื่องมือเทส) — แพทเทิร์นเดียวกับปุ่มคลังคำถาม/ปรับค่า */
+{ const mb = $('house-music-btn');
+  if(mb) mb.addEventListener('click', ()=>{
+    if(typeof playClick==='function') playClick();
+    setHouseCtrlOpen(false);
+    if(window.HouseMusicUI) window.HouseMusicUI.open();
+    else if(typeof showToast==='function') showToast('🎶', 'หน้าเพลงยังโหลดไม่เสร็จ ลองอีกครั้งนะ');
+  });
+}
 /* จุดต่อให้หน้าเทสสั่งวาด HUD ใหม่หลังยัดค่า (ไม่งั้นหลอด/จำนวนมื้อในแถบค้างค่าเก่าจนกว่าจะครบวินาที) */
 window.HouseDevHooks = {
   petChanged: ()=>{ petCareHud.t = 0; petBarKey = '';
@@ -12986,6 +13108,11 @@ window.HouseWorld = {
   toast: (ic, msg) => { if(typeof showToast === 'function') showToast(ic, msg); },
   npcDefs: () => NPC_DEFS,
   refreshHud: () => { questBarKey = ''; refreshQuestBar(); },
+  /* 🎣 มินิเกมในโลก 3D บอกว่า "ทำสำเร็จ 1 ครั้ง" เพื่อให้เควสต์แบบ "ทำจริงแล้วเอาไปส่ง" นับได้
+     คืน true ถ้ามีเควสต์กำลังนับอยู่จริง (ตัวเรียกจะได้รู้ว่าควรบอกความคืบหน้าเพิ่มไหม)
+     ⚠ ตัวนี้เป็นประตูเดียวของกลไกนี้ — กลไกใหม่ที่ทำแบบเดียวกันให้ส่ง kind ใหม่เข้ามา
+       ('crop' ผัก · 'photo' รูป · 'leaf' ของที่เก็บได้) **ห้ามเปิดประตูใหม่รายเกม** */
+  questCaught: (kind, id) => questCaught(kind, id),
 
   /* ---------- เพิ่มให้เฟส 11 รอบแก้ (2026-08-13) ---------- */
   /* ความสูงพื้นจริงของช่องนั้น — **สะพานไม้ผิวบนอยู่ที่ .12 ไม่ใช่ 0**
@@ -13183,6 +13310,8 @@ $('house-rot-right').addEventListener('click', ()=>{
    กรณีปกติ (เลือกโปรไฟล์เด็กก่อน) renderHome ใน app.js จะเรียกให้เอง */
 if(!homeView.hidden) houseBuddyRefresh();
 /* DEBUG-TEMP */ window.__houseDbg = {
+  /* ออกจากโหมดบ้านผ่านทางเดินโค้ดจริง (ชุดเทสเฟส 14 ใช้ดูว่า playlist ถูกคืนให้หน้าหลักไหม) */
+  exit: ()=> stopHouseGame(),
   tp:(x,z)=>{ charGroup.position.set(outWX(x),0,outWZ(z));
               hChar.tile.x = x; hChar.tile.z = z; hChar.path = []; hChar.walking = false; },
   grid:()=>outGrid,
@@ -13263,6 +13392,16 @@ if(!homeView.hidden) houseBuddyRefresh();
   /* เฟส 9 — เครื่องดนตรี (ชุดเทสเรียกเล่นเสียงผ่านทางเดินโค้ดจริง แทนการเดินไปแตะในฉาก 3D) */
   hasInstrument: ()=> hasInstrument(),
   playInstrument: (g, it)=> playInstrument(g, it),
+  /* ---- จุดต่อชุดเทส 2026-08-16 ----
+     ⚠ ชื่อ hook ใหม่ต้อง grep ก่อนเสมอ — คีย์ซ้ำใน object literal ตัวหลังชนะเงียบๆ ไม่มี error
+       (กับดักเดิมของ `charPose` เฟส 12.1 และ `action` ของเปียโนเฟส 9) */
+  musicItems: ()=> FURN.items.filter(it => it.cat === 'music')
+                    .map(it => ({id:it.id, voice:it.voice || 'piano',
+                                 note:it.note | 0, tune:it.tune || null})),
+  /* 🎣 สถานะเควสต์ "ตกปลาไปส่ง" — ตัวนับของจริงที่หน้าจอถืออยู่ */
+  walkCatch: ()=> (walkQuest && walkQuest.target === 'catch')
+                    ? {where: walkQuest.where, need: walkQuest.need, got: walkQuest.got,
+                       toNpc: walkQuest.toNpc, done: catchDone()} : null,
   /* ---- จุดต่อชุดเทสเฟส 13 ----
      🎺 วงดนตรี: จำนวนคนที่กำลังเต้น + สั่งเรียกคนมามุงจากพิกัดหนึ่ง (แทนการเดินไปแตะเครื่องจริง)
      🕵️ ทายว่าใคร: ขอเงาของคนคนนั้นมาเทียบว่าแยกออกจากคนอื่นจริงไหม */

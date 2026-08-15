@@ -1081,6 +1081,8 @@
         <!-- เมนูที่เป็นเครื่องมือเทสระบบต้องมี * แดงต่อท้ายเสมอ (จะได้แยกออกจากเมนูของเด็กจริงๆ) -->
         <button class="icon-btn house-ctrl-item" id="house-qb-btn" aria-label="คลังคำถามทั้งหมด (เครื่องมือเทส)"><span class="hc-ic">📚</span><span class="hc-label">คลังคำถาม<span class="hc-test-star">*</span></span></button>
         <button class="icon-btn house-ctrl-item" id="house-dev-btn" aria-label="ปรับค่าต่างๆ (เครื่องมือเทส)"><span class="hc-ic">🛠️</span><span class="hc-label">ปรับค่าต่างๆ<span class="hc-test-star">*</span></span></button>
+        <!-- หน้าเทส: ฟังเพลงธีมฟาร์มทั้ง 4 เพลงของโหมดบ้านทีละเพลง (เฟส 14) -->
+        <button class="icon-btn house-ctrl-item" id="house-music-btn" aria-label="ฟังเพลงธีม (เครื่องมือเทส)"><span class="hc-ic">🎶</span><span class="hc-label">ฟังเพลงธีม<span class="hc-test-star">*</span></span></button>
         <!-- ทางออกจากโหมดบ้านทางเดียว (ปุ่ม ← ถูกเอาออกจากแถบบนแล้ว) — อยู่ในเมนูเฟืองที่เด็กไม่เผลอกดโดน -->
         <button class="icon-btn house-ctrl-item house-exit-item" id="house-exit-btn" aria-label="ออกจากบ้านของหนู"><span class="hc-ic">🚪</span><span class="hc-label">ออกจากบ้าน</span></button>
       </div>
@@ -1232,10 +1234,27 @@
     </div>
   </div>
   <!-- คลังคำถาม (หน้าเทส) — เนื้อในแถบกรอง/ตารางสร้างด้วย JS ทั้งหมดใน js/house-qbrowse.js -->
+  <!-- ============================================================
+       🎶 แผง "ฟังเพลงธีม" (เฟส 14 · **เครื่องมือเทสเท่านั้น**)
+       ผู้ใช้สั่ง 2026-08-16: อยากฟังเพลงที่ทำทั้งหมดเพื่อตรวจสอบ ไม่ใช่ของให้เด็กเล่น
+       ⇒ ปิดพร้อมกันกับสวิตช์ MUSIC_PANEL_ENABLED ใน js/house-music-ui.js ตอน deploy
+       ============================================================ -->
+  <div class="house-creator house-mus" id="house-mus" hidden>
+    <div class="house-creator-panel hmus-panel">
+      <h3 class="house-creator-title">🎶 เพลงธีมฟาร์ม <span class="hc-test-star">*</span></h3>
+      <div class="hmus-sum" id="hmus-sum"></div>
+      <div class="hmus-list" id="hmus-list"></div>
+      <div class="hmus-foot">
+        <button class="btn-secondary hmus-stop" id="hmus-stop" type="button">⏹ หยุดฟัง</button>
+        <button class="btn-secondary" id="hmus-close" type="button">ปิด</button>
+      </div>
+    </div>
+  </div>
   <div class="house-creator house-qb" id="house-qb" hidden>
     <div class="house-creator-panel hqb-panel">
       <div class="house-creator-title">📚 คลังคำถามในบ้านของหนู</div>
       <div class="hqb-tabs" id="hqb-grades" role="tablist" aria-label="ระดับชั้น"></div>
+      <div class="hqb-tabs hqb-groups" id="hqb-groups" role="tablist" aria-label="กลุ่มกลไก"></div>
       <div class="hqb-tabs hqb-mechs" id="hqb-mechs" role="tablist" aria-label="กลไกเควสต์"></div>
       <div class="hqb-tabs hqb-cats" id="hqb-cats"></div>
       <div class="hqb-sum" id="hqb-sum"></div>
