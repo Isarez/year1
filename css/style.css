@@ -3244,6 +3244,46 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .hqz-dot.now{background:#F0A14B; transform:scale(1.25);}
   .hqz-sub{font-size:14px; font-weight:800; color:var(--ink-soft); text-align:center;}
   .hqz-stage{display:flex; flex-direction:column; gap:12px; align-items:stretch; min-height:0; overflow-y:auto;}
+  /* ---------- เฟส 13 · 🎨 ระบายสีตามเลข ----------
+     ⚠ ช่องต้องไม่เล็กกว่า 34px — นิ้วเด็กต้องแตะโดนช่องที่ตั้งใจ ไม่ใช่ช่องข้างๆ */
+  .hqz-art{
+    display:grid; gap:3px; justify-content:center; align-self:center;
+    background:#FFF6E6; border-radius:16px; padding:10px;
+  }
+  .hqz-artcell{
+    width:38px; height:38px; border-radius:8px; border:2px solid #E8DCC6;
+    background:var(--white); font-size:15px; font-weight:900; color:var(--ink-soft);
+    cursor:pointer; transition:transform .1s ease;
+  }
+  .hqz-artcell.blank{ background:transparent; border-color:transparent; cursor:default; }
+  .hqz-artcell.filled{ color:transparent; }
+  /* แตะช่องที่เลขไม่ตรงสี = ขยับเบาๆ บอกว่า "ยังไม่ใช่ช่องนี้" **ไม่ใช่การบอกว่าผิด** */
+  .hqz-artcell.nope{ transform:scale(.9); }
+  .hqz-palette{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+  .hqz-pal{
+    width:46px; height:46px; border-radius:50%; border:4px solid #FFF6E6;
+    font-size:17px; font-weight:900; color:#fff; cursor:pointer;
+    text-shadow:0 1px 2px rgba(0,0,0,.35); box-shadow:0 3px 0 rgba(0,0,0,.12);
+    transition:transform .12s ease, border-color .12s ease;
+  }
+  .hqz-pal.on{ border-color:var(--ink); transform:scale(1.12); }
+  body.night-mode .hqz-art{ background:#2A3352; }
+  @media (max-width:480px){
+    .hqz-artcell{ width:34px; height:34px; font-size:13px; }
+    .hqz-pal{ width:42px; height:42px; }
+  }
+  /* ---------- เฟส 13 · 🕵️ ทายว่าใคร — เงาดำของชาวบ้าน ---------- */
+  .hqz-shadow-wrap{
+    position:relative; display:flex; align-items:center; justify-content:center;
+    background:#FFF6E6; border-radius:20px; padding:12px;
+  }
+  .hqz-shadow{ width:110px; height:150px; color:#2B2438; fill:currentColor; }
+  body.night-mode .hqz-shadow-wrap{ background:#2A3352; }
+  body.night-mode .hqz-shadow{ color:#0F1220; }
+  .hqz-shadow-q{
+    position:absolute; right:14px; top:10px;
+    font-size:40px; font-weight:900; color:var(--cat-color,#F0A14B); opacity:.85;
+  }
   /* ---------- เฟส 13 · 🫥 ของหายไปไหน ----------
      โต๊ะของ 2 จังหวะ (ก่อนคลุม / หลังเปิด) + ถาดให้แตะตอบ
      ⚠ ตัวของต้องใหญ่พอให้เด็กแยกออกจริงตอนย่อ (บทเรียนอิโมจิ 30px ของเฟส 4B) */

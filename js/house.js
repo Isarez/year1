@@ -6930,6 +6930,7 @@ function renderQuestStep(){
     if(!qFlashDone[qRun.idx]){ renderVanishShow(st, it); return; }
     renderVanishPick(st, it); return;
   }
+  if(it.kind === 'colornum'){ renderColorNum(st, it); return; }   /* เฟส 13: ระบายสีตามเลข */
   /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
@@ -7068,6 +7069,7 @@ function renderWalkStep(st, it){
     });
     st.appendChild(row);
   }
+  if(it.whois) st.appendChild(buildNpcShadow(it.toNpc));   /* เฟส 13: เงาดำของคนที่ต้องไปหา */
   const row2 = document.createElement('div'); row2.className = 'hqz-row';
   row2.appendChild(qzBtn(it.go || 'ไปเลย!', 'hqz-yes', ()=>{
     if(typeof playClick==='function') playClick();
@@ -7078,6 +7080,115 @@ function renderWalkStep(st, it){
     walkHint();
   }));
   st.appendChild(row2);
+}
+/* ================= เฟส 13: 🎨 ระบายสีตามเลข (ข้อ 52) =================
+   เลือกสีจากจาน → แตะช่องที่มี "เลขตรงกับสีที่ถืออยู่" → ช่องนั้นเปลี่ยนสี
+   🔒 **ไม่มีคำว่าผิด** — แตะช่องที่เลขไม่ตรง = ไม่มีอะไรเกิดขึ้น ไม่นับพลาด ไม่มีเสียงดุ
+      (กติกาเหล็กข้อ 2) ⇒ เด็กระบายจนครบได้เสมอ ไม่มีทางตัน
+   🎁 ระบายครบ = ปลดล็อก "กรอบรูปติดผนัง" ให้เอาไปแขวนในบ้านจริง (ผ่าน SHOP.grantFree)
+   ⚠ กริดสูงสุด 8×8 — ใหญ่กว่านี้ช่องเล็กจนนิ้วเด็กแตะไม่โดนในการ์ดใบเล็ก */
+function renderColorNum(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = it.q;
+  st.appendChild(line);
+
+  let cur = it.palette[0];
+  const board = document.createElement('div');
+  board.className = 'hqz-art';
+  board.style.gridTemplateColumns = 'repeat(' + it.w + ', 1fr)';
+  const byXY = {};
+  it.cells.forEach(c => { byXY[c.x + ',' + c.y] = c; });
+  let done = 0;
+  for(let y = 0; y < it.h; y++){
+    for(let x = 0; x < it.w; x++){
+      const c = byXY[x + ',' + y];
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'hqz-artcell' + (c ? '' : ' blank');
+      if(!c){ cell.disabled = true; board.appendChild(cell); continue; }
+      cell.textContent = String(c.n);
+      cell.dataset.hpClick = '1';                 /* โหมดมือ: ชี้ค้างแล้วต้องระบายได้ด้วย */
+      cell.addEventListener('click', ()=>{
+        if(cell.classList.contains('filled')) return;
+        /* เลขไม่ตรงสีที่ถืออยู่ = เงียบๆ ไม่มีอะไรเกิดขึ้น **ห้ามนับว่าผิด** */
+        if(c.n !== cur.n){ cell.classList.add('nope'); setTimeout(()=>cell.classList.remove('nope'), 260); return; }
+        cell.classList.add('filled');
+        cell.style.background = cur.c;
+        cell.style.borderColor = cur.c;
+        cell.textContent = '';
+        if(typeof playClick === 'function') playClick();
+        done++;
+        if(done >= it.cells.length){
+          /* ระบายครบ → ปลดล็อกกรอบรูปให้เอาไปแขวนที่บ้าน แล้วส่งคำตอบตามทางเดิม */
+          if(window.HouseShop && HouseShop.grantFree) HouseShop.grantFree(['wall-picture']);
+          if(typeof showToast === 'function') showToast('🖼️', 'ได้กรอบรูปใหม่! เอาไปแขวนที่บ้านได้เลย');
+          submitQuestPayload(done);
+        }
+      });
+      board.appendChild(cell);
+    }
+  }
+  st.appendChild(board);
+
+  /* จานสี — ปุ่มกลมสีจริง มีเลขกำกับ เด็กจับคู่เลขกับช่องบนภาพได้เอง */
+  const pal = document.createElement('div'); pal.className = 'hqz-palette';
+  it.palette.forEach((pcol, i)=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hqz-pal' + (i === 0 ? ' on' : '');
+    b.style.background = pcol.c;
+    b.textContent = String(pcol.n);
+    b.dataset.hpClick = '1';
+    b.addEventListener('click', ()=>{
+      cur = pcol;
+      Array.prototype.forEach.call(pal.children, e => e.classList.remove('on'));
+      b.classList.add('on');
+      if(typeof playClick === 'function') playClick();
+    });
+    pal.appendChild(b);
+  });
+  st.appendChild(pal);
+}
+/* ================= เฟส 13: 🕵️ ทายว่าใคร — เงาดำของชาวบ้าน (ข้อ 52) =================
+   วาดจาก `look` จริงของคนนั้นใน NPC_DEFS ⇒ **ไม่ต้องวาดอาร์ตใหม่แม้แต่ชิ้นเดียว**
+   และเงาของแต่ละคนต่างกันจริงเพราะทรงผม/หมวก/ของถือ/ผ้ากันเปื้อนไม่เหมือนกัน
+
+   ⚠ **ต้องต่างกันที่ "เงารวม" ไม่ใช่รายละเอียดเล็ก** — เงาเป็นสีดำล้วน สีเสื้อ/สีผมช่วยไม่ได้เลย
+     ⇒ ตัวแปรที่ใช้จริงมีแค่ ทรงผม · หมวก · ของถือ · ผ้ากันเปื้อน · เด็กหญิง/ชาย (บทเรียนไอคอนเฟส 8)
+   ⚠ ห้ามใส่ชื่อคนลงในภาพหรือ alt (เฉลยทันที) */
+function npcDefById(id){
+  for(let i = 0; i < NPC_DEFS.length; i++) if(NPC_DEFS[i].id === id) return NPC_DEFS[i];
+  return null;
+}
+function buildNpcShadow(npcId){
+  const wrap = document.createElement('div');
+  wrap.className = 'hqz-shadow-wrap';
+  const def = npcDefById(npcId) || {};
+  const lk = def.look || {};
+  const p = [];
+  /* ---- ทรงผม (ตัวแยกเงาที่ชัดที่สุด) ---- */
+  const hair = lk.hair | 0;
+  if(lk.girl || hair === 1)      p.push('<path d="M50 26c-16 0-24 11-24 24 0 12 3 22 6 30h8c-4-10-5-20-5-28 0-9 6-16 15-16s15 7 15 16c0 8-1 18-5 28h8c3-8 6-18 6-30 0-13-8-24-24-24z"/>');
+  else if(hair === 2)            p.push('<path d="M28 46c0-14 10-22 22-22s22 8 22 22c0 4-1 7-2 9-3-8-10-13-20-13s-17 5-20 13c-1-2-2-5-2-9z"/><path d="M24 44c4-4 8 2 6 8-3 8-8 6-8 0z"/>');
+  else                           p.push('<path d="M28 48c0-14 10-24 22-24s22 10 22 24c0 3-1 6-2 8-3-9-10-14-20-14s-17 5-20 14c-1-2-2-5-2-8z"/>');
+  /* ---- หมวก ---- */
+  if(lk.hat === 'cap')    p.push('<path d="M26 40c0-13 11-20 24-20s24 7 24 20H26z"/><path d="M70 40h18c2 0 3 3 0 4H70z"/>');
+  else if(lk.hat === 'straw') p.push('<ellipse cx="50" cy="38" rx="34" ry="8"/><path d="M30 38c0-12 9-19 20-19s20 7 20 19H30z"/>');
+  else if(lk.hat)         p.push('<path d="M28 38c0-12 10-19 22-19s22 7 22 19H28z"/>');
+  /* ---- หัว + ลำตัว + ขา (ทุกคนเหมือนกัน — ตัวยืนพื้นฐาน) ---- */
+  p.push('<circle cx="50" cy="52" r="17"/>');
+  p.push('<path d="M34 76h32c6 0 10 5 10 11v33H24V87c0-6 4-11 10-11z"/>');
+  p.push('<rect x="34" y="120" width="12" height="26" rx="5"/><rect x="54" y="120" width="12" height="26" rx="5"/>');
+  /* ---- ผ้ากันเปื้อน (พ่อค้าแม่ค้า) — เปลี่ยนเงาช่วงลำตัวให้ต่างออกไป ---- */
+  if(lk.apron) p.push('<path d="M40 84h20v34H40z"/>');
+  /* ---- ของถือ (ตัวแยกเงาอันดับ 2) ---- */
+  if(lk.prop === 'basket')      p.push('<path d="M76 96h20l-3 20H79z"/><path d="M79 96c0-7 4-11 7-11s7 4 7 11" fill="none" stroke="currentColor" stroke-width="3"/>');
+  else if(lk.prop === 'broom')  p.push('<rect x="80" y="60" width="4" height="52" rx="2"/><path d="M74 112h16l4 14H70z"/>');
+  else if(lk.prop === 'book')   p.push('<path d="M74 92h22v20H74z"/>');
+  else if(lk.prop)              p.push('<circle cx="84" cy="100" r="10"/>');
+  const svg = '<svg viewBox="0 0 110 150" class="hqz-shadow" aria-hidden="true">' + p.join('') + '</svg>';
+  wrap.innerHTML = svg + '<div class="hqz-shadow-q">?</div>';
+  return wrap;
 }
 /* ป้ายบอกว่าตอนนี้ต้องไปไหน — ใช้แถบคำใบ้เดิมของโหมดบ้าน ไม่สร้าง UI ใหม่ให้เด็กงง */
 function walkHint(){
@@ -8468,6 +8579,25 @@ function updateNpcs(dt, t){
     g.rotation.z = Math.sin(t*.0016 + n.ph) * .022;            /* ยืนโยกตัวเบาๆ ให้ดูมีชีวิต */
     /* คนที่กำลังยื่นงาน/คุมงานให้เด็กอยู่ → ตรึงไว้ให้ยืนหันหน้าหาเด็กตลอดรอบเล่น ไม่เดินหนี */
     if(qzNpcId && n.def.id === qzNpcId){ n.hold = 1; n.faceT = Math.max(n.faceT || 0, .5); }
+    /* 🎺 เฟส 13 — วงดนตรีข้างถนน: เด็กเล่นเครื่องดนตรี → คนแถวนั้นหยุดเดินแล้วเต้นตาม
+       **ไม่มีโจทย์ ไม่มีคะแนน ไม่มีจบเกม** เล่นจนพอใจแล้วเดินจากไปได้เลย (ข้อ 52.2)
+       ใช้ `hold` ตัวเดิมกันไม่ให้เดินหนี แล้วบวกท่าโยกทับ ⇒ ไม่ต้องแตะระบบเดินเลย */
+    if(n.dance > 0){
+      n.dance -= dt;
+      n.hold = Math.max(n.hold || 0, .3);
+      const bob = Math.sin(t * .012 + n.ph * 3);
+      g.position.y = Math.abs(bob) * .12;                      /* กระโดดเบาๆ ตามจังหวะ */
+      g.rotation.z = bob * .16;                                /* โยกตัวซ้ายขวา */
+      const u = g.userData;
+      if(u && u.arms){                                          /* ยกมือโบกตามจังหวะ */
+        u.arms[0].rotation.z = -1.1 - bob * .35;
+        u.arms[1].rotation.z =  1.1 + bob * .35;
+      }
+      if(n.dance <= 0){                                         /* หมดเพลง — คืนท่าเดิมให้เรียบร้อย */
+        g.position.y = 0;
+        if(u && u.arms){ u.arms[0].rotation.z = 0; u.arms[1].rotation.z = 0; }
+      }
+    }
     if(n.hold > 0) n.hold -= dt;                               /* ถูกเด็กเรียกคุย → ยืนรออยู่กับที่ */
     let moving = false;
     if(n.route && !(n.faceT > 0) && !(n.hold > 0)){            /* คนเดินทางไกล: เดินตามเส้นทางจริงไปทีละจุดแวะ */
@@ -11621,6 +11751,37 @@ function playInstrument(g, item){
   const k = MUSIC_WHITE_KEYS[(item.note | 0) % MUSIC_WHITE_KEYS.length];
   if(k && typeof playPianoNote === 'function') playPianoNote(k.freq, .7);
   spawnMusicNotes(g, 1);
+  gatherCrowd(g);
+}
+/* ================= เฟส 13: 🎺 วงดนตรีข้างถนน (ข้อ 52) =================
+   เล่นเครื่องดนตรีที่วางไว้ในเมือง → ชาวบ้านที่อยู่ใกล้หยุดเดินแล้วเต้นตาม
+   ยิ่งเล่นนานคนยิ่งมามุงเยอะ (เวลาเต้นสะสมขึ้นเรื่อยๆ) เล่นจนพอใจแล้วเดินจากไปได้เลย
+
+   🔒 **ไม่มีโจทย์ ไม่มีคะแนน ไม่มีเงื่อนไขแพ้/ชนะ ไม่จ่ายเหรียญ** — เป็นของเล่นในโลก ไม่ใช่เควสต์
+      ⇒ ไม่มีทางเป็น dead end ต่อให้เด็กยังไม่มีเครื่องดนตรีของตัวเอง (แค่ไม่มีอะไรให้แตะ)
+   ⚠ ใช้ `hold` + ท่าโยกทับใน updateNpcs() **ไม่แตะระบบเดินของ NPC เลย**
+     ⇒ พอหมดเวลาเต้น ทุกคนเดินต่อเองตามปกติ ไม่ต้องมีตัวคืนสถานะแยก */
+const BAND_RANGE = 7;        /* ระยะที่ได้ยิน (ช่อง) — ไกลกว่านี้คนทั้งเมืองเต้นพร้อมกันดูแปลก */
+const BAND_MAX   = 9;        /* เวลาเต้นสะสมสูงสุด (วิ) กันเล่นรัวแล้วค้างเต้นเป็นนาที */
+function gatherCrowd(g){
+  if(!g || hScene !== 'out' || !npcs || !npcs.length) return;
+  const p = g.position;
+  let joined = 0;
+  for(let i = 0; i < npcs.length; i++){
+    const n = npcs[i];
+    if(!n.g) continue;
+    const d = Math.hypot(n.g.position.x - p.x, n.g.position.z - p.z);
+    if(d > BAND_RANGE) continue;
+    const was = n.dance > 0;
+    n.dance = Math.min(BAND_MAX, (n.dance > 0 ? n.dance : 0) + 3.2);
+    n.faceT = Math.max(n.faceT || 0, 1.2);        /* หันหน้ามาทางคนเล่นดนตรี */
+    if(!was) joined++;
+  }
+  if(joined > 0 && typeof spawnParticle === 'function'){
+    for(let i = 0; i < 5; i++)
+      spawnParticle(p.x + (Math.random() - .5) * 1.6, 1.2 + Math.random() * .6,
+                    p.z + (Math.random() - .5) * 1.6, i % 2 ? 0xffd54f : 0x7fd4e8);
+  }
 }
 /* ตัวโน้ตลอยขึ้นจากตัวเครื่อง — ใช้ระบบ particle เดิมของโหมดบ้าน ไม่ได้ทำระบบใหม่ */
 function spawnMusicNotes(g, n){
@@ -13062,6 +13223,12 @@ if(!homeView.hidden) houseBuddyRefresh();
   /* เฟส 9 — เครื่องดนตรี (ชุดเทสเรียกเล่นเสียงผ่านทางเดินโค้ดจริง แทนการเดินไปแตะในฉาก 3D) */
   hasInstrument: ()=> hasInstrument(),
   playInstrument: (g, it)=> playInstrument(g, it),
+  /* ---- จุดต่อชุดเทสเฟส 13 ----
+     🎺 วงดนตรี: จำนวนคนที่กำลังเต้น + สั่งเรียกคนมามุงจากพิกัดหนึ่ง (แทนการเดินไปแตะเครื่องจริง)
+     🕵️ ทายว่าใคร: ขอเงาของคนคนนั้นมาเทียบว่าแยกออกจากคนอื่นจริงไหม */
+  dancers: ()=> npcs.filter(n => n.dance > 0).length,
+  bandAt: (x, z)=> gatherCrowd({position:{x: outWX(x), y:0, z: outWZ(z)}}),
+  npcShadow: id => buildNpcShadow(id),
   /* จังหวะเฟรมของลูปวาด — ใช้วัดว่า "หรี่เฟรมตอนเปิดกล้อง" แล้วยังเดินสม่ำเสมอไหม
      (ผู้ใช้แจ้ง 2026-08-12 ว่าโลกกระตุกตอนเปิดกล้อง — ต้นเหตุคือหรี่แบบเว้นตามเวลา) */
   frameLog: ()=> frameLog.slice(),
