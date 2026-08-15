@@ -265,47 +265,57 @@
         const a = c.a, g = c.g, T = c.T, disc = a.toy;
         if(disc) disc.rotation.y += c.dt*17;                 /* หมุนรอบตัวตลอดเวลาที่ลอย */
 
-        if(T < .8){
-          /* เด็กเหวี่ยงออกข้าง จานลอยเป็นเส้นโค้งช้าๆ */
+        /* 🛠 แก้ 2026-08-15 รอบ 2 (ผู้ใช้แจ้ง)
+           ของเดิม: จานลอยไปหยุดค้างกลางอากาศที่ปลายทาง **แล้วน้องค่อยออกวิ่งทีหลัง**
+           ⇒ เห็นจานแขวนลอยรอเฉยๆ ดูผิดธรรมชาติมาก
+           ตอนนี้: **จานกับน้องออกตัวพร้อมกัน** วิ่งคู่กันไป แล้วงับกลางอากาศตอนจานกำลังจะตก
+           (จานเร็วกว่านิดหน่อยเพื่อให้น้อง "ไล่ตาม" ไม่ใช่รอรับ) */
+        const T_THROW = .26;                 /* เด็กปล่อยจาน */
+        const T_CATCH = 1.95;                /* จังหวะงับ — จานถึงจุดงับพอดี */
+        const hand = handAt(c, .30, -.26, .60);
+
+        if(T < T_CATCH){
+          const k = clamp01((T - T_THROW) / (T_CATCH - T_THROW));
+          /* จานลอยเป็นเส้นโค้ง จากมือเด็กไปจุดงับ */
           if(disc){
-            const k = clamp01((T - .26) / .54);
-            disc.position.lerpVectors(handAt(c, .30, -.26, .60), a.catchAt.clone().setY(.62), k);
-            disc.position.y = .60 + Math.sin(k*Math.PI)*.30;
-            disc.rotation.z = .18*Math.sin(k*Math.PI);
+            disc.position.lerpVectors(hand, a.catchAt.clone().setY(.78), ease(k));
+            disc.position.y = hand.y + (0.78 - hand.y)*ease(k) + Math.sin(k*Math.PI)*.42;
+            disc.rotation.z = .2*Math.sin(k*Math.PI);
           }
-          if(!a.flags.eye && T > .3){ a.flags.eye = true; c.bubble('👀'); }
-        }else if(T < 2.1){
-          /* น้องวิ่งไปจุดงับ */
-          runTo(c, a.petFrom, a.catchAt, (T - .8) / 1.3);
-          if(disc) disc.position.set(a.catchAt.x, .82, a.catchAt.z);
-        }else if(T < 2.7){
-          /* กระโดดงับกลางอากาศ — จุดสูงสุดของท่านี้
-             ⚠ **ห้ามใส่ pitch (rotation.x) ให้ตัวสัตว์** — กล้อง isometric มองลงเฉียง
-               เอียงแค่ .3 rad ก็เห็นเป็น "นอนตะแคง" ไม่ใช่ "เงยหน้างับ" (ผู้ใช้แจ้ง 2026-08-15)
-               ความรู้สึกเงยหน้าให้ทำที่ **หัว** อย่างเดียว (u.head) ตัวยังตั้งตรงเสมอ
-             ⚠ และห้ามบวก PI ให้ faceY — น้องวิ่งออกไปทางเดียวกับจาน ต้องหันหน้าตามทางวิ่ง */
-          const k = (T - 2.1) / .6;
-          g.position.set(a.catchAt.x, arc(k)*.62, a.catchAt.z);
+          /* น้องออกวิ่งพร้อมกัน (ช้ากว่าจานเล็กน้อย = ไล่ตาม) */
+          if(T > T_THROW){
+            const pk = clamp01((T - T_THROW) / (T_CATCH - T_THROW) * .92);
+            runTo(c, a.petFrom, a.catchAt, pk);
+          }else{
+            g.position.copy(a.petFrom);
+            g.rotation.set(0, a.faceY, 0);
+          }
+          if(!a.flags.eye && T > T_THROW + .1){ a.flags.eye = true; c.bubble('👀'); }
+        }else if(T < T_CATCH + .55){
+          /* กระโดดงับกลางอากาศ — ⚠ ตัวตั้งตรงเสมอ ความรู้สึกเงยหน้าอยู่ที่หัวอย่างเดียว */
+          const k = (T - T_CATCH) / .55;
+          g.position.set(a.catchAt.x, arc(k)*.6, a.catchAt.z);
           g.rotation.set(0, Math.atan2(a.dx, a.dz), 0);
           if(c.u && c.u.head) c.u.head.rotation.x = -.45*arc(k);
           if(disc){
-            disc.position.set(a.catchAt.x, .82 - arc(k)*.12, a.catchAt.z);
-            if(k > .45) disc.position.copy(muzzleAt(g, .30));
+            if(k < .42) disc.position.set(a.catchAt.x, .78 - k*.2, a.catchAt.z);
+            else disc.position.copy(muzzleAt(g, .30));       /* งับติดปากแล้ว */
           }
-          if(!a.flags.catch && k > .45){
+          if(k > .42 && !a.flags.catch){
             a.flags.catch = true;
             c.bubble('🥏'); c.jingle(); c.puff(5, 0xffd166, .7, .6);
           }
         }else if(T < 3.9){
           /* คาบกลับมาหาเด็ก */
           if(c.u && c.u.head) c.u.head.rotation.x = .18;
-          runTo(c, a.catchAt, a.petTo, (T - 2.7) / 1.2);
+          runTo(c, a.catchAt, a.petTo, (T - (T_CATCH + .55)) / (3.9 - T_CATCH - .55));
           if(disc) disc.position.copy(muzzleAt(g, .30));
         }else{
           g.position.set(a.petTo.x, Math.abs(Math.sin((T-3.9)*9))*.28, a.petTo.z);
           g.rotation.set(0, a.faceY, 0);
+          if(c.u && c.u.head) c.u.head.rotation.x = 0;
           if(disc){
-            disc.position.y = Math.max(.045, disc.position.y - c.dt*2.4);
+            disc.position.copy(muzzleAt(g, .30));
             disc.scale.setScalar(Math.max(.001, 1 - clamp01((T - 4.25) / .35)));
           }
           if(!a.flags.done){
@@ -463,19 +473,26 @@
         });
 
         if(target){
+          /* 🛠 แก้ 2026-08-15 รอบ 2 (ผู้ใช้แจ้งว่าจังหวะลงของน้อง "warp")
+             ของเดิม lerp จาก `bubHome` ด้วย k ที่ **รีเซ็ตเป็น 0 ทุกครั้งที่เปลี่ยนลูกเป้าหมาย**
+             พอฟองแตกแล้วลูกถัดไปเข้าคิว น้องถูกดีดกลับไปจุดเริ่มทันที = วาร์ป
+             ⇒ เปลี่ยนเป็น **วิ่งไล่แบบต่อเนื่องตาม dt** ไม่มี k ไม่มีจุดเริ่มให้รีเซ็ต */
           const b = target.b;
-          const to = new T3.Vector3(b.position.x, 0, b.position.z);
-          const k = clamp01((T - (.45 + target.i*GAP) - .5) / .55);
-          const home = a.bubHome;
-          g.position.set(
-            home.x + (to.x - home.x)*ease(Math.min(1, k*1.6)),
-            arc(k)*Math.max(.2, b.position.y - .28),
-            home.z + (to.z - home.z)*ease(Math.min(1, k*1.6)));
-          /* ⚠ ตัวตั้งตรงเสมอ (ห้าม pitch) — เงยหน้าตบฟองทำที่หัวอย่างเดียว */
-          g.rotation.set(0, Math.atan2(to.x - g.position.x, to.z - g.position.z) || g.rotation.y, 0);
-          if(c.u && c.u.head) c.u.head.rotation.x = -.4*arc(k);
-          home.set(g.position.x, 0, g.position.z);            /* รอบถัดไปออกตัวจากที่ยืนล่าสุด */
-          if(k > .62 && !b.userData.pop){
+          const gx = b.position.x, gz = b.position.z;
+          const dxx = gx - g.position.x, dzz = gz - g.position.z;
+          const dist = Math.hypot(dxx, dzz);
+          const SPD = 3.4;                                   /* ช่อง/วินาที */
+          const step = Math.min(dist, SPD * c.dt);
+          if(dist > .02){
+            g.position.x += dxx / dist * step;
+            g.position.z += dzz / dist * step;
+            g.rotation.set(0, Math.atan2(dxx, dzz), 0);
+          }
+          /* กระโดดตบเมื่อเข้าใกล้ — ความสูงผูกกับ "ระยะที่เหลือ" ไม่ใช่เวลา ⇒ ต่อเนื่องเสมอ */
+          const near = clamp01(1 - dist / 1.1);
+          g.position.y = near * near * Math.max(.15, b.position.y - .3);
+          if(c.u && c.u.head) c.u.head.rotation.x = -.4 * near;
+          if(dist < .42 && !b.userData.pop){
             b.userData.pop = true;
             b.visible = false;
             c.puff(4, 0xcdeffb, .5, b.position.y);
@@ -483,7 +500,8 @@
             if(!a.flags.first){ a.flags.first = true; c.jingle(); }
           }
         }else{
-          g.position.y = Math.abs(Math.sin(T*8))*.05;
+          /* ไม่มีฟองให้ไล่ — ลงพื้นนุ่มๆ ไม่ใช่ตกทันที */
+          g.position.y = Math.max(0, g.position.y - c.dt*2.6) + Math.abs(Math.sin(T*8))*.03;
           g.rotation.x = 0;
           if(c.u && c.u.head) c.u.head.rotation.x = 0;
         }
@@ -546,8 +564,11 @@
           hoop.scale.setScalar(s2 + .001);
           hoop.position.copy(a.hoopAt);
           hoop.position.y = a.hoopAt.y + Math.sin(T*2.6)*.03;
-          /* ระนาบห่วงต้อง **ตั้งขวางทางวิ่ง** — หมุนรอบ Y ให้หน้าห่วงหันเข้าหาเส้นทาง */
-          hoop.rotation.set(0, Math.atan2(a.dx, a.dz) + Math.PI/2, Math.sin(T*2.2)*.04);
+          /* 🛠 แก้ 2026-08-15 รอบ 2 (ผู้ใช้แจ้งว่ายังหันผิดด้าน)
+             ⚠ **`TorusGeometry` มี "แกนรู" ชี้ตาม local +Z อยู่แล้ว** ⇒ อยากให้น้องลอดตามแนววิ่ง
+               ต้องหมุน Y ให้ local +Z ชี้ไปตามแนวนั้นตรงๆ = `atan2(dx, dz)` **ห้ามบวก PI/2**
+               บวก PI/2 เมื่อไหร่ = หันรูไปด้านข้าง เห็นห่วงเป็นแผ่นขวางทางแทน */
+          hoop.rotation.set(0, Math.atan2(a.dx, a.dz), Math.sin(T*2.2)*.04);
         }
 
         if(T < .6){
