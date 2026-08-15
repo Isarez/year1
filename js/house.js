@@ -6926,6 +6926,10 @@ function renderQuestStep(){
   if(it.kind === 'flash'){                           /* เฟส 7: นับแว้บเดียว — โชว์ของแล้วซ่อน */
     if(!qFlashDone[qRun.idx]){ renderFlashShow(st, it); return; }
   }
+  if(it.kind === 'vanish'){                          /* เฟส 13: ของหายไปไหน — แตะของตรงๆ */
+    if(!qFlashDone[qRun.idx]){ renderVanishShow(st, it); return; }
+    renderVanishPick(st, it); return;
+  }
   /* ---- ส่วนหัวโจทย์มี 4 แบบตามชนิดข้อมูลในคลัง CATS — ห้ามตกแบบใดแบบหนึ่ง ---- */
   if(it.show){                                   /* โจทย์นับของ: แถวอิโมจิให้เด็กนับจริง */
     const sh = document.createElement('div'); sh.className = 'hqz-show'; sh.textContent = it.show;
@@ -7298,6 +7302,61 @@ function renderFlashShow(st, it){
     renderQuestStep();
   };
   const tid = setTimeout(go, it.flash.showFor || 2600);
+}
+/* ================= เฟส 13: 🫥 ของหายไปไหน (ข้อ 52) =================
+   2 จังหวะ: โชว์ของครบบนโต๊ะ → ผ้าคลุมลงมา → เปิดออกมามีช่องว่าง 1 ช่อง
+   เด็กตอบด้วยการ **แตะตัวของบนถาดตรงๆ** ไม่ใช่กดตัวเลือกที่เป็นข้อความ
+
+   ⚠ ใช้ `qFlashDone` จำว่าโชว์ไปแล้ว — กับดักเดียวกับ `flashcount`:
+     ตอบผิดแล้ว renderQuestStep() วาดใหม่ ถ้าไม่จำจะย้อนไปโชว์ของอีกรอบ = **เฉลยให้ฟรี**
+   ⚠ ของบนถาดต้องเป็นชุดเดิมทั้งหมด ไม่มีตัวลวง (ดูเหตุผลที่ vanishMech ใน js/house-quests.js) */
+function renderVanishShow(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = 'ดูของบนโต๊ะให้ดีนะ เดี๋ยวนกฮูกจะเอาผ้าคลุม!';
+  const tray = document.createElement('div'); tray.className = 'hqz-vanish-tray';
+  it.before.forEach(e=>{
+    const t = document.createElement('span'); t.className = 'hqz-vtile'; t.textContent = e;
+    tray.appendChild(t);
+  });
+  st.appendChild(line); st.appendChild(tray);
+  let done = false;
+  const go = ()=>{
+    if(done) return;
+    done = true;
+    clearTimeout(tid);
+    qFlashDone[qRun.idx] = 1;
+    renderQuestStep();
+  };
+  /* ผ้าคลุมลงมาให้เห็นชัดๆ ก่อนเปลี่ยนหน้า — เด็กจะได้รู้ว่า "ตอนนี้แหละที่ของหาย" */
+  const tid = setTimeout(()=>{ tray.classList.add('covered'); setTimeout(go, 620); },
+                         it.showFor || 2600);
+}
+function renderVanishPick(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = it.q;
+  st.appendChild(line);
+  /* โต๊ะหลังเปิดผ้า — ช่องที่ของหายไปเป็นช่องว่างเส้นประ ให้เด็กเห็นว่าตรงนี้เคยมีของ */
+  const tray = document.createElement('div'); tray.className = 'hqz-vanish-tray';
+  it.after.forEach(e=>{
+    const t = document.createElement('span');
+    t.className = 'hqz-vtile' + (e ? '' : ' gap');
+    t.textContent = e || '';
+    tray.appendChild(t);
+  });
+  st.appendChild(tray);
+  const pickLine = document.createElement('div'); pickLine.className = 'hqz-sub';
+  pickLine.textContent = 'แตะของชิ้นที่หายไป';
+  st.appendChild(pickLine);
+  /* ถาดของให้แตะ — เป็น <button> จริงเพื่อให้โหมดมือ (ชี้ค้าง) ใช้ได้เหมือนตัวเลือกอื่น */
+  const pick = document.createElement('div'); pick.className = 'hqz-vanish-pick';
+  it.choices.forEach((e, i)=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-vtile hqz-vpick';
+    b.textContent = e;
+    b.addEventListener('click', ()=>answerQuest(i, b));
+    pick.appendChild(b);
+  });
+  st.appendChild(pick);
 }
 /* ================= เฟส 5 ตกค้าง: ทายเสียง (sound-guess) =================
    ใช้ `playMusicSequence()` ของหน้าหลักตรงๆ (js/games-art.js) ไม่โหลดไฟล์เสียงเพิ่ม

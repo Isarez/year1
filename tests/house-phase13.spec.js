@@ -142,3 +142,91 @@ test('🍰 ร้านขนม: เล่นในการ์ดได้จ�
   expect(r.badWhenWrong, 'วางสลับช่องแล้วต้องยังไม่ผ่าน').toBe(true);
   expect(errs).toEqual([]);
 });
+
+/* ---------------- 🫥 ของหายไปไหน ---------------- */
+
+test('🫥 ของหายไปไหน: ของบนถาดเป็นชุดเดิมทั้งหมด ไม่มีตัวลวง · มีคำตอบถูกเสมอ', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const Q = window.HouseQuests;
+    const bad = { noAnswer: [], decoy: [], dupItem: [], gapCount: [], notInBefore: [] };
+    ['prep-p1', 'p3', 'p6'].forEach(g => {
+      for (let s = 0; s < 6; s++) {
+        const run = Q.testRun({ mech: 'vanish', gid: g, seed: s });
+        (run.items || []).forEach(it => {
+          if (it.kind !== 'vanish') return;
+          const gone = it.choices[it.correct];
+          if (it.correct < 0 || !gone) bad.noAnswer.push(g + '#' + s);
+          /* ถาดต้องเป็นชุดเดิมเป๊ะ — ห้ามมีของที่ไม่เคยโผล่บนโต๊ะ */
+          it.choices.forEach(c => { if (it.before.indexOf(c) < 0) bad.decoy.push(c); });
+          if (it.choices.length !== it.before.length) bad.decoy.push('ขนาดถาดไม่เท่าของบนโต๊ะ');
+          /* ของห้ามซ้ำในกระดานเดียว ไม่งั้นชิ้นที่หายยังอยู่บนโต๊ะ = ไม่มีคำตอบถูก */
+          if (new Set(it.before).size !== it.before.length) bad.dupItem.push(g);
+          /* ต้องหายพอดี 1 ช่อง */
+          const gaps = it.after.filter(e => !e).length;
+          if (gaps !== 1) bad.gapCount.push(gaps);
+          /* ชิ้นที่หายต้องเคยอยู่บนโต๊ะ และต้องไม่เหลืออยู่หลังเปิดผ้า */
+          if (it.before.indexOf(gone) < 0 || it.after.indexOf(gone) >= 0) bad.notInBefore.push(gone);
+        });
+      }
+    });
+    return bad;
+  });
+  expect(r.noAnswer, 'ทุกกระดานต้องมีคำตอบที่ถูก').toEqual([]);
+  expect(r.decoy, 'ห้ามมีตัวลวงที่ไม่เคยโผล่บนโต๊ะ (เด็กจำครบก็ยังตอบผิดได้ = ลงโทษกลายๆ)').toEqual([]);
+  expect(r.dupItem, 'ของห้ามซ้ำในกระดานเดียว').toEqual([]);
+  expect(r.gapCount, 'ต้องหายพอดี 1 ชิ้น').toEqual([]);
+  expect(r.notInBefore, 'ชิ้นที่หายต้องเคยอยู่บนโต๊ะและต้องหายไปจริง').toEqual([]);
+  expect(errs).toEqual([]);
+});
+
+test('🫥 ของหายไปไหน: ไล่ระดับตามชั้น · เด็กเล็กได้ดูนานกว่า', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const Q = window.HouseQuests;
+    const avg = g => {
+      const runs = [0, 1, 2].map(s => Q.testRun({ mech: 'vanish', gid: g, seed: s }));
+      const items = runs.reduce((a, r2) => a.concat(r2.items || []), []).filter(i => i.kind === 'vanish');
+      return { n: items.reduce((a, i) => a + i.before.length, 0) / items.length,
+               showFor: items[0].showFor };
+    };
+    return { small: avg('prep-p1'), big: avg('p6') };
+  });
+  expect(r.big.n, 'ชั้นโตต้องจำของมากกว่าชั้นเล็ก').toBeGreaterThan(r.small.n);
+  expect(r.small.showFor, 'เด็กเล็กต้องได้เวลาดูนานกว่า').toBeGreaterThan(r.big.showFor);
+  expect(errs).toEqual([]);
+});
+
+test('🫥 ของหายไปไหน: เล่นจริง — โชว์ของ → คลุม → แตะตอบได้ · ตอบผิดแล้วห้ามย้อนไปโชว์ซ้ำ', async ({ page }) => {
+  const errs = await house(page);
+  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'vanish', title: '🫥 ของหายไปไหน' }));
+  /* จังหวะ 1: โต๊ะของครบ ยังไม่มีปุ่มให้แตะ */
+  await expect(page.locator('.hqz-vanish-tray').first()).toBeVisible({ timeout: 8000 });
+  expect(await page.locator('.hqz-vpick').count(), 'ตอนโชว์ของต้องยังไม่มีถาดให้ตอบ').toBe(0);
+
+  /* จังหวะ 2: ถาดให้แตะโผล่ + ช่องว่างบนโต๊ะพอดี 1 ช่อง */
+  await expect(page.locator('.hqz-vpick').first()).toBeVisible({ timeout: 15000 });
+  const st = await page.evaluate(() => {
+    const it = window.__houseDbg.qRun().items[window.__houseDbg.qRun().idx];
+    return { gaps: document.querySelectorAll('.hqz-vtile.gap').length,
+             picks: document.querySelectorAll('.hqz-vpick').length,
+             correct: it.correct };
+  });
+  expect(st.gaps).toBe(1);
+  expect(st.picks).toBeGreaterThanOrEqual(4);
+
+  /* ตอบผิดก่อน → ต้องยังอยู่หน้าเดิม ห้ามย้อนไปโชว์ของใหม่ (เฉลยให้ฟรี) */
+  const wrongIdx = (st.correct + 1) % st.picks;
+  await page.locator('.hqz-vpick').nth(wrongIdx).click();
+  await page.waitForTimeout(400);
+  const afterWrong = await page.evaluate(() => ({
+    picks: document.querySelectorAll('.hqz-vpick').length,
+    covered: !!document.querySelector('.hqz-vanish-tray.covered'),
+  }));
+  expect(afterWrong.picks, 'ตอบผิดแล้วต้องยังอยู่หน้าเดิม ให้ลองใหม่ได้').toBeGreaterThan(0);
+
+  /* ตอบถูก → ไปข้อถัดไป */
+  await page.locator('.hqz-vpick').nth(st.correct).click();
+  await page.waitForTimeout(900);
+  expect(errs).toEqual([]);
+});

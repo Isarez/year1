@@ -1051,6 +1051,51 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       ['📕','หนังสือ'], ['🔧','เครื่องมือ'], ['💐','ช่อดอกไม้'], ['🍰','เค้ก'], ['🧸','ตุ๊กตา'],
       ['🗝️','กุญแจ'], ['👜','กระเป๋า'], ['☂️','ร่ม'], ['🧢','หมวก'], ['🍞','ขนมปังอบใหม่'],
     ];
+    /* ---------- เฟส 13 · 🫥 ของหายไปไหน (ข้อ 52) ----------
+       โชว์ของบนโต๊ะ → นกฮูกเอาผ้าคลุม → เปิดออกมาแล้ว **หายไป 1 ชิ้น**
+       เด็กตอบด้วยการ **แตะตัวของบนถาดตรงๆ** ไม่ใช่อ่านตัวเลือก 4 บรรทัด (ข้อ 52.2)
+
+       ต่างจาก `flashcount` ที่ให้ **นับจำนวน** — ตัวนี้ให้จำ **ตัวตน** ของสิ่งของ
+       ⚠ ของบนถาด = ของชุดเดิมที่เพิ่งเห็นทั้งหมด **ไม่มีตัวลวงที่ไม่เคยโผล่**
+         (ใส่ตัวลวงเมื่อไหร่ เด็กที่จำได้ครบก็ยังตอบผิดได้ = ลงโทษกลายๆ ผิดกติกาเหล็กข้อ 2)
+       ⚠ ของห้ามซ้ำกันในกระดานเดียว ไม่งั้น "ชิ้นที่หาย" ยังอยู่บนโต๊ะ = ไม่มีคำตอบที่ถูก */
+    function vanishMech(){
+      /* รวมของจากหลายธีมให้เป็นกองเดียว — ของบนโต๊ะคละหมวดได้ตามธรรมชาติ */
+      function bag(rng){
+        const keys = shuffled(rng, Object.keys(ITEM_SETS));
+        let out = [];
+        for(let i = 0; i < keys.length && out.length < 14; i++) out = out.concat(ITEM_SETS[keys[i]]);
+        return shuffled(rng, out.filter((e, i, a) => a.indexOf(e) === i));
+      }
+      return {
+        id:'vanish', name:'ของหายไปไหน', fam:'B',
+        gen(rng, diff){
+          const out = [];
+          for(let k = 0; k < diff.qN; k++){
+            const dk = stepDiff(diff, k, diff.qN);
+            /* ชั้นเล็ก 4 ชิ้น → ชั้นโต 7 ชิ้น · ไล่ระดับภายในเควสต์ด้วย (ข้อแรกง่ายสุดเสมอ) */
+            const nLo = diff.tier <= 2 ? 4 : 5;
+            const nHi = diff.tier <= 2 ? 5 : 7;
+            const n = Math.round(nLo + (nHi - nLo) * dk.p);
+            const items = bag(rng).slice(0, n);
+            if(items.length < 3) continue;
+            const gi = (rng() * items.length) | 0;
+            const gone = items[gi];
+            const tray = shuffled(rng, items.slice());
+            out.push({
+              kind:'vanish',
+              before: items.slice(),                       /* จังหวะที่ 1 — ของครบบนโต๊ะ */
+              after:  items.map((e, i) => i === gi ? '' : e),  /* จังหวะที่ 2 — มีช่องว่าง 1 ช่อง */
+              q:'ของชิ้นไหนหายไป? แตะที่ของชิ้นนั้นเลย',
+              showFor: diff.tier <= 2 ? 3200 : 2600,       /* เด็กเล็กได้ดูนานกว่า */
+              choices: tray, correct: tray.indexOf(gone),
+              emoji:'', explain:'ตาไวมาก จำได้ครบเลย!',
+            });
+          }
+          return out;
+        },
+      };
+    }
     function deliverMech(){
       return {
         id:'deliver', name:'ส่งของถึงมือ', fam:'B', walk:true,
@@ -1470,6 +1515,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
          ⚠ `only:null` = ไม่ใช่ของเควสต์ครอบครัว · `fam:'A'` = งานในร้าน */
       dessert:   orderMech('', null, {id:'dessert', name:'ร้านขนมตามใบสั่ง',
                    q:'ลูกค้าสั่ง ', sets:DESSERT_SETS, fam:'A', only:null}),
+      vanish:    vanishMech(),
       /* ---- เฟส 6 — แล็บ STEM ที่เขียนใหม่ (ข้อ 30) ----
          4 ตัวแรกเป็น "จัดของลงถัง" ทรงเดียวกับเกมครอบครัว ⇒ ใช้ renderSortStep เดิมได้เลย
          ⚠ ทุกตัวต้องมี `fam:'A'` (งานในร้าน) และ `only:null` = ไม่ใช่ของเควสต์ครอบครัว */
@@ -1603,6 +1649,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       [/^npc-(police|mayor|headman)/,      ['traffic','findhidden']],
       /* ---- เฟส 7 กลุ่ม D: เกมสังเกต/ความจำ แจกได้กว้างกว่าเพราะไม่ผูกกับอาชีพใครเป็นพิเศษ ---- */
       [/^npc-(mall|shop|mart|mk|cart|toy|garden|kid|stu)/, ['spotdiff','flashcount']],
+      /* 🫥 ของหายไปไหน (เฟส 13) — ธีมสังเกต/ความจำเดียวกับ spotdiff/flashcount
+         เพิ่มนักมายากลกับคุณยายด้วย (คนที่ "ทำของหาย" เข้ากับบทบาทพอดี) */
+      [/^npc-(toy|kid|play|magician|granny|mall|mart)/, ['vanish']],
       [/^npc-(mall-fash|shop|kid)/,        ['dressorder']],
       /* ---- 2026-08-15: engine หน้าหลักอีก 12 ตัว — ผูกกับ "คนที่โจทย์นั้นเข้ากับอาชีพเขา" ----
          เจตนาคือให้เด็กรู้สึกว่า **คนในเมืองชวนเล่นเรื่องที่เขาทำอยู่จริง** ไม่ใช่สุ่มโจทย์มามั่วๆ

@@ -3244,6 +3244,34 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .hqz-dot.now{background:#F0A14B; transform:scale(1.25);}
   .hqz-sub{font-size:14px; font-weight:800; color:var(--ink-soft); text-align:center;}
   .hqz-stage{display:flex; flex-direction:column; gap:12px; align-items:stretch; min-height:0; overflow-y:auto;}
+  /* ---------- เฟส 13 · 🫥 ของหายไปไหน ----------
+     โต๊ะของ 2 จังหวะ (ก่อนคลุม / หลังเปิด) + ถาดให้แตะตอบ
+     ⚠ ตัวของต้องใหญ่พอให้เด็กแยกออกจริงตอนย่อ (บทเรียนอิโมจิ 30px ของเฟส 4B) */
+  .hqz-vanish-tray{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:10px;
+    background:#FFF6E6; border-radius:18px; padding:14px 12px;
+    transition:opacity .5s ease, filter .5s ease;
+  }
+  .hqz-vanish-tray.covered{ opacity:.15; filter:blur(6px); }
+  .hqz-vtile{
+    display:flex; align-items:center; justify-content:center;
+    width:62px; height:62px; font-size:38px; line-height:1;
+    background:var(--white); border-radius:16px; box-shadow:0 3px 0 rgba(0,0,0,.08);
+  }
+  /* ช่องที่ของหายไป — เส้นประให้เห็นว่า "ตรงนี้เคยมีของ" ไม่ใช่ช่องว่างเปล่าๆ */
+  .hqz-vtile.gap{ background:transparent; border:3px dashed #D8C7A6; box-shadow:none; }
+  .hqz-vanish-pick{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+  .hqz-vpick{
+    border:3px solid #E8DCC6; cursor:pointer;
+    transition:transform .12s ease, border-color .12s ease;
+  }
+  .hqz-vpick:hover{ transform:translateY(-3px); border-color:var(--cat-color,#F0A14B); }
+  .hqz-vpick.right{ border-color:var(--correct,#66BB6A); background:#E8F7E9; }
+  .hqz-vpick.wrong{ animation:shakeX .4s ease; border-color:var(--wrong,#E5533D); }
+  body.night-mode .hqz-vanish-tray{ background:#2A3352; }
+  @media (max-width:480px){
+    .hqz-vtile{ width:52px; height:52px; font-size:31px; }
+  }
   .hqz-line{font-size:18px; font-weight:800; color:var(--ink); line-height:1.45; text-align:center;
             background:#FFF6E6; border-radius:18px; padding:15px 18px;}
   .hqz-emoji{font-size:56px; text-align:center; line-height:1;}
