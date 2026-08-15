@@ -191,7 +191,8 @@ test('เฟส 12G: เมนูฟองมี 4 กิจกรรม + เ�
   await page.evaluate(() => window.__houseDbg.petTap());
   const menu = page.locator('#house-pet-menu');
   await expect(menu).toBeVisible();
-  await expect(menu.locator('.hpm-btn')).toHaveCount(4);
+  /* 2026-08-15: ปุ่ม 🍽️ ให้อาหารย้ายมาอยู่ในเมนูนี้เป็นปุ่มแรก ⇒ หน้าแรกมี 5 ปุ่ม */
+  await expect(menu.locator('.hpm-btn')).toHaveCount(5);
   /* ปุ่มทุกใบต้องมีทั้งไอคอนและคำอธิบาย (เด็ก 5 ขวบดูรูปเป็นหลัก) */
   const shape = await menu.evaluate(el => Array.from(el.querySelectorAll('.hpm-btn')).map(b => ({
     ic: (b.querySelector('.hpm-ic') || {}).textContent || '',
@@ -199,7 +200,7 @@ test('เฟส 12G: เมนูฟองมี 4 กิจกรรม + เ�
   })));
   shape.forEach(s => { expect(s.ic.length).toBeGreaterThan(0); expect(s.lb.length).toBeGreaterThan(0); });
   /* เข้าเมนูสอนท่า */
-  await menu.locator('.hpm-btn').nth(3).click();
+  await menu.locator('.hpm-btn').filter({ hasText: 'สอนท่า' }).first().click();
   const n = await page.evaluate(() => window.HousePetCare.TRICKS.length);
   await expect(menu.locator('.hpm-btn')).toHaveCount(n);
   const pips = await menu.evaluate(el => Array.from(el.querySelectorAll('.hpm-btn')).map(b => b.querySelectorAll('.hpm-pips i').length));
@@ -277,7 +278,9 @@ test('เฟส 12K: กิจกรรมจริงในโลก 3D — เ
   const h0 = await page.evaluate(() => { window.HousePetCare.setHappy(80); return window.HousePetCare.happiness(); });
   const during = await page.evaluate(() => {
     window.__houseDbg.petTap();
-    document.querySelectorAll('#house-pet-menu .hpm-btn')[0].click();   /* 🤚 ลูบหัว */
+    /* หาปุ่มจาก **ข้อความ** ไม่ใช่ index — เมนูมีปุ่มเพิ่ม/ลดได้ (เช่นปุ่มให้อาหารที่ย้ายมา 2026-08-15) */
+    Array.from(document.querySelectorAll('#house-pet-menu .hpm-btn'))
+      .filter(b => b.textContent.indexOf('ลูบหัว') >= 0)[0].click();
     return window.__houseDbg.petAct();
   });
   expect(during, 'กดปุ่มแล้วต้องเข้าสู่กิจกรรมจริง').toBe('pat');
@@ -291,5 +294,35 @@ test('เฟส 12K: กิจกรรมจริงในโลก 3D — เ
   expect(r.menu).toBe(false);
   expect(r.rest.rest, 'เล่นจบแล้วน้องต้องอยู่ข้างนอกเดินตามเด็กตามปกติ').toBe(false);
   expect(r.h1).toBeGreaterThan(h0);
+  expect(errs).toEqual([]);
+});
+
+/* ผู้ใช้สั่ง 2026-08-15: ย้ายปุ่มให้อาหารจากแถบสถานะเข้าไปในเมนูฟองของน้อง
+   แถบเหลือหน้าที่ "บอกสถานะ" อย่างเดียว แต่ **ยังต้องโชว์จำนวนอาหารที่เหลือ** */
+test('เฟส 12L: ให้อาหารอยู่ในเมนูฟอง · แถบไม่มีปุ่มแต่ยังบอกจำนวนมื้อคงเหลือ', async ({ page }) => {
+  const errs = await house(page);
+  /* แถบ: ไม่มีปุ่มแล้ว แต่ตัวเลขมื้อยังอยู่ */
+  await expect(page.locator('#hpb-feed')).toBeHidden();
+  await expect(page.locator('#hpb-left')).toHaveText(/×\d+/);
+  const meals0 = await page.evaluate(() => {
+    const C = window.HousePetCare;
+    C.setFull(30);                                   /* ให้หิวก่อน ไม่งั้นกดแล้วเด้ง "อิ่มอยู่" */
+    return C.meals(C.foodForPet('dog'));
+  });
+  expect(meals0, 'ต้องมีอาหารติดมือตั้งแต่รับเลี้ยง').toBeGreaterThan(0);
+
+  /* เมนูฟอง: ปุ่มแรกต้องเป็นให้อาหาร และบอกจำนวนมื้อบนปุ่มด้วย */
+  await page.evaluate(() => window.__houseDbg.petTap());
+  const first = page.locator('#house-pet-menu .hpm-btn').first();
+  await expect(first).toContainText('ให้อาหาร');
+  await expect(first, 'ปุ่มต้องบอกจำนวนมื้อที่เหลือ').toContainText('×');
+
+  const full0 = await page.evaluate(() => window.HousePetCare.fullness());
+  await first.click();
+  await expect.poll(() => page.evaluate(() => window.HousePetCare.fullness()),
+                    { timeout: 15000 }).toBeGreaterThan(full0);
+  /* ให้อาหารแล้วจำนวนมื้อในแถบต้องลดลงตาม */
+  await expect.poll(() => page.evaluate(() => document.getElementById('hpb-left').textContent))
+    .toBe('×' + (meals0 - 1));
   expect(errs).toEqual([]);
 });

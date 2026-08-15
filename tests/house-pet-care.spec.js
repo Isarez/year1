@@ -52,6 +52,14 @@ const rollDays = (page, n) => page.evaluate(cnt => {
   return window.HousePetCare.state();
 }, n);
 
+/* 🍽️ ปุ่มให้อาหารย้ายจากแถบสถานะไปอยู่ในเมนูฟองของน้องแล้ว (ผู้ใช้สั่ง 2026-08-15)
+   ⇒ ต้องแตะตัวน้องเปิดเมนูก่อน แล้วกดปุ่มแรกในเมนู */
+async function feedFromMenu(page) {
+  await page.evaluate(() => window.__houseDbg.petTap());
+  await page.waitForSelector('#house-pet-menu .hpm-btn', { timeout: 8000 });
+  await page.locator('#house-pet-menu .hpm-btn').first().click();
+}
+
 test('ตารางอาหารครบทุกชนิดสัตว์ + ราคาตรงข้อ 18.2 (ตัวคุมไม่ให้มีสัตว์ที่ให้อาหารไม่ได้)', async ({ page }) => {
   const errors = await openHouse(page);
   const out = await page.evaluate(() => {
@@ -202,7 +210,8 @@ test('แถบสถานะใต้ชื่อเด็ก: ชื่อส
   await expect(page.locator('#hpb-pet')).toContainText('บราวนี่');
   await expect(page.locator('#hpb-food-ic')).toHaveText('🍖');    /* หมากินอาหารเนื้อ */
   await expect(page.locator('#hpb-left')).toHaveText('×5');       /* จำนวนมื้อคงเหลืออยู่หลังหลอด */
-  await expect(page.locator('#hpb-feed')).toContainText('ให้อาหาร');
+  /* ปุ่มให้อาหารไม่อยู่ในแถบแล้ว — แถบเหลือหน้าที่บอกสถานะอย่างเดียว */
+  await expect(page.locator('#hpb-feed')).toBeHidden();
   /* อิ่มเต็ม = หลอดเต็ม ไม่มีคลาสเตือน */
   await expect.poll(() => page.evaluate(() => document.getElementById('hpb-fill').style.width)).toBe('100%');
   expect(await bar.evaluate(el => el.classList.contains('hpb-warn'))).toBe(false);
@@ -216,13 +225,12 @@ test('แถบสถานะใต้ชื่อเด็ก: ชื่อส
 
 /* ผู้ใช้สั่งเอา popup เลือกอาหารออก 2026-08-09 — สัตว์แต่ละตัวกินได้ชนิดเดียวอยู่แล้ว
    การ์ดจึงมีของใบเดียว = คลิกเปล่าเพิ่มมาขั้นนึงโดยไม่ได้อะไร ⇒ กดปุ่มในแถบแล้วป้อนเลย */
-test('กดปุ่มให้อาหารครั้งเดียวป้อนเลย ไม่มี popup ให้เลือก · จำนวนมื้อในแถบลดลง', async ({ page }) => {
+test('กดให้อาหารในเมนูฟองครั้งเดียวป้อนเลย ไม่มี popup เลือกอาหาร · จำนวนมื้อในแถบลดลง', async ({ page }) => {
   const errors = await openHouse(page);
-  await expect(page.locator('#hpb-feed')).toBeVisible();
   await rollDays(page, 2);                                /* ให้หิวก่อน ไม่งั้นกดแล้วเด้ง "อิ่มอยู่" */
 
   const before = await page.evaluate(() => window.HousePetCare.fullness());
-  await page.locator('#hpb-feed').click();
+  await feedFromMenu(page);
   await expect.poll(() => page.evaluate(() => window.HousePetCare.fullness())).toBe(before + 50);
   /* ต้องไม่มีการ์ด/แผงอะไรเด้งมาให้เลือกเลย */
   expect(await page.evaluate(() => !!document.getElementById('house-feed'))).toBe(false);
@@ -236,7 +244,7 @@ test('อิ่มอยู่แล้วกดให้อาหาร: น้
   const full = await page.evaluate(() => window.HousePetCare.fullness());
   expect(full).toBe(100);
 
-  await page.locator('#hpb-feed').click();
+  await feedFromMenu(page);
   await page.waitForTimeout(600);
   /* ของไม่หาย ความอิ่มไม่เปลี่ยน และไม่มีอนิเมชันป้อนอาหารเริ่มขึ้น */
   expect(await page.evaluate(() => window.HousePetCare.meals('meat'))).toBe(5);
@@ -263,7 +271,7 @@ test('อนิเมชันป้อนอาหาร: มีชามโผ
     return Math.hypot(window.__houseDbg.petPos().x - c.x, window.__houseDbg.petPos().z - c.z);
   });
 
-  await page.locator('#hpb-feed').click();
+  await feedFromMenu(page);
   /* กำลังเล่นอนิเมชันอยู่ */
   await expect.poll(() => page.evaluate(() => window.__houseDbg.feeding())).toBe(true);
 

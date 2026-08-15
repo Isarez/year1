@@ -9275,6 +9275,32 @@ function renderPetMenu(){
   }
 
   e.title.textContent = 'อยากทำอะไรกับ' + name + '?';
+  /* 🍽️ ให้อาหาร — ย้ายมาจากแถบสถานะ (ผู้ใช้สั่ง 2026-08-15)
+     ⚠ อยู่ **ปุ่มแรก** เพราะเป็นเรื่องที่เร่งด่วนที่สุด (น้องหิว/ป่วยรอไม่ได้)
+     ⚠ ป้ายบนปุ่มบอก **จำนวนมื้อที่เหลือ** ด้วย เด็กจะได้รู้ว่าต้องไปซื้อเพิ่มหรือยัง
+       โดยไม่ต้องไปอ่านที่แถบสถานะอีกรอบ
+     ⚠ อิ่มอยู่/ป่วยอยู่ **ยังกดได้เสมอ** — `feedNow()` เป็นคนอธิบายเหตุผลน่ารักๆ เอง
+       (กติกาเหล็กข้อ 2: ห้ามกดแล้วเงียบ ห้ามดุ) */
+  {
+    const fid  = PETCARE ? PETCARE.foodForPet(hPet.cfg ? hPet.cfg.type : '') : '';
+    const food = PETCARE ? PETCARE.FOOD.filter(x => x.id === fid)[0] : null;
+    const left = (PETCARE && fid) ? PETCARE.meals(fid) : 0;
+    const sick = petCareHud.sick;
+    e.grid.appendChild(hpmBtn(food ? food.emoji : '🍽️',
+      sick ? 'พาไปหาหมอ' : (left > 0 ? 'ให้อาหาร ×' + left : 'อาหารหมดแล้ว'), {
+      done: !sick && petCareHud.full >= 100,       /* อิ่มเต็มแล้ว = ติ๊กถูก ไม่ใช่ปิดปุ่ม */
+      run: ()=>{
+        closePetMenu();
+        if(!sick && left <= 0){
+          /* อาหารหมด **ห้ามเงียบ** ต้องบอกทางไปต่อ (ร้านสัตว์เลี้ยงมีแท็บอาหาร) */
+          if(typeof showToast === 'function')
+            showToast(food ? food.emoji : '🍖', 'อาหารหมดแล้ว — ไปซื้อเพิ่มที่ร้านสัตว์เลี้ยงได้เลยนะ');
+          return;
+        }
+        feedNow();
+      },
+    }));
+  }
   /* 🤚 ลูบหัว — ทำได้ทุกที่ ทุกเวลา แม้น้องกำลังงีบอยู่ (ผู้ใช้สั่ง 2026-08-14) */
   e.grid.appendChild(hpmBtn('🤚', 'ลูบหัว', {
     run: ()=>{ closePetMenu(); startPetAct('pat'); },
@@ -10695,7 +10721,7 @@ function petBarPaintLocked(){
   const bar = $('house-pet-bar');
   if(bar) bar.classList.remove('hpb-warn');
   const btn = $('hpb-feed');
-  if(btn) btn.classList.remove('hpb-feed-sick');
+  if(btn){ btn.hidden = false; btn.classList.remove('hpb-feed-sick'); }
 }
 function petBarPaint(){
   if(!hPet.cfg) return;
@@ -10745,11 +10771,10 @@ function petBarPaint(){
   }
   const bar = $('house-pet-bar');
   if(bar) bar.classList.toggle('hpb-warn', sick || full < PETCARE.LOW_AT);
-  /* เขียนเฉพาะ <span> ป้ายข้อความ — ห้าม textContent ทั้งปุ่ม ไม่งั้นไอคอน SVG หายไปด้วย */
-  const lb = $('hpb-feed-label');
-  if(lb) lb.textContent = sick ? 'พาไปหาหมอ' : 'ให้อาหาร';
+  /* 🍽️ ปุ่มให้อาหารย้ายไปเมนูฟองแล้ว — แถบนี้เหลือหน้าที่บอกสถานะอย่างเดียว
+     ปุ่มในแถบถูกซ่อนเมื่อมีสัตว์แล้ว (เหลือไว้เฉพาะสถานะล็อก = "ไปรับเลี้ยง") */
   const btn = $('hpb-feed');
-  if(btn) btn.classList.toggle('hpb-feed-sick', sick);
+  if(btn){ btn.hidden = true; btn.classList.remove('hpb-feed-sick'); }
 }
 /* ---------- คุณหมอ/พยาบาล: การ์ดรักษาสัตว์ป่วย (ข้อ 18.4) ----------
    เงินไม่พอ **ห้ามไล่กลับ** ต้องมีทางไปต่อเสมอ = รับงานช่วยคุณหมอแทนค่ารักษา (กติกาเหล็กข้อ 1) */

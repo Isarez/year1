@@ -90,7 +90,12 @@ test('แท็บความหิว: ตั้งค่าความอิ
 
   await clickBtn(page, 'ทำให้ป่วย 🤒');
   expect(await page.evaluate(() => window.HousePetCare.isSick())).toBe(true);
-  await expect.poll(() => page.evaluate(() => document.getElementById('hpb-feed').textContent)).toContain('หาหมอ');
+  /* ⚠ ปุ่ม "พาไปหาหมอ" ย้ายไปอยู่ในเมนูฟองของน้องแล้ว (2026-08-15)
+     แถบสถานะจึงบอกความป่วยด้วย **หน้าตาของแถบ** แทน: ติดคลาสเตือน + หลอดความอิ่มว่าง */
+  await expect.poll(() => page.evaluate(() => ({
+    warn: document.getElementById('house-pet-bar').classList.contains('hpb-warn'),
+    fill: document.getElementById('hpb-fill').style.width,
+  }))).toEqual({ warn: true, fill: '0%' });
 
   await clickBtn(page, 'รักษาให้หาย');
   expect(await page.evaluate(() => window.HousePetCare.isSick())).toBe(false);
