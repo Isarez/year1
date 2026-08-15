@@ -163,7 +163,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
   if(typeof window.HOUSE_QUEST_DATA !== 'function')
     throw new Error('house-quest-data.js ต้องถูกโหลดก่อน house-quests.js');
   const QD = window.HOUSE_QUEST_DATA();
-  const {ITEM_SETS, SORT_SETS, ORDER_POOLS, STEM_SETS, GROW_SETS, COIN_UNITS, PRICED_GOODS, SHELF_CATS, RECIPE_SETS, TRAFFIC_CARDS, SPOT_SCENES, DRESS_ITEMS, HIDDEN_ZONES, HIDDEN_ITEMS, SOUND_MOTIFS, CODE_TASKS, MEASURE_ITEMS, MEASURE_UNITS, PET_FACE, MARKET_GOODS, NPC_THEMES} = QD;
+  const {ITEM_SETS, SORT_SETS, ORDER_POOLS, DESSERT_SETS, STEM_SETS, GROW_SETS, COIN_UNITS, PRICED_GOODS, SHELF_CATS, RECIPE_SETS, TRAFFIC_CARDS, SPOT_SCENES, DRESS_ITEMS, HIDDEN_ZONES, HIDDEN_ITEMS, SOUND_MOTIFS, CODE_TASKS, MEASURE_ITEMS, MEASURE_UNITS, PET_FACE, MARKET_GOODS, NPC_THEMES} = QD;
 
   function themeOf(def){
     /* หน้า "คลังคำถาม" ส่งธีมมาตรงๆ เพื่อบังคับให้ได้ชุดของที่ต้องการดู (NPC จริงไม่มีฟิลด์นี้) */
@@ -1464,6 +1464,12 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       mirrorsym: engineMech('mirror',   'กระจกเงา',       '🪞', {ask:'ลองส่องกระจกแล้วทายดูสิ!'}),
       /* 🦉 ตัวจับเวลาถูกปิดตอนเล่นในโหมดบ้าน (ดู houseTune ใน js/house-games.js) */
       owlsay:    engineMech('ef',       'นกฮูกสั่ง',      '🦉', {ask:'มาเล่นเกมนกฮูกสั่งกันไหม?'}),
+      /* ---- เฟส 13 · 🍰 ร้านขนมตามใบสั่ง (ข้อ 52) ----
+         ใช้ orderMech ทรง slots ตัวเดิม 100% — ไม่มีโค้ดหน้าจอใหม่เลยสักบรรทัด
+         ต่างจาก `cook` ตรงคลัง (40 ใบสั่งของหวาน) และโทนคำพูด (ลูกค้าสั่ง ไม่ใช่แม่ขอให้ช่วย)
+         ⚠ `only:null` = ไม่ใช่ของเควสต์ครอบครัว · `fam:'A'` = งานในร้าน */
+      dessert:   orderMech('', null, {id:'dessert', name:'ร้านขนมตามใบสั่ง',
+                   q:'ลูกค้าสั่ง ', sets:DESSERT_SETS, fam:'A', only:null}),
       /* ---- เฟส 6 — แล็บ STEM ที่เขียนใหม่ (ข้อ 30) ----
          4 ตัวแรกเป็น "จัดของลงถัง" ทรงเดียวกับเกมครอบครัว ⇒ ใช้ renderSortStep เดิมได้เลย
          ⚠ ทุกตัวต้องมี `fam:'A'` (งานในร้าน) และ `only:null` = ไม่ใช่ของเควสต์ครอบครัว */
@@ -1605,6 +1611,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       [/^npc-(mart|mk|cart|food|ice|mall|shop|toy|garden|pet|music)/, ['shopmoney']],
       /* 🍕 ร้านอาหาร/ไอศกรีม/รถเข็นของกิน = แบ่งชิ้นให้เท่ากัน */
       [/^npc-(food|ice|mk-|cart-)/,        ['slicefrac']],
+      /* 🍰 ร้านของหวาน/ไอศกรีม/รถเข็นหวานเย็น = ประกอบขนมตามใบสั่งลูกค้า (เฟส 13) */
+      [/^npc-(ice|food|mk-shave|mk-smoothie|mk-cotton|cart-)/, ['dessert']],
       /* 📅⏳ คนจัดงานในหมู่บ้าน / ครู / คุณยายเล่าเรื่อง = ปฏิทินกับเส้นเวลา */
       [/^npc-(mayor|headman|post|teacher|granny)/, ['caldays']],
       [/^npc-(teacher|stu|student|granny|traveler)/, ['timeorder']],
@@ -2087,7 +2095,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
       STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
       buildRun, answer, submit, starsOf, coinsFor, finish, itemSig,
-      FAM_MECHS, ENGINE_MECHS, SORT_SETS, ORDER_POOLS, PET_FACE, MARKET_GOODS, catalogSort, famMechOk,
+      FAM_MECHS, ENGINE_MECHS, SORT_SETS, ORDER_POOLS, DESSERT_SETS, PET_FACE, MARKET_GOODS, catalogSort, famMechOk,
       /* เฟส 6 — แล็บ STEM/coding (คลัง + ตารางแบ่งงานตาม NPC · เทสใช้ไล่นับว่าคลัง ≥ 40 จริง) */
       STEM_SETS, GROW_SETS, MEASURE_ITEMS, MEASURE_UNITS, CODE_TASKS, LAB_MECHS, SOUND_MOTIFS,
       /* เฟส 7 — กลุ่ม B (คลัง + ตารางกลไกพิเศษตาม NPC) */
