@@ -16,7 +16,7 @@ const { test, expect } = require('@playwright/test');
 
 const CHILD = { id: 'fix816', name: 'เทสแก้', emoji: '🔧', birthDate: '2018-01-15', grade: 'p2' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
-const SEED = { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
+const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
 
 async function house(page) {
   const errors = [];
@@ -414,4 +414,72 @@ test('🌍 งาน Action จริง: ทำจริงในโลกแ�
   expect(r.wrongKind, 'ทำงานคนละชนิดต้องไม่นับ').toBe(false);
   expect(r.done, 'ครบแล้วต้องส่งได้').toBe(true);
   expect(errs).toEqual([]);
+});
+
+/* ============================================================
+   📍 ปิดแอปดื้อๆ แล้วกลับมา ต้องอยู่จุดเดิม (ผู้ใช้แจ้ง 2026-08-17)
+
+   ของเดิมเซฟตำแหน่งไว้ที่ `stopHouseGame()` จุดเดียว = เซฟเฉพาะตอน "กดปุ่มออกจากเมือง"
+   เด็กปิดแท็บ/สลับแอปบนแท็บเล็ตไม่เคยวิ่งผ่านตรงนั้นเลย ⇒ ตำแหน่งไม่เคยถูกบันทึก
+   ⚠ เทสนี้ต้อง **โหลดหน้าใหม่จริงๆ** ไม่ใช่กด exit — ไม่งั้นวัดทางเดิมที่เคยผ่านอยู่แล้ว
+   ⚠ ห้ามให้ addInitScript ทับ save ตอน reload (เคยพลาดมาแล้ว) ⇒ seed เฉพาะตอนยังไม่มี
+   ============================================================ */
+async function houseKeep(page) {
+  await page.addInitScript(([child, hkey, seed]) => {
+    localStorage.setItem('p1quiz_children', JSON.stringify([child]));
+    localStorage.setItem('p1quiz_active_child', child.id);
+    localStorage.setItem('p1quiz_music', 'off');
+    if (!localStorage.getItem(hkey)) localStorage.setItem(hkey, JSON.stringify(seed));
+  }, [CHILD, HKEY, SEED]);
+}
+async function enterHouse(page) {
+  await page.goto('/');
+  await page.locator('#child-select-view .child-card').first().click();
+  await page.locator('#house-entry-btn').dispatchEvent('click');
+  await page.waitForFunction(() => !document.getElementById('house-view').hidden, null, { timeout: 30000 });
+  await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready && window.__houseDbg.ready(),
+    null, { timeout: 30000 });
+}
+
+test('📍 ปิดแอปโดยไม่กดออก (pagehide) แล้วเปิดใหม่ ต้องยืนที่เดิม', async ({ page }) => {
+  await houseKeep(page);
+  await enterHouse(page);
+
+  /* เดินไปช่องอื่นให้ไกลจากจุดตั้งต้น แล้วรอจนถึงที่จริง */
+  const walked = await page.evaluate(async () => {
+    const W = window.HouseWorld;
+    const from = W.tile();
+    const dst = W.nearWalkable(from.x + 4, from.z + 4) || W.nearWalkable(from.x - 4, from.z - 4);
+    W.walkTo(dst.x, dst.z);
+    /* ⚠ ต้องรอจน **หยุดเดินจริง** ไม่ใช่แค่ถึงช่องปลายทาง — ถ้าวัดตอนยังก้าวอยู่
+       ตัวเกมจะเซฟทับด้วยช่องถัดไปหลังเทสอ่านค่าไปแล้ว แล้วเทสแดงแบบเข้าใจผิด */
+    /* ⚠ เครื่องเทสวาดได้ ~3 fps ⇒ ก้าวละ ~2 วินาทีจริง **ห้ามเดาว่าหยุดเดินแล้วจากเวลาที่นิ่ง**
+       ต้องดูธง walking() ตรงๆ ไม่งั้นวัดตอนยังก้าวอยู่ แล้วเกมเซฟทับด้วยช่องถัดไปทีหลัง */
+    const t0 = Date.now();
+    while (Date.now() - t0 < 40000) {
+      await new Promise(r => setTimeout(r, 200));
+      if (!window.__houseDbg.walking()) break;
+    }
+    return { from, dst, at: W.tile() };
+  });
+  expect(walked.at, 'ต้องเดินออกจากจุดตั้งต้นได้').not.toEqual(walked.from);
+
+  /* 🔌 ปิดแอปดื้อๆ — ไม่แตะปุ่มออกจากเมืองเลย */
+  const saved = await page.evaluate(hkey => {
+    window.dispatchEvent(new Event('pagehide'));
+    const d = JSON.parse(localStorage.getItem(hkey) || '{}');
+    return d.spot || null;
+  }, HKEY);
+  expect(saved, 'ปิดแอปแล้วต้องมีตำแหน่งถูกบันทึกไว้').not.toBeNull();
+  expect({ x: saved.x, z: saved.z }, 'ตำแหน่งที่บันทึกต้องตรงกับที่เด็กยืนอยู่').toEqual(walked.at);
+
+  /* เปิดแอปใหม่ */
+  await enterHouse(page);
+  const back = await page.evaluate(hkey => {
+    const d = JSON.parse(localStorage.getItem(hkey) || '{}');
+    return { tile: window.HouseWorld.tile(), spot: d.spot };
+  }, HKEY);
+  expect(back.spot, 'ค่าที่บันทึกต้องไม่ถูกเขียนทับตอนโหลดใหม่')
+    .toMatchObject({ x: walked.at.x, z: walked.at.z });
+  expect(back.tile, 'กลับเข้ามาใหม่ต้องยืนจุดเดิม ไม่ใช่เด้งกลับหน้าบ้าน').toEqual(walked.at);
 });

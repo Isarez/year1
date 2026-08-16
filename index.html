@@ -1083,11 +1083,23 @@
         <button class="icon-btn house-ctrl-item" id="house-dev-btn" aria-label="ปรับค่าต่างๆ (เครื่องมือเทส)"><span class="hc-ic">🛠️</span><span class="hc-label">ปรับค่าต่างๆ<span class="hc-test-star">*</span></span></button>
         <!-- หน้าเทส: ฟังเพลงธีมฟาร์มทั้ง 4 เพลงของโหมดบ้านทีละเพลง (เฟส 14) -->
         <button class="icon-btn house-ctrl-item" id="house-music-btn" aria-label="ฟังเพลงธีม (เครื่องมือเทส)"><span class="hc-ic">🎶</span><span class="hc-label">ฟังเพลงธีม<span class="hc-test-star">*</span></span></button>
+        <!-- 🎓 บทเรียนสอนเล่น — ปุ่มข้าม/เรียนใหม่อยู่ในเมนูนี้เท่านั้น (ผู้ใช้สั่ง: เด็กข้ามเองไม่ได้) -->
+        <button class="icon-btn house-ctrl-item" id="house-tut-btn" aria-label="บทเรียนสอนเล่น"><span class="hc-ic">🎓</span><span class="hc-label">บทเรียนสอนเล่น</span></button>
         <!-- ทางออกจากโหมดบ้านทางเดียว (ปุ่ม ← ถูกเอาออกจากแถบบนแล้ว) — อยู่ในเมนูเฟืองที่เด็กไม่เผลอกดโดน -->
         <button class="icon-btn house-ctrl-item house-exit-item" id="house-exit-btn" aria-label="ออกจากบ้านของหนู"><span class="hc-ic">🚪</span><span class="hc-label">ออกจากบ้าน</span></button>
       </div>
     </div>
     <!-- ป้ายบอกช่องที่ตัวละครยืนอยู่ (มุมขวาล่าง) — ไว้ดูพิกัดตอนทดสอบเกม -->
+    <!-- 🧭 ลูกศรนำทางของเควสต์ "เก็บของไปให้" — โผล่เฉพาะตอนของที่ต้องเก็บอยู่นอกจอ
+         (ของที่อยู่ในจอมีป้ายลอยเหนือหัวอยู่แล้ว ไม่ต้องมีลูกศรซ้ำ) -->
+    <!-- 🙈 เลขนับถอยหลังกลางจอ (เกมซ่อนแอบ) -->
+    <div class="house-bigcount" id="house-bigcount" hidden aria-hidden="true"><span id="hbc-n">5</span></div>
+    <div class="house-qarrow" id="house-qarrow" hidden aria-hidden="true">
+      <svg viewBox="0 0 44 44" class="hqa-ic"><g id="hqa-rot">
+        <path d="M22 6 L33 26 L22 21 L11 26 Z" fill="#FFD166" stroke="#B4650F" stroke-width="2.4" stroke-linejoin="round"/>
+      </g></svg>
+      <span class="hqa-dist" id="hqa-dist"></span>
+    </div>
     <div class="house-pos-chip" id="house-pos-chip" hidden>x– z–</div>
     <div class="ar-hint-chip house-hint" id="house-hint" hidden>👆 แตะพื้นเพื่อเดินเล่น ลองไปคุยกับชาวบ้าน และดูกระดานภารกิจข้างน้ำพุกลางหมู่บ้านนะ!</div>
   </div>
@@ -1239,6 +1251,38 @@
        ผู้ใช้สั่ง 2026-08-16: อยากฟังเพลงที่ทำทั้งหมดเพื่อตรวจสอบ ไม่ใช่ของให้เด็กเล่น
        ⇒ ปิดพร้อมกันกับสวิตช์ MUSIC_PANEL_ENABLED ใน js/house-music-ui.js ตอน deploy
        ============================================================ -->
+  <!-- 🎓 เฟส 15 — ระบบสอนเล่น (js/house-tutor.js)
+       ⚠ **ต้องอยู่ระดับเดียวกับ #house-mus/#house-qb ห้ามย้ายกลับเข้า .house-overlay-ui**
+         เงา `box-shadow` วง 9999px ที่ทำม่านมืด **ไม่ทาบทับ canvas 3D เลย** ถ้าอยู่ในกล่องนั้น
+         (เห็นจากภาพจริง: รูเจาะกับวงแหวนขึ้นครบ แต่จอไม่มืดลงสักนิด — วัดค่าความสว่างแล้วต่างแค่ 8%
+          ทั้งที่ควรมืดลง ~45%) กับดักเดียวกับตอนย้าย #house-mus เมื่อ 2026-08-16 -->
+       ม่านมืด+รูเจาะ = `#house-tut-hole` (ตัวมันเองคือ "รู" ส่วนม่านมืดคือ box-shadow วงมหึมารอบๆ)
+       ⚠ ทั้งชั้นเป็น pointer-events:none — **ห้ามบล็อกการกดปุ่ม/การเดินเด็ดขาด**
+         (กติกา "ไม่ล็อกการเดิน + ต้องมีวาล์วนิรภัยเสมอ" ข้อ 56.7) -->
+  <div class="house-tut" id="house-tut" hidden>
+    <!-- ม่านมืด 4 แผ่นล้อมรอบ "รู" — บน/ล่าง/ซ้าย/ขวา
+         ⚠ **ห้ามเปลี่ยนกลับไปใช้ `box-shadow:0 0 0 9999px` แผ่นเดียว** — ลองแล้วไม่ได้ผลในหน้านี้
+           เงาวงใหญ่ **ไม่ทาบทับ canvas 3D เลย** ทั้งที่ computed style ถูกทุกค่าและ element
+           ตัวเดียวกันวาดพื้นหลังสีทับ canvas ได้ปกติ (พิสูจน์ด้วยภาพถ่ายจริง 2026-08-17)
+           แผ่นสี่เหลี่ยมธรรมดาวาดได้แน่นอนกว่า และไม่ต้องพึ่งพฤติกรรมเฉพาะเบราว์เซอร์ -->
+    <div class="house-tut-dim" id="house-tut-dim" hidden>
+      <i class="htd" id="htd-t"></i><i class="htd" id="htd-b"></i>
+      <i class="htd" id="htd-l"></i><i class="htd" id="htd-r"></i>
+    </div>
+    <div class="house-tut-hole" id="house-tut-hole" hidden></div>
+    <div class="house-tut-say" id="house-tut-say">
+      <span class="ht-ic" id="house-tut-ic">🦉</span>
+      <div class="ht-body">
+        <p class="ht-text" id="house-tut-text"></p>
+        <p class="ht-note" id="house-tut-note" hidden></p>
+        <div class="ht-btns">
+          <button type="button" class="ht-btn ht-go" id="house-tut-go" hidden>🚶 พาไปเลย</button>
+          <button type="button" class="ht-btn ht-ok" id="house-tut-ok" hidden>👌 เข้าใจแล้ว</button>
+        </div>
+      </div>
+      <span class="ht-bar" id="house-tut-bar"></span>
+    </div>
+  </div>
   <div class="house-creator house-mus" id="house-mus" hidden>
     <div class="house-creator-panel hmus-panel">
       <h3 class="house-creator-title">🎶 เพลงธีมฟาร์ม <span class="hc-test-star">*</span></h3>

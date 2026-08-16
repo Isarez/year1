@@ -909,6 +909,11 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-qbrowse.js'+v))
     /* หน้าปรับค่าต่างๆ (เครื่องมือเทส) — ต้องมาหลัง house.js เช่นกัน เพราะเรียก window.HousePetCare/HouseShop */
     .then(()=>loadScriptOnce('js/house-devtools.js'+v))
+    /* 🎓 ระบบสอนเล่น (เฟส 15) — **เนื้อบทเรียนต้องมาก่อน engine**
+       engine อ่าน window.HouseTutorSteps ตอนเริ่มบท และ house.js เรียก HouseTutor.start()
+       หลังฉากพร้อม ⇒ ทั้งคู่ต้องอยู่หลัง house.js/house-play.js (บทเรียนถาม HousePlay ด้วย) */
+    .then(()=>loadScriptOnce('js/house-tutor-steps.js'+v))
+    .then(()=>loadScriptOnce('js/house-tutor.js'+v))
     .then(()=>{ step(.20, 'กำลังปลุกเมืองให้ตื่น…'); })
     .catch(err=>{ housePromise = null; throw err; });
   return housePromise;

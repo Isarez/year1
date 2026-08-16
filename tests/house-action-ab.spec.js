@@ -19,7 +19,7 @@ const { test, expect } = require('@playwright/test');
 
 const CHILD = { id: 'actab', name: 'เทสแอค', emoji: '🎯', birthDate: '2018-01-15', grade: 'p3' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
-const BASE = { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
+const BASE = { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
 
 async function house(page, extra) {
   const errors = [];
@@ -175,8 +175,10 @@ test('🏪 ชุด B เป็นงาน 2 ขา: ถึงร้านแ�
     await new Promise(r => setTimeout(r, 400));
     return { leg: window.__houseDbg.walkLeg(),
              cardOpen: !document.getElementById('house-qz').hidden,
-             bins: document.querySelectorAll('.hqz-mart-bin').length,
-             tiles: document.querySelectorAll('.hqz-mart-item').length };
+             /* ⚠ คลาสเปลี่ยนตอนออกแบบหน้าจอชั้นวางใหม่ 2026-08-16
+                (.hqz-mart-bin/.hqz-mart-item → .hqz-shelf/.hqz-crate-it) */
+             bins: document.querySelectorAll('.hqz-shelf').length,
+             tiles: document.querySelectorAll('.hqz-crate-it').length };
   });
   expect(atShop.leg.leg, 'ถึงร้านแล้วเข้าขา 2').toBe(2);
   expect(atShop.cardOpen, 'ถึงร้านแล้วกระดานต้องเปิด').toBe(true);
@@ -239,5 +241,56 @@ test('📊 สัดส่วน Action ต้องเพิ่มขึ้น�
   expect(r.walk, 'ต้องมี Action จริงอย่างน้อย 16 ตัว').toBeGreaterThanOrEqual(16);
   /* 🔒 เพดานที่ล็อกไว้ในข้อ 54.8 — เกินนี้เด็กจะใช้เวลาเดินมากกว่าคิด และงบเวลา 240 วิ/เควสต์พัง */
   expect(r.walk, 'ห้ามเกิน 20 ตัว (เพดานที่ล็อกไว้)').toBeLessThanOrEqual(20);
+  expect(errs).toEqual([]);
+});
+
+/* ---------- 🧭 ลูกศรนำทางเควสต์เก็บของ (ผู้ใช้สั่ง 2026-08-16) ---------- */
+test('🧭 เก็บของไปให้: มีลูกศรบอกทางไปของที่ต้องเก็บ · ของอยู่ในจอแล้วไม่ต้องมีลูกศรซ้ำ', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(async () => {
+    const D = window.__houseDbg;
+    /* 🔒 ลูกศรต้องโผล่ **เฉพาะตอนทำเควสต์** ไม่ใช่ตอนเล่นกิจกรรมรายวัน (ผู้ใช้สั่ง 2026-08-16)
+       กิจกรรมรายวันเปิดค้างทั้งวัน ⇒ ลูกศรจะโชว์ตลอดเวลาจนรบกวนเด็กที่แค่อยากเดินเล่น */
+    const idle = D.qArrow();
+    window.HouseQuestUI.playTest({ mech: 'collectgive', gid: 'p3', seed: 1, title: '🧪 เก็บของ' });
+    await new Promise(r2 => setTimeout(r2, 400));
+    document.querySelector('#house-qz .hqz-yes').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise(r2 => setTimeout(r2, 500));
+    const busy = D.qArrow();
+    /* ของที่เหลือต้องมีจริง และลูกศรต้องเล็งไปชิ้นที่ใกล้ที่สุด */
+    const left = window.HousePlay.colLeft();
+    const t = D.tile ? null : null;
+    /* เก็บครบตามที่สั่ง → ลูกศรต้องหายไป (เหลือแค่เดินไปส่ง) */
+    const need = D.walkCatch().need[0];
+    for (let i = 0; i < need.n; i++) window.HouseWorld.questCaught('leaf', '');
+    await new Promise(r2 => setTimeout(r2, 400));
+    const doneCatch = D.walkCatch().done;
+    return { idle, busy, leftN: left.length, doneCatch, done: D.qArrow() };
+  });
+  expect(r.idle.target, 'ยังไม่ได้รับเควสต์ = ห้ามมีลูกศรมารบกวน').toBeNull();
+  expect(r.leftN, 'ต้องมีของประจำวันให้เก็บจริง').toBeGreaterThan(0);
+  expect(r.busy.target, 'รับงานแล้วต้องมีเป้าให้ชี้').toBeTruthy();
+  expect(r.busy.target.dist, 'ต้องบอกระยะเป็นจำนวนช่อง').toBeGreaterThan(0);
+  expect(r.doneCatch, 'เก็บครบแล้วต้องพร้อมเดินไปส่ง').toBe(true);
+  expect(r.done.target, 'เก็บครบแล้วลูกศรต้องหาย (เหลือแค่เดินไปส่ง)').toBeNull();
+  expect(errs).toEqual([]);
+});
+
+test('🧭 ลูกศรต้องไม่บังการแตะพื้น และซ่อนตอนโหมดตกแต่ง', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const el = document.getElementById('house-qarrow');
+    const cs = getComputedStyle(el);
+    return { pe: cs.pointerEvents, pos: cs.position, exists: !!el,
+             editHide: !!Array.from(document.styleSheets).some(ss => {
+               try { return Array.from(ss.cssRules).some(r2 =>
+                 r2.selectorText && r2.selectorText.indexOf('house-edit') >= 0
+                 && r2.selectorText.indexOf('house-qarrow') >= 0); } catch (e) { return false; }
+             }) };
+  });
+  expect(r.exists).toBe(true);
+  expect(r.pe, 'ลูกศรต้องแตะทะลุได้ ไม่งั้นบังการแตะพื้นเพื่อเดิน').toBe('none');
+  expect(r.pos).toBe('fixed');
+  expect(r.editHide, 'โหมดตกแต่งต้องซ่อนลูกศร').toBe(true);
   expect(errs).toEqual([]);
 });

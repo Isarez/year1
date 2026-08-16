@@ -5859,6 +5859,12 @@ function handleTap(cx, cy){
      ของเดิมเดินหนีไปได้ทั้งที่เบ็ดยังอยู่ในน้ำ ⇒ เห็นทุ่นลอยอยู่คนละมุมกับตัวเด็ก
      ⚠ **ยกเว้นการแตะ "ทุ่น"** เพราะนั่นคือทางดึงเบ็ดในโลก 3D (อีกทางคือปุ่ม "ดึง!" ในแผง)
      ⚠ ไม่มีทางค้าง: ปลาหนีเองใน 1.6 วิถ้าไม่ดึง แล้ว `fishState` เคลียร์ตัวเองที่ tick() */
+  /* 🙈 อินโทรซ่อนแอบ — แตะอะไรก็ไม่ได้จนกว่าจะนับจบ (เพื่อนกำลังวิ่งไปแอบตามเส้นทางที่คิดจาก
+     ตำแหน่งเด็กตอนเริ่ม · เดินหนีระหว่างนี้ = ทุกคนวิ่งไปรวมที่ช่องเปล่า + ท่าตีกัน) */
+  if(seekIntroNow()){
+    showToast('🙈', 'หลับตานับก่อนนะ เดี๋ยวค่อยออกไปตามหาเพื่อน!');
+    return;
+  }
   if(fishingNow()){
     const fh = raycaster.intersectObjects(worldGroup.children, true);
     for(let i = 0; i < fh.length; i++){
@@ -5927,12 +5933,20 @@ function handleTap(cx, cy){
 
 /* 🎣 กำลังตกปลาอยู่ไหม — เช็คผ่านประตูสาธารณะของ js/house-play.js (house.js ไม่รู้จัก state ข้างใน) */
 function fishingNow(){ return !!(window.HousePlay && window.HousePlay.fishState && window.HousePlay.fishState()); }
+/* 🙈 กำลังเล่นอินโทรซ่อนแอบอยู่ไหม (เพื่อนวิ่งมารวม → คุย → นับถอยหลัง → วิ่งไปแอบ)
+   ⚠ **ช่วงนี้เด็กต้องเดินไม่ได้** (ผู้ใช้แจ้ง 2026-08-16) — เพื่อนคำนวณเส้นทางจาก
+     "ช่องที่เด็กยืนตอนเริ่ม" ถ้าเด็กเดินหนีระหว่างนั้น ทุกคนจะวิ่งไปรวมที่ช่องเปล่า
+     และท่านั่งยองจะตีกับท่าเดินจนภาพเพี้ยนทั้งฉาก */
+function seekIntroNow(){
+  return !!(window.HousePlay && window.HousePlay.seekIntroActive && window.HousePlay.seekIntroActive());
+}
 function walkTo(gx, gz, opts){
   opts = opts || {};
   /* 🎣 **ตกปลาอยู่ = เดินไม่ได้** — กันที่นี่เพราะเป็นทางเดียวที่ทุกอย่างวิ่งผ่าน
      (แตะพื้น · แตะชาวบ้าน · ปุ่มเข็มทิศกลับบ้าน · เควสต์สั่งเดิน) `handleTap` กันไว้อีกชั้นเพื่อ
      ให้ได้ toast อธิบาย ส่วนตรงนี้เป็นตะแกรงสุดท้ายกันทางที่ไม่ผ่าน handleTap */
   if(fishingNow()) return;
+  if(seekIntroNow()) return;      /* 🙈 อินโทรซ่อนแอบ — ห้ามขยับจนกว่าจะนับจบ */
   slideRide = null;              /* สั่งเดินใหม่ระหว่างเล่นสไลเดอร์ = เลิกเล่นก่อน */
   const out = hScene==='out';
   const grid = out?outGrid:inGrid, W = out?OUT_W:IN_W, D = out?OUT_D:IN_D;
@@ -6143,6 +6157,7 @@ function switchScene(to){
     }
     updateHomeZoneFrame();     /* กรอบบริเวณบ้านมีเฉพาะฉากนอกบ้าน */
     if(window.HousePlay) window.HousePlay.onScene(to);   /* มินิเกมกลุ่ม A อยู่ฉากนอกบ้านเท่านั้น */
+    if(window.HouseTutor) window.HouseTutor.onScene(to); /* วงแหวนบอกจุดหมายต้องวาดใหม่ทุกครั้งที่เปลี่ยนฉาก */
     applyCamera();
   });
 }
@@ -6230,7 +6245,7 @@ function buildCreatorRows(cfg){
         if(typeof playClick==='function') playClick();
         if(locked){
           if(typeof showToast==='function')
-            showToast('👗', 'แบบนี้ยังไม่มีนะ ราคา '+SHOP.priceFit(row.key, i)+' เหรียญ ไปซื้อได้ที่ห้างแฟชั่นในเมือง!');
+            showToast('👗', 'แบบนี้ยังไม่มีนะ ราคา '+SHOP.priceFit(row.key, i)+' บาท ไปซื้อได้ที่ห้างแฟชั่นในเมือง!');
           return;
         }
         const was = cfg[row.key];
@@ -6364,7 +6379,7 @@ function closeCreator(){
     saveHouseData({petPromptSeen:true});
     setTimeout(()=>{
       if(houseOpen && hMode==='world' && !editMode && typeof showToast==='function')
-        showToast('🐾', 'อยากมีเพื่อนตัวน้อยไหม? ทำภารกิจเก็บเหรียญแล้วไปเลือกซื้อที่ร้านสัตว์เลี้ยงกลางเมืองได้เลย!');
+        showToast('🐾', 'อยากมีเพื่อนตัวน้อยไหม? ทำภารกิจเก็บเงินแล้วไปเลือกซื้อที่ร้านสัตว์เลี้ยงกลางเมืองได้เลย!');
     }, 1400);
   }
 }
@@ -6825,7 +6840,7 @@ function claimQuestReward(){
                   [0xffd54f, 0xff8fb3, 0x7fc4e8, 0xfff1a8][i%4]);
   if(typeof playCongrats==='function') playCongrats();
   charBubble('⭐');
-  if(typeof showToast==='function') showToast('⭐', 'เก่งมาก! ทำครบทั้ง 5 ชุด ได้โบนัส ' + got + ' เหรียญ');
+  if(typeof showToast==='function') showToast('⭐', 'เก่งมาก! ทำครบทั้ง 5 ชุด ได้โบนัส ' + got + ' บาท');
 }
 
 /* ---------- จ่ายเหรียญ: จุดเดียวในโหมดบ้านที่แตะ window.OwlCoins (กติกาเหล็กข้อ 5) ---------- */
@@ -6870,6 +6885,9 @@ function closeQuestPanel(){
   qRun = null; qLock = false; qzNpcId = null;   /* ปล่อยให้คนออกโจทย์เดินต่อได้ตามปกติ */
   if(window.OwlGames) OwlGames.unmount();   /* ปิดกลางเกมที่ยืมมา → คืน view กลับหน้าหลักให้เรียบร้อย */
   stopHouseTune();                          /* ปิดกลางเสียงเครื่องดนตรี → ตัดโน้ตที่ยังรอเล่นทิ้ง */
+  /* ปิดการ์ดกลางลาก → เก็บ ghost ทิ้ง ไม่งั้นค้างลอยอยู่บนจอตลอด */
+  if(shelfDrag){ if(shelfDrag.ghost.parentNode) shelfDrag.ghost.parentNode.removeChild(shelfDrag.ghost);
+                 shelfDrag = null; }
   /* ปิดกลางกระดานมินิเกม → ถอด listener ลาก-วางที่ผูกไว้ที่ window ทิ้งด้วย ไม่งั้นค้างสะสม */
   if(qSortOff){ qSortOff(); qSortOff = null; }
   if(qDrag){ const b = qDrag.b; qDrag = null;
@@ -6934,7 +6952,7 @@ function offerChallenge(then){
   row.appendChild(qzBtn('ลองเลย! 🌟', 'hqz-yes', ()=>{
     if(typeof playClick==='function') playClick();
     QUESTS.chalAccept(true);
-    if(typeof showToast==='function') showToast('🌟', 'เปิดโจทย์ท้าทายแล้ว! ได้เหรียญมากขึ้นด้วยนะ');
+    if(typeof showToast==='function') showToast('🌟', 'เปิดโจทย์ท้าทายแล้ว! ได้เงินมากขึ้นด้วยนะ');
     then();
   }));
   row.appendChild(qzBtn('ยังไม่พร้อม', 'hqz-no', ()=>{
@@ -6974,6 +6992,7 @@ function renderQuestStep(){
   if(it.kind === 'walk'){ renderWalkStep(st, it); return; }
   if(it.kind === 'engine'){ renderEngineStep(st, it); return; }
   if(it.kind === 'mart'){ renderMartStep(st, it); return; }   /* 🏪 ชุด B: งานที่ต้องไปทำที่ร้าน */
+  if(it.kind === 'coinpay'){ renderCoinPay(st, it); return; } /* 💰 จ่ายเงินให้พอดี — แตะเหรียญตรงๆ */
   if(it.kind === 'sort'){
     /* เกมจำรายการของ: โชว์รายการก่อน แล้วค่อยให้หยิบ */
     if(it.memory && !qMemShown[qRun.idx]){ renderMemoryList(st, it); return; }
@@ -7566,6 +7585,36 @@ function renderSpotRows(st, it){
    ⚠ **ห้ามให้ย้อนกลับมาดูซ้ำ** — ตัวกลไกคือการจำภาพ แต่ **ตอบช้าแค่ไหนก็ได้** ไม่มีจับเวลาตอบ
    ⚠ ต้องจำว่าโชว์ไปแล้วด้วย `qFlashDone` ไม่งั้นตอบผิดแล้ว renderQuestStep() วาดใหม่
      จะย้อนไปโชว์ของอีกรอบ = เฉลยให้ฟรี */
+/* ================= ⏳ เลขนับถอยหลังของเกมความจำ (2026-08-16 · ผู้ใช้สั่ง) =================
+   เกมที่ต้อง "จำแล้วของจะหาย" (นับแว้บเดียว · ของหายไปไหน · ทำตามสูตร · จำของที่แม่สั่ง)
+   เดิม**ไม่บอกเลยว่ามีเวลาดูกี่วินาที** ⇒ เด็กยังดูไม่ทันของก็หายไปแล้ว รู้สึกเหมือนถูกแกล้ง
+   ⇒ โชว์เลขนับถอยหลังตัวใหญ่ระหว่างที่ยังดูได้ **เด็กจะได้รู้ว่าเหลือเวลาอีกเท่าไร**
+
+   ⚠ **นี่ไม่ใช่ "จับเวลาตอบ"** ซึ่งกติกาเหล็กข้อ 2 ห้ามไว้ — เป็นแค่การบอกล่วงหน้าว่า
+     ของจะหายเมื่อไร (ของมันหายอยู่แล้วตั้งแต่แรก แค่เดิมไม่บอก) ตอบช้าแค่ไหนก็ยังไม่มีโทษ
+   ⚠ คืนฟังก์ชันยกเลิกไว้ให้เสมอ — ปิดการ์ดกลางนับถอยหลังแล้วต้องหยุด ไม่งั้นตัวจับเวลาค้าง */
+function attachCountdown(st, ms, onEnd){
+  const wrap = document.createElement('div');
+  wrap.className = 'hqz-count';
+  const ring = document.createElement('span'); ring.className = 'hqz-count-ring';
+  const num = document.createElement('span'); num.className = 'hqz-count-n';
+  wrap.appendChild(ring); wrap.appendChild(num);
+  st.appendChild(wrap);
+  const total = Math.max(1000, ms | 0);
+  const t0 = Date.now();
+  let raf = 0, tid = 0, dead = false;
+  const paint = ()=>{
+    if(dead) return;
+    const left = Math.max(0, total - (Date.now() - t0));
+    num.textContent = String(Math.ceil(left / 1000));
+    wrap.style.setProperty('--p', (1 - left / total).toFixed(3));
+    if(left <= 0) return;
+    raf = requestAnimationFrame(paint);
+  };
+  paint();
+  tid = setTimeout(()=>{ if(!dead){ dead = true; cancelAnimationFrame(raf); onEnd(); } }, total);
+  return ()=>{ dead = true; cancelAnimationFrame(raf); clearTimeout(tid); };
+}
 let qFlashDone = {};
 function renderFlashShow(st, it){
   const line = document.createElement('div'); line.className = 'hqz-line';
@@ -7573,15 +7622,15 @@ function renderFlashShow(st, it){
   const show = document.createElement('div'); show.className = 'hqz-show hqz-flash';
   show.textContent = it.flash.cells.join('');
   st.appendChild(line); st.appendChild(show);
-  let done = false;
+  let done = false, cancel = null;
   const go = ()=>{
     if(done) return;
     done = true;
-    clearTimeout(tid);
+    if(cancel) cancel();
     qFlashDone[qRun.idx] = 1;
     renderQuestStep();
   };
-  const tid = setTimeout(go, it.flash.showFor || 2600);
+  cancel = attachCountdown(st, it.flash.showFor || 2600, go);
 }
 /* ================= เฟส 13: 🫥 ของหายไปไหน (ข้อ 52) =================
    2 จังหวะ: โชว์ของครบบนโต๊ะ → ผ้าคลุมลงมา → เปิดออกมามีช่องว่าง 1 ช่อง
@@ -7599,17 +7648,17 @@ function renderVanishShow(st, it){
     tray.appendChild(t);
   });
   st.appendChild(line); st.appendChild(tray);
-  let done = false;
+  let done = false, cancel = null;
   const go = ()=>{
     if(done) return;
     done = true;
-    clearTimeout(tid);
+    if(cancel) cancel();
     qFlashDone[qRun.idx] = 1;
     renderQuestStep();
   };
   /* ผ้าคลุมลงมาให้เห็นชัดๆ ก่อนเปลี่ยนหน้า — เด็กจะได้รู้ว่า "ตอนนี้แหละที่ของหาย" */
-  const tid = setTimeout(()=>{ tray.classList.add('covered'); setTimeout(go, 620); },
-                         it.showFor || 2600);
+  cancel = attachCountdown(st, it.showFor || 2600,
+    ()=>{ tray.classList.add('covered'); setTimeout(go, 620); });
 }
 function renderVanishPick(st, it){
   const line = document.createElement('div'); line.className = 'hqz-line';
@@ -7638,6 +7687,134 @@ function renderVanishPick(st, it){
   });
   st.appendChild(pick);
 }
+/* ================= 🪙 หน้าเหรียญ (2026-08-16 · ผู้ใช้สั่ง) =================
+   เกมที่เกี่ยวกับเงินทุกเกมต้องใช้ **เหรียญนกฮูกของเกม** ไม่ใช่อิโมจิ 🪙
+   ⚠ กติกาเดิมของโปรเจค: **ห้ามใช้อิโมจิ 🪙** บางเครื่องไม่มี glyph แล้วขึ้นเป็นกล่องเทา
+   ⚠ **ตัวเลขต้องอยู่บนตัวเหรียญ** — เดิมวาดเหรียญกับเลขแยกกัน เด็กอ่านเป็น "วงกลม + เลข"
+     ไม่ใช่ "เหรียญห้า" ⇒ จำหน้าเหรียญไม่ได้ */
+function coinFace(v){
+  const c = document.createElement('span');
+  /* คลาส cv1/cv2/cv5/cv10 คุมทั้งขนาดและสีตามดีไซน์ที่ผู้ใช้กำหนด
+     ⚠ เหรียญที่ไม่ใช่ 1/2/5/10 (ไม่ควรมี) ตกมาที่หน้าตาของเหรียญ 1 */
+  c.className = 'hqz-coinface cv' + ([1,2,5,10].indexOf(v) >= 0 ? v : 1);
+  const n = document.createElement('span');
+  n.className = 'hqz-cn'; n.textContent = String(v);   /* ต้องเป็น element จะได้ทับชั้นในของเหรียญ 10 */
+  c.appendChild(n);
+  return c;
+}
+/* แตกจำนวนเงินเป็นเหรียญ 1/2/5/10 (ใหญ่ไปเล็ก) — ใช้โชว์ตัวเลือกของเกมทอนเงิน
+   ⚠ ต้องเรียงจากใหญ่ไปเล็กเสมอ เด็กจะได้นับง่าย (10,10,5,2,1 ไม่ใช่ 1,10,2,5,10) */
+const COIN_FACES = [10, 5, 2, 1];
+function coinBreak(n){
+  const out = [];
+  let left = Math.max(0, n | 0), guard = 0;
+  while(left > 0 && guard++ < 40){
+    const u = COIN_FACES.filter(c => c <= left)[0];
+    if(!u) break;
+    out.push(u); left -= u;
+  }
+  return out;
+}
+/* แถวเหรียญจากจำนวนเงิน */
+function coinRow(n, size){
+  const row = document.createElement('div');
+  row.className = 'hqz-coinrow' + (size ? ' ' + size : '');
+  coinBreak(n).forEach(v => row.appendChild(coinFace(v)));
+  return row;
+}
+/* 🗑️ แถบตัวอย่าง "เหรียญแต่ละแบบราคาเท่าไหร่" ถูกถอดออก 2026-08-16 (ผู้ใช้สั่ง)
+   — เกมจ่ายเงินมีแถวเลือกเหรียญที่โชว์ค่าบนหน้าเหรียญอยู่แล้ว ใส่เพิ่มกลายเป็นเหรียญ 8 อันบนจอ
+   — เกมทอนเงินก็ไม่ต้องมี เด็กดูจากหน้าเหรียญในตัวเลือกได้เลย
+   🔒 **ห้ามใส่กลับ** ทั้ง 2 เกม เว้นแต่ผู้ใช้สั่งใหม่
+
+/* ================= 💰 จ่ายเงินให้พอดี — แตะที่เหรียญได้เลย (2026-08-16) =================
+   ผู้ใช้สั่ง: **"ให้มีเหรียญ 4 แบบให้เด็กเลือกเองว่าจะจ่ายด้วยเหรียญอะไรได้บ้าง
+   และไม่ต้องมีกรอบคำตอบ ให้หยิบที่เหรียญได้เลย"**
+
+   ⇒ ไม่มีถาด ไม่มีถังให้ลาก — แตะเหรียญ 1/2/5/10 เพื่อหยิบใส่ · แตะเหรียญที่จ่ายแล้วเพื่อเอาคืน
+   ⚠ **ทุกวิธีที่รวมได้พอดีถือว่าถูกหมด** (จ่าย 6 ด้วย 5+1 หรือ 2+2+2 ก็ถูกทั้งคู่)
+   ⚠ จ่ายเกินไม่ใช่ "ผิด" — แค่ยังกดยืนยันไม่ได้ เอาเหรียญออกแล้วลองใหม่ (กติกาเหล็กข้อ 2) */
+function renderCoinPay(st, it){
+  const paid = it._paid || (it._paid = []);
+  const q = document.createElement('div'); q.className = 'hqz-q'; q.textContent = it.q;
+  st.appendChild(q);
+  /* ⚠ **ห้ามใส่แถบ "เหรียญของเรา" ที่นี่** (ผู้ใช้สั่งย้ำ 2026-08-16) —
+     แถวเลือกเหรียญข้างล่างโชว์ค่าบนหน้าเหรียญอยู่แล้ว ใส่แถบตัวอย่างเพิ่มจะกลายเป็น
+     **เหรียญ 8 อันบนจอ** เด็กนึกว่ามีเหรียญมากกว่า 4 แบบ
+     ⇒ เกมนี้ต้องเห็นเหรียญ **4 อันเท่านั้น** · แถบตัวอย่างมีเฉพาะเกมทอนเงิน (ที่ไม่มีแถวเลือก) */
+  const wrap = document.createElement('div'); wrap.className = 'hqz-pay';
+  const repaint = ()=>{ qzStageClear(); renderCoinPay(qzStage(), it); };
+
+  /* --- เหรียญ 4 แบบให้เลือก (แตะเพื่อหยิบใส่) --- */
+  const pick = document.createElement('div'); pick.className = 'hqz-pay-pick';
+  (it.units || [1,2,5,10]).forEach(u=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-pay-btn';
+    b.dataset.hpClick = '1';
+    b.setAttribute('aria-label', 'หยิบเหรียญ ' + u);
+    b.appendChild(coinFace(u));
+    b.addEventListener('click', ()=>{
+      if(qLock) return;
+      if(typeof playClick==='function') playClick();
+      paid.push(u);
+      repaint();
+    });
+    pick.appendChild(b);
+  });
+  wrap.appendChild(pick);
+
+  /* --- เหรียญที่จ่ายไปแล้ว (แตะเพื่อเอาคืน) --- */
+  const bag = document.createElement('div'); bag.className = 'hqz-pay-paid';
+  if(!paid.length){
+    const e = document.createElement('span'); e.className = 'hqz-pay-empty';
+    e.textContent = 'แตะเหรียญข้างบนเพื่อหยิบมาจ่าย';
+    bag.appendChild(e);
+  }else{
+    paid.forEach((u, i)=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'hqz-pay-btn';
+      b.dataset.hpClick = '1';
+      b.setAttribute('aria-label', 'เอาเหรียญ ' + u + ' คืน');
+      b.appendChild(coinFace(u));
+      b.addEventListener('click', ()=>{
+        if(qLock) return;
+        if(typeof playClick==='function') playClick();
+        paid.splice(i, 1);
+        repaint();
+      });
+      bag.appendChild(b);
+    });
+  }
+  wrap.appendChild(bag);
+
+  const sum = paid.reduce((a, c) => a + c, 0);
+  const tot = document.createElement('div');
+  tot.className = 'hqz-pay-sum' + (sum === it.price ? ' ok' : '');
+  tot.textContent = 'จ่ายแล้ว ' + sum + ' / ต้องจ่าย ' + it.price + ' บาท';
+  wrap.appendChild(tot);
+  st.appendChild(wrap);
+
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  if(paid.length){
+    row.appendChild(qzBtn('เอาคืนหมด', 'hqz-no', ()=>{
+      if(typeof playClick==='function') playClick();
+      it._paid = []; repaint();
+    }));
+  }
+  row.appendChild(qzBtn('จ่ายเลย!', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    if(sum !== it.price){
+      /* ⚠ ยังไม่พอดี = **ไม่นับว่าผิด** แค่บอกให้ลองใหม่ (กติกาเหล็กข้อ 2) */
+      if(typeof showToast==='function')
+        showToast('💰', sum < it.price ? 'ยังไม่พอนะ ใส่อีกนิด' : 'เกินไปนิดนึง เอาออกบ้างสิ');
+      return;
+    }
+    it._paid = [];
+    submitQuestPayload(paid.slice());
+  }));
+  st.appendChild(row);
+}
+
 /* ================= 🏪 ชุด B (2026-08-16): งานที่ต้อง "ไปทำที่ร้านสะดวกซื้อ" =================
    รูปแบบที่ผู้ใช้กำหนด: **รับคำสั่ง → เดินไปทำที่ร้านจริง → เดินกลับมาส่งงาน**
    ⇒ การ์ดใบเดียวกันวาด 2 หน้า ขึ้นกับว่าอยู่ขาไหน (`walkQuest.leg`)
@@ -7683,7 +7860,7 @@ function renderMartShop(st, it){
     b.dataset.hpClick = '1';
     b.innerHTML = '<span class="hqz-tile-em">' + g.e + '</span>'
                 + '<span class="hqz-tile-tx">' + g.name + '</span>'
-                + '<span class="hqz-mart-price">' + g.price + '</span>';
+                + '<span class="hqz-mart-price">' + g.price + ' บาท</span>';
     b.addEventListener('click', ()=>{
       if(typeof playClick==='function') playClick();
       picked[g.k] = (picked[g.k] | 0) + 1;
@@ -7703,7 +7880,7 @@ function renderMartShop(st, it){
   bag.textContent = keys.length ? 'ในตะกร้า: ' + keys.map(k=>{
     const g = it.shelf.filter(x => x.k === k)[0];
     return (g ? g.e + ' ×' + picked[k] : '');
-  }).join('  ') + '   รวม ' + total + ' เหรียญ' : 'ตะกร้ายังว่างอยู่';
+  }).join('  ') + '   รวม ' + total + ' บาท' : 'ตะกร้ายังว่างอยู่';
   st.appendChild(bag);
 
   const row = document.createElement('div'); row.className = 'hqz-row';
@@ -7715,7 +7892,7 @@ function renderMartShop(st, it){
   }
   const done = it.want.every(w => (picked[w.k] | 0) >= w.n)
             && it.want.reduce((a, w) => a + w.n, 0) === keys.reduce((a, k) => a + picked[k], 0);
-  row.appendChild(qzBtn('จ่ายเงิน ' + total + ' 🪙', 'hqz-yes', ()=>{
+  row.appendChild(qzBtn('จ่ายเงิน ' + total + ' บาท', 'hqz-yes', ()=>{
     if(typeof playClick==='function') playClick();
     if(!done){
       if(typeof showToast==='function') showToast('🛒', 'ของยังไม่ตรงรายการนะ ลองดูอีกที');
@@ -7723,7 +7900,7 @@ function renderMartShop(st, it){
     }
     /* ⚠ เงินไม่พอ = ไม่ตัน แค่บอกให้ไปหาเงินก่อนแล้วกลับมาทำต่อ */
     if(!window.OwlCoins || window.OwlCoins.get() < total){
-      if(typeof showToast==='function') showToast('💰', 'เงินยังไม่พอ ไปหาเหรียญเพิ่มแล้วกลับมาได้เลย');
+      if(typeof showToast==='function') showToast('💰', 'เงินยังไม่พอ ไปหาเงินเพิ่มแล้วกลับมาได้เลย');
       return;
     }
     window.OwlCoins.spend(total);
@@ -7734,26 +7911,47 @@ function renderMartShop(st, it){
   }));
   st.appendChild(row);
 }
-/* ---------- 💵 ทอนเงิน — ซื้อของจริงแล้วบอกว่าต้องได้ทอนเท่าไร ---------- */
+/* ---------- 💵 ทอนเงิน — ซื้อของจริงแล้วเลือกว่าต้องได้ทอนเท่าไร ----------
+   ⚠ **ตัวเลือกเป็นกองเหรียญ ไม่ใช่ตัวเลข** (ผู้ใช้สั่ง 2026-08-16) — เด็กต้องนับเอง
+     ถ้าเขียนเป็น "8 เหรียญ" เด็กแค่จำเลขจากโจทย์ ไม่ได้ฝึกนับเงินจริง
+   ⚠ ต้องมี **แถบตัวอย่างบอกว่าเหรียญแต่ละแบบราคาเท่าไหร่** ให้ดูเทียบได้ตลอด */
 function renderMartChange(st, it){
-  const line = document.createElement('div'); line.className = 'hqz-line';
+  /* ⚠ **โจทย์ต้องตัวใหญ่** (ผู้ใช้แจ้ง 2026-08-16 ว่าเล็กเกินไปมองยาก) —
+     เกมนี้เด็กต้องอ่านราคาแล้วคิดลบในหัว ถ้าอ่านราคาไม่ชัดตั้งแต่แรกก็จบ */
+  const line = document.createElement('div'); line.className = 'hqz-q hqz-change-q';
   line.textContent = it.q2;
   st.appendChild(line);
-  const show = document.createElement('div'); show.className = 'hqz-mart-bag';
-  show.textContent = it.item.e + ' ' + it.item.name + ' ราคา ' + it.item.price
-                   + ' 🪙 · จ่ายไป ' + it.paid + ' 🪙';
-  st.appendChild(show);
+
+  /* ของที่ซื้อ + ราคา — ราคาต้องเด่นที่สุดในบรรทัด (เป็นตัวเลขที่เด็กต้องเอาไปคิด) */
+  const row = document.createElement('div'); row.className = 'hqz-change-item';
+  const em = document.createElement('span'); em.className = 'hqz-change-em'; em.textContent = it.item.e;
+  const nm = document.createElement('span'); nm.className = 'hqz-change-nm'; nm.textContent = it.item.name;
+  const pr = document.createElement('span'); pr.className = 'hqz-change-pr';
+  pr.textContent = 'ราคา ' + it.item.price + ' บาท';
+  row.appendChild(em); row.appendChild(nm); row.appendChild(pr);
+  st.appendChild(row);
+
+  const lbl = document.createElement('div'); lbl.className = 'hqz-change-lbl';
+  lbl.textContent = 'จ่ายไป';
+  st.appendChild(lbl);
+  st.appendChild(coinRow(it.paid, 'sm'));
+
   const tray = document.createElement('div'); tray.className = 'hqz-tray';
-  it.choices.forEach((c, i)=>{
+  it.choices.forEach((amount, i)=>{
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'hqz-tile hqz-tile-lab hqz-mart-item';
+    /* ⚠ **กรอบต้องเท่ากันทุกอัน** (ผู้ใช้สั่ง 2026-08-16) — จำนวนเหรียญแต่ละกองไม่เท่ากัน
+       ถ้าปล่อยให้กรอบยืดตามเนื้อใน กองที่เหรียญเยอะจะกล่องใหญ่กว่า = **ใบ้คำตอบให้เด็ก** */
+    b.type = 'button'; b.className = 'hqz-tile hqz-change-opt';
     b.dataset.hpClick = '1';
-    b.innerHTML = '<span class="hqz-tile-em">🪙</span><span class="hqz-tile-tx">' + c + '</span>';
+    b.setAttribute('aria-label', 'ทอน ' + amount + ' บาท');
+    /* ⚠ **ห้ามย่อเหรียญในตัวเลือก** — ผู้ใช้แจ้ง 2026-08-16 ว่าย่อแล้วมองไม่เห็นเลย
+       ตัวเลือกคือของที่เด็กต้องนับ ต้องใหญ่ที่สุดในการ์ด ไม่ใช่เล็กที่สุด */
+    b.appendChild(coinRow(amount));         /* ไม่มีตัวเลขกำกับ — เด็กต้องนับเอง */
     b.addEventListener('click', ()=>{
       if(typeof playClick==='function') playClick();
       if(i !== it.correct){
         if(typeof playWrong==='function') playWrong();
-        if(typeof showToast==='function') showToast('💵', 'ลองคิดใหม่อีกทีนะ');
+        if(typeof showToast==='function') showToast('💵', 'ลองนับใหม่อีกทีนะ');
         return;                        /* ⚠ ตอบผิดไม่นับพลาด ไม่มีบทลงโทษ (กติกาเหล็กข้อ 2) */
       }
       if(typeof playCorrect==='function') playCorrect();
@@ -7770,41 +7968,49 @@ function renderMartChange(st, it){
 }
 /* ---------- 🏪 จัดของขึ้นชั้น — แตะของ แล้วแตะชั้นที่ถูก ---------- */
 function renderMartShelf(st, it){
-  const line = document.createElement('div'); line.className = 'hqz-line';
-  line.textContent = 'ช่วยจัดของขึ้นชั้นให้ถูกหมวดหน่อยนะ';
-  st.appendChild(line);
   const placed = it._placed || (it._placed = {});
   const sel = it._sel;
   const paint = ()=>{ qzStageClear(); renderMartShelf(qzStage(), it); };
+  const leftN = Math.ceil(it.bins.length / 2);        /* ชั้นซ้ายได้เศษ (2 ใบเมื่อมี 3 ชั้น) */
 
-  const tray = document.createElement('div'); tray.className = 'hqz-tray';
-  it.tiles.forEach(t=>{
-    if(placed[t.k]) return;                    /* วางแล้วหายจากถาด */
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'hqz-tile hqz-tile-lab hqz-mart-item' + (sel === t.k ? ' sel' : '');
-    b.dataset.hpClick = '1';
-    b.innerHTML = '<span class="hqz-tile-em">' + t.e + '</span>'
-                + '<span class="hqz-tile-tx">' + t.name + '</span>';
-    b.addEventListener('click', ()=>{
-      if(typeof playClick==='function') playClick();
-      it._sel = (sel === t.k) ? null : t.k;
-      paint();
-    });
-    tray.appendChild(b);
-  });
-  st.appendChild(tray);
+  const q = document.createElement('div'); q.className = 'hqz-q';
+  q.textContent = sel ? 'แตะชั้นที่ของชิ้นนี้ควรอยู่' : 'แตะของที่จะจัด แล้วแตะชั้นที่ถูกหมวด';
+  st.appendChild(q);
 
-  const bins = document.createElement('div'); bins.className = 'hqz-tray hqz-mart-bins';
-  it.bins.forEach(bin=>{
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'hqz-tile hqz-tile-lab hqz-mart-bin';
-    b.dataset.hpClick = '1';
+  /* --- ชั้นวางจริง: ชั้นอยู่ซ้าย-ขวา · ของที่ต้องจัดอยู่ตรงกลาง --- */
+  const wrap = document.createElement('div'); wrap.className = 'hqz-shelfwrap';
+  const cols = [document.createElement('div'), document.createElement('div')];
+  cols[0].className = 'hqz-shelfcol left';
+  cols[1].className = 'hqz-shelfcol right';
+
+  it.bins.forEach((bin, bi)=>{
     const mine = it.tiles.filter(t => placed[t.k] === bin.id);
-    b.innerHTML = '<span class="hqz-tile-em">' + bin.e + '</span>'
-                + '<span class="hqz-tile-tx">' + bin.name + '</span>'
-                + '<span class="hqz-mart-in">' + mine.map(t => t.e).join('') + '</span>';
-    b.addEventListener('click', ()=>{
+    const sh = document.createElement('button');
+    sh.type = 'button';
+    sh.className = 'hqz-shelf' + (sel ? ' pickable' : '');
+    sh.dataset.hpClick = '1';
+    sh.setAttribute('aria-label', bin.name);
+    /* ป้ายชื่อชั้น — แขวนอยู่บนหัวชั้น บอกว่าชั้นนี้สำหรับอะไร */
+    const tag = document.createElement('span'); tag.className = 'hqz-shelf-tag';
+    const te = document.createElement('span'); te.className = 'hqz-shelf-tag-e'; te.textContent = bin.e;
+    const tn = document.createElement('span'); tn.className = 'hqz-shelf-tag-n'; tn.textContent = bin.name;
+    tag.appendChild(te); tag.appendChild(tn);
+    sh.appendChild(tag);
+    /* ตัวชั้น 2 แผ่น — ของที่วางแล้วไปเรียงอยู่บนแผ่น */
+    const body = document.createElement('span'); body.className = 'hqz-shelf-body';
+    [0, 1].forEach(row=>{
+      const bd = document.createElement('span'); bd.className = 'hqz-shelf-board';
+      const goods = document.createElement('span'); goods.className = 'hqz-shelf-goods';
+      mine.filter((_, i) => i % 2 === row).forEach(t=>{
+        const g = document.createElement('span'); g.className = 'hqz-shelf-item';
+        g.textContent = t.e;
+        goods.appendChild(g);
+      });
+      bd.appendChild(goods);
+      body.appendChild(bd);
+    });
+    sh.appendChild(body);
+    sh.addEventListener('click', ()=>{
       if(typeof playClick==='function') playClick();
       if(!it._sel) return;
       const t = it.tiles.filter(x => x.k === it._sel)[0];
@@ -7824,9 +8030,95 @@ function renderMartShelf(st, it){
       }
       paint();
     });
-    bins.appendChild(b);
+    cols[bi < leftN ? 0 : 1].appendChild(sh);
   });
-  st.appendChild(bins);
+
+  /* --- ลังของตรงกลาง --- */
+  const mid = document.createElement('div'); mid.className = 'hqz-shelfmid';
+  const crate = document.createElement('div'); crate.className = 'hqz-crate';
+  const rest = it.tiles.filter(t => !placed[t.k]);
+  if(!rest.length){
+    const e = document.createElement('div'); e.className = 'hqz-crate-empty'; e.textContent = 'จัดครบแล้ว!';
+    crate.appendChild(e);
+  }
+  rest.forEach(t=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hqz-crate-it' + (sel === t.k ? ' sel' : '');
+    b.dataset.hpClick = '1';
+    b.setAttribute('aria-label', t.name);
+    const em = document.createElement('span'); em.className = 'hqz-crate-em'; em.textContent = t.e;
+    const nm = document.createElement('span'); nm.className = 'hqz-crate-nm'; nm.textContent = t.name;
+    b.appendChild(em); b.appendChild(nm);
+    /* 🖐️ **ลากวาง** (ผู้ใช้สั่ง 2026-08-16) — จับของแล้วลากไปปล่อยบนชั้น
+       ⚠ **ยังเก็บ "แตะเลือกแล้วแตะชั้น" ไว้ด้วย** เพราะโหมดเล่นด้วยมือหน้ากล้องใช้ `click`
+         ลากด้วยนิ้วชี้ในอากาศไม่ได้ ⇒ ถ้าตัดทิ้งเกมนี้จะเล่นด้วยมือไม่ได้เลย */
+    b.addEventListener('click', ()=>{
+      if(b.dataset.dragged === '1'){ b.dataset.dragged = ''; return; }   /* ลากจบแล้ว ไม่ต้องนับเป็นแตะ */
+      if(typeof playClick==='function') playClick();
+      it._sel = (sel === t.k) ? null : t.k;
+      paint();
+    });
+    b.addEventListener('pointerdown', ev => startShelfDrag(ev, b, t, it, paint));
+    crate.appendChild(b);
+  });
+  const lab = document.createElement('div'); lab.className = 'hqz-crate-lab';
+  lab.textContent = 'ของที่ยังไม่ได้จัด ' + rest.length + '/' + it.tiles.length;
+  mid.appendChild(crate); mid.appendChild(lab);
+
+  wrap.appendChild(cols[0]); wrap.appendChild(mid); wrap.appendChild(cols[1]);
+  st.appendChild(wrap);
+}
+/* ---------- 🖐️ ลากของไปวางบนชั้น (เกมจัดชั้นวาง) ----------
+   ใช้ pointer event ตรงๆ ไม่พึ่ง HTML5 drag-and-drop (ซึ่งบนแท็บเล็ตใช้ไม่ได้)
+   ⚠ ต้อง `setPointerCapture` ไม่งั้นลากออกนอกปุ่มแล้ว event หลุด
+   ⚠ ตัวลากเป็น ghost ที่ `position:fixed` บน body — **ห้ามย้ายปุ่มจริง** ไม่งั้น layout เด้ง */
+let shelfDrag = null;
+function startShelfDrag(ev, btn, tile, it, paint){
+  if(shelfDrag || ev.button > 0) return;
+  const ghost = document.createElement('div');
+  ghost.className = 'hqz-drag-ghost';
+  ghost.innerHTML = '<span class="hqz-crate-em">' + tile.e + '</span>'
+                  + '<span class="hqz-crate-nm">' + tile.name + '</span>';
+  ghost.style.left = ev.clientX + 'px';
+  ghost.style.top  = ev.clientY + 'px';
+  document.body.appendChild(ghost);
+  btn.classList.add('dragging');
+  shelfDrag = {ghost, btn, tile, it, paint, moved:false, over:null};
+  try{ btn.setPointerCapture(ev.pointerId); }catch(e){}
+  const move = e2 =>{
+    if(!shelfDrag) return;
+    shelfDrag.moved = true;
+    ghost.style.left = e2.clientX + 'px';
+    ghost.style.top  = e2.clientY + 'px';
+    ghost.style.display = 'none';
+    const el = document.elementFromPoint(e2.clientX, e2.clientY);
+    ghost.style.display = '';
+    const sh = el && el.closest ? el.closest('.hqz-shelf') : null;
+    if(sh !== shelfDrag.over){
+      if(shelfDrag.over) shelfDrag.over.classList.remove('over');
+      if(sh) sh.classList.add('over');
+      shelfDrag.over = sh;
+    }
+  };
+  const up = e2 =>{
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    document.removeEventListener('pointercancel', up);
+    if(!shelfDrag) return;
+    const d = shelfDrag; shelfDrag = null;
+    if(d.over) d.over.classList.remove('over');
+    d.btn.classList.remove('dragging');
+    if(d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+    if(d.moved) d.btn.dataset.dragged = '1';      /* กัน click ที่ตามมาหลังปล่อยนิ้ว */
+    if(!d.over || !d.moved){ if(d.moved) d.paint(); return; }
+    /* ปล่อยบนชั้นแล้ว — ใช้ทางเดินเดียวกับการแตะเลือก (ตรวจถูก/ผิดที่เดียว) */
+    d.it._sel = d.tile.k;
+    d.over.dispatchEvent(new MouseEvent('click', {bubbles:true}));
+  };
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
 }
 /* ล้างเนื้อในการ์ดแล้ววาดใหม่ (กระดานร้านค้าวาดใหม่ทุกครั้งที่แตะ) */
 function qzStageClear(){ const st = qzStage(); if(st) st.innerHTML = ''; }
@@ -7901,16 +8193,17 @@ function renderMemoryList(st, it){
   });
   const brow = document.createElement('div'); brow.className = 'hqz-row'; brow.appendChild(btn);
   st.appendChild(line); st.appendChild(row); st.appendChild(brow);
-  let done = false;
+  let done = false, cancel = null;
   function go(){
     if(done) return;
     done = true;
-    clearTimeout(tid);
+    if(cancel) cancel();
     qMemShown[qRun.idx] = 1;
     renderQuestStep();
   }
-  /* หมดเวลาแล้วไปต่อเอง — เด็กที่ยังอ่านปุ่มไม่ออกก็ไม่ค้างอยู่หน้านี้ */
-  const tid = setTimeout(go, it.showFor || 4000);
+  /* หมดเวลาแล้วไปต่อเอง — เด็กที่ยังอ่านปุ่มไม่ออกก็ไม่ค้างอยู่หน้านี้
+     ⏳ โชว์เลขนับถอยหลังด้วย เด็กจะได้รู้ว่าเหลือเวลาจำอีกกี่วินาที (ผู้ใช้สั่ง 2026-08-16) */
+  cancel = attachCountdown(st, it.showFor || 4000, go);
 }
 let qSortSel = '';          /* ชิ้นที่กำลังเลือกอยู่ด้วยการแตะ (key) */
 let qSortPut = null;        /* {tileKey: binId} ของกระดานนี้ */
@@ -7965,17 +8258,42 @@ function renderSortStep(st, it){
   function clearOver(){
     Array.from(bins.querySelectorAll('.hqz-bin.over')).forEach(e=>e.classList.remove('over'));
   }
+  /* 🎩 หมวกวาดเป็น SVG ตามสีที่โจทย์สั่ง — **ห้ามใช้อิโมจิ** (ผู้ใช้สั่ง 2026-08-16)
+     อิโมจิหมวกมีสีตายตัว (🧢 ฟ้าเสมอ · ⛑️ ขาว-แดงเสมอ) ⇒ สั่ง "หมวกแดง" แล้วโชว์หมวกฟ้า
+     เด็กเลือกถูกไม่ได้เลย · เป็นกับดักเดียวกับที่โปรเจคเจอมาแล้วกับเหรียญ/ป้ายลอย
+     ⚠ เพิ่มสีใหม่ในคลัง DRESS_ITEMS ต้องมาเติมที่ตารางนี้ด้วย ไม่งั้นตกมาที่สีเทา */
+  const DRESS_COLORS = {
+    'แดง':'#E4574A', 'เหลือง':'#F3C53F', 'ดำ':'#4A4A4A', 'ทอง':'#E8B33C',
+    'ส้ม':'#EF8B2C', 'เขียว':'#5AA84F', 'ฟ้า':'#5BB8E8', 'ชมพู':'#F49AC1',
+    'ขาว':'#FFFFFF', 'น้ำเงิน':'#3F6FD8', 'ม่วง':'#A47BD4', 'น้ำตาล':'#A9784A', 'ใส':'#DDEAF2',
+  };
+  function hatIcon(colorName){
+    const col = DRESS_COLORS[colorName] || '#B9B9B9';
+    const el = document.createElement('span');
+    el.className = 'hqz-hat';
+    /* ทรงแก๊ป: โดม + ปีกหน้า — เงารวมอ่านออกว่าเป็นหมวกแม้ย่อเหลือ 30px */
+    el.innerHTML = '<svg viewBox="0 0 48 40" aria-hidden="true">'
+      + '<path d="M6 30 Q6 10 24 10 Q42 10 42 30 Z" fill="' + col + '" stroke="rgba(0,0,0,.34)" stroke-width="2.4" stroke-linejoin="round"/>'
+      + '<path d="M4 30 Q24 26 44 30 Q44 34 40 34 L8 34 Q4 34 4 30 Z" fill="' + col + '" stroke="rgba(0,0,0,.34)" stroke-width="2.4" stroke-linejoin="round"/>'
+      + '<path d="M24 10 Q30 16 30 30" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/>'
+      + '</svg>';
+    return el;
+  }
   function tile(t){
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'hqz-tile'; b.dataset.k = t.k;
-    if(t.coin != null){
+    if(t.hat){
+      /* หมวก — วาดรูปตามสีที่สั่ง แล้วมีชื่อกำกับใต้ภาพเหมือนของชิ้นอื่น */
+      b.classList.add('hqz-tile-lab');
+      b.appendChild(hatIcon(t.hat));
+      const tx = document.createElement('span'); tx.className = 'hqz-tile-tx';
+      tx.textContent = t.label;
+      b.appendChild(tx);
+    }else if(t.coin != null){
       /* เฟส 7: ชิ้นที่เป็น "เหรียญ" (เกมจ่ายเงินให้พอดี) — วาดด้วยรูปเหรียญของเกม + ตัวเลข
          ⚠ ห้ามใช้อิโมจิ 🪙 (บางเครื่องไม่มี glyph) กติกาเดียวกับราคาสินค้าในร้าน */
       b.classList.add('hqz-tile-coin');
-      const ic = document.createElement('i'); ic.className = 'hs-coin';
-      const tx = document.createElement('span'); tx.className = 'hqz-coin-n';
-      tx.textContent = String(t.coin);
-      b.appendChild(ic); b.appendChild(tx);
+      b.appendChild(coinFace(t.coin));
     }else if(t.label || t.price != null){
       /* ของที่มีชื่อ/ราคากำกับ (เรียงขั้นตอน · อาหารสัตว์ · ซื้อของ) — เด็กต้องอ่านได้ว่าคืออะไร */
       b.classList.add('hqz-tile-lab');
@@ -8183,7 +8501,7 @@ function finishTestQuest(run){
   gain.textContent = run.items.length + ' ข้อ · ตอบผิด ' + run.wrong + ' ข้อ';
   const tag = document.createElement('div');
   tag.className = 'hqz-chal';
-  tag.textContent = '🧪 โหมดทดสอบ — ไม่ได้เหรียญ ไม่นับเป็นเควสต์ของวันนี้';
+  tag.textContent = '🧪 โหมดทดสอบ — ไม่ได้เงิน ไม่นับเป็นเควสต์ของวันนี้';
   st.appendChild(sEl); st.appendChild(gain); st.appendChild(tag);
   const row = document.createElement('div'); row.className = 'hqz-row';
   row.appendChild(qzBtn('สุ่มใหม่ 🔁', 'hqz-yes', ()=>{
@@ -8215,7 +8533,7 @@ function finishQuest(){
   const back = run.spent | 0;
   awardCoins(res.coins + back);
   if(back > 0 && typeof showToast === 'function')
-    showToast('💰', 'ได้ค่าตอบแทน ' + res.coins + ' เหรียญ + คืนค่าของที่ซื้อ ' + back + ' เหรียญ');
+    showToast('💰', 'ได้ค่าตอบแทน ' + res.coins + ' บาท + คืนค่าของที่ซื้อ ' + back + ' บาท');
   /* ติดค้าง "ทำงานแทนค่ารักษา" อยู่ → งานนี้ถือว่าใช้หนี้ครบ น้องหายป่วยทันที (ข้อ 18.4) */
   const cured = PETCARE ? PETCARE.questDone() : false;
   refreshNpcMarks();
@@ -8231,11 +8549,11 @@ function finishQuest(){
   stars.textContent = '⭐'.repeat(res.stars) + '☆'.repeat(3 - res.stars);
   const gain = document.createElement('div');
   gain.className = 'hqz-gain';
-  gain.textContent = '+ ' + res.coins + ' เหรียญนกฮูก';
+  gain.textContent = '+ ' + res.coins + ' บาท';
   st.appendChild(stars); st.appendChild(gain);
   if(res.chal){
     const tag = document.createElement('div'); tag.className = 'hqz-chal';
-    tag.textContent = '🌟 โจทย์ท้าทาย ได้เหรียญเพิ่มพิเศษ';
+    tag.textContent = '🌟 โจทย์ท้าทาย ได้เงินเพิ่มพิเศษ';
     st.appendChild(tag);
   }
   if(cured){
@@ -10948,16 +11266,16 @@ function renderStarBonus(){
                  + (it.claimed ? '✓' : '<i class="hs-coin"></i>' + it.coins) + '</span>'
                  + '<span class="hqsum-pinneed">' + it.need + '⭐</span>';
     el.disabled = !it.ready;
-    el.title = it.claimed ? ('รับโบนัส ' + it.coins + ' เหรียญไปแล้ว')
-             : it.ready ? ('กดรับโบนัส ' + it.coins + ' เหรียญ')
-                        : ('ได้ ' + it.need + ' ดาว รับโบนัส ' + it.coins + ' เหรียญ');
+    el.title = it.claimed ? ('รับโบนัส ' + it.coins + ' บาทไปแล้ว')
+             : it.ready ? ('กดรับโบนัส ' + it.coins + ' บาท')
+                        : ('ได้ ' + it.need + ' ดาว รับโบนัส ' + it.coins + ' บาท');
     el.onclick = it.ready ? ()=>{
       if(typeof playClick==='function') playClick();
       const got = QUESTS.claimStarBonus(k);
       if(!got) return;
       awardCoins(got);
       if(typeof playCongrats==='function') playCongrats();
-      if(typeof showToast==='function') showToast('🎁', 'ได้โบนัสดาว ' + got + ' เหรียญ! เก่งมากเลย');
+      if(typeof showToast==='function') showToast('🎁', 'ได้โบนัสดาว ' + got + ' บาท! เก่งมากเลย');
       questBarKey = '';
       renderQuestSummary();
     } : null;
@@ -11172,8 +11490,8 @@ function offerCure(npcDef){
   line.className = 'hqz-line';
   const enough = (window.OwlCoins ? window.OwlCoins.get() : 0) >= PETCARE.CURE_COST;
   line.textContent = enough
-    ? (d.pet.name + 'ไม่สบายนะ เดี๋ยวหมอรักษาให้เอง ค่ารักษา ' + PETCARE.CURE_COST + ' เหรียญจ้ะ')
-    : (d.pet.name + 'ไม่สบายนะ เหรียญยังไม่พอก็ไม่เป็นไรเลย มาช่วยหมอทำงานแทนค่ารักษาก็ได้จ้ะ');
+    ? (d.pet.name + 'ไม่สบายนะ เดี๋ยวหมอรักษาให้เอง ค่ารักษา ' + PETCARE.CURE_COST + ' บาทจ้ะ')
+    : (d.pet.name + 'ไม่สบายนะ บาทยังไม่พอก็ไม่เป็นไรเลย มาช่วยหมอทำงานแทนค่ารักษาก็ได้จ้ะ');
   const row = document.createElement('div'); row.className = 'hqz-row';
   row.appendChild(qzBtn(enough ? ('รักษาเลย 🩺 ' + PETCARE.CURE_COST) : 'ช่วยคุณหมอทำงาน 💪', 'hqz-yes', ()=>{
     if(typeof playClick==='function') playClick();
@@ -11232,7 +11550,7 @@ function firstOwnedPet(){
 }
 function toShopForPet(info){
   if(typeof showToast==='function')
-    showToast('🐾', 'ยังไม่มี' + info.label + ' ไปซื้อที่ร้านสัตว์เลี้ยง 🐾 กลางเมืองก่อนนะ (' + petPriceOf(info.id) + ' เหรียญ)');
+    showToast('🐾', 'ยังไม่มี' + info.label + ' ไปซื้อที่ร้านสัตว์เลี้ยง 🐾 กลางเมืองก่อนนะ (' + petPriceOf(info.id) + ' บาท)');
 }
 function buildPetColorChips(){
   const wrap = $('house-pet-colors');
@@ -11249,7 +11567,7 @@ function buildPetColorChips(){
       if(typeof playClick==='function') playClick();
       if(!own){
         if(typeof showToast==='function')
-          showToast('🎨', 'สี' + col.n + 'ซื้อได้ที่ร้านสัตว์เลี้ยงนะ (' + (SHOP ? SHOP.PET_COLOR_PRICE : 100) + ' เหรียญ)');
+          showToast('🎨', 'สี' + col.n + 'ซื้อได้ที่ร้านสัตว์เลี้ยงนะ (' + (SHOP ? SHOP.PET_COLOR_PRICE : 100) + ' บาท)');
         return;
       }
       petPickerColor = i;
@@ -11348,6 +11666,9 @@ function closePetPicker(kind){
     saveHouseData({pet:{type:petPickerType, name, color:petPickerColor}});
     syncPetHouse(true);           /* มีสัตว์แล้ว → บ้านสัตว์โผล่ที่ช่องที่จองไว้ (ข้อ 18.1) */
     if(PETCARE) PETCARE.onAdopt();/* เฟส 3B: เริ่มนับความอิ่มใหม่ + แถมอาหารถุงแรกของชนิดนั้น */
+    /* 🎓 เฟส 15: ได้เพื่อนตัวน้อยตัวแรก → บทเรียนดูแลสัตว์เลี้ยงเด้งเอง (ผู้ใช้สั่ง)
+       ⚠ หน่วงไว้ให้อนิเมชันรับเลี้ยง/ตั้งชื่อจบก่อน ไม่งั้นฟองนกฮูกเด้งทับหน้าตั้งชื่อ */
+    if(window.HouseTutor) setTimeout(()=>{ if(houseOpen) window.HouseTutor.fire('c5'); }, 2200);
   }else if(kind==='remove'){
     saveHouseData({pet:null});
     syncPetHouse(false);          /* ปล่อยเพื่อนตัวน้อยคืน → บ้านสัตว์หายไปด้วย */
@@ -11461,6 +11782,82 @@ function updateCompass(){
   const needle = document.getElementById('hc-needle'), home = document.getElementById('hc-home');
   if(needle) needle.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 32 32)');
   if(home) home.setAttribute('transform', 'rotate(' + (-deg).toFixed(1) + ' 32 19.2)');
+}
+/* ================= 🧭 ลูกศรนำทางเควสต์เก็บของ (2026-08-16 · ผู้ใช้สั่ง) =================
+   ปัญหา: เควสต์ "เก็บของไปให้" สั่งให้เก็บของประจำวันที่**กระจายอยู่ทั่วเมือง** เด็กไม่รู้ว่าอยู่ทางไหน
+   ⇒ ใช้แพทเทิร์นเดียวกับเกม RPG: **เป้าหมายอยู่นอกจอ → ลูกศรไปเกาะขอบจอด้านนั้นแล้วชี้ออก**
+      พร้อมบอกระยะเป็นจำนวนช่อง
+
+   ⚠ **ของที่อยู่ในจอไม่ต้องมีลูกศร** — มีป้ายลอยเหนือหัวอยู่แล้ว (colBuild ใน js/house-play.js)
+     ใส่ซ้ำจะรกและเด็กสับสนว่าต้องดูอันไหน
+   ⚠ ชี้ไป **ชิ้นที่ใกล้ที่สุดที่ยังไม่ได้เก็บ** เสมอ (เก็บชิ้นนี้แล้วลูกศรเด้งไปชิ้นถัดไปเอง)
+   ⚠ มุมต้องคิดใน **พิกัดหน้าจอ** ไม่ใช่พิกัดโลก — กล้องเป็นไอโซเมตริกเอียง 45°
+     ถ้าใช้มุมในโลกตรงๆ ลูกศรจะชี้เพี้ยนจากที่ตาเห็น (บทเรียนเดียวกับเข็มทิศ) */
+/* เขตปลอดภัยของลูกศร — **ต้องพ้น HUD จริงทุกด้าน** ไม่ใช่ระยะเท่ากันรอบจอ
+   ⚠ บทเรียน 2026-08-16: ตั้งไว้ 46px เท่ากันทุกด้าน แล้วลูกศรไปโผล่**ใต้ปุ่มกล้อง/เฟืองมุมขวาบน**
+     มองไม่เห็นเลย — จับได้จากภาพจริงเท่านั้น (วัดด้วยตัวเลขบอกไม่ได้ว่า "ถูกบัง")
+   บน = เข็มทิศ + แถบชื่อ/สัตว์เลี้ยง/เควสต์ + ปุ่มกล้อง/เฟือง · ล่าง = แถบคำใบ้ + ปุ่ม 🎈 */
+/* ระยะที่ลูกศรโคจรรอบตัวเด็ก (px) — **ใกล้ตัวเด็กแต่ไม่ชิดจนบังตัว** (ผู้ใช้สั่ง 2026-08-16)
+   ⚠ รอบแรกทำเป็น "ลูกศรเกาะขอบจอ" แบบเกม RPG แล้วผู้ใช้บอกว่า **ไม่เห็น** —
+     ขอบจอไกลจากจุดที่เด็กจ้องอยู่ (ตัวละคร) มาก และชนกับ HUD ตลอด
+   ⇒ ย้ายมาโคจรรอบตัวเด็ก เห็นแน่นอนเพราะเด็กมองตัวเองอยู่แล้ว */
+const QARROW_R = 104;
+const _qaV = new THREE.Vector3(), _qaV2 = new THREE.Vector3();
+function questArrowTarget(){
+  /* 🧭 **โชว์เฉพาะตอนทำเควสต์เท่านั้น ไม่โชว์ตอนเล่นกิจกรรมรายวัน** (ผู้ใช้สั่ง 2026-08-16)
+
+     เคยเปิดให้โผล่ตอนเล่นมินิเกมเก็บของ/ซ่อนแอบเองด้วย แต่กิจกรรมรายวัน **เปิดค้างอยู่ทั้งวัน**
+     ⇒ ลูกศรโชว์ตลอดเวลาจนรบกวนเด็กที่แค่อยากเดินเล่น
+     ⇒ เควสต์เท่านั้น เพราะเควสต์มีจุดเริ่ม-จุดจบชัดเจน และเด็ก "รับงานมา" จริงๆ
+     🔒 ห้ามเปิดให้กิจกรรมรายวันใช้อีก เว้นแต่ผู้ใช้สั่งใหม่ */
+  if(!walkQuest || walkQuest.target !== 'catch') return null;
+  const row = walkQuest.need.filter(r => r.k === 'leaf')[0];
+  if(!row || catchGot(row) >= row.n) return null;
+  const P = window.HousePlay;
+  const left = (P && P.colLeft) ? P.colLeft() : [];
+  if(!left.length) return null;
+  /* ใกล้ที่สุดจากตัวเด็ก — วัดเป็นช่องแบบตรงๆ พอ (ใช้แค่เลือกเป้า ไม่ได้เอาไปคิดงบเวลา) */
+  let best = null, bd = 1e9;
+  const t = hChar.tile;
+  left.forEach(it=>{
+    const d = Math.abs(it.x - t.x) + Math.abs(it.z - t.z);
+    if(d < bd){ bd = d; best = it; }
+  });
+  return best ? {tile:best, dist:bd} : null;
+}
+function updateQuestArrow(){
+  const el = $('house-qarrow');
+  if(!el) return;
+  const show = houseOpen && hMode === 'world' && hScene === 'out' && !editMode && charGroup;
+  const tgt = show ? questArrowTarget() : null;
+  /* ⚠ **โชว์ตลอดตราบใดที่ยังเก็บไม่ครบ** ไม่ใช่เฉพาะตอนของอยู่นอกจอ —
+     ของ 8 ชิ้นกระจายทั่วเมือง ชิ้นใกล้สุดมักอยู่ในจอพอดี ลูกศรเลยแทบไม่เคยโผล่
+     (ผู้ใช้แจ้งว่า "ยังไม่เห็นลูกศร" 2026-08-16) */
+  if(!tgt){ el.hidden = true; return; }
+
+  const W2 = window.innerWidth, H2 = window.innerHeight;
+  /* มุมบนหน้าจอจริง: project ทั้งตัวเด็กและเป้าหมาย แล้ววัดมุมระหว่าง 2 จุด
+     (กล้องไอโซเมตริกเอียง 45° — ใช้มุมในโลกตรงๆ ลูกศรจะชี้เพี้ยนจากที่ตาเห็น
+      บทเรียนเดียวกับเข็มทิศ) */
+  _qaV.copy(charGroup.position).project(camera);
+  _qaV2.set(outWX(tgt.tile.x), .6, outWZ(tgt.tile.z)).project(camera);
+  const cx = (_qaV.x * .5 + .5) * W2, cy = (-_qaV.y * .5 + .5) * H2;
+  let dx = ((_qaV2.x - _qaV.x) * .5) * W2;
+  let dy = (-(_qaV2.y - _qaV.y) * .5) * H2;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len; dy /= len;
+  /* วางไว้รอบตัวเด็ก แล้วดันให้อยู่ในจอเสมอ (เผื่อเด็กเดินไปติดขอบแผนที่) */
+  const px = Math.max(30, Math.min(W2 - 30, cx + dx * QARROW_R));
+  const py = Math.max(30, Math.min(H2 - 30, cy + dy * QARROW_R));
+  el.style.left = px + 'px';
+  el.style.top  = py + 'px';
+  const rot = document.getElementById('hqa-rot');
+  /* ลูกศรวาดชี้ขึ้นในไฟล์ ⇒ หมุนตามมุมของทิศทางบนจอ */
+  if(rot) rot.setAttribute('transform',
+    'rotate(' + (Math.atan2(dx, -dy) * 180 / Math.PI).toFixed(1) + ' 22 22)');
+  const d = $('hqa-dist');
+  if(d) d.textContent = tgt.dist + ' ช่อง';
+  el.hidden = false;
 }
 /* ป้ายพิกัดมุมขวาล่าง — บอกช่องที่ตัวละครยืนอยู่ (ไว้ดูตำแหน่งตอนทดสอบแผนที่)
    อัปเดตเฉพาะตอนเปลี่ยนช่องจริงๆ ไม่แตะ DOM ทุกเฟรม */
@@ -12485,6 +12882,34 @@ function charPoseAt(kind, pr){
   const tp = PET_TOYS3D.pose ? PET_TOYS3D.pose(kind, pr, {ARM_Z: CH_ARM_Z}) : null;
   if(tp){
     Object.assign(p, tp);
+  }else if(kind === 'talk'){
+    /* 💬 ท่าคุยกัน — ยืนตรง โยกตัวเบาๆ + ยกมือประกอบคำพูดสลับข้าง (ผู้ใช้สั่ง 2026-08-16) */
+    const w2 = Math.sin(pr * Math.PI * 6);
+    p.lean = .04 * w2;
+    p.aL = -.55 + .35 * Math.sin(pr * Math.PI * 5);
+    p.aR = -.45 + .35 * Math.sin(pr * Math.PI * 5 + 1.6);
+    p.zL = CH_ARM_Z[0] * .55; p.zR = CH_ARM_Z[1] * .55;
+  }else if(kind === 'hide'){
+    /* 🙈 ท่านับเลขของเกมซ่อนแอบ — **นั่งยองปิดตา** (ผู้ใช้สั่ง 2026-08-16)
+       ⚠ `rig` หมุนรอบฝ่าเท้า เอนเกิน .26 rad เห็นเป็นล้มคว่ำ (กติกาเดิมของเฟส 12.1)
+         ⇒ ทำ "นั่งยอง" ด้วยการ **ย่อขา (legX)** ไม่ใช่เอนตัวลงไปเยอะ
+       ⚠ **ห้ามใส่ `hop` ติดลบ** — `applyCharPose` ลดสะโพกให้พอดีกับขาที่งอ**อยู่แล้ว**
+         (`rig.position.y = -CH_LEG_LEN*(1-cos(legX)) + hop`) ใส่ hop ติดลบทับ = **ขาจมพื้น**
+         (ผู้ใช้แจ้ง 2026-08-16) · `hop` มีไว้สำหรับท่าที่ตั้งใจให้ "ลอย" เท่านั้น
+       ⏱️ จังหวะของท่า (ความยาวรวม 5.9 วิ = นับ 5 + ลุกยืน .9):
+            0-1.0 วิ  ย่อลงนั่งยอง   ·  1.0-5.0 วิ  ค้างไว้  ·  5.0-5.9 วิ  **ลุกขึ้นยืน**
+       ⚠ **ต้องมีช่วงลุกยืนเสมอ** — ปล่อยให้ท่าหมดอายุเฉยๆ ตัวจะเด้งกลับท่ายืนทันทีแบบแข็งๆ
+         (ผู้ใช้แจ้ง 2026-08-16) · ใช้ smoothstep ทั้งขาลงและขาขึ้นให้ดูนุ่ม
+       ⚠ **เลขจังหวะผูกกับความยาวท่าที่ js/house-play.js เรียกมา** — แก้ที่หนึ่งต้องแก้อีกที่ */
+    const HIDE_DUR = 5.9, HIDE_UP = 1.0 / HIDE_DUR, HIDE_DOWN = 5.0 / HIDE_DUR;
+    const sm = v => { const x = Math.max(0, Math.min(1, v)); return x * x * (3 - 2 * x); };
+    const ph = pr < HIDE_UP   ? sm(pr / HIDE_UP)
+             : pr < HIDE_DOWN ? 1
+                              : sm(1 - (pr - HIDE_DOWN) / (1 - HIDE_DOWN));
+    p.lean = .20 * ph;
+    p.legX = -.95 * ph;                        /* งอเข่าลึก = นั่งยอง (สะโพกลดตามเอง) */
+    p.aL = -2.05 * ph; p.aR = -2.05 * ph;      /* ยกแขนขึ้นหน้า */
+    p.zL = -.05 * ph;  p.zR = .05 * ph;        /* หุบเข้าหากัน = มือปิดตา */
   }else if(kind === 'plant'){
     /* ย่อเข่าลงไปจิ้มเมล็ดลงดิน — ค้างท่าย่อช่วงกลางให้เห็นชัด แล้วค่อยลุก */
     const c = pr < .3 ? pr/.3 : (pr < .68 ? 1 : 1 - (pr-.68)/.32);
@@ -12627,6 +13052,7 @@ function frame(t){
   if(walkQuest) walkQuestTileCheck();
   updateWalkMark(t);              /* รอยเท้าปลายทาง — ซ่อน/โชว์ตามสถานะเดินจริงทุกเฟรม */
   if(window.HousePlay) window.HousePlay.tick(dt, t);   /* มินิเกมกลุ่ม A (เฟส 11) */
+  if(window.HouseTutor) window.HouseTutor.tick(dt);    /* 🎓 ระบบสอนเล่น (เฟส 15) */
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator' || hMode==='pet'){
@@ -12671,6 +13097,7 @@ function frame(t){
         if(hChar.seg >= hChar.path.length){
           hChar.path = []; hChar.walking = false;
           finishArrive();
+          saveCharSpot();          /* 📍 เดินถึงที่แล้วจดตำแหน่งไว้ (หน่วง 1.5 วิในตัว) */
         }
       }
       if(u){
@@ -12799,6 +13226,7 @@ function frame(t){
   updateNpcLabels();
   updateParentLabels();
   updateCompass();
+  updateQuestArrow();
   updateCoinBadge();
   updatePosChip();
   updateLamps(t, dt);
@@ -12916,6 +13344,9 @@ function enterHouseGame(){
     hChar.tile = {x:SPAWN_TILE.x, z:SPAWN_TILE.z};
     hChar.path = []; hChar.walking = false; hChar.pendingEnter = false; hChar.pendingExit = false;
     hChar.targetRotY = Math.PI/4;
+    /* 📍 เด็กคนนี้เคยเล่นแล้ว → กลับไปยืนจุดเดิมที่ออกไป (ผู้ใช้สั่ง 2026-08-16)
+       ⚠ ต้องอยู่ **หลัง** ตั้งค่าเริ่มต้น เพื่อให้มีค่าตั้งต้นรออยู่แล้วถ้ากู้ไม่สำเร็จ */
+    restoreCharSpot();
   }
   updateLights(true);
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -12957,6 +13388,7 @@ function enterHouseGame(){
   lastT = performance.now();
   /* เฟส 11 — มินิเกมกลุ่ม A ที่เล่นในโลก 3D (js/house-play.js) · ไฟล์นั้นอาจยังไม่โหลดก็ไม่พัง */
   if(window.HousePlay) window.HousePlay.start();
+  if(window.HouseTutor) window.HouseTutor.start();     /* 🎓 บทเรียนเริ่มเองถ้ายังเรียนไม่จบ */
   houseStarted = true;          /* ✅ เข้าบ้านเสร็จสมบูรณ์แล้ว (ชุดเทสรอสัญญาณนี้ ดู __houseDbg.ready) */
   rafId = requestAnimationFrame(frame);
 }
@@ -12967,7 +13399,56 @@ function enterHouseGame(){
    ⇒ ให้รอ `__houseDbg.ready()` แทนเสมอ */
 let houseStarted = false;
 
+/* ================= 📍 จำที่ที่เด็กยืนล่าสุด (2026-08-16 · ผู้ใช้สั่ง) =================
+   ออกจากเมืองแล้วกลับเข้ามาใหม่ ต้องอยู่จุดเดิม ไม่ใช่เด้งกลับหน้าบ้านทุกครั้ง
+   ⚠ เก็บ **ฉากด้วย** (ในบ้าน/นอกบ้าน) ไม่งั้นออกตอนอยู่ในบ้านแล้วกลับมาโผล่นอกบ้าน
+   ⚠ ต้องเช็คว่าช่องนั้น **ยังเดินได้อยู่** ตอนโหลด — ผังเมืองอาจเปลี่ยน (mapV) หรือเด็กย้ายของ
+     ทับช่องนั้นไปแล้ว ⇒ ถอยไปจุดตั้งต้นแทน ดีกว่าเด็กติดอยู่ในกำแพง */
+let lastSpotSave = 0;
+function saveCharSpot(force){
+  if(!hChar || !hChar.tile || !activeChild || !houseOpen) return;
+  /* หน่วงไว้ 1.5 วิ — เด็กเดินยาวๆ จะได้ไม่เขียน localStorage รัวทุกช่อง
+     (`force` ใช้ตอนออกจากเกม/ปิดแอป ซึ่งต้องเซฟให้ได้แน่ๆ) */
+  const now = Date.now();
+  if(!force && now - lastSpotSave < 1500) return;
+  lastSpotSave = now;
+  saveHouseData({spot:{x: hChar.tile.x, z: hChar.tile.z, scene: hScene}});
+}
+/* ⚠ **ต้องเซฟตอน "ปิดแอป" ด้วย ไม่ใช่แค่ตอนกดออกจากเมือง** (ผู้ใช้แจ้ง 2026-08-16)
+   เด็กปิดแท็บ/สลับแอปบนแท็บเล็ต ⇒ `stopHouseGame()` ไม่ถูกเรียกเลย ตำแหน่งจึงไม่เคยถูกบันทึก
+   ⚠ บนมือถือ **`beforeunload` ไม่ทำงานเชื่อถือได้** — ต้องใช้ `visibilitychange` (สลับแอป/ล็อกจอ)
+     กับ `pagehide` (ปิดแท็บ) ⇒ ใส่ทั้งคู่ ไม่ใช่อย่างใดอย่างหนึ่ง */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden') saveCharSpot(true);
+});
+window.addEventListener('pagehide', ()=> saveCharSpot(true));
+function restoreCharSpot(){
+  const d = loadHouseData() || {};
+  const sp = d.spot;
+  if(!sp || typeof sp.x !== 'number') return false;
+  /* ⚠ **ตอนเข้าเมืองใหม่ กริดผังเมืองอาจยังไม่ถูกสร้าง** — ถ้าเช็ค `isWalk` ตอนนั้นจะได้ false
+       ทุกครั้งแล้วเด้งกลับจุดตั้งต้นเสมอ (เจอจากเทสจริง 2026-08-16: บันทึก 26,30 แต่กลับมาที่ 21,37)
+     ⇒ กริดยังไม่พร้อม = เชื่อค่าที่บันทึกไว้ไปก่อน (ตอนบันทึกมันเดินได้อยู่แล้ว)
+       กริดพร้อมแล้วค่อยตรวจจริง เผื่อผังเมืองเปลี่ยนหรือเด็กวางของทับช่องนั้น */
+  const okTile = (grid, W2, D2, x, z) =>
+    (!grid || !grid.length) ? true : isWalk(grid, W2, D2, x, z);
+  if(sp.scene === 'in'){
+    hScene = 'in';
+    worldGroup.visible = false; interiorGroup.visible = true;
+    hChar.tile = okTile(inGrid, IN_W, IN_D, sp.x, sp.z)
+      ? {x:sp.x, z:sp.z} : {x:IN_DOOR_TILE.x, z:IN_DOOR_TILE.z + 1};
+  }else{
+    hScene = 'out';
+    worldGroup.visible = true; interiorGroup.visible = false;
+    hChar.tile = okTile(outGrid, OUT_W, OUT_D, sp.x, sp.z)
+      ? {x:sp.x, z:sp.z} : {x:SPAWN_TILE.x, z:SPAWN_TILE.z};
+  }
+  hChar.path = []; hChar.walking = false; hChar.pendingEnter = false; hChar.pendingExit = false;
+  hChar.targetRotY = Math.PI / 4;
+  return true;
+}
 function stopHouseGame(){
+  saveCharSpot(true);    /* 📍 จำที่ที่เด็กยืนไว้ กลับเข้ามาใหม่จะได้อยู่จุดเดิม */
   walkQuest = null;      /* งานเดินที่ค้างอยู่ไม่ถือว่าทำเสร็จ — กลับมาคุยกับพ่อแม่รับใหม่ได้ */
   if(window.HouseMusic) HouseMusic.release();   /* 🎵 คืน playlist ให้หน้าหลัก */
   if(editMode) exitEditMode();
@@ -12976,6 +13457,7 @@ function stopHouseGame(){
   { const cv = $('house-canvas'); if(cv) cv.classList.remove('house-talk-hover'); }   /* กันเคอร์เซอร์ฟองคำพูดค้าง */
   houseOpen = false;
   if(window.HousePlay) window.HousePlay.stop();
+  if(window.HouseTutor) window.HouseTutor.stop();
   clearPlayObjs();               /* ของของมินิเกมกลุ่ม A ต้องไม่ค้างในฉากข้ามรอบการเล่น */
   qzOnClose = null;              /* ออกจากบ้านแล้ว ห้ามให้หน้าคลังคำถามเด้งกลับมาทับหน้าหลัก */
   closeQuestBoard();
@@ -13239,6 +13721,7 @@ function setHouseCtrlOpen(open){
   if(!list || !gear) return;
   list.hidden = !open;
   gear.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if(open && typeof refreshTutBtn === 'function') refreshTutBtn();   /* 🎓 ป้ายข้าม/เรียนใหม่ */
 }
 $('house-ctrl-gear').addEventListener('click', ()=>{
   if(typeof playClick==='function') playClick();
@@ -13283,6 +13766,28 @@ $('house-ctrl-gear').addEventListener('click', ()=>{
     setHouseCtrlOpen(false);
     if(window.HouseMusicUI) window.HouseMusicUI.open();
     else if(typeof showToast==='function') showToast('🎶', 'หน้าเพลงยังโหลดไม่เสร็จ ลองอีกครั้งนะ');
+  });
+}
+/* 🎓 บทเรียนสอนเล่น (เฟส 15) — **ปุ่มนี้อยู่ในเมนูเฟืองเท่านั้น เด็กข้ามเองไม่ได้** (ผู้ใช้สั่ง)
+   ยังเรียนไม่จบ = ปุ่มนี้คือ "ข้ามบทเรียน" · เรียนจบ/ข้ามไปแล้ว = "เรียนใหม่อีกครั้ง"
+   ⚠ ป้ายต้องอัปเดตทุกครั้งที่เปิดเมนู ไม่งั้นพ่อแม่กดแล้วได้ผลตรงข้ามกับที่ป้ายเขียน */
+function refreshTutBtn(){
+  const b = $('house-tut-btn');
+  if(!b) return;
+  const T = window.HouseTutor;
+  const lab = b.querySelector('.hc-label');
+  const done = !!(T && (T.skipped() || (T.saved() && (T.saved().done || []).length >= 4)));
+  if(lab) lab.textContent = done ? 'เรียนใหม่อีกครั้ง' : 'ข้ามบทเรียน';
+}
+{ const tb = $('house-tut-btn');
+  if(tb) tb.addEventListener('click', ()=>{
+    if(typeof playClick==='function') playClick();
+    setHouseCtrlOpen(false);
+    const T = window.HouseTutor;
+    if(!T){ if(typeof showToast==='function') showToast('🎓', 'บทเรียนยังโหลดไม่เสร็จ ลองอีกครั้งนะ'); return; }
+    const done = T.skipped() || ((T.saved() && (T.saved().done || []).length) >= 4);
+    if(done) T.restart(); else T.skipAll();
+    refreshTutBtn();
   });
 }
 /* จุดต่อให้หน้าเทสสั่งวาด HUD ใหม่หลังยัดค่า (ไม่งั้นหลอด/จำนวนมื้อในแถบค้างค่าเก่าจนกว่าจะครบวินาที) */
@@ -13380,9 +13885,18 @@ window.HouseWorld = {
   OUT_W: () => OUT_W, OUT_D: () => OUT_D,
   grid:  () => outGrid,
   walkable: (x, z) => isWalk(outGrid, OUT_W, OUT_D, x, z),
+  /* 🌉 ช่องนี้เป็นสะพานไหม — ของที่วางที่ y=0 จะจมใต้แผ่นสะพาน ⇒ มินิเกมต้องเลี่ยง */
+  isBridge: (x, z) => !!(outGrid[z] && outGrid[z][x] === 2),
   nearWalkable: (x, z) => nearestWalkable(outGrid, OUT_W, OUT_D, x, z),
   /* ⚠ **ระยะเดินต้องวัดด้วยตัวนี้เท่านั้น ห้ามใช้เส้นตรง** — แม่น้ำ/สะพานทำให้ 10 ช่องเส้นตรง
      กลายเป็นเดินอ้อม 40 ช่อง (สูตรจำนวนข้อของเฟส 10 พังทันทีถ้าใช้เส้นตรง) */
+  /* 🚶 เส้นทางเดินจริง (รายช่อง) — มินิเกมใช้ให้ตัวละครเดินตามทาง **ไม่ทะลุตึก/รั้ว/น้ำ**
+     คืน [] ถ้าไปไม่ถึง · ตัวเดียวกับที่ระบบเดินของเด็กใช้ ⇒ เดินได้เหมือนกันเป๊ะ */
+  path: (from, to) => {
+    if(!from || !to) return [];
+    const p = findPath(outGrid, OUT_W, OUT_D, from, to);
+    return p ? p.map(t => ({x:t.x, z:t.z})) : [];
+  },
   pathLen: (from, to) => {
     if(!from || !to) return -1;
     const p = findPath(outGrid, OUT_W, OUT_D, from, to);
@@ -13411,6 +13925,15 @@ window.HouseWorld = {
   award: n => awardCoins(n),               /* ⚠ เงินในโหมดบ้านจ่ายผ่านตัวนี้จุดเดียวเท่านั้น (ข้อ 5) */
   toast: (ic, msg) => { if(typeof showToast === 'function') showToast(ic, msg); },
   npcDefs: () => NPC_DEFS,
+  /* 🙈 เลขนับถอยหลังกลางจอ (เกมซ่อนแอบ) — ส่ง null = ซ่อน */
+  bigCount: n =>{
+    const el = $('house-bigcount'), sp = $('hbc-n');
+    if(!el) return;
+    if(n == null){ el.hidden = true; return; }
+    if(sp) sp.textContent = String(n);
+    el.hidden = false;
+    el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+  },
   refreshHud: () => { questBarKey = ''; refreshQuestBar(); },
   /* 🎣 มินิเกมในโลก 3D บอกว่า "ทำสำเร็จ 1 ครั้ง" เพื่อให้เควสต์แบบ "ทำจริงแล้วเอาไปส่ง" นับได้
      คืน true ถ้ามีเควสต์กำลังนับอยู่จริง (ตัวเรียกจะได้รู้ว่าควรบอกความคืบหน้าเพิ่มไหม)
@@ -13470,6 +13993,23 @@ window.HouseWorld = {
     .map(g => (g.userData.deco || {}).rec)
     .filter(r => r && r.id === 'veg-plot')
     .map(r => ({x:r.x, z:r.z})),
+  /* ---------- เพิ่มให้เฟส 15 (ระบบสอนเล่น) ----------
+     บทเรียนต้องพาเด็ก "ไปที่ร้าน/กระดาน/บ้านคนนั้น" ⇒ ต้องถามพิกัดจริงจากผังได้
+     ⚠ **ห้ามให้ไฟล์บทเรียนฮาร์ดโค้ดพิกัดเอง** — ผังเมืองย้ายร้านมาแล้วหลายรอบ
+       (ร้านต้นไม้/แฟชั่นมอลล์/ร้านของเล่นย้ายกันคนละที่เมื่อ 2026-08-08..09)
+       ถ้าจดพิกัดไว้ในบทเรียน วันหนึ่งบทเรียนจะพาเด็กไปยืนกลางทุ่งโดยไม่มี error ให้จับ */
+  lotDoor: id => {
+    const l = LOT_BY_ID[id]; if(!l) return null;
+    const d = lotDoorTile(l);
+    const w = isWalk(outGrid, OUT_W, OUT_D, d.x, d.z) ? d : nearestWalkable(outGrid, OUT_W, OUT_D, d.x, d.z);
+    return w ? {x:w.x, z:w.z} : null;
+  },
+  /* ช่องยืนหน้ากระดานภารกิจ (ตัวกระดานบล็อกช่องตัวเอง ⇒ ต้องหาช่องข้างๆ ที่เดินได้) */
+  boardTile: () => {
+    const w = nearestWalkable(outGrid, OUT_W, OUT_D, QUEST_BOARD.x, QUEST_BOARD.z + 1);
+    return w ? {x:w.x, z:w.z} : null;
+  },
+  npcTile: id => { const n = NPCS.find(v => v.id === id); return n ? {x:n.x, z:n.z} : null; },
   /* ตำแหน่งตะกร้า = อ่านจาก decor จริง (ย้ายในโหมดตกแต่งแล้วป้ายตามไปเอง) */
   basketTile: () => {
     const r = (decorGroups.out || []).map(g => (g.userData.deco || {}).rec)
@@ -13678,6 +14218,10 @@ if(!homeView.hidden) houseBuddyRefresh();
      ⚠ **ห้ามตั้งชื่อว่า `charPose`** — คีย์นั้นถูกจองไว้แล้วท้ายอ็อบเจกต์นี้ (อ่านท่าที่กำลังเล่นอยู่จริง)
        key ซ้ำใน object literal ตัวหลังชนะเสมอ ⇒ ตัวนี้จะเงียบหายโดยไม่มี error ให้จับ
        (กับดักเดียวกับ `action` ของเปียโนในเฟส 9 — เจอซ้ำอีกรอบตอนทำเฟส 12.1) */
+  charActKind: ()=> charAct ? charAct.kind : null,
+  /* ⚠ เครื่องเทสวาดได้ ~3 fps ⇒ "นิ่งไป 1 วิ" ไม่ได้แปลว่าหยุดเดินแล้ว (ก้าวละ ~2 วิจริง)
+     เทสที่ต้องรอให้เด็กเดินถึงที่ ให้ดูธงนี้ **ห้ามเดาจากเวลา** */
+  walking: ()=> !!hChar.walking,
   poseAt: (kind, pr)=> charPoseAt(kind, pr),
   poseKinds: ()=> (PET_TOYS3D.POSE_KINDS || []).slice(),
   /* ---- จุดต่อชุดเทสเฟส 8 (คลังเฟอร์นิเจอร์ 180 ชิ้น + ของแต่งตัว 114 แบบ) ----
@@ -13704,6 +14248,12 @@ if(!homeView.hidden) houseBuddyRefresh();
   musicItems: ()=> FURN.items.filter(it => it.cat === 'music')
                     .map(it => ({id:it.id, voice:it.voice || 'piano',
                                  note:it.note | 0, tune:it.tune || null})),
+  /* ชุดเทส: ตำแหน่งช่องของเพื่อนที่กำลังแอบ (ดูว่าล้อมวงไม่ทับกันจริงไหม) */
+  seekPos: ()=>{
+    const P = window.HousePlay;
+    if(!P || !P.state || !P.state().seek) return [];
+    return (window.__seekObjPos || []).slice();
+  },
   /* 🎣 สถานะเควสต์ "ตกปลาไปส่ง" — ตัวนับของจริงที่หน้าจอถืออยู่ */
   /* 🏪 ชุด B: สั่งให้ "ถึงร้านแล้ว" ผ่านทางเดินโค้ดจริง (ชุดเทสไม่ต้องเดินข้ามเมือง) */
   routineCats: ()=> routineCats(),
@@ -13712,6 +14262,10 @@ if(!homeView.hidden) houseBuddyRefresh();
   martArrive: ()=>{ if(walkQuest && walkQuest.target === 'mart' && walkQuest.leg === 1) openMartBoard(); },
   walkLeg: ()=> walkQuest ? {target:walkQuest.target, leg:walkQuest.leg | 0, spent:walkQuest.spent | 0,
                              buy:!!walkQuest.buy, done:catchDone(), toNpc:walkQuest.toNpc} : null,
+  /* ชุดเทส: สถานะลูกศรนำทาง (เป้าที่ชี้อยู่ + อยู่นอกจอไหม) */
+  qArrow: ()=>{ const t = questArrowTarget(); const el = $('house-qarrow');
+                return {target:t, shown: !!(el && !el.hidden),
+                        left: el ? el.style.left : '', top: el ? el.style.top : ''}; },
   walkCatch: ()=> (walkQuest && (walkQuest.target === 'catch' || walkQuest.target === 'mart'))
                     ? {where: walkQuest.where, need: walkQuest.need, got: walkQuest.got,
                        toNpc: walkQuest.toNpc, done: catchDone()} : null,

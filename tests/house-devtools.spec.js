@@ -12,7 +12,7 @@ const CHILD = { id: 'dev-test', name: 'เทสปรับค่า', emoji: '
 const HKEY = 'p1quiz_house_' + CHILD.id;
 const PKEY = 'p1quiz_progress_' + CHILD.id;
 const CHAR = { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 };
-const SEED = { v: 1, mapV: 3, char: CHAR, pet: { type: 'dog', name: 'บราวนี่', color: 0 } };
+const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: CHAR, pet: { type: 'dog', name: 'บราวนี่', color: 0 } };
 
 async function openHouse(page, coins) {
   const errors = [];

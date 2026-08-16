@@ -25,7 +25,7 @@ async function house(page, seed) {
     localStorage.setItem('p1quiz_active_child', c.id);
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify(Object.assign({
-      v: 1, mapV: 4, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
+      v: 1, mapV: 4, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
     }, s || {})));
   }, [CHILD, seed || null]);
   await page.goto('/');
@@ -91,6 +91,7 @@ test('เฟส 11C: ซ่อนแอบ — จุดแอบมาจาก
   const r = await page.evaluate(() => {
     const P = window.HousePlay, W = window.HouseWorld;
     const ok = P.seekStart();
+    P.seekIntroSkip();   /* ⏭️ ข้ามอินโทรนับถอยหลัง 5 วิ (เพิ่ม 2026-08-16) */
     const s = P.state().seek;
     return {
       ok, n: s.spots.length, on: s.on,
@@ -125,6 +126,7 @@ test('เฟส 11D: ซ่อนแอบ — หาครบได้เหร
   const r = await page.evaluate(() => {
     const P = window.HousePlay, Q = window.HouseQuests;
     P.seekStart();
+    P.seekIntroSkip();
     const n = P.state().seek.spots.length;
     /* "เจอ" ทีละคนผ่านทางเดินโค้ดจริง (ข้ามการเดินเพราะเทสเดินทั้งเมืองไม่ไหว) */
     for (let i = 0; i < n; i++) P.arrive({ game: 'seek', i });
@@ -294,6 +296,10 @@ test('เฟส 11H: ช่างภาพ — ได้ภาพจริงจ
   const errs = await house(page);
   const r = await page.evaluate(() => {
     const P = window.HousePlay;
+    /* ⚠ ใบสั่งรูปสุ่มตาม **วันที่จริง** ⇒ บางวันสั่ง "ถ่ายที่ตลาด/ริมน้ำ" แล้วเด็กยืนผิดที่
+       ทุกช็อตจะถูกปฏิเสธ เทสแดงเองโดยที่โค้ดไม่ได้ผิด (เจอ 2026-08-17 พอวันเปลี่ยน)
+       ⇒ ตรึงใบสั่งเป็น "มุมไหนก็ได้" เทสนี้วัดเรื่องเพดานจำนวนรูป ไม่ได้วัดด่านตำแหน่ง */
+    P.state().photo.order = 'any';
     const u = P.grabShot();
     /* ถ่ายรัวๆ เกินเพดาน — ต้องตัดของเก่าทิ้ง ไม่ใช่บวมจน localStorage เต็ม */
     for (let i = 0; i < P.PHOTO_MAX + 4; i++) P.photoShoot();
@@ -447,7 +453,7 @@ test('เฟส 11J: ขึ้นวันใหม่ — ของรายว
 
 test('เฟส 11K: ของในฉากต้องถูกเก็บกวาด — เข้าบ้าน/ออกจากบ้านแล้วไม่ค้าง', async ({ page }) => {
   const errs = await house(page);
-  const out0 = await page.evaluate(() => { window.HousePlay.seekStart(); return window.HousePlay.objs(); });
+  const out0 = await page.evaluate(() => { window.HousePlay.seekStart(); window.HousePlay.seekIntroSkip(); window.HousePlay.seekIntroSkip(); return window.HousePlay.objs(); });
   expect(out0.col).toBeGreaterThan(0);
   expect(out0.seek).toBeGreaterThan(0);
 

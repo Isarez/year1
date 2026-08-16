@@ -15,7 +15,7 @@ const HKEY = 'p1quiz_house_' + CHILD.id;
 const PKEY = 'p1quiz_progress_' + CHILD.id;
 const CHAR = { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 };
 /* มีบ้านอยู่แล้ว → ข้ามหน้าสร้างตัวละคร เข้าเมืองได้เลย */
-const SEED = { v: 1, mapV: 3, char: CHAR };
+const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: CHAR };
 
 async function openHouse(page, seedHouse, coins) {
   const errors = [];
@@ -118,7 +118,7 @@ test('เด็กใหม่: ยังไม่มีสัตว์ ⇒ ไ�
 test('migration: เด็กที่เลี้ยงสัตว์อยู่ก่อนเปิดร้าน ต้องได้ชนิด+สีนั้นฟรี และสัตว์/บ้านสัตว์ต้องไม่หาย', async ({ page }) => {
   /* สภาพก่อนเฟส 3A: econVer 3 · เลือกแพนด้าสีที่ 2 มาฟรี · บ้านสัตว์ถูก seed ไว้ในสนาม */
   const legacy = {
-    v: 1, mapV: 3, econVer: 3, worldSeeded: true, char: CHAR,
+    v: 1, mapV: 3, tut: { skip: true }, econVer: 3, worldSeeded: true, char: CHAR,
     pet: { type: 'panda', name: 'ไผ่หวาน', color: 1 },
     decor: { out: [{ id: 'pet-house', x: 3, z: 3, rot: 0, col: 0 }], in: [] },
     unlocked: [],

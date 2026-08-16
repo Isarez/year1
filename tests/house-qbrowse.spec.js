@@ -11,7 +11,7 @@ const { test, expect } = require('@playwright/test');
 const CHILD = { id: 'qb-test', name: 'เทสคลัง', emoji: '📚', birthDate: '2018-01-15', grade: 'p2' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
 /* มีบ้านอยู่แล้ว → ข้ามหน้าสร้างตัวละคร/เลือกสัตว์เลี้ยง เข้าเมืองได้เลย */
-const SEED = { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
+const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
 
 async function enterHouse(page) {
   const errors = [];

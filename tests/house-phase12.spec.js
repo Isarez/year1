@@ -24,7 +24,7 @@ async function house(page, seed) {
     localStorage.setItem('p1quiz_active_child', c.id);
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify(Object.assign({
-      v: 1, mapV: 4, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
+      v: 1, mapV: 4, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
       pet: { type: 'dog', color: 0, name: 'ปุยนุ่น' },
     }, s || {})));
   }, [CHILD, seed || null]);
@@ -166,7 +166,7 @@ test('เฟส 12F: ความสุขต่ำ = น้องไปงี�
   /* ต้องมีบ้านสัตว์เลี้ยงวางอยู่จริงถึงจะมีที่ให้งีบ */
   /* ใช้พิกัดชุดเดียวกับ tests/house-pets.spec.js (mapV 3 แล้วให้ migration เลื่อนให้เอง) */
   const errs = await house(page, {
-    mapV: 3, econVer: 3, worldSeeded: true,
+    mapV: 3, tut: { skip: true }, econVer: 3, worldSeeded: true,
     decor: { out: [{ id: 'pet-house', x: 3, z: 3, rot: 0, col: 0 }], in: [] },
   });
   expect(await page.evaluate(() => window.HousePetCare.SLEEP_AT)).toBe(25);

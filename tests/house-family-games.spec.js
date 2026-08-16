@@ -19,7 +19,7 @@ async function openHouse(page, grade) {
     localStorage.setItem('p1quiz_active_child', child.id);
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_progress_' + child.id, JSON.stringify({ coins: 300 }));
-    localStorage.setItem('p1quiz_house_' + child.id, JSON.stringify({ v: 1, mapV: 3,
+    localStorage.setItem('p1quiz_house_' + child.id, JSON.stringify({ v: 1, mapV: 3, tut: { skip: true },
       char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } }));
   }, [CHILD, grade || '']);
   await page.goto('/');

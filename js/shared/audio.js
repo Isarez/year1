@@ -112,23 +112,69 @@ function playMusicTrack(list, idx){
   if(musicOn) startMusic();              /* ③ ค่อยเปิดเพลงที่เลือก */
 }
 /* ---- เพลงหลายชั้น: ทำนองเป็นตัวตัดสินว่าเพลงจบ · เบส/คอร์ดวนซ้ำอยู่ภายในเพลง ---- */
-const MUSIC_LAYER_MIX = {lead:{gain:1, sub:true, atk:.06},
-                         bass:{gain:.55, sub:false, atk:.07},
-                         chord:{gain:.30, sub:false, atk:.13}};
+/* ============================================================
+   🎻 เสียงประจำชั้น (เขียนใหม่ 2026-08-16 รอบ 3)
+
+   ผู้ใช้แจ้ง: **"เพลงมีเครื่องดนตรีเสียงเดียว เสียงคีย์บอร์ดแบบนี้แสบหูเกินไป"**
+   🔑 ต้นเหตุ 2 อย่าง:
+     ① ทุกชั้นเป็น sine เปล่าเหมือนกันหมด ⇒ ฟังเป็น **เครื่องเดียวเล่น 3 เสียงพร้อมกัน** ไม่ใช่วง
+     ② sine ล้วนย่าน 800-1000 Hz **แสบหูที่สุด** และทำนอง 23% อยู่เหนือ A5
+
+   ⇒ รอบนี้ให้แต่ละชั้นมี **โอเวอร์โทนเป็นของตัวเอง = คนละเครื่องดนตรี** + หรี่โน้ตสูงอัตโนมัติ
+   ⚠ ยังเป็น **sine ล้วนทุกตัว ไม่มี sawtooth/square ไม่มีกลอง** ตามกติกาเดิม
+     (ความเป็น "เครื่องดนตรี" มาจากส่วนผสมโอเวอร์โทน + ซองเสียง ไม่ใช่จากรูปคลื่นแข็งๆ)
+   ============================================================ */
+const MUSIC_VOICES = {
+  /* 🎵 ระนาด/มาริมบา — ไม้ตี โอเวอร์โทนที่ 4 เด่น เสียงอุ่น จางเร็ว (ทำนองหลัก) */
+  marimba: {parts:[[1,.9],[4,.16],[9.2,.04]], atk:.012, rel:.32, sub:true},
+  /* 🔔 ระฆังราว (กลอกเกนสปีล) — โลหะตีเบาๆ ใส จางปานกลาง */
+  glock:   {parts:[[1,.85],[2.7,.22],[5.4,.07]], atk:.005, rel:.28, sub:true},
+  /* 🪈 ขลุ่ย — ขึ้นเสียงช้า ค้างยาว ไม่มีเสียงต่ำ (ทำนองของเพลงที่ต้องการความนุ่ม) */
+  flute:   {parts:[[1,.85],[2,.14],[3,.05]], atk:.06, rel:.74, sub:false},
+  /* 🎸 กีตาร์โปร่ง ดีดทีละสาย — ใช้เป็นเบส ชัดโดยไม่ขุ่น */
+  guitar:  {parts:[[1,.9],[2,.28],[3,.10],[4,.04]], atk:.008, rel:.26, sub:false},
+  /* 🪕 กีตาร์ตีคอร์ด — ใช้แทนแผ่นเสียงคลอ (pad) ที่ฟังเป็นออร์แกน/คีย์บอร์ด
+     ⚠ **ห้ามกลับไปใช้เสียงลากค้าง** — ผู้ใช้สั่ง 2026-08-16 ว่าไม่เอาเสียงคีย์บอร์ดเลย
+       เสียงคอร์ดที่ "ลากค้างสม่ำเสมอ" คือสิ่งที่หูตีความว่าเป็นออร์แกนทันที
+     `spread` = ดีดไล่สายทีละเส้น ไม่ใช่กดพร้อมกัน — นี่คือตัวที่ทำให้ฟังเป็นกีตาร์จริง */
+  strum:   {parts:[[1,.75],[2,.24],[3,.09]], atk:.010, rel:.34, sub:false, spread:.022},
+  /* ✨ กระดิ่งเล็ก — ประกายบางๆ โรยเป็นจุดๆ (ชั้นที่ 4 · เบามาก) */
+  bells:   {parts:[[2,.5],[4,.16],[5.4,.05]], atk:.004, rel:.22, sub:false},
+};
+/* ⚠ **เพลงพื้นหลังต้องเบากว่าเสียงกดปุ่มเสมอ** (ผู้ใช้สั่ง 2026-08-16)
+   `playClick` พีค 0.12 · `playCorrect` พีค 0.14 · เพลง = master 0.025 × ผลรวมทุกชั้นที่ดังพร้อมกัน
+   🔒 ห้ามปรับขึ้นโดยไม่ถามผู้ใช้ · มีเทสวัดผลรวมไว้ที่ tests/house-phase14.spec.js */
+const MUSIC_LAYER_MIX = {
+  lead:  {gain:.55, voice:'marimba', tilt:.28},   /* tilt = หรี่โน้ตสูง กันแสบหู */
+  bass:  {gain:.24, voice:'guitar',  tilt:0},
+  chord: {gain:.12, voice:'strum',   tilt:.18},
+  spark: {gain:.07, voice:'bells',   tilt:.35},
+};
+/* รวมค่าของชั้น + เสียงประจำชั้น (เพลงระบุ `voices:{lead:'musicbox'}` ทับได้รายเพลง) */
+function musicLayerOpt(layer, track){
+  const mix = MUSIC_LAYER_MIX[layer] || MUSIC_LAYER_MIX.lead;
+  const vName = (track && track.voices && track.voices[layer]) || mix.voice;
+  const v = MUSIC_VOICES[vName] || MUSIC_VOICES.marimba;
+  return {gain:mix.gain, tilt:mix.tilt, parts:v.parts, atk:v.atk, rel:v.rel, sub:v.sub,
+          spread:v.spread || 0};
+}
 function musicSchedulerLayered(track){
   const beat = 60 / track.bpm;
   const horizon = audioCtx.currentTime + 1.0;
-  if(!musicLayerT) musicLayerT = {lead:musicNextTime, bass:musicNextTime, chord:musicNextTime, i:{bass:0, chord:0}};
+  if(!musicLayerT) musicLayerT = {lead:musicNextTime, bass:musicNextTime, chord:musicNextTime,
+                                  spark:musicNextTime, i:{bass:0, chord:0, spark:0}};
   /* ชั้นเบส/คอร์ด — วนซ้ำไปเรื่อยๆ จนกว่าทำนองจะจบเพลง */
-  ['bass', 'chord'].forEach(k=>{
+  ['bass', 'chord', 'spark'].forEach(k=>{
     const seq = track.layers[k];
     if(!seq || !seq.length) return;
-    const mix = MUSIC_LAYER_MIX[k];
+    const mix = musicLayerOpt(k, track);
     while(musicLayerT[k] < horizon){
       const step = seq[musicLayerT.i[k] % seq.length];
       const dur = step[1] * beat;
       const notes = Array.isArray(step[0]) ? step[0] : [step[0]];
-      notes.forEach(f => scheduleMusicNote(f, musicLayerT[k], dur, mix));
+      /* 🪕 `spread` = ดีดไล่สายทีละเส้น (เสียงต่ำก่อน) — ทำให้คอร์ดฟังเป็น "กีตาร์ตีคอร์ด"
+         แทนที่จะเป็น "กดคีย์บอร์ดพร้อมกัน" ซึ่งผู้ใช้ไม่เอา (2026-08-16) */
+      notes.forEach((f, ni) => scheduleMusicNote(f, musicLayerT[k] + ni * (mix.spread || 0), dur, mix));
       musicLayerT[k] += dur;
       musicLayerT.i[k]++;
     }
@@ -139,7 +185,7 @@ function musicSchedulerLayered(track){
     const step = lead[musicNoteIndex];
     if(!step) break;
     const dur = step[1] * beat;
-    scheduleMusicNote(step[0], musicLayerT.lead, dur, MUSIC_LAYER_MIX.lead);
+    scheduleMusicNote(step[0], musicLayerT.lead, dur, musicLayerOpt('lead', track));
     musicLayerT.lead += dur;
     musicNoteIndex++;
     if(musicNoteIndex >= lead.length){

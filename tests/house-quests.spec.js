@@ -23,7 +23,9 @@ async function openHouse(page, seedHouse, seedProgress) {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
     localStorage.setItem('p1quiz_music', 'off');
-    if (seed) localStorage.setItem(hkey, JSON.stringify(seed));
+    /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) เสมอ — เทสชุดนี้สั่งเควสต์เอง ฟองนกฮูกไม่ควรมาแทรก */
+    const s2 = Object.assign({}, seed || {}, { tut: { skip: true } });
+    localStorage.setItem(hkey, JSON.stringify(s2));
     if (prog) localStorage.setItem(pkey, JSON.stringify(prog));
   }, [CHILD, HKEY, seedHouse || null, PKEY, seedProgress || null]);
   await page.goto('/');

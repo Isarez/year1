@@ -27,7 +27,7 @@ async function house(page, unlockAll) {
     localStorage.setItem('p1quiz_active_child', c.id);
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify({
-      v: 1, mapV: 4, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
+      v: 1, mapV: 4, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
       pet: { type: 'dog', color: 0, name: 'ปุยฝ้าย' },
     }));
   }, CHILD);

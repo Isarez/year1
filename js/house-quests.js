@@ -579,7 +579,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
                                .reduce((a, b) => a + b, 0);
             const budget = cheap + 1 + ((rng() * 3) | 0);
             out.push({kind:'sort', basket:true, need:need, budget:budget,
-                      q:'คุณแม่ให้เงิน ' + budget + ' เหรียญ ช่วยเลือกของ ' + need + ' อย่างให้ไม่เกินเงินนะ',
+                      q:'คุณแม่ให้เงิน ' + budget + ' บาท ช่วยเลือกของ ' + need + ' อย่างให้ไม่เกินเงินนะ',
                       emoji:'', choices:[], correct:0,
                       bins:[{id:'basket', name:'ตะกร้าของหนู', emoji:'🧺'}],
                       tiles: shuffled(rng, tiles),
@@ -724,86 +724,47 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     /* ---------- จ่ายเงินให้พอดี ----------
        ⚠ **ต้องมีชุดเหรียญที่จ่ายพอดีได้เสมอ** ⇒ สร้างคำตอบก่อน แล้วค่อยแจกเหรียญหลอกเพิ่ม
          (ถ้าสุ่มเหรียญก่อนแล้วหวังว่าจะรวมได้พอดี = มีโอกาสเป็น dead end จริงๆ) */
+    /* ---------- 💰 จ่ายเงินให้พอดี (เขียนใหม่ 2026-08-16 ตามที่ผู้ใช้สั่ง) ----------
+       เดิมเป็นกระดานลาก: แจกเหรียญมาชุดหนึ่ง (มีตัวหลอกปน) ให้ลากลงถัง
+       ⇒ เด็กไม่ได้ "เลือกวิธีจ่าย" เอง แค่หาว่าเหรียญไหนที่แจกมารวมกันได้พอดี
+
+       ตอนนี้: **มีเหรียญ 4 แบบให้เลือกเอง (1/2/5/10) แตะที่เหรียญได้เลย ไม่มีกรอบคำตอบ**
+       ⇒ เด็กตัดสินใจเองว่าจะจ่ายด้วยเหรียญอะไรบ้าง · **ทุกวิธีที่รวมได้พอดีถือว่าถูกหมด**
+       ⚠ ไม่มี "ชุดที่ตั้งใจไว้" ⇒ ไม่ต้องเก็บเฉลย แค่เก็บราคาไว้ให้ตรวจผลรวม */
     function payExactMech(){
       return {
-        id:'payexact', name:'จ่ายเงินให้พอดี', fam:'A', basket:true,
+        id:'payexact', name:'จ่ายเงินให้พอดี', fam:'A',
         gen(rng, diff){
           const out = [];
           const nR = sortRounds(diff);
           for(let r = 0; r < nR; r++){
             const p = (nR <= 1) ? 1 : r / (nR - 1);
-            /* ราคาตามชั้น + ไล่ระดับในเควสต์ (ข้อแรกถูกสุด) */
-            const cap  = diff.tier <= 2 ? 10 : (diff.tier <= 4 ? 30 : 80);
-            const lo   = Math.max(2, Math.round(cap * .2));
+            /* ราคาตามชั้น + ไล่ระดับในเควสต์ (ข้อแรกถูกสุด)
+               ⚠ เพดานต้องไม่สูงจนต้องแตะเหรียญเป็นสิบครั้ง — เหรียญใหญ่สุดคือ 10 */
+            const cap  = diff.tier <= 2 ? 9 : (diff.tier <= 4 ? 24 : 45);
+            const lo   = Math.max(2, Math.round(cap * .25));
             const price= Math.max(2, Math.round(lo + (cap - lo) * p));
-            const units= COIN_UNITS.filter(u => u <= price);
-            /* หาชุดเหรียญที่รวมได้พอดี (greedy จากใหญ่ไปเล็ก ⇒ ได้เสมอเพราะมีเหรียญ 1) */
-            const pay = [];
-            let left = price, guard = 0;
-            while(left > 0 && guard++ < 40){
-              const fit = units.filter(u => u <= left);
-              const u = fit[fit.length - 1];
-              pay.push(u); left -= u;
-            }
-            if(left !== 0) continue;
-            /* เหรียญหลอก — จำนวนตามชั้น (ยิ่งเยอะยิ่งต้องคิด) */
-            const extra = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
-            const coins = pay.slice();
-            for(let i = 0; i < extra; i++) coins.push(pick(rng, COIN_UNITS));
             const good = pick(rng, PRICED_GOODS);
-            out.push({kind:'sort', basket:true, payTo: price, coinPay:true,
-                      q:'ซื้อ' + good[1] + ' ' + good[0] + ' ราคา ' + price + ' เหรียญ — หยิบเหรียญให้พอดีนะ',
+            /* ⚠ **แถวให้เลือกต้องมี 4 แบบเท่านั้น: 1 · 2 · 5 · 10** (ผู้ใช้สั่งย้ำหลายรอบ)
+               เขียนตรงๆ ไม่พึ่งค่าจากไฟล์อื่น จะได้ไม่มีทางหลุด 20/50 กลับมาอีก */
+            out.push({kind:'coinpay', price: price, units: [1, 2, 5, 10],
+                      q:'ซื้อ' + good[1] + ' ' + good[0] + ' ราคา ' + price
+                        + ' บาท — เลือกเหรียญจ่ายให้พอดีนะ',
                       emoji:'', choices:[], correct:0,
-                      bins:[{id:'basket', name:'จ่ายตรงนี้', emoji:'🧾'}],
-                      tiles: shuffled(rng, coins).map((c, i) => ({k:'c' + i, e:'', coin:c, label:''})),
-                      explain:'จ่ายได้พอดี ' + price + ' เหรียญเลย!'});
+                      explain:'จ่ายได้พอดี ' + price + ' บาทเลย!'});
           }
           return out.length ? out : MECHS.count.gen(rng, diff, {id:'', job:'villager'});
         },
-        verify(it, placed){
-          placed = placed || {};
-          const sum = it.tiles.filter(t => placed[t.k] === 'basket')
-                              .reduce((a, t) => a + t.coin, 0);
-          return {ok: sum === it.payTo, bad: []};
+        /* payload = อาเรย์ของเหรียญที่เด็กเลือกจ่าย ⇒ **ทุกชุดที่รวมได้พอดีถูกหมด** */
+        verify(it, paid){
+          const sum = (paid || []).reduce((a, c) => a + (c | 0), 0);
+          return {ok: sum === it.price, bad: []};
         },
       };
     }
-    /* ---------- ทอนเงิน ---------- โจทย์ 4 ตัวเลือกธรรมดา */
-    function changeBackMech(){
-      return {
-        id:'changeback', name:'ทอนเงิน', fam:'A',
-        gen(rng, diff){
-          const out = [];
-          for(let k = 0; k < diff.qN; k++){
-            const dk = stepDiff(diff, k, diff.qN);
-            const cap = diff.tier <= 2 ? 10 : (diff.tier <= 4 ? 40 : 90);
-            const good = pick(rng, PRICED_GOODS);
-            const price = Math.max(1, Math.min(cap, Math.round(good[2] * (dk.p > .5 ? 2 : 1))));
-            /* จ่ายด้วยเหรียญกลมๆ ที่มากกว่าราคา — เด็กคิดง่ายกว่าจำนวนสุ่มมั่ว */
-            const payOpts = [10, 20, 50, 100].filter(v => v > price);
-            if(!payOpts.length) continue;
-            const paid = payOpts[0];
-            const ans = paid - price;
-            const opts = [ans];
-            let g2 = 0;
-            while(opts.length < 4 && g2++ < 60){
-              const v = ans + (((rng() * 9) | 0) - 4);
-              if(v >= 0 && opts.indexOf(v) < 0) opts.push(v);
-            }
-            while(opts.length < 4) opts.push(ans + opts.length + 1);
-            const order = shuffled(rng, opts);
-            out.push({q:'ซื้อ' + good[1] + ' ราคา ' + price + ' เหรียญ จ่ายไป ' + paid
-                        + ' เหรียญ ต้องทอนกี่เหรียญ?',
-                      emoji: good[0], show:'',
-                      choices: order.map(String), correct: order.indexOf(ans),
-                      explain: paid + ' − ' + price + ' = ' + ans + ' เหรียญ'});
-          }
-          return out.length ? out : MECHS.count.gen(rng, diff, {id:'', job:'villager'});
-        },
-      };
-    }
-    /* ---------- จัดชั้นวาง ---------- ทรงเดียวกับ tidy แต่ถังคือ "ชั้นในร้าน" */
-    /* 🗑️ ถอดออก 2026-08-16 — เปลี่ยนเป็นงาน Action ที่ร้านสะดวกซื้อจริงแล้ว */
+    /* 🗑️ `changeBackMech` (การ์ด 4 ตัวเลือกแบบเก่า) ถอดออก 2026-08-16
+       — ถูกแทนด้วย `martChangeMech` ที่ไปคิดเงินทอนที่ร้านจริงแล้ว
+       ⚠ ตัวเก่ายังมีเหรียญ 20/50 ค้างอยู่ในโค้ด ซึ่งผู้ใช้สั่งให้เอาออกจากทั้งเกม */
     function fishCatchMech(){
       /* คลังปลาสำรอง — ใช้เฉพาะตอน js/house-play.js ยังไม่โหลด (ไฟล์นั้นโหลดทีหลังไฟล์นี้)
          ⚠ ห้ามใส่ id ที่ไม่มีจริงในคลังตัวจริง ไม่งั้นเด็กตกยังไงก็ไม่มีวันตรง */
@@ -1026,21 +987,28 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
           const g = pick(rng, pool);
           const item = {e:g[0], name:g[1], price:g[2]};
           /* จ่ายด้วยเหรียญกลมๆ ที่มากกว่าราคาเสมอ */
-          const notes = [10, 20, 50, 100].filter(v => v > item.price);
+          /* จ่ายด้วยจำนวนกลมๆ — แตกเป็นเหรียญ 10 ล้วนบนจอ (ไม่มีเหรียญ 20/50 ในเกมนี้แล้ว) */
+          const notes = [10, 20, 30, 50].filter(v => v > item.price);
           const paid = notes.length ? notes[0] : item.price + 10;
           const ans = paid - item.price;
+          /* ตัวลวง — ต้องต่างจากคำตอบอย่างน้อย 2 เหรียญ ไม่งั้นกองเหรียญ 2 กองหน้าตาเกือบเหมือนกัน
+             เด็กนับถูกแล้วยังเลือกผิดได้ = ลงโทษกลายๆ (กติกาเหล็กข้อ 2) */
           const wrong = [];
-          while(wrong.length < 3){
-            const d2 = ans + (1 + ((rng() * 9) | 0)) * (rng() < .5 ? 1 : -1);
-            if(d2 > 0 && d2 !== ans && wrong.indexOf(d2) < 0) wrong.push(d2);
+          let guard2 = 0;
+          while(wrong.length < 3 && guard2++ < 60){
+            const d2 = ans + (2 + ((rng() * 8) | 0)) * (rng() < .5 ? 1 : -1);
+            if(d2 > 0 && Math.abs(d2 - ans) >= 2 && wrong.indexOf(d2) < 0) wrong.push(d2);
           }
+          while(wrong.length < 3) wrong.push(ans + 2 + wrong.length * 3);
           const order = shuffled(rng, [ans].concat(wrong));
           const to = (def && def.id) ? def.id : (questableIds()[0] || '');
           return [{kind:'mart', target:'mart', job:'change', toNpc: to, buy:true,
                    need:[{k:'mart', id:'change', e:'💵', name:'ทอนเงิน', n:1}],
                    item: item, paid: paid,
-                   choices: order.map(v => String(v) + ' เหรียญ'), correct: order.indexOf(ans),
-                   q2:'ซื้อของชิ้นนี้แล้วจ่ายไปเท่านี้ — ต้องได้ทอนเท่าไร?',
+                   /* ⚠ ส่งเป็น **จำนวนเงิน** ไม่ใช่ข้อความ — หน้าจอแตกเป็นกองเหรียญให้เด็กนับเอง
+                      (ผู้ใช้สั่ง 2026-08-16: ห้ามเขียนเป็นตัวเลขให้อ่าน) */
+                   choices: order, correct: order.indexOf(ans),
+                   q2:'ซื้อของชิ้นนี้แล้วจ่ายไปเท่านี้ — ต้องได้เงินทอนกี่บาท?',
                    q:'ไปซื้อของที่ร้านสะดวกซื้อแล้วคิดเงินทอนให้ถูกนะ (เงินที่จ่ายได้คืนตอนส่งงาน)',
                    go:'ไปที่ร้าน 🏪', hint:'ที่ร้านจะมีโจทย์เงินทอนรออยู่',
                    emoji:'💵', explain:'คิดเงินทอนเก่งมาก!'}];
@@ -1191,7 +1159,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
                       q:'ช่วยหยิบ' + order + 'ให้หน่อยนะ',
                       emoji:'', choices:[], correct:0,
                       bins:[{id:'basket', name:'ชุดของหนู', emoji:'🪞'}],
+                      /* 🎩 **หมวกวาดเป็นรูปตามสีที่สั่งจริง ไม่ใช้อิโมจิ** (ผู้ใช้สั่ง 2026-08-16)
+                         อิโมจิหมวกมีสีตายตัวของมันเอง (🧢 = ฟ้าเสมอ) ⇒ สั่ง "หมวกแดง" แล้วโชว์
+                         หมวกฟ้า เด็กเลือกถูกไม่ได้เลย · แถม 🧢 ยังถูกใช้ซ้ำ 2 สีในคลังเดียวกัน */
                       tiles: shuffled(rng, tiles).map((x, i) => ({k:'d' + i, e:x[0],
+                                        hat: x[1] === 'หมวก' ? x[2] : '',
                                         label:x[1] + x[2], want: wantSig.indexOf(sig(x)) >= 0})),
                       explain:'ใส่ครบตามที่บอกเลย เก่งมาก!'});
           }
@@ -1881,7 +1853,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
          ซึ่งถูกสำหรับกลไกส่วนใหญ่ แต่ถ้ากลไกใหม่เป็นทรงลากหรือทรงเดิน **ต้องมาเติมที่นี่**
          ไม่งั้นจำนวนข้อจะถูกคำนวณจากเวลาที่ผิด (เควสต์ยาวเกินงบ 240 วิ) — มีเทสคุมไว้ที่ house-phase10
        ⚠ `secPerQ` ใช้คำนวณจำนวนข้อเท่านั้น **ห้ามโชว์บนจอ ห้ามใช้ตัดจบเควสต์** (กติกาเหล็กข้อ 2) */
-    const DRAG_MECHS = ['budget', 'payexact', 'dressorder'];
+    /* ⚠ `payexact` ออกจากลิสต์ 2026-08-16 — ไม่ใช่กระดานลากแล้ว (แตะเหรียญตรงๆ) */
+    const DRAG_MECHS = ['budget', 'dressorder'];
     /* ⚠ ตัวไหนมี `walk:true` ต้องอยู่ในลิสต์นี้ด้วยเสมอ ไม่งั้นถูกนับเป็นการ์ด 4 ตัวเลือก
      แล้วคำนวณจำนวนข้อ/งบเวลาผิด (`whois` เคยตกหล่นมาตั้งแต่เฟส 13 — เจอ 2026-08-16) */
     const WALK_MECHS_SHAPE = ['findhidden', 'deliver', 'dinner', 'market', 'fishcatch', 'whois',

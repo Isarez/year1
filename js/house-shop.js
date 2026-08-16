@@ -576,7 +576,7 @@
     function buy(key, price, label){
       if(!window.OwlCoins){ return false; }
       if(coins() < price){
-        toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!');
+        toast('💰', 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!');
         return false;
       }
       if(!window.OwlCoins.spend(price)) return false;
@@ -600,7 +600,7 @@
       const price = priceFurn(id);
       if(!window.OwlCoins) return false;
       if(coins() < price){
-        toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!');
+        toast('💰', 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!');
         return false;
       }
       if(!window.OwlCoins.spend(price)) return false;
@@ -1069,7 +1069,7 @@
               sub: 'สำหรับ\n' + who + (left ? '\nเหลือ ' + left + ' มื้อ' : ''),
               price: f.price, owned: false, repeat: true, emoji: f.emoji,
               onBuy: ()=>{
-                if(coins() < f.price){ toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!'); return false; }
+                if(coins() < f.price){ toast('💰', 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!'); return false; }
                 if(!C.buyBag(f.id)) return false;
                 toast('🎉', 'ได้ ' + f.name + ' 1 ถุง (' + C.MEALS_PER_BAG + ' มื้อ) แล้ว!');
                 onChange();

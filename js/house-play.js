@@ -127,6 +127,14 @@
       const k = x + ',' + z;
       if(seen[k]) continue;
       if(!w.walkable(x, z)) continue;
+      /* 🌉 **ห้ามวางของบนสะพาน** (ผู้ใช้แจ้ง 2026-08-16) — ของถูกวางที่ y=0 แต่ผิวสะพานอยู่สูงกว่า
+         ⇒ ของจมอยู่ใต้แผ่นสะพาน เด็กมองไม่เห็นและเดินทับไปเฉยๆ = หาไม่เจอทั้งวัน
+         (ช่องสะพานคือค่า 2 ในกริดผังเมือง — ตัวเดียวกับที่ questZonesAt ใช้) */
+      if(w.isBridge && w.isBridge(x, z)) continue;
+      /* 🏠 **ห้ามวางของในเขตตึก/ร้าน** (ผู้ใช้แจ้ง 2026-08-16: กลีบดอกไม้โดนร่มร้านอาหารบัง)
+         ล็อตร้านมีหลังคา ร่ม ป้าย ฯลฯ บังของที่วางที่พื้นจนมองไม่เห็น
+         ⇒ โปรยเฉพาะที่โล่ง — เผื่อขอบล็อต 1 ช่องด้วย กันของไปแอบใต้ชายคา */
+      if(w.lotAt && w.lotAt(x, z, 1)) continue;
       if(opt.noHome && w.inHomeZone(x, z)) continue;
       if(opt.homeOnly && !w.inHomeZone(x, z)) continue;
       /* กระจายให้ห่างกันพอ เด็กจะได้ไม่เจอกองเดียวจบ (เช็คด้วยระยะเส้นตรง — พอสำหรับ "กระจาย"
@@ -180,10 +188,147 @@
     P.seek = {on:true, spots: reach.slice(0, n).map(t => ({x:t.x, z:t.z})), found:[], done:false};
     persist();
     seekBuild();
+    seekIntroStart();          /* 🙈 อินโทร: เพื่อนมารวมตัว → นับถอยหลัง → วิ่งกระจายไปแอบ */
     return true;
+  }
+  /* ================= 🙈 อินโทรเกมซ่อนแอบ (2026-08-16 · ผู้ใช้สั่ง) =================
+     ① เพื่อนทุกคนเดินมารวมกันที่ตัวเด็ก  ② เด็กนั่งยองปิดตา + นับถอยหลัง 5→0
+     ③ ระหว่างนับ เพื่อนวิ่งกระจายออกไปยังจุดแอบของตัวเอง  ④ นับจบ = เริ่มหาได้
+
+     ⚠ ระหว่างอินโทร **ห้ามนับว่าเจอ** — ไม่งั้นเพื่อนวิ่งผ่านตัวเด็กแล้วถูกนับว่าเจอทันที
+     ⚠ ตำแหน่งคำนวณจาก "จุดแอบจริง" ทุกเฟรม ⇒ ปิดเกมกลางอินโทรแล้วไม่มีอะไรค้าง */
+  const SEEK_GATHER = 2.0;      /* วิ่งมารวมตัว (วินาที) — ไม่ต้องรีบ */
+  const SEEK_CHAT   = 1.5;      /* ยืนคุยกันก่อนแยกย้าย (ผู้ใช้ปรับ 2 → 1 → 1.5 วิ) */
+  const SEEK_COUNT  = 5;        /* นับถอยหลังกี่วินาที */
+  const SEEK_SCATTER= 3.8;      /* วิ่งไปแอบ — ช้าลงกว่าเดิม (ผู้ใช้สั่ง) เสร็จตอนเหลือ ~1.2 วิ */
+  let seekIntro = null;
+  function seekIntroStart(){
+    const w = W(); if(!w) return;
+    const t = w.tile();
+    /* 🔵 **ล้อมวงรอบตัวเด็ก — คนละช่อง ไม่ทับกันและไม่ทับตัวเด็ก** (ผู้ใช้แจ้ง 2026-08-16)
+       เดิมทุกคนเดินไปที่ "ช่องของเด็ก" ช่องเดียวกันหมด ⇒ ซ้อนกันเป็นก้อนและถูกตัวเด็กบังมิด
+       ⇒ หาช่องรอบตัวเด็กที่ **เดินได้จริง** แล้วแจกให้คนละช่อง (ขยายวงออกถ้าช่องไม่พอ) */
+    const ring = [];
+    const seenRing = {};
+    for(let r = 1; r <= 4 && ring.length < P.seek.spots.length; r++){
+      for(let dz = -r; dz <= r; dz++) for(let dx = -r; dx <= r; dx++){
+        if(Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;   /* เฉพาะขอบวงรัศมี r */
+        const x = t.x + dx, z = t.z + dz, k = x + ',' + z;
+        if(seenRing[k]) continue;
+        seenRing[k] = 1;
+        if(!w.walkable(x, z)) continue;                            /* ติดตึก/รั้ว/น้ำ = ข้ามไป */
+        if(x === t.x && z === t.z) continue;                       /* ห้ามยืนทับตัวเด็ก */
+        ring.push({x:x, z:z});
+      }
+    }
+    /* แจกช่องแบบ "ใครใกล้ช่องไหนได้ช่องนั้น" — เส้นทางจะได้ไม่ตัดกันมั่ว */
+    const taken = [];
+    const legs = (P.seek.spots || []).map(sp=>{
+      let best = -1, bd = 1e9;
+      ring.forEach((c, ci)=>{
+        if(taken.indexOf(ci) >= 0) return;
+        const d = Math.abs(c.x - sp.x) + Math.abs(c.z - sp.z);
+        if(d < bd){ bd = d; best = ci; }
+      });
+      /* ช่องรอบตัวเด็กไม่พอจริงๆ (ยืนอยู่ซอกแคบ) → ถอยไปใช้ช่องของเด็ก ดีกว่าไม่มีเส้นทาง */
+      const dst = best >= 0 ? (taken.push(best), ring[best]) : {x:t.x, z:t.z};
+      const path = w.path({x:sp.x, z:sp.z}, dst) || [];
+      return path.length ? path : [{x:sp.x, z:sp.z}, dst];
+    });
+    /* ⚠ **จับเวลาด้วยนาฬิกาจริง ไม่ใช่สะสม dt** — ลูปวาดหนีบ dt ไว้ที่ 50 ms/เฟรม
+       เครื่องช้าที่วาดได้ 3 fps จะเดินเวลาช้ากว่าจริง ~6 เท่า ⇒ "นับ 5 วิ" กลายเป็นครึ่งนาที
+       (เจอจากเทสจริง 2026-08-16) · เลขนับถอยหลังต้องเป็นวินาทีจริงเสมอ */
+    seekIntro = {t0: Date.now(), from:{x:t.x, z:t.z}, shown:-1, legs:legs, crouched:false};
+    /* 💬 ช่วงรวมตัว+คุยกัน เด็ก **ยืนคุย** ยังไม่นั่งยอง (ผู้ใช้สั่ง 2026-08-16)
+       ค่อยเปลี่ยนเป็นท่านั่งยองปิดตาตอนเริ่มนับ */
+    if(w.pose) w.pose('talk', (SEEK_GATHER + SEEK_CHAT) * 1000);
+  }
+  function seekIntroActive(){ return !!seekIntro; }
+  /* ตำแหน่งบนเส้นทางที่สัดส่วน k (0 = ต้นทาง · 1 = ปลายทาง) — เดินตามช่องจริงทีละช่อง */
+  function pathPoint(w, path, k){
+    if(!path || !path.length) return null;
+    if(path.length === 1) return {x:w.wx(path[0].x), z:w.wz(path[0].z)};
+    const f = Math.max(0, Math.min(1, k)) * (path.length - 1);
+    const i = Math.min(path.length - 2, Math.floor(f));
+    const r = f - i;
+    const a = path[i], b = path[i + 1];
+    return {x: w.wx(a.x) + (w.wx(b.x) - w.wx(a.x)) * r,
+            z: w.wz(a.z) + (w.wz(b.z) - w.wz(a.z)) * r};
+  }
+  function seekIntroTick(){
+    const w = W(); if(!w || !seekIntro) return;
+    const T = (Date.now() - seekIntro.t0) / 1000;
+    const tGather = SEEK_GATHER, tChat = SEEK_GATHER + SEEK_CHAT;
+    const total = tChat + SEEK_COUNT;
+    const ease = v => v * v * (3 - 2 * v);
+    seekObjs.forEach((g, i)=>{
+      const idx = (g.userData.hPick ? g.userData.hPick.i : i);
+      const path = seekIntro.legs[idx];
+      if(!path) return;
+      let pt, run = 0;
+      if(T < tGather){                            /* ① วิ่งเข้ามาหาเด็กตามทางจริง */
+        pt = pathPoint(w, path, ease(T / tGather));
+        run = Math.abs(Math.sin(T * 8 + i)) * .09;
+      }else if(T < tChat){                        /* ② ยืนคุยกัน — เด้งเบาๆ เหมือนกำลังพูด */
+        pt = pathPoint(w, path, 1);
+        run = Math.abs(Math.sin((T - tGather) * 5.5 + i * 1.7)) * .045;
+      }else{                                      /* ③ วิ่งกระจายกลับไปแอบ (ย้อนเส้นทางเดิม) */
+        const k = ease(Math.min(1, (T - tChat) / SEEK_SCATTER));
+        pt = pathPoint(w, path, 1 - k);
+        run = k < 1 ? Math.abs(Math.sin(T * 8 + i)) * .09 : 0;
+      }
+      if(!pt) return;
+      /* หันหน้าไปทางที่กำลังไป (เทียบกับตำแหน่งเฟรมก่อน) */
+      const dx = pt.x - g.position.x, dz = pt.z - g.position.z;
+      if(Math.abs(dx) + Math.abs(dz) > .002) g.rotation.y = Math.atan2(dx, dz);
+      else if(T >= tGather && T < tChat)
+        g.rotation.y = Math.atan2(w.wx(seekIntro.from.x) - pt.x, w.wz(seekIntro.from.z) - pt.z);
+      g.position.x = pt.x; g.position.z = pt.z;
+      g.position.y = (g.userData.baseY || 0) + run;
+      /* หายไปตอนถึงที่แอบแล้ว (เหลือ 2 วิสุดท้ายของการนับ) */
+      g.visible = !(T >= tChat + SEEK_SCATTER);
+      /* ชุดเทส: จดช่องที่ยืนอยู่จริง เพื่อตรวจว่าล้อมวงไม่ทับกัน */
+      (window.__seekObjPos = window.__seekObjPos || [])[idx] =
+        {x: Math.round(pt.x + (w.OUT_W() - 1) / 2), z: Math.round(pt.z + (w.OUT_D() - 1) / 2)};
+    });
+    /* ---- เลขนับถอยหลัง (เริ่มตอนแยกย้าย) ---- */
+    if(T >= tChat){
+      /* 🙈 เริ่มนับ = เริ่มนั่งยองปิดตา (ท่าค่อยๆ ย่อลงภายใน ~1 วิ ดู charPoseAt) */
+      if(!seekIntro.crouched){
+        seekIntro.crouched = true;
+        /* ⚠ ความยาว 5.9 วิ = นับ 5 + **ลุกขึ้นยืน .9** — ตัวเลขจังหวะอยู่ใน charPoseAt('hide')
+           แก้ที่นี่ต้องแก้ที่นั่นด้วย ไม่งั้นเด็กลุกผิดจังหวะโดยไม่มีอะไรฟ้อง */
+        if(w.pose) w.pose('hide', 5.9 * 1000);
+      }
+      const left = Math.max(0, Math.ceil(SEEK_COUNT - (T - tChat)));
+      if(left !== seekIntro.shown){
+        seekIntro.shown = left;
+        if(w.bigCount) w.bigCount(left);
+        if(left > 0 && typeof playClick === 'function') playClick();
+      }
+    }
+    if(T >= total + .35){
+      seekIntro = null;
+      if(w.bigCount) w.bigCount(null);
+      seekBuild();                               /* วางกลับที่จุดแอบให้ตรงเป๊ะ */
+      w.toast('🙈', 'เพื่อนแอบเรียบร้อยแล้ว ไปตามหากันเลย!');
+    }
+  }
+  function seekIntroSkip(){
+    const w = W();
+    if(!seekIntro) return;
+    seekIntro = null;
+    if(w && w.bigCount) w.bigCount(null);
+    seekBuild();
+  }
+  function seekIntroStop(){
+    const w = W();
+    seekIntro = null;
+    if(w && w.bigCount) w.bigCount(null);
   }
   function seekClear(){
     const w = W();
+    seekIntroStop();
     seekObjs.forEach(o => { if(w) w.despawn(o); });
     seekObjs = [];
   }
@@ -223,6 +368,7 @@
   }
   function seekFind(i){
     if(!P || !P.seek.on || P.seek.found.indexOf(i) >= 0) return;
+    if(seekIntroActive()) return;      /* ยังนับถอยหลังอยู่ — เพื่อนวิ่งผ่านตัวเด็กต้องไม่ถูกนับว่าเจอ */
     P.seek.found.push(i);
     const left = P.seek.spots.length - P.seek.found.length;
     const w = W();
@@ -240,7 +386,7 @@
     const coins = payFor(3);
     w.award(coins);
     if(typeof playCongrats === 'function') playCongrats();
-    w.toast('🎉', 'เจอเพื่อนครบทุกคนแล้ว! ได้ ' + coins + ' เหรียญ');
+    w.toast('🎉', 'เจอเพื่อนครบทุกคนแล้ว! ได้ ' + coins + ' บาท');
     renderPanel();
     w.refreshHud();
   }
@@ -1441,14 +1587,14 @@
       SEEDS.forEach(sd=>{
         wrap.appendChild(tradeCard({
           emoji: sd.e, name: sd.n + ' (' + GRADE_NAME[sd.grade] + ')',
-          sub: 'รดน้ำ ' + sd.days + ' วันก็เก็บได้ · ขายได้ ' + sd.pay + ' เหรียญ · มีอยู่ ' + seedCount(sd.id) + ' เม็ด',
+          sub: 'รดน้ำ ' + sd.days + ' วันก็เก็บได้ · ขายได้ ' + sd.pay + ' บาท · มีอยู่ ' + seedCount(sd.id) + ' เม็ด',
           price: sd.cost, btn: 'ซื้อ 1 เม็ด', off: coins() < sd.cost,
           /* ⚠ ผู้ใช้แจ้ง 2026-08-14: กดซื้อแล้วกดซ้ำไม่ได้ ต้องไปกดที่อื่นก่อน
              ต้นเหตุ: `done()` วาดรายการใหม่ทั้งก้อน ปุ่มที่นิ้วยังจิ้มอยู่จึงถูกลบทิ้ง
              ⇒ เลื่อนการวาดใหม่ไปหลังจบ event ปัจจุบัน ปุ่มใหม่จะพร้อมรับคลิกถัดไปทันที */
           fn: ()=>{
             if(!window.OwlCoins || !window.OwlCoins.spend(sd.cost)){
-              W().toast('💰', 'เงินยังไม่พอนะ เก็บเหรียญเพิ่มอีกนิดแล้วค่อยกลับมา!');
+              W().toast('💰', 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!');
               return;
             }
             addSeed(sd.id, 1);
@@ -1473,14 +1619,14 @@
         const n = cropCount(sd.id);
         wrap.appendChild(tradeCard({
           emoji: sd.e, name: sd.n, sell: true,
-          sub: 'เก็บไว้ ' + n + ' ชิ้น · ขายได้ชิ้นละ ' + sd.pay + ' เหรียญ',
+          sub: 'เก็บไว้ ' + n + ' ชิ้น · ขายได้ชิ้นละ ' + sd.pay + ' บาท',
           price: sd.pay * n, btn: 'ขายทั้งหมด',
           fn: ()=>{
             const got = sd.pay * n;
             P.garden.crop = Object.assign({}, P.garden.crop);
             P.garden.crop[sd.id] = 0;
             W().award(got);
-            W().toast('🪙', 'ขาย' + sd.n + ' ' + n + ' ชิ้น ได้ ' + got + ' เหรียญ!');
+            W().toast('🪙', 'ขาย' + sd.n + ' ' + n + ' ชิ้น ได้ ' + got + ' บาท!');
             W().refreshHud();
             setTimeout(done, 0);
           },
@@ -1511,7 +1657,7 @@
             P.fish.bag = Object.assign({}, P.fish.bag);
             P.fish.bag[f.id] = 0;
             W().award(got);
-            W().toast('🪙', 'ขาย' + f.n + ' ' + n + ' ตัว ได้ ' + got + ' เหรียญ!');
+            W().toast('🪙', 'ขาย' + f.n + ' ' + n + ' ตัว ได้ ' + got + ' บาท!');
             W().refreshHud();
             setTimeout(done, 0);
           },
@@ -1567,7 +1713,7 @@
       if(n > 0) rows.push({e:f.e, n:f.n, cnt:n, pay:f.pay, where:'ขายที่ร้านสะดวกซื้อ'}); });
     const total = rows.reduce((a, r) => a + r.pay * r.cnt, 0);
     if(sub) sub.textContent = rows.length
-      ? ('ถ้าขายหมดจะได้ ' + total + ' เหรียญ · เอาไปขายที่ร้านได้เลย')
+      ? ('ถ้าขายหมดจะได้ ' + total + ' บาท · เอาไปขายที่ร้านได้เลย')
       : 'ตะกร้ายังว่างอยู่ ลองไปปลูกผักหรือตกปลาดูสิ';
     rows.forEach(r=>{
       const d = document.createElement('div');
@@ -1665,8 +1811,16 @@
     el.innerHTML = '<span class="hsk-lab">ระยะห่างจากเพื่อนที่ใกล้ที่สุด</span>'
                  + '<span class="hsk-bar">' + bars + '</span>'
                  + '<span class="hsk-txt">' + h.text + '</span>'
-                 + '<span class="hsk-left">เหลืออีก ' + left + ' คน</span>';
+                 + '<span class="hsk-left">เหลืออีก ' + left + ' คน</span>'
+                 /* ⏸ ปุ่มพักอยู่ตรงนี้ด้วย (ผู้ใช้สั่ง 2026-08-17) — ของเดิมต้องเปิดแผง 🎈 ก่อน
+                    ⚠ ตัวแถบเป็น `pointer-events:none` ปุ่มจึงต้องเปิดกลับเป็น `auto` เอง */
+                 + '<button type="button" class="hsk-pause" id="hsk-pause-btn">⏸ พักก่อน</button>';
     el.className = 'house-seek-hud lv' + h.level;
+    const pb = $('hsk-pause-btn');
+    if(pb) pb.addEventListener('click', ()=>{
+      if(typeof playClick === 'function') playClick();
+      seekPause();
+    });
   }
 
   /* ============================================================
@@ -1738,8 +1892,33 @@
     if(to === 'out' && started) buildAll();
     renderPanel();
   }
+  /* 🚶 **เดินผ่านของ = เก็บเลย ไม่ต้องแตะ** (ผู้ใช้สั่ง 2026-08-16)
+     เด็กเล็กเล็งแตะของชิ้นเล็กๆ ในฉาก 3D ยาก ⇒ ให้เดินชนแล้วเก็บได้ด้วย
+     ⚠ ยังแตะเก็บได้เหมือนเดิม (โหมดเล่นด้วยมือใช้การแตะ) — เพิ่มทางเก็บ ไม่ได้แทนที่
+     ⚠ เช็คเฉพาะตอนเปลี่ยนช่อง ไม่ใช่ทุกเฟรม (ลูปนี้วิ่ง 60 ครั้ง/วินาที) */
+  let lastWalkTile = '';
+  function pickupUnderfoot(){
+    const w = W(); if(!w || !P) return;
+    if(w.scene() !== 'out' || w.mode() !== 'world' || w.editing()) return;
+    const t2 = w.tile();
+    const key = t2.x + ',' + t2.z;
+    if(key === lastWalkTile) return;
+    lastWalkTile = key;
+    /* 🍃 ของประจำวัน */
+    (P.col.items || []).forEach((it, i)=>{
+      if((P.col.got || []).indexOf(i) >= 0) return;
+      if(Math.abs(it.x - t2.x) <= 0 && Math.abs(it.z - t2.z) <= 0) colTake(i);
+    });
+    /* 🙈 ซ่อนแอบ — เดินชนคนที่แอบอยู่ก็เจอเลย */
+    if(P.seek.on) (P.seek.spots || []).forEach((sp, i)=>{
+      if((P.seek.found || []).indexOf(i) >= 0) return;
+      if(Math.abs(sp.x - t2.x) <= 1 && Math.abs(sp.z - t2.z) <= 1) seekFind(i);
+    });
+  }
   function tick(dt, t){
     if(!started) return;
+    if(seekIntro){ seekIntroTick(); }
+    pickupUnderfoot();
     /* ของสะสมลอยขึ้นลง + หมุนช้าๆ ให้สะดุดตาแต่ไม่วูบวาบจนรบกวน */
     for(let i=0; i<colObjs.length; i++){
       const g = colObjs[i];
@@ -1855,7 +2034,19 @@
     open: openPanel, close: closePanel, isOpen: panelOpen,
     /* ---- จุดต่อชุดเทส (ไม่มีอะไรที่เกมจริงไม่ผ่าน) ---- */
     state: () => P,
-    seekStart, seekHint, seekPause, seekResume, seekPaused, seedPick, seedPickClose,
+    seekStart, seekHint, seekIntroActive, seekIntroSkip,
+    /* 🔄 รีเซ็ตกิจกรรมรายวันทั้งชุด (เครื่องมือเทส — เรียกจากหน้าปรับค่าต่างๆ)
+       ⚠ ใช้ `rollDay()` ตัวเดียวกับที่ระบบใช้ตอนขึ้นวันใหม่จริง **ห้ามเขียน state เอง**
+         ⇒ ของสะสมถาวร (สมุดปลา · ของรางวัล · แปลงผัก) ปลอดภัยแน่นอน ไม่ถูกล้างไปด้วย */
+    devResetDay: ()=>{
+      if(!P) return false;
+      seekClear(); colClear();
+      rollDay(P);
+      persist();
+      colBuild(); seekBuild();
+      renderPanel();
+      return true;
+    }, seekPause, seekResume, seekPaused, seedPick, seedPickClose,
     tradeAvailable, tradeLabel, tradeEmoji, renderTrade,
     SEEDS, seedCount, cropCount, seedTotal, addSeed, growMax, fishById,
     beds, bedAction, fishSpots: () => fishSpots, atFishSpot,
@@ -1874,6 +2065,11 @@
       persist(); gardenBuild(); renderPanel(); return c; },
     gardenPlant, gardenWater, gardenHarvest,
     objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
+    /* 🧭 ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" — ลูกศรนำทางของเควสต์เก็บของใช้ (2026-08-16)
+       ⚠ ต้องกรอง `got` ออกเสมอ ไม่งั้นลูกศรชี้ไปที่ของที่เก็บไปแล้ว */
+    colLeft: ()=> (!P || !P.col.items) ? []
+      : P.col.items.map((it, i) => ({x:it.x, z:it.z, i:i}))
+                   .filter(it => (P.col.got || []).indexOf(it.i) < 0),
     FISH, SEEDS, COL_PRIZES, COL_N, PLOT_MAX, GROW_MAX, PHOTO_MAX,
     /* ---- 🚪 ประตูเดียวที่ฝั่งเควสต์ใช้เช็คว่า "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" ----
        ⚠ **ต้องเช็คก่อนแจกงานเสมอ** ไม่งั้นเด็กเก็บของครบไปแล้วแล้วเพิ่งได้งานให้เก็บ = ตันทั้งวัน
