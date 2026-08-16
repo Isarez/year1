@@ -229,9 +229,18 @@ test('โหมดมือในบ้าน: ชี้ค้าง 1.5 วิ 
     btn.addEventListener('click', ()=>{ clicked = true; }, {once:true});
 
     /* ชี้ครึ่งทาง แล้วขยับออกไปที่ว่าง → ต้องรีเซ็ต (ไม่มี .hp-dwell เหลือ) */
+    /* ⚠ ความคืบหน้าของวงแหวนเดินตาม **เฟรมที่วาดจริง** ไม่ใช่เวลาเดินสด
+       เครื่องเทสตอนรันทั้งชุดพร้อมกันวาดได้ ~1 fps ⇒ ชี้ 600 ms อาจยังไม่ทันขยับเลย
+       แล้วเทสแดงทั้งที่โค้ดถูก (เจอจริง 2026-08-17 · รันเดี่ยวผ่าน รันรวมแดง)
+       ⇒ ชี้จนกว่าจะเห็นวงแหวนขยับจริง แต่หยุดตั้งแต่ยังไม่ถึงครึ่ง จะได้ทดสอบการรีเซ็ตต่อได้ */
+    let pMid = 0;
     const t0 = Date.now();
-    while(Date.now()-t0 < 600){ updateHandCursor(x, y, false); await new Promise(r2=>setTimeout(r2,60)); }
-    const pMid = parseFloat(getComputedStyle(document.querySelector('.hp-dwell')).getPropertyValue('--hp-dwell-p'));
+    while(Date.now()-t0 < 5000 && pMid <= 0.15){
+      updateHandCursor(x, y, false);
+      const el0 = document.querySelector('.hp-dwell');
+      if(el0) pMid = Math.max(pMid, parseFloat(getComputedStyle(el0).getPropertyValue('--hp-dwell-p')) || 0);
+      await new Promise(r2=>setTimeout(r2,60));
+    }
     updateHandCursor(2, 2, false);
     const resetOk = !document.querySelector('.hp-dwell') && !clicked;
 
@@ -294,17 +303,20 @@ test('โหมดมือในบ้าน: จีบนิ้วยังต
     const btn = document.querySelector('#house-qz button:not(#hqz-close)');
     const b = btn.getBoundingClientRect();
     const x = b.left + b.width/2, y = b.top + b.height/2;
-    let clicked = false;
-    btn.addEventListener('click', ()=>{ clicked = true; }, {once:true});
-    const t0 = Date.now();
+    let clicked = false, tClick = 0;
+    btn.addEventListener('click', ()=>{ clicked = true; tClick = Date.now(); }, {once:true});
     updateHandCursor(x, y, false);          /* เฟรมแรกยังไม่จีบ */
+    /* ⚠ ต้องจับเวลา **ตั้งแต่จังหวะจีบนิ้ว** ไม่ใช่ตั้งแต่เฟรมแรก — `updateHandCursor` เองก็กิน
+       เวลาหลายร้อย ms ตอนเครื่องโดนรันทั้งชุดพร้อมกัน แล้วเทสแดงทั้งที่จีบนิ้วตอบทันทีจริงๆ
+       (เจอจริง 2026-08-17 · รันเดี่ยวผ่าน รันรวมแดง) */
+    const tPinch = Date.now();
     updateHandCursor(x, y, true);           /* จีบนิ้ว = ต้องตอบทันที */
     await new Promise(r2=>setTimeout(r2, 120));
-    return { clicked, ms: Date.now()-t0 };
+    return { clicked, ms: clicked ? tClick - tPinch : -1 };
   });
   console.log('จีบนิ้ว: ' + JSON.stringify(r));
   expect(r.clicked, 'จีบนิ้วต้องตอบได้ทันทีแม้อยู่ในโหมดชี้ค้าง').toBe(true);
-  expect(r.ms, 'ต้องไม่ต้องรอครบเวลาชี้ค้าง').toBeLessThan(600);
+  expect(r.ms, 'ต้องไม่ต้องรอครบเวลาชี้ค้าง').toBeLessThan(300);   /* ชี้ค้างคือ 1,500 ms */
   expect(errs).toEqual([]);
 });
 
