@@ -16,8 +16,9 @@ async function house(page, opts){
   await page.addInitScript(([c, withIns]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([c]));
     localStorage.setItem('p1quiz_active_child', c.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
-    const save = { v:1, mapV: 3, tut: { skip: true }, char:{gender:0,hair:0,hairC:0,eyes:1,eyeC:0,shirt:5,bottom:0,shoes:0} };
+    const save = { v:1, mapV: 3, char:{gender:0,hair:0,hairC:0,eyes:1,eyeC:0,shirt:5,bottom:0,shoes:0} };
     /* บ้านที่ "มีเครื่องดนตรีวางแล้ว" — ใช้ทดสอบว่าเควสต์ดนตรีถูกแจกจริง */
     if (withIns) save.decor = { in: [{ id:'ins-ching', x:5, z:5, rot:0, col:0 }], out: [] };
     localStorage.setItem('p1quiz_house_p9a', JSON.stringify(save));

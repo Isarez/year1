@@ -18,8 +18,9 @@ async function house(page){
   await page.addInitScript(c => {
     localStorage.setItem('p1quiz_children', JSON.stringify([c]));
     localStorage.setItem('p1quiz_active_child', c.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
-    localStorage.setItem('p1quiz_house_p67a', JSON.stringify({ v:1, mapV: 3, tut: { skip: true },
+    localStorage.setItem('p1quiz_house_p67a', JSON.stringify({ v:1, mapV: 3,
       char:{gender:0,hair:0,hairC:0,eyes:1,eyeC:0,shirt:5,bottom:0,shoes:0} }));
   }, CHILD);
   await page.goto('/');
@@ -154,6 +155,11 @@ test('เฟส 6-7: gen() ทุกกลไกใหม่ × ทุกชั�
               /* เกมที่ยืมมา: การ์ดใบนี้เป็นแค่หน้าชวนเล่น ตัวเกมจริงอยู่ที่ engine ของหน้าหลัก */
               if (!it.game) out.push(g.id + '/' + m + ': ไม่ได้บอกว่าจะเล่นเกมไหน');
               if (!it.go)   out.push(g.id + '/' + m + ': ไม่มีปุ่มเริ่มเล่น');
+            } else if (it.kind === 'coinpay') {
+              /* 💰 จ่ายเงินให้พอดี: เด็ก **แตะเหรียญเอง** ไม่มีปุ่มตัวเลือกให้กด (ผู้ใช้สั่งเปลี่ยน 2026-08-16)
+                 ⇒ ยกเว้นกติกา choices แต่ต้องมีราคากับชุดเหรียญที่จ่ายได้จริงเสมอ */
+              if (!(it.price > 0)) out.push(g.id + '/' + m + ': ข้อ ' + i + ' ไม่มีราคา');
+              if (!it.units || !it.units.length) out.push(g.id + '/' + m + ': ข้อ ' + i + ' ไม่มีเหรียญให้จ่าย');
             } else {
               if (!it.choices || it.choices.length < 2) out.push(g.id + '/' + m + ': ข้อ ' + i + ' ตัวเลือกน้อยไป');
               if (it.correct == null || it.correct < 0 || it.correct >= (it.choices || []).length)
@@ -268,10 +274,13 @@ test('เฟส 6: การ์ดโจทย์วาดได้จริง 
 
 test('เฟส 7: การ์ดโจทย์วาดได้จริง — เหรียญ · จับผิดภาพ · นับแว้บเดียว', async ({ page }) => {
   const errs = await house(page);
-  /* จ่ายเงินให้พอดี: ชิ้นที่ลากต้องเป็น "เหรียญของเกม" (CSS) ไม่ใช่อิโมจิ 🪙 ที่บางเครื่องไม่มี glyph */
+  /* 💰 จ่ายเงินให้พอดี — **แตะเหรียญเอง ไม่ใช่ลากการ์ด** (ผู้ใช้สั่งเปลี่ยน 2026-08-16)
+     เหรียญต้องเป็นเหรียญนกฮูกที่วาดด้วย CSS ไม่ใช่อิโมจิ 🪙 ที่บางเครื่องไม่มี glyph
+     และแถวให้เลือกต้องมี **4 แบบเท่านั้น (1/2/5/10)** ตามที่ผู้ใช้ย้ำหลายรอบ */
   await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'payexact', title: '🧾 จ่ายเงินให้พอดี' }));
-  await expect(page.locator('.hqz-tile-coin').first()).toBeVisible();
-  expect(await page.locator('.hqz-tile-coin .hs-coin').count()).toBeGreaterThan(2);
+  await expect(page.locator('.hqz-pay-pick .hqz-pay-btn').first()).toBeVisible();
+  expect(await page.locator('.hqz-pay-pick .hqz-pay-btn').count()).toBe(4);
+  expect(await page.locator('.hqz-pay-pick .hqz-coinface').count()).toBe(4);
   const coinText = await page.locator('.hqz-stage, #hqz-stage').first().innerText();
   expect(coinText).not.toContain('🪙');
 

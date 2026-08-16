@@ -23,9 +23,10 @@ async function house(page, seed) {
   await page.addInitScript(([c, s]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([c]));
     localStorage.setItem('p1quiz_active_child', c.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify(Object.assign({
-      v: 1, mapV: 4, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
+      v: 1, mapV: 4, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
     }, s || {})));
   }, [CHILD, seed || null]);
   await page.goto('/');
@@ -312,9 +313,13 @@ test('เฟส 11H: ช่างภาพ — ได้ภาพจริงจ
   expect(r.head, 'ต้องเป็นรูป jpeg ที่อ่านจาก canvas จริง').toContain('data:image/jpeg');
   expect(r.len, 'ภาพต้องไม่ว่างเปล่า (ถ้าบัฟเฟอร์ถูกเคลียร์จะได้ภาพดำสั้นๆ)').toBeGreaterThan(1500);
   expect(r.shots).toBe(r.max);
-  /* ⚠ 20 รูป × ~40 KB ≈ 800 KB ต่อเด็ก 1 คน — **เกณฑ์นี้คุมไม่ให้ใครดันความละเอียด/จำนวนรูป
-     ขึ้นจนครอบครัวที่มีลูก 3 คนชน localStorage (~5 MB) แล้วเซฟบ้านหายทั้งก้อน** */
-  expect(r.saveKB, 'house save ต้องไม่บวมจนเสี่ยง localStorage เต็ม').toBeLessThan(1100);
+  /* ⚠ 12 รูป × 760px — **เกณฑ์นี้คุมไม่ให้ใครดันความละเอียด/จำนวนรูปขึ้นจนครอบครัว
+       ที่มีลูก 3 คนชน localStorage (~5 MB) แล้วเซฟบ้านหายทั้งก้อน**
+     ⚠ วัดจริงแล้ว **จอแท็บเล็ตกินที่มากกว่าจอกว้าง ~20%** (สัดส่วนจอสูงกว่า ⇒ รูปสูงกว่า
+       ที่ความกว้างเท่ากัน) เดสก์ท็อป ~960 KB · แท็บเล็ต ~1,150 KB (เจอตอนไล่เทส 2026-08-17)
+     🔒 **1,250 คือเพดานที่ยอมได้จริง** (ลูก 3 คน ≈ 3.75 MB เหลือที่ให้ข้อมูลอื่น ~1.2 MB)
+       ⇒ **ห้ามเพิ่ม PHOTO_MAX/PHOTO_W อีกโดยไม่ถามผู้ใช้** ตัวเลข 12 รูป/760px ผู้ใช้เลือกเอง */
+  expect(r.saveKB, 'house save ต้องไม่บวมจนเสี่ยง localStorage เต็ม').toBeLessThan(1250);
   expect(r.order).toBeTruthy();
   /* ⚠ ห้ามเปิด preserveDrawingBuffer — มันกินเฟรมเรตตลอดเวลาที่เด็กเล่น */
   const ctxAttr = await page.evaluate(() => {

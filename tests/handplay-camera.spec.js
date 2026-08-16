@@ -20,8 +20,9 @@ test('เปิดกล้องในการ์ดเควสต์แล�
   await page.addInitScript(c => {
     localStorage.setItem('p1quiz_children', JSON.stringify([c]));
     localStorage.setItem('p1quiz_active_child', c.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
-    localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify({ v: 1, mapV: 3, tut: { skip: true },
+    localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify({ v: 1, mapV: 3,
       char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } }));
   }, CHILD);
   await page.goto('/');
@@ -61,8 +62,9 @@ test('ปิดการ์ดคำถามแล้วเปิดกล้�
   await page.addInitScript(c => {
     localStorage.setItem('p1quiz_children', JSON.stringify([c]));
     localStorage.setItem('p1quiz_active_child', c.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
-    localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify({ v: 1, mapV: 3, tut: { skip: true },
+    localStorage.setItem('p1quiz_house_' + c.id, JSON.stringify({ v: 1, mapV: 3,
       char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } }));
   }, CHILD);
   await page.goto('/');

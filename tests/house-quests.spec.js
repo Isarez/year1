@@ -22,10 +22,9 @@ async function openHouse(page, seedHouse, seedProgress) {
   await page.addInitScript(([child, hkey, seed, pkey, prog]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
-    /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) เสมอ — เทสชุดนี้สั่งเควสต์เอง ฟองนกฮูกไม่ควรมาแทรก */
-    const s2 = Object.assign({}, seed || {}, { tut: { skip: true } });
-    localStorage.setItem(hkey, JSON.stringify(s2));
+    if (seed) localStorage.setItem(hkey, JSON.stringify(seed));
     if (prog) localStorage.setItem(pkey, JSON.stringify(prog));
   }, [CHILD, HKEY, seedHouse || null, PKEY, seedProgress || null]);
   await page.goto('/');
@@ -104,12 +103,27 @@ test('โจทย์คงที่ต่อวัน: เปิดเควส
   expect(same.a.length).toBeGreaterThan(10);
 });
 
+/* 🎴 หา NPC ที่วันนี้แจก "งานทรงการ์ด 4 ตัวเลือก" จริงๆ
+   ⚠ **ห้ามใช้ `npcIds[0]` ตรงๆ ในเทสที่ต้องกดตัวเลือก** — ตั้งแต่มีงาน Action จริง
+     (ตกปลา/เก็บของ/รดน้ำ/ถ่ายรูป) กับกลไกจ่ายเงินแบบวางเหรียญ คนแรกในลิสต์อาจได้งาน
+     ที่ไม่มีปุ่มตัวเลือกเลย แล้วเทสจะแดงแบบสุ่มตามวันที่ ทั้งที่โค้ดไม่ผิด (เจอจริง 2026-08-17) */
+async function cardNpc(page) {
+  return page.evaluate(() => {
+    const q = window.HouseQuests, s = q.state();
+    return s.npcIds.find(id => {
+      const sp = q.specForNpc(id);
+      return sp && !sp.done && q.mechShape(sp.mech) === 'card';
+    }) || null;
+  });
+}
+
 test('เล่นเควสต์ NPC จนจบ: ได้เหรียญผ่าน OwlCoins · ป้ายเปลี่ยนเป็น ✓ · วันนี้คุยซ้ำไม่มีงานอีก', async ({ page }) => {
   const errors = await openHouse(page);
   const before = await coins(page);
   expect(before).toBe(0);
 
-  const npcId = await page.evaluate(() => window.HouseQuests.state().npcIds[0]);
+  const npcId = await cardNpc(page);
+  expect(npcId, 'วันนี้ต้องมีชาวบ้านที่แจกงานทรงการ์ดอย่างน้อย 1 คน').not.toBeNull();
   await page.evaluate(id => window.HouseQuestUI.offer(id), npcId);
   await expect(page.locator('#house-qz')).toBeVisible();
   await page.locator('#hqz-stage .hqz-yes').click();      // กด "รับงาน!"
@@ -155,7 +169,8 @@ test('เล่นเควสต์ NPC จนจบ: ได้เหรีย�
    ⇒ ระหว่างการ์ดเควสต์เปิดอยู่ NPC เจ้าของงานต้องถูกตรึงให้ยืนกับที่ (n.hold ไม่มีวันหมด) */
 test('คนออกโจทย์ต้องยืนรออยู่กับเด็กตลอดรอบเล่น ไม่เดินหนีระหว่างทำเควสต์', async ({ page }) => {
   const errors = await openHouse(page);
-  const npcId = await page.evaluate(() => window.HouseQuests.state().npcIds[0]);
+  const npcId = await cardNpc(page);
+  expect(npcId, 'วันนี้ต้องมีชาวบ้านที่แจกงานทรงการ์ดอย่างน้อย 1 คน').not.toBeNull();
   await page.evaluate(id => window.HouseQuestUI.offer(id), npcId);
   await expect(page.locator('#house-qz')).toBeVisible();
   await page.locator('#hqz-stage .hqz-yes').click();
@@ -261,7 +276,8 @@ test('ประตูเช็คความพร้อม: ยังไม่
   expect(ready.ready).toBe(true);
 
   /* ถามแล้วต้องมีปุ่มให้เลือก 2 ทาง และ "ยังไม่พร้อม" ต้องไม่เปิดโจทย์ยาก */
-  const npcId = await page.evaluate(() => window.HouseQuests.state().npcIds[0]);
+  const npcId = await cardNpc(page);
+  expect(npcId, 'วันนี้ต้องมีชาวบ้านที่แจกงานทรงการ์ดอย่างน้อย 1 คน').not.toBeNull();
   await page.evaluate(id => window.HouseQuestUI.offer(id), npcId);
   await page.locator('#hqz-stage .hqz-yes').click();      // รับงาน → เจอการ์ดถามท้าทาย
   await page.waitForTimeout(200);

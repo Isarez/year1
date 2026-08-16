@@ -13,7 +13,7 @@ const CHILD = { id: 'fam-test', name: 'เทสครอบครัว', emoji
 const HKEY = 'p1quiz_house_' + CHILD.id;
 const PKEY = 'p1quiz_progress_' + CHILD.id;
 const CHAR = { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 };
-const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: CHAR };
+const SEED = { v: 1, mapV: 3, char: CHAR };
 
 async function openHouse(page, seedHouse) {
   const errors = [];
@@ -22,6 +22,7 @@ async function openHouse(page, seedHouse) {
   await page.addInitScript(([child, hkey, seed, pkey]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem(hkey, JSON.stringify(seed));
     localStorage.setItem(pkey, JSON.stringify({ coins: 0 }));
@@ -318,7 +319,10 @@ test('ท่าเดินพ่อแม่: ขาต้องแกว่ง
     Object.keys(legs).forEach(w => seen.add(w + ':' + (legs[w] > 0.15 ? 'up' : legs[w] < -0.15 ? 'dn' : 'mid')));
     /* ต้องเคยเห็นขาอยู่ทั้งท่าหน้าและท่าหลัง = แกว่งจริง */
     return ['dad', 'mom'].some(w => seen.has(w + ':up') && seen.has(w + ':dn'));
-  }, { timeout: 60000 }).toBe(true);
+    /* ⚠ พ่อแม่เดินเป็นรอบๆ ไม่ได้เดินตลอด + เครื่องเทสวาดได้ ~3 fps และรันหลาย worker พร้อมกัน
+       ⇒ 60 วิไม่พอตอนรันทั้งชุด (ผ่านตอนรันเดี่ยว แต่แดงตอนรันรวม) **ไม่ได้ลดความเข้มของเงื่อนไข
+       แค่ให้เวลารอมากขึ้น** */
+  }, { timeout: 150000 }).toBe(true);
   expect(errors).toEqual([]);
 });
 

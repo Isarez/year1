@@ -16,7 +16,7 @@ const { test, expect } = require('@playwright/test');
 
 const CHILD = { id: 'fix816', name: 'เทสแก้', emoji: '🔧', birthDate: '2018-01-15', grade: 'p2' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
-const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
+const SEED = { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } };
 
 async function house(page) {
   const errors = [];
@@ -25,6 +25,7 @@ async function house(page) {
   await page.addInitScript(([child, hkey, seed]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem(hkey, JSON.stringify(seed));
   }, [CHILD, HKEY, SEED]);
@@ -428,6 +429,7 @@ async function houseKeep(page) {
   await page.addInitScript(([child, hkey, seed]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     if (!localStorage.getItem(hkey)) localStorage.setItem(hkey, JSON.stringify(seed));
   }, [CHILD, HKEY, SEED]);

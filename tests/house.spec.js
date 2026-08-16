@@ -95,9 +95,8 @@ test('เข้าบ้าน 3D แล้วฉากเดินต่อไ�
     localStorage.setItem('p1quiz_children', JSON.stringify([
       { id: 'house-test', name: 'เทสบ้าน', emoji: '🦉', birthDate: '2016-01-15' }]));
     localStorage.setItem('p1quiz_active_child', 'house-test');
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
-    /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — เทสชุดนี้กดปุ่ม/แตะฉากเอง ฟองนกฮูกจะบังจุดที่แตะ */
-    localStorage.setItem('p1quiz_house_house-test', JSON.stringify({ tut: { skip: true } }));
   });
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();

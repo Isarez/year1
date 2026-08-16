@@ -71,6 +71,11 @@
     return !!(t && (t.done || []).indexOf(id) >= 0);
   }
   function skipped(){ const t = tut(); return !!(t && t.skip); }
+  /* 🧪 สวิตช์ปิดบทเรียนสำหรับชุดเทสเท่านั้น — ตั้งด้วย `addInitScript` ก่อนหน้าโหลด
+     ⚠ **ต้องเป็นตัวแปรบน window ห้ามไปเขียนลง save ของเด็ก** — ลองแล้วพัง: เทสหลายชุดตั้งใจ
+       ไม่ seed ข้อมูลบ้านเลย (เด็กใหม่แท้ๆ) พอเขียน `tut` ลงไปกลายเป็น "มีข้อมูลบ้านแล้ว"
+       ชุดของแถมตั้งต้น/economy migration เดินคนละทาง แล้วเควสต์ที่ถูกแจกเปลี่ยนชนิดไปเลย */
+  function testOff(){ return typeof window !== 'undefined' && !!window.__TUT_OFF; }
 
   /* ================= หน้าจอ ================= */
   function els(){
@@ -305,8 +310,14 @@
     return false;                                        /* tapWorld/await รอ check() ล้วน */
   }
 
+  let retryAt = 0;
   function tick(dt){
-    if(!run) return;
+    if(!run){
+      /* 🔁 **เด็กใหม่แท้ๆ อยู่หน้าสร้างตัวละครตอน start() ⇒ ครั้งแรกเริ่มไม่ได้**
+         ถ้าไม่ลองใหม่ คนที่ควรได้บทเรียนมากที่สุดกลับไม่เคยได้เลย (เจอตอนไล่เทส 2026-08-17) */
+      if(started && Date.now() > retryAt){ retryAt = Date.now() + 2000; autoStart(); }
+      return;
+    }
     markerTick(dt);
     const s = step();
     if(!s) return;
@@ -370,7 +381,7 @@
     return true;
   }
   function autoStart(){
-    if(run || skipped() || !STEPS()) return false;
+    if(run || skipped() || testOff() || !STEPS()) return false;
     const w = W();
     if(!w || w.mode() !== 'world') return false;
     const t = tut();

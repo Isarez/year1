@@ -15,7 +15,7 @@ const HKEY = 'p1quiz_house_' + CHILD.id;
 const PKEY = 'p1quiz_progress_' + CHILD.id;
 const CHAR = { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 };
 /* มีบ้าน + เลี้ยงหมาอยู่แล้ว → ข้ามหน้าสร้างตัวละคร เข้าเมืองได้เลย (หมากิน 'meat') */
-const SEED = { v: 1, mapV: 3, tut: { skip: true }, char: CHAR, pet: { type: 'dog', name: 'บราวนี่', color: 0 } };
+const SEED = { v: 1, mapV: 3, char: CHAR, pet: { type: 'dog', name: 'บราวนี่', color: 0 } };
 
 async function openHouse(page, seedHouse, coins) {
   const errors = [];
@@ -24,6 +24,7 @@ async function openHouse(page, seedHouse, coins) {
   await page.addInitScript(([child, hkey, seed, pkey, c]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem(hkey, JSON.stringify(seed));
     if (c != null) localStorage.setItem(pkey, JSON.stringify({ coins: c }));
@@ -361,7 +362,7 @@ test('ปล่อยสัตว์คืน: สถานะสุขภาพ
 });
 
 test('ไม่มีสัตว์เลี้ยง: แถบขึ้นสถานะกุญแจล็อก และระบบดูแลไม่ทำงาน (ไม่มีอะไรให้ดูแล)', async ({ page }) => {
-  const errors = await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: CHAR });
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: CHAR });
   /* 🔒 ผู้ใช้สั่ง 2026-08-14: **เลิกซ่อนแถบตอนยังไม่มีสัตว์** — ให้โชว์เป็นสถานะกุญแจล็อกแทน
      เกณฑ์เดิม (`toBeHidden`) ถูกทับด้วยมตินี้ **ห้ามลบเทส ให้เปลี่ยนเกณฑ์**
      เหตุผลของมติ: เด็กที่ยังไม่มีสัตว์จะไม่มีทางรู้เลยว่ามีระบบเลี้ยงสัตว์อยู่ในเกม */

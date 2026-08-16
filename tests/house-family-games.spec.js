@@ -17,9 +17,10 @@ async function openHouse(page, grade) {
     const child = Object.assign({}, c, g ? { grade: g } : {});
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_progress_' + child.id, JSON.stringify({ coins: 300 }));
-    localStorage.setItem('p1quiz_house_' + child.id, JSON.stringify({ v: 1, mapV: 3, tut: { skip: true },
+    localStorage.setItem('p1quiz_house_' + child.id, JSON.stringify({ v: 1, mapV: 3,
       char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } }));
   }, [CHILD, grade || '']);
   await page.goto('/');
@@ -688,7 +689,15 @@ test('จำนวนโจทย์ต่อเควสต์: ตามตา
          - งานเดิน (เฟส 4B/7): "ไปให้ถึงแล้วทำ" ชิ้นเดียวจบ — dinner/market/deliver/findhidden
            (ผู้ใช้อนุมัติข้อยกเว้นนี้ตั้งแต่ 2026-08-10 · กติกา 5 ข้อใช้กับเกมที่เปิด popup ให้ตอบเท่านั้น) */
     const eng = q.ENGINE_MECHS;
-    const oneShot = sp => eng.indexOf(sp.mech) >= 0 || !!(q.MECHS[sp.mech] && q.MECHS[sp.mech].walk);
+    /* ⚠ **ต้องดูจาก "ของที่สร้างออกมาจริง" ไม่ใช่จากธง `walk` ในตาราง** — งาน Action จริงชุดใหม่
+       (ตกปลา/เก็บของ/รดน้ำ/ถ่ายรูป/ซื้อของที่ร้าน) ก็เป็นงานชิ้นเดียวจบเหมือนกัน
+       ถ้ากรองด้วยธงอย่างเดียว งานพวกนี้จะหลุดเข้ามาแล้วถูกนับว่า "สั้นเกินไป" (เจอจริง 2026-08-17) */
+    const oneShot = sp => {
+      if (eng.indexOf(sp.mech) >= 0) return true;
+      if (q.MECHS[sp.mech] && q.MECHS[sp.mech].walk) return true;
+      const items = q.buildRun(sp).items || [];
+      return items.length > 0 && items.every(x => x.kind === 'walk' || x.kind === 'engine');
+    };
     const ns = [];
     const specs = [];
     q.state().npcIds.forEach(id => { const sp = q.specForNpc(id); if (sp) specs.push(sp); });

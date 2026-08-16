@@ -18,6 +18,7 @@ async function openHouse(page, seedHouse) {
   await page.addInitScript(([child, hkey, seed]) => {
     localStorage.setItem('p1quiz_children', JSON.stringify([child]));
     localStorage.setItem('p1quiz_active_child', child.id);
+    window.__TUT_OFF = true;   /* 🎓 ปิดบทเรียนสอนเล่น (เฟส 15) — ฟองนกฮูกจะบังจุดที่เทสสั่งแตะ */
     localStorage.setItem('p1quiz_music', 'off');
     if (seed) localStorage.setItem(hkey, JSON.stringify(seed));
   }, [CHILD, HKEY, seedHouse || null]);
@@ -87,7 +88,7 @@ test('เด็กใหม่: ได้ชุดเฟอร์นิเจอ
 test('migration: ของที่เด็กวางไว้/ใส่อยู่ก่อนอัปเดตต้องไม่หาย', async ({ page }) => {
   /* เด็กเก่า: วางเปียโน+แทรมโพลีน (ของแพงที่ชุดเริ่มต้นไม่มี) และใส่มงกุฎ+แว่นดาว */
   const legacy = {
-    v: 1, mapV: 3, tut: { skip: true }, worldSeeded: true,
+    v: 1, mapV: 3, worldSeeded: true,
     decor: { out: [{ id: 'trampoline', x: 4, z: 5, rot: 0, col: 0 }], in: [{ id: 'piano', x: 2, z: 2, rot: 0, col: 0 }] },
     char: { gender: 0, hair: 3, hairC: 4, eyes: 1, eyeC: 2, shirt: 9, bottom: 7, shoes: 3,
             pattern: 4, hat: 5, hatC: 5, glass: 5, glassC: 9, bag: 2, bagC: 0, hold: 6, holdC: 2 },
@@ -120,7 +121,7 @@ test('migration: ของที่เด็กวางไว้/ใส่อ�
 
 test('กล่องเลือกของ: ของที่ยังไม่ได้ซื้อยังโชว์อยู่ (จาง + ป้ายราคา) ไม่ถูกซ่อน', async ({ page }) => {
   /* ต้องมี char มาก่อน ไม่งั้นเปิดบ้านแล้วเด้งหน้าสร้างตัวละคร (hMode='creator') กดตกแต่งไม่ได้ */
-  await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   await page.locator('#house-decorate-btn').dispatchEvent('click');
   await page.waitForFunction(() => !document.getElementById('house-edit-panel').hidden, null, { timeout: 10000 });
   const s = await page.evaluate(() => ({
@@ -173,7 +174,7 @@ test('ซื้อของ: ตัดเงินผ่าน OwlCoins · เ�
 test('หน้าแต่งตัว: แถวสีของเครื่องแต่งโผล่เฉพาะตอนใส่ชิ้นนั้นอยู่', async ({ page }) => {
   /* เด็กที่มีสิทธิ์เฉพาะหมวกแบบ 1 — ยังไม่ได้ใส่อะไรเลย */
   await openHouse(page, {
-    v: 1, mapV: 3, tut: { skip: true }, econVer: 2,
+    v: 1, mapV: 3, econVer: 2,
     unlocked: ['fit:hair:0', 'fit:shirt:5', 'fit:bottom:0', 'fit:shoes:0', 'fit:hat:1'],
     char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0,
             pattern: 0, hat: 0, hatC: 5, glass: 0, glassC: 9, bag: 0, bagC: 0, hold: 0, holdC: 2 },
@@ -210,7 +211,7 @@ test('หน้าแต่งตัว: แถวสีของเครื่
 });
 
 test('หน้าแต่งตัว: ลายเสื้อมาก่อนสีเสื้อ และมีเส้นคั่นแบ่งกลุ่ม', async ({ page }) => {
-  await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   await page.locator('#house-edit-btn').dispatchEvent('click');
   await page.waitForFunction(() => !document.getElementById('house-creator').hidden, null, { timeout: 10000 });
   const r = await page.evaluate(() => ({
@@ -223,7 +224,7 @@ test('หน้าแต่งตัว: ลายเสื้อมาก่อ
 });
 
 test('หน้าร้าน: แตะการ์ด = ดูตัวอย่าง 3D + แถบซื้อ · การ์ดขนาดเท่ากันทุกใบ · พรีวิวได้ทุกแบบรวมสี', async ({ page }) => {
-  await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   await page.evaluate(() => { window.OwlCoins.set(400); window.HouseShop.open('mall-furniture'); });
   await page.waitForTimeout(500);
 
@@ -391,7 +392,7 @@ test('หน้าร้าน: เปิดห้างเฟอร์นิเ
    ⚠ จุดที่พังแล้วเจ็บที่สุด = **มีหมวดตกหล่นไม่มีร้านไหนขาย** เด็กจะซื้อของหมวดนั้นไม่ได้ตลอดกาล
      (ผิดกติกาเหล็กข้อ 1 "ห้ามมี dead end") — เทสข้อแรกคือตัวดักเรื่องนี้ */
 test('ทุกหมวดเฟอร์นิเจอร์ต้องมีร้านขายเสมอ ห้ามมีหมวดที่ตกหล่น', async ({ page }) => {
-  const errors = await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   const r = await page.evaluate(() => {
     const S = window.HouseShop;
     const sold = new Set();
@@ -433,7 +434,7 @@ test('ทุกหมวดเฟอร์นิเจอร์ต้องม�
 });
 
 test('ร้านต้นไม้/ร้านของเล่น: เปิดได้ มีหมวดถูกต้อง และห้างเฟอร์นิเจอร์ไม่มีของนอกบ้านแล้ว', async ({ page }) => {
-  const errors = await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   const shopTabs = id => page.evaluate(i => {
     window.HouseShop.open(i);
     const t = Array.from(document.querySelectorAll('#house-shop-tabs .he-tab')).map(b => b.textContent.trim());
@@ -463,7 +464,7 @@ test('ร้านต้นไม้/ร้านของเล่น: เป�
 });
 
 test('ผังเมือง: ล็อตที่ย้าย/เพิ่มใหม่ ต้องมีช่องหน้าประตูเดินได้จริง ไม่มีตึกทับกัน', async ({ page }) => {
-  const errors = await openHouse(page, { v: 1, mapV: 3, tut: { skip: true }, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  const errors = await openHouse(page, { v: 1, mapV: 3, char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
   const r = await page.evaluate(() => {
     const M = window.HOUSE_MAP({ inBox: (b, x, z) => !!b && x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 });
     const g = window.__houseDbg.grid();
