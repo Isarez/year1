@@ -134,9 +134,12 @@
        ⚠ ทั้งคู่ต้อง idempotent — `enterHouseGame()` ถูกเรียกซ้ำได้ (ตัวจริงกันไว้ที่ setMusicPlaylist) */
     use:   ()=>{ if(typeof setMusicPlaylist === 'function') setMusicPlaylist(TRACKS); },
     release: ()=>{ if(typeof setMusicPlaylist === 'function') setMusicPlaylist(null); },
-    /* หน้าทดสอบเพลงในเมนูตั้งค่า — เล่นเพลงที่เลือกทันที (ทดสอบเท่านั้น ไม่ใช่ของให้เด็กเล่น) */
+    /* หน้าทดสอบเพลงในเมนูตั้งค่า — **ปิดเพลงพื้นหลังให้เงียบก่อน แล้วค่อยเปิดเพลงที่เลือก** */
     preview: i =>{ if(typeof playMusicTrack === 'function') playMusicTrack(TRACKS, i); },
-    stopPreview: ()=>{ if(typeof setMusicPlaylist === 'function') setMusicPlaylist(null);
-                       if(typeof stopMusic === 'function') stopMusic(); },
+    /* เลิกฟัง = กลับไปเล่นชุดฟาร์มตามปกติตั้งแต่เพลงแรก (เด็กยังอยู่ในเมือง ต้องไม่เงียบสนิท)
+       ⚠ ห้ามทำด้วยการสลับไป null แล้วสลับกลับ — จะได้ยินเพลงหน้าหลักแวบหนึ่งตรงกลาง */
+    stopPreview: ()=>{ if(typeof playMusicTrack === 'function') playMusicTrack(TRACKS, 0); },
+    /* ปิดเสียงสนิท (ใช้ตอนออกจากหน้าโดยที่เพลงพื้นหลังถูกปิดอยู่) */
+    silence: ()=>{ if(typeof stopMusic === 'function') stopMusic(true); },
   };
 })();

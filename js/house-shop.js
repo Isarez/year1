@@ -580,6 +580,8 @@
         return false;
       }
       if(!window.OwlCoins.spend(price)) return false;
+      /* 💸 กำลังทำเควสต์ที่ต้องซื้อของอยู่ไหม → จดยอดไว้คืนตอนจบงาน (ผู้ใช้สั่ง 2026-08-16) */
+      if(window.HouseWorld && HouseWorld.questSpend) HouseWorld.questSpend(price);
       grant([key]);
       toast('🎉', 'ได้ ' + label + ' แล้ว!');
       onChange();
@@ -602,6 +604,8 @@
         return false;
       }
       if(!window.OwlCoins.spend(price)) return false;
+      /* 💸 กำลังทำเควสต์ที่ต้องซื้อของอยู่ไหม → จดยอดไว้คืนตอนจบงาน (ผู้ใช้สั่ง 2026-08-16) */
+      if(window.HouseWorld && HouseWorld.questSpend) HouseWorld.questSpend(price);
       /* ⚠ **ต้องนับจำนวนก่อน `grant()` เสมอ** — `addFurnCount()` ใช้ `unlocked` เป็นค่าตั้งต้น
          ตอนที่ยังไม่มีคีย์ใน `owned` ถ้า grant ไปก่อน ซื้อครั้งแรกจะกลายเป็น 0→1(จาก unlocked)→2
          คือได้ฟรีไป 1 ชิ้น (เทสจับได้ 2026-08-13) */

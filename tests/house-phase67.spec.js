@@ -35,7 +35,10 @@ const NEW_MECHS = [
   'sinkfloat','magnet','states','habitat','plantgrow','measure','codeorder','codedebug',   /* เฟส 6 เขียนใหม่ */
   'shapebuild','circuit','robot','codeloop','codecond',                                    /* เฟส 6 ยืม engine */
   'soundguess',                                                                            /* เฟส 5 ตกค้าง */
-  'payexact','changeback','stockshelf','recipeseq','traffic','deliver',          /* เฟส 7 กลุ่ม B */
+  /* ⚠ 2026-08-16: `changeback`/`stockshelf` เปลี่ยนเป็นงาน Action ที่ร้านสะดวกซื้อแล้ว (ข้อ 55)
+       ⇒ ออกจากชุดนี้ เพราะ gen() คืนงานเดิน ไม่ใช่กระดานให้ตอบในการ์ด
+       เทสของมันอยู่ที่ tests/house-action-ab.spec.js */
+  'payexact','recipeseq','traffic','deliver',                                   /* เฟส 7 กลุ่ม B */
   'spotdiff','flashcount','dressorder','findhidden',                                        /* เฟส 7 กลุ่ม D */
 ];
 

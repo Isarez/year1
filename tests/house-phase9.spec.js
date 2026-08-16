@@ -157,30 +157,21 @@ test('เฟส 9C: บ้านมีเครื่องดนตรีแล
   expect(errs).toEqual([]);
 });
 
-test('เฟส 9C: กระดานเล่นตามทำนองวาดได้จริง · กดครบแล้วผ่าน · กดผิดไม่มีบทลงโทษ', async ({ page }) => {
+/* ⚠ 2026-08-16: `playalong` เปลี่ยนจาก "กดคีย์บนจอในการ์ด" เป็น **งานเดินไปเล่นเครื่องจริงที่บ้าน**
+   (ข้อ 55) ⇒ เทสกระดานคีย์เดิมใช้ไม่ได้แล้ว เทสตัวใหม่คุมที่ tests/house-action-ab.spec.js
+   ที่นี่เหลือคุมแค่ว่า "ยังเป็นงานที่ต้องมีเครื่องดนตรีก่อน" ซึ่งเป็นกติกากันทางตันของเฟส 9 */
+test('เฟส 9C: เล่นดนตรีที่บ้าน — เป็นงานเดินไปเล่นเครื่องจริง และต้องมีเครื่องก่อน', async ({ page }) => {
   const errs = await house(page, { withInstrument: true });
-  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'playalong', title: '🎵 เล่นตามทำนอง' }));
-  await expect(page.locator('.hqz-key').first()).toBeVisible({ timeout: 10000 });
-  const info = await page.evaluate(() => {
-    const run = window.__houseDbg.qRun();
-    return { keys: document.querySelectorAll('.hqz-key').length,
-             dots: document.querySelectorAll('.hqz-kdot').length,
-             seq: run.items[run.idx].seq.slice() };
+  const r = await page.evaluate(() => {
+    const q = window.HouseQuests;
+    const it = (q.testRun({ mech: 'playalong', gid: 'p3', seed: 2 }).items || [])[0] || {};
+    return { shape: q.mechShape('playalong'), kind: it.kind, target: it.target,
+             need: (it.need || []).map(n => n.k), toNpc: it.toNpc, ok: q.mechOk('playalong') };
   });
-  expect(info.keys).toBeGreaterThanOrEqual(5);
-  expect(info.dots, 'ต้องมีจุดบอกความคืบหน้าเท่าจำนวนโน้ต').toBe(info.seq.length);
-
-  /* กดผิดก่อน — ต้องไม่พัง ไม่จบเควสต์ แค่เริ่มกดใหม่ */
-  const wrongKey = (info.seq[0] + 1) % info.keys;
-  await page.locator('.hqz-key').nth(wrongKey).click();
-  await page.waitForTimeout(500);
-  expect(await page.locator('.hqz-key').count(), 'กดผิดแล้วต้องยังอยู่ข้อเดิม').toBeGreaterThan(0);
-
-  /* กดถูกครบทั้งลำดับ → ต้องผ่านไปข้อถัดไป */
-  const before = await page.evaluate(() => window.__houseDbg.qRun().idx);
-  for (const k of info.seq) { await page.locator('.hqz-key').nth(k).click(); await page.waitForTimeout(120); }
-  await expect.poll(() => page.evaluate(() => {
-    const r = window.__houseDbg.qRun(); return r ? r.idx : 99;
-  }), { timeout: 8000 }).toBeGreaterThan(before);
+  expect(r.ok, 'บ้านมีเครื่องดนตรีแล้ว → แจกงานได้').toBe(true);
+  expect(r.shape, 'ต้องเป็นทรงเดิน ไม่ใช่การ์ด').toBe('walk');
+  expect(r.target).toBe('catch');
+  expect(r.need, 'ต้องนับจากการเล่นเครื่องดนตรีจริง').toContain('music');
+  expect(r.toNpc, 'ต้องมีปลายทางให้กลับไปเล่าให้ฟัง').toBeTruthy();
   expect(errs).toEqual([]);
 });

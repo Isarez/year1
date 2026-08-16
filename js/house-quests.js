@@ -212,6 +212,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     /* 🌍 "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" — {leaf, water, photo}
        ⚠ ถ้าไม่มี kit ส่งมา ให้คืน 0 ทุกคีย์ ⇒ งานแนวนี้จะไม่ถูกแจกเลย (ปลอดภัยไว้ก่อน ไม่มีทางตัน) */
     const worldStock = kit.worldStock || function(){ return {leaf:0, water:0, photo:0}; };
+    /* 🕰️ หมวดของในบ้านที่เด็กวางไว้จริง — เควสต์กิจวัตรสั่งได้เฉพาะหมวดพวกนี้ (ผู้ใช้สั่ง 2026-08-16) */
+    const routineCats = kit.routineCats || function(){ return []; };
     /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม (เควสต์ "ไปนั่งกินข้าว") — ฝั่งหน้าจอเป็นคนตอบ */
     const hasIndoorSeat = kit.hasIndoorSeat || function(){ return false; };
     /* เกมของหน้าหลักตัวนี้พร้อมให้ยืมมาเล่นในบ้านไหม (เฟส 5) — ฝั่งหน้าจอถาม OwlGames/HouseGames ให้
@@ -558,47 +560,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     /* ---------- เกมเตือนเรื่องสัตว์: ลากอาหารไปให้สัตว์ที่กินของนั้น ----------
        ⚠ ต้องเลือกสัตว์ที่ "กินอาหารคนละชนิดกัน" เท่านั้น — แมวกับเพนกวินกินปลาเหมือนกัน
          ถ้าอยู่กระดานเดียวกันเด็กวางถูกก็ยังถูกนับว่าผิด (ผิดกติกาเหล็กข้อ 2) */
-    function petFeedMech(){
-      return {
-        /* ⚠ เฟส 7: เปิดให้ร้านสัตว์เลี้ยง/ฟาร์มแจกงานนี้ได้ด้วย (ผู้ใช้สั่ง 2026-08-12)
-           ตารางอาหารยังมาจาก js/house-pet-care.js ตัวจริงเหมือนเดิม จึงเข้ากับร้านอยู่แล้วโดยธรรมชาติ */
-        id:'petfeed', name:'เตือนเรื่องสัตว์', fam:'family', sort:true, only:'',
-        gen(rng, diff){
-          const foods = (petFoods() || []).filter(f => f.pets && f.pets.length && PET_FACE[f.pets[0]]);
-          if(!foods.length) return MECHS.count.gen(rng, diff, {id:'', job:'villager'});
-          const binN  = Math.min(diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4), foods.length);
-          const tileN = diff.tier <= 2 ? 4 : (diff.tier <= 4 ? 6 : 8);
-          const out = [];
-          for(let r = 0; r < MIN_Q; r++){
-            const use = pickMany(rng, foods, binN);        /* 1 ชนิดอาหาร = 1 ตัว ⇒ ไม่มีทางกำกวม */
-            const bins = use.map(f => {
-              const p = PET_FACE[f.pets[0]];
-              return {id:f.pets[0], name:p.n, emoji:p.e};
-            });
-            const tiles = [];
-            use.forEach((f, i) => tiles.push({e:f.emoji, label:f.name, bin:bins[i].id}));
-            let guard = 0;
-            while(tiles.length < tileN && guard++ < 100){
-              const i = (rng() * use.length) | 0;
-              tiles.push({e:use[i].emoji, label:use[i].name, bin:bins[i].id});
-            }
-            out.push({kind:'sort', q:'ถึงเวลาให้อาหารแล้ว ลากอาหารไปให้น้องแต่ละตัวหน่อยนะ',
-                      emoji:'', choices:[], correct:0,
-                      bins, tiles: shuffled(rng, tiles).map((t, i) => ({k:'t' + i, e:t.e, label:t.label, bin:t.bin})),
-                      explain:'น้องๆ ได้กินอาหารที่ถูกชนิดครบทุกตัวแล้ว!'});
-          }
-          return out;
-        },
-        verify(it, placed){
-          placed = placed || {};
-          const bad = it.tiles.filter(t => placed[t.k] !== t.bin).map(t => t.k);
-          return {ok: bad.length === 0, bad: bad};
-        },
-      };
-    }
-    /* ---------- เกมใช้เงินให้พอ: เลือกของให้ครบจำนวนโดยรวมแล้วไม่เกินงบ ----------
-       ⚠ **มีคำตอบถูกได้หลายชุด** (ขอแค่ครบจำนวนและไม่เกินเงิน) ตั้งใจให้เป็นแบบนี้
-         เด็กได้ลองคิดเอง ไม่ใช่ทายว่าผู้ใหญ่คิดชุดไหนอยู่ */
+    /* 🗑️ `petFeedMech` (การ์ดลากอาหารให้ตรงสัตว์) ถอดออก 2026-08-16 ตามกติกา
+       "เกมไหนทำเป็น Action จริงแล้ว ให้ถอดเวอร์ชันการ์ดออก" — ดู `petCareMech` ที่ไปดูแลน้องจริง */
     function budgetMech(){
       return {
         id:'budget', name:'ใช้เงินให้พอ', fam:'family', basket:true, only:'family',
@@ -840,37 +803,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       };
     }
     /* ---------- จัดชั้นวาง ---------- ทรงเดียวกับ tidy แต่ถังคือ "ชั้นในร้าน" */
-    function stockShelfMech(){
-      const set = {
-        name:'จัดชั้นวาง', emoji:'🏪', maxBins:4,
-        q:'ของมาส่งแล้ว ช่วยจัดขึ้นชั้นให้ถูกที่หน่อยนะ',
-        bins: Object.keys(SHELF_CATS).map(k => ({
-          id:k, name:SHELF_CATS[k].name, emoji:SHELF_CATS[k].emoji,
-          items: PRICED_GOODS.filter(g => g[3] === k).map(g => g[0]),
-        })),
-      };
-      return sortMech('', null, {set:set, id:'stockshelf', fam:'A', only:null});
-    }
-    /* ---------- ตกปลาคิดเลข ----------
-       ⚠ ต้องมีคำตอบเสมอ ⇒ สุ่ม "ปลาที่เป็นคำตอบ" ก่อน แล้วค่อยเติมปลาหลอก */
-    /* 🗑️ `fishMathMech` (ตกปลาคิดเลข) ถูกถอดออก 2026-08-16 ตามคำสั่งผู้ใช้
-       เหตุผล: มี `fishcatch` ที่ให้เด็ก **ตกปลาจริงในโลก 3D** แล้ว การมีเวอร์ชันการ์ดลากอยู่ด้วย
-       ทำให้เด็กเจอ "ตกปลาปลอม" ที่จืดกว่าของจริง
-       🔒 **กติกาใหม่ที่ผู้ใช้ตั้ง: เกมไหนทำเป็น Action จริงในโลกแล้ว ให้ถอดเวอร์ชันการ์ดออกทันที** */
-    /* ================= 🎣 ตกปลาไปส่ง (ผู้ใช้เสนอเอง 2026-08-16 · ปรับรอบ 2 วันเดียวกัน) =================
-       แนวใหม่ที่ต่างจากทุกกลไกก่อนหน้า: **ไม่มีโจทย์ในการ์ดเลย** — รับงานแล้วการ์ดปิด
-       เด็กออกไปตกปลาด้วยระบบตกปลาจริงของเฟส 11 (js/house-play.js) ให้ครบตามที่สั่ง
-       แล้วเดินกลับไปหาคนที่สั่งงานเพื่อส่งของ
-
-       ปรับรอบ 2 ตามที่ผู้ใช้สั่ง:
-         ① **สุ่มว่าเป็นปลาบ่อหรือปลาทะเล** — เด็กต้องเดินไปให้ถูกแหล่งน้ำ
-         ② **ระบุชนิดปลาที่ต้องการ** ไม่ใช่ "ปลาอะไรก็ได้"
-         ③ **ห้ามสั่งปลาหายาก** (rare 3) — โผล่แค่ 10% เควสต์จะจบยากเกินไป และห้ามสั่งของขยะ
-         ④ **สั่งได้หลายชนิดต่อ 1 รอบ** (แบบเดียวกับที่ `fishmath` เคยทำ)
-         ⑤ **แจกโดยลุงตกปลา/ลุงชาวประมง** (ดู BONUS_MECHS)
-
-       ⚠ ตัวนับ/ตัวตัดสินว่า "ตกครบแล้ว" อยู่ฝั่งหน้าจอ (js/house.js) ไฟล์นี้ไม่รู้จักฉาก 3D
-       ⚠ ไม่เข้ากติกาขั้นต่ำ 5 ข้อ เหมือนงานเดินตัวอื่น */
+    /* 🗑️ ถอดออก 2026-08-16 — เปลี่ยนเป็นงาน Action ที่ร้านสะดวกซื้อจริงแล้ว */
     function fishCatchMech(){
       /* คลังปลาสำรอง — ใช้เฉพาะตอน js/house-play.js ยังไม่โหลด (ไฟล์นั้นโหลดทีหลังไฟล์นี้)
          ⚠ ห้ามใส่ id ที่ไม่มีจริงในคลังตัวจริง ไม่งั้นเด็กตกยังไงก็ไม่มีวันตรง */
@@ -953,6 +886,187 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
                    q: o.ask(n), go: o.go, hint: o.hint,
                    list:[{e:o.emoji, label:o.unit + ' ×' + n}],
                    emoji:o.emoji, choices:[], correct:0, explain:o.done}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    /* ================= 🏠 งาน Action จริง "ชุด A" (2026-08-16) =================
+       แปลงกลไกที่เคยเป็นการ์ด/กระดานลาก ให้เป็น **รับคำสั่ง → ไปทำจริง → กลับมาส่งงาน**
+       ทั้งหมดใช้ระบบที่มีอยู่แล้วในโลก ไม่ได้สร้างระบบใหม่:
+         🐾 ดูแลน้อง      → PETCARE.feed/bath/pat/toyPlayed (เฟส 12)
+         🐕 สอนท่าให้น้อง → PETCARE.teach (เฟส 12)
+         🎹 เล่นดนตรีที่บ้าน → action:'music' ของเครื่องดนตรี (เฟส 9)
+         🕰️ กิจวัตร        → แตะเฟอร์นิเจอร์ที่เด็ก**วางไว้จริง** (ผู้ใช้สั่งให้อิงของที่มี)
+       ⚠ ทุกตัวมี `action` ⇒ `mechOk()` เช็ค `worldStock()` ก่อนแจกเสมอ (กันงานตัน) */
+
+    /* ชื่อไทยของหมวดของในบ้าน — ใช้บอกเด็กว่าต้องไปแตะอะไร */
+    const ROUTINE_LABEL = {bed:{e:'🛏️', n:'ที่นอน'}, bath:{e:'🛁', n:'ห้องน้ำ'},
+                           table:{e:'🍽️', n:'โต๊ะ'}, seat:{e:'🪑', n:'ที่นั่ง'},
+                           kitchen:{e:'🍳', n:'ครัว'}};
+    /* 🕰️ กิจวัตรของหนู — สั่งให้ไปทำตามลำดับด้วยของที่บ้านหลังนี้มีจริง
+       ⚠ **ห้ามสั่งหมวดที่เด็กไม่มี** — ผู้ใช้สั่ง 2026-08-16 ว่า "ไม่มีของจะเล่นไม่ผ่าน"
+         ⇒ หยิบเฉพาะจาก `worldStockCats()` ที่อ่านของที่วางไว้จริงในบ้าน */
+    function routineActMech(){
+      return {
+        id:'routine', name:'กิจวัตรของหนู', fam:'A', walk:true, action:'routine',
+        gen(rng, diff, def){
+          const have = routineCats().filter(c => ROUTINE_LABEL[c]);
+          if(have.length < 2) return MECHS.count.gen(rng, diff, def || {id:'', job:'villager'});
+          /* เด็กเล็ก 2 อย่าง · ชั้นโต 3 (แต่ไม่เกินที่บ้านมีจริง) */
+          const n = Math.min(have.length, diff.tier <= 2 ? 2 : 3);
+          const pick2 = pickMany(rng, have, n);
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'walk', target:'catch', toNpc: to,
+                   need: pick2.map(c => ({k:'use', id:c, e:ROUTINE_LABEL[c].e, name:ROUTINE_LABEL[c].n, n:1})),
+                   q:'ช่วยทำกิจวัตรให้ครบหน่อยนะ — ' + pick2.map(c => ROUTINE_LABEL[c].n).join(' → '),
+                   go:'ไปทำเลย! 🏠',
+                   hint:'กลับไปที่บ้านแล้วแตะของตามที่บอก',
+                   list: pick2.map(c => ({e:ROUTINE_LABEL[c].e, label:ROUTINE_LABEL[c].n})),
+                   emoji:'🕰️', choices:[], correct:0, explain:'ทำครบทุกอย่างเลย เก่งมาก!'}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    /* 🐾 ดูแลน้อง — ให้อาหาร/อาบน้ำ/ลูบหัว/เล่นด้วย ตามที่สั่ง */
+    const PET_ACTS = [{id:'feed', e:'🍖', n:'ให้อาหาร'}, {id:'pat', e:'🤲', n:'ลูบหัว'},
+                      {id:'bath', e:'🛁', n:'อาบน้ำ'}, {id:'play', e:'🎾', n:'เล่นด้วย'}];
+    function petCareMech(){
+      return {
+        id:'petcare', name:'ดูแลเพื่อนตัวน้อย', fam:'A', walk:true, action:'pet',
+        gen(rng, diff, def){
+          /* ⚠ ให้อาหาร/อาบน้ำมีเงื่อนไขของตัวเอง (อิ่มอยู่/อาบไปแล้ววันนี้) ⇒ **สั่งได้แค่ 1 อย่างต่อรอบ**
+             ไม่งั้นเด็กทำอันหนึ่งไม่ได้แล้วงานค้างทั้งวัน · ลูบหัว/เล่นด้วยทำได้เสมอ */
+          const safe = [PET_ACTS[1], PET_ACTS[3]];             /* ลูบ + เล่น = ทำได้เสมอ */
+          const pickA = diff.tier <= 2 ? [pick(rng, safe)]
+                      : pickMany(rng, safe, 2);
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          const times = diff.tier <= 2 ? 1 : 2;
+          return [{kind:'walk', target:'catch', toNpc: to,
+                   need: pickA.map(a => ({k:'pet', id:a.id, e:a.e, name:a.n, n:times})),
+                   q:'ไปดูแลเพื่อนตัวน้อยของหนูหน่อยนะ — ' + pickA.map(a => a.n).join(' · ')
+                     + (times > 1 ? ' อย่างละ ' + times + ' ครั้ง' : ''),
+                   go:'ไปหาน้อง 🐾',
+                   hint:'กลับไปหาเพื่อนตัวน้อยแล้วแตะตัวน้องเพื่อเปิดเมนู',
+                   list: pickA.map(a => ({e:a.e, label:a.n + (times > 1 ? ' ×' + times : '')})),
+                   emoji:'🐾', choices:[], correct:0, explain:'น้องมีความสุขมากเลย!'}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    /* 🐕 สอนท่าให้น้อง — ใช้ระบบสอนท่าของเฟส 12 ตรงๆ */
+    function petTrickMech(){
+      return {
+        id:'pettrick', name:'สอนท่าให้น้อง', fam:'A', walk:true, action:'trick',
+        gen(rng, diff, def){
+          const n = diff.tier <= 2 ? 1 : 2;
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'walk', target:'catch', toNpc: to,
+                   need:[{k:'pet', id:'trick', e:'🎓', name:'ฝึกท่า', n:n}],
+                   q:'ลองไปสอนท่าใหม่ให้เพื่อนตัวน้องดูสิ ฝึกให้ได้ ' + n + ' ครั้งนะ',
+                   go:'ไปฝึกกัน 🐕', hint:'แตะตัวน้องแล้วเลือก "สอนท่า"',
+                   list:[{e:'🎓', label:'ฝึกท่า ×' + n}],
+                   emoji:'🐕', choices:[], correct:0, explain:'น้องเก่งขึ้นเยอะเลย!'}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    /* 🎹 ไปเล่นเครื่องดนตรีที่บ้าน — แทนที่การ์ด playalong ที่กดคีย์บนจอ */
+    function playHomeMech(){
+      return {
+        id:'playalong', name:'เล่นดนตรีให้ฟังหน่อย', fam:'A', walk:true, action:'music', music:true,
+        gen(rng, diff, def){
+          const n = diff.tier <= 2 ? 3 : (diff.tier <= 4 ? 4 : 5);
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'walk', target:'catch', toNpc: to,
+                   need:[{k:'music', id:'', e:'🎵', name:'เล่นดนตรี', n:n}],
+                   q:'อยากฟังหนูเล่นดนตรีจัง กลับไปเล่นเครื่องดนตรีที่บ้าน ' + n + ' ครั้งแล้วมาเล่าให้ฟังนะ',
+                   go:'ไปเล่นดนตรี 🎹', hint:'กลับไปที่บ้านแล้วแตะเครื่องดนตรีที่วางไว้',
+                   list:[{e:'🎵', label:'เล่น ×' + n}],
+                   emoji:'🎹', choices:[], correct:0, explain:'เพราะมากเลย!'}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    /* ================= 🏪 งาน Action จริง "ชุด B" (2026-08-16) =================
+       ผู้ใช้สั่ง: **shopping / changeback / stockshelf ให้ไปเล่นที่ร้านสะดวกซื้อจริง**
+       ทั้ง 3 ตัวเป็นงาน 2 ขา: รับคำสั่ง → เดินไปทำที่ร้าน → เดินกลับไปส่งงาน
+
+       🔒 กติกา: ตัวที่ต้องใช้เงินซื้อของติดธง `buy:true` ⇒ **จบงานแล้วได้เงินที่จ่ายไปคืน**
+         (ผู้ใช้สั่ง 2026-08-16 — ไม่งั้นเด็กขาดทุนจากการทำงาน ยิ่งขยันยิ่งจน)
+       ⚠ ทั้ง 3 ตัวไม่มีธง `action` เพราะร้านสะดวกซื้ออยู่ในเมืองเสมอ ไม่มีทางหมด/ไม่มี */
+    function martShopMech(){
+      return {
+        id:'shopping', name:'ไปซื้อของที่ร้าน', fam:'family', walk:true, buy:true,
+        gen(rng, diff, def){
+          const n = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
+          const all = PRICED_GOODS.map((g, i) => ({k:'g' + i, e:g[0], name:g[1], price:g[2], bin:g[3]}));
+          const want = pickMany(rng, all, n).map(g => Object.assign({}, g, {n:1}));
+          /* ชั้นวางต้องมีของหลอกปนด้วย ไม่งั้นหยิบมั่วก็ถูก */
+          const rest = all.filter(g => !want.some(w => w.k === g.k));
+          const shelf = shuffled(rng, want.concat(pickMany(rng, rest, Math.min(rest.length, n + 4))));
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'mart', target:'mart', job:'shop', toNpc: to, buy:true,
+                   need:[{k:'mart', id:'shop', e:'🛒', name:'ซื้อของ', n:1}],
+                   want: want, shelf: shelf,
+                   q:'ช่วยไปซื้อของที่ร้านสะดวกซื้อให้หน่อยได้ไหม? — '
+                     + want.map(w => w.e + ' ' + w.name).join(' · ') + ' (เงินที่จ่ายไปได้คืนตอนส่งงานนะ)',
+                   go:'ไปที่ร้าน 🏪', hint:'หยิบของตามรายการแล้วจ่ายเงินที่ร้าน',
+                   list: want.map(w => ({e:w.e, label:w.name})),
+                   emoji:'🛒', choices:[], correct:0, explain:'ซื้อครบพอดีเลย ขอบใจมากนะ!'}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    function martChangeMech(){
+      return {
+        id:'changeback', name:'ทอนเงินที่ร้าน', fam:'A', walk:true, buy:true,
+        gen(rng, diff, def){
+          /* ราคาไล่ตามชั้น — เด็กเล็กเลขกลมๆ ชั้นโตมีเศษ */
+          const pool = PRICED_GOODS.filter(g => diff.tier <= 2 ? g[2] <= 10 : true);
+          const g = pick(rng, pool);
+          const item = {e:g[0], name:g[1], price:g[2]};
+          /* จ่ายด้วยเหรียญกลมๆ ที่มากกว่าราคาเสมอ */
+          const notes = [10, 20, 50, 100].filter(v => v > item.price);
+          const paid = notes.length ? notes[0] : item.price + 10;
+          const ans = paid - item.price;
+          const wrong = [];
+          while(wrong.length < 3){
+            const d2 = ans + (1 + ((rng() * 9) | 0)) * (rng() < .5 ? 1 : -1);
+            if(d2 > 0 && d2 !== ans && wrong.indexOf(d2) < 0) wrong.push(d2);
+          }
+          const order = shuffled(rng, [ans].concat(wrong));
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'mart', target:'mart', job:'change', toNpc: to, buy:true,
+                   need:[{k:'mart', id:'change', e:'💵', name:'ทอนเงิน', n:1}],
+                   item: item, paid: paid,
+                   choices: order.map(v => String(v) + ' เหรียญ'), correct: order.indexOf(ans),
+                   q2:'ซื้อของชิ้นนี้แล้วจ่ายไปเท่านี้ — ต้องได้ทอนเท่าไร?',
+                   q:'ไปซื้อของที่ร้านสะดวกซื้อแล้วคิดเงินทอนให้ถูกนะ (เงินที่จ่ายได้คืนตอนส่งงาน)',
+                   go:'ไปที่ร้าน 🏪', hint:'ที่ร้านจะมีโจทย์เงินทอนรออยู่',
+                   emoji:'💵', explain:'คิดเงินทอนเก่งมาก!'}];
+        },
+        verify(){ return {ok:true}; },
+      };
+    }
+    function martShelfMech(){
+      return {
+        id:'stockshelf', name:'จัดชั้นวางที่ร้าน', fam:'A', walk:true,
+        gen(rng, diff, def){
+          const n = diff.tier <= 2 ? 4 : (diff.tier <= 4 ? 6 : 8);
+          const binN = diff.tier <= 2 ? 2 : (diff.tier <= 4 ? 3 : 4);
+          const binIds = pickMany(rng, Object.keys(SHELF_CATS), binN);
+          const pool = PRICED_GOODS.filter(g => binIds.indexOf(g[3]) >= 0);
+          if(pool.length < n) return MECHS.count.gen(rng, diff, def || {id:'', job:'villager'});
+          const tiles = pickMany(rng, pool, n)
+            .map((g, i) => ({k:'t' + i, e:g[0], name:g[1], bin:g[3]}));
+          const to = (def && def.id) ? def.id : (questableIds()[0] || '');
+          return [{kind:'mart', target:'mart', job:'shelf', toNpc: to,
+                   need:[{k:'mart', id:'shelf', e:'🏪', name:'จัดชั้น', n:1}],
+                   tiles: tiles,
+                   bins: binIds.map(id => ({id:id, e:SHELF_CATS[id].emoji, name:SHELF_CATS[id].name})),
+                   q:'ที่ร้านของยังไม่ได้จัดขึ้นชั้นเลย ช่วยไปจัดให้หน่อยได้ไหม?',
+                   go:'ไปที่ร้าน 🏪', hint:'แตะของแล้วแตะชั้นที่ถูกหมวด',
+                   emoji:'🏪', choices:[], correct:0, explain:'ร้านเป็นระเบียบเลย ขอบใจนะ!'}];
         },
         verify(){ return {ok:true}; },
       };
@@ -1648,13 +1762,13 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       tidy:     sortMech('tidy'),
       laundry:  sortMech('laundry'),
       cook:     orderMech('cook'),
-      routine:  orderMech('routine'),
+      routine:  routineActMech(),   /* 🕰️ 2026-08-16: เปลี่ยนจากการ์ดลากเป็น Action จริงในบ้าน */
       /* คลังจากเกมหน้าหลัก: เรียงลำดับตามหลักสูตร (ORDER_SETS) + จัดหมวดของ (EF_CATEGORIES) */
       orderlearn: orderMech('routine', mainOrderSets),
       sortcat:    sortMech('tidy', efSortSet),
-      petfeed:  petFeedMech(),
+      /* 🗑️ `petfeed` (การ์ดลากอาหาร) ถอดออก 2026-08-16 — มี `petcare` ที่ไปดูแลน้องจริงแล้ว */
       budget:   budgetMech(),
-      shopping: shoppingMech(),
+      shopping:   martShopMech(),    /* 🏪 2026-08-16: ไปซื้อของที่ร้านจริง */
       clock:    clockMech(),
       dinner:   dinnerMech(),
       market:   marketMech(),
@@ -1715,9 +1829,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       soundguess: soundMech(),
       /* ---- เฟส 7 — กลไกกลุ่ม B (ข้อ 15.2) · escort ถูกตัดออกตามคำสั่งผู้ใช้ ---- */
       payexact:   payExactMech(),
-      changeback: changeBackMech(),
-      stockshelf: stockShelfMech(),
+      changeback: martChangeMech(),  /* 💵 2026-08-16: คิดเงินทอนที่ร้านจริง */
+      stockshelf: martShelfMech(),   /* 🏪 2026-08-16: จัดชั้นที่ร้านจริง */
       fishcatch:  fishCatchMech(),
+      petcare:    petCareMech(),    /* 🐾 2026-08-16: แทนการ์ด petfeed */
+      pettrick:   petTrickMech(),   /* 🐕 2026-08-16: ใหม่ */
       /* ---- 🌍 งาน Action จริงชุดที่ 2 (2026-08-16) ---- */
       collectgive: actionMech({
         id:'collectgive', name:'เก็บของไปให้', stock:'leaf', emoji:'🍃', unit:'ชิ้น',
@@ -1739,7 +1855,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       deliver:    deliverMech(),
       /* ---- เฟส 7 — กลไกกลุ่ม D (ข้อ 15.4 · ไอเดียจาก IDEA.md) ---- */
       /* ---- เฟส 9 — เควสต์ดนตรี (พี่โน้ตที่ร้านเครื่องดนตรีเป็นคนแจก) ---- */
-      playalong:  playAlongMech(),
+      playalong:  playHomeMech(),   /* 🎹 2026-08-16: จากกดคีย์บนจอ → ไปเล่นเครื่องจริงที่บ้าน */
       findsound:  findSoundMech(),
       spotdiff:   spotDiffMech(),
       flashcount: flashCountMech(),
@@ -1765,9 +1881,15 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
          ซึ่งถูกสำหรับกลไกส่วนใหญ่ แต่ถ้ากลไกใหม่เป็นทรงลากหรือทรงเดิน **ต้องมาเติมที่นี่**
          ไม่งั้นจำนวนข้อจะถูกคำนวณจากเวลาที่ผิด (เควสต์ยาวเกินงบ 240 วิ) — มีเทสคุมไว้ที่ house-phase10
        ⚠ `secPerQ` ใช้คำนวณจำนวนข้อเท่านั้น **ห้ามโชว์บนจอ ห้ามใช้ตัดจบเควสต์** (กติกาเหล็กข้อ 2) */
-    const DRAG_MECHS = ['petfeed', 'budget', 'shopping', 'payexact', 'dressorder'];
-    const WALK_MECHS_SHAPE = ['findhidden', 'deliver', 'dinner', 'market', 'fishcatch',
-                              'collectgive', 'watergarden', 'photogive'];
+    const DRAG_MECHS = ['budget', 'payexact', 'dressorder'];
+    /* ⚠ ตัวไหนมี `walk:true` ต้องอยู่ในลิสต์นี้ด้วยเสมอ ไม่งั้นถูกนับเป็นการ์ด 4 ตัวเลือก
+     แล้วคำนวณจำนวนข้อ/งบเวลาผิด (`whois` เคยตกหล่นมาตั้งแต่เฟส 13 — เจอ 2026-08-16) */
+    const WALK_MECHS_SHAPE = ['findhidden', 'deliver', 'dinner', 'market', 'fishcatch', 'whois',
+                              'collectgive', 'watergarden', 'photogive',
+                              /* ---- ชุด A (2026-08-16) ---- */
+                              'routine', 'petcare', 'pettrick', 'playalong',
+                              /* ---- ชุด B (2026-08-16) — งาน 2 ขาที่ร้านสะดวกซื้อ ---- */
+                              'shopping', 'changeback', 'stockshelf'];
     Object.keys(MECHS).forEach(k=>{
       const m = MECHS[k];
       if(m.shape) return;                                        /* factory ติดป้ายมาแล้ว */
@@ -1831,14 +1953,16 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       [/^npc-(mart|mk|cart|food|ice|mall|shop|pet|music|toy|garden)/, ['payexact','changeback']],
       /* ร้านสะดวกซื้อ + ห้าง: จัดชั้นวาง + จำรายการของ (เฟส 4B ที่เปิดให้ NPC ใช้ในเฟส 7) */
       [/^npc-(mart|mall)/,                 ['stockshelf','shopping']],
-      /* ร้านสัตว์เลี้ยง + ฟาร์ม: จับคู่สัตว์↔อาหาร (feed-pet ของข้อ 15.2 = petfeed ของเฟส 4B) */
-      [/^npc-(pet|farm|cowboy)/,           ['petfeed']],
+      /* 🐾 ร้านสัตว์เลี้ยง + ฟาร์ม: ไปดูแล/สอนท่าน้องจริงที่บ้าน (2026-08-16 แทนการ์ด petfeed) */
+      [/^npc-(pet|farm|cowboy)/,           ['petcare','pettrick']],
       /* ตลาด/รถเข็น: จำรายการของ (ของในโจทย์เปลี่ยนตามธีมร้านให้เอง) */
       [/^npc-(mk|cart)/,                   ['shopping']],
       /* ร้านอาหาร/ไอศกรีม/ตลาด: ทำตามสูตร */
       [/^npc-(food|ice|mk|cart)/,          ['recipeseq']],
       /* ริมน้ำ/ชาวประมง: ตกปลาคิดเลข */
       /* ---- 🌍 งาน Action จริง (2026-08-16) — ผูกกับคนที่งานนั้นเข้ากับบทบาทเขา ---- */
+      /* 🕰️ กิจวัตร = ครู/คุณยาย/หมอ (คนที่สนใจว่าเด็กดูแลตัวเองดีไหม) */
+      [/^npc-(teacher|granny|doctor|nurse)/, ['routine']],
       /* 🍃 เก็บของ = เด็กๆ/คุณยาย/ร้านต้นไม้ (คนที่ขอให้ช่วยเก็บของเข้าท่า) */
       [/^npc-(kid|granny|garden|play|stu)/, ['collectgive']],
       /* 💧 รดน้ำแปลงผัก = ชาวนา/ฟาร์ม/ร้านต้นไม้ */
@@ -1896,8 +2020,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     const MECH_IDS = Object.keys(MECHS);
     /* กลไกที่ **เควสต์ครอบครัวเท่านั้น**สุ่มได้ — NPC/กระดานยังเป็น quiz/count เหมือนเดิม
        (มินิเกม 8 แบบของเฟส 4B + quiz/count ที่ใช้ตั้งแต่เฟส 4A) */
-    const FAM_MECHS = ['quiz', 'count', 'tidy', 'laundry', 'cook', 'routine',
-                       'petfeed', 'budget', 'shopping', 'clock', 'dinner', 'market',
+    /* ⚠ **ห้ามใส่กลไกที่ต้อง "เดินกลับไปส่งที่ตัว NPC"** — พ่อแม่รับงานคืนไม่ได้
+         (ทางส่งงานอยู่ที่ `talkToNpc` เท่านั้น ส่วนพ่อแม่ใช้ `tapParent` คนละทาง)
+       ⇒ `routine`/`petcare`/`shopping` ย้ายออกไปเป็นงานของชาวเมืองแล้ว 2026-08-16 */
+    const FAM_MECHS = ['quiz', 'count', 'tidy', 'laundry', 'cook',
+                       'budget', 'clock', 'dinner', 'market',
                        'orderlearn', 'sortcat'];
     /* เควสต์ "เดินไปทำ" — ต้องเช็คก่อนว่าเล่นได้จริงในบ้านหลังนี้ ไม่งั้นเด็กรับงานแล้วทำไม่ได้ (ห้ามมี dead end) */
     function famMechOk(m){

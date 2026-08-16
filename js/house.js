@@ -355,11 +355,23 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
                                         ไม่ใช่เสียงเปียโนเหมือนกันหมด (ผู้ใช้แจ้ง 2026-08-16) */
                                      voice:it.voice || 'piano'})),
       hasInstrument: ()=> hasInstrument(),
+      routineCats: ()=> routineCats(),   /* 🕰️ หมวดของในบ้านที่เด็กวางไว้จริง (เควสต์กิจวัตรใช้) */
       /* 🚪 "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" — ใช้กันงานตัน (เก็บของหมดแล้ว/ไม่มีแปลงให้รด)
          ⚠ ต้องอ่านจาก js/house-play.js ตัวจริง ไม่ใช่เดาจากของที่ซื้อไว้ */
       worldStock: ()=>{
         const P = window.HousePlay;
-        return (P && P.worldStock) ? P.worldStock() : {leaf:0, water:0, photo:0};
+        const base = (P && P.worldStock) ? P.worldStock() : {leaf:0, water:0, photo:0};
+        /* 🏠 ของในบ้าน — งาน Action ชุด A ต้องมีของจริงก่อนถึงถูกแจก (กันงานตัน)
+           ⚠ ดูจาก "ของที่วางไว้จริง" ไม่ใช่ "ของที่ซื้อแล้ว" — ซื้อแล้วเก็บในคลังยังใช้ไม่ได้ */
+        const d = loadHouseData() || {};
+        base.pet   = d.pet ? 1 : 0;
+        base.music = hasInstrument() ? 1 : 0;
+        base.trick = (d.pet && PETCARE && PETCARE.learnedTricks
+                       && PETCARE.learnedTricks().length < (PETCARE.TRICKS || []).length) ? 1 : 0;
+        /* 🕰️ กิจวัตร: นับ "หมวดของในบ้านที่ต่างกัน" ที่เด็กวางไว้จริง — ต้องมีอย่างน้อย 2 หมวด
+           ไม่งั้นสั่งให้ไปแตะเตียงแล้วโต๊ะ ทั้งที่บ้านมีแต่โซฟา = ตัน (ผู้ใช้สั่งให้อิงของที่มีจริง) */
+        base.routine = routineCats().length;
+        return base;
       },
       /* เฟส 5: เกมของหน้าหลักตัวนี้ยืมมาเล่นได้ไหม (ต้องลงทะเบียนกับ OwlGames + อยู่ในรายการ ALLOW)
          เฟส 6 เพิ่มเงื่อนไขที่ 3: **ต้องมีหมวดที่ระดับชั้นเด็กเล่นได้จริงด้วย** — วงจรไฟฟ้ามีแต่ ป.6
@@ -5979,6 +5991,9 @@ function finishArrive(){
     else if(a.type==='play') playAtItem(a.idx);
     else if(a.type==='decor'){
       const g = a.group, item = a.item, act = a.act;
+      /* 🕰️ เควสต์ "ทำกิจวัตรจริง" นับตรงนี้ — เด็กแตะของชิ้นไหนในบ้านก็แจ้งหมวดของชิ้นนั้นไป
+         ⚠ ต้องอยู่**ก่อน**การกระทำจริง เพราะบางอย่าง (นั่ง/นอน) หน่วงเวลาก่อนทำงาน */
+      questCaught('use', item.cat || '');
       if(act==='slide') startSlideRide(g, item);
       else if(act==='pethouse') togglePetRest(g);
       else if(act==='sit' || act==='sleep') startSit(g, item, act);
@@ -6587,6 +6602,14 @@ function talkToNpc(n){
   }
   /* 🎣 งาน "ตกปลาไปส่ง" (2026-08-16): มาถึงตัวคนที่สั่งงานแล้ว — ครบแล้วจบงาน ยังไม่ครบก็บอกยอด
      ⚠ ต้อง `return` ทั้ง 2 ทาง ไม่งั้นการ์ดรับงานใหม่ของคนคนเดียวกันจะเด้งทับงานที่ทำค้างอยู่ */
+  if(walkQuest && walkQuest.target === 'mart' && walkQuest.toNpc === d.id){
+    if(catchDone()){
+      setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkQuestArrive('mart'); }, 320);
+    }else if(typeof showToast === 'function'){
+      showToast('🏪', 'ยังไม่ได้ทำที่ร้านเลยนะ ไปที่ร้านสะดวกซื้อก่อน');
+    }
+    return;
+  }
   if(walkQuest && walkQuest.target === 'catch' && walkQuest.toNpc === d.id){
     if(catchDone()){
       setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkQuestArrive('catch'); }, 320);
@@ -6806,6 +6829,22 @@ function claimQuestReward(){
 }
 
 /* ---------- จ่ายเหรียญ: จุดเดียวในโหมดบ้านที่แตะ window.OwlCoins (กติกาเหล็กข้อ 5) ---------- */
+/* ============================================================
+   💸 เงินที่เด็กจ่ายไป "เพื่อทำเควสต์" — ต้องได้คืนตอนจบงาน (ผู้ใช้สั่ง 2026-08-16)
+
+   ทำไม: เควสต์แนวใหม่บางตัวให้เด็ก **ไปซื้อของจริงที่ร้าน** แล้วเอาไปส่ง
+   ถ้าไม่คืนเงิน เด็กจะ "ขาดทุน" จากการทำงาน = ยิ่งขยันยิ่งจน ซึ่งขัดกับทั้งเกม
+   ⇒ ตอนจบเควสต์จ่าย **ค่าตอบแทนปกติ + เงินที่จ่ายไปในเควสต์นั้น**
+
+   ⚠ นับเฉพาะตอนมีเควสต์ที่ต้องซื้อของค้างอยู่จริง (`walkQuest.buy`) — ซื้อของแต่งบ้านเล่นๆ
+     ระหว่างทำเควสต์ต้องไม่ถูกคืนเงิน ไม่งั้นกลายเป็นช่องโกงเงินไม่จำกัด
+   ============================================================ */
+function questSpend(n){
+  n = Math.max(0, Math.round(Number(n) || 0));
+  if(!n || !walkQuest || !walkQuest.buy) return 0;
+  walkQuest.spent = (walkQuest.spent | 0) + n;
+  return n;
+}
 function awardCoins(n){
   n = Math.max(0, Math.round(Number(n) || 0));
   if(!n) return 0;
@@ -6934,6 +6973,7 @@ function renderQuestStep(){
      **เพิ่มมินิเกมใหม่ให้มาต่อแถวที่นี่** (ตัวที่ไม่มี `it.kind` = โจทย์ตอบคำถามแบบเดิม) */
   if(it.kind === 'walk'){ renderWalkStep(st, it); return; }
   if(it.kind === 'engine'){ renderEngineStep(st, it); return; }
+  if(it.kind === 'mart'){ renderMartStep(st, it); return; }   /* 🏪 ชุด B: งานที่ต้องไปทำที่ร้าน */
   if(it.kind === 'sort'){
     /* เกมจำรายการของ: โชว์รายการก่อน แล้วค่อยให้หยิบ */
     if(it.memory && !qMemShown[qRun.idx]){ renderMemoryList(st, it); return; }
@@ -7064,6 +7104,20 @@ let walkQuest = null;          /* {run, target:'table'|'market'} */
 /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม — อ่านจากของที่เด็กวางไว้จริง (ไม่นับของนอกบ้าน) */
 /* เฟส 9 — บ้านหลังนี้มีเครื่องดนตรีวางอยู่ไหม (นับทั้งในบ้านและนอกบ้าน — ระฆังลมแขวนนอกบ้าน)
    ⚠ ต้องดูจาก "ของที่วางไว้จริง" ไม่ใช่ "ของที่ซื้อแล้ว" — ซื้อแล้วเก็บไว้ในคลังยังเล่นไม่ได้ */
+/* 🕰️ หมวดของในบ้านที่ "แตะใช้งานได้" และเด็กวางไว้จริง — เควสต์กิจวัตรสั่งได้เฉพาะหมวดพวกนี้
+   ⚠ **ผู้ใช้สั่ง 2026-08-16: ต้องอิงจากของที่เด็กมีจริง ไม่มีของ = ไม่แจกงาน**
+   ⚠ ดูเฉพาะของใน `dec.in` (ในบ้าน) เพราะกิจวัตรทำในบ้านทั้งหมด */
+const ROUTINE_CATS = ['bed', 'bath', 'table', 'seat', 'kitchen'];
+function routineCats(){
+  const d = loadHouseData() || {};
+  const list = (d.decor || {}).in || [];
+  const out = [];
+  list.forEach(rec=>{
+    const it = FURN.byId[rec.id];
+    if(it && ROUTINE_CATS.indexOf(it.cat) >= 0 && out.indexOf(it.cat) < 0) out.push(it.cat);
+  });
+  return out;
+}
 function hasInstrument(){
   const d = loadHouseData() || {};
   const dec = d.decor || {};
@@ -7105,7 +7159,10 @@ function renderWalkStep(st, it){
     walkQuest = {run: run, target: it.target, toNpc: it.toNpc || '', zone: it.zone || '',
                  /* 🎣 งานแบบ "ทำจริงแล้วค่อยเอาไปส่ง" — `need` เป็น **ใบสั่งรายชนิด**
                     [{id, e, name, n}] · `got` = {ชนิด: ที่ได้แล้ว} · `where` = บ่อ/ทะเล */
-                 where: it.where || '', need: (it.need && it.need.length) ? it.need : [], got: {}};
+                 where: it.where || '', need: (it.need && it.need.length) ? it.need : [], got: {},
+                 /* 🏪 งาน 2 ขาของชุด B — leg 1 = เดินไปร้าน · leg 2 = ทำเสร็จแล้วเดินกลับไปส่ง
+                    `buy` = งานนี้ต้องใช้เงินซื้อของจริง ⇒ คืนเงินให้ตอนจบ (ผู้ใช้สั่ง) */
+                 leg: it.target === 'mart' ? 1 : 0, buy: !!it.buy, spent: 0};
     closeQuestPanel();                       /* ⚠ ล้าง qRun ทิ้ง จึงต้องคว้า run ไว้ก่อนบรรทัดนี้ */
     walkHint();
   }));
@@ -7227,6 +7284,19 @@ function walkHint(){
   let msg = (it && it.hint) ? it.hint : 'ไปทำงานที่คุณแม่ฝากไว้กันนะ';
   /* 🎣 งาน "ทำจริงแล้วเอาไปส่ง" มี 2 ช่วง — คำใบ้ต้องเปลี่ยนตามช่วงที่อยู่ ไม่งั้นเด็กตกครบแล้ว
      ยังไม่รู้ว่าต้องเดินกลับไปหาใคร (ป้ายเดิมค้างว่า "ไปตกปลา" = ตกไปเรื่อยๆ ไม่มีวันจบ) */
+  if(walkQuest.target === 'mart'){
+    if(walkQuest.leg === 1){
+      msg = 'ไปที่ 🏪 ร้านสะดวกซื้อก่อนนะ — ' + ((it && it.hint) || 'มีงานรออยู่ที่นั่น');
+    }else{
+      msg = 'ทำที่ร้านเสร็จแล้ว! เอากลับไปส่งที่';
+      const info = questItemInfo({src:'npc', id: walkQuest.toNpc});
+      msg += ' ' + info.icon + ' ' + info.name + ' ที่ ' + info.place;
+    }
+    const h3 = $('house-hint');
+    if(h3){ h3.textContent = '📋 ' + msg; showHint(); }
+    if(typeof showToast==='function') showToast('🏪', msg);
+    return;
+  }
   if(walkQuest.target === 'catch'){
     if(!catchDone()){
       /* ⚠ ตกปลาต้องบอก **แหล่งน้ำ** ด้วยเสมอ — ปลาบ่อกับปลาทะเลคนละชุดกันสนิท
@@ -7286,12 +7356,42 @@ function walkQuestTileCheck(){
     if(questZonesAt(hChar.tile.x, hChar.tile.z).indexOf(walkQuest.zone) >= 0) walkQuestArrive('zone');
     return;
   }
+  /* 🏪 ชุด B (2026-08-16) — งานที่ต้อง "ไปทำที่ร้านสะดวกซื้อ" แล้วค่อยเอากลับไปส่ง
+     ⚠ เป็นงาน **2 ขา**: ขา 1 เดินไปที่ร้าน → เปิดกระดานทำงานตรงนั้น · ขา 2 เดินกลับไปหาคนสั่ง
+       ⇒ ต่างจาก `market` ที่จบตรงตลาดเลย · ตัวจำว่าอยู่ขาไหนคือ `walkQuest.leg` */
+  if(walkQuest.target === 'mart'){
+    if(walkQuest.leg === 1 && atMartLot(hChar.tile.x, hChar.tile.z)) openMartBoard();
+    return;
+  }
   if(walkQuest.target !== 'market') return;
   if(inMarket(hChar.tile.x, hChar.tile.z)) walkQuestArrive('market');
+}
+/* ยืนอยู่ที่ร้านสะดวกซื้อหรือยัง (เผื่อขอบล็อต 1 ช่อง เด็กไม่ต้องยืนตรงเป๊ะ) */
+function atMartLot(x, z){
+  const lt = lotAt(x, z, 1);
+  return !!(lt && lt.id === 'shop-mart');
+}
+/* ถึงร้านแล้ว → เปิดกระดานทำงานที่ร้าน (ยังไม่จบเควสต์ ต้องเอากลับไปส่งอีกที) */
+function openMartBoard(){
+  if(!walkQuest || walkQuest.leg !== 1) return;
+  walkQuest.leg = 2;
+  const run = walkQuest.run;
+  qRun = run; qLock = false;
+  qzShow();
+  renderQuestStep();
+}
+/* กระดานที่ร้านทำเสร็จแล้ว → ปิดการ์ด ให้เด็กเดินกลับไปหาคนที่สั่งงาน (ขา 2)
+   ⚠ **ห้ามจบเควสต์ตรงนี้** — ผู้ใช้กำหนดรูปแบบไว้ว่า "รับคำสั่ง → ไปทำ → กลับมาส่งงาน" */
+function martBoardDone(){
+  if(!walkQuest || walkQuest.target !== 'mart') return;
+  walkQuest.need.forEach(r => { walkQuest.got[r.k + ':' + (r.id || '')] = r.n; });
+  closeQuestPanel();
+  walkHint();
 }
 function walkQuestArrive(target){
   if(!walkQuest || walkQuest.target !== target) return false;
   const run = walkQuest.run;
+  run.spent = walkQuest.spent | 0;      /* 💸 ส่งยอดที่จ่ายไประหว่างงานต่อให้ตอนจบเควสต์คืนเงิน */
   walkQuest = null;
   qRun = run; qLock = false;
   const r = QUESTS.submit(qRun, true);
@@ -7538,6 +7638,199 @@ function renderVanishPick(st, it){
   });
   st.appendChild(pick);
 }
+/* ================= 🏪 ชุด B (2026-08-16): งานที่ต้อง "ไปทำที่ร้านสะดวกซื้อ" =================
+   รูปแบบที่ผู้ใช้กำหนด: **รับคำสั่ง → เดินไปทำที่ร้านจริง → เดินกลับมาส่งงาน**
+   ⇒ การ์ดใบเดียวกันวาด 2 หน้า ขึ้นกับว่าอยู่ขาไหน (`walkQuest.leg`)
+       ขา 1 (ยังไม่ได้รับงาน / ยังไม่ถึงร้าน) → การ์ดรับงานปกติ
+       ขา 2 (ยืนอยู่ที่ร้านแล้ว)             → กระดานทำงานจริง
+
+   🔒 กติกาที่ต้องผ่าน (เหมือนทุกเกมในโหมดนี้):
+     - ไม่มีจับเวลา ไม่มีคำว่าแพ้ · หยิบผิดแค่เอาออกได้ ไม่นับพลาด
+     - **เงินที่จ่ายไปต้องได้คืนตอนจบเควสต์** (ผู้ใช้สั่ง) — ผ่าน `questSpend()`
+     - ⚠ เงินไม่พอต้องไม่ตัน: ปุ่มจ่ายจะบอกให้ไปหาเงินก่อน แล้วกลับมาทำต่อได้ */
+function renderMartStep(st, it){
+  /* ยังไม่ได้ออกเดิน หรือยังไม่ถึงร้าน → การ์ดรับงานเดิม */
+  if(!walkQuest || walkQuest.leg !== 2){ renderWalkStep(st, it); return; }
+  if(it.job === 'shelf')  return renderMartShelf(st, it);
+  if(it.job === 'change') return renderMartChange(st, it);
+  return renderMartShop(st, it);
+}
+/* ---------- 🛒 หยิบของตามรายการ แล้วจ่ายเงิน ---------- */
+function renderMartShop(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = 'หยิบของให้ครบตามรายการ แล้วกดจ่ายเงินนะ';
+  st.appendChild(line);
+  const picked = it._picked || (it._picked = {});
+  const paint = ()=>{ qzStageClear(); renderMartShop(qzStage(), it); };
+
+  /* รายการที่สั่ง — ติ๊กเองเมื่อหยิบครบ */
+  const list = document.createElement('div'); list.className = 'hqz-tray hqz-memlist';
+  it.want.forEach(w=>{
+    const b = document.createElement('div');
+    const got = (picked[w.k] | 0);
+    b.className = 'hqz-tile hqz-tile-lab' + (got >= w.n ? ' ok' : '');
+    b.innerHTML = '<span class="hqz-tile-em">' + w.e + '</span>'
+                + '<span class="hqz-tile-tx">' + w.name + ' ' + Math.min(got, w.n) + '/' + w.n + '</span>';
+    list.appendChild(b);
+  });
+  st.appendChild(list);
+
+  /* ชั้นวางของในร้าน — แตะเพื่อหยิบ แตะซ้ำที่ตะกร้าเพื่อเอาออก */
+  const shelf = document.createElement('div'); shelf.className = 'hqz-tray hqz-mart-shelf';
+  it.shelf.forEach(g=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-tile hqz-tile-lab hqz-mart-item';
+    b.dataset.hpClick = '1';
+    b.innerHTML = '<span class="hqz-tile-em">' + g.e + '</span>'
+                + '<span class="hqz-tile-tx">' + g.name + '</span>'
+                + '<span class="hqz-mart-price">' + g.price + '</span>';
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      picked[g.k] = (picked[g.k] | 0) + 1;
+      paint();
+    });
+    shelf.appendChild(b);
+  });
+  st.appendChild(shelf);
+
+  /* ตะกร้า + ยอดรวม */
+  const keys = Object.keys(picked).filter(k => picked[k] > 0);
+  const total = keys.reduce((a, k)=>{
+    const g = it.shelf.filter(x => x.k === k)[0];
+    return a + (g ? g.price * picked[k] : 0);
+  }, 0);
+  const bag = document.createElement('div'); bag.className = 'hqz-mart-bag';
+  bag.textContent = keys.length ? 'ในตะกร้า: ' + keys.map(k=>{
+    const g = it.shelf.filter(x => x.k === k)[0];
+    return (g ? g.e + ' ×' + picked[k] : '');
+  }).join('  ') + '   รวม ' + total + ' เหรียญ' : 'ตะกร้ายังว่างอยู่';
+  st.appendChild(bag);
+
+  const row = document.createElement('div'); row.className = 'hqz-row';
+  if(keys.length){
+    row.appendChild(qzBtn('เอาออกทั้งหมด', 'hqz-no', ()=>{
+      if(typeof playClick==='function') playClick();
+      it._picked = {}; paint();
+    }));
+  }
+  const done = it.want.every(w => (picked[w.k] | 0) >= w.n)
+            && it.want.reduce((a, w) => a + w.n, 0) === keys.reduce((a, k) => a + picked[k], 0);
+  row.appendChild(qzBtn('จ่ายเงิน ' + total + ' 🪙', 'hqz-yes', ()=>{
+    if(typeof playClick==='function') playClick();
+    if(!done){
+      if(typeof showToast==='function') showToast('🛒', 'ของยังไม่ตรงรายการนะ ลองดูอีกที');
+      return;
+    }
+    /* ⚠ เงินไม่พอ = ไม่ตัน แค่บอกให้ไปหาเงินก่อนแล้วกลับมาทำต่อ */
+    if(!window.OwlCoins || window.OwlCoins.get() < total){
+      if(typeof showToast==='function') showToast('💰', 'เงินยังไม่พอ ไปหาเหรียญเพิ่มแล้วกลับมาได้เลย');
+      return;
+    }
+    window.OwlCoins.spend(total);
+    questSpend(total);                 /* 💸 จดไว้คืนตอนจบเควสต์ */
+    if(typeof playCorrect==='function') playCorrect();
+    if(typeof showToast==='function') showToast('🛒', 'ซื้อครบแล้ว! เอาไปส่งได้เลย');
+    martBoardDone();
+  }));
+  st.appendChild(row);
+}
+/* ---------- 💵 ทอนเงิน — ซื้อของจริงแล้วบอกว่าต้องได้ทอนเท่าไร ---------- */
+function renderMartChange(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = it.q2;
+  st.appendChild(line);
+  const show = document.createElement('div'); show.className = 'hqz-mart-bag';
+  show.textContent = it.item.e + ' ' + it.item.name + ' ราคา ' + it.item.price
+                   + ' 🪙 · จ่ายไป ' + it.paid + ' 🪙';
+  st.appendChild(show);
+  const tray = document.createElement('div'); tray.className = 'hqz-tray';
+  it.choices.forEach((c, i)=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-tile hqz-tile-lab hqz-mart-item';
+    b.dataset.hpClick = '1';
+    b.innerHTML = '<span class="hqz-tile-em">🪙</span><span class="hqz-tile-tx">' + c + '</span>';
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      if(i !== it.correct){
+        if(typeof playWrong==='function') playWrong();
+        if(typeof showToast==='function') showToast('💵', 'ลองคิดใหม่อีกทีนะ');
+        return;                        /* ⚠ ตอบผิดไม่นับพลาด ไม่มีบทลงโทษ (กติกาเหล็กข้อ 2) */
+      }
+      if(typeof playCorrect==='function') playCorrect();
+      /* จ่ายเงินจริงตามราคาของ แล้วได้ทอนกลับ ⇒ สุทธิเสียเท่าราคาของ */
+      if(window.OwlCoins && window.OwlCoins.get() >= it.item.price){
+        window.OwlCoins.spend(it.item.price);
+        questSpend(it.item.price);
+      }
+      martBoardDone();
+    });
+    tray.appendChild(b);
+  });
+  st.appendChild(tray);
+}
+/* ---------- 🏪 จัดของขึ้นชั้น — แตะของ แล้วแตะชั้นที่ถูก ---------- */
+function renderMartShelf(st, it){
+  const line = document.createElement('div'); line.className = 'hqz-line';
+  line.textContent = 'ช่วยจัดของขึ้นชั้นให้ถูกหมวดหน่อยนะ';
+  st.appendChild(line);
+  const placed = it._placed || (it._placed = {});
+  const sel = it._sel;
+  const paint = ()=>{ qzStageClear(); renderMartShelf(qzStage(), it); };
+
+  const tray = document.createElement('div'); tray.className = 'hqz-tray';
+  it.tiles.forEach(t=>{
+    if(placed[t.k]) return;                    /* วางแล้วหายจากถาด */
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hqz-tile hqz-tile-lab hqz-mart-item' + (sel === t.k ? ' sel' : '');
+    b.dataset.hpClick = '1';
+    b.innerHTML = '<span class="hqz-tile-em">' + t.e + '</span>'
+                + '<span class="hqz-tile-tx">' + t.name + '</span>';
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      it._sel = (sel === t.k) ? null : t.k;
+      paint();
+    });
+    tray.appendChild(b);
+  });
+  st.appendChild(tray);
+
+  const bins = document.createElement('div'); bins.className = 'hqz-tray hqz-mart-bins';
+  it.bins.forEach(bin=>{
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hqz-tile hqz-tile-lab hqz-mart-bin';
+    b.dataset.hpClick = '1';
+    const mine = it.tiles.filter(t => placed[t.k] === bin.id);
+    b.innerHTML = '<span class="hqz-tile-em">' + bin.e + '</span>'
+                + '<span class="hqz-tile-tx">' + bin.name + '</span>'
+                + '<span class="hqz-mart-in">' + mine.map(t => t.e).join('') + '</span>';
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      if(!it._sel) return;
+      const t = it.tiles.filter(x => x.k === it._sel)[0];
+      if(!t) return;
+      if(t.bin !== bin.id){
+        if(typeof playWrong==='function') playWrong();
+        if(typeof showToast==='function') showToast('🏪', 'ชั้นนี้ไม่ใช่ของชิ้นนี้นะ ลองชั้นอื่นดู');
+        return;                                /* ⚠ วางผิดไม่นับพลาด แค่ไม่ยอมรับ */
+      }
+      placed[t.k] = bin.id;
+      it._sel = null;
+      if(typeof playCorrect==='function') playCorrect();
+      if(it.tiles.every(x => placed[x.k])){
+        if(typeof showToast==='function') showToast('🏪', 'จัดครบแล้ว! กลับไปบอกได้เลย');
+        martBoardDone();
+        return;
+      }
+      paint();
+    });
+    bins.appendChild(b);
+  });
+  st.appendChild(bins);
+}
+/* ล้างเนื้อในการ์ดแล้ววาดใหม่ (กระดานร้านค้าวาดใหม่ทุกครั้งที่แตะ) */
+function qzStageClear(){ const st = qzStage(); if(st) st.innerHTML = ''; }
+
 /* ================= เฟส 5 ตกค้าง: ทายเสียง (sound-guess) =================
    ใช้ `playMusicSequence()` ของหน้าหลักตรงๆ (js/games-art.js) ไม่โหลดไฟล์เสียงเพิ่ม
    ⚠ **ต้องส่ง noFlash = true เสมอ** — ฟังก์ชันนั้นจะไปสั่ง flash คีย์เปียโนผ่าน `$('music-piano')`
@@ -7918,7 +8211,11 @@ function finishQuest(){
   if(qRun.spec && qRun.spec.test){ finishTestQuest(qRun); return; }
   const run = qRun, res = QUESTS.finish(run);
   qRun = null;
-  awardCoins(res.coins);
+  /* 💸 คืนเงินที่จ่ายไปเพื่อทำเควสต์นี้ (ถ้ามี) — ทบกับค่าตอบแทนปกติ ไม่ใช่แทนที่ */
+  const back = run.spent | 0;
+  awardCoins(res.coins + back);
+  if(back > 0 && typeof showToast === 'function')
+    showToast('💰', 'ได้ค่าตอบแทน ' + res.coins + ' เหรียญ + คืนค่าของที่ซื้อ ' + back + ' เหรียญ');
   /* ติดค้าง "ทำงานแทนค่ารักษา" อยู่ → งานนี้ถือว่าใช้หนี้ครบ น้องหายป่วยทันที (ข้อ 18.4) */
   const cured = PETCARE ? PETCARE.questDone() : false;
   refreshNpcMarks();
@@ -9686,6 +9983,7 @@ function feedNow(){
   const f = PETCARE.FOOD.filter(x => x.id === fid)[0];
   if(!f) return;
   const r = PETCARE.feed(f.id);
+  if(r && r.ok) questCaught('pet', 'feed');   /* 🐾 เควสต์ "ดูแลน้อง" นับตรงนี้ */
   if(r.ok){
     petCareHud.t = 0;               /* บังคับคำนวณใหม่เฟรมถัดไป — หลอดในแถบจะได้ขยับทันตา ไม่รอครบวินาที */
     petBarKey = '';                 /* จำนวนมื้อคงเหลือในแถบต้องอัปเดตด้วย */
@@ -9947,6 +10245,7 @@ function petToyCtx(dt){
       const info = petToyInfo(a.arg);
       petJingle();
       const r = PETCARE ? PETCARE.toyPlayed(info ? (info.gain | 0) : null) : null;
+      if(r) questCaught('pet', 'play');
       if(typeof playCorrect === 'function') playCorrect();
       charBubble(r && r.gain > 0 ? txt : ('สนุกจังเลย ' + (info ? info.emoji : '😊')), true);
     },
@@ -10034,6 +10333,7 @@ function petPuff(n, color, spread, high){
 function finishTeach(id){
   if(!PETCARE) return;
   const r = PETCARE.teach(id);
+  if(r && r.ok) questCaught('pet', 'trick');   /* 🐕 เควสต์ "สอนท่าให้น้อง" */
   if(!r.ok) return;
   const tk = petTrickInfo(id);
   petJingle();
@@ -10078,6 +10378,7 @@ function updatePetAct(dt){
         a.flags.done = true;
         petJingle();
         const r = PETCARE ? PETCARE.pat() : null;
+        if(r) questCaught('pet', 'pat');
         if(typeof playCorrect === 'function') playCorrect();
         /* ลูบครบโควตาวันนี้แล้วยังลูบได้เรื่อยๆ **แค่ไม่ได้ค่าความสุขเพิ่ม** ห้ามห้ามไม่ให้ลูบ */
         charBubble(r && r.capped ? 'ชอบมากเลยยย 💗' : 'น่ารักที่สุดเลย 💗', true);
@@ -10112,6 +10413,7 @@ function updatePetAct(dt){
         a.flags.shake = true;
         petPuff(12, 0xcdeffb, 1.1, .3);
         const r = PETCARE ? PETCARE.bath() : {ok:false};
+        if(r && r.ok) questCaught('pet', 'bath');
         if(r.ok){
           restylePet();                                   /* รอยเปื้อนหายทันตา */
           if(typeof playCorrect === 'function') playCorrect();
@@ -11894,10 +12196,12 @@ function playInstrument(g, item){
     playHouseTune(item.tune, item.voice);
     spawnMusicNotes(g, item.tune.length);
     gatherCrowd(g);
+    questCaught('music', '');
     return;
   }
   /* ระดับ 1 (และตัวสำรองของระดับอื่น) — เคาะทีเดียว 1 เสียง */
   playHouseTune([item.note | 0], item.voice);
+  questCaught('music', '');          /* 🎹 เควสต์ "ไปเล่นดนตรีที่บ้าน" นับทุกครั้งที่เล่นจริง */
   spawnMusicNotes(g, 1);
   gatherCrowd(g);
 }
@@ -13113,6 +13417,8 @@ window.HouseWorld = {
      ⚠ ตัวนี้เป็นประตูเดียวของกลไกนี้ — กลไกใหม่ที่ทำแบบเดียวกันให้ส่ง kind ใหม่เข้ามา
        ('crop' ผัก · 'photo' รูป · 'leaf' ของที่เก็บได้) **ห้ามเปิดประตูใหม่รายเกม** */
   questCaught: (kind, id) => questCaught(kind, id),
+  /* 💸 ร้านค้าแจ้งว่าเด็กเพิ่งจ่ายเงินไปเท่าไร — คืนให้ตอนจบถ้ากำลังทำเควสต์ที่ต้องซื้อของ */
+  questSpend: n => questSpend(n),
 
   /* ---------- เพิ่มให้เฟส 11 รอบแก้ (2026-08-13) ---------- */
   /* ความสูงพื้นจริงของช่องนั้น — **สะพานไม้ผิวบนอยู่ที่ .12 ไม่ใช่ 0**
@@ -13399,7 +13705,14 @@ if(!homeView.hidden) houseBuddyRefresh();
                     .map(it => ({id:it.id, voice:it.voice || 'piano',
                                  note:it.note | 0, tune:it.tune || null})),
   /* 🎣 สถานะเควสต์ "ตกปลาไปส่ง" — ตัวนับของจริงที่หน้าจอถืออยู่ */
-  walkCatch: ()=> (walkQuest && walkQuest.target === 'catch')
+  /* 🏪 ชุด B: สั่งให้ "ถึงร้านแล้ว" ผ่านทางเดินโค้ดจริง (ชุดเทสไม่ต้องเดินข้ามเมือง) */
+  routineCats: ()=> routineCats(),
+  /* ชุดเทส: ล้าง/ยัดของในบ้านเพื่อทดสอบด่านกันงานตันของเควสต์กิจวัตร */
+  setDecor: d => { saveHouseData({decor: d}); },
+  martArrive: ()=>{ if(walkQuest && walkQuest.target === 'mart' && walkQuest.leg === 1) openMartBoard(); },
+  walkLeg: ()=> walkQuest ? {target:walkQuest.target, leg:walkQuest.leg | 0, spent:walkQuest.spent | 0,
+                             buy:!!walkQuest.buy, done:catchDone(), toNpc:walkQuest.toNpc} : null,
+  walkCatch: ()=> (walkQuest && (walkQuest.target === 'catch' || walkQuest.target === 'mart'))
                     ? {where: walkQuest.where, need: walkQuest.need, got: walkQuest.got,
                        toNpc: walkQuest.toNpc, done: catchDone()} : null,
   /* ---- จุดต่อชุดเทสเฟส 13 ----

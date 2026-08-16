@@ -33,6 +33,15 @@ function ensureMusicGain(){
      gain = ตัวคูณความดังของชั้นนั้น · sub = ใส่เสียงต่ำ 1 อ็อกเทฟไหม (ชั้นคอร์ดไม่ใส่ จะขุ่น)
      atk  = เวลาขึ้นเสียง (ชั้นคอร์ดขึ้นช้ากว่า จะได้ไม่แย่งความสนใจจากทำนอง)
    ⚠ **หน้าครูใช้ไฟล์นี้ร่วม** — พารามิเตอร์ทั้งหมดเป็น optional เท่านั้น ห้ามเปลี่ยนค่าเริ่มต้น */
+/* โน้ตที่ถูกนัดหมายไว้ล่วงหน้า (มากสุด ~1 วินาที) — ต้องเก็บไว้เพื่อ **สั่งหยุดได้จริง**
+   ⚠ `stopMusic()` แบบเดิมหรี่แค่ระดับเสียงรวม แต่โน้ตที่นัดไว้แล้วยังดังต่อ ⇒ พอเปิดเพลงใหม่
+     ระดับเสียงถูกดันกลับขึ้นมา **เพลงเก่ากับเพลงใหม่จึงดังทับกัน** (ผู้ใช้แจ้ง 2026-08-16) */
+let musicNodes = [];
+function killMusicNodes(){
+  const now = audioCtx ? audioCtx.currentTime : 0;
+  musicNodes.forEach(n=>{ try{ n.stop(now); }catch(e){} });
+  musicNodes = [];
+}
 function scheduleMusicNote(freq, startTime, dur, opt){
   if(freq==null) return;
   opt = opt || {};
@@ -49,6 +58,7 @@ function scheduleMusicNote(freq, startTime, dur, opt){
   noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
   osc.connect(noteGain).connect(musicGain);
   osc.start(startTime); osc.stop(startTime+dur+tail);
+  musicNodes.push(osc);
   if(!withSub) return;
 
   const subOsc = audioCtx.createOscillator();
@@ -60,6 +70,7 @@ function scheduleMusicNote(freq, startTime, dur, opt){
   subGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
   subOsc.connect(subGain).connect(musicGain);
   subOsc.start(startTime); subOsc.stop(startTime+dur+tail);
+  musicNodes.push(subOsc);
 }
 
 /* ============================================================
@@ -84,17 +95,21 @@ function setMusicPlaylist(list){
   musicPlaylist = next;
   musicTrackIdx = 0; musicNoteIndex = 0; musicLayerT = null;
   if(musicOn && musicSchedulerId){
-    /* กำลังเล่นอยู่ → เริ่มชุดใหม่ทันที (startMusic รีเซ็ตตัวชี้ให้เอง) */
-    stopMusic();
+    /* กำลังเล่นอยู่ → **ปิดของเก่าให้เงียบสนิทก่อน** แล้วค่อยเริ่มชุดใหม่ */
+    stopMusic(true);
     startMusic();
   }
 }
 /* เล่นเพลงเดียวแบบเจาะจง (หน้าทดสอบเพลงในเมนูตั้งค่า) — คืนค่าเป็นตัวมันเองเพื่อ chain ได้ */
+/* เล่นเพลงเดียวแบบเจาะจง (หน้าทดสอบเพลง)
+   ⚠ **ต้องปิดเพลงพื้นหลังให้เงียบสนิทก่อนเสมอ** แล้วค่อยเปิดเพลงที่เลือก (ผู้ใช้สั่ง 2026-08-16)
+     ไม่งั้นโน้ตของเพลงเดิมที่นัดไว้ล่วงหน้าจะดังทับเพลงใหม่ ~1 วินาที */
 function playMusicTrack(list, idx){
-  setMusicPlaylist(list);
+  stopMusic(true);                       /* ① ปิดของเก่าให้เงียบจริงก่อน */
+  musicPlaylist = (list && list.length) ? list : null;   /* ② ตั้งชุดตรงๆ ไม่ผ่านตัวที่รีสตาร์ตเอง */
   musicTrackIdx = (idx | 0) % Math.max(1, musicList().length);
   musicNoteIndex = 0; musicLayerT = null;
-  stopMusic(); startMusic();
+  if(musicOn) startMusic();              /* ③ ค่อยเปิดเพลงที่เลือก */
 }
 /* ---- เพลงหลายชั้น: ทำนองเป็นตัวตัดสินว่าเพลงจบ · เบส/คอร์ดวนซ้ำอยู่ภายในเพลง ---- */
 const MUSIC_LAYER_MIX = {lead:{gain:1, sub:true, atk:.06},
@@ -174,19 +189,23 @@ function startMusic(){
   musicNextTime = now + 0.1;
   musicNoteIndex = 0;
   musicLayerT = null;
+  musicNodes = [];
   if(musicSchedulerId) clearInterval(musicSchedulerId);
   musicScheduler();
   musicSchedulerId = setInterval(musicScheduler, 250);
 }
 
-function stopMusic(){
+/* hard = ตัดโน้ตที่นัดไว้ทิ้งทันที (ใช้ตอนจะเปิดเพลงอื่นต่อ ไม่งั้น 2 เพลงดังทับกัน)
+   เว้นไว้ = พฤติกรรมเดิมเป๊ะ (หรี่เสียงลงนุ่มๆ) — **หน้าครูเรียกแบบเดิม ไม่กระทบ** */
+function stopMusic(hard){
   if(musicGain && audioCtx){
     const now = audioCtx.currentTime;
     musicGain.gain.cancelScheduledValues(now);
     musicGain.gain.setValueAtTime(musicGain.gain.value, now);
-    musicGain.gain.linearRampToValueAtTime(0.0001, now+0.4);
+    musicGain.gain.linearRampToValueAtTime(0.0001, now + (hard ? 0.06 : 0.4));
   }
   if(musicSchedulerId){ clearInterval(musicSchedulerId); musicSchedulerId=null; }
+  if(hard) killMusicNodes();
 }
 
 function refreshMusicBtn(){ musicBtn.innerHTML = '<span class="icon-inner"><span class="icon-glyph">'+SVG_MUSIC+'</span><span class="mute-stripe"></span></span>'; musicBtn.classList.toggle('muted', !musicOn); musicBtn.dataset.tooltip = musicOn ? 'ปิดเพลงพื้นหลัง' : 'เปิดเพลงพื้นหลัง'; }

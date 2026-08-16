@@ -3965,6 +3965,24 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   body.night-mode .house-pet-bar{background:rgba(255,255,255,.9);}
   body.house-edit .house-pet-bar{display:none;}
 
+  /* ---------- 🏪 กระดานงานที่ร้านสะดวกซื้อ (ชุด B · 2026-08-16) ----------
+     ใช้ .hqz-tile/.hqz-tray เดิมเป็นฐาน เพิ่มแค่ป้ายราคา/ชั้นวาง/ตะกร้า */
+  .hqz-mart-item{position:relative; cursor:pointer;}
+  .hqz-mart-item.sel{background:#FFE0B8; border-color:#E59A5B; transform:translateY(-2px);}
+  .hqz-mart-price{
+    position:absolute; right:4px; top:3px; font-size:11px; font-weight:900;
+    color:#8A4B1E; background:#FFE9C6; border-radius:999px; padding:1px 6px;
+  }
+  .hqz-mart-shelf{background:rgba(255,241,216,.6); border-radius:16px; padding:8px;}
+  .hqz-mart-bag{
+    font-size:13.5px; font-weight:800; color:var(--ink-soft); text-align:center;
+    padding:7px 12px; background:#FFFDF7; border-radius:13px; line-height:1.5;
+  }
+  .hqz-mart-bins{gap:10px;}
+  .hqz-mart-bin{min-width:96px;}
+  .hqz-mart-in{display:block; font-size:15px; line-height:1.2; min-height:18px; letter-spacing:1px;}
+  .hqz-tile-lab.ok{background:#D6EFD0; border-color:#7FBF74;}
+
   /* ---------- 🎶 หน้าฟังเพลงธีม (เฟส 14 · หน้าเทส · js/house-music-ui.js) ----------
      แผงเล็กกว่าคลังคำถามมาก (มีแค่ 4 แถว) ⇒ ไม่ต้องมีตาราง/แถบเลื่อน */
   .house-creator.house-mus{max-height:88vh; max-height:88dvh; width:min(520px,94vw);}

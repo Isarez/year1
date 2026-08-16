@@ -148,7 +148,9 @@ test('เอนจิน: วางผิดคืนรายชื่อชิ
        (ร้านสัตว์เลี้ยง/ฟาร์ม ↔ petfeed · ร้านสะดวกซื้อ/ตลาด ↔ shopping — ข้อ 15.2 กลุ่ม B)
    ที่ยัง **ต้องเป็นของเควสต์ครอบครัวล้วน** คือมินิเกมที่เล่าเรื่องในบ้านโดยเฉพาะ
    (เก็บของเข้าที่ · แยกผ้าซัก · ทำอาหาร · กิจวัตร · ใช้เงินให้พอ · ตื่นให้ตรงเวลา · กินข้าวพร้อมหน้า · ไปซื้อของให้แม่) */
-const FAM_ONLY = ['tidy', 'laundry', 'cook', 'routine', 'budget', 'clock', 'dinner', 'market',
+/* ⚠ 2026-08-16: `routine` ออกจากกลุ่มนี้แล้ว — เปลี่ยนเป็นงาน Action ที่ต้อง **เดินกลับไปส่งที่ตัว NPC**
+     ซึ่งพ่อแม่รับคืนไม่ได้ (ทางส่งงานอยู่ที่ talkToNpc เท่านั้น) ⇒ ย้ายไปเป็นงานของชาวเมือง (ข้อ 55) */
+const FAM_ONLY = ['tidy', 'laundry', 'cook', 'budget', 'clock', 'dinner', 'market',
                   'orderlearn', 'sortcat'];
 test('มินิเกมของบ้านยังเป็นของเควสต์ครอบครัวล้วน — NPC/กระดานได้เฉพาะที่อนุญาตไว้', async ({ page }) => {
   const errors = await openHouse(page);
@@ -166,7 +168,10 @@ test('มินิเกมของบ้านยังเป็นของ�
         wide.push(q.rollWorkMech(rng, id));
       }
     });
-    return { fam: q.FAM_MECHS, engines: q.ENGINE_MECHS,
+    /* รายชื่องานที่ "ร้านสัตว์เลี้ยงมีสิทธิ์แจก" — ดูจากตารางผูก ไม่ใช่ผลสุ่ม (ไม่ผ่านด่านกันงานตัน) */
+    const petBind = [];
+    q.BONUS_MECHS.forEach(row => { if (row[0].test('npc-pet1')) petBind.push.apply(petBind, row[1]); });
+    return { petBind, fam: q.FAM_MECHS, engines: q.ENGINE_MECHS,
              others: others.filter((v, i, a) => a.indexOf(v) === i),
              wide: wide.filter((v, i, a) => a.indexOf(v) === i),
              leak: wide.filter(m => famOnly.indexOf(m) >= 0).filter((v, i, a) => a.indexOf(v) === i) };
@@ -177,9 +182,13 @@ test('มินิเกมของบ้านยังเป็นของ�
   /* ① มินิเกมที่เล่าเรื่องในบ้าน ต้องไม่หลุดไปอยู่กับ NPC/กระดานเด็ดขาด */
   expect(r.leak).toEqual([]);
   r.others.forEach(m => expect(FAM_ONLY).not.toContain(m));
-  /* ② เฟส 7: petfeed/shopping ต้อง "ถึงมือ NPC ได้จริง" แล้ว (ไม่ใช่แค่ไม่ห้าม) */
-  expect(r.wide).toContain('petfeed');
+  /* ② เฟส 7: มินิเกมที่เปิดให้ NPC หยิบไปใช้ ต้อง "ถึงมือ NPC ได้จริง" (ไม่ใช่แค่ไม่ห้าม)
+     ⚠ 2026-08-16: `petfeed`/`shopping` เวอร์ชันการ์ดถูกถอดออกแล้ว — กลายเป็นงาน Action จริง
+       `petcare` (ไปดูแลน้องที่บ้าน) กับ `shopping` (ไปซื้อของที่ร้านสะดวกซื้อ) แทน */
   expect(r.wide).toContain('shopping');
+  /* ⚠ `petcare` ไม่โผล่ในบ้านที่ยังไม่มีสัตว์เลี้ยง — **นั่นคือด่านกันงานตันทำงานถูกต้องแล้ว**
+     จึงเช็คที่ "ผูกกับร้านสัตว์ไว้จริงไหม" แทนการรอให้สุ่มออกมา */
+  expect(r.petBind, 'ร้านสัตว์เลี้ยงต้องมีสิทธิ์แจกงานดูแลน้อง').toContain('petcare');
   expect(errors).toEqual([]);
 });
 
@@ -317,7 +326,10 @@ test('จำนวนของ/ถัง/กระดาน ไล่ตาม�
    cook/routine = เรียงลำดับ · petfeed = จับคู่อาหารสัตว์ · budget = ใช้เงินให้พอ
    shopping = จำรายการของ · clock = ดูนาฬิกา
    ============================================================ */
-const ALL_GAMES = ['tidy', 'laundry', 'cook', 'routine', 'petfeed', 'budget', 'shopping', 'clock'];
+/* ⚠ 2026-08-16: `petfeed`/`routine`/`shopping` ถูกเปลี่ยนเป็นงาน Action จริงในโลกแล้ว
+     (ดูข้อ 55) ⇒ ไม่ใช่กระดานในการ์ดอีก จึงไม่อยู่ในชุดนี้ — มีเทสของตัวเองที่
+     `tests/house-action-ab.spec.js` */
+const ALL_GAMES = ['tidy', 'laundry', 'cook', 'budget', 'clock'];
 /* เควสต์ "เดินไปทำนอกบ้าน" — ไม่เข้ากติกาขั้นต่ำ 5 ข้อ (ผู้ใช้อนุมัติ 2026-08-10) */
 const WALK_GAMES = ['dinner', 'market'];
 
@@ -406,7 +418,8 @@ test('เกมเรียงลำดับ: ทุกช่องมีขอ
   const bad = await page.evaluate(() => {
     const q = window.HouseQuests;
     const out = [];
-    ['cook', 'routine'].forEach(mech => {
+    /* ⚠ `routine` ออกจากชุดนี้ 2026-08-16 — ไม่ใช่กระดานลากแล้ว (ข้อ 55) */
+    ['cook'].forEach(mech => {
       q.GRADES.forEach(g => {
         for (let seed = 0; seed < 4; seed++) {
           q.testRun({ mech, gid: g.id, seed }).items.forEach(it => {
@@ -427,37 +440,9 @@ test('เกมเรียงลำดับ: ทุกช่องมีขอ
   expect(errors).toEqual([]);
 });
 
-test('เกมอาหารสัตว์: สัตว์บนกระดานเดียวกันต้องกินคนละชนิด (ไม่งั้นวางถูกก็ถูกนับว่าผิด)', async ({ page }) => {
-  const errors = await openHouse(page);
-  const r = await page.evaluate(() => {
-    const q = window.HouseQuests;
-    const out = [];
-    /* ชื่อ/หน้าสัตว์ในไฟล์เควสต์ต้องครบทุกตัวที่มีในตารางอาหารจริงของ house-pet-care.js */
-    const foods = window.HousePetCare ? window.HousePetCare.FOOD : [];
-    foods.forEach(f => f.pets.forEach(p => {
-      if (!q.PET_FACE[p]) out.push('ไม่มีหน้า/ชื่อของสัตว์ ' + p + ' ในไฟล์เควสต์');
-    }));
-    q.GRADES.forEach(g => {
-      for (let seed = 0; seed < 5; seed++) {
-        q.testRun({ mech: 'petfeed', gid: g.id, seed }).items.forEach(it => {
-          const seen = {};
-          it.tiles.forEach(t => {
-            if (seen[t.e] && seen[t.e] !== t.bin) out.push('อาหาร ' + t.e + ' ไปได้ 2 ถังในกระดานเดียว');
-            seen[t.e] = t.bin;
-          });
-          const used = {};
-          it.tiles.forEach(t => { used[t.bin] = 1; });
-          it.bins.forEach(b => { if (!used[b.id]) out.push('น้อง ' + b.name + ' ไม่ได้อาหารเลย'); });
-        });
-      }
-    });
-    return { out, foods: foods.length };
-  });
-  expect(r.foods).toBeGreaterThan(0);
-  expect(r.out).toEqual([]);
-  expect(errors).toEqual([]);
-});
-
+/* 🗑️ เทส "เกมอาหารสัตว์" ถูกถอดออก 2026-08-16
+   — กลไกนั้นเปลี่ยนเป็นงาน Action จริงในโลกแล้ว (ข้อ 55) เทสตัวใหม่อยู่ที่
+   tests/house-action-ab.spec.js ซึ่งเทสของจริงในโลก ไม่ใช่กระดานในการ์ด */
 test('เกมใช้เงินให้พอ: มีคำตอบที่เป็นไปได้เสมอ · เกินงบไม่ผ่าน · ครบและไม่เกินผ่าน', async ({ page }) => {
   const errors = await openHouse(page);
   const r = await page.evaluate(() => {
@@ -496,31 +481,9 @@ test('เกมใช้เงินให้พอ: มีคำตอบที
   expect(errors).toEqual([]);
 });
 
-test('เกมจำรายการของ: หน้าแรกโชว์รายการ กดแล้วไปหน้าหยิบ · หยิบเกินที่สั่งไม่ผ่าน', async ({ page }) => {
-  const errors = await openHouse(page);
-  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'shopping', title: '🧪 จำของ' }));
-  await expect(page.locator('.hqz-memlist')).toBeVisible({ timeout: 8000 });
-  const listN = await page.locator('.hqz-memlist .hqz-tile').count();
-  expect(listN).toBeGreaterThanOrEqual(2);
-  await page.locator('#hqz-stage .hqz-yes').click();
-  await expect(page.locator('.hqz-tray')).toBeVisible();
-  await expect(page.locator('.hqz-memlist')).toHaveCount(0);      /* รายการต้องหายไปแล้ว ไม่งั้นไม่ได้ฝึกจำ */
-
-  const r = await page.evaluate(() => {
-    const q = window.HouseQuests;
-    const run = window.__houseDbg.qRun();
-    const it = run.items[run.idx];
-    const right = {}, extra = {};
-    it.tiles.forEach(t => { if (t.want){ right[t.k] = 'basket'; extra[t.k] = 'basket'; } });
-    const wrongOne = it.tiles.filter(t => !t.want)[0];
-    extra[wrongOne.k] = 'basket';
-    return { extra: q.submit(run, extra).ok, right: q.submit(run, right).ok };
-  });
-  expect(r.extra, 'หยิบของที่ไม่ได้สั่งมาด้วยต้องยังไม่ผ่าน').toBe(false);
-  expect(r.right).toBe(true);
-  expect(errors).toEqual([]);
-});
-
+/* 🗑️ เทส "เกมจำรายการของ" ถูกถอดออก 2026-08-16
+   — กลไกนั้นเปลี่ยนเป็นงาน Action จริงในโลกแล้ว (ข้อ 55) เทสตัวใหม่อยู่ที่
+   tests/house-action-ab.spec.js ซึ่งเทสของจริงในโลก ไม่ใช่กระดานในการ์ด */
 test('เกมนาฬิกา: หน้าปัดวาดจริง · เข็มสั้นอยู่หน้าเข็มยาว · คำบอกเวลาตรงแบบเดียวกับเกมนาฬิกาวิเศษ', async ({ page }) => {
   const errors = await openHouse(page);
   await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'clock', title: '🧪 นาฬิกา' }));

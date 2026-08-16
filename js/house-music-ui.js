@@ -59,6 +59,7 @@
             showToast('🔇', 'เพลงพื้นหลังปิดอยู่ — เปิดที่เมนู "เพลงพื้นหลัง" ก่อนนะ');
           return;
         }
+        /* `preview()` ปิดเพลงพื้นหลังให้เงียบสนิทก่อนแล้วค่อยเปิดเพลงที่เลือก (ผู้ใช้สั่ง) */
         playingIdx = i;
         m.preview(i);
         paint();
@@ -67,14 +68,16 @@
       wrap.appendChild(row);
     });
   }
-  /* หยุดฟัง = กลับไปเล่น playlist ฟาร์มตามปกติ (ไม่ใช่เงียบสนิท — เด็กยังอยู่ในเมือง) */
+  /* หยุดฟัง = กลับไปเล่น playlist ฟาร์มตามปกติตั้งแต่เพลงแรก (เด็กยังอยู่ในเมือง ต้องไม่เงียบสนิท)
+     ⚠ ของเดิมสลับไป playlist หน้าหลักก่อนแล้วค่อยสลับกลับ ⇒ **ได้ยินเพลงหน้าทำโจทย์แวบหนึ่ง**
+       และเพลงเก่าที่นัดโน้ตไว้ล่วงหน้ายังดังทับอีก (ผู้ใช้แจ้ง 2026-08-16) */
   function stop(){
+    if(playingIdx < 0) return;              /* ไม่ได้ฟังอยู่ = ไม่ต้องรีสตาร์ตเพลงเมืองให้เสียจังหวะ */
     playingIdx = -1;
     const m = M();
-    if(m){
-      if(typeof setMusicPlaylist === 'function') setMusicPlaylist(null);
-      m.use();
-    }
+    if(!m) return;
+    if(typeof musicOn !== 'undefined' && !musicOn) m.silence();   /* ปิดเพลงไว้ = ต้องเงียบสนิท */
+    else m.stopPreview();
     paint();
   }
   function open(){
@@ -84,9 +87,9 @@
     $('house-mus').hidden = false;
   }
   function close(){
+    stop();                     /* ⚠ คืนเพลงเมืองก่อนซ่อนหน้า (stop() อ่าน playingIdx อยู่) */
     const e = $('house-mus');
     if(e) e.hidden = true;
-    stop();                     /* ⚠ ปิดหน้าแล้วต้องคืนเพลงเมืองเสมอ */
   }
 
   const closeBtn = $('hmus-close');
