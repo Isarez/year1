@@ -162,12 +162,17 @@ test('โหมดมือ: เปลี่ยนข้อ/เปิดกา�
     mountHandPlayHouse();
     return {before, stillOn: !layer.hidden,
             btn: document.getElementById('handplay-toggle') !== null,
-            inTop: !!document.querySelector('#house-view .quiz-top #handplay-toggle')};
+            /* 📷 ผู้ใช้สั่ง 2026-08-17: **การ์ดโจทย์เปิดอยู่ = ปุ่มกล้องต้องอยู่หัวการ์ด**
+               (เดิมอยู่แถบบนของจอ ไกลจากการ์ดจนเด็กไม่รู้ว่าเล่นด้วยมือหน้ากล้องได้)
+               ⚠ ต้องมีปุ่มเดียวในเอกสารเสมอ — กล้องมีตัวเดียว 2 ปุ่มจะหลุดสถานะกัน */
+            inCard: !!document.querySelector('#house-qz .hqz-top #handplay-toggle'),
+            n: document.querySelectorAll('#handplay-toggle').length};
   });
   expect(r.before).toBe(true);
   expect(r.stillOn).toBe(true);       /* ← ตัวจับบั๊ก: กล้องต้องไม่ถูกปิด */
   expect(r.btn).toBe(true);
-  expect(r.inTop).toBe(true);
+  expect(r.inCard, 'การ์ดโจทย์เปิดอยู่ ปุ่มกล้องต้องอยู่หัวการ์ด').toBe(true);
+  expect(r.n, 'ต้องมีปุ่มกล้องใบเดียวเท่านั้น').toBe(1);
 
   /* แต่ปิดการ์ด = ต้องปิดกล้องให้เรียบร้อยจริงๆ */
   await page.locator('#hqz-close').click();

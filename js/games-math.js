@@ -524,8 +524,72 @@ function renderTimelineLevel(){
   $('timeline-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('timeline-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   $('timeline-theme').innerHTML = '📜 เรียงให้ถูก: <b>'+set.theme+'</b> (เก่า → ใหม่)';
-  $('timeline-hint').textContent = 'แตะบัตร แล้วแตะช่องบนเส้นเวลาให้เรียงจากก่อนไปหลังนะ';
+  $('timeline-hint').textContent = 'ลากบัตรไปวางบนเส้นเวลา (หรือแตะบัตรแล้วแตะช่องก็ได้) เรียงจากก่อนไปหลังนะ';
   renderTimelineBoard();
+}
+/* 🖐️ ลากบัตรเส้นเวลาไปวางบนช่อง (ผู้ใช้สั่ง 2026-08-17)
+   ⚠ **เพิ่มทางลาก ไม่ได้แทนที่การแตะ** — โหมดเล่นด้วยมือหน้ากล้องใช้การ "คลิก" อย่างเดียว
+     ถ้าเปลี่ยนเป็นลากอย่างเดียว เด็กที่เล่นด้วยมือจะเล่นเกมนี้ไม่ได้เลย
+   ⚠ ขยับไม่ถึง TL_DRAG_MIN px = นับเป็น "แตะ" ปล่อยให้ handler เดิมทำงานต่อ
+   ⚠ หา "ช่องที่ปล่อย" ด้วย `elementFromPoint` **ห้ามใช้ mouseover ของช่อง** — ghost ที่ลอยตามนิ้ว
+     จะบังช่องไว้ทั้งหมด (ghost ตั้ง pointer-events:none แล้วแต่ยังต้องหาจากพิกัดจริงอยู่ดี) */
+const TL_DRAG_MIN = 6;
+function tlStartDrag(ev, card, fromSlot){
+  const g = timelineGame;
+  if(!g || g.locked || ev.button > 0) return;
+  const src = ev.currentTarget;
+  const x0 = ev.clientX, y0 = ev.clientY;
+  let ghost = null, moved = false, over = null;
+  const clearOver = ()=>{ if(over) over.classList.remove('tl-over'); over = null; };
+  const move = e=>{
+    if(!moved && Math.abs(e.clientX-x0) + Math.abs(e.clientY-y0) < TL_DRAG_MIN) return;
+    if(!moved){
+      moved = true;
+      g.dragging = true;
+      ghost = src.cloneNode(true);
+      ghost.className = 'tl-card tl-drag-ghost';
+      const r = src.getBoundingClientRect();
+      ghost.style.width = r.width+'px'; ghost.style.height = r.height+'px';
+      document.body.appendChild(ghost);
+      src.classList.add('tl-dragging');
+    }
+    ghost.style.left = (e.clientX - 40)+'px';
+    ghost.style.top  = (e.clientY - 34)+'px';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const slot = el && el.closest ? el.closest('.tl-slot') : null;
+    if(slot !== over){ clearOver(); if(slot && !slot.classList.contains('tl-filled')) { over = slot; over.classList.add('tl-over'); } }
+  };
+  const up = e=>{
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
+    if(ghost) ghost.remove();
+    src.classList.remove('tl-dragging');
+    clearOver();
+    if(!moved) return;                       /* ไม่ได้ลาก = ปล่อยให้ click เดิมทำงาน */
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const slot = el && el.closest ? el.closest('.tl-slot') : null;
+    const idx = slot ? Array.prototype.indexOf.call(slot.parentNode.querySelectorAll('.tl-slot'), slot) : -1;
+    if(idx >= 0 && !g.slots[idx]){
+      playClick();
+      if(fromSlot != null) g.slots[fromSlot] = null;
+      else g.tray = g.tray.filter(c=>c!==card);
+      g.slots[idx] = card;
+      g.sel = null;
+      renderTimelineBoard();
+      maybeCheckTimeline();
+    }else if(fromSlot != null && !slot){
+      /* ลากออกนอกเส้นเวลา = เอากลับลงถาด (ทางถอยที่เด็กเดาได้เอง) */
+      playClick();
+      g.slots[fromSlot] = null; g.tray.push(card); g.sel = null;
+      renderTimelineBoard();
+    }
+    /* กัน click ที่ตามหลัง pointerup ไปสลับ selection ทับผลของการลาก */
+    setTimeout(()=>{ g.dragging = false; }, 0);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+  window.addEventListener('pointercancel', up);
 }
 function renderTimelineBoard(){
   const g = timelineGame;
@@ -537,8 +601,12 @@ function renderTimelineBoard(){
     slot.innerHTML = '<div class="tl-slot-num">'+(i+1)+'</div>'+
       (card ? '<div class="tl-card tl-card-placed"><div class="tl-card-e">'+card.e+'</div><div class="tl-card-l">'+card.l+'</div></div>'
             : '<div class="tl-slot-empty">'+(i===0?'⭐ ก่อน':(i===g.slots.length-1?'ใหม่ 🏁':'▢'))+'</div>');
+    if(card){
+      const ce = slot.querySelector('.tl-card');
+      if(ce) ce.addEventListener('pointerdown', ev=>tlStartDrag(ev, card, i));
+    }
     slot.addEventListener('click', ()=>{
-      if(g.locked) return;
+      if(g.locked || g.dragging) return;
       if(card){ playClick(); g.tray.push(card); g.slots[i]=null; g.sel=null; renderTimelineBoard(); }
       else if(g.sel){ playClick(); g.slots[i]=g.sel; g.tray = g.tray.filter(c=>c!==g.sel); g.sel=null; renderTimelineBoard(); maybeCheckTimeline(); }
     });
@@ -552,7 +620,8 @@ function renderTimelineBoard(){
     const b = document.createElement('button');
     b.className = 'tl-card tl-card-tray'+(g.sel===card?' tl-selected':'');
     b.innerHTML = '<div class="tl-card-e">'+card.e+'</div><div class="tl-card-l">'+card.l+'</div>';
-    b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.sel = (g.sel===card?null:card); renderTimelineBoard(); });
+    b.addEventListener('pointerdown', ev=>tlStartDrag(ev, card, null));
+    b.addEventListener('click', ()=>{ if(g.locked || g.dragging) return; playClick(); g.sel = (g.sel===card?null:card); renderTimelineBoard(); });
     tray.appendChild(b);
   });
 }
@@ -1188,6 +1257,9 @@ function buildClockFace(){
 /* ตกแต่งกรอบตามแบบสุ่ม — inject span ให้ CSS จัดตำแหน่ง/วาดต่อ */
 function buildClockDecor(frame){
   const d = $('clock-frame-decor');
+  if(!d) return;
+  /* ไม่ส่งธีมมา = ขอบวงกลมเปล่าๆ (ค่าปริยายตั้งแต่ 2026-08-17) */
+  if(!frame){ d.innerHTML = ''; return; }
   if(frame==='owl') d.innerHTML = '<span class="d-owl-ear l"></span><span class="d-owl-ear r"></span><span class="d-owl-beak"></span>';
   else if(frame==='cat') d.innerHTML = '<span class="d-cat-ear l"></span><span class="d-cat-ear r"></span><span class="d-whisker l w1"></span><span class="d-whisker l w2"></span><span class="d-whisker r w1"></span><span class="d-whisker r w2"></span>';
   else if(frame==='flower') d.innerHTML = [0,1,2,3,4,5,6,7].map(i=>'<span class="d-petal" style="--i:'+i+'"></span>').join('');
@@ -1364,9 +1436,12 @@ function startClockGame(catId){
   document.documentElement.style.setProperty('--cat-color', cat.color);
   clockView.querySelectorAll('.progress-fill').forEach(el=>el.style.setProperty('--cat-color', cat.color));
   setCatLabel('clock-cat-label', cat);
-  const frame = CLOCK_FRAMES[Math.floor(Math.random()*CLOCK_FRAMES.length)];
-  $('clock-frame').className = 'clock-frame frame-'+frame;
-  buildClockDecor(frame);
+  /* 🕐 **เอาธีมกรอบนาฬิกาออก ให้เหลือขอบวงกลมเฉยๆ** (ผู้ใช้สั่ง 2026-08-17)
+     หูนกฮูก/หูแมว/กลีบดอก/แฉกพระอาทิตย์ รอบหน้าปัดดึงสายตาออกจากเข็มซึ่งเป็นตัวโจทย์จริง
+     ⚠ **ไม่ลบ CLOCK_FRAMES/buildClockDecor ทิ้ง** — เก็บโค้ดไว้เผื่อผู้ใช้อยากได้กลับ
+       แค่ไม่เรียกใช้ และล้างของตกแต่งที่อาจค้างจากรอบก่อน */
+  $('clock-frame').className = 'clock-frame';
+  buildClockDecor(null);
   buildClockFace();
   newClockLevel();
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1592,9 +1667,12 @@ function renderTangramLevel(){
   g.fig = fig;
   g.slots = fig.slots.map((s,i)=>({ i, x:s[0], y:s[1], w:s[2], type:s[3], rot:s[4], filled:false }));
   /* ชิ้นในถาด = ชิ้นที่ต้องใช้ทั้งหมด สุ่มมุมเริ่มต้นไม่ให้ตรงคำตอบตั้งแต่แรก */
+  /* ⚠ **ชิ้นในถาดต้องพกขนาดของช่องที่มันใช้ไปด้วย** (ผู้ใช้แจ้ง 2026-08-17)
+     ของเดิมถาดวาดขนาดเดียวหมด (74px) ⇒ รูปที่มีสามเหลี่ยม 2 ขนาด เด็กเห็นเป็นชิ้นเหมือนกันเป๊ะ
+     แล้วงงว่าทำไมวางไม่ลง — ต้องเห็นด้วยตาว่าชิ้นไหนใหญ่ ชิ้นไหนเล็ก */
   g.pieces = g.slots.map((s,i)=>{
     let r; do { r = Math.floor(Math.random()*8)*45; } while(r===s.rot);
-    return { i, type:s.type, rot:r, used:false };
+    return { i, type:s.type, rot:r, w:s.w, used:false };
   });
   g.pieces = shuffleArray(g.pieces);
   g.sel = null; g.locked = false;
@@ -1618,14 +1696,17 @@ function renderTangramBoard(){
       if(g.locked || s.filled || g.sel===null) return;
       const p = g.pieces[g.sel];
       playClick();
-      if(p.type===s.type && ((p.rot%360)+360)%360 === s.rot){
+      /* ต้องตรงทั้ง **ชนิด · มุม · ขนาด** — ขนาดเพิ่มเข้ามา 2026-08-17 พร้อมกับที่ถาดวาดตามขนาดจริง */
+      if(p.type===s.type && p.w===s.w && ((p.rot%360)+360)%360 === s.rot){
         p.used = true; s.filled = true; g.sel = null;
         playCorrect();
         renderTangramBoard();
         if(g.slots.every(x=>x.filled)) tangramWin();
       } else {
         g.mistakes++; playWrong(); showOwlMsg('wrong');
-        $('tangram-hint').textContent = 'ยังไม่พอดีนะ ลองหมุนชิ้นให้ตรงมุมของเงาดูอีกที';
+        $('tangram-hint').textContent = (p.type===s.type && p.w!==s.w)
+          ? 'ชิ้นนี้ขนาดไม่พอดีกับเงานะ ลองชิ้นที่ใหญ่/เล็กกว่านี้ดู'
+          : 'ยังไม่พอดีนะ ลองหมุนชิ้นให้ตรงมุมของเงาดูอีกที';
         b.classList.add('oc-bad'); setTimeout(()=>b.classList.remove('oc-bad'), 340);
       }
     });
@@ -1637,6 +1718,9 @@ function renderTangramBoard(){
     const b = document.createElement('button');
     b.type='button';
     b.className = 'tangram-piece'+(g.sel===i?' tg-sel':'');
+    /* ขนาดปุ่มไล่ตามขนาดช่องจริง (ช่อง 50-120px → ปุ่ม 54-84px) — เล็กสุดยังเกิน 44px ที่นิ้วเด็กต้องการ */
+    { const px = Math.round(38 + (p.w || 80) * 0.38);
+      b.style.width = px + 'px'; b.style.height = px + 'px'; }
     b.innerHTML = tangramSvg(p.type, light, dark, p.rot);
     b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.sel = (g.sel===i? null : i); renderTangramBoard(); });
     tray.appendChild(b);

@@ -209,3 +209,41 @@ test('🪙 ร้านค้านกฮูก: ต้องใช้เหร�
   expect(r.old, 'ห้ามเหลือเหรียญแบบเก่า (.money-coin)').toBe(0);
   r.cls.forEach(c => expect(['cv1', 'cv2', 'cv5', 'cv10'], 'ต้องเป็นเหรียญ 1/2/5/10').toContain(c));
 });
+
+test('🧩 แท็งแกรม: ทุกรูปต้องอยู่ในเวที และชิ้นในถาดต้องมีขนาดตามช่องที่มันใช้', async ({ page }) => {
+  await openHouse(page);
+  const r = await page.evaluate(() => {
+    const over = [];
+    TANGRAM_FIGURES.forEach(f => f.slots.forEach(sl => {
+      const [x, y, w] = sl;
+      /* ⚠ เวทีแท็งแกรมกว้าง 280×280 — ล้นแล้วชิ้นนั้นถูกตัดหาย เด็กมองไม่เห็นเงาที่ต้องวาง */
+      if (x + w > 280 || y + w > 280) over.push(f.name + ' ' + sl.join(','));
+    }));
+    /* ทุกรูปต้องมีชิ้นครบและมีขนาดกำกับ */
+    const bad = TANGRAM_FIGURES.filter(f => !f.slots.length || f.slots.some(sl => !(sl[2] > 0)));
+    return { over, bad: bad.map(f => f.name), n: TANGRAM_FIGURES.length };
+  });
+  expect(r.n, 'ต้องมีรูปให้ต่อหลายแบบ').toBeGreaterThan(5);
+  expect(r.over, 'ห้ามมีชิ้นไหนล้นออกนอกเวที (รูป/พิกัดที่ล้น)').toEqual([]);
+  expect(r.bad, 'ทุกชิ้นต้องมีขนาดกำกับ').toEqual([]);
+});
+
+test('🤖 พาหุ่นยนต์: แผนที่ต้องเห็นครบโดยไม่ต้องเลื่อนจอ', async ({ page }) => {
+  await openHouse(page);
+  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'robot', title: 'robot' }));
+  await page.locator('#hqz-stage button').first().click();
+  await page.waitForTimeout(2000);
+  const r = await page.evaluate(() => {
+    const st = document.querySelector('.code-iso-stage');
+    const stage = document.getElementById('hqz-stage');
+    if (!st) return null;
+    const a = st.getBoundingClientRect(), b = stage.getBoundingClientRect();
+    return { inView: a.top >= b.top - 2 && a.bottom <= b.bottom + 2,
+             scroll: stage.scrollHeight - stage.clientHeight, w: a.width };
+  });
+  expect(r, 'ต้องมีแผนที่หุ่นยนต์').not.toBeNull();
+  /* ⚠ ของเดิมเรียงลงมาคอลัมน์เดียว ⇒ ต้องเลื่อนจอ แล้วแผนที่ซึ่งเป็นตัวโจทย์หายไปจากสายตา */
+  expect(r.scroll, 'การ์ดต้องไม่มีแถบเลื่อน').toBeLessThanOrEqual(2);
+  expect(r.inView, 'แผนที่ต้องอยู่ในกรอบที่มองเห็น').toBe(true);
+  expect(r.w, 'แผนที่ต้องใหญ่พอ').toBeGreaterThan(240);
+});

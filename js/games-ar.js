@@ -498,6 +498,9 @@ function hpFire(el){
   }
   el.click();
 }
+/* ✋ สถานะ "แบมืออยู่ไหม" + เกณฑ์ขาขึ้น/ขาลง (hysteresis) — ดูคำอธิบายที่จุดคำนวณ */
+let hpOpenHand = false;
+const HP_OPEN_HI = 1.85, HP_OPEN_LO = 1.55;
 let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = null, hpLandmarks = null,
     hpRaf = null, hpSmooth = null, hpWasPinching = false, hpResizeHandler = null, hpHoverEl = null, hpClickAt = 0,
     hpHintShown = false, hpResCount = 0, hpSawHand = false, hpWatchdog = null;
@@ -535,7 +538,13 @@ function mountHandPlayHouse(){
   if(isMobileViewport()){ unmountHandPlay(); return; }
   const view = document.getElementById('house-view');
   if(!view || view.hidden){ unmountHandPlay(); return; }
-  const top = view.querySelector('.quiz-top');
+  /* 📷 **ปุ่มกล้องต้องอยู่ติดการ์ดโจทย์ ไม่ใช่มุมบนของจอ** (ผู้ใช้สั่ง 2026-08-17)
+     เดิมอยู่บนแถบ `.quiz-top` ซึ่งไกลจากการ์ดมาก เด็กไม่รู้เลยว่าเกมนี้เล่นด้วยมือหน้ากล้องได้
+     ⇒ การ์ดเควสต์เปิดอยู่ = ย้ายไปอยู่หัวการ์ด · การ์ดปิด = กลับไปแถบบนตามเดิม
+     ⚠ ต้องย้ายจริง (appendChild) **ห้ามสร้างปุ่มใบที่ 2** — กล้องมีตัวเดียว สองปุ่มจะหลุดสถานะกัน */
+  const qz = document.getElementById('house-qz');
+  const qzTop = (qz && !qz.hidden) ? qz.querySelector('.hqz-top') : null;
+  const top = qzTop || view.querySelector('.quiz-top');
   if(!top){ unmountHandPlay(); return; }
   /* ⚠ ต้องเรียกซ้ำได้โดย "ไม่ปิดกล้องที่เปิดอยู่" — qzShow() ในโหมดบ้านถูกเรียกทุกครั้งที่เปลี่ยนข้อ
      (8 จุด: รับงาน → เริ่มเล่น → ข้อถัดไป → หน้าสรุป) ถ้า unmount ทุกรอบแบบ mountHandPlay()
@@ -661,11 +670,24 @@ function hpDrawLoop(){
     const pts = hpSmooth;
     drawCartoonHand(ctx, pts);
     const ix = pts[8].x, iy = pts[8].y, tx = pts[4].x, ty = pts[4].y;
-    const pinching = Math.sqrt((ix-tx)*(ix-tx)+(iy-ty)*(iy-ty)) < Math.max(28, canvas.width*0.07);
+    /* ✋ **แบมือ = แตะ · กำมือ = ไม่แตะ** (ผู้ใช้สั่ง 2026-08-17)
+       เด็ก 5 ขวบจีบนิ้วให้แม่นยาก แต่ "แบ/กำ" ทำได้ตั้งแต่ยังเล็ก
+       วิธีวัด: ระยะเฉลี่ยจากปลายนิ้ว 4 นิ้วถึงข้อมือ หารด้วยขนาดฝ่ามือ (ข้อมือ→โคนนิ้วกลาง)
+         แบมือได้ ~2.0-2.5 · กำมือได้ ~1.0-1.3 ⇒ ใช้เกณฑ์คนละค่าขาขึ้น/ขาลง (hysteresis)
+         กันสั่นตรงรอยต่อ ไม่งั้นมือค้างกลางๆ จะกด-ปล่อยรัวเป็นสิบครั้งต่อวินาที
+       ⚠ **จีบนิ้วยังใช้ได้เหมือนเดิม ไม่ได้เอาออก** (กติกาที่ล็อกไว้ใน CLAUDE.md)
+         ⇒ แตะได้ทั้ง 2 ท่า เด็กถนัดแบบไหนใช้แบบนั้น */
+    const pinching0 = Math.sqrt((ix-tx)*(ix-tx)+(iy-ty)*(iy-ty)) < Math.max(28, canvas.width*0.07);
+    const palm = Math.hypot(pts[9].x-pts[0].x, pts[9].y-pts[0].y) || 1;
+    const spread = [8,12,16,20].reduce((a,i)=>a + Math.hypot(pts[i].x-pts[0].x, pts[i].y-pts[0].y), 0) / 4 / palm;
+    if(hpOpenHand){ if(spread < HP_OPEN_LO) hpOpenHand = false; }
+    else          { if(spread > HP_OPEN_HI) hpOpenHand = true;  }
+    const pinching = pinching0 || hpOpenHand;
     const rect = canvas.getBoundingClientRect();
     updateHandCursor(rect.left + ix*rect.width/canvas.width, rect.top + iy*rect.height/canvas.height, pinching);
   } else {
     hpSmooth = null;
+    hpOpenHand = false;          /* มือหลุดออกนอกกล้อง = ถือว่ากำมือ (ไม่แตะ) */
     hpSetHover(null);
     hpDwellClear();          /* มือหลุดออกนอกกล้อง = เริ่มนับใหม่รอบหน้า */
     $('hp-cursor').classList.remove('active');

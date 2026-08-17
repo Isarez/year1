@@ -3282,6 +3282,36 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     #clock-view.og-embedded .clock-board{grid-template-columns:1fr; grid-template-areas:'task' 'clock' 'digi'; gap:8px;}
     #clock-view.og-embedded .clock-frame{width:min(200px, 100%); height:auto;}
   }
+  /* 📷 ปุ่มกล้อง (เล่นด้วยมือ) เมื่อย้ายมาอยู่หัวการ์ดเควสต์ — ต้องเด่นพอให้เด็กเห็นว่ากดได้
+     (ผู้ใช้สั่ง 2026-08-17: "ให้มาอยู่ใกล้ popup โจทย์ เด็กจะได้เห็นว่าเล่นด้วย ar ได้") */
+  .hqz-top .hp-toggle{
+    position:static; margin-left:auto; flex:0 0 auto;
+    box-shadow:0 3px 0 rgba(0,0,0,.10);
+  }
+  .hqz-top .hp-toggle:not(.muted){ outline:3px solid #7FC8F0; outline-offset:2px; }
+  /* 🤖 พาหุ่นยนต์/แมวกลับบ้าน — **แบ่งครึ่ง: แผนที่ซ้าย · บัตรคำสั่งขวา** (ผู้ใช้สั่ง 2026-08-17)
+     ของเดิมเรียงลงมาเป็นคอลัมน์เดียว (แผนที่ → โปรแกรม → บัตรคำสั่ง → ปุ่มเล่น) สูงเกินการ์ดเควสต์
+     ⇒ ต้องเลื่อนจอ แล้ว **แผนที่ซึ่งเป็นตัวโจทย์เลื่อนหายไปจากสายตา** เด็กวางแผนเดินไม่ได้เลย
+     ⚠ แผนที่คร่อมทุกแถวฝั่งซ้าย ⇒ เห็นจุดหมายตลอดเวลาที่กำลังเรียงบัตรคำสั่ง */
+  #code-view.og-embedded .code-board{
+    display:grid; max-width:none; width:100%;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:'stage lbl' 'stage prog' 'stage rep' 'stage pal' 'stage act';
+    align-items:center; justify-items:center; gap:6px 18px; padding:4px 6px 8px;
+  }
+  #code-view.og-embedded .code-iso-stage{grid-area:stage; width:min(100%, 360px); margin:0;}
+  #code-view.og-embedded .code-program-label{grid-area:lbl;}
+  #code-view.og-embedded .code-program{grid-area:prog; width:100%;}
+  #code-view.og-embedded .code-repeat-row{grid-area:rep;}
+  #code-view.og-embedded .code-palette{grid-area:pal;}
+  #code-view.og-embedded .code-actions{grid-area:act;}
+  /* จอแคบกลับไปเรียงลงมาเหมือนเดิม — 2 คอลัมน์บนจอเล็กจะบีบจนกดบัตรคำสั่งไม่โดน */
+  @media (max-width:640px){
+    #code-view.og-embedded .code-board{
+      display:flex; flex-direction:column; align-items:center; max-width:560px;
+    }
+    #code-view.og-embedded .code-iso-stage{width:min(92vw, 300px);}
+  }
   /* 🎴 จับคู่ความจำ — การ์ดเล็กลงให้ครบทุกใบในหน้าเดียว */
   /* 🎨 ป้าย "ผสมกี่สี" ข้างสีเป้าหมายของเกมผสมสี (ผู้ใช้สั่ง 2026-08-17) */
   .mix-need{
@@ -4813,9 +4843,11 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .money-tray-coin{ background:none; border:none; cursor:pointer; padding:0; transition:transform .12s; }
   .money-tray-coin:active{ transform:scale(.85); }
   .money-coins{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; width:100%; }
-  .money-coin-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; background:#fff; border:3px solid #E5A93B; border-radius:18px; padding:8px 12px; cursor:pointer; font-family:inherit; box-shadow:0 4px 0 rgba(229,169,59,.4); transition:transform .12s, box-shadow .12s; }
-  body.night-mode .money-coin-btn{ background:#222B45; }
-  .money-coin-btn:active{ transform:translateY(4px); box-shadow:0 1px 0 rgba(229,169,59,.4); }
+  /* 💰 **ตัวเลือกเหรียญไม่ต้องมีกรอบ** (ผู้ใช้สั่ง 2026-08-17) — ตัวเหรียญมีขอบของตัวเองอยู่แล้ว
+     กรอบซ้อนอีกชั้นทำให้ดูเป็น "ปุ่ม" มากกว่า "เหรียญที่หยิบได้" */
+  .money-coin-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; border-radius:18px; padding:6px 8px; cursor:pointer; font-family:inherit; box-shadow:none; transition:transform .12s; }
+  body.night-mode .money-coin-btn{ background:none; }
+  .money-coin-btn:active{ transform:scale(.9); }
   .money-coin-lbl{ font-size:12px; font-weight:700; color:var(--ink-soft); }
   body.night-mode .money-coin-lbl{ color:#C7D2E8; }
   .money-pay-btn{ padding:14px 34px; border-radius:18px; border:none; background:#3B9E5B; color:#fff; font-family:inherit; font-size:19px; font-weight:700; cursor:pointer; box-shadow:0 5px 0 #2b7a44; transition:transform .12s, box-shadow .12s; }
@@ -4879,6 +4911,14 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   body.night-mode .tl-card-l{ color:#EAF0FF; }
   .tl-card-placed{ pointer-events:none; }
   .timeline-tray{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; width:100%; min-height:120px; align-items:center; }
+  /* 🖐️ ลากบัตรเส้นเวลา (ผู้ใช้สั่ง 2026-08-17) — ghost ลอยตามนิ้ว + ช่องที่เล็งอยู่เรืองแสง */
+  .tl-card-tray, .tl-card-placed{ touch-action:none; }
+  .tl-dragging{ opacity:.35; }
+  .tl-drag-ghost{
+    position:fixed; z-index:3000; pointer-events:none; opacity:.92;
+    transform:rotate(-4deg) scale(1.05); box-shadow:0 10px 24px rgba(0,0,0,.28);
+  }
+  .tl-slot.tl-over{ outline:4px dashed var(--cat-color,#B07A2E); outline-offset:3px; border-radius:14px; }
   .tl-tray-empty{ font-size:15px; font-weight:700; color:var(--ink-soft); }
   body.night-mode .tl-tray-empty{ color:#C7D2E8; }
   .tl-card-tray{ width:120px; min-height:118px; border-radius:20px; background:#fff; border:3px solid #eadfca; cursor:pointer; font-family:inherit; box-shadow:0 4px 0 rgba(176,122,46,.28); transition:transform .12s, box-shadow .12s, border-color .15s; }
@@ -5006,8 +5046,10 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .tangram-slot .tg-shape{ width:100%; height:100%; display:block; }
   .tangram-slot.tg-empty .tg-shape{ opacity:.28; }
   .tangram-slot.tg-filled .tg-shape{ opacity:1; }
-  .tangram-tray{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:640px; }
-  .tangram-piece{ width:74px; height:74px; border:3px solid transparent; border-radius:16px; background:#fff; padding:4px; cursor:pointer; transition:transform .12s, border-color .15s; }
+  .tangram-tray{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; max-width:640px; }
+  /* ⚠ ขนาดจริงตั้งจาก JS ตามขนาดช่องที่ชิ้นนั้นใช้ — ค่าที่นี่เป็นแค่ค่าสำรอง
+     (ห้ามล็อกขนาดตายตัวกลับ ไม่งั้นชิ้นคนละขนาดจะดูเหมือนกันหมด) */
+  .tangram-piece{ width:74px; height:74px; align-self:center; border:3px solid transparent; border-radius:16px; background:#fff; padding:4px; cursor:pointer; transition:transform .12s, border-color .15s; }
   .tangram-piece svg{ width:100%; height:100%; display:block; transition:transform .2s; }
   .tangram-piece.tg-sel{ border-color:var(--cat-color,#7C5CFC); transform:translateY(-4px); }
   body.night-mode .tangram-piece{ background:#2c3c58; }
