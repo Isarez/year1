@@ -81,8 +81,24 @@
     window.scrollTo({top:0, behavior:'smooth'});
   }
 
+  /* 🚪 ปุ่ม "ออกจากโหมดทำโจทย์" บนหน้าเลือกหมวด (ผู้ใช้สั่ง 2026-08-17)
+     เดิมทางออกเดียวคือกดที่ชื่อเด็กบนแถบบน (`#switch-child-btn`) ซึ่ง **ไม่มีอะไรบอกว่ากดได้**
+     ⇒ กดแล้วกลับมาหน้าเลือกโหมด ซึ่งมีทั้ง "เข้าเมือง" และ "เปลี่ยนคนเล่น" ให้ต่อในที่เดียว
+     ⚠ **ต้องซ่อนถ้าโหมดบ้านปิดอยู่** — หน้าเลือกโหมดจะไม่โผล่ (`maybeShow` คืน false)
+       กดแล้วไม่มีอะไรเกิดขึ้น = ทางตัน ผิดกติกาเหล็กข้อ 1 */
+  function refreshQuizExitBtn(){
+    const row = $('home-exit-row');
+    if(row) row.hidden = !houseOn();
+  }
+
   function init(){
     const h = $('landing-house'), q = $('landing-quiz'), b = $('landing-back');
+    const ex = $('home-exit-btn');
+    if(ex) ex.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      reopen();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
     if(h) h.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); goHouse(); });
     if(q) q.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); goQuiz(); });
     if(b) b.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); backToChildSelect(); });
@@ -98,5 +114,5 @@
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
-  window.OwlLanding = {maybeShow, reopen, reset, hide, houseOn};
+  window.OwlLanding = {maybeShow, reopen, reset, hide, houseOn, refreshQuizExitBtn};
 })();

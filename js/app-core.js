@@ -680,6 +680,22 @@ function beginSkillGame(catId, type, view, labelId){
   setCatLabel(labelId, cat);
   return cat;
 }
+/* ⭐ **ตะเข็บ Mount สำหรับ engine ที่มีหน้าสรุปผลเป็นของตัวเอง** (ไม่ได้จบผ่าน finishP2Game)
+   🐞 บั๊กจริงที่ผู้ใช้แจ้ง 2026-08-17 (เกมทายเงา): เล่นจบในการ์ดเควสต์แล้ว
+      **การ์ดไม่ปิด · ไม่รายงานผล · เควสต์ไม่จบ**
+   ต้นเหตุ: `js/owl-games.js` ออกแบบให้ทุก engine ส่งผลกลับโฮสต์ผ่าน `OwlGames.handleFinish()`
+      ซึ่งถูกเรียกอยู่บรรทัดแรกของ `finishP2Game()` เท่านั้น
+      แต่มี engine อีก 6 ตัวที่เขียนหน้าสรุปเองแยกไปเลย (ทายเงา/จับคู่/นกฮูกสั่ง/ผสมสี/ดนตรี/หุ่นยนต์)
+      ⇒ ทั้ง 6 ตัวข้ามตะเข็บนี้ไปหมด · โฮสต์ไม่เคยรู้ว่าเกมจบ การ์ดเลยค้าง
+      ⇒ ซ้ำร้าย `showOnlyView` ถูกครอบไว้ระหว่าง mount ให้ "แค่โชว์ ไม่ซ่อนใคร"
+        หน้าสรุปของหน้าหลักเลยไปเปิดค้างอยู่หลังฉากเมืองแทนที่จะเด้งขึ้นมา
+
+   ⚠ **engine ที่มีหน้าสรุปของตัวเองต้องเรียกตัวนี้เป็นบรรทัดแรกเสมอ** แล้ว `return` ทันทีถ้าได้ true
+     (ตัวที่จบด้วย finishP2Game ไม่ต้องเรียก — มีให้อยู่แล้วข้างใน) */
+function reportGameResult(catId, mistakes, totalLevels, doneWord){
+  return !!(window.OwlGames && OwlGames.handleFinish(catId, mistakes, totalLevels, doneWord));
+}
+
 /* ปิดท้ายการเริ่มเกม: เลื่อนจอขึ้นแล้วให้นกฮูกทักทาย */
 function endSkillGameStart(){
   window.scrollTo({top:0, behavior:'smooth'});
@@ -689,6 +705,9 @@ function endSkillGameStart(){
 /* ============================= HOME RENDER ============================= */
 function renderHome(){
   unmountHandPlay(); // ออกจากเกมแล้วปิดกล้อง/ถอดปุ่มโหมดมือเสมอ
+  /* 🚪 ปุ่มออกจากโหมดทำโจทย์ — ต้องเช็คทุกครั้งที่กลับมาหน้านี้
+     (โหมดบ้านเปิด/ปิดได้ระหว่าง branch ⇒ ค่าคงที่ตอนโหลดหน้าเชื่อไม่ได้) */
+  if(window.OwlLanding && OwlLanding.refreshQuizExitBtn) OwlLanding.refreshQuizExitBtn();
   resumeBgMusicAfterMusicGame(); // กลับมาหน้าหลัก = เล่นเพลงพื้นหลังต่อ (เผื่อออกจากเกมดนตรีทางอื่น)
   document.body.classList.remove('music-open');
   document.body.classList.remove('dots-open');

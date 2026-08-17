@@ -115,6 +115,10 @@ function startCodeGame(catId){
 }
 
 function renderCodeLevel(){
+  if(!codeGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = codeGame;
   const lv = g.set[(g.level-1) % g.set.length];
   g.lv = lv;
@@ -331,7 +335,11 @@ function codeCheckResult(){
 }
 
 function finishCodeGame(){
+  if(!codeGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
   clearTimeout(codeTimer); codeTimer = null;
+  /* ⭐ ส่งผลกลับโฮสต์ก่อนเสมอ (ล้างตัวจับเวลาไปแล้วข้างบน จะได้ไม่มีอะไรค้างทำงานต่อ) */
+  if(reportGameResult(codeGame.catId, codeGame.mistakes, codeGame.totalLevels, 'พาหุ่นยนต์')) return;
   const cat = catById(codeGame.catId);
   const mistakes = codeGame.mistakes;
   const totalLevels = codeGame.totalLevels;

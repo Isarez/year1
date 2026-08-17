@@ -792,10 +792,10 @@
           const hill=box(.5,.14,.01,0xa5d6a7,.04); hill.position.set(0,1.28,.05); g.add(hill);
         } },
       /* ⚠ **id `aquarium` ห้ามเปลี่ยน** — สิทธิ์ที่เด็กซื้อไว้ผูกกับ id นี้ (เปลี่ยนแค่ชื่อกับ action ได้)
-         เฟส 11: แตะแล้วเปิดหน้าตู้ปลา แสดงปลาที่เด็กตกได้จริงว่ายอยู่ (`action:'tank'`)
-         ⚠ `tank` บอกว่าตู้นี้รับปลาชนิดไหน — น้ำจืด/ทะเล ต้องแยกกัน (ผู้ใช้สั่ง 2026-08-13) */
+         🗑️ `action:'tank'` (แตะแล้วเปิด popup ตู้ปลา) **ถูกยกเลิก 2026-08-17 ตามที่ผู้ใช้สั่ง**
+            popup ไม่เหมือนตู้ปลาจริง ไอคอน/อนิเมชันปลาไม่สวย ⇒ ปลาที่ตกได้ย้ายไปสมุดสะสม (เฟส 16)
+            ตู้ปลายังเป็นของตกแต่งเต็มตัว มีปลาว่ายอยู่ในโมเดล 3D เหมือนเดิม แตะแล้วเด้งเหมือนของชิ้นอื่น */
       { id:'aquarium', name:'ตู้ปลาน้ำจืด', cat:'decor', scope:'in', emoji:'🐠', top:.9, colors:[0xb3e5fc,0x90caf9],
-        action:'tank', tank:'pond',
         build(g,col){
           const stand=box(.9,.5,.4,shade(0xc98d4e,.9),.04); stand.position.y=.25; g.add(stand);
           const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);
@@ -809,7 +809,6 @@
         } },
       /* ตู้ปลาทะเล (เฟส 11) — โทนน้ำเข้มกว่า + ปะการัง ให้แยกออกจากตู้น้ำจืดด้วยเงารวม */
       { id:'aquarium-sea', name:'ตู้ปลาทะเล', cat:'decor', scope:'in', emoji:'🐡', top:.9, colors:[0x81d4fa,0x4fc3f7],
-        action:'tank', tank:'sea',
         build(g,col){
           const stand=box(.9,.5,.4,shade(0x6d4c41,.95),.04); stand.position.y=.25; g.add(stand);
           const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);

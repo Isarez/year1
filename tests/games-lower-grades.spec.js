@@ -65,10 +65,10 @@ test('🪙 เหรียญในเกมร้านค้าต้องม
   await page.goto('/');
   const bad = await page.evaluate(() => {
     const out = [];
-    [null, 'p5', 'p6'].forEach(h => {
+    ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].forEach(g => {
       for (let lv = 1; lv <= 10; lv++) {
-        const cfg = moneyLevelConfig(lv, h);
-        cfg.coins.forEach(v => { if ([1, 2, 5, 10].indexOf(v) < 0) out.push((h || 'ปกติ') + ' ด่าน' + lv + ' = ' + v); });
+        const cfg = moneyLevelConfig(lv, (g === 'p5' || g === 'p6') ? g : null, g);
+        cfg.coins.forEach(v => { if ([1, 2, 5, 10].indexOf(v) < 0) out.push(g + ' ด่าน' + lv + ' = ' + v); });
       }
     });
     return out;
@@ -109,18 +109,70 @@ test('✋ นกฮูกสั่ง: ท่ามือคือคำตอ�
   expect(r.off.skip, 'ปิดโหมดแล้วต้องคืนข้อความเดิม').not.toContain('กำมือ');
 });
 
-test('💵 ธนบัตร 20 เขียว · 50 ฟ้า · 100 แดง — โผล่เฉพาะด่านที่ราคาเกิน 100', async ({ page }) => {
+/* 🐞 บั๊กจริงที่ผู้ใช้แจ้ง 2026-08-17: "เกมนกฮูกสั่งยังใช้แบมือ/กำมือแทนกดปุ่มไม่ได้"
+   ต้นเหตุ: `setHandPoseMode()` ถูกเรียกจากโหมดบ้านทางเดียว (js/house-games.js)
+   ⇒ เล่นเกมนี้จากหน้าเลือกเกม (mountHandPlay) แล้ว hpPoseMode ยังเป็น false ตลอด ท่ามือจึงตายสนิท */
+test('✋ นกฮูกสั่งของหน้าหลัก: เข้าเกมแล้วต้องเปิดโหมดท่ามือให้เอง (ไม่ใช่เฉพาะโหมดบ้าน)', async ({ page }) => {
   await page.goto('/');
   const r = await page.evaluate(() => {
-    const early = [], badVal = [];
-    [null, 'p5', 'p6'].forEach(h => {
+    const efCats = CATS.filter(c => c.mode === 'ef');
+    /* ทุกชั้นที่มีเกมนี้ต้องเปิดกล้องได้ — แบ/กำ เป็นท่าที่เด็กเล็กทำง่ายกว่าจีบนิ้ว
+       ⇒ ชั้นเล็กยิ่งต้องมี ห้ามเปิดให้แต่ชั้นโต */
+    const noCam = efCats.filter(c => !c.handPlay).map(c => c.id);
+    const on = {}, off = {};
+    efCats.forEach(c => { mountHandPlay(c); on[c.id] = window.getHandPoseMode(); });
+    /* เกมอื่นที่เล่นด้วยมือได้เหมือนกัน ห้ามติดโหมดท่าไปด้วย (ตัวเลือกเกิน 2 ทาง) */
+    CATS.filter(c => c.handPlay && c.mode !== 'ef').slice(0, 6)
+        .forEach(c => { mountHandPlay(c); off[c.id] = window.getHandPoseMode(); });
+    unmountHandPlay();
+    return { noCam, on, off, afterUnmount: window.getHandPoseMode(), grades: efCats.map(c => c.grade) };
+  });
+  expect(r.noCam, 'เกมนกฮูกสั่งต้องเล่นด้วยมือได้ทุกชั้น').toEqual([]);
+  expect(r.grades.sort(), 'ต้องมีเกมนี้ครบ ป.1-ป.6').toEqual(['p1','p2','p3','p4','p5','p6']);
+  Object.keys(r.on).forEach(id =>
+    expect(r.on[id], 'เข้าเกม ' + id + ' แล้วโหมดท่ามือต้องเปิด').toBe(true));
+  Object.keys(r.off).forEach(id =>
+    expect(r.off[id], 'เกม ' + id + ' ต้องไม่ติดโหมดท่ามือ').toBe(false));
+  expect(r.afterUnmount, 'ออกจากเกมแล้วต้องปิดโหมดท่ามือ ไม่ค้างข้ามเกม').toBe(false);
+});
+
+/* ⏱️ ค้างท่า 2 วิ กินเวลาด่านไปครึ่งหนึ่ง — ป.6 ด่านสั้นแค่ 2.6 วิ ซึ่งสั้นกว่าเวลาค้างท่าเสียอีก
+   ⇒ ถ้าไม่ยืดเวลาตอนกล้องเปิด เด็กจะแบมือค้างจนหมดเวลาทุกด่านโดยไม่มีทางตอบทัน */
+test('⏱️ นกฮูกสั่ง: เปิดกล้องแล้วเวลาต่อด่านต้องยาวพอให้ค้างท่าครบ 2 วิ', async ({ page }) => {
+  await page.goto('/');
+  const r = await page.evaluate(() => {
+    const out = {};
+    [null, 'p5', 'p6'].forEach(h => { out[h || 'ปกติ'] = efRoundMs(h); });
+    return { base: out, bonus: efHandBonusMs(), poseMs: 2000 };
+  });
+  Object.keys(r.base).forEach(k =>
+    expect(r.base[k] + 3000, 'ด่าน ' + k + ' ต้องเหลือเวลาคิดหลังหักเวลาค้างท่า')
+      .toBeGreaterThan(r.poseMs + 1500));
+  expect(r.bonus, 'กล้องยังไม่เปิด = ไม่ยืดเวลา (หน้าหลักจับเวลาเหมือนเดิม)').toBe(0);
+});
+
+test('💵 ธนบัตร 20 เขียว · 50 ฟ้า · 100 แดง — ทอนเงินมีเสมอ · จ่ายเงินมีเท่าที่จำเป็น', async ({ page }) => {
+  await page.goto('/');
+  const r = await page.evaluate(() => {
+    const early = [], badVal = [], missChange = [], useless = [];
+    ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].forEach(g => {
       for (let lv = 1; lv <= 10; lv++) {
-        const cfg = moneyLevelConfig(lv, h);
-        if (!cfg.notes) continue;
-        cfg.notes.forEach(v => { if ([20, 50, 100].indexOf(v) < 0) badVal.push((h || 'ปกติ') + ' ' + v); });
-        /* 🔒 "ใช้เท่าที่จำเป็นเท่านั้นกับราคาที่เยอะเกิน 100" (ผู้ใช้สั่ง)
-           ⇒ ด่านที่ราคาสูงสุดยังไม่ถึง 100 ห้ามมีธนบัตรให้เลย เด็กจะได้ไม่ต้องเรียนของใหม่เร็วเกิน */
-        if (cfg.priceMax <= 100) early.push((h || 'ปกติ') + ' ด่าน' + lv + ' ราคาสูงสุด ' + cfg.priceMax);
+        const cfg = moneyLevelConfig(lv, (g === 'p5' || g === 'p6') ? g : null, g);
+        /* ไล่ทุกยอดที่ด่านนี้เป็นไปได้ — ชุดเงินคิดจาก "ยอดจริง" ไม่ใช่ช่วงราคาของ config */
+        for (let t = 1; t <= cfg.priceMax + 400; t++) {
+          const u = moneyUnitsFor(cfg, t);
+          const notes = u.filter(isBillValue);
+          notes.forEach(v => { if ([20, 50, 100].indexOf(v) < 0) badVal.push(g + ' ' + v); });
+          if (cfg.mode === 'change') {
+            /* 🔒 ผู้ใช้สั่ง 2026-08-17: โหมดทอนเงินต้องโชว์แบงก์ 20/50/100 **เสมอ** ทุกด่าน */
+            if (notes.join() !== '20,50,100') missChange.push(g + ' ด่าน' + lv + ' ยอด' + t + ' = ' + notes.join('/'));
+          } else {
+            /* 🔒 โหมดจ่ายเงิน "ใช้เท่าที่จำเป็น": ยอดต่ำกว่า 20 = เหรียญล้วน
+               และห้ามยื่นแบงก์ที่ใหญ่กว่ายอด (หยิบมาก็จ่ายเกินอย่างเดียว) */
+            if (t < 20 && notes.length) early.push(g + ' ด่าน' + lv + ' ยอด' + t);
+            notes.forEach(v => { if (v > t) useless.push(g + ' ด่าน' + lv + ' ยอด' + t + ' แบงก์' + v); });
+          }
+        }
       }
     });
     /* หน้าตาธนบัตรต้องเป็นสี่เหลี่ยม ไม่ใช่วงกลมแบบเหรียญ + สีตรงตามที่กำหนด */
@@ -132,10 +184,13 @@ test('💵 ธนบัตร 20 เขียว · 50 ฟ้า · 100 แด�
       return { r: st.borderRadius, bg: st.backgroundImage };
     });
     probe.remove();
-    return { early, badVal, css, isBill: [isBillValue(20), isBillValue(50), isBillValue(100), isBillValue(10)] };
+    return { early, badVal, missChange, useless, css,
+             isBill: [isBillValue(20), isBillValue(50), isBillValue(100), isBillValue(10)] };
   });
   expect(r.badVal, 'ธนบัตรต้องมีแค่ 20/50/100').toEqual([]);
-  expect(r.early, 'ห้ามมีธนบัตรในด่านที่ราคายังไม่ถึง 100').toEqual([]);
+  expect(r.missChange.slice(0, 5), 'โหมดทอนเงินต้องมีแบงก์ 20/50/100 ครบเสมอ').toEqual([]);
+  expect(r.early.slice(0, 5), 'ยอดต่ำกว่า 20 บาทต้องเป็นเหรียญล้วน').toEqual([]);
+  expect(r.useless.slice(0, 5), 'ห้ามยื่นแบงก์ที่ใหญ่กว่ายอดที่ต้องจ่าย').toEqual([]);
   expect(r.isBill, '20/50/100 = ธนบัตร · 10 = เหรียญ').toEqual([true, true, true, false]);
   /* ⚠ ธนบัตรต้องไม่กลม ไม่งั้นเด็กนับปนกับเหรียญ */
   r.css.forEach(c => expect(parseFloat(c.r), 'ธนบัตรต้องเป็นสี่เหลี่ยมมุมมน ไม่ใช่วงกลม').toBeLessThan(12));

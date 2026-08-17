@@ -505,7 +505,11 @@ function hpFire(el){
 
    ⚠ **ไม่ใช่ "แบมือ = คลิกอะไรก็ได้"** — รอบแรกทำผิดแบบนั้นแล้วผู้ใช้ตีกลับ
      ท่ามือที่นี่ไม่เกี่ยวกับตำแหน่งเคอร์เซอร์เลย มันคือ "เลือกคำตอบข้อไหน"
-   🔒 เปิดเฉพาะเกม ef ผ่าน `setHandPoseMode()` ที่ js/house-games.js เรียกตอน mount/unmount
+   🔒 เปิดเฉพาะเกม ef ผ่าน `setHandPoseMode()` — มี **2 ทางเข้า** ที่ต้องเปิดให้ครบ:
+     1. โหมดบ้าน (ยืม engine ไปเล่นในการ์ดเควสต์) — js/house-games.js `houseTune()`
+     2. **หน้าหลัก** (เล่นเกม "นกฮูกสั่ง" ตรงๆ จากหน้าเลือกเกม) — `mountHandPlay()` ข้างล่างไฟล์นี้
+     ⚠ ทาง (2) เคยหล่นหาย ⇒ เด็กเปิดกล้องในเกมนกฮูกสั่งของหน้าหลักแล้ว "แบมือ/กำมือไม่ทำงาน"
+       เพราะ `hpPoseMode` ยังเป็น false อยู่ (ผู้ใช้แจ้ง 2026-08-17) — แก้ทาง (1) ทางเดียวไม่พอ
      เกมอื่นยังเป็นจีบนิ้ว/ชี้ค้างเหมือนเดิมทุกประการ
    เกณฑ์แยกท่า: ระยะเฉลี่ยปลายนิ้ว 4 นิ้วถึงข้อมือ ÷ ขนาดฝ่ามือ — แบ ~1.9-2.2 · กำ ~1.0-1.2
      ใช้คนละค่าขาขึ้น/ขาลง (hysteresis) กันมือค้างกลางๆ แล้วสลับท่ารัวจนนับเวลาไม่ทัน */
@@ -516,8 +520,14 @@ function setHandPoseMode(on){
   hpPoseMode = !!on;
   hpPose = null; hpPoseAt = 0; hpPoseLatch = null;
   hpPosePaint(null, 0);
-  /* 🏷️ **บอกเด็กบนปุ่มเลยว่าท่าไหนคือคำตอบไหน** — เด็ก 5 ขวบไม่มีทางเดาเองได้
-     ⚠ ยังกดปุ่มด้วยนิ้วได้ตามปกติ ท่ามือเป็นทางเพิ่ม ไม่ใช่ทางเดียว */
+  hpPoseLabels();
+}
+/* 🏷️ **บอกเด็กบนปุ่มเลยว่าท่าไหนคือคำตอบไหน** — เด็ก 5 ขวบไม่มีทางเดาเองได้
+   ⚠ ยังกดปุ่มด้วยนิ้วได้ตามปกติ ท่ามือเป็นทางเพิ่ม ไม่ใช่ทางเดียว
+   ⚠ ป้ายขึ้นตั้งแต่เข้าเกม (ยังไม่ต้องเปิดกล้อง) — เป็นตัวบอกเด็กว่าเกมนี้เล่นด้วยมือได้
+     ปุ่มกล้องอยู่มุมบนของเกมพอดี · ทำแบบเดียวกับโหมดบ้านที่ใช้อยู่แล้ว */
+function hpPoseLabels(){
+  const on = hpPoseMode;
   const tap = document.getElementById('ef-tap-btn'), skip = document.getElementById('ef-skip-btn');
   if(tap) tap.textContent = on ? '✋ แบมือค้าง = แตะเลย!' : '✋ แตะเลย!';
   if(skip) skip.textContent = on ? '✊ กำมือค้าง = ไม่แตะ' : '🚫 ไม่แตะ';
@@ -525,6 +535,18 @@ function setHandPoseMode(on){
 window.setHandPoseMode = setHandPoseMode;
 /* ให้ชุดเทสตรวจได้ว่าโหมดนี้ถูกเปิดเฉพาะเกมนกฮูกสั่งจริง */
 window.getHandPoseMode = () => hpPoseMode;
+/* "ตอบด้วยท่ามือได้จริงตอนนี้ไหม" = เปิดโหมดท่า **และ** กล้องติดแล้ว
+   games-think.js ใช้ค่านี้ยืดเวลาต่อด่าน เพราะค้างท่า 2 วิ กินเวลาของด่านไปครึ่งหนึ่ง */
+window.isHandPoseLive = () => hpPoseMode && hpActive;
+/* 🔄 ขึ้นด่านใหม่ = ล้างท่าที่ค้างอยู่ ให้ตอบด่านถัดไปได้โดยไม่ต้องเอามือออกนอกกล้องก่อน
+   ⚠ ตั้ง `hpPoseAt` เป็น "เดี๋ยวนี้" ด้วย ⇒ มือที่แบค้างไว้เฉยๆ ต้องนับใหม่อีก 2 วิ
+     ไม่ใช่ยิงคำตอบทันทีที่ด่านใหม่ขึ้น (ซึ่งเด็กยังไม่ทันเห็นของบนจอเลย)
+   เรียกจาก renderEfRound() ใน js/games-think.js */
+window.resetHandPose = function(){
+  if(!hpPoseMode) return;
+  hpPose = null; hpPoseAt = Date.now(); hpPoseLatch = null;
+  hpPosePaint(null, 0);
+};
 
 /* ปุ่มคำตอบของท่านั้น — คืน null ถ้าไม่ได้อยู่ในเกมนกฮูกสั่ง (วาล์วนิรภัย) */
 function hpPoseBtn(pose){
@@ -621,6 +643,10 @@ function mountHandPlayHouse(){
 function mountHandPlay(cat){
   unmountHandPlay();
   setHandDwellMode(false);         /* เกมหน้าหลักยังใช้ท่าเดิม (จีบนิ้ว) ตามที่ล็อกไว้ใน CLAUDE.md */
+  /* ✋ **เกมนกฮูกสั่ง (mode:'ef') ของหน้าหลักก็ต้องเปิดโหมดท่ามือด้วย** (ผู้ใช้แจ้ง 2026-08-17)
+     เดิมเปิดแค่ทางโหมดบ้าน ⇒ เล่นจากหน้าเลือกเกมแล้วแบมือ/กำมือไม่มีอะไรเกิดขึ้นเลย
+     ⚠ เช็ค `mode === 'ef'` เท่านั้น — เกมอื่นที่ handPlay:true มีตัวเลือกเกิน 2 ทาง ท่ามือแทนไม่ได้ */
+  setHandPoseMode(!!(cat && cat.mode === 'ef' && cat.handPlay) && !isMobileViewport());
   if(!cat || !cat.handPlay || isMobileViewport()) return;
   const view = hpVisibleView();
   if(!view) return;
@@ -635,6 +661,8 @@ function mountHandPlay(cat){
 }
 function unmountHandPlay(){
   stopHandPlay();
+  /* ออกจากเกมแล้วต้องปิดโหมดท่าด้วย ไม่งั้นค่าค้างข้ามไปเกมถัดไป (ปุ่มเกมอื่นจะโดนท่ามือกดเอง) */
+  setHandPoseMode(false);
   if(hpBtn && hpBtn.parentNode) hpBtn.parentNode.removeChild(hpBtn);
 }
 function toggleHandPlay(){
@@ -794,10 +822,13 @@ async function startHandPlay(){
     await hpCamera.start();
     hpActive = true;
     hpRaf = requestAnimationFrame(hpDrawLoop);
+    hpSyncEfTimer();     /* กล้องติดแล้ว = ด่านที่ค้างอยู่ต้องได้เวลาเผื่อค้างท่า 2 วิ ทันที */
     /* ⚠ โหมดชี้ค้าง **ไม่ได้ตัดการจีบนิ้วทิ้ง** — ต้องบอกเด็กว่าทำได้ทั้ง 2 ทาง (ผู้ใช้สั่ง 2026-08-12) */
-    showToast('✋', hpDwellOn
-      ? 'ยกมือขึ้นหน้ากล้อง ชี้ค้างที่คำตอบจนเส้นเขียวเต็ม = ตอบ · หรือ "จีบนิ้ว" ตอบทันทีก็ได้!'
-      : 'ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" เพื่อแตะได้เลย!');
+    showToast('✋', hpPoseMode
+      ? 'ยกมือขึ้นหน้ากล้อง — ✋ แบมือค้าง 2 วิ = "แตะเลย!" · ✊ กำมือค้าง 2 วิ = "ไม่แตะ"'
+      : (hpDwellOn
+        ? 'ยกมือขึ้นหน้ากล้อง ชี้ค้างที่คำตอบจนเส้นเขียวเต็ม = ตอบ · หรือ "จีบนิ้ว" ตอบทันทีก็ได้!'
+        : 'ยกมือขึ้นหน้ากล้อง แล้ว "จีบนิ้ว" เพื่อแตะได้เลย!'));
     startHandWatchdog();
   }catch(err){
     console.warn('hand play unavailable:', err);
@@ -824,9 +855,14 @@ function startHandWatchdog(){
   }, 7000);
 }
 function clearHandWatchdog(){ if(hpWatchdog){ clearTimeout(hpWatchdog); hpWatchdog = null; } }
+/* บอกเกมนกฮูกสั่งให้ตั้งเวลาด่านใหม่ตามสถานะกล้องล่าสุด (ดู efRefreshTimer ใน js/games-think.js)
+   ⚠ ต้องเรียก **หลัง** ตั้งค่า hpActive แล้วเท่านั้น — ฝั่งโน้นอ่าน isHandPoseLive() ทันที */
+function hpSyncEfTimer(){ if(window.efRefreshTimer) window.efRefreshTimer(); }
 function stopHandPlay(){
   clearHandWatchdog();
   hpDwellClear();
+  hpPosePaint(null, 0);
+  hpPose = null; hpPoseAt = 0; hpPoseLatch = null;
   hpActive = false;
   hpLandmarks = null;
   hpSmooth = null;
@@ -843,6 +879,7 @@ function stopHandPlay(){
   if(cur) cur.classList.remove('active');
   hpRefreshBtn();
   hpFrameHint();
+  hpSyncEfTimer();     /* ปิดกล้องกลางด่าน = คืนเวลาปกติของด่านนั้นทันที */
 }
 
 

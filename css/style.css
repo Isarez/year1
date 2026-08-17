@@ -705,6 +705,24 @@
   .child-chip-group .child-edit-btn:active{transform:none; background:rgba(74,63,53,.06);}
 
   /* ---------- home view ---------- */
+  /* 🚪 ปุ่มออกจากโหมดทำโจทย์ (2026-08-17 · ผู้ใช้สั่ง)
+     ⚠ **ต้องมีข้อความ ไม่ใช่ลูกศรเปล่า** — ปัญหาเดิมคือทางออกซ่อนอยู่ในชื่อเด็กบนแถบบน
+       เด็ก/ผู้ปกครองไม่รู้ว่ากดได้ ⇒ ปุ่มใหม่ต้อง "อ่านออกว่าออกได้" ตั้งแต่แรกเห็น
+     ⚠ ชิดซ้ายบนสุดของหน้า = ตำแหน่งเดียวกับปุ่มย้อนกลับของทุกหน้าในแอป (เด็กคุ้นที่แล้ว) */
+  .home-exit-row{display:flex; justify-content:flex-start; margin:6px 0 0;}
+  .home-exit-btn{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 16px; border-radius:999px; cursor:pointer;
+    background:var(--cream); border:2.5px solid var(--cream-2); color:var(--ink);
+    font-family:inherit; font-size:15px; font-weight:700;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .home-exit-btn:hover{background:var(--cream-2);}
+  .home-exit-btn:active{transform:scale(.95);}
+  .home-exit-ic{font-size:17px; line-height:1;}
+  body.night-mode .home-exit-btn{background:#3a4270; border-color:#5d6ba6; color:#f4f7ff;}
+  body.night-mode .home-exit-btn:hover{background:#47507f;}
+
   .hero{text-align:center; margin:10px 0 24px;}
   .hero-mascot{font-size:64px; display:inline-block; animation:idleBounce 1.2s ease-in-out infinite alternate;}
   .hero h2{font-size:clamp(28px,7vw,38px); font-weight:700; margin-top:6px; transition:color 2s ease, text-shadow 2s ease;}
@@ -2581,7 +2599,11 @@
   .house-creator-name-row[hidden]{display:none;}
   .house-creator-name-row .house-row-label{margin-bottom:0; flex:0 0 auto;}
   .house-creator-name-row input{flex:1 1 auto; min-width:0;}
-  .house-creator-rows{overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px 2px 8px; min-height:0;}
+  /* ⚠ **ต้องใส่ overflow-x:hidden ด้วยเสมอ** — CSS บังคับว่าถ้าแกนหนึ่งไม่ใช่ visible
+     อีกแกนที่เป็น visible จะถูกคิดเป็น `auto` ให้อัตโนมัติ ⇒ พอมี overflow-y:auto อย่างเดียว
+     แกน x จะกลายเป็น auto ไปด้วย แล้วมีสกรอลบาร์แนวนอนโผล่มาเวลาชิปแถวไหนล้นนิดเดียว
+     (ผู้ใช้แจ้ง 2026-08-17 ว่าหน้าสัตว์เลี้ยงมีสกรอลบาร์แกน x) */
+  .house-creator-rows{overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:10px; padding:4px 2px 8px; min-height:0;}
   .house-row-label{font-size:15.5px; font-weight:700; color:var(--ink); margin-bottom:4px; display:flex; align-items:center; gap:7px;}
   /* เส้นคั่นกลุ่มในหน้าแต่งตัว (ผม / ตา / เสื้อ / กางเกง / รองเท้า / หมวก / แว่น / เป้ / ของถือ)
      จางๆ พอให้ตาแยกกลุ่มออก ไม่ตัดหน้าจนดูเป็นตาราง */
@@ -2642,7 +2664,10 @@
 /* grid ช่องกว้างเท่ากันทุกใบ (flex-wrap เดิมทำให้ใบสั้น/ยาวไม่เท่ากันตามชื่อสัตว์)
    ตัวการ์ดต้อง min-width:0 กันชื่อยาวดันคอลัมน์ overflow (บทเรียนเดียวกับ #emoji-picker) */
 #house-pet-chips{display:grid; grid-template-columns:repeat(auto-fill, minmax(78px,1fr));}
-.house-chip.house-pet-chip{flex-direction:column; gap:2px; height:auto; min-width:0; padding:8px 4px;}
+/* ⚠ ต้องมีเพดานความกว้าง + ให้ชื่อยาวตัดบรรทัดได้ ไม่งั้นชิปชื่อยาว (เช่น "พวงมาลัยดอกไม้")
+   ดันแถวให้กว้างเกินแผงจนเกิดสกรอลบาร์แนวนอน */
+.house-chip.house-pet-chip{flex-direction:column; gap:2px; height:auto; min-width:0; max-width:112px; padding:8px 4px;}
+.house-pet-chip .house-pet-chip-name{white-space:normal; overflow-wrap:anywhere; text-align:center; line-height:1.25;}
 .house-pet-chip-emoji{font-size:26px; line-height:1;}
 .house-pet-chip-name{font-size:12.5px; font-weight:700;}
 /* เฟส 3A: ตัวที่ยังไม่ได้ซื้อ **ยังโชว์อยู่** แค่จางลง + ติดป้ายราคา ให้เด็กเห็นเป้าหมายว่าเก็บเงินไว้ซื้ออะไร
@@ -2721,6 +2746,12 @@ body.night-mode .hpm-btn:hover{background:#47507f;}
 .hpm-pips{display:flex; gap:2px; margin-top:1px;}
 .hpm-pips i{width:5px; height:5px; border-radius:50%; background:#e6d9c2; display:block;}
 .hpm-pips i.on{background:#ffb300;}
+/* 🎨 สวอตช์สีปลอกคอในเมนูสัตว์เลี้ยง — วางแทนที่อิโมจิในช่อง .hpm-ic
+   ⚠ ต้องเป็นวงกลมทึบขอบขาว เห็นสีจริงชัดๆ ที่ 22px (เด็กเลือกจากสี ไม่ได้อ่านชื่อสี) */
+.hpm-btn .hpm-sw{
+  display:block; width:22px; height:22px; border-radius:50%;
+  border:2px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.14);
+}
 .hpm-btn.done .hpm-lb{color:#2e9e5b;}
 body.night-mode .hpm-btn.done .hpm-lb{color:#8ff0b6;}
 .hpm-note{
@@ -3238,6 +3269,24 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .og-embedded > .quiz-top,
   .og-embedded > .back-btn,
   .og-embedded > .cat-label{ display:none; }
+  /* 🔢 **ยกเว้นตัวนับข้อ — ต้องเห็นเสมอ** (ผู้ใช้แจ้ง 2026-08-17 จากเกมทายเงา)
+     ซ่อนทั้งแถบบนแล้วเด็กไม่รู้เลยว่า "ต้องเล่นกี่ข้อ / ตอนนี้ข้อที่เท่าไหร่"
+     ⇒ ดึงเฉพาะ `.q-counter` กับหลอดความคืบหน้ากลับมาลอยไว้มุมขวาบนของการ์ด
+     ⚠ ต้องทำที่ `.og-embedded` กลาง **ไม่ใช่รายเกม** — ทุกเกมที่ยืมมาเล่นมีปัญหาเดียวกันหมด
+     ⚠ `position:absolute` เพื่อไม่ให้ไปกินความสูงของกระดาน (การ์ดเควสต์เตี้ย ห้ามมีสกรอล) */
+  .og-embedded{ position:relative; }
+  .og-embedded > .quiz-top.og-keep{
+    display:block; position:absolute; top:0; right:0; z-index:3;
+    padding:0; margin:0; background:none; box-shadow:none; border:0; min-height:0; width:auto;
+  }
+  .og-embedded > .quiz-top.og-keep > .back-btn,
+  .og-embedded > .quiz-top.og-keep .cat-label,
+  .og-embedded > .quiz-top.og-keep .memory-hint-chip{ display:none; }
+  .og-embedded > .quiz-top.og-keep .quiz-top-info{ padding:0; margin:0; min-width:96px; }
+  .og-embedded > .quiz-top.og-keep .progress-track{ height:6px; margin:3px 0 0; }
+  .og-embedded > .quiz-top.og-keep > .q-counter{
+    display:block; font-size:13px; padding:2px 10px;
+  }
   /* 🦉 ยกเว้น "นกฮูกสั่ง" — **กติกาของด่านอยู่ในแถบบน** (`#ef-rule` ซ้อนใน `.quiz-top-info`)
      ซ่อนทั้งแถบแล้วเด็กจะไม่มีทางรู้เลยว่ารอบนี้ต้องแตะอะไร = เล่นไม่ได้
      (เจอตอนเปิด engine ตัวนี้เข้าโหมดบ้าน 2026-08-15 — ภาพจริงโชว์แค่รูปกับปุ่ม ไม่มีคำสั่ง)
@@ -4231,29 +4280,7 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .house-basket{width:min(520px,94vw);}
   /* ---------- หน้าตู้ปลา (เฟส 11) ----------
      กรอบกระจก + น้ำไล่เฉด + ทรายก้นตู้ · ปลาว่ายข้ามจอวนไปเรื่อยๆ ด้วย CSS ล้วน */
-  .house-tank{width:min(520px,94vw);}
-  .htk-glass{
-    position:relative; height:210px; border-radius:16px; overflow:hidden;
-    border:6px solid #C9E7F5; box-shadow:inset 0 0 0 3px rgba(255,255,255,.75);
-  }
-  .htk-water{position:absolute; inset:0; background:linear-gradient(180deg,#BDE9F7 0%,#7FD3EE 60%,#5CBFE0 100%);}
-  .htk-water.sea{background:linear-gradient(180deg,#8FD8F5 0%,#3FB0DE 55%,#1C7FB5 100%);}
-  .htk-sand{position:absolute; left:0; right:0; bottom:0; height:26px;
-            background:linear-gradient(180deg,#F5DFB4,#E8C88C); border-radius:0 0 10px 10px;}
-  /* ⚠ **ต้องอนิเมต `left` ไม่ใช่ `translateX(%)`** — เปอร์เซ็นต์ของ transform อิงความกว้าง
-     "ของตัวปลาเอง" (ไม่กี่สิบพิกเซล) ปลาจึงขยับนิดเดียวไม่ข้ามตู้ ส่วน `left` อิงความกว้างของตู้ */
-  .htk-fish{
-    position:absolute; line-height:1; white-space:nowrap;
-    animation-name:htkSwim; animation-timing-function:linear; animation-iteration-count:infinite;
-  }
-  @keyframes htkSwim{
-    0%  {left:-9%;  transform:scaleX(1);}
-    47% {left:101%; transform:scaleX(1);}
-    50% {left:101%; transform:scaleX(-1);}
-    97% {left:-9%;  transform:scaleX(-1);}
-    100%{left:-9%;  transform:scaleX(1);}
-  }
-  @media (prefers-reduced-motion:reduce){ .htk-fish{animation:none;} }
+  /* 🗑️ สไตล์ตู้ปลา (.house-tank / .htk-*) ถูกลบพร้อมระบบตู้ปลา 2026-08-17 (ผู้ใช้สั่ง) */
 
   /* อัลบั้ม */
   .house-album{width:min(560px,94vw);}
@@ -4865,6 +4892,10 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .money-bill.b100{ background:linear-gradient(135deg,#F2867E,#D9534F 60%,#A8332F); }
   .money-bill-btn .money-coin-lbl{ margin-top:1px; }
   @media (max-width:600px){ .money-bill{ width:56px; height:30px; font-size:16px; } }
+  /* 💰 กองเงินที่โชว์ในฟองคำพูด (เช่น 200 = แบงก์ 100 สองใบ) — เรียงติดกันเหมือนปึกเงินจริง */
+  .money-stack{ display:inline-flex; align-items:center; gap:3px; vertical-align:middle; margin:0 3px; }
+  .money-stack .money-bill{ width:44px; height:25px; font-size:14px; }
+  .money-stack .hqz-coinface{ --k:.62; }
   .money-tray-coin{ background:none; border:none; cursor:pointer; padding:0; transition:transform .12s; }
   .money-tray-coin:active{ transform:scale(.85); }
   /* ⚠ ด่านที่มีธนบัตรจะมีของให้เลือก 7 ชิ้น (เหรียญ 4 + แบงก์ 3) — ต้องกว้างพอให้อยู่แถวเดียว

@@ -138,6 +138,15 @@
   </section>
 
   <section id="home-view" hidden>
+    <!-- 🚪 ปุ่มออกจากโหมดทำโจทย์ (2026-08-17 · ผู้ใช้สั่ง)
+         เดิมออกได้ทางเดียวคือกดที่ "ชื่อเด็ก" บนแถบบน ซึ่งเด็ก/ผู้ปกครองไม่มีทางรู้ว่ากดได้
+         ⇒ ทำเป็นปุ่มมีข้อความชัดๆ ตามแบบเดียวกับปุ่มออกของโหมดบ้าน
+         ⚠ ซ่อนเองถ้าโหมดบ้านถูกปิด (ไม่มีหน้าเลือกโหมดให้กลับไป) — ดู refreshQuizExitBtn -->
+    <div class="home-exit-row" id="home-exit-row" hidden>
+      <button class="home-exit-btn" id="home-exit-btn">
+        <span class="home-exit-ic" aria-hidden="true">←</span> ออกจากโหมดทำโจทย์
+      </button>
+    </div>
     <div class="hero">
       <div class="hero-mascot"><img src="assets/owl_full.svg" alt="นกฮูก" width="80" height="85"></div>
       <h2 id="hero-greeting">สวัสดีจ้า นักสู้ตัวน้อย!</h2>
@@ -1078,24 +1087,30 @@
       <!-- แต่ละปุ่มเป็นแคปซูล ไอคอน + ข้อความ กว้างเท่ากันทุกปุ่ม (เด็กอ่านคำได้ ไม่ต้องเดาจากไอคอน)
            ไอคอนอยู่ใน .hc-ic เสมอ เพราะ syncHouseCtrls()/refreshFsBtn() เขียนทับเฉพาะช่องนั้น ป้ายข้อความจะได้ไม่หาย -->
       <div class="house-ctrl-list" id="house-ctrl-list" hidden>
-        <button class="icon-btn house-ctrl-item" id="house-theme-toggle" aria-label="สลับธีมกลางวัน/กลางคืน" data-sync-label="1"><span class="hc-ic">🌙</span><span class="hc-label">โหมดกลางคืน</span></button>
-        <button class="icon-btn house-ctrl-item" id="house-music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง"><span class="hc-ic">🎵</span><span class="hc-label">เพลงพื้นหลัง</span></button>
-        <button class="icon-btn house-ctrl-item" id="house-sound-toggle" aria-label="เปิด/ปิดเสียง"><span class="hc-ic">🔊</span><span class="hc-label">เสียงกด</span></button>
-        <button class="icon-btn house-ctrl-item" id="house-fullscreen-toggle" aria-label="เต็มหน้าจอ"><span class="hc-ic">⛶</span><span class="hc-label">เต็มหน้าจอ</span></button>
+        <!-- 🎨 **ไอคอนในเมนูนี้เป็น SVG ทั้งหมด ห้ามใส่ emoji กลับมา** (ผู้ใช้สั่ง 2026-08-18)
+             เหตุผล: emoji วาดด้วยฟอนต์ของเครื่อง ⇒ Windows/Android/iOS ได้คนละรูป คนละขนาด
+             คนละน้ำหนักสี เมนูเลยดูไม่เป็นชุดเดียวกัน และบางตัว (⛶ 🗂️) ขาดหายบนบางเครื่อง
+             ⚠ 4 ปุ่มแรกเป็น "ค่าเริ่มต้นก่อน sync" เท่านั้น — syncHouseCtrls()/refreshFsBtn()
+               จะเขียนทับด้วย SVG_MOON/SVG_MUSIC/SVG_SPEAKER/SVG_EXPAND จาก js/app-core.js
+               ใส่ SVG ไว้ตรงนี้ด้วยเพื่อไม่ให้เห็น emoji แว่บนึงตอนเมนูกางครั้งแรก -->
+        <button class="icon-btn house-ctrl-item" id="house-theme-toggle" aria-label="สลับธีมกลางวัน/กลางคืน" data-sync-label="1"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7BA7E0" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8DEFF"/></svg></span><span class="hc-label">โหมดกลางคืน</span></button>
+        <button class="icon-btn house-ctrl-item" id="house-music-toggle" aria-label="เปิด/ปิดเพลงพื้นหลัง"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6C5CE7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13" fill="#DCD2FB"/><circle cx="6" cy="18" r="3" fill="#C7B3FF"/><circle cx="18" cy="16" r="3" fill="#C7B3FF"/></svg></span><span class="hc-label">เพลงพื้นหลัง</span></button>
+        <button class="icon-btn house-ctrl-item" id="house-sound-toggle" aria-label="เปิด/ปิดเสียง"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#D4881C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="#FFDF8E"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M18.7 5.3a9.5 9.5 0 0 1 0 13.4" opacity=".55"/></svg></span><span class="hc-label">เสียงกด</span></button>
+        <button class="icon-btn house-ctrl-item" id="house-fullscreen-toggle" aria-label="เต็มหน้าจอ"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></span><span class="hc-label">เต็มหน้าจอ</span></button>
         <!-- หน้าเทส: กางคลังโจทย์ของโหมดบ้านทั้งหมดเป็นตาราง (แยกระดับชั้น/กลไก) แล้วกดเล่นทีละข้อได้ -->
         <!-- เมนูที่เป็นเครื่องมือเทสระบบต้องมี * แดงต่อท้ายเสมอ (จะได้แยกออกจากเมนูของเด็กจริงๆ) -->
-        <button class="icon-btn house-ctrl-item" id="house-qb-btn" aria-label="คลังคำถามทั้งหมด (เครื่องมือเทส)"><span class="hc-ic">📚</span><span class="hc-label">คลังคำถาม<span class="hc-test-star">*</span></span></button>
-        <button class="icon-btn house-ctrl-item" id="house-dev-btn" aria-label="ปรับค่าต่างๆ (เครื่องมือเทส)"><span class="hc-ic">🛠️</span><span class="hc-label">ปรับค่าต่างๆ<span class="hc-test-star">*</span></span></button>
+        <button class="icon-btn house-ctrl-item" id="house-qb-btn" aria-label="คลังคำถามทั้งหมด (เครื่องมือเทส)"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4.2 5.4h4.2a2 2 0 0 1 2 2v11a1.7 1.7 0 0 0-1.7-1.5H4.2z" fill="#FFD6E8" stroke="#C0527A" stroke-width="1.4" stroke-linejoin="round"/><path d="M19.8 5.4h-4.2a2 2 0 0 0-2 2v11a1.7 1.7 0 0 1 1.7-1.5h4.5z" fill="#D6ECFF" stroke="#2E6F9E" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 9.4v9" stroke="#8A6D8A" stroke-width="1.4" stroke-linecap="round"/></svg></span><span class="hc-label">คลังคำถาม<span class="hc-test-star">*</span></span></button>
+        <button class="icon-btn house-ctrl-item" id="house-dev-btn" aria-label="ปรับค่าต่างๆ (เครื่องมือเทส)"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#5B7A8C" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15"/><circle cx="9" cy="7" r="2.1" fill="#FFE1A8"/><circle cx="15.5" cy="12" r="2.1" fill="#BFE6C8"/><circle cx="8" cy="17" r="2.1" fill="#D6ECFF"/></svg></span><span class="hc-label">ปรับค่าต่างๆ<span class="hc-test-star">*</span></span></button>
         <!-- หน้าเทส: ฟังเพลงธีมฟาร์มทั้ง 4 เพลงของโหมดบ้านทีละเพลง (เฟส 14) -->
-        <button class="icon-btn house-ctrl-item" id="house-music-btn" aria-label="ฟังเพลงธีม (เครื่องมือเทส)"><span class="hc-ic">🎶</span><span class="hc-label">ฟังเพลงธีม<span class="hc-test-star">*</span></span></button>
+        <button class="icon-btn house-ctrl-item" id="house-music-btn" aria-label="ฟังเพลงธีม (เครื่องมือเทส)"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6C5CE7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.6 16.5V4.8l10-1.8v11.4"/><ellipse cx="6.3" cy="16.8" rx="2.4" ry="2" fill="#C7B3FF"/><ellipse cx="16.3" cy="14.7" rx="2.4" ry="2" fill="#C7B3FF"/><path d="M8.6 8.4l10-1.8" stroke-width="1.3"/></svg></span><span class="hc-label">ฟังเพลงธีม<span class="hc-test-star">*</span></span></button>
         <!-- 🗂️ จัดการข้อมูล — เปิดกล่องเดียวกับหน้าเลือกเด็ก (ย้ายเครื่อง/รีเซ็ต/ลบ)
              ⚠ กล่องเป็น z-index 200 อยู่เหนือ #house-view (70) จึงเปิดทับเมืองได้เลย
              และปุ่มรีเซ็ต/ลบ จบด้วย location.reload() อยู่แล้ว ⇒ ไม่ต้องสั่งออกจากเมืองเอง -->
-        <button class="icon-btn house-ctrl-item" id="house-data-btn" aria-label="จัดการข้อมูล"><span class="hc-ic">🗂️</span><span class="hc-label">จัดการข้อมูล</span></button>
+        <button class="icon-btn house-ctrl-item" id="house-data-btn" aria-label="จัดการข้อมูล"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3.2 7.2a1.6 1.6 0 0 1 1.6-1.6h4l1.6 2h9.4a1.6 1.6 0 0 1 1.6 1.6v9a1.6 1.6 0 0 1-1.6 1.6H4.8a1.6 1.6 0 0 1-1.6-1.6z" fill="#FFD6A0" stroke="#E59A5B" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 11.6h9M7.5 14.6h6" stroke="#C97E3E" stroke-width="1.4" stroke-linecap="round"/></svg></span><span class="hc-label">จัดการข้อมูล</span></button>
         <!-- 🎓 บทเรียนสอนเล่น — ปุ่มข้าม/เรียนใหม่อยู่ในเมนูนี้เท่านั้น (ผู้ใช้สั่ง: เด็กข้ามเองไม่ได้) -->
-        <button class="icon-btn house-ctrl-item" id="house-tut-btn" aria-label="บทเรียนสอนเล่น"><span class="hc-ic">🎓</span><span class="hc-label">บทเรียนสอนเล่น</span></button>
+        <button class="icon-btn house-ctrl-item" id="house-tut-btn" aria-label="บทเรียนสอนเล่น"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 4.2 21.2 8.4 12 12.6 2.8 8.4z" fill="#B9D8F5" stroke="#2E6F9E" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.6 10.6v4.2c0 1.5 2.4 2.7 5.4 2.7s5.4-1.2 5.4-2.7v-4.2" fill="#D6ECFF" stroke="#2E6F9E" stroke-width="1.4" stroke-linejoin="round"/><path d="M20 9.6v4.4" stroke="#2E6F9E" stroke-width="1.4" stroke-linecap="round"/></svg></span><span class="hc-label">บทเรียนสอนเล่น</span></button>
         <!-- ทางออกจากโหมดบ้านทางเดียว (ปุ่ม ← ถูกเอาออกจากแถบบนแล้ว) — อยู่ในเมนูเฟืองที่เด็กไม่เผลอกดโดน -->
-        <button class="icon-btn house-ctrl-item house-exit-item" id="house-exit-btn" aria-label="ออกจากบ้านของหนู"><span class="hc-ic">🚪</span><span class="hc-label">ออกจากบ้าน</span></button>
+        <button class="icon-btn house-ctrl-item house-exit-item" id="house-exit-btn" aria-label="ออกจากบ้านของหนู"><span class="hc-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M5 4.4h7.4a1.4 1.4 0 0 1 1.4 1.4v12.4a1.4 1.4 0 0 1-1.4 1.4H5z" fill="#FFD6A0" stroke="#C97E3E" stroke-width="1.4" stroke-linejoin="round"/><circle cx="11.1" cy="12" r=".95" fill="#C97E3E"/><path d="M16.4 12h5M19.2 9.4 21.8 12l-2.6 2.6" stroke="#2E8F63" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="hc-label">ออกจากบ้าน</span></button>
       </div>
     </div>
     <!-- ป้ายบอกช่องที่ตัวละครยืนอยู่ (มุมขวาล่าง) — ไว้ดูพิกัดตอนทดสอบเกม -->
@@ -1170,13 +1185,6 @@
   </div>
 
   <!-- เฟส 11: หน้าตู้ปลา — แตะตู้ในบ้านแล้วเห็นปลาที่ตกได้จริงว่ายอยู่ -->
-  <div class="house-creator house-qz house-qsum house-tank" id="house-tank" hidden>
-    <div class="house-creator-panel hqz-panel hqsum-panel">
-      <div class="hqz-top"><div class="hqz-who" id="house-tank-title">🐠 ตู้ปลาน้ำจืด</div></div>
-      <div class="hqz-sub" id="house-tank-sub"></div>
-      <div class="htk-glass"><div class="htk-water" id="house-tank-water"></div><i class="htk-sand"></i></div>
-      <button class="house-pet-alt-btn hqz-close-btn" id="house-tank-close">ปิด</button>
-    </div>
   </div>
 
   <!-- ตะกร้าของที่เก็บได้ (ผัก + ปลา) — แตะตะกร้าหน้าบ้านเพื่อดูว่ามีอะไรกี่ชิ้น ราคาเท่าไหร่ -->
@@ -1342,6 +1350,10 @@
         <div><div class="house-row-label">เลือกเพื่อนตัวน้อย</div><div class="house-chip-wrap" id="house-pet-chips"></div></div>
         <div><div class="house-row-label">เลือกสีน้อง</div><div class="house-chip-wrap" id="house-pet-colors"></div></div>
         <div><div class="house-row-label">ตั้งชื่อให้เพื่อน</div><input class="house-pet-name-input" id="house-pet-name-input" type="text" maxlength="14" placeholder="พิมพ์ชื่อน่ารักๆ"></div>
+        <!-- 🎀 ปลอกคอ (ผู้ใช้สั่ง 2026-08-17) — โผล่เฉพาะตอนมีน้องอยู่แล้ว (ยังไม่รับเลี้ยงก็ยังไม่มีอะไรให้ใส่)
+             เดิมเปลี่ยนได้ที่ร้านสัตว์เลี้ยงที่เดียว ต้องเดินข้ามเมืองไปทั้งที่ของซื้อมาแล้วและสีก็ฟรี -->
+        <div id="house-pet-collar-row" hidden><div class="house-row-label">ปลอกคอ</div><div class="house-chip-wrap" id="house-pet-collars"></div></div>
+        <div id="house-pet-collarcol-row" hidden><div class="house-row-label">สีปลอกคอ</div><div class="house-chip-wrap" id="house-pet-collar-colors"></div></div>
       </div>
       <button class="house-done-btn" id="house-pet-done">รับเลี้ยงเลย 💕</button>
       <div class="house-pet-alt-row">
@@ -1597,6 +1609,7 @@
 <script src="js/data-cats.js?v=2.1.0-dev7"></script>
 <script src="js/data-pools.js?v=2.1.0-dev7"></script>
 <!-- โค้ดกลางที่ใช้ร่วมกับโหมดครู (teacher/) — แก้ที่นี่ที่เดียวมีผลทั้งสองหน้า -->
+<script src="js/shared/char-colors.js?v=2.1.0-dev7"></script>
 <script src="js/shared/audio.js?v=2.1.0-dev7"></script>
 <script src="js/shared/ui.js?v=2.1.0-dev7"></script>
 <script src="js/shared/speech.js?v=2.1.0-dev7"></script>

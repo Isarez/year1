@@ -172,6 +172,11 @@ test('🎻 แต่ละชั้นต้องเป็นคนละเค
       /* ทุกเสียงต้องมีโอเวอร์โทนมากกว่า 1 ตัว ไม่งั้นคือ sine เปล่า */
       partCounts: Object.keys(MUSIC_VOICES).map(v => MUSIC_VOICES[v].parts.length),
       trackVoices: M.TRACKS.map(t => (t.voices && t.voices.lead) || ''),
+      trackChord: M.TRACKS.map(t => (t.voices && t.voices.chord) || ''),
+      /* โอเวอร์โทนของเปียโนต้อง **ไม่ลงตัวเป๊ะ** ไม่งั้นฟังเป็นออร์แกน */
+      pianoRatios: (MUSIC_VOICES.piano || {parts:[]}).parts.map(p => p[0]),
+      pianoAtk: (MUSIC_VOICES.piano || {}).atk,
+      pianoRel: (MUSIC_VOICES.piano || {}).rel,
       hasSpark: M.TRACKS.every(t => !!t.layers.spark),
       chordSpread: MUSIC_VOICES[MUSIC_LAYER_MIX.chord.voice].spread || 0,
       chordRel: MUSIC_VOICES[MUSIC_LAYER_MIX.chord.voice].rel,
@@ -182,7 +187,23 @@ test('🎻 แต่ละชั้นต้องเป็นคนละเค
   expect(new Set(r.layerVoices).size, 'ทำนอง/เบส/คอร์ด/ประกาย ต้องเป็นคนละเครื่อง').toBe(4);
   expect(new Set(r.sigs).size, 'โอเวอร์โทนของแต่ละชั้นต้องไม่ซ้ำกัน').toBe(4);
   r.partCounts.forEach(n => expect(n, 'ทุกเสียงต้องมีโอเวอร์โทนมากกว่า 1 ตัว (ไม่ใช่ sine เปล่า)').toBeGreaterThan(1));
-  expect(new Set(r.trackVoices).size, 'ทำนองของ 4 เพลงต้องไม่ใช้เครื่องเดียวกันหมด').toBeGreaterThanOrEqual(2);
+  /* 🎹 **ผู้ใช้สั่ง 2026-08-17: เพลงพื้นหลังของโลกเกมสร้างจากเปียโนทั้งหมด**
+     ⚠ ข้อนี้ **ทับกติกาเดิม** ที่เคยบังคับว่า "ทำนองของ 4 เพลงต้องไม่ใช้เครื่องเดียวกันหมด"
+       (กติกาเดิมมาจากตอนที่ทุกเสียงยังเป็น sine เปล่าเหมือนกันหมด จึงต้องสลับเครื่องให้พอฟังต่าง)
+     ⇒ ตอนนี้ความต่างของแต่ละเพลงมาจากทำนอง/คีย์/จังหวะ ไม่ใช่จากการสลับเครื่องดนตรี */
+  r.trackVoices.forEach(v => expect(v, 'ทุกเพลงต้องเล่นด้วยเปียโน').toBe('piano'));
+  /* แต่ชั้นคอร์ดต้องเป็นเปียโนคนละตัว (เบากว่า ไม่มีเสียงต่ำ) ไม่งั้นคอร์ดกลบทำนอง */
+  r.trackChord.forEach(v => expect(v, 'ชั้นคอร์ดต้องใช้เปียโนตัวที่เบากว่า').toBe('pianoCh'));
+  /* 🔑 หัวใจที่ทำให้ "ฟังเป็นเปียโน" — โอเวอร์โทนเพี้ยนขึ้นทีละนิดตามความแข็งของสายจริง
+     ถ้าใครปัดเป็น 2/3/4/5 ลงตัวเมื่อไหร่ เสียงจะกลายเป็นออร์แกนทันที (กติกาห้ามไว้ตั้งแต่เฟส 14) */
+  expect(r.pianoRatios.length, 'เปียโนต้องมีโอเวอร์โทนหลายชั้น').toBeGreaterThanOrEqual(4);
+  expect(r.pianoRatios.slice(1).every(x => Math.abs(x - Math.round(x)) > 0.0005),
+         'โอเวอร์โทนเปียโนต้องไม่ลงตัวเป๊ะ ไม่งั้นฟังเป็นออร์แกน').toBe(true);
+  expect(r.pianoAtk, 'เปียโนต้องขึ้นเสียงเร็ว (ค้อนกระทบสาย)').toBeLessThan(0.02);
+  expect(r.pianoRel, 'เปียโนต้องปล่อยเสียงยาวกว่าเครื่องตี').toBeGreaterThan(0.4);
+  /* 🐞 ตัวสังเคราะห์ต้อง **อ่าน `parts` จริง** — เดิมมีตารางโอเวอร์โทนแต่ไม่เคยถูกใช้เลย
+     ทุกเสียงจึงออกมาเป็น sine เปล่าเหมือนกันหมด (แก้ 2026-08-17) */
+  expect(r.src, 'ตัวสังเคราะห์ต้องไล่สร้างโอเวอร์โทนตาม parts').toContain('parts');
   expect(r.hasSpark, 'ทุกเพลงต้องมีชั้นประกาย').toBe(true);
   /* 🔒 **ห้ามมีเสียงคีย์บอร์ด/ออร์แกนกลับมา** (ผู้ใช้สั่ง 2026-08-16: "ไม่ต้องใช้คีย์บอร์ดเลย")
      หูตีความว่าเป็นออร์แกนเมื่อคอร์ด "ลากค้างสม่ำเสมอ" ⇒ ชั้นคอร์ดต้อง

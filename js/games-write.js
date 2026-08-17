@@ -34,6 +34,10 @@ function startDotsGame(catId){
 }
 
 function renderDotsLevel(){
+  if(!dotsGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = dotsGame;
   g.shape = g.queue[g.level-1];
   g.connected = 0; g.dragging = false; g.locked = false;
@@ -209,6 +213,8 @@ function wireDotsStage(){
 }
 
 function finishDotsGame(){
+  if(!dotsGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
   const cat = catById(dotsGame.catId);
   const mistakes = dotsGame.mistakes;
   const totalLevels = dotsGame.totalLevels;

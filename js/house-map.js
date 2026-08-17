@@ -16,28 +16,20 @@
 window.HOUSE_MAP = function(ctx){
 const inBox = ctx.inBox;
 
-const H_SKIN = 0xffd9b3;
-const H_HAIR_COLORS = [0x3b2a1a,0x6b4423,0xa5692a,0xe8c05c,0xf28c28,0xd94f30,0xf48fb1,0x9b59b6,0x5aa7e8,0x58c473,
-  /* สีผมชุดใหม่ (2026-08-04) — โทนพาสเทล/สีสนุกสำหรับเด็ก */
-  0x1c1c1c,0xc9a227,0xe0e0e0,0xff8a65,0x4dd0e1,0xffb7d5,0xb39ddb];
-const H_EYE_COLORS  = [0x33261d,0x6b4423,0x3a79d8,0x3f9d5a,0x8e5bc0,0xe56aa4,0x7a8894,0xd8a520,
-  0x26c6da,0xef5350,0x7e57c2,0x66bb6a];
-/* เสื้อ: สีเดียวล้วน — **ลายทางตั้ง (เดิมเป็น entry 2 สีในแถวนี้) ย้ายไปเป็น "ลายเสื้อ" แบบที่ 9 แล้ว**
-   (ผู้ใช้แจ้ง 2026-08-04: สีกับลายต้องแยกแถวกัน ไม่ปนกันในแถวสี) ห้ามเอา entry {a,b} กลับมาใส่แถวนี้ */
-const H_SHIRT_COLORS  = [0xef5350,0xffa726,0xffd54f,0x9ccc65,0x4db6ac,0x42a5f5,0x7986cb,0xba68c8,0xf06292,0x8d6e63,
-  0xffffff,0x26c6da,0xff7043,0xd4e157,0xf8bbd0,0xfff59d,0xb39ddb,0x00bfa5,0x5c6bc0,0xa1887f,
-  0x37474f,0x66bb6a,0x9575cd,0x4dd0e1,0xffab91,0xc5e1a5];
-const H_BOTTOM_COLORS = [0x3f5aa8,0x6d4c41,0x455a64,0x00897b,0xc62828,0xf48fb1,0x9575cd,0x558b2f,0xffb74d,0x263238,
-  0x1e88e5,0x00acc1,0xe57373,0x9ccc65,0x5c6bc0,0xff8a65,0xffffff,0x795548,
-  /* แบบ 2 สี (กางเกงท่อนบน a / ท่อนล่าง b, กระโปรงตัว a / ชายกระโปรง b) */
-  {a:0x3f5aa8,b:0xffffff},{a:0xf48fb1,b:0xffffff},{a:0xc62828,b:0x3f5aa8},{a:0x558b2f,b:0xffd54f},{a:0x7e57c2,b:0xffffff},
-  {a:0x455a64,b:0xffd54f},{a:0x00897b,b:0xffffff},{a:0xba68c8,b:0xfff59d},{a:0x1e88e5,b:0xf06292}];
-const H_SHOE_COLORS   = [0xffffff,0x333333,0xef5350,0x42a5f5,0xffca28,0x66bb6a,0xab47bc,0x8d6e63,
-  0xff7043,0x26a69a,0xf06292,0x7e57c2,0xfff176,0x90a4ae];
-/* สีของแต่ง — จานสีเดียวกันแต่ **แยกแถวให้เลือกสีของหมวก/แว่น/เป้/ของถือ ได้อิสระของใครของมัน**
-   (เดิมใช้แถวเดียวคุมทุกชิ้น ผู้ใช้ขอให้แยกเมื่อ 2026-08-04) */
-const H_ACC_COLORS = [0xef5350,0xff9800,0xffd54f,0x66bb6a,0x26c6da,0x42a5f5,0x7e57c2,0xf06292,
-  0xffffff,0x546e7a,0x8d6e63,0xa5d6a7];
+/* 🎨 จานสีตัวละคร **ย้ายไป js/shared/char-colors.js แล้ว** (2026-08-17)
+   เหตุผล: หน้า landing ต้องวาดตัวละครของเด็กด้วย แต่ไฟล์นี้ lazy-load พร้อมชุด 3D (~1.2 MB)
+   ⇒ แยกจานสีไปไว้ไฟล์เล็กที่โหลดตั้งแต่ต้น จะได้มีแหล่งความจริงแหล่งเดียว ไม่ต้องก๊อปสีไปไว้ 2 ที่
+   ⚠ **ห้ามเขียนค่าสีกลับมาไว้ที่นี่** — สีเพี้ยนคนละที่แปลว่าตัวละครในเมืองกับในหน้า landing คนละสี
+   ⚠ มี fallback ไว้กันเคส "cache ผสมรุ่น" (เบราว์เซอร์ถือ index.html เก่าที่ยังไม่มี script ตัวใหม่)
+     — ยอมให้สีเป็นค่าเริ่มต้นชั่วคราว ดีกว่าทั้งเมืองพังเพราะอ่าน property ของ undefined */
+const CC = window.OWL_CHAR_COLORS || {};
+const H_SKIN          = CC.SKIN   ?? 0xffd9b3;
+const H_HAIR_COLORS   = CC.HAIR   || [0x3b2a1a];
+const H_EYE_COLORS    = CC.EYE    || [0x33261d];
+const H_SHIRT_COLORS  = CC.SHIRT  || [0xef5350];
+const H_BOTTOM_COLORS = CC.BOTTOM || [0x3f5aa8];
+const H_SHOE_COLORS   = CC.SHOE   || [0xffffff];
+const H_ACC_COLORS    = CC.ACC    || [0xef5350];
 /* ⚠ **เพิ่มแบบใหม่ต้องต่อท้ายเสมอ ห้ามแทรกกลาง/สลับลำดับ** — ตัวเลขที่เด็กเลือกไว้ถูกเก็บเป็น
      index ตรงๆ ใน save การแทรกกลางจะทำให้ตัวละครของเด็กที่เล่นอยู่เปลี่ยนหน้าตาเองทั้งเมือง */
 const H_HAIR_N = 12, H_EYE_N = 12;
@@ -167,10 +159,13 @@ const OI_HAIR_ICONS = [
   '<circle cx="12" cy="10.6" r="7.4" fill="H" stroke="D" stroke-width="1.2"/><circle cx="12" cy="13.6" r="5.2" fill="' + OI_SKIN + '" stroke="' + OI_LINE + '" stroke-width="1.2"/>',
   /* 9 หน้าม้าหนา */
   '<path d="M5.4 12.4 Q5.4 5.6 12 5.6 Q18.6 5.6 18.6 12.4 L18.6 11 Q12 8.6 5.4 11 Z" fill="H" stroke="D" stroke-width="1.2"/><rect x="5.6" y="9.4" width="12.8" height="2.8" rx="1.3" fill="H"/>',
-  /* 10 โมฮอว์ก */
-  '<path d="M7.6 10.6 A4.6 4.6 0 0 1 16.4 10.6 Z" fill="H"/><path d="M9.6 9.6 L12 3.4 L14.4 9.6 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>',
-  /* 11 ยาวประบ่า */
-  '<path d="M5 19 Q4.6 6 12 6 Q19.4 6 19 19 L16.6 19 Q17.4 9.6 12 9.6 Q6.6 9.6 7.4 19 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
+  /* 10 ผมกะลา (มัชรูม) — เปลี่ยนจากโมฮอว์กเมื่อ 2026-08-17 ให้ตรงกับโมเดล 3D
+     จุดที่ทำให้แยกออกคือ **ผายกว้างกว่าหัวแล้วจบเป็นเส้นตรงระดับกราม** (ทรงอื่นจบเหนือหู) */
+  '<path d="M4.8 16.6 Q4.4 5.6 12 5.6 Q19.6 5.6 19.2 16.6 L16.4 16.6 Q17 9.8 12 9.8 Q7 9.8 7.6 16.6 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
+  /* 11 ผมม้าเฉียงยาว — ปอยผมพาดทแยงหน้าผาก (เปลี่ยนทรงรอบที่ 3 เมื่อ 2026-08-17)
+     ⚠ จุดที่ทำให้แยกออกคือ **เส้นทแยง** — ทรงอื่นในตารางนี้เป็นเส้นแนวนอน/โค้งรอบหัวหมด */
+  '<path d="M6 12 A6 6 0 0 1 18 12 L17.4 8.8 Q12 5.4 6.8 9 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<path d="M17 8.2 Q11 10.4 5.6 14.6 L4.6 11.6 Q10.4 7.6 16.4 6.4 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>',
 ];
 /* ---- ทรงผมเด็กหญิง 12 แบบ ----
    🐞 **บั๊กที่ผู้ใช้แจ้ง 2026-08-17**: เลือกเป็นเด็กผู้หญิงแล้วไอคอนตัวอย่างทรงผมไม่เปลี่ยนตาม
@@ -275,12 +270,21 @@ const OI_HAT = [
   '<path d="M7.4 10.4 A4.6 4.6 0 0 1 16.6 10.4 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><ellipse cx="12" cy="11" rx="8.4" ry="1.8" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/>',
   '<circle cx="9.4" cy="7" r="2.2" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="14.6" cy="7" r="2.2" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="12" cy="7" r="1.2" fill="' + OI_BD + '"/>',
   '<path d="M6.6 10.4 L6.6 5.6 L9.4 8 L12 4.6 L14.6 8 L17.4 5.6 L17.4 10.4 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3" stroke-linejoin="round"/>',
-  '<path d="M7 8.6 L8 4.6 L11 7.4 Z" fill="' + OI_HAIR + '"/><path d="M17 8.6 L16 4.6 L13 7.4 Z" fill="' + OI_HAIR + '"/><path d="M6.4 10.2 A6 6 0 0 1 17.6 10.2" fill="none" stroke="' + OI_HAIRD + '" stroke-width="1.4"/>',
+  /* 6 หูกระต่าย (ตั้ง) — โมเดล 3D เป็นแท่งยาว 2 แท่ง ไอคอนเดิมเป็นสามเหลี่ยมเตี้ยซึ่งไปเหมือน
+     หูแมว (เบอร์ 9) ⇒ แก้ให้เป็นแท่งยาวตรงกับโมเดล และแยกจากหูหมี (เบอร์ 10 = วงกลม) ชัดเจน */
+  '<rect x="8" y="3" width="2.8" height="7" rx="1.4" fill="' + OI_HAIR + '" stroke="' + OI_HAIRD + '" stroke-width="1.1"/><rect x="13.2" y="3" width="2.8" height="7" rx="1.4" fill="' + OI_HAIR + '" stroke="' + OI_HAIRD + '" stroke-width="1.1"/>',
   '<path d="M12 3.6 L15.6 10.4 H8.4 Z" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="3.4" r="1.2" fill="' + OI_C + '"/>',
   '<path d="M6.4 10.4 A6 6 0 0 1 17.6 10.4" fill="none" stroke="' + OI_BD + '" stroke-width="1.6"/><circle cx="16.6" cy="8.4" r="2.2" fill="' + OI_B + '"/><circle cx="16.6" cy="8.4" r=".9" fill="' + OI_C + '"/>',
   '<path d="M7.6 9 L8.6 4.6 L11.6 7.8 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.1" stroke-linejoin="round"/><path d="M16.4 9 L15.4 4.6 L12.4 7.8 Z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.1" stroke-linejoin="round"/>',
-  '<rect x="8" y="3.4" width="2.6" height="6.4" rx="1.3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.1"/><rect x="13.4" y="3.4" width="2.6" height="6.4" rx="1.3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.1"/>',
-  '<path d="M6 11 A6 6 0 0 1 18 11 Z" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.4"/><rect x="5.4" y="10.6" width="13.2" height="1.8" rx=".9" fill="' + OI_GD + '"/>',
+  /* 10 หูหมี — เปลี่ยนจากหูกระต่ายเมื่อ 2026-08-17 (เบอร์ 6 เป็นหูกระต่ายอยู่แล้ว)
+     วงกลม 2 วง = เงารวมที่ต่างจากหูแมว (สามเหลี่ยม) และหูกระต่าย (แท่งยาว) ชัดเจนที่ 32px */
+  '<circle cx="7.8" cy="7.2" r="3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="7.8" cy="7.2" r="1.4" fill="#ffc0cb"/><circle cx="16.2" cy="7.2" r="3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="16.2" cy="7.2" r="1.4" fill="#ffc0cb"/>',
+  /* 11 หมวกบัณฑิต — เปลี่ยนจากหมวกกันน็อกเมื่อ 2026-08-17 (ผู้ใช้สั่ง) ให้ตรงกับโมเดล 3D
+     กระดานสี่เหลี่ยม + พู่ = เงารวม "เหลี่ยม" ซึ่งไม่มีหมวกใบไหนในตารางนี้เป็น */
+  '<rect x="7" y="9.4" width="10" height="3.4" rx="1.2" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.2"/>'
+  + '<path d="M12 4.6 L20.4 8 L12 11.4 L3.6 8 Z" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.2" stroke-linejoin="round"/>'
+  + '<path d="M12 7.4 L18.4 9.4" fill="none" stroke="#ffd54f" stroke-width="1.2"/>'
+  + '<rect x="17.4" y="9" width="2.2" height="3.6" rx="1.1" fill="#ffd54f"/>',
   '<ellipse cx="12" cy="11" rx="9" ry="2.2" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/><path d="M8 10.6 A4 4 0 0 1 16 10.6 Z" fill="' + OI_C + '" stroke="' + OI_CD + '" stroke-width="1.3"/>',
   '<circle cx="8.4" cy="6.6" r="3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="15.6" cy="6.6" r="3" fill="' + OI_B + '" stroke="' + OI_BD + '" stroke-width="1.2"/><circle cx="12" cy="6.6" r="1.5" fill="' + OI_BD + '"/>',
   '<path d="M5.8 10.4 Q12 6 18.2 10.4 L17.6 12 Q12 8.4 6.4 12 Z" fill="' + OI_G + '" stroke="' + OI_GD + '" stroke-width="1.2"/><circle cx="18.4" cy="11.4" r="1.4" fill="' + OI_G + '"/>',

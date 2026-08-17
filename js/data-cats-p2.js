@@ -665,9 +665,10 @@ const CATS_P2 = [
     ]
   },
   {
-    /* reuse EF engine (นกฮูกสั่ง) — แยก id/progress จาก ป.1 */
+    /* reuse EF engine (นกฮูกสั่ง) — แยก id/progress จาก ป.1
+       ✋ handPlay: ตอบด้วยแบมือ/กำมือหน้ากล้องได้เหมือนชั้นอื่น (เพิ่ม 2026-08-17) */
     id:'p2-iq3', name:'เชาวน์ ป.2 · นกฮูกสั่ง', emoji:'🦉', icon:'assets/icons/p2-iq3.svg', color:'#17A65B', light:'#D6F3E4',
-    type:'skill', mode:'ef', levels:10, grade:'p2', isNew:true
+    type:'skill', mode:'ef', levels:10, handPlay:true, grade:'p2', isNew:true
   },
 
   /* ---------- ดนตรี ป.2 (quiz) ---------- */

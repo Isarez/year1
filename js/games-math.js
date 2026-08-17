@@ -58,38 +58,96 @@ function finishP2Game(catId, mistakes, totalLevels, doneWord){
 let moneyGame = null;
 const MONEY_ITEMS = [ {e:'🍎',n:'แอปเปิล'},{e:'🍌',n:'กล้วย'},{e:'🍞',n:'ขนมปัง'},{e:'🍭',n:'อมยิ้ม'},{e:'🥤',n:'น้ำ'},{e:'🍪',n:'คุกกี้'},{e:'🧃',n:'น้ำกล่อง'},{e:'✏️',n:'ดินสอ'},{e:'📒',n:'สมุด'},{e:'🎈',n:'ลูกโป่ง'},{e:'🍩',n:'โดนัท'},{e:'🧸',n:'ตุ๊กตา'} ];
 const MONEY_CUSTOMERS = ['🐰','🐻','🐱','🐶','🐼','🦊','🐨','🐯'];
-function moneyLevelConfig(level, hard){
+/* 💵 ธนบัตรที่มีในโลกของเกม (ชุดเดียวกับโหมดบ้าน) */
+const MONEY_NOTES = [20, 50, 100];
+/* 🧾 เงินทอนสูงสุดที่ยอมให้เกิดในด่านหนึ่ง — ทอน 200 บาทใช้เงิน 100+50+20+20+5+2+2 = 7 ชิ้น
+   ซึ่งยังอยู่ในเพดาน ~8 ชิ้นที่ถาดวางไหวและเด็กหยิบไหว (ดูคอมเมนต์ใน moneyLevelConfig) */
+const MONEY_CHANGE_MAX = 200;
+function moneyLevelConfig(level, hard, grade){
   /* 🪙 **เหรียญในเกมมีแค่ 4 แบบ: 1 · 2 · 5 · 10** (ผู้ใช้สั่ง 2026-08-17)
      ทั้งแอปใช้หน้าตาเหรียญชุดเดียวกัน (`.hqz-coinface` cv1/cv2/cv5/cv10) ⇒ เหรียญ 20/50/100
      ไม่มีหน้าตารองรับ และเด็กที่เพิ่งเรียนจากเกมจ่ายเงิน/ทอนเงินจะเจอเหรียญคนละชุดแล้วสับสน
-     ⚠ **ตัดเหรียญออกแล้วต้องลดช่วงราคาลงด้วย** — ทอน 300 บาทด้วยเหรียญ 10 = ต้องหยิบ 30 เหรียญ
-       เด็กหยิบไม่ไหวและการ์ดวางไม่พอ ⇒ คุมให้ทอนได้ภายใน ~8 เหรียญทุกระดับ
-     💵 "เงินที่ลูกค้าจ่ายมา" (`bills`) ยังเป็นหลักสิบ/ร้อยได้ เพราะโชว์เป็น **ตัวเลขในฟองคำพูด**
-       ไม่ได้วาดเป็นเหรียญ (ธนบัตร 20/50/100 มีจริงอยู่แล้ว) */
-  if(hard==='p6'){
-    /* ป.6: เริ่มมีของราคาเกิน 100 ⇒ **ด่านท้ายเท่านั้นที่ได้ธนบัตรมาใช้** */
-    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:24, priceMax:60, step:1, discount:[10,20] };
-    if(level<=7) return { coins:[1,2,5,10], notes:[20,50], mode:'change', bills:[100,200], priceMin:60, priceMax:160, step:1, discount:[10,20,25] };
-    return { coins:[1,2,5,10], notes:[20,50,100], mode:'pay', priceMin:120, priceMax:320, step:1, discount:[20,25,50] };
+     💵 "เงินที่ลูกค้าจ่ายมา" (`bills`) เป็นหลักร้อยได้ เพราะโชว์เป็น **กองแบงก์จริง** ผ่าน moneyStack()
+       (200 = แบงก์ 100 สองใบ) ไม่ใช่แบงก์ใบเดียวที่เขียนเลข 200 ซึ่งไม่มีอยู่จริง
+
+     📈 **ไล่ระดับตามชั้นจริง ไม่ใช่เหมารวม** (ผู้ใช้สั่ง 2026-08-17)
+       เดิม ป.1-ป.4 ใช้ตารางเดียวกันหมด ⇒ เด็ก ป.1 เจอโจทย์ทอนเงินหลักร้อยเท่า ป.4
+       ตอนนี้แยกทีละชั้นตามลำดับที่หลักสูตรสอนจริง:
+         ป.1 รู้จักค่าเงิน + จ่ายพอดี (ยังไม่ทอน)      ป.2 ทอนจากแบงก์ 50
+         ป.3 ราคาหลักร้อย + ทอนจากแบงก์ 100          ป.4 ทอนจาก 100/200
+         ป.5 เริ่มส่วนลดร้อยละ                        ป.6 ส่วนลด + ทอนจากเงินก้อนใหญ่
+
+     🔒 กติกาที่ล็อกไว้ (ผู้ใช้สั่ง 2026-08-17) — บังคับใช้ที่ `moneyUnitsFor()` ไม่ใช่ที่นี่:
+       - โหมด **ทอนเงิน**: โชว์แบงก์ 20/50/100 ในตัวเลือก **เสมอ**
+       - โหมด **จ่ายเงิน**: แบงก์โผล่เท่าที่จำเป็น (ยอดถึง 20 บาทขึ้นไป และเฉพาะใบที่ไม่เกินยอด)
+     ⚠ จำนวนชิ้นที่ต้องหยิบต้องไม่เกิน ~8 ทุกด่าน — เกินกว่านั้นเด็กหยิบไม่ไหวและถาดวางไม่พอ
+       (ทุกช่วงราคาข้างล่างคิดมาแล้วด้วยวิธีทอนแบบใบใหญ่ก่อน) */
+  const g = grade || (hard === 'p6' ? 'p6' : (hard === 'p5' ? 'p5' : 'p1'));
+  if(g === 'p6'){
+    /* ป.6: ราคาหลักร้อย + ส่วนลดร้อยละ · ทอนจากเงินก้อนใหญ่ */
+    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:105, priceMax:180, step:1, discount:[10,20] };
+    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[200,300], priceMin:110, priceMax:190, step:1, discount:[10,20,25] };
+    /* ⚠ ไม่ใส่แบงก์ 500 ที่นี่ — ราคาสูงสุด 280 ⇒ ทอนเกิน 200 ทุกครั้ง (เกินเพดานชิ้นที่เด็กหยิบไหว)
+       ความยากของช่วงนี้มาจาก "ราคาสูงขึ้น + ส่วนลดแรงขึ้น" แทน ไม่ใช่จากกองเงินทอนที่ยาวขึ้น */
+    return { coins:[1,2,5,10], mode:'change', bills:[200,300], priceMin:150, priceMax:280, step:1, discount:[20,25,50] };
   }
-  if(hard==='p5'){
-    /* ป.5: ราคาหลักสิบเป็นหลัก · ด่านท้ายแตะหลักร้อยพอให้รู้จักธนบัตร */
-    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:16, priceMax:45, step:1 };
-    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[50], priceMin:14, priceMax:45, step:1, discount:[10,50] };
-    return { coins:[1,2,5,10], notes:[20,50], mode:'pay', priceMin:105, priceMax:180, step:1, discount:[10,20,25] };
+  if(g === 'p5'){
+    /* ป.5: หลักสิบปลายๆ ถึงหลักร้อยต้นๆ · เริ่มมีส่วนลดร้อยละอย่างง่าย */
+    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:16, priceMax:60, step:1 };
+    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[100,200], priceMin:40, priceMax:150, step:1, discount:[10,50] };
+    return { coins:[1,2,5,10], mode:'pay', priceMin:105, priceMax:230, step:1, discount:[10,20,25] };
   }
-  if(level<=3) return { coins:[1,2,5], mode:'pay', priceMin:2, priceMax:10 };
-  if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:11, priceMax:30 };
-  return { coins:[1,2,5,10], mode:'change', bills:[20,50], priceMin:11, priceMax:45 };
+  if(g === 'p4'){
+    /* ป.4: ทอนเงินคล่องแล้ว — ขยับเป็นทอนจากแบงก์ 200 (ต้องเห็นว่า 200 = แบงก์ร้อยสองใบ) */
+    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:35, priceMax:120 };
+    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[100], priceMin:25, priceMax:95 };
+    return { coins:[1,2,5,10], mode:'change', bills:[200], priceMin:105, priceMax:190 };
+  }
+  if(g === 'p3'){
+    /* ป.3: ราคาขยับถึงหลักร้อย แล้วค่อยเริ่มทอนจากแบงก์ 100 (ทอนได้ไม่เกิน 6 ชิ้น) */
+    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:12, priceMax:45 };
+    if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:45, priceMax:150 };
+    return { coins:[1,2,5,10], mode:'change', bills:[100], priceMin:30, priceMax:95 };
+  }
+  if(g === 'p2'){
+    /* ป.2: รู้จักแบงก์ 20/50 ตอนจ่าย แล้วจบด้วยทอนเงินอย่างง่ายจากแบงก์ 50 */
+    if(level<=3) return { coins:[1,2,5], mode:'pay', priceMin:4, priceMax:15 };
+    if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:16, priceMax:60 };
+    return { coins:[1,2,5,10], mode:'change', bills:[50], priceMin:15, priceMax:45 };
+  }
+  /* ป.1 (และค่าตั้งต้นถ้าการ์ดไม่ระบุชั้น): **จ่ายพอดีอย่างเดียว ยังไม่ต้องทอน**
+     หลักสูตร ป.1 คือ "บอกชนิดและค่าของเหรียญ/ธนบัตร" — การทอนเงินเป็นเนื้อหา ป.2
+     ⇒ ด่านท้ายแค่ดันราคาให้ถึง 20-40 บาท เด็กจะได้รู้จักแบงก์ 20 จากการหยิบมาจ่ายเอง */
+  if(level<=4) return { coins:[1,2,5], mode:'pay', priceMin:2, priceMax:9 };
+  if(level<=8) return { coins:[1,2,5,10], mode:'pay', priceMin:6, priceMax:20 };
+  return { coins:[1,2,5,10], mode:'pay', priceMin:22, priceMax:40 };
+}
+/* 💵 **ชุดเงินที่ยื่นให้เด็กเลือก — ตัดสินจาก "ยอดที่ต้องหยิบจริง" ไม่ใช่ช่วงราคาของด่าน**
+   ⚠ ราคาหลังส่วนลดเปลี่ยนได้ (ป.5-6) ⇒ ถ้าดูจาก config อย่างเดียว ด่านราคา 105 ที่ลด 20%
+     เหลือ 84 บาท จะยังโชว์แบงก์ 100 ที่หยิบมาก็ใช้ไม่ได้ — เด็กหยิบแล้วเกินทุกครั้ง
+   🔒 โหมดทอนเงิน: โชว์ครบ 20/50/100 เสมอ (ผู้ใช้สั่ง 2026-08-17 — เงินทอนมาเป็นก้อนใหญ่ได้ทุกด่าน)
+   🔒 โหมดจ่ายเงิน: "ใช้เท่าที่จำเป็น" = ยอดต่ำกว่า 20 ใช้เหรียญล้วน · ถึง 20 แล้วค่อยแถมแบงก์
+     ที่ไม่เกินยอดเข้ามา — เกณฑ์เดียวกับเกมจ่ายเงินของโหมดบ้าน (payExactMech ใน js/house-quests.js)
+     เด็กจะได้เจอชุดเงินหน้าตาเดียวกันทั้งสองเกม */
+function moneyUnitsFor(cfg, target){
+  const coins = (cfg.coins || [1,2,5,10]).slice();
+  if(cfg.mode === 'change') return coins.concat(MONEY_NOTES);
+  if(target < 20) return coins;
+  return coins.concat(MONEY_NOTES.filter(n => n <= target));
 }
 function startMoneyGame(catId){
   const cat = beginSkillGame(catId, 'money', moneyView, 'money-cat-label');
-  moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), tray:[], locked:false };
+  /* `grade` คือตัวคุมความยากหลักของเกมนี้ (ดู moneyLevelConfig) — การ์ดทุกใบของ mode:'money' มีค่านี้ */
+  moneyGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, hard:(cat.hard||null), grade:(cat.grade||null), tray:[], locked:false };
   renderMoneyLevel();
   endSkillGameStart();
 }
 function renderMoneyLevel(){
-  const g = moneyGame; const cfg = moneyLevelConfig(g.level, g.hard);
+  if(!moneyGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
+  const g = moneyGame; const cfg = moneyLevelConfig(g.level, g.hard, g.grade);
   const item = p2pick(MONEY_ITEMS), cust = p2pick(MONEY_CUSTOMERS);
   let price = p2rand(cfg.priceMin, cfg.priceMax), given=0, target;
   if(cfg.step) price = Math.max(cfg.step, Math.round(price/cfg.step)*cfg.step);
@@ -101,11 +159,20 @@ function renderMoneyLevel(){
   }
   g.disc = disc; g.full = disc ? Math.round(price*100/(100-disc)) : price;
   if(cfg.mode==='change'){
-    const bills = cfg.bills.filter(b=>b>price);
-    given = bills.length ? p2pick(bills) : (Math.floor(price/10)*10+20);
+    /* 💵 ลูกค้าต้องยื่นเงิน "ที่คนจริงจะยื่น" — ไม่ใช่ก้อนใหญ่สุดที่มี
+       ⚠ **เพดานเงินทอน `MONEY_CHANGE_MAX`** คือตัวคุมไม่ให้เด็กต้องหยิบเงินเกิน ~8 ชิ้น
+         (เจอจริงตอน ป.6: ราคา 202 ลด 50% เหลือ 101 แล้วลูกค้ายื่น 500 ⇒ ทอน 399 = 9 ชิ้น)
+         ราคาหลังส่วนลดต่ำลงได้เสมอ จึงกรองที่ "เงินทอนจริง" ไม่ใช่ที่ช่วงราคาของด่าน
+       ถ้าไม่มีใบไหนผ่านเกณฑ์เลย ⇒ ใช้ใบที่เล็กที่สุดที่ยังพอจ่าย (ทอนน้อยที่สุดเท่าที่ทำได้) */
+    const over = cfg.bills.filter(b=>b>price).sort((a,b)=>a-b);
+    const fit = over.filter(b => b - price <= MONEY_CHANGE_MAX);
+    given = fit.length ? p2pick(fit) : (over.length ? over[0] : (Math.floor(price/10)*10+20));
     target = given - price;
   } else target = price;
   g.cfg=cfg; g.item=item; g.price=price; g.target=target; g.given=given; g.mode=cfg.mode; g.tray=[]; g.locked=false;
+  /* ⚠ คิดชุดเงินหลังรู้ `target` แล้วเท่านั้น (ส่วนลดทำให้ยอดจริงต่างจากช่วงราคาของด่าน) */
+  g.units = moneyUnitsFor(cfg, target);
+  const hasNote = g.units.some(isBillValue);
   $('money-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('money-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const priceLine = g.disc
@@ -113,11 +180,16 @@ function renderMoneyLevel(){
     : 'ราคา <b>'+price+' บาท</b>';
   const bubble = cfg.mode==='change'
     ? '<div class="money-bubble">อยากได้ '+item.e+' '+priceLine
-      + '<br><span class="money-give">หนูจ่ายด้วย '
-      + (isBillValue(given) ? billFace(given) : (given+' บาท')) + ' ช่วยทอนหน่อย</span></div>'
+      + '<br><span class="money-give">หนูจ่ายด้วย ' + moneyStack(given)
+      + ' <b>'+given+' บาท</b> ช่วยทอนหน่อย</span></div>'
     : '<div class="money-bubble">อยากได้ '+item.e+'<br>'+priceLine+'</div>';
   $('money-customer').innerHTML = '<div class="money-cust-face">'+cust+'</div>'+bubble;
-  $('money-hint').textContent = cfg.mode==='change' ? 'หยิบเหรียญ "ทอน" ให้พอดี แล้วกดจ่ายเงิน!' : 'หยิบเหรียญใส่ถาดให้ครบราคา แล้วกดจ่ายเงิน!';
+  /* คำว่า "เหรียญ" ใช้ได้เฉพาะด่านที่ไม่มีแบงก์ — ด่านที่มีแบงก์ต้องพูดว่า "เงิน" ไม่งั้น
+     เด็กที่อ่านออกจะเข้าใจว่าห้ามใช้แบงก์ (ผู้ใช้แจ้ง 2026-08-17) */
+  const w = hasNote ? 'เงิน' : 'เหรียญ';
+  $('money-hint').textContent = cfg.mode==='change'
+    ? 'หยิบ'+w+'"ทอน" ให้พอดี แล้วกดจ่ายเงิน!'
+    : 'หยิบ'+w+'ใส่ถาดให้ครบราคา แล้วกดจ่ายเงิน!';
   renderMoneyCoins(); renderMoneyTray();
 }
 /* 💰 **เหรียญต้องเป็นชุดเดียวกับเกมจ่ายเงิน/ทอนเงินของโหมดบ้าน** (ผู้ใช้สั่ง 2026-08-17)
@@ -140,11 +212,25 @@ function billFace(v){
 /* ค่านี้เป็นธนบัตรไหม (ที่เหลือคือเหรียญ) */
 function isBillValue(v){ return v === 20 || v === 50 || v === 100; }
 function moneyFace(v){ return isBillValue(v) ? billFace(v) : coinFace(v); }
+/* 💰 **แตกจำนวนเงินเป็นแบงก์/เหรียญจริง** (ผู้ใช้สั่ง 2026-08-17)
+     200 ต้องโชว์ "แบงก์ 100 สองใบ" ไม่ใช่แบงก์ใบเดียวที่เขียนเลข 200 (ซึ่งไม่มีจริง)
+   ⚠ ในโลกเกมมีแค่ 100/50/20 (แบงก์) และ 10/5/2/1 (เหรียญ) — จำนวนอื่นต้องแตกเสมอ
+   ⚠ เรียงจากใหญ่ไปเล็ก = วิธีทอนที่ใช้ใบน้อยที่สุด ตรงกับที่คนจริงทำ */
+const MONEY_UNITS = [100, 50, 20, 10, 5, 2, 1];
+function moneyBreak(n){
+  const out = []; let left = Math.max(0, Math.round(n));
+  MONEY_UNITS.forEach(u=>{ while(left >= u){ out.push(u); left -= u; } });
+  return out;
+}
+function moneyStack(n){
+  return '<span class="money-stack">' + moneyBreak(n).map(moneyFace).join('') + '</span>';
+}
 function renderMoneyCoins(){
   const g = moneyGame, wrap = $('money-coins'); wrap.innerHTML='';
-  /* เหรียญก่อน แล้วค่อยธนบัตร (ถ้าด่านนี้มี) — เรียงจากค่าน้อยไปมากเหมือนกระเป๋าเงินจริง */
-  const list = (g.cfg.coins || []).concat(g.cfg.notes || []);
-  list.forEach(v=>{
+  /* เหรียญก่อน แล้วค่อยธนบัตร — เรียงจากค่าน้อยไปมากเหมือนกระเป๋าเงินจริง
+     ⚠ ชุดนี้มาจาก `moneyUnitsFor()` ตอนสร้างด่าน **ห้ามอ่าน cfg ตรงๆ ที่นี่** ไม่งั้นด่านที่มีส่วนลด
+       จะโชว์แบงก์ที่ใช้ไม่ได้ (ดูคอมเมนต์ที่ moneyUnitsFor) */
+  (g.units || g.cfg.coins || [1,2,5,10]).forEach(v=>{
     const b = document.createElement('button');
     b.className = 'money-coin-btn' + (isBillValue(v) ? ' money-bill-btn' : '');
     b.innerHTML = moneyFace(v)+'<span class="money-coin-lbl">บาท</span>';
@@ -155,7 +241,8 @@ function renderMoneyCoins(){
 function moneyTotal(){ return moneyGame.tray.reduce((a,b)=>a+b,0); }
 function renderMoneyTray(){
   const g = moneyGame, tray = $('money-tray'); tray.innerHTML='';
-  if(g.tray.length===0){ tray.innerHTML='<span class="money-tray-empty">แตะเหรียญด้านล่างใส่ถาดนะ 👇</span>'; }
+  const money = (g.units || []).some(isBillValue) ? 'เงิน' : 'เหรียญ';
+  if(g.tray.length===0){ tray.innerHTML='<span class="money-tray-empty">แตะ'+money+'ด้านล่างใส่ถาดนะ 👇</span>'; }
   g.tray.forEach((v,i)=>{
     const c = document.createElement('button'); c.className='money-tray-coin'; c.innerHTML=moneyFace(v);
     c.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.tray.splice(i,1); renderMoneyTray(); });
@@ -173,8 +260,12 @@ function moneyPay(){
     setTimeout(()=>{ if(g.level>=g.totalLevels) finishP2Game(g.catId,g.mistakes,g.totalLevels,'ขายของ'); else { g.level++; renderMoneyLevel(); } }, 1300);
   } else {
     g.mistakes++; playWrong(); showOwlMsg('wrong');
-    $('money-hint').textContent = total>g.target ? 'เยอะไปนิดนะ ลองเอาเหรียญออกบ้าง' : 'ยังไม่พอนะ เติมเหรียญอีกหน่อย';
-    showToast('🪙','ต้องการ '+g.target+' บาท · ตอนนี้ '+total+' บาท');
+    const money = (g.units || []).some(isBillValue) ? 'เงิน' : 'เหรียญ';
+    $('money-hint').textContent = total>g.target ? 'เยอะไปนิดนะ ลองเอา'+money+'ออกบ้าง' : 'ยังไม่พอนะ เติม'+money+'อีกหน่อย';
+    /* 🔢 บอกส่วนต่างเป็นตัวเลขตรงๆ — เด็กจะได้รู้ว่า "ขาดอีกเท่าไหร่" ไม่ใช่แค่ "ยังไม่พอ"
+       แล้วเดาเติมทีละเหรียญไปเรื่อยๆ (ขาด/เกินเท่าไหร่คือตัวเลขที่เขาต้องคิดให้ได้พอดี) */
+    const diff = Math.abs(total - g.target);
+    showToast('🪙', (total>g.target ? 'เกินไป ' : 'ขาดอีก ') + diff + ' บาท · ต้องการ '+g.target+' บาท');
   }
 }
 $('money-pay').addEventListener('click', ()=>{ playClick(); moneyPay(); });
@@ -219,6 +310,10 @@ function startFractionGame(catId){
   endSkillGameStart();
 }
 function renderFractionLevel(){
+  if(!fractionGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = fractionGame, cfg = fractionLevelConfig(g.level, g.hard);
   const slices = p2pick(cfg.sliceOpts);
   const food = p2pick(FRACTION_FOODS);
@@ -361,6 +456,10 @@ function balanceMakeQuestion(level, hard){
 }
 function balancePanHtml(content){ return '<div class="bal-pan-content">'+content+'</div>'; }
 function renderBalanceLevel(){
+  if(!balanceGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = balanceGame; const Q = balanceMakeQuestion(g.level, g.hard);
   g.q = Q; g.locked=false;
   $('balance-level-counter').textContent = g.level+'/'+g.totalLevels;
@@ -426,6 +525,10 @@ function startCalendarGame(catId){
   endSkillGameStart();
 }
 function renderCalendarLevel(){
+  if(!calendarGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = calendarGame, level = g.level;
   const daysIn = p2pick([28,30,31]);
   const startDow = p2rand(0,6);
@@ -534,6 +637,10 @@ function pickTimelineSet(size, used, tag){
   return TIMELINE_SETS[pick];
 }
 function renderTimelineLevel(){
+  if(!timelineGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = timelineGame;
   const size = timelineSize(g.level, g.maxSize);
   const set = pickTimelineSet(size, g.used, g.tag);
@@ -687,6 +794,10 @@ function startSortGame(catId){
   endSkillGameStart();
 }
 function renderSortLevel(){
+  if(!sortGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = sortGame, pool = g.pool, n = sortItemCount(g.level), bins = pool.bins;
   const byBin = {}; bins.forEach(b=>byBin[b.k] = shuffleArray(pool.items.filter(it=>it.k===b.k)));
   const chosen = [];
@@ -776,6 +887,10 @@ function worldZoneOf(angle){
   return best.k;
 }
 function renderWorldLevel(){
+  if(!worldGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = worldGame;
   if(g.hard){
     /* ป.5 ยอมคลาดเคลื่อนได้ 1 ช่อง (30°) ป.6 ต้องตรงช่วงเวลาพอดีขึ้น */
@@ -856,6 +971,10 @@ function startCoordGame(catId){
   endSkillGameStart();
 }
 function renderCoordLevel(){
+  if(!coordGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = coordGame, n = coordSize(g.level, g.hard);
   g.size = n; g.target = { r:p2rand(0,n-1), c:p2rand(0,n-1) }; g.locked = false;
   $('coord-level-counter').textContent = g.level+'/'+g.totalLevels;
@@ -933,6 +1052,10 @@ function startChartGame(catId){
   endSkillGameStart();
 }
 function renderChartLevel(){
+  if(!chartGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = chartGame, n = chartBarCount(g.level, g.hard);
   const set = p2pick(CHART_SETS);
   const items = shuffleArray(set.items.slice()).slice(0, n);
@@ -1035,6 +1158,10 @@ function startAreaGame(catId){
   endSkillGameStart();
 }
 function renderAreaLevel(){
+  if(!areaGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = areaGame;
   /* ป.5-6 ใช้กริดใหญ่ขึ้นและเข้าโหมดสี่เหลี่ยมผืนผ้าเร็วกว่า (ป.6 เป็นสี่เหลี่ยมตั้งแต่ด่านแรก) */
   const n = g.hard==='p6' ? (g.level<=4 ? 7 : 8) : (g.hard==='p5' ? (g.level<=4 ? 6 : 7) : (g.level<=4 ? 5 : 6));
@@ -1149,6 +1276,10 @@ function buildAngleGuides(){
   $('angle-guides').innerHTML = out;
 }
 function renderAngleLevel(){
+  if(!angleGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = angleGame;
   const band = g.level<=3 ? 0 : (g.level<=7 ? 1 : 2);
   const bank = g.hard==='p6' ? ANGLE_TARGETS_P6 : (g.hard==='p5' ? ANGLE_TARGETS_P5 : ANGLE_TARGETS);
@@ -1380,6 +1511,9 @@ function randClockInt(min,max){ return min + Math.floor(Math.random()*(max-min+1
 
 /* สุ่มโจทย์ตาม mode/ด่าน (กันซ้ำในรอบด้วย used Set) แล้วตั้งเข็มไปเวลาเริ่มต้น */
 function newClockLevel(){
+  if(!clockGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง */
   const g = clockGame;
   const stage = g.level;
   let target = null, start = {h:12,m:0}, offsetH = 0, offsetM = 0;
@@ -1561,6 +1695,10 @@ function pickCircuitLevel(used){
   return CIRCUIT_LEVELS[pick];
 }
 function renderCircuitLevel(){
+  if(!circuitGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = circuitGame;
   const lv = pickCircuitLevel(g.used);
   const size = lv.size, path = lv.path;
@@ -1686,6 +1824,10 @@ function startTangramGame(catId){
   endSkillGameStart();
 }
 function renderTangramLevel(){
+  if(!tangramGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = tangramGame;
   /* 🧩 **เปิดให้เด็กเล่นได้ตั้งแต่ ป.1** (ผู้ใช้สั่ง 2026-08-17)
      ⚠ ชั้นเล็กต้องได้เฉพาะรูปที่ใช้ชิ้นน้อย — `cat.tangramMax` คุมจำนวนชิ้นสูงสุด
@@ -1787,6 +1929,10 @@ function startMirrorGame(catId){
   endSkillGameStart();
 }
 function renderMirrorLevel(){
+  if(!mirrorGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = mirrorGame;
   let avail = MIRROR_PICS.map((p,i)=>i).filter(i=>!g.used.has(i));
   if(!avail.length){ g.used.clear(); avail = MIRROR_PICS.map((p,i)=>i); }
@@ -1892,6 +2038,10 @@ function startOrderGame(catId){
 }
 function orderSize(level){ return level<=3 ? 3 : (level<=7 ? 4 : 5); }
 function renderOrderLevel(){
+  if(!orderGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = orderGame;
   const size = orderSize(g.level);
   const pool = ORDER_SETS.filter(s=>s.items.length===size && (s.tag||null)===(g.tag||null));

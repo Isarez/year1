@@ -63,6 +63,13 @@
     host.appendChild(view);
     view.hidden = false;
     view.classList.add('og-embedded');
+    /* 🔢 **ตัวนับข้อต้องรอดจากการซ่อนแถบบน** (ผู้ใช้แจ้ง 2026-08-17 จากเกมทายเงา)
+       `.og-embedded > .quiz-top` ถูกซ่อนทั้งแถบ ⇒ เด็กไม่รู้เลยว่าต้องเล่นกี่ข้อ
+       ⇒ ติดธง `og-keep` ให้แถบบนของ view ที่ **มีตัวนับข้อจริง** แล้วให้ CSS ดึงเฉพาะ
+         ตัวนับ+หลอดความคืบหน้ากลับมาลอยมุมขวาบน (ดู .og-keep ใน css/style.css)
+       ⚠ ตัวที่ไม่มี `.q-counter` (เช่นเกมที่นับเป็นอย่างอื่น) ไม่ต้องติดธง จะได้ไม่มีกล่องเปล่าโผล่ */
+    const top = view.querySelector(':scope > .quiz-top');
+    if(top && top.querySelector('.q-counter')) top.classList.add('og-keep');
     document.body.classList.add('og-mounted');
 
     cur = {id, host, placeholder: ph, view, opts};
@@ -94,6 +101,8 @@
     const spec = REG[c.id];
     if(spec && spec.stop){ try{ spec.stop(); }catch(e){} }
     c.view.classList.remove('og-embedded');
+    const kept = c.view.querySelector(':scope > .quiz-top.og-keep');
+    if(kept) kept.classList.remove('og-keep');      /* คืนแถบบนให้หน้าเต็มจอเหมือนเดิม */
     c.view.hidden = true;
     if(c.placeholder && c.placeholder.parentNode){
       c.placeholder.parentNode.insertBefore(c.view, c.placeholder);

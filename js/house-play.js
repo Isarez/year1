@@ -931,11 +931,19 @@
         ยังใต้เพดาน localStorage ~5 MB)
      ⚠ **ห้ามเพิ่มความกว้างโดยไม่ลดจำนวนรูปลงพร้อมกัน** — มีเทสคุมขนาดเซฟไว้ */
   const PHOTO_W = 760;
+  /* `where` = **จุดที่ใบสั่งวันนี้อยากได้ บอกเป็นภาษาเด็ก** (ผู้ใช้สั่ง 2026-08-18)
+     ของเดิมมีแต่ `hint` สั้นๆ ⇒ เด็กเปิดแผงกิจกรรมแล้วยังไม่รู้ว่า "ตรงไหนคือริมน้ำ"
+     ⇒ แยกเป็น 2 บรรทัด: `where` บอกว่าอยากได้ที่ไหน · `look` บอกว่าให้มองหาอะไรถึงจะรู้ว่าถึงแล้ว
+     ⚠ ต้องเป็นคำที่เด็ก 5 ขวบมองหาในฉากได้จริง ห้ามใช้ชื่อโซนในโค้ด */
   const PHOTO_ORDERS = [
-    {id:'water',  name:'ถ่ายรูปริมน้ำ',        hint:'ไปยืนใกล้แม่น้ำหรือสะพานแล้วกดถ่าย'},
-    {id:'home',   name:'ถ่ายรูปหน้าบ้านของหนู', hint:'กลับไปที่บริเวณบ้านแล้วกดถ่าย'},
-    {id:'market', name:'ถ่ายรูปที่ตลาด',        hint:'เดินไปที่ลานตลาดรถเข็นแล้วกดถ่าย'},
-    {id:'any',    name:'ถ่ายรูปมุมที่หนูชอบ',   hint:'เดินไปมุมไหนก็ได้ที่ชอบ แล้วกดถ่ายเลย'},
+    {id:'water',  name:'ถ่ายรูปริมน้ำ',        hint:'ไปยืนใกล้แม่น้ำหรือสะพานแล้วกดถ่าย',
+     where:'ริมแม่น้ำ หรือบนสะพาน 🌉', look:'มองหาน้ำสีฟ้า ยืนให้น้ำอยู่ใกล้ๆ ตัว'},
+    {id:'home',   name:'ถ่ายรูปหน้าบ้านของหนู', hint:'กลับไปที่บริเวณบ้านแล้วกดถ่าย',
+     where:'บริเวณบ้านของหนูเอง 🏠', look:'เดินกลับไปที่บ้านที่มีรั้วกับสวนของหนู'},
+    {id:'market', name:'ถ่ายรูปที่ตลาด',        hint:'เดินไปที่ลานตลาดรถเข็นแล้วกดถ่าย',
+     where:'ลานตลาดที่มีรถเข็นขายของ 🛒', look:'มองหาร่มสีสดๆ กับรถเข็นเรียงกันหลายคัน'},
+    {id:'any',    name:'ถ่ายรูปมุมที่หนูชอบ',   hint:'เดินไปมุมไหนก็ได้ที่ชอบ แล้วกดถ่ายเลย',
+     where:'มุมไหนก็ได้ที่หนูชอบ ✨', look:'วันนี้ไม่มีจุดบังคับ ถ่ายตรงไหนก็สำเร็จเลย'},
   ];
   function photoOrder(){
     if(!P) return PHOTO_ORDERS[3];
@@ -984,21 +992,34 @@
   }
   function photoShoot(){
     const w = W();
-    if(!photoSpotOk()){ w.toast('📷', photoOrder().hint); return false; }
+    /* 📷 **ถ่ายได้ทุกที่ แล้วให้เกมตรวจเองว่าตรงจุดของใบสั่งไหม** (ผู้ใช้สั่ง 2026-08-17)
+       ของเดิม: ยืนผิดที่ = **กดชัตเตอร์ไม่ติดเลย** เด้ง toast บอกใบสั่งแล้วจบ
+       ⇒ เด็กที่แค่อยากถ่ายรูปสวยๆ เก็บไว้ ทำไม่ได้เลยจนกว่าจะเดินไปจุดที่ระบบสั่ง
+         = ลงโทษกลายๆ และขัดกติกาเหล็กข้อ 2 (กดแล้วต้องมีอะไรเกิดขึ้นเสมอ ห้ามเงียบ/ห้ามดุ)
+       ⇒ ตอนนี้: **ได้รูปทุกครั้ง** เก็บเข้าอัลบั้มเสมอ · เควสต์ "ถ่ายรูปมาให้ดู" ก็นับให้ทุกใบ
+         (เควสต์นั้นขอแค่ "วิวสวยๆ" ไม่ได้ระบุสถานที่)
+         ส่วน **ใบสั่งประจำวัน** จะติ๊กว่าสำเร็จก็ต่อเมื่อยืนตรงจุดจริงเท่านั้น — ระบบตรวจให้เอง
+       ⚠ ยืนผิดจุดต้อง **ชมก่อนแล้วค่อยบอกทาง** ไม่ใช่บอกว่าทำผิด */
     if((P.photo.shots || []).length >= PHOTO_MAX){
       w.toast('📷', 'อัลบั้มเต็มแล้ว (' + PHOTO_MAX + ' รูป) ลบรูปเก่าออกก่อนนะ');
       photoAlbumOpen();
       return false;
     }
+    const o = photoOrder();
+    const onSpot = photoSpotOk();
+    const wasDone = !!P.photo.done;
     playShutter();
     const url = grabShot();
     if(!url){ w.toast('📷', 'ถ่ายรูปไม่สำเร็จ ลองใหม่อีกครั้งนะ'); return false; }
     P.photo.shots = (P.photo.shots || []).concat([{u:url, d:dayKey()}]);
-    P.photo.done = true;
+    if(onSpot) P.photo.done = true;      /* ใบสั่งวันนี้สำเร็จ — เฉพาะตอนยืนถูกจุด */
     persist();
-    /* 📷 เควสต์ "ถ่ายรูปไปให้ดู" — นับเมื่อกดชัตเตอร์สำเร็จจริงเท่านั้น (ผ่านด่านตำแหน่งมาแล้ว) */
+    /* 📷 เควสต์ "ถ่ายรูปไปให้ดู" — นับทุกใบที่ถ่ายสำเร็จ ไม่ผูกกับใบสั่งประจำวัน */
     if(w.questCaught) w.questCaught('photo', '');
     photoPreview(url);
+    if(onSpot && !wasDone) w.toast('🎉', 'ตรงจุดพอดีเลย! ทำใบสั่ง "' + o.name + '" สำเร็จแล้ว');
+    else if(!onSpot)       w.toast('📷', 'ได้รูปสวยแล้ว เก็บไว้ในอัลบั้มให้นะ · '
+                                       + 'ใบสั่งวันนี้คือ "' + o.name + '" — ' + o.hint);
     renderPanel();
     return true;
   }
@@ -1526,11 +1547,23 @@
         ? (fishState.phase === 'bite' ? '‼️ ทุ่นจมแล้ว! รีบแตะทุ่นเลย!' : 'กำลังตกอยู่ · รอทุ่นจม…')
         : (fishSub + ' · มีจุดตกปลาที่บ่อน้ำใหญ่กับริมทะเล มองหาป้าย 🎣 แล้วแตะได้เลย'), []));
 
-    /* 📷 ช่างภาพ */
+    /* 📷 ช่างภาพ
+       ⚠ ต้องบอกให้ชัดว่า **ถ่ายที่ไหนก็ได้** ไม่งั้นเด็กยังนึกว่าต้องเดินไปจุดนั้นก่อนถึงจะกดได้
+       ⚠ **บอกรายละเอียดจุดของวันนี้ด้วย** (ผู้ใช้สั่ง 2026-08-18) — ของเดิมบอกแค่ hint บรรทัดเดียว
+         เด็กเลยไม่รู้ว่าต้องไปตรงไหนและถึงหรือยัง ⇒ เพิ่ม "วันนี้อยากได้รูปที่…" + "ตอนนี้หนูอยู่…"
+         โดยอ่านจาก `photoSpotOk()` ตัวเดียวกับที่ใช้ตัดสินตอนกดชัตเตอร์ — ข้อความกับผลจึงตรงกันเสมอ */
     const po = photoOrder();
+    /* กันพังตอนเปิดแผงจากในบ้าน/ก่อนแผนที่พร้อม — แผงกิจกรรมห้ามล้มเพราะบรรทัดบอกทาง */
+    let atSpot = false, here = '';
+    try{ atSpot = photoSpotOk(); here = (W().zoneName(W().tile().x, W().tile().z) || '').trim(); }
+    catch(e){ atSpot = false; here = ''; }
+    const status = P.photo.done ? '✅ ใบสั่งวันนี้สำเร็จแล้ว ถ่ายเก็บเพิ่มได้อีกตามใจเลย'
+      : atSpot ? '✅ ตอนนี้หนูยืนตรงจุดแล้ว! กดปุ่ม 📷 มุมขวาบนได้เลย'
+      : '🚶 ตอนนี้หนูอยู่' + (here ? 'ที่ ' + here : 'ไกลจากจุดนั้น') + ' · ' + po.look;
     list.appendChild(row('📷', po.name,
-      (P.photo.done ? 'วันนี้ถ่ายแล้ว · ' : '') + po.hint
-      + ' · กดปุ่มกล้องมุมขวาบนเพื่อเข้าโหมดถ่ายรูป · อัลบั้ม ' + ((P.photo.shots || []).length) + '/' + PHOTO_MAX, []));
+      'วันนี้อยากได้รูปที่ ' + po.where + ' · ' + status
+      + ' · ถ่ายมุมไหนก็ได้นะ เก็บเข้าอัลบั้มให้ทุกใบ (ใบสั่งจะติ๊กเองเมื่อถ่ายตรงจุด)'
+      + ' · อัลบั้ม ' + ((P.photo.shots || []).length) + '/' + PHOTO_MAX, []));
 
     /* 🌱 แปลงผัก — แตะที่แปลงในเมืองได้เลย ปุ่มในแผงเป็นทางลัดสำรอง */
     const nb = beds().length;
@@ -1725,66 +1758,12 @@
     });
   }
 
-  /* ============================================================
-     🐠 หน้าตู้ปลา (ผู้ใช้สั่ง 2026-08-13)
-     แตะตู้ปลาในบ้าน → เปิดหน้าต่างรูปตู้ปลา แล้วโชว์ **ปลาที่เด็กตกได้จริง** ว่ายอยู่ข้างใน
-     ⚠ **ตู้น้ำจืดโชว์เฉพาะปลาน้ำจืด · ตู้ทะเลโชว์เฉพาะปลาทะเล** (ดู `tank` ของเฟอร์นิเจอร์)
-     ⚠ **ห้ามโชว์ทุกตัวที่มี** — เด็กที่ตกปลาเยอะจะได้ตู้ที่แน่นจนดูไม่รู้เรื่อง
-       ⇒ ชนิดละไม่เกิน `TANK_PER_KIND` ตัว และรวมทั้งตู้ไม่เกิน `TANK_MAX` ตัว
-     ⚠ ปลาที่โชว์นับจาก **สมุดปลา (เคยตกได้)** ไม่ใช่ถังที่รอขาย — ขายปลาไปแล้วตู้ต้องไม่ว่างเปล่า
-     ============================================================ */
-  const TANK_MAX = 9, TANK_PER_KIND = 2;
-  let tankT = null;
-  function tankFish(kind){
-    if(!P) return [];
-    const book = P.fish.book || [];
-    const out = [];
-    FISH.filter(f => f.where === kind && book.indexOf(f.id) >= 0).forEach(f=>{
-      /* ยิ่งหายากยิ่งโชว์น้อยตัว (ตัวเด่นควรมีตัวเดียวในตู้ จะได้สังเกตเห็น) */
-      const n = Math.min(TANK_PER_KIND, f.rare >= 3 ? 1 : TANK_PER_KIND);
-      for(let i = 0; i < n && out.length < TANK_MAX; i++) out.push(f);
-    });
-    return out;
-  }
-  function openTank(kind){
-    const el = $('house-tank');
-    if(!el || !P) return false;
-    if(window.HouseShop) window.HouseShop.close();
-    closePanel();
-    el.hidden = false;
-    const t = $('house-tank-title');
-    if(t) t.textContent = (kind === 'sea' ? '🐡 ตู้ปลาทะเล' : '🐠 ตู้ปลาน้ำจืด');
-    renderTank(kind);
-    return true;
-  }
-  function closeTank(){
-    const el = $('house-tank'); if(el) el.hidden = true;
-    clearInterval(tankT); tankT = null;
-  }
-  function tankIsOpen(){ const e = $('house-tank'); return !!e && !e.hidden; }
-  function renderTank(kind){
-    const wrap = $('house-tank-water'), sub = $('house-tank-sub');
-    if(!wrap) return;
-    const list = tankFish(kind);
-    const total = FISH.filter(f => f.where === kind).length;
-    const got = (P.fish.book || []).filter(id => { const f = fishById(id); return f && f.where === kind; }).length;
-    if(sub) sub.textContent = 'ตกได้แล้ว ' + got + ' / ' + total + ' ชนิด'
-      + (list.length ? '' : ' · ยังไม่มีปลาเลย ลองไปตกที่' + (kind === 'sea' ? 'ริมทะเล' : 'ท่าน้ำในบ่อ') + 'ดูสิ');
-    wrap.innerHTML = '';
-    wrap.classList.toggle('sea', kind === 'sea');
-    list.forEach((f, i)=>{
-      const d = document.createElement('span');
-      d.className = 'htk-fish';
-      d.textContent = f.e;
-      d.title = f.n;
-      /* กระจายให้ไม่ทับกัน: แบ่งเป็น 3 แถว วนตำแหน่งตามลำดับ + หน่วงเวลาเริ่มต่างกัน */
-      d.style.top = (12 + (i % 3) * 27) + '%';
-      d.style.animationDuration = (7 + (i % 4) * 1.8) + 's';
-      d.style.animationDelay = (-i * 1.7) + 's';
-      d.style.fontSize = (f.rare >= 3 ? 30 : f.rare === 2 ? 25 : 21) + 'px';
-      wrap.appendChild(d);
-    });
-  }
+  /* 🗑️ **ระบบตู้ปลาถูกยกเลิกทั้งระบบ 2026-08-17 (ผู้ใช้สั่ง)**
+     เดิม: แตะตู้ปลาในบ้าน → เปิด popup โชว์ปลาที่ตกได้ว่ายอยู่ข้างใน
+     เหตุผลที่ถอด: popup ไม่เหมือนตู้ปลาจริง · ไอคอนปลากับอนิเมชันว่ายไม่สวย
+     ⇒ ปลาที่ตกได้ไปอยู่ใน **สมุดสะสม (เฟส 16)** แทน — ดู QUEST-DESIGN.md ข้อ 57
+     ⚠ **ห้ามเอา popup ตู้ปลากลับมา** — ตู้ปลายังเป็นเฟอร์นิเจอร์ตกแต่งได้ตามปกติ แตะแล้วเด้งเฉยๆ
+       เหมือนของตกแต่งชิ้นอื่น (ถ้าจะให้แตะแล้วมีอะไรเกิดขึ้น ให้ไปทำที่เฟส 17 "ใช้งานของตกแต่ง") */
 
   /* ---------- แถบบอกระยะห่างตอนเล่นซ่อนแอบ ----------
      ผู้ใช้สั่ง 2026-08-13: **ย้ายมาไว้กลางล่างของจอ เว้นจากขอบขึ้นมา** และ **เขียนอธิบายให้ชัด
@@ -1880,7 +1859,6 @@
     closePanel();
     photoExit();
     photoAlbumClose();
-    closeTank();
     seedPickClose();
     basketClose();
     const el = $('house-seek-hud'); if(el) el.hidden = true;
@@ -2053,7 +2031,6 @@
     fishCast, fishPull, fishState: () => fishState,
     photoShoot, photoOrder, grabShot, photoEnter, photoExit, photoMode,
     photoAlbumOpen, photoAlbumClose, photoAlbumIsOpen, playShutter, photoBig, photoBigClose,
-    openTank, closeTank, tankIsOpen, tankFish, TANK_MAX, TANK_PER_KIND,
     basketOpen, basketClose, basketIsOpen, basketTile,
     fxCount: () => gfx.length,          /* ชุดเทส: อนิเมชันถูกสร้างจริงและไม่ถูกลบทิ้งทันที */
     /* เครื่องมือเทส: เร่งเวลาผัก (js/house-devtools.js) */
@@ -2099,8 +2076,6 @@
     });
     const sh = $('house-shutter');
     if(sh) sh.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); photoShoot(); });
-    const tc = $('house-tank-close');
-    if(tc) tc.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); closeTank(); });
     const ab = $('house-album-btn');
     if(ab) ab.addEventListener('click', ()=>{ if(typeof playClick === 'function') playClick(); photoAlbumOpen(); });
     const bk = $('house-basket-close');

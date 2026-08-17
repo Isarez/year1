@@ -83,6 +83,9 @@ function renderAnimalCards(pairCount){
 }
 
 function renderMemoryLevel(){
+  if(!memoryGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง */
   const cat = catById(memoryGame.catId);
   const pairCount = (cat.memoryPairs || MEMORY_LEVEL_PAIRS)[memoryGame.level-1];
   memoryGame.totalPairs = pairCount;
@@ -195,6 +198,10 @@ function matchMistake(){
 }
 
 function finishMemoryGame(){
+  if(!memoryGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
+  /* ⭐ ส่งผลกลับโฮสต์ก่อนเสมอ ถ้ากำลังถูกยืมไปเล่นในการ์ดเควสต์ (ดู reportGameResult ใน js/app-core.js) */
+  if(reportGameResult(memoryGame.catId, memoryGame.mistakes | 0, memoryGame.totalLevels, 'จับคู่')) return;
   const cat = catById(memoryGame.catId);
   const totalLevels = memoryGame.totalLevels;
   showOnlyView(resultView);
@@ -282,6 +289,10 @@ function startShadowGame(catId){
 }
 
 function renderShadowLevel(){
+  if(!shadowGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = shadowGame;
   if(g.overlap > 1){ renderShadowOverlapLevel(); return; }
   const choiceCount = g.level<=5 ? 3 : (g.level<=10 ? 4 : 5);
@@ -360,6 +371,9 @@ function shadowReplaceItem(pool, original, excludeEs){
   return src[Math.floor(Math.random()*src.length)];
 }
 function renderShadowOverlapLevel(){
+  if(!shadowGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง */
   const g = shadowGame;
   const k = g.overlap;
   const choiceCount = k===2 ? (g.level<=5 ? 3 : (g.level<=10 ? 4 : 5))
@@ -437,6 +451,10 @@ function pickShadowChoice(btn, item){
 }
 
 function finishShadowGame(){
+  if(!shadowGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
+  /* ⭐ ส่งผลกลับโฮสต์ก่อนเสมอ ถ้ากำลังถูกยืมไปเล่นในการ์ดเควสต์ (ดู reportGameResult ใน js/app-core.js) */
+  if(reportGameResult(shadowGame.catId, shadowGame.mistakes, shadowGame.totalLevels, 'ทายเงา')) return;
   const cat = catById(shadowGame.catId);
   const mistakes = shadowGame.mistakes;
   const totalLevels = shadowGame.totalLevels;
@@ -499,6 +517,12 @@ const EF_SWITCH_AT = 6;     // ด่านที่กติกาเปลี�
 /* ป.5-6: เวลาสั้นลง เปลี่ยนกติกาเร็วขึ้น และ ป.6 มีกติกาปฏิเสธ ("แตะทุกอย่างที่ไม่ใช่ ...")
    ซึ่งต้องยับยั้งความเคยชินมากกว่าเดิม (inhibitory control ระดับสูงขึ้น) */
 function efRoundMs(hard){ return hard==='p6' ? 2600 : (hard==='p5' ? 3300 : EF_ROUND_MS); }
+/* ✋ **เปิดกล้องเล่นด้วยท่ามือ = ต้องยืดเวลาต่อด่าน** (ผู้ใช้แจ้ง 2026-08-17)
+   ตอบด้วยท่าต้อง "ค้างท่าไว้ 2 วินาที" (HP_POSE_MS ใน js/games-ar.js) ⇒ เวลาด่านที่เหลือให้คิด
+   เหลือแค่ 2.5 วิ สำหรับ ป.1-4 และ **ติดลบ** สำหรับ ป.6 (ด่านสั้น 2.6 วิ สั้นกว่าเวลาค้างท่า)
+   ⇒ ถ้าไม่ยืด เด็กจะแบมือค้างจนหมดเวลาทุกด่านโดยไม่มีทางตอบทัน = ท่ามือ "ใช้ไม่ได้จริง"
+   ⚠ ยืดเฉพาะตอนกล้องติดจริง — เล่นด้วยนิ้วยังจับเวลาเท่าเดิมทุกประการ (กติกาเดิมของหน้าหลัก) */
+function efHandBonusMs(){ return (window.isHandPoseLive && window.isHandPoseLive()) ? 3000 : 0; }
 function efSwitchAt(hard){ return hard==='p6' ? 4 : (hard==='p5' ? 5 : EF_SWITCH_AT); }
 function efNegateFrom(hard){ return hard==='p6' ? 7 : (hard==='p5' ? 9 : 99); }
 
@@ -519,6 +543,9 @@ function startEfGame(catId){
 }
 
 function renderEfRound(first){
+  if(!efGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง */
   const g = efGame;
   clearTimeout(efTimer);
   g.answered = false;
@@ -548,6 +575,9 @@ function renderEfRound(first){
   $('ef-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   $('ef-feedback').textContent = '';
   $('ef-tap-btn').disabled = false; $('ef-skip-btn').disabled = false;
+  /* ✋ ล้างท่ามือที่ค้างจากด่านก่อน — ไม่งั้นเด็กต้องเอามือออกนอกกล้องก่อนถึงจะตอบด่านใหม่ได้
+     (ตัวล็อกกันยิงรัวใน hpPoseTick จะปลดก็ต่อเมื่อ "เปลี่ยนท่า" เท่านั้น) */
+  if(window.resetHandPose) window.resetHandPose();
 
   if(switched){ showToast('🔄','เปลี่ยนกติกาแล้ว! ตอนนี้แตะเฉพาะ '+ruleCat.name+' '+ruleCat.items[0]); flashEfRule(); }
   if(g.negate && g.level === efNegateFrom(g.hard) && !first){ showToast('🙃','กติกาพลิก! ตอนนี้ต้องแตะทุกอย่างที่ไม่ใช่'+ruleCat.name); flashEfRule(); }
@@ -562,10 +592,25 @@ function renderEfRound(first){
     return;
   }
   bar.style.width = '100%'; void bar.offsetWidth;
-  const roundMs = efRoundMs(g.hard);
+  const roundMs = efRoundMs(g.hard) + efHandBonusMs();
   bar.style.transition = 'width '+roundMs+'ms linear'; bar.style.width = '0%';
   efTimer = setTimeout(()=>{ if(!g.answered) efAnswer(null); }, roundMs);
 }
+
+/* 📷 เด็กกดเปิด/ปิดกล้องกลางด่าน = ตั้งเวลาด่านนี้ใหม่ทันที ไม่ต้องรอด่านหน้า
+   (ปุ่มกล้องอยู่ในเกม ⇒ ด่านแรกเริ่มนับไปแล้วเสมอตอนเด็กกดเปิด — ถ้าไม่ตั้งใหม่
+    ด่านแรกจะหมดเวลาก่อนค้างท่าครบ 2 วิ ทุกครั้ง) · เรียกจาก js/games-ar.js
+   ⚠ ไม่แตะอะไรเลยถ้าด่านนี้ตอบไปแล้ว/ปิดจับเวลาอยู่ (โหมดบ้าน)/ไม่ได้อยู่ในเกม ef */
+window.efRefreshTimer = function(){
+  const g = efGame;
+  if(!g || g.answered || EF_NO_TIMER || !efTimer) return;
+  clearTimeout(efTimer); efTimer = null;
+  const bar = $('ef-timer-fill');
+  bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth;
+  const roundMs = efRoundMs(g.hard) + efHandBonusMs();
+  bar.style.transition = 'width '+roundMs+'ms linear'; bar.style.width = '0%';
+  efTimer = setTimeout(()=>{ if(!g.answered) efAnswer(null); }, roundMs);
+};
 
 function flashEfRule(){
   const el = $('ef-rule');
@@ -601,7 +646,11 @@ function efAnswer(tapped){
 }
 
 function finishEfGame(){
+  if(!efGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
   clearTimeout(efTimer); efTimer = null;
+  /* ⭐ ส่งผลกลับโฮสต์ก่อนเสมอ (ล้างตัวจับเวลาไปแล้วข้างบน จะได้ไม่มีอะไรค้างทำงานต่อ) */
+  if(reportGameResult(efGame.catId, efGame.mistakes, efGame.totalLevels, 'ทำตามนกฮูกสั่ง')) return;
   const cat = catById(efGame.catId);
   const mistakes = efGame.mistakes;
   const totalLevels = efGame.totalLevels;
@@ -815,6 +864,9 @@ function sciDrawLoop(){
 
 /* ---- รอบเกม ---- */
 function renderSciRound(){
+  if(!sciGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง */
   const g = sciGame;
   clearTimeout(sciTimer);
   g.answered = false;
@@ -893,6 +945,8 @@ $('sci-camera-toggle').addEventListener('click', ()=>{
 });
 
 function finishScienceGame(){
+  if(!sciGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
   clearTimeout(sciTimer); sciTimer=null;
   sciStopCamera();
   document.body.classList.remove('sci-open','sci-nocam');
@@ -949,5 +1003,11 @@ if(window.OwlGames){
                  const b = document.getElementById('ef-timer-fill'); if(b) b.style.transition = 'none'; }});
   OwlGames.register('science', {name:'นักวิทยาศาสตร์', view:'science-view',
     start:o => startScienceGame(o.catId),
-    stop:() => { scienceGame = null; }});
+    /* 🐞 **ของเดิมเขียนว่า `scienceGame = null`** ซึ่งเป็นตัวแปรที่ไม่มีอยู่จริง (state ชื่อ `sciGame`)
+       ⇒ ในโหมด sloppy มันไปสร้าง global ใหม่เปล่าๆ ส่วน state จริง/ตัวจับเวลา/กล้อง **ไม่เคยถูกล้างเลย**
+       (เจอตอนรีวิว 2026-08-17 · ตอนนี้เกมนี้ยังไม่ถูกเปิดให้ยืมไปเล่นในการ์ด จึงยังไม่มีใครเจออาการ
+        แต่ถ้าวันหลังเปิด `science` ใน ALLOW ของ js/house-games.js จะกลายเป็นกล้องค้างเปิดทันที)
+       ⚠ เกมนี้มีทั้ง timer · ลูป rAF · กล้อง ⇒ ต้องปิดให้ครบทุกอย่าง ไม่ใช่แค่ null state */
+    stop:() => { sciGame = null; clearTimeout(sciTimer); sciTimer = null; sciStopCamera();
+                 document.body.classList.remove('sci-open', 'sci-nocam'); }});
 }

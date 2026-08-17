@@ -68,6 +68,10 @@ function startMixGame(catId){
 }
 
 function renderMixLevel(){
+  if(!mixGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = mixGame;
   const entry = g.queue[g.level-1];
   g.entry = entry; g.pours = []; g.mixedCount = 0; g.locked = false;
@@ -295,6 +299,10 @@ function finishMixPour(effective){
 }
 
 function finishMixGame(){
+  if(!mixGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
+  /* ⭐ ส่งผลกลับโฮสต์ก่อนเสมอ ถ้ากำลังถูกยืมไปเล่นในการ์ดเควสต์ (ดู reportGameResult ใน js/app-core.js) */
+  if(reportGameResult(mixGame.catId, mixGame.mistakes, mixGame.totalLevels, 'ผสมสี')) return;
   const cat = catById(mixGame.catId);
   const mistakes = mixGame.mistakes;
   const totalLevels = mixGame.totalLevels;
@@ -428,6 +436,10 @@ function renderMusicNotes(allDone){
 }
 
 function renderMusicLevel(){
+  if(!musicGame) return;
+  /* 🛟 การ์ดเควสต์ถูกปิดกลางคัน = `stop()` ล้าง state ทิ้งไปแล้ว แต่ setTimeout เลื่อนด่าน
+     ที่ตั้งไว้ก่อนหน้ายังยิงตามมา ⇒ ต้องกันไว้ ไม่งั้นอ่าน property ของ null แล้วพัง
+     (บั๊กจริงที่จับได้ตอนรีวิว 2026-08-17: ตอบข้อแล้วปิดการ์ดทันที เกมทายเงา throw) */
   const g = musicGame;
   g.pos = 0; g.locked = false;
   $('music-msg').hidden = true;
@@ -501,10 +513,14 @@ function startMusicGame(catId){
 }
 
 function finishMusicGame(){
+  if(!musicGame) return;
+  /* 🛟 ผลลัพธ์มาถึงหลังการ์ดถูกปิดไปแล้ว (setTimeout ค้าง) ⇒ state ถูกล้างแล้ว จบเงียบๆ */
   const cat = catById(musicGame.catId);
   const mistakes = musicGame.mistakes, totalLevels = musicGame.totalLevels;
   resumeBgMusicAfterMusicGame();
   document.body.classList.remove('music-open');
+  /* ⭐ ส่งผลกลับโฮสต์ **หลังคืนเพลงพื้นหลัง/ถอดคลาสแล้ว** ไม่งั้นออกจากการ์ดไปโดยยังค้างสถานะเกมดนตรี */
+  if(reportGameResult(musicGame.catId, mistakes, totalLevels, 'เล่นตามทำนอง')) return;
   const wasAllDone = musicAllDone();
   showOnlyView(resultView);
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);

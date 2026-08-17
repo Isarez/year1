@@ -49,16 +49,38 @@ function scheduleMusicNote(freq, startTime, dur, opt){
   const withSub = (opt.sub == null) ? true : !!opt.sub;
   const atk = opt.atk || 0.06;
   const tail = 0.12;
-  const osc = audioCtx.createOscillator();
-  const noteGain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freq, startTime);
-  noteGain.gain.setValueAtTime(0.0001, startTime);
-  noteGain.gain.exponentialRampToValueAtTime(Math.max(0.0002, 0.9*gMul), startTime+atk);
-  noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35+tail);
-  osc.connect(noteGain).connect(musicGain);
-  osc.start(startTime); osc.stop(startTime+dur+tail);
-  musicNodes.push(osc);
+  /* 🎹 **โอเวอร์โทนของเครื่องดนตรี** (ทำจริงเมื่อ 2026-08-17)
+     🐞 บั๊กที่ซ่อนอยู่นานมาก: ตาราง `MUSIC_VOICES` มี `parts` (โอเวอร์โทน) / `rel` / `tilt` มาตั้งแต่
+        เฟส 14 และ **เทสวัดความดังก็คิดสูตรจาก `parts` มาตลอด** — แต่ตัวสังเคราะห์เสียงตรงนี้
+        สร้าง sine ลูกเดียวที่ความถี่พื้นแล้วจบ ไม่เคยอ่าน `parts` เลย
+        ⇒ ทุกเสียง (ระนาด/ระฆัง/ขลุ่ย/กีตาร์) ออกมาเป็น **sine เปล่าเหมือนกันหมด** ต่างแค่เวลาขึ้นเสียง
+        นี่คือเหตุผลที่เพลงฟังจืดและ "ไม่เหมือนเครื่องดนตรีอะไรเลย" มาตลอด
+     ⇒ ตอนนี้ไล่สร้างทุกโอเวอร์โทนจริงตาม `parts` = [[อัตราส่วนความถี่, ความดัง], …]
+     ⚠ **ความดังต่อโอเวอร์โทน = p[1] × gain** ตรงตามสูตรที่เทสใช้คิดพีค (`house-phase14`)
+       ของเดิมใช้ 0.9 คงที่ ซึ่งบังเอิญเท่ากับความดังพื้นของระนาดพอดี ⇒ ค่าเดิมไม่เพี้ยน
+     ⚠ ไม่ส่ง `parts` มา (เพลงหน้าหลัก) = **พฤติกรรมเดิมเป๊ะ** ห้ามเปลี่ยน */
+  const parts = (opt.parts && opt.parts.length) ? opt.parts : [[1, 0.9]];
+  /* หรี่โน้ตสูงกันแสบหู — สูตรเดียวกับที่เทสคาดไว้ (อ้างอิง G4 = 392 Hz) */
+  const tilt = opt.tilt ? Math.max(.35, 1 - opt.tilt * Math.max(0, Math.log2(freq / 392))) : 1;
+  /* หางเสียง: เครื่องที่ปล่อยยาว (เปียโน/ขลุ่ย) ต้องค้างนานกว่าเครื่องตีสั้น */
+  const rel = opt.rel || 0.32;
+  for(let i = 0; i < parts.length; i++){
+    const ratio = parts[i][0], amp = parts[i][1];
+    const f = freq * ratio;
+    if(f > 12000) continue;                     /* พ้นย่านที่ได้ยิน — ไม่ต้องเปลืองออสซิลเลเตอร์ */
+    const osc = audioCtx.createOscillator();
+    const noteGain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f, startTime);
+    noteGain.gain.setValueAtTime(0.0001, startTime);
+    noteGain.gain.exponentialRampToValueAtTime(Math.max(0.0002, amp*gMul*tilt), startTime+atk);
+    /* โอเวอร์โทนสูงจางเร็วกว่าเสียงพื้นเสมอ — นี่คือสิ่งที่ทำให้หูแยกออกว่าเป็นเครื่องอะไร */
+    const dec = rel / (1 + i*0.6);
+    noteGain.gain.setTargetAtTime(0.0001, startTime+dur*0.6, dur*0.35*dec/0.32 + tail);
+    osc.connect(noteGain).connect(musicGain);
+    osc.start(startTime); osc.stop(startTime+dur+tail);
+    musicNodes.push(osc);
+  }
   if(!withSub) return;
 
   const subOsc = audioCtx.createOscillator();
@@ -140,6 +162,18 @@ const MUSIC_VOICES = {
   strum:   {parts:[[1,.75],[2,.24],[3,.09]], atk:.010, rel:.34, sub:false, spread:.022},
   /* ✨ กระดิ่งเล็ก — ประกายบางๆ โรยเป็นจุดๆ (ชั้นที่ 4 · เบามาก) */
   bells:   {parts:[[2,.5],[4,.16],[5.4,.05]], atk:.004, rel:.22, sub:false},
+  /* 🎹 **เปียโน** (ผู้ใช้สั่ง 2026-08-17: ให้เพลงพื้นหลังของโลกเกมสร้างจากเปียโน)
+     ⚠ อัตราส่วนโอเวอร์โทน **จงใจไม่ลงตัวเป๊ะ** (2.001 / 3.005 / 4.012 / 5.02)
+       ลอกมาจากเสียงเปียโนจริงของเกม (`INSTRUMENT_VOICES.piano` ใน js/shared/piano.js)
+       สายเปียโนจริงมีความแข็ง (inharmonicity) ทำให้โอเวอร์โทนเพี้ยนสูงขึ้นทีละนิด
+       **ถ้าปัดเป็น 2/3/4/5 ลงตัว จะฟังเป็นออร์แกนทันที** ซึ่งผู้ใช้สั่งห้ามไว้ตั้งแต่เฟส 14
+     ⚠ ขึ้นเสียงเร็วมาก (.004 = ค้อนกระทบสาย) แต่ปล่อยยาว (.62) — นี่คือลายเซ็นของเปียโน
+     ⚠ ผลรวมความดัง = 1.16 (+sub .35) คุมไว้ให้ใกล้ของเดิม ไม่ให้เพลงดังขึ้น (มีเทสวัดพีค) */
+  piano:   {parts:[[1,.82],[2.001,.22],[3.005,.08],[4.012,.03],[5.02,.01]],
+            atk:.004, rel:.62, sub:true},
+  /* 🎹 เปียโนสำหรับชั้นคอร์ด — ตัวเดียวกันแต่เบากว่า ไม่ใส่เสียงต่ำ (ไม่งั้นคอร์ดขุ่นกวนเบส)
+     `spread` น้อยๆ = กดคอร์ดแล้วนิ้วลงไม่พร้อมกันเป๊ะแบบคนจริง (ไม่ใช่การดีดไล่สายแบบกีตาร์) */
+  pianoCh: {parts:[[1,.7],[2.001,.18],[3.005,.06]], atk:.006, rel:.5, sub:false, spread:.008},
 };
 /* ⚠ **เพลงพื้นหลังต้องเบากว่าเสียงกดปุ่มเสมอ** (ผู้ใช้สั่ง 2026-08-16)
    `playClick` พีค 0.12 · `playCorrect` พีค 0.14 · เพลง = master 0.025 × ผลรวมทุกชั้นที่ดังพร้อมกัน

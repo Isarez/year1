@@ -192,8 +192,9 @@ test('เฟส 12G: เมนูฟองมี 4 กิจกรรม + เ�
   await page.evaluate(() => window.__houseDbg.petTap());
   const menu = page.locator('#house-pet-menu');
   await expect(menu).toBeVisible();
-  /* 2026-08-15: ปุ่ม 🍽️ ให้อาหารย้ายมาอยู่ในเมนูนี้เป็นปุ่มแรก ⇒ หน้าแรกมี 5 ปุ่ม */
-  await expect(menu.locator('.hpm-btn')).toHaveCount(5);
+  /* 2026-08-15: ปุ่ม 🍽️ ให้อาหารย้ายมาอยู่ในเมนูนี้เป็นปุ่มแรก ⇒ หน้าแรกมี 5 ปุ่ม
+     2026-08-17: เพิ่มปุ่ม 🎀 ปลอกคอ (ผู้ใช้สั่งให้เปลี่ยนปลอกคอ/สีได้จากเมนูนี้ด้วย) ⇒ เป็น 6 ปุ่ม */
+  await expect(menu.locator('.hpm-btn')).toHaveCount(6);
   /* ปุ่มทุกใบต้องมีทั้งไอคอนและคำอธิบาย (เด็ก 5 ขวบดูรูปเป็นหลัก) */
   const shape = await menu.evaluate(el => Array.from(el.querySelectorAll('.hpm-btn')).map(b => ({
     ic: (b.querySelector('.hpm-ic') || {}).textContent || '',

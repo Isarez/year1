@@ -200,9 +200,20 @@ test('คนออกโจทย์ต้องยืนรออยู่ก�
 test('ตอบผิดไม่มีบทลงโทษ: ผิดรัวๆ ก็ยังจบได้ ได้ 1 ดาว + เหรียญ และเงินไม่เคยลด', async ({ page }) => {
   await openHouse(page);
   await page.evaluate(() => window.OwlCoins.set(120));
+  /* ⚠ **ห้ามหยิบ `npcIds[0]` มาดื้อๆ** (แก้ 2026-08-17) — คนออกโจทย์ของแต่ละวันสุ่มตามวันที่
+     บางวันคนแรกได้กลไกแบบ "เดิน/ลากของ" ที่ `it.choices` ว่างและ `it.correct` เป็น undefined
+     ⇒ `q.answer(run, undefined)` กลายเป็น `undefined === undefined` = **ตอบถูก** ⇒ `wrong` ค้าง 0
+     ⇒ ได้ 3 ดาว เทสแดงทั้งที่โปรแกรมไม่ได้พัง (เจอจริงวันที่คนแรกเป็นเควสต์ตกปลา)
+     ที่แย่กว่านั้น: วันอื่นๆ ที่คนแรกบังเอิญเป็นการ์ด เทสนี้เขียวโดยที่บางข้อไม่เคยตอบผิดเลย
+     ⇒ เลือกเฉพาะชุดที่ตอบผิดได้จริงทุกข้อ แล้ว **ยืนยันว่าตอบผิดไปจริง** กันเทสผ่านลอยๆ */
   const out = await page.evaluate(() => {
-    const q = window.HouseQuests, id = q.state().npcIds[0];
-    const run = q.buildRun(q.specForNpc(id));
+    const q = window.HouseQuests;
+    let run = null;
+    for (const id of q.state().npcIds) {
+      const r = q.buildRun(q.specForNpc(id));
+      if (r.items.every(it => it.choices && it.choices.length > 1)) { run = r; break; }
+    }
+    if (!run) return { noChoiceQuest: true };
     let guard = 0;
     while (!run.over && guard++ < 300) {
       const it = run.items[run.idx];
@@ -210,9 +221,12 @@ test('ตอบผิดไม่มีบทลงโทษ: ผิดรัว
       q.answer(run, bad[0]); q.answer(run, bad[1] != null ? bad[1] : bad[0]);   // ผิด 2 ครั้งก่อน
       q.answer(run, it.correct);                                                // แล้วค่อยตอบถูก
     }
-    return { over: run.over, wrong: run.wrong, stars: q.starsOf(run), res: q.finish(run) };
+    return { over: run.over, wrong: run.wrong, n: run.items.length,
+             stars: q.starsOf(run), res: q.finish(run) };
   });
+  expect(out.noChoiceQuest, 'แต่ละวันต้องมีเควสต์แบบมีตัวเลือกอย่างน้อย 1 ชุด').toBeFalsy();
   expect(out.over).toBe(true);                 // ผิดกี่ครั้งก็ต้องเล่นจบได้เสมอ (ห้ามมี dead end)
+  expect(out.wrong, 'ต้องตอบผิดจริงครบทุกข้อ ไม่งั้นเทสผ่านแบบไม่ได้เทสอะไรเลย').toBe(out.n);
   expect(out.stars).toBe(1);
   expect(out.res.coins).toBeGreaterThan(0);    // ได้เงินเสมอ กันเด็กท้อ
   expect(await coins(page)).toBe(120);         // ยอดเงินเดิมต้องไม่ถูกหักแม้แต่เหรียญเดียว

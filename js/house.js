@@ -6014,8 +6014,9 @@ function finishArrive(){
       else if(act==='toggle') decorToggle(g);
       else if(act==='spin') decorSpin(g);
       else if(act==='music') playInstrument(g, item);   /* เฟส 9: เครื่องดนตรี — แตะแล้วมีเสียงจริง */
-      /* เฟส 11: ตู้ปลา — แตะแล้วเปิดหน้าตู้ โชว์ปลาที่เด็กตกได้จริงว่ายอยู่ในนั้น */
-      else if(act==='tank'){ if(window.HousePlay) window.HousePlay.openTank(item.tank || 'pond'); }
+      /* 🗑️ `act==='tank'` (แตะตู้ปลา → เปิด popup) **ถูกยกเลิกทั้งระบบ 2026-08-17 (ผู้ใช้สั่ง)**
+         popup ไม่เหมือนตู้ปลาจริง ไอคอน/อนิเมชันปลาไม่สวย ⇒ ปลาที่ตกได้ย้ายไปสมุดสะสม (เฟส 16)
+         ตอนนี้ตู้ปลาตกลงมาที่ `decorBounce` เหมือนของตกแต่งชิ้นอื่น — แตะแล้วเด้ง ไม่เงียบ */
       else if(act==='basket'){ if(window.HousePlay) window.HousePlay.basketOpen(); }
       else decorBounce(g);
       /* ต้นไม้/พุ่มที่เด็กปลูกเอง: เขย่าแล้วใบร่วงด้วย ให้เหมือนต้นไม้ในป่า
@@ -6307,6 +6308,7 @@ function openCreator(fromWorld, who){
   $('house-creator').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
+  refreshChromeBtns();
   $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true; $('house-child-chip').hidden = true;
   $('house-hint').hidden = true;
   /* ไอคอนหัวข้อเป็น SVG ให้เข้าชุด template (เสื้อ = ชุดเดียวกับปุ่มแต่งตัว #house-edit-btn, หน้าเด็ก = ชุด row "หนูเป็น...") */
@@ -6416,6 +6418,7 @@ function exitCreatorToWorld(){
   $('house-creator').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
+  refreshChromeBtns();
   $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false; $('house-child-chip').hidden = false;
   creatorGroup.visible = false;
   worldGroup.visible = (hScene==='out'); interiorGroup.visible = (hScene==='in');
@@ -7723,9 +7726,23 @@ function coinFace(v){
   c.appendChild(n);
   return c;
 }
-/* แตกจำนวนเงินเป็นเหรียญ 1/2/5/10 (ใหญ่ไปเล็ก) — ใช้โชว์ตัวเลือกของเกมทอนเงิน
-   ⚠ ต้องเรียงจากใหญ่ไปเล็กเสมอ เด็กจะได้นับง่าย (10,10,5,2,1 ไม่ใช่ 1,10,2,5,10) */
-const COIN_FACES = [10, 5, 2, 1];
+/* 💵 ธนบัตร 20 เขียว · 50 ฟ้า · 100 แดง — ชุดเดียวกับหน้าหลัก (คลาส `.money-bill` เป็น global)
+   ⚠ **ห้ามวาดธนบัตรเป็นวงกลม** ต้องเป็นสี่เหลี่ยม ไม่งั้นเด็กนับปนกับเหรียญ */
+function billFace(v){
+  const b = document.createElement('span');
+  b.className = 'money-bill ' + (v >= 100 ? 'b100' : (v >= 50 ? 'b50' : 'b20'));
+  const n = document.createElement('span');
+  n.className = 'mb-n'; n.textContent = String(v);
+  b.appendChild(n);
+  return b;
+}
+function isBillVal(v){ return v === 20 || v === 50 || v === 100; }
+function moneyFaceEl(v){ return isBillVal(v) ? billFace(v) : coinFace(v); }
+/* แตกจำนวนเงินเป็นแบงก์+เหรียญ (ใหญ่ไปเล็ก) — ใช้โชว์ตัวเลือกของเกมทอนเงิน
+   ⚠ ต้องเรียงจากใหญ่ไปเล็กเสมอ เด็กจะได้นับง่าย (100,50,10,5 ไม่ใช่ 5,100,10,50)
+   ⚠ **ต้องมีแบงก์ 20/50/100 ด้วย** (ผู้ใช้สั่ง 2026-08-17) ไม่งั้นเงินทอน 80 บาท
+     กลายเป็นเหรียญ 10 แปดเหรียญ เด็กนับไม่ไหวและกองยาวจนล้นการ์ด */
+const COIN_FACES = [100, 50, 20, 10, 5, 2, 1];
 function coinBreak(n){
   const out = [];
   let left = Math.max(0, n | 0), guard = 0;
@@ -7736,11 +7753,11 @@ function coinBreak(n){
   }
   return out;
 }
-/* แถวเหรียญจากจำนวนเงิน */
+/* แถวเงินจากจำนวนเงิน (แบงก์ + เหรียญ) */
 function coinRow(n, size){
   const row = document.createElement('div');
   row.className = 'hqz-coinrow' + (size ? ' ' + size : '');
-  coinBreak(n).forEach(v => row.appendChild(coinFace(v)));
+  coinBreak(n).forEach(v => row.appendChild(moneyFaceEl(v)));
   return row;
 }
 /* 🗑️ แถบตัวอย่าง "เหรียญแต่ละแบบราคาเท่าไหร่" ถูกถอดออก 2026-08-16 (ผู้ใช้สั่ง)
@@ -7773,7 +7790,7 @@ function renderCoinPay(st, it){
     b.type = 'button'; b.className = 'hqz-pay-btn';
     b.dataset.hpClick = '1';
     b.setAttribute('aria-label', 'หยิบเหรียญ ' + u);
-    b.appendChild(coinFace(u));
+    b.appendChild(moneyFaceEl(u));
     b.addEventListener('click', ()=>{
       if(qLock) return;
       if(typeof playClick==='function') playClick();
@@ -7796,7 +7813,7 @@ function renderCoinPay(st, it){
       b.type = 'button'; b.className = 'hqz-pay-btn';
       b.dataset.hpClick = '1';
       b.setAttribute('aria-label', 'เอาเหรียญ ' + u + ' คืน');
-      b.appendChild(coinFace(u));
+      b.appendChild(moneyFaceEl(u));
       b.addEventListener('click', ()=>{
         if(qLock) return;
         if(typeof playClick==='function') playClick();
@@ -9526,20 +9543,27 @@ function updateCritters(dt, t){
    กระโดดเอง/ส่ง emoji น่ารักๆ สลับกันไป ---------- */
 /* แต่ละชนิดมี colors = สีขนที่เลือกได้ (คัดเฉพาะสีที่เหมาะกับสัตว์ชนิดนั้นจริงๆ
    ยกเว้นยูนิคอร์นที่เป็นสัตว์แฟนตาซี ใช้พาสเทลได้อิสระ) — index 0 คือสีดั้งเดิม/default */
+/* 🐾 ชนิดสัตว์เลี้ยง — **สีขนย้ายไป js/shared/char-colors.js แล้ว** (2026-08-17)
+   เหตุผลเดียวกับจานสีตัวละคร: หน้า landing ต้องวาดสัตว์เลี้ยงของเด็กแต่ไฟล์นี้ lazy-load
+   ⚠ ห้ามเขียนสีกลับมาไว้ที่นี่ — มีแหล่งเดียวเท่านั้น ไม่งั้นสีในเมืองกับในหน้า landing เพี้ยนกัน
+   ⚠ fallback กันเคส "cache ผสมรุ่น" (index.html เก่ายังไม่มี script ตัวใหม่) — ยอมได้สีเดียว
+     ดีกว่าหน้าเลือกสัตว์พังทั้งหน้าเพราะอ่าน property ของ undefined */
 const PET_TYPES = [
-  {id:'dog',     emoji:'🐶', label:'หมาน้อย',   def:'บราวนี่',  colors:[{c:0xd7a86e,n:'น้ำตาลทอง'},{c:0x8d6e63,n:'ช็อกโกแลต'},{c:0xf3e2c6,n:'ครีม'},{c:0x9aa5ae,n:'เทา'}]},
-  {id:'cat',     emoji:'🐱', label:'แมวเหมียว', def:'โมจิ',     colors:[{c:0xffb74d,n:'ส้ม'},{c:0x90a4ae,n:'เทา'},{c:0xfaf3e8,n:'ขาว'},{c:0x5d4b41,n:'น้ำตาลเข้ม'}]},
-  {id:'rabbit',  emoji:'🐰', label:'กระต่าย',   def:'ปุยฝ้าย',  colors:[{c:0xf7f3ee,n:'ขาว'},{c:0xcfc4b8,n:'เทา'},{c:0xc4a184,n:'น้ำตาล'},{c:0xf6cdd9,n:'ชมพู'}]},
-  {id:'chick',   emoji:'🐥', label:'ลูกเจี๊ยบ',  def:'ไข่หวาน',  colors:[{c:0xffe082,n:'เหลือง'},{c:0xfff6dc,n:'ขาวครีม'},{c:0xffb74d,n:'ส้ม'}]},
-  {id:'hamster', emoji:'🐹', label:'แฮมสเตอร์', def:'ข้าวปั้น', colors:[{c:0xffcc80,n:'ส้มครีม'},{c:0xbcaaa4,n:'น้ำตาลเทา'},{c:0xf7ead8,n:'ขาว'}]},
-  {id:'turtle',  emoji:'🐢', label:'เต่าน้อย',   def:'เต้าหู้',   colors:[{c:0x66a15c,n:'เขียว'},{c:0x8d6e63,n:'น้ำตาล'},{c:0x4db6ac,n:'เขียวน้ำทะเล'}]},
-  {id:'pig',     emoji:'🐷', label:'หมูน้อย',    def:'ชมพู่',    colors:[{c:0xf8a8c0,n:'ชมพู'},{c:0xf5d0b5,n:'ครีม'},{c:0x8a7468,n:'เทาน้ำตาล'}]},
-  {id:'sheep',   emoji:'🐑', label:'แกะน้อย',   def:'ปุกปุย',   colors:[{c:0xf5f1e6,n:'ขาว'},{c:0xe8d7b7,n:'ครีม'},{c:0x6f625c,n:'เทาเข้ม'}]},
-  {id:'frog',    emoji:'🐸', label:'กบน้อย',    def:'อ๊บอ๊บ',    colors:[{c:0x7cb342,n:'เขียว'},{c:0x4fc3f7,n:'ฟ้า'},{c:0xd4e157,n:'เขียวมะนาว'}]},
-  {id:'penguin', emoji:'🐧', label:'เพนกวิน',   def:'พิงกุ',    colors:[{c:0x3d4f5c,n:'กรมท่า'},{c:0x263238,n:'ดำ'},{c:0x7986cb,n:'ม่วงฟ้า'}]},
-  {id:'unicorn', emoji:'🦄', label:'ยูนิคอร์น',  def:'สายรุ้ง',   colors:[{c:0xfdfaf2,n:'ขาว'},{c:0xf9c9da,n:'ชมพู'},{c:0xcdbcec,n:'ม่วงอ่อน'},{c:0xbfe3f7,n:'ฟ้าอ่อน'}]},
-  {id:'panda',   emoji:'🐼', label:'แพนด้า',    def:'ไผ่หวาน',  colors:[{c:0xf7f3ee,n:'ขาวดำ'},{c:0xe3cfae,n:'น้ำตาลอ่อน'}]},
-];
+  {id:'dog',     emoji:'🐶', label:'หมาน้อย',   def:'บราวนี่'},
+  {id:'cat',     emoji:'🐱', label:'แมวเหมียว', def:'โมจิ'},
+  {id:'rabbit',  emoji:'🐰', label:'กระต่าย',   def:'ปุยฝ้าย'},
+  {id:'chick',   emoji:'🐥', label:'ลูกเจี๊ยบ',  def:'ไข่หวาน'},
+  {id:'hamster', emoji:'🐹', label:'แฮมสเตอร์', def:'ข้าวปั้น'},
+  {id:'turtle',  emoji:'🐢', label:'เต่าน้อย',   def:'เต้าหู้'},
+  {id:'pig',     emoji:'🐷', label:'หมูน้อย',    def:'ชมพู่'},
+  {id:'sheep',   emoji:'🐑', label:'แกะน้อย',   def:'ปุกปุย'},
+  {id:'frog',    emoji:'🐸', label:'กบน้อย',    def:'อ๊บอ๊บ'},
+  {id:'penguin', emoji:'🐧', label:'เพนกวิน',   def:'พิงกุ'},
+  {id:'unicorn', emoji:'🦄', label:'ยูนิคอร์น',  def:'สายรุ้ง'},
+  {id:'panda',   emoji:'🐼', label:'แพนด้า',    def:'ไผ่หวาน'},
+].map(p => Object.assign(p, {
+  colors: ((window.OWL_PET_COLORS || {})[p.id]) || [{c:0xd7a86e, n:'สีปกติ'}],
+}));
 const PET_SPEED = {dog:3.6, cat:3.4, rabbit:3.5, chick:3.1, hamster:3.3, turtle:2.6,
                    pig:3.2, sheep:3.0, frog:3.3, penguin:2.9, unicorn:3.7, panda:2.8};
 const PET_SCALE = 1.45;   /* สัตว์เลี้ยงตัวใหญ่กว่าสัตว์ป่าในฉากชัดเจน (โมเดล base ขนาดใกล้กัน) */
@@ -9577,16 +9601,30 @@ const PET_COLLAR_FIT = {
   dog:    {y:.225, z:.2,   r:.12,  tilt:.3},
   cat:    {y:.215, z:.17,  r:.11,  tilt:.28},
   rabbit: {y:.215, z:.13,  r:.11,  tilt:.28},
-  chick:  {y:.21,  z:.05,  r:.09,  tilt:.12},
+  /* 🐤 ตัวเป็นลูกกลม r .13 (บน y .2865) · หัวลูกกลม r .1 ที่ y .32 (ล่าง y .22)
+     ⇒ คอจริงอยู่ราว y .25 · ของเดิม y=.21 คือ **กลางลำตัว** ปลอกคอเลยไปคาดอกแทนคอ
+       (ผู้ใช้แจ้ง 2026-08-17) · คอลูกเจี๊ยบเป็นแนวตั้งปกติ จึงยังใช้วงนอนราบได้ */
+  /* ⚠ **tilt ต้องเท่ากับความเอียงของคอจริง** (ผู้ใช้แจ้ง 2026-08-17 ว่าปลอกคอไม่เอียงตามคอ)
+     คอลูกเจี๊ยบพุ่งจากกลางตัว (0,.15,0) ไปกลางหัว (0,.32,.05) ⇒ เอียงไปข้างหน้า
+     atan(.05/.17) ≈ .29 rad · ของเดิม .05 = เกือบราบ วงเลยตัดขวางคอแทนที่จะตั้งฉากกับคอ
+     (ค่านี้อยู่ในช่วงเดียวกับหมา .3 / แมว .28 ซึ่งคอเอียงหน้าเหมือนกัน) */
+  chick:  {y:.25,  z:.045, r:.098, tilt:.29},
   hamster:{y:.13,  z:.02,  r:.14,  tilt:.38},
   /* 🐢 หัวเป็นทรงกลม r=.07 อยู่ที่ (0,.13,.24) ยื่นออกมาจากกระดองที่จบราว z=.196
      ⇒ คอคือช่องแคบๆ ระหว่าง z .17-.20 · ของเดิม z=.24 คือ **กลางหัวพอดี** ปลอกคอเลยรัดหน้า
-       เหมือนผ้าปิดปาก (เห็นจากภาพจริง 2026-08-17) */
-  turtle: {y:.125, z:.185, r:.066, tilt:.12},
+       เหมือนผ้าปิดปาก (เห็นจากภาพจริง 2026-08-17)
+     🔁 **คอเต่าเป็นแนวนอน** (หัวยื่นไปข้างหน้า ไม่ได้ตั้งอยู่บนตัว) ⇒ ต้องใช้ axis:'z'
+       วงปลอกคอแบบนอนราบจะกลายเป็นแถบเฉียงพาดแก้มแทนที่จะรัดคอ (ผู้ใช้แจ้ง 2026-08-17) */
+  turtle: {y:.13, z:.185, r:.072, tilt:0, axis:'z'},
   pig:    {y:.245, z:.18,  r:.14,  tilt:.3},
   /* 🐑 หัวเป็นกล่อง .15×.15×.13 อยู่ที่ (0,.30,.235) ⇒ ฐานหัวอยู่ y=.225 · หลังหัว z=.17
-     ของเดิม y=.20 ต่ำกว่าฐานหัว และ z=.235 คือกลางหัว ⇒ ห่วงไปคล้องปากลอยอยู่ข้างหน้า */
-  sheep:  {y:.25,  z:.195, r:.085, tilt:.28},
+     ของเดิม y=.20 ต่ำกว่าฐานหัว และ z=.235 คือกลางหัว ⇒ ห่วงไปคล้องปากลอยอยู่ข้างหน้า
+     🔁 เหมือนเต่า: **หัวแกะยื่นไปข้างหน้าจากพวงขนแกะ** ไม่ได้ตั้งอยู่บนตัว ⇒ axis:'z'
+       ต้องกว้างกว่าเส้นทแยงหน้าตัดหัว (.106) นิดหน่อยถึงจะคล้องคอได้ไม่กินเนื้อหัว */
+  /* ⚠ รัศมีต้อง **แค่พอดีหน้าตัดหัว** (กล่อง .15×.15 ขอบมน ⇒ เส้นทแยง ≈ .09)
+     ใหญ่กว่านี้วงจะกลายเป็น "กรอบรูปล้อมหน้า" แทนที่จะเป็นปลอกคอ (ลองใช้ .115 แล้วเป็นแบบนั้น)
+     และต้องดันไปหลังหัว (z .17 = ด้านหลังสุดของหัว) วงจะได้ซ่อนอยู่หลังหัวเหลือโผล่แค่ขอบ */
+  sheep:  {y:.275, z:.172, r:.097, tilt:-.15, axis:'z'},
   frog:   {y:.12,  z:.02,  r:.15,  tilt:.25},
   penguin:{y:.27,  z:.03,  r:.12,  tilt:.18},
   unicorn:{y:.3,   z:.21,  r:.095, tilt:.3},
@@ -9651,12 +9689,21 @@ function addPetCollar(g, type, cl){
   const band = style === 'bandana'
     ? new THREE.Mesh(new THREE.TorusGeometry(o.r, .026, 6, 16), toonMat(col))
     : new THREE.Mesh(new THREE.TorusGeometry(o.r, .017, 8, 18), toonMat(col));
-  band.rotation.x = Math.PI/2 + (o.tilt || 0);
+  /* 🧭 **แกนของคอไม่เหมือนกันทุกตัว** (แก้ 2026-08-17)
+       axis ปริยาย = 'y' — คอตั้งขึ้น หัวอยู่บนตัว (หมา/แมว/ลูกเจี๊ยบ/แพนด้า…)
+         ⇒ วงปลอกคอต้อง **นอนราบ** = หมุน x ไป PI/2
+       axis:'z' — คอเป็นแนวนอน หัวยื่นไปข้างหน้า (เต่า/แกะ)
+         ⇒ วงปลอกคอต้อง **ตั้งหันหน้าเข้าหากล้อง** = ไม่ต้องหมุน (torus อยู่ระนาบ XY อยู่แล้ว)
+     ⚠ ถ้าใช้วงนอนราบกับคอแนวนอน จะได้แถบเฉียงพาดแก้มแทนที่จะเป็นปลอกคอ — บั๊กเดิมของเต่ากับแกะ
+     ⚠ จี้ต้องห้อย "ใต้วง" ตามแกนที่ใช้จริงด้วย ไม่งั้นจี้ไปโผล่กลางหน้า */
+  const zAxis = o.axis === 'z';
+  band.rotation.x = zAxis ? (o.tilt || 0) : Math.PI/2 + (o.tilt || 0);
   band.position.set(0, o.y, o.z || 0);
   band.castShadow = hShadows;
   g.add(band);
   const charm = collarCharm(style, col);
-  charm.position.set(0, o.y - Math.sin(o.tilt || 0) * o.r - .03, (o.z || 0) + o.r * .92);
+  if(zAxis) charm.position.set(0, o.y - o.r - .018, (o.z || 0) + .025);
+  else      charm.position.set(0, o.y - Math.sin(o.tilt || 0) * o.r - .03, (o.z || 0) + o.r * .92);
   g.add(charm);
   return {band, charm, style};
 }
@@ -9998,6 +10045,43 @@ function renderPetMenu(){
     return;
   }
 
+  /* ---------- 🎀 ปลอกคอ (ย้ายมาไว้ในเมนูน้องด้วย · ผู้ใช้สั่ง 2026-08-17) ----------
+     เดิมเปลี่ยนปลอกคอได้ **ที่ร้านสัตว์เลี้ยงที่เดียว** ⇒ อยากสลับสีเล่นทีต้องเดินข้ามเมืองไปร้าน
+     ทั้งที่เป็นของที่ซื้อมาแล้วและสีก็แจกฟรีทุกสี ⇒ ให้เปลี่ยนได้จากเมนูน้องตรงนี้เลย ทุกที่ทุกเวลา
+     ⚠ **แยกเป็น 2 หน้า** (แบบ / สี) — รวมหน้าเดียวจะได้ปุ่ม 16 อันเรียงยาวเกินจอ
+     ⚠ ต้อง `restylePet()` ทุกครั้งหลังเปลี่ยน ไม่งั้นน้องในฉากยังใส่ของเดิมจนกว่าจะรีโหลด */
+  if(petMenuPage === 'collar' || petMenuPage === 'collarcol'){
+    const worn = PETCARE ? PETCARE.collar() : {s:'classic', c:0};
+    const wear = (sid, ci)=>{
+      if(!PETCARE) return;
+      PETCARE.setCollar(sid, ci);
+      restylePet();
+      renderPetMenu();                       /* วาดใหม่ให้เครื่องหมาย ✓ ย้ายมาที่อันที่เพิ่งเลือก */
+    };
+    if(petMenuPage === 'collarcol'){
+      e.title.textContent = 'เลือกสีปลอกคอ';
+      const cols = (SHOP && SHOP.COLLAR_COLORS) || [];
+      cols.forEach((col, i)=>{
+        const hex = '#' + col.c.toString(16).padStart(6, '0');
+        const on = (worn.c | 0) === i;
+        e.grid.appendChild(hpmBtn('<i class="hpm-sw" style="background:' + hex + '"></i>',
+          on ? col.n + ' ✓' : col.n, {done: on, run: ()=> wear(worn.s, i)}));
+      });
+      petMenuNote('สีปลอกคอแจกฟรีทุกสี เปลี่ยนกี่ครั้งก็ได้เลย 🎨');
+      return;
+    }
+    e.title.textContent = 'ปลอกคอของ' + name;
+    const owned = (SHOP && SHOP.ownedCollars) ? SHOP.ownedCollars() : [];
+    owned.forEach(it=>{
+      const on = worn.s === it.id;
+      e.grid.appendChild(hpmBtn(it.emoji, on ? it.name + ' ✓' : it.name,
+        {done: on, run: ()=> wear(it.id, worn.c | 0)}));
+    });
+    e.grid.appendChild(hpmBtn('🎨', 'เปลี่ยนสี', {run: ()=> openPetMenu('collarcol')}));
+    petMenuNote('อยากได้ปลอกคอแบบอื่นอีก? ไปเลือกซื้อที่ร้านสัตว์เลี้ยงได้เลย 🐾');
+    return;
+  }
+
   e.title.textContent = 'อยากทำอะไรกับ' + name + '?';
   /* 🍽️ ให้อาหาร — ย้ายมาจากแถบสถานะ (ผู้ใช้สั่ง 2026-08-15)
      ⚠ อยู่ **ปุ่มแรก** เพราะเป็นเรื่องที่เร่งด่วนที่สุด (น้องหิว/ป่วยรอไม่ได้)
@@ -10059,6 +10143,8 @@ function renderPetMenu(){
       openPetMenu('trick');
     },
   }));
+  /* 🎀 ปลอกคอ — ไม่ต้องอยู่บ้านก็เปลี่ยนได้ (เป็นของแต่งตัว ไม่ใช่กิจกรรมที่ต้องใช้พื้นที่) */
+  e.grid.appendChild(hpmBtn('🎀', 'ปลอกคอ', {run: ()=> openPetMenu('collar')}));
   if(lonely) petMenuNote(name + 'กำลังงีบอยู่ในบ้าน ลูบหัวหรืออาบน้ำให้ก่อน เดี๋ยว' + name + 'ก็ออกมาเองนะ 💗');
   else if(!home) petMenuNote('กลับไปที่สนามหน้าบ้านก่อนนะ แล้วจะเล่นกับ' + name + 'ได้ทุกอย่างเลย 🏡');
 }
@@ -11410,6 +11496,24 @@ function atHomeNow(){
   if(hScene === 'in') return true;
   return !!inHomeZone(hChar.tile.x, hChar.tile.z);
 }
+/* 📷⚙️ ปุ่มกล้อง + ปุ่มเฟืองมุมขวาบน — **ซ่อนตอนเปิดแผงเต็มจอ** (ผู้ใช้สั่ง 2026-08-17)
+   หน้าแต่งตัว / หน้าสัตว์เลี้ยงของหนู / โหมดตกแต่งบ้าน มีแผงควบคุมของตัวเองเต็มจออยู่แล้ว
+   2 ปุ่มนี้ลอยทับอยู่ข้างบนโดยไม่ได้ช่วยอะไรในหน้านั้นเลย แถมเด็กเผลอกดแล้วหลุดจากงานที่ทำค้างไว้
+   ⚠ **ต้องเรียกทุกจุดที่เปิด/ปิดแผง** ไม่งั้นปุ่มหายค้างหลังออกจากหน้า (มี 5 จุดในไฟล์นี้)
+   ⚠ ต้องพับลิ้นชักตั้งค่าที่กางค้างอยู่ด้วย ไม่งั้นแถวปุ่มยังลอยอยู่ทั้งที่ปุ่มเฟืองหายไปแล้ว */
+const CHROME_BTN_IDS = ['house-photo-btn', 'house-ctrl-gear'];
+function panelOpenNow(){
+  const c = $('house-creator'), p = $('house-pet-picker');
+  return !!((c && !c.hidden) || (p && !p.hidden) || editMode);
+}
+function refreshChromeBtns(){
+  const hide = panelOpenNow();
+  CHROME_BTN_IDS.forEach(id=>{ const b = $(id); if(b) b.hidden = hide; });
+  if(hide){
+    const l = $('house-ctrl-list'); if(l) l.hidden = true;
+    const g = $('house-ctrl-gear'); if(g) g.setAttribute('aria-expanded', 'false');
+  }
+}
 function refreshHomeBtns(){
   const want = !!(atHomeNow() && hMode === 'world' && !editMode);
   HOME_BTN_IDS.forEach(id=>{ const b = $(id); if(b && b.hidden === want) b.hidden = !want; });
@@ -11563,7 +11667,10 @@ function curedCelebrate(name){
 let petPreview = null, petPickerType = null, petPickerColor = 0, petNameDirty = false;
 function rebuildPetPreview(){
   if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); }
-  petPreview = buildPet(petPickerType, petPickerColor);
+  /* ⚠ ส่ง collar เข้าไปด้วย — ไม่งั้นพรีวิวจะไม่โชว์ปลอกคอที่เด็กเพิ่งเลือกในแถวข้างล่าง
+     (buildPet อ่านจาก PETCARE เองอยู่แล้ว แต่ส่งตรงชัดกว่าและใช้ตอนยังไม่มีน้องได้ด้วย) */
+  petPreview = buildPet(petPickerType, petPickerColor,
+                        {collar: PETCARE ? PETCARE.collar() : undefined});
   petPreview.scale.setScalar(3);          /* สัตว์ตัวจิ๋ว ขยายให้เต็มเฟรมพรีวิวพอๆ ตัวละคร */
   petPreview.rotation.y = creatorState.rotY;
   scene.add(petPreview);
@@ -11608,6 +11715,63 @@ function buildPetColorChips(){
       rebuildPetPreview();
     });
     wrap.appendChild(b);
+  });
+}
+/* ---------- 🎀 แถวปลอกคอในหน้า "สัตว์เลี้ยงของหนู" (ผู้ใช้สั่ง 2026-08-17) ----------
+   ⚠ **โผล่เฉพาะตอนรับเลี้ยงน้องแล้วเท่านั้น** — ยังไม่มีน้องก็ยังไม่มีตัวให้ใส่ปลอกคอ
+     (โชว์ไว้เฉยๆ แล้วกดไม่ได้ = หลอกเด็ก ผิดกติกาเหล็กข้อ 1)
+   ⚠ แบบที่ยังไม่ได้ซื้อ **ยังโชว์อยู่** พร้อมป้ายราคา เหมือนกติกาของชิปสัตว์/สี (ข้อ 17.4)
+   ⚠ เปลี่ยนแล้วต้อง `restylePet()` ด้วย ไม่ใช่แค่พรีวิว — น้องตัวจริงในฉากต้องเปลี่ยนตาม */
+function petCollarNow(){ return PETCARE ? PETCARE.collar() : {s:'classic', c:0}; }
+function wearCollarFromPicker(sid, ci){
+  if(!PETCARE) return;
+  PETCARE.setCollar(sid, ci);
+  restylePet();                      /* น้องในฉาก (ถ้าออกมาเดินอยู่) */
+  rebuildPetPreview();               /* ตัวอย่างในหน้านี้ */
+  buildPetCollarChips();
+}
+function buildPetCollarChips(){
+  const rowS = $('house-pet-collar-row'), rowC = $('house-pet-collarcol-row');
+  const wrapS = $('house-pet-collars'), wrapC = $('house-pet-collar-colors');
+  if(!rowS || !rowC || !wrapS || !wrapC) return;
+  const data = loadHouseData() || {};
+  const has = !!data.pet;
+  rowS.hidden = !has; rowC.hidden = !has;
+  if(!has) return;
+  const worn = petCollarNow();
+  wrapS.innerHTML = ''; wrapC.innerHTML = '';
+  const list = (SHOP && SHOP.PET_COLLARS) || [];
+  list.forEach(it=>{
+    const own = !SHOP || SHOP.ownsCollar(it.id);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'house-chip house-pet-chip' + (worn.s === it.id ? ' active' : '') + (own ? '' : ' locked');
+    b.innerHTML = '<span class="house-pet-chip-emoji">' + it.emoji + '</span>'
+                + '<span class="house-pet-chip-name">' + it.name + '</span>'
+                + (own ? '' : '<span class="house-pet-chip-lock">🔒 ' + it.price + '</span>');
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      if(!own){
+        if(typeof showToast==='function')
+          showToast('🎀', it.name + 'ซื้อได้ที่ร้านสัตว์เลี้ยง 🐾 นะ (' + it.price + ' บาท)');
+        return;
+      }
+      wearCollarFromPicker(it.id, worn.c | 0);
+    });
+    wrapS.appendChild(b);
+  });
+  /* สีปลอกคอแจกฟรีทุกสี ⇒ ไม่มีชิปล็อก แตะเปลี่ยนได้เลย */
+  ((SHOP && SHOP.COLLAR_COLORS) || []).forEach((col, i)=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'house-chip house-chip-color' + ((worn.c | 0) === i ? ' active' : '');
+    b.style.background = '#' + col.c.toString(16).padStart(6, '0');
+    b.setAttribute('aria-label', 'ปลอกคอสี' + col.n);
+    b.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      wearCollarFromPicker(worn.s, i);
+    });
+    wrapC.appendChild(b);
   });
 }
 function buildPetChips(){
@@ -11672,6 +11836,7 @@ function openPetPicker(wantType){
   $('house-pet-picker').hidden = false;
   $('house-rotate-wrap').hidden = false;
   $('house-edit-btn').hidden = true;
+  refreshChromeBtns();
   $('house-pet-btn').hidden = true; $('house-decorate-btn').hidden = true; $('house-child-chip').hidden = true;
   $('house-hint').hidden = true;
   $('house-pet-remove').hidden = !data.pet;
@@ -11680,6 +11845,7 @@ function openPetPicker(wantType){
   if(charGroup) charGroup.visible = false;
   buildPetChips();
   buildPetColorChips();
+  buildPetCollarChips();
   refreshPetPickerFoot();
   rebuildPetPreview();
   applyCamera();
@@ -11694,10 +11860,20 @@ function closePetPicker(kind){
   /* กันรับเลี้ยงตัวที่ยังไม่ได้ซื้อ (เช่นกดปุ่มรัวๆ ตอนหน้ากำลังเปลี่ยน) — ถอยเป็น "แค่ปิดหน้า" */
   if(kind==='adopt' && !petOwned(petPickerType)) kind = null;
   if(kind==='adopt'){
+    /* 🐞 **กดบันทึกแล้วปลอกคอ/สีเด้งกลับเป็นค่าเริ่มต้น** (ผู้ใช้แจ้ง 2026-08-17)
+       ต้นเหตุ: `onAdopt()` เรียก `blank()` ซึ่งล้าง `care` ทั้งก้อน (รวมปลอกคอ) แล้วเขียนทับ
+       แต่ปุ่มนี้ทำ 2 หน้าที่ในตัวเดียว — "รับเลี้ยงตัวใหม่" กับ "บันทึกการแก้ไขน้องตัวเดิม"
+       (ดู refreshPetPickerFoot ที่สลับข้อความปุ่มเป็น "บันทึกเลย" เมื่อมีน้องอยู่แล้ว)
+       ⇒ เดิมแค่เปลี่ยนสี/เปลี่ยนชื่อน้องตัวเดิม ก็โดนล้างความอิ่ม ความสุข วันอาบน้ำ ท่าที่สอนไว้
+         และปลอกคอไปทั้งหมด — ไม่ใช่แค่ปลอกคอ
+       ⇒ เรียก `onAdopt()` **เฉพาะตอนเป็นน้องตัวใหม่จริงๆ** (ยังไม่เคยมี หรือเปลี่ยนชนิดสัตว์)
+         เปลี่ยนชนิด = คนละตัว เริ่มนับใหม่ถูกแล้ว · เปลี่ยนสี/ชื่อ = ตัวเดิม ต้องเก็บของเดิมไว้ครบ */
+    const prevPet = (loadHouseData() || {}).pet || null;
+    const freshPet = !prevPet || prevPet.type !== petPickerType;
     const name = ($('house-pet-name-input').value || '').trim().slice(0,14) || petTypeInfo(petPickerType).def;
     saveHouseData({pet:{type:petPickerType, name, color:petPickerColor}});
     syncPetHouse(true);           /* มีสัตว์แล้ว → บ้านสัตว์โผล่ที่ช่องที่จองไว้ (ข้อ 18.1) */
-    if(PETCARE) PETCARE.onAdopt();/* เฟส 3B: เริ่มนับความอิ่มใหม่ + แถมอาหารถุงแรกของชนิดนั้น */
+    if(PETCARE && freshPet) PETCARE.onAdopt();/* เฟส 3B: เริ่มนับความอิ่มใหม่ + แถมอาหารถุงแรกของชนิดนั้น */
     /* 🎓 เฟส 15: ได้เพื่อนตัวน้อยตัวแรก → บทเรียนดูแลสัตว์เลี้ยงเด้งเอง (ผู้ใช้สั่ง)
        ⚠ หน่วงไว้ให้อนิเมชันรับเลี้ยง/ตั้งชื่อจบก่อน ไม่งั้นฟองนกฮูกเด้งทับหน้าตั้งชื่อ */
     if(window.HouseTutor) setTimeout(()=>{ if(houseOpen) window.HouseTutor.fire('c5'); }, 2200);
@@ -11710,6 +11886,7 @@ function closePetPicker(kind){
   $('house-pet-picker').hidden = true;
   $('house-rotate-wrap').hidden = true;
   $('house-edit-btn').hidden = false;
+  refreshChromeBtns();
   $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false; $('house-child-chip').hidden = false;
   creatorGroup.visible = false;
   if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
@@ -12223,6 +12400,7 @@ function enterEditMode(){
   closeQuestPanel(); closeQuestBoard();
   editMode = true;
   document.body.classList.add('house-edit');
+  refreshChromeBtns();                 /* ซ่อนปุ่มกล้อง/เฟือง ระหว่างตกแต่งบ้าน */
   /* ซ่อนตัวละคร + สัตว์เลี้ยง + พ่อแม่ + ป้ายชื่อ ระหว่างตกแต่ง (ไม่ให้บังของ/สับสน) */
   if(charGroup) charGroup.visible = false;
   if(hPet.group) hPet.group.visible = false;
@@ -12251,6 +12429,7 @@ function enterEditMode(){
 function exitEditMode(){
   editMode = false;
   editPan = null;
+  refreshChromeBtns();                 /* ออกจากโหมดตกแต่ง = คืนปุ่มกล้อง/เฟือง */
   deselectDecor();
   updateHomeZoneFrame();
   document.body.classList.remove('house-edit');
@@ -13397,6 +13576,7 @@ function enterHouseGame(){
     $('house-pet-picker').hidden = true;
     $('house-rotate-wrap').hidden = true;
     $('house-edit-btn').hidden = false;
+    refreshChromeBtns();
     $('house-pet-btn').hidden = false; $('house-decorate-btn').hidden = false; $('house-child-chip').hidden = false;
     if(petPreview){ scene.remove(petPreview); disposeGroup(petPreview); petPreview = null; }
     creatorGroup.visible = false;
@@ -14287,6 +14467,12 @@ if(!homeView.hidden) houseBuddyRefresh();
     const g = new THREE.Group(); it.build(g, (it.colors && it.colors[0]) || 0xffffff, decorKit()); return g; },
   buildChar: cfg => buildCharacter(cfg),
   openCreator: ()=> openCreator(true),
+  /* ตั้งค่าตัวละครในหน้าแต่งตัวตรงๆ แล้ววาดใหม่ — ใช้ถ่ายรูปเทียบทรงผม/หมวกทีละแบบ
+     (`creatorCfg` เป็น `let` ระดับโมดูล จึงไม่ได้อยู่บน window ให้เทสแตะเองได้) */
+  setCreatorCfg: patch => { if(!creatorCfg) return null;
+                            Object.assign(creatorCfg, patch || {});
+                            rebuildChar(creatorCfg); buildCreatorRows(creatorCfg);
+                            return Object.assign({}, creatorCfg); },
   /* ผัง NPC ทั้งเมือง + ปิดการ์ดเควสต์ (ชุดเทสเฟส 6-7 สร้าง engine เควสต์ตัวที่ 2 มาไล่ทุกระดับชั้น
      ⚠ ถ้าไม่ส่ง npcDefs เข้าไป งาน "ส่งของถึงมือ" จะหาปลายทางไม่ได้แล้วถอยไปใช้ count เงียบๆ
        ⇒ เทสผ่านโดยไม่เคยรันโค้ดของกลไกนั้นเลยสักบรรทัด) */

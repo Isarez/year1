@@ -598,7 +598,9 @@ const CATS_P1 = [
        ฝึก inhibitory control (แตะเฉพาะที่ตรงกติกา ห้ามแตะมั่ว) + cognitive flexibility (กติกาสลับกลางเกม) + มีตัวจับเวลาต่อด่าน
        type:'skill' mode:'ef' — ดู startEfGame ใน app.js (คลังของใช้ EF_CATEGORIES) */
     id:'p1-iq3', name:'เชาวน์ ป.1 · นกฮูกสั่ง', emoji:'🦉', icon:'assets/icons/p1-ef.svg', color:'#17A65B', light:'#D6F3E4',
-    type:'skill', mode:'ef', levels:10, grade:'p1', isNew:true
+    /* ✋ handPlay: เกมนี้ตอบด้วย "แบมือ/กำมือ" หน้ากล้องได้ ซึ่งเป็นท่าที่เด็กเล็กทำง่ายกว่าจีบนิ้วมาก
+       ⇒ ชั้นเล็กยิ่งต้องมี (เดิมเปิดให้แต่ ป.3 ขึ้นไป ซึ่งกลับหัวกลับหาง — แก้ 2026-08-17) */
+    type:'skill', mode:'ef', levels:10, handPlay:true, grade:'p1', isNew:true
   },
   /* ---------- เกมฝึกทักษะ ป.1 (reuse engine เดิม: นาฬิกา/ทายเงา/จับคู่/เปียโน/ผสมสี — คลังร่วมกับระดับเตรียม ป.1) ---------- */
   {
