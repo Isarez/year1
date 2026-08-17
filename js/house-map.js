@@ -172,8 +172,61 @@ const OI_HAIR_ICONS = [
   /* 11 ยาวประบ่า */
   '<path d="M5 19 Q4.6 6 12 6 Q19.4 6 19 19 L16.6 19 Q17.4 9.6 12 9.6 Q6.6 9.6 7.4 19 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
 ];
-const OI_HAIR_SHAPES = OI_HAIR_ICONS.map(p =>
-  p.split('"H"').join('"' + OI_HAIR + '"').split('"D"').join('"' + OI_HAIRD + '"'));
+/* ---- ทรงผมเด็กหญิง 12 แบบ ----
+   🐞 **บั๊กที่ผู้ใช้แจ้ง 2026-08-17**: เลือกเป็นเด็กผู้หญิงแล้วไอคอนตัวอย่างทรงผมไม่เปลี่ยนตาม
+     ต้นเหตุ: `addHair(head, girl, style, hex)` ใน js/house-avatar.js วาด **ทรงคนละชุดกันสนิท**
+     ระหว่างชายกับหญิงที่ index เดียวกัน แต่ไอคอนมีตารางเดียวคือของเด็กชาย
+     ⇒ เด็กผู้หญิงเห็นรูปทรงผมชายทั้งแถว แล้วกดเลือกได้ทรงหญิงที่ไม่ตรงกับรูปเลย
+   ⚠ **ลำดับต้องตรงกับ case ฝั่ง girl ใน addHair() เป๊ะ** เพิ่มแบบใหม่ต้องต่อท้ายทั้ง 2 ที่พร้อมกัน
+   ⚠ กติกาเดิมยังอยู่: **ต่างกันที่เงารวม ไม่ใช่รายละเอียดเล็ก** (ไอคอนโชว์แค่ 32px) */
+const OI_HAIR_ICONS_G = [
+  /* 0 หางม้าสูง — มัดสูงท้ายทอย หางสะบัดขึ้นหลัง */
+  '<path d="M5.8 13 A6.2 6.2 0 0 1 18.2 13 L17.2 9.8 Q12 6.2 6.8 9.8 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="17.4" cy="9" r="1.5" fill="D"/>'
+  + '<path d="M17.6 9 Q21.6 7.6 20.6 3.4 Q19 6.4 16.6 7.2 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>',
+  /* 1 สองแกละ — จุกกลม 2 ข้างระดับแก้ม */
+  '<path d="M5.8 13 A6.2 6.2 0 0 1 18.2 13 L17.2 9.6 Q12 6 6.8 9.6 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="4.6" cy="13.4" r="2.6" fill="H" stroke="D" stroke-width="1.1"/>'
+  + '<circle cx="19.4" cy="13.4" r="2.6" fill="H" stroke="D" stroke-width="1.1"/>',
+  /* 2 เปียคู่ — เปียถักห้อยลง 2 ข้าง */
+  '<path d="M5.8 12.8 A6.2 6.2 0 0 1 18.2 12.8 L17.2 9.4 Q12 5.8 6.8 9.4 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="5.4" cy="15" r="1.7" fill="H"/><circle cx="5.4" cy="18" r="1.5" fill="H"/><circle cx="5.4" cy="20.6" r="1.2" fill="H"/>'
+  + '<circle cx="18.6" cy="15" r="1.7" fill="H"/><circle cx="18.6" cy="18" r="1.5" fill="H"/><circle cx="18.6" cy="20.6" r="1.2" fill="H"/>',
+  /* 3 มวยผมบนหัว — ก้อนกลมใหญ่บนกลางหัว */
+  '<circle cx="12" cy="5.2" r="3.1" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<path d="M5.8 13 A6.2 6.2 0 0 1 18.2 13 L17.2 9.6 Q12 6 6.8 9.6 Z" fill="H" stroke="D" stroke-width="1.2"/>',
+  /* 4 ยาวลอนสลวย — ผมยาวคลุมสองข้างจนถึงขอบล่าง */
+  '<path d="M4.4 22 Q3.4 13 6.4 9.4 Q12 5.4 17.6 9.4 Q20.6 13 19.6 22 L16.6 22 Q17.8 13.6 15.4 11 Q12 8.8 8.6 11 Q6.2 13.6 7.4 22 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
+  /* 5 เปียข้างเดี่ยว — เปียเส้นเดียวข้างขวา */
+  '<path d="M5.8 13 A6.2 6.2 0 0 1 18.2 13 L17.2 9.4 Q12 5.8 6.8 9.4 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="18.8" cy="14.4" r="1.8" fill="H"/><circle cx="19.2" cy="17.6" r="1.6" fill="H"/><circle cx="19.4" cy="20.4" r="1.3" fill="H"/>',
+  /* 6 บ๊อบสั้นทันสมัย — ปลายตัดตรงระดับคาง */
+  '<path d="M5 17.6 Q5 6.4 12 6.4 Q19 6.4 19 17.6 L16.8 17.6 Q17 10 12 10 Q7 10 7.2 17.6 Z" fill="H" stroke="D" stroke-width="1.2" stroke-linejoin="round"/>',
+  /* 7 หางม้าคู่สูง — หางสะบัดขึ้นทั้ง 2 ข้าง */
+  '<path d="M5.8 13 A6.2 6.2 0 0 1 18.2 13 L17.2 9.6 Q12 6 6.8 9.6 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<path d="M7 8.4 Q3 6.4 3.4 2.6 Q5.6 5.6 8.4 6.4 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>'
+  + '<path d="M17 8.4 Q21 6.4 20.6 2.6 Q18.4 5.6 15.6 6.4 Z" fill="H" stroke="D" stroke-width="1.1" stroke-linejoin="round"/>',
+  /* 8 มวยผมคู่ (ดังโงะ) — ก้อนกลม 2 ก้อนมุมบน */
+  '<path d="M5.8 13 A6.2 6.2 0 0 1 18.2 13 L17.2 9.6 Q12 6 6.8 9.6 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="6" cy="5.8" r="2.7" fill="H" stroke="D" stroke-width="1.1"/>'
+  + '<circle cx="18" cy="5.8" r="2.7" fill="H" stroke="D" stroke-width="1.1"/>',
+  /* 9 ผมหยิกยาว — ก้อนหยิกไล่ลงสองข้าง */
+  '<path d="M5.6 12.6 A6.4 6.4 0 0 1 18.4 12.6 L17.4 9.2 Q12 5.6 6.6 9.2 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="4.8" cy="14.2" r="2.3" fill="H"/><circle cx="5.6" cy="18" r="2" fill="H"/><circle cx="4.8" cy="21" r="1.6" fill="H"/>'
+  + '<circle cx="19.2" cy="14.2" r="2.3" fill="H"/><circle cx="18.4" cy="18" r="2" fill="H"/><circle cx="19.2" cy="21" r="1.6" fill="H"/>',
+  /* 10 ผมสั้นซอยมีกิ๊บ — สั้นแนบหัว + กิ๊บชมพู */
+  '<path d="M6 12.6 A6 6 0 0 1 18 12.6 L17.2 9.6 Q12 6.2 6.8 9.6 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<rect x="14.6" y="8.2" width="4.4" height="1.9" rx=".9" fill="#ff6f91" stroke="#d94f72" stroke-width=".9"/>',
+  /* 11 เปียยาวข้างเดียวพาดหน้า — เปียเส้นใหญ่พาดมาด้านหน้า */
+  '<path d="M5.8 12.8 A6.2 6.2 0 0 1 18.2 12.8 L17.2 9.4 Q12 5.8 6.8 9.4 Z" fill="H" stroke="D" stroke-width="1.2"/>'
+  + '<circle cx="17.8" cy="14" r="2" fill="H"/><circle cx="17" cy="17.4" r="1.8" fill="H"/><circle cx="15.6" cy="20.4" r="1.5" fill="H"/>'
+  + '<circle cx="14.6" cy="22.4" r="1" fill="#ff6f91"/>',
+];
+
+const oiHairPaint = p =>
+  p.split('"H"').join('"' + OI_HAIR + '"').split('"D"').join('"' + OI_HAIRD + '"');
+const OI_HAIR_SHAPES   = OI_HAIR_ICONS.map(oiHairPaint);
+const OI_HAIR_SHAPES_G = OI_HAIR_ICONS_G.map(oiHairPaint);
 
 /* ---- ดวงตา 12 แบบ ---- */
 const OI_EYES = [
@@ -300,10 +353,14 @@ const OI_SHOE = [
   '<path d="M6 12.6 h5.4 l3.4 -2 h3.4 a2 2 0 0 1 2 2 v2 h-14.2 z" fill="' + OI_A + '" stroke="' + OI_AD + '" stroke-width="1.3" stroke-linejoin="round"/><rect x="5.4" y="10.4" width="14" height="2.6" rx="1.3" fill="#fff" stroke="' + OI_AD + '" stroke-width="1.1"/><rect x="4.6" y="15" width="15.6" height="2.6" rx="1.2" fill="' + OI_HAIRD + '"/>',
 ];
 /* คืน SVG ของ "แบบที่ i" ในแถว rowKey — ไม่มีก็คืนค่าว่าง (ผู้เรียกจะถอยไปใช้ตัวเลขเหมือนเดิม) */
-function outfitIcon(rowKey, i){
+function outfitIcon(rowKey, i, girl){
   switch(rowKey){
-    /* ⚠ ทรงผมบางแบบ (อาฟโร) วาดวงผมคลุมแล้ววาดหน้าทับเอง ⇒ ส่ง markup เต็มมาเลย ไม่ห่อ path ซ้ำ */
-    case 'hair':  return oiSvg(oiHead() + (OI_HAIR_SHAPES[i] || OI_HAIR_SHAPES[0]));
+    /* ⚠ ทรงผมบางแบบ (อาฟโร) วาดวงผมคลุมแล้ววาดหน้าทับเอง ⇒ ส่ง markup เต็มมาเลย ไม่ห่อ path ซ้ำ
+       ⚠ **ต้องแยกตามเพศ** — index เดียวกันของชาย/หญิงเป็นคนละทรงกันสนิทในโมเดล 3D */
+    case 'hair': {
+      const tb = girl ? OI_HAIR_SHAPES_G : OI_HAIR_SHAPES;
+      return oiSvg(oiHead() + (tb[i] || tb[0]));
+    }
     case 'eyes':  return oiSvg(oiHead() + (OI_EYES[i] || ''));
     case 'pattern': return oiSvg(OI_SHIRT + (OI_PAT[i] || ''));
     case 'hat':   return i === 0 ? '' : oiSvg(oiHead(14) + (OI_HAT[i] || ''));

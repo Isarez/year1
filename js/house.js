@@ -6226,7 +6226,10 @@ function buildCreatorRows(cfg){
         /* เฟส 8C: วาด **รูปของชิ้นนั้นจริงๆ** แทนปุ่มตัวเลข (ข้อ 29 ของ QUEST-DESIGN.md)
            เด็ก 5 ขวบอ่านเลข 7 แล้วไม่มีทางรู้ว่าเป็นหมวกอะไร ⇒ ต้องดูออกด้วยตา
            ⚠ ถ้าแถวไหนยังไม่มีไอคอน `outfitIcon` คืนค่าว่าง → ถอยไปใช้ตัวเลขแบบเดิม ไม่พัง */
-        const ico = (typeof outfitIcon === 'function') ? outfitIcon(row.key, i) : '';
+        /* ⚠ ต้องส่งเพศไปด้วย — ทรงผมชาย/หญิงที่ index เดียวกันเป็นคนละทรงกันสนิท
+           (ผู้ใช้แจ้ง 2026-08-17: เลือกเด็กผู้หญิงแล้วไอคอนทรงผมไม่เปลี่ยนตาม) */
+        const ico = (typeof outfitIcon === 'function')
+          ? outfitIcon(row.key, i, (cfg.gender | 0) === 1) : '';
         if(ico && !(row.none && i===0)){
           b.classList.add('house-chip-ico');
           b.innerHTML = ico;
@@ -6251,6 +6254,9 @@ function buildCreatorRows(cfg){
         const was = cfg[row.key];
         cfg[row.key] = i;
         rebuildChar(cfg);
+        /* 🚻 เปลี่ยนเพศ = **ไอคอนทรงผมทั้งแถวต้องวาดใหม่** (ทรงชาย/หญิงคนละชุดกัน)
+           ⚠ ถ้าไม่วาดใหม่ เด็กผู้หญิงจะเห็นรูปทรงผมชายค้างอยู่ แล้วกดเลือกได้ทรงที่ไม่ตรงกับรูป */
+        if(row.key === 'gender' && was !== i){ buildCreatorRows(cfg); return; }
         /* ใส่/ถอดเครื่องแต่งที่มีแถวสีคู่กัน → สร้างรายการใหม่ให้แถวสีโผล่/หายทันที
            (เช็คแค่ตอนข้ามเส้น 0 ↔ ไม่ใช่ 0 จะได้ไม่ต้องวาดใหม่ทุกครั้งที่แค่เปลี่ยนแบบ) */
         if(H_ROWS.some(r=>r.needs===row.key) && (!was !== !i)){ buildCreatorRows(cfg); return; }
