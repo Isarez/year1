@@ -128,7 +128,12 @@
         </button>
       </div>
       <p class="landing-note">เปลี่ยนใจทีหลังได้นะ — ในเมืองมีปุ่มออก และหน้าหมวดก็มีปุ่มเข้าเมือง</p>
-      <button class="landing-back" id="landing-back">← เปลี่ยนคนเล่น</button>
+      <div class="landing-foot">
+        <button class="landing-back" id="landing-back">← เปลี่ยนคนเล่น</button>
+        <!-- 🗂️ จัดการข้อมูล (ย้ายเครื่อง/รีเซ็ต/ลบ) — เปิดกล่องเดียวกับปุ่มในแถบบนของหน้าเลือกเด็ก
+             ⚠ ต้องเล็กกว่าการ์ด 2 ใบชัดเจน เด็กจะได้ไม่เข้าใจว่าเป็นทางเลือกที่ 3 -->
+        <button class="landing-back landing-data" id="landing-data">🗂️ จัดการข้อมูล</button>
+      </div>
     </div>
   </section>
 
@@ -1083,6 +1088,10 @@
         <button class="icon-btn house-ctrl-item" id="house-dev-btn" aria-label="ปรับค่าต่างๆ (เครื่องมือเทส)"><span class="hc-ic">🛠️</span><span class="hc-label">ปรับค่าต่างๆ<span class="hc-test-star">*</span></span></button>
         <!-- หน้าเทส: ฟังเพลงธีมฟาร์มทั้ง 4 เพลงของโหมดบ้านทีละเพลง (เฟส 14) -->
         <button class="icon-btn house-ctrl-item" id="house-music-btn" aria-label="ฟังเพลงธีม (เครื่องมือเทส)"><span class="hc-ic">🎶</span><span class="hc-label">ฟังเพลงธีม<span class="hc-test-star">*</span></span></button>
+        <!-- 🗂️ จัดการข้อมูล — เปิดกล่องเดียวกับหน้าเลือกเด็ก (ย้ายเครื่อง/รีเซ็ต/ลบ)
+             ⚠ กล่องเป็น z-index 200 อยู่เหนือ #house-view (70) จึงเปิดทับเมืองได้เลย
+             และปุ่มรีเซ็ต/ลบ จบด้วย location.reload() อยู่แล้ว ⇒ ไม่ต้องสั่งออกจากเมืองเอง -->
+        <button class="icon-btn house-ctrl-item" id="house-data-btn" aria-label="จัดการข้อมูล"><span class="hc-ic">🗂️</span><span class="hc-label">จัดการข้อมูล</span></button>
         <!-- 🎓 บทเรียนสอนเล่น — ปุ่มข้าม/เรียนใหม่อยู่ในเมนูนี้เท่านั้น (ผู้ใช้สั่ง: เด็กข้ามเองไม่ได้) -->
         <button class="icon-btn house-ctrl-item" id="house-tut-btn" aria-label="บทเรียนสอนเล่น"><span class="hc-ic">🎓</span><span class="hc-label">บทเรียนสอนเล่น</span></button>
         <!-- ทางออกจากโหมดบ้านทางเดียว (ปุ่ม ← ถูกเอาออกจากแถบบนแล้ว) — อยู่ในเมนูเฟืองที่เด็กไม่เผลอกดโดน -->

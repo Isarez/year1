@@ -3195,6 +3195,9 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .landing-back:hover{background:#fff; transform:translateY(-1px);}
   .landing-back:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.08);}
   body.night-mode .landing-back{background:rgba(38,52,78,.8); color:#E6DCC8;}
+  /* แถวปุ่มเล็กใต้การ์ด 2 ใบ — ห่อไว้เพื่อให้เรียงข้างกันบนจอกว้าง และซ้อนกันบนจอแคบ */
+  .landing-foot{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px;}
+  .landing-foot .landing-back{margin-top:0;}
   body.night-mode .landing-back:hover{background:rgba(52,70,102,.92);}
   @media (max-width:560px){
     .landing-cards{grid-template-columns:1fr;}

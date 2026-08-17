@@ -86,6 +86,14 @@
     if(h) h.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); goHouse(); });
     if(q) q.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); goQuiz(); });
     if(b) b.addEventListener('click', ()=>{ if(typeof playClick==='function') playClick(); backToChildSelect(); });
+    /* 🗂️ จัดการข้อมูล — ใช้กล่องเดียวกับหน้าเลือกเด็ก (ผู้ใช้สั่ง 2026-08-17)
+       ⚠ **ห้ามทำกล่องใหม่ซ้ำ** — ย้ายข้อมูล/รีเซ็ต/ลบ ต้องมีทางเดียวจุดเดียวเสมอ
+         ไม่งั้นวันหลังแก้ที่หนึ่งแล้วอีกที่ค้างของเก่า */
+    const d = $('landing-data');
+    if(d) d.addEventListener('click', ()=>{
+      if(typeof playClick==='function') playClick();
+      if(typeof showClearModal === 'function') showClearModal();
+    });
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
