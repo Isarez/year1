@@ -1237,6 +1237,8 @@
           const bowl=ball(.46,col,16); bowl.scale.set(1,.55,1); bowl.position.y=.42; g.add(bowl);
           const rim=torus(.44,.05,shade(col,.82),16); rim.rotation.x=Math.PI/2; rim.position.y=.5; g.add(rim);
           const stand=cyl(.3,.34,.3,shade(col,.7),12); stand.position.y=.15; g.add(stand);
+          /* ⚠ ของเดิมมีแค่ชาม+ขอบ **ไม่มีเบาะ** ⇒ บนจอดูเป็นอ่างอาบน้ำ ไม่ใช่เก้าอี้ */
+          const cu=cushion(.62,.16,.5,shade(col,1.18)); cu.position.set(0,.62,.02); g.add(cu);
         } },
       { id:'stool-round', name:'สตูลกลมนุ่ม', cat:'seat', scope:'in', emoji:'🔵', colors:FABRIC,
         action:'sit', sit:{sy:.4},
@@ -1258,7 +1260,9 @@
           const rope=cyl(.02,.02,.7,0xbcaaa4,6); rope.position.y=1.42; g.add(rope);
           const shell=ball(.42,col,16); shell.scale.set(1,.9,1); shell.position.y=.72; g.add(shell);
           const rim=torus(.4,.045,shade(col,.85),16); rim.rotation.x=Math.PI/2; rim.position.y=.96; g.add(rim);
-          const cu=cushion(.46,.14,.36,shade(col,1.15)); cu.position.set(0,.6,.08); g.add(cu);
+          /* ⚠ เบาะต้องอยู่ **บนผิวบนของเปลือก** ไม่ใช่กลางลูก — ของเดิม y=.6 อยู่ต่ำกว่าจุดศูนย์กลาง
+             เปลือก (y=.72) ⇒ ถูกกลบมิดในเนื้อทรงกลม เก้าอี้เลยดูเป็นแค่ "อ่างเปล่า" */
+          const cu=cushion(.46,.14,.36,shade(col,1.15)); cu.position.set(0,1.0,.05); g.add(cu);
         } },
       { id:'pouf', name:'พูฟถักนุ่ม', cat:'seat', scope:'in', emoji:'🧵', colors:FABRIC,
         action:'sit', sit:{sy:.28},
@@ -1329,8 +1333,13 @@
         build(g,col){
           [-1,1].forEach(s=>{ const post=cyl(.06,.07,1.1,0x8d6e63,10); post.position.set(s*.78,.55,0); g.add(post);
             const foot=box(.24,.08,.5,0x8d6e63,.03); foot.position.set(s*.78,.04,0); g.add(foot); });
-          for(let i=0;i<9;i++){ const t=i/8; const x=-.7+t*1.4; const y=.9-Math.sin(t*Math.PI)*.42;
-            const strip=box(.16,.05,.56,col,.02); strip.position.set(x,y,0); g.add(strip); }
+          /* ⚠ แผ่นผ้าต้อง **เอียงตามความชันของเส้นโค้ง** ไม่งั้นเป็นแผ่นแบนเรียงกันดูเหมือนบันไดพาด
+             (dy/dx ของ y = .9 - sin(πt)·.42 คือ -.42·π·cos(πt)/1.4) และต้องกว้างพอให้ซ้อนกันเล็กน้อย */
+          for(let i=0;i<11;i++){ const t=i/10; const x=-.7+t*1.4; const y=.9-Math.sin(t*Math.PI)*.42;
+            const strip=box(.2,.05,.56,col,.02);
+            strip.position.set(x,y,0);
+            strip.rotation.z = Math.atan2(-.42*Math.PI*Math.cos(t*Math.PI)/1.4, 1);
+            g.add(strip); }
         } },
       { id:'toy-chest-bed', name:'ตู้ลิ้นชักเตี้ย', cat:'bed', scope:'in', emoji:'🧳', fw:2, fd:1, colors:WOOD,
         build(g,col){
@@ -1563,7 +1572,9 @@
         build(g,col){
           const base=box(1.5,.16,1.5,0x8d6e63,.04); base.position.y=.08; g.add(base);
           const glass=box(1.4,.9,1.4,col,.06); glass.position.y=.6; g.add(glass);
-          const roof=cone(1.1,.5,shade(col,.9),4); roof.rotation.y=Math.PI/4; roof.position.y=1.28; g.add(roof);
+          /* ⚠ กรวย 4 เหลี่ยมที่หมุน 45° กว้างจริง = r×√2×2 **ไม่ใช่ r×2**
+             ของเดิม r=1.1 ⇒ กว้าง 3.11 บนช่อง 2×2 (ล้นไปทับของข้างๆ) · .70 ⇒ 1.98 พอดีช่อง */
+          const roof=cone(.7,.5,shade(col,.9),4); roof.rotation.y=Math.PI/4; roof.position.y=1.28; g.add(roof);
           [-1,1].forEach(s=>[-1,1].forEach(t=>{ const post=cyl(.03,.03,.9,0x8d6e63,6);
             post.position.set(s*.68,.6,t*.68); g.add(post); }));
           [[-.4,.3],[.4,-.3]].forEach(([x,z])=>{ const pot=cyl(.12,.1,.16,0xd7a86e,10); pot.position.set(x,.24,z); g.add(pot);
@@ -1640,7 +1651,8 @@
           const leaf=ball(.6,0x66bb6a,14); leaf.position.y=1.9; g.add(leaf);
           const floor=box(1.2,.1,1.2,col,.04); floor.position.y=1.2; g.add(floor);
           const wall=box(.9,.6,.9,shade(col,1.1),.05); wall.position.y=1.55; g.add(wall);
-          const roof=cone(.85,.45,0xef5350,4); roof.rotation.y=Math.PI/4; roof.position.y=2.05; g.add(roof);
+          /* ⚠ กับดักเดียวกับเรือนกระจก: r=.85 หมุน 45° ⇒ กว้างจริง 2.40 ล้นช่อง 2×2 */
+          const roof=cone(.62,.45,0xef5350,4); roof.rotation.y=Math.PI/4; roof.position.y=2.05; g.add(roof);
           for(let i=0;i<5;i++){ const r=box(.36,.05,.1,shade(col,.85),.02);
             r.position.set(0,.2+i*.22,.62); g.add(r); }
         } },

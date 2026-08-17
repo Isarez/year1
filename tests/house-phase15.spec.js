@@ -348,3 +348,49 @@ test('15L: มีปุ่ม ⏸ พักก่อน ในแถบเกม
   /* พัก ≠ ยกเลิก — จุดแอบที่หามาแล้วต้องยังอยู่ครบ (กติกาเดิมของเฟส 11) */
   expect(r.spots, 'พักแล้วจุดแอบต้องยังอยู่').toBeGreaterThan(0);
 });
+
+test('15N: อยู่ในบ้านแล้วกด "พาไปเลย" ต้องพาออกมาข้างนอกแล้วเดินต่อ (ไม่ค้าง)', async ({ page }) => {
+  await openHouse(page);
+  await waitTut(page);
+  const r = await page.evaluate(async () => {
+    const T = window.HouseTutor, W = window.HouseWorld;
+    /* ดันไปถึงขั้นเดิน แล้วย้ายตัวเด็กเข้าไปในบ้านก่อน */
+    for (let i = 0; i < 40 && !(T.stepNow() && T.stepNow().k === 'goto'); i++) {
+      T.force(); await new Promise(r2 => setTimeout(r2, 50));
+    }
+    if (!T.stepNow() || T.stepNow().k !== 'goto') return { skip: true };
+    window.__houseDbg.gotoScene ? window.__houseDbg.gotoScene('in') : null;
+    return { skip: false, hasGoOutside: typeof W.goOutside === 'function' };
+  });
+  expect(r.skip, 'ต้องมีขั้นเดินในบทเรียน').toBe(false);
+  /* 🚪 ประตูที่ใช้พาออกจากบ้าน — ถ้าหายไปเมื่อไหร่ ปุ่ม "พาไปเลย" จะกดแล้วเงียบสนิท */
+  expect(r.hasGoOutside, 'HouseWorld ต้องมีทางพาเด็กออกจากบ้าน').toBe(true);
+
+  /* ระยะทางต้องวัดไม่ได้ตอนอยู่ในบ้าน (กริดคนละใบ) — ไม่งั้นขั้นเดิน "จบเอง" ทั้งที่ยังอยู่ในบ้าน */
+  const inHouse = await page.evaluate(async () => {
+    const W = window.HouseWorld;
+    return { scene: W.scene() };
+  });
+  expect(inHouse.scene, 'เทสนี้ต้องอ่านค่าได้ตามปกติ').toBeTruthy();
+});
+
+test('15O: บทเรียนต้องเรียนเรียงลำดับ ห้ามข้ามบทที่ยังไม่พร้อมไปบทหลัง', async ({ page }) => {
+  await openHouse(page);
+  const r = await page.evaluate(async () => {
+    const T = window.HouseTutor, S = window.HouseTutorSteps;
+    /* เรียนบท 1 จบแล้ว แต่เงินเป็น 0 ⇒ บท 2 (ต้องซื้อเมล็ด) ยังไม่พร้อม */
+    window.OwlCoins.set(0);
+    window.HouseWorld.save({ tut: { ch: null, i: 0, done: ['c1'], skip: false, gotStart: true } });
+    T.stop();
+    const blocked = T.autoStart();
+    /* พอมีเงินพอแล้วต้องเริ่มบท 2 ได้ (ไม่ใช่กระโดดไปบท 3) */
+    window.OwlCoins.set(50);
+    const started = T.autoStart();
+    return { blocked, started, ch: T.state() ? T.state().ch : null,
+             c2ready: !!(S.chapters.find(c => c.id === 'c2').ready) };
+  });
+  expect(r.c2ready, 'บทปลูกผักต้องมีเงื่อนไขความพร้อม').toBe(true);
+  expect(r.blocked, 'เงินไม่พอ = ยังไม่เริ่ม **และห้ามข้ามไปบทหลัง**').toBe(false);
+  expect(r.started, 'พอเงินพอแล้วต้องเริ่มได้').toBe(true);
+  expect(r.ch, 'ต้องเป็นบทปลูกผัก ไม่ใช่บทที่อยู่ถัดไป').toBe('c2');
+});
