@@ -67,16 +67,16 @@ function moneyLevelConfig(level, hard){
      💵 "เงินที่ลูกค้าจ่ายมา" (`bills`) ยังเป็นหลักสิบ/ร้อยได้ เพราะโชว์เป็น **ตัวเลขในฟองคำพูด**
        ไม่ได้วาดเป็นเหรียญ (ธนบัตร 20/50/100 มีจริงอยู่แล้ว) */
   if(hard==='p6'){
-    /* ป.6: ราคาหลักสิบ ทอนจากธนบัตร และมีโจทย์ส่วนลดร้อยละ */
+    /* ป.6: เริ่มมีของราคาเกิน 100 ⇒ **ด่านท้ายเท่านั้นที่ได้ธนบัตรมาใช้** */
     if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:24, priceMax:60, step:1, discount:[10,20] };
-    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[50,100], priceMin:20, priceMax:60, step:1, discount:[10,20,25] };
-    return { coins:[1,2,5,10], mode:'change', bills:[100], priceMin:55, priceMax:95, step:1, discount:[20,25,50] };
+    if(level<=7) return { coins:[1,2,5,10], notes:[20,50], mode:'change', bills:[100,200], priceMin:60, priceMax:160, step:1, discount:[10,20,25] };
+    return { coins:[1,2,5,10], notes:[20,50,100], mode:'pay', priceMin:120, priceMax:320, step:1, discount:[20,25,50] };
   }
   if(hard==='p5'){
-    /* ป.5: ราคาหลักสิบ เริ่มมีส่วนลดร้อยละอย่างง่าย */
+    /* ป.5: ราคาหลักสิบเป็นหลัก · ด่านท้ายแตะหลักร้อยพอให้รู้จักธนบัตร */
     if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:16, priceMax:45, step:1 };
     if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[50], priceMin:14, priceMax:45, step:1, discount:[10,50] };
-    return { coins:[1,2,5,10], mode:'change', bills:[50,100], priceMin:30, priceMax:80, step:1, discount:[10,20,25] };
+    return { coins:[1,2,5,10], notes:[20,50], mode:'pay', priceMin:105, priceMax:180, step:1, discount:[10,20,25] };
   }
   if(level<=3) return { coins:[1,2,5], mode:'pay', priceMin:2, priceMax:10 };
   if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:11, priceMax:30 };
@@ -112,7 +112,9 @@ function renderMoneyLevel(){
     ? 'ราคาป้าย <s>'+g.full+' บาท</s> <b>ลด '+g.disc+'%</b> เหลือ <b>'+price+' บาท</b>'
     : 'ราคา <b>'+price+' บาท</b>';
   const bubble = cfg.mode==='change'
-    ? '<div class="money-bubble">อยากได้ '+item.e+' '+priceLine+'<br><span class="money-give">หนูจ่ายด้วยเงิน '+given+' บาท ช่วยทอนหน่อย</span></div>'
+    ? '<div class="money-bubble">อยากได้ '+item.e+' '+priceLine
+      + '<br><span class="money-give">หนูจ่ายด้วย '
+      + (isBillValue(given) ? billFace(given) : (given+' บาท')) + ' ช่วยทอนหน่อย</span></div>'
     : '<div class="money-bubble">อยากได้ '+item.e+'<br>'+priceLine+'</div>';
   $('money-customer').innerHTML = '<div class="money-cust-face">'+cust+'</div>'+bubble;
   $('money-hint').textContent = cfg.mode==='change' ? 'หยิบเหรียญ "ทอน" ให้พอดี แล้วกดจ่ายเงิน!' : 'หยิบเหรียญใส่ถาดให้ครบราคา แล้วกดจ่ายเงิน!';
@@ -127,11 +129,25 @@ function coinFace(v){
   const cls = [1,2,5,10].indexOf(v) >= 0 ? v : 1;
   return '<span class="hqz-coinface cv'+cls+'"><span class="hqz-cn">'+v+'</span></span>';
 }
+/* 💵 **ธนบัตร 20 เขียว · 50 ฟ้า · 100 แดง** (ผู้ใช้สั่ง 2026-08-17 · สีตามแบงก์ไทยจริง)
+   ⚠ **ใช้เท่าที่จำเป็น — เฉพาะด่านที่ราคาเกิน 100** เท่านั้น (ดู `notes` ใน moneyLevelConfig)
+     ด่านราคาน้อยยังใช้เหรียญ 1/2/5/10 ล้วนเหมือนเดิม เด็กจะได้ไม่ต้องเรียนของใหม่ตั้งแต่ด่านแรก
+   ⚠ ธนบัตร **ไม่ใช่เหรียญ** — หน้าตาต้องเป็นสี่เหลี่ยมชัดเจน ไม่งั้นเด็กนับปนกับเหรียญ */
+function billFace(v){
+  const cls = v >= 100 ? 'b100' : (v >= 50 ? 'b50' : 'b20');
+  return '<span class="money-bill '+cls+'"><span class="mb-n">'+v+'</span></span>';
+}
+/* ค่านี้เป็นธนบัตรไหม (ที่เหลือคือเหรียญ) */
+function isBillValue(v){ return v === 20 || v === 50 || v === 100; }
+function moneyFace(v){ return isBillValue(v) ? billFace(v) : coinFace(v); }
 function renderMoneyCoins(){
   const g = moneyGame, wrap = $('money-coins'); wrap.innerHTML='';
-  g.cfg.coins.forEach(v=>{
-    const b = document.createElement('button'); b.className='money-coin-btn';
-    b.innerHTML = coinFace(v)+'<span class="money-coin-lbl">บาท</span>';
+  /* เหรียญก่อน แล้วค่อยธนบัตร (ถ้าด่านนี้มี) — เรียงจากค่าน้อยไปมากเหมือนกระเป๋าเงินจริง */
+  const list = (g.cfg.coins || []).concat(g.cfg.notes || []);
+  list.forEach(v=>{
+    const b = document.createElement('button');
+    b.className = 'money-coin-btn' + (isBillValue(v) ? ' money-bill-btn' : '');
+    b.innerHTML = moneyFace(v)+'<span class="money-coin-lbl">บาท</span>';
     b.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.tray.push(v); renderMoneyTray(); });
     wrap.appendChild(b);
   });
@@ -141,7 +157,7 @@ function renderMoneyTray(){
   const g = moneyGame, tray = $('money-tray'); tray.innerHTML='';
   if(g.tray.length===0){ tray.innerHTML='<span class="money-tray-empty">แตะเหรียญด้านล่างใส่ถาดนะ 👇</span>'; }
   g.tray.forEach((v,i)=>{
-    const c = document.createElement('button'); c.className='money-tray-coin'; c.innerHTML=coinFace(v);
+    const c = document.createElement('button'); c.className='money-tray-coin'; c.innerHTML=moneyFace(v);
     c.addEventListener('click', ()=>{ if(g.locked) return; playClick(); g.tray.splice(i,1); renderMoneyTray(); });
     tray.appendChild(c);
   });

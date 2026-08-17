@@ -4825,6 +4825,9 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     display:flex; flex-direction:column; align-items:center; gap:16px; width:100%;
     max-width:520px; margin:8px auto 30px; padding:0 12px;
   }
+  /* ⚠ ด่านที่มีธนบัตรมีของให้เลือก 7 ชิ้น (เหรียญ 4 + แบงก์ 3) รวมกว้างเกิน 520px
+     ⇒ ขยายเฉพาะกระดานร้านค้า ไม่งั้นแบงก์ 100 ตกไปอยู่บรรทัดล่างลำพัง ดูเหมือนของคนละกลุ่ม */
+  .money-board{ max-width:600px; }
   /* ---- ร้านค้านกฮูก ---- */
   .money-customer{ display:flex; align-items:center; gap:12px; background:#fff; border:3px solid #F2D48A; border-radius:22px; padding:14px 18px; width:100%; box-shadow:0 5px 0 rgba(229,169,59,.25); }
   body.night-mode .money-customer{ background:#222B45; border-color:#7a6534; }
@@ -4840,9 +4843,33 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .money-tray-empty{ font-size:14px; color:#B89347; font-weight:700; }
   .money-coin{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; font-weight:700; font-size:18px; color:#5a3e00; border:3px solid rgba(0,0,0,.15); box-shadow:inset 0 -3px 0 rgba(0,0,0,.12); }
   .money-coin.c1{ background:#F4C86B; } .money-coin.c2{ background:#EBB24A; } .money-coin.c5{ background:#E0E4EA; color:#3a3f47; } .money-coin.c10{ background:#F0D06A; }
+  /* 💵 ธนบัตร — **20 เขียว · 50 ฟ้า · 100 แดง** ตามแบงก์ไทยจริง (ผู้ใช้สั่ง 2026-08-17)
+     ⚠ ต้องเป็น **สี่เหลี่ยมชัดเจน** ไม่ใช่วงกลม ไม่งั้นเด็กนับปนกับเหรียญ
+     ⚠ ใช้เฉพาะด่านที่ราคาเกิน 100 — ด่านราคาน้อยยังเป็นเหรียญล้วนเหมือนเดิม */
+  .money-bill{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:58px; height:32px; border-radius:6px; box-sizing:border-box;
+    font-weight:800; font-size:18px; line-height:1; color:#fff;
+    border:2px solid rgba(0,0,0,.22); box-shadow:inset 0 -3px 0 rgba(0,0,0,.14);
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  .money-bill .mb-n{ position:relative; z-index:2; }
+  /* ลายขอบในบางๆ ให้ดูเป็นธนบัตรพิมพ์จริง */
+  .money-bill::after{
+    content:''; position:absolute; inset:4px; border-radius:3px;
+    border:1px dashed rgba(255,255,255,.5); pointer-events:none;
+  }
+  .money-bill{ position:relative; }
+  .money-bill.b20 { background:linear-gradient(135deg,#7CD08A,#3E9E52 60%,#2E7D3E); }
+  .money-bill.b50 { background:linear-gradient(135deg,#7FC8F0,#3A93C4 60%,#2A6E96); }
+  .money-bill.b100{ background:linear-gradient(135deg,#F2867E,#D9534F 60%,#A8332F); }
+  .money-bill-btn .money-coin-lbl{ margin-top:1px; }
+  @media (max-width:600px){ .money-bill{ width:56px; height:30px; font-size:16px; } }
   .money-tray-coin{ background:none; border:none; cursor:pointer; padding:0; transition:transform .12s; }
   .money-tray-coin:active{ transform:scale(.85); }
-  .money-coins{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; width:100%; }
+  /* ⚠ ด่านที่มีธนบัตรจะมีของให้เลือก 7 ชิ้น (เหรียญ 4 + แบงก์ 3) — ต้องกว้างพอให้อยู่แถวเดียว
+     ไม่งั้นแบงก์ 100 ตกไปอยู่บรรทัดล่างลำพัง ดูเหมือนของคนละกลุ่ม (เห็นจากภาพจริง 2026-08-17) */
+  .money-coins{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%; max-width:780px; margin:0 auto; }
   /* 💰 **ตัวเลือกเหรียญไม่ต้องมีกรอบ** (ผู้ใช้สั่ง 2026-08-17) — ตัวเหรียญมีขอบของตัวเองอยู่แล้ว
      กรอบซ้อนอีกชั้นทำให้ดูเป็น "ปุ่ม" มากกว่า "เหรียญที่หยิบได้" */
   .money-coin-btn{ display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; border-radius:18px; padding:6px 8px; cursor:pointer; font-family:inherit; box-shadow:none; transition:transform .12s; }

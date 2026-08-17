@@ -498,19 +498,73 @@ function hpFire(el){
   }
   el.click();
 }
-/* ✋ ท่า "แบมือ = แตะ · กำมือ = ไม่แตะ"
-   🔒 **ใช้กับเกมนกฮูกสั่ง (ef) เท่านั้น** (ผู้ใช้สั่ง 2026-08-17) — เกมอื่นยังเป็นจีบนิ้ว/ชี้ค้างเหมือนเดิม
-     เพราะเกมที่ต้องเล็งแม่นๆ (ลากเส้น/กดคีย์เปียโน) เด็กจะเผลอแบมือแล้วกดโดนของที่ไม่ได้ตั้งใจ
-     ส่วนนกฮูกสั่งเป็นปุ่มใหญ่ 4 ตัวเลือก แบ/กำ จึงเหมาะกว่า
-   สวิตช์เปิดที่ `setHandOpenMode()` ซึ่ง js/house-games.js เรียกตอน mount/unmount เกม ef
-   เกณฑ์: ระยะเฉลี่ยปลายนิ้ว 4 นิ้วถึงข้อมือ ÷ ขนาดฝ่ามือ — แบได้ ~1.9-2.2 · กำได้ ~1.0-1.2
-   ⚠ ใช้คนละค่าขาขึ้น/ขาลง (hysteresis) กันมือค้างกลางๆ แล้วกด-ปล่อยรัวเป็นสิบครั้งต่อวินาที */
-let hpOpenHand = false, hpOpenMode = false;
+/* ✋ **ท่ามือคือคำตอบ — เฉพาะเกมนกฮูกสั่ง (ef)** (ผู้ใช้อธิบายใหม่ 2026-08-17)
+     **แบมือค้าง 2 วิ = ตอบว่า "แตะเลย!"** · **กำมือค้าง 2 วิ = ตอบว่า "ไม่แตะ"**
+   เกมนี้มีคำตอบแค่ 2 ทาง (`#ef-tap-btn` / `#ef-skip-btn`) ⇒ ท่ามือแทนปุ่มได้ตรงๆ
+   ไม่ต้องเล็งเคอร์เซอร์ให้ตรงปุ่มเลย ซึ่งเป็นเรื่องยากสำหรับเด็ก 5 ขวบ
+
+   ⚠ **ไม่ใช่ "แบมือ = คลิกอะไรก็ได้"** — รอบแรกทำผิดแบบนั้นแล้วผู้ใช้ตีกลับ
+     ท่ามือที่นี่ไม่เกี่ยวกับตำแหน่งเคอร์เซอร์เลย มันคือ "เลือกคำตอบข้อไหน"
+   🔒 เปิดเฉพาะเกม ef ผ่าน `setHandPoseMode()` ที่ js/house-games.js เรียกตอน mount/unmount
+     เกมอื่นยังเป็นจีบนิ้ว/ชี้ค้างเหมือนเดิมทุกประการ
+   เกณฑ์แยกท่า: ระยะเฉลี่ยปลายนิ้ว 4 นิ้วถึงข้อมือ ÷ ขนาดฝ่ามือ — แบ ~1.9-2.2 · กำ ~1.0-1.2
+     ใช้คนละค่าขาขึ้น/ขาลง (hysteresis) กันมือค้างกลางๆ แล้วสลับท่ารัวจนนับเวลาไม่ทัน */
+const HP_POSE_MS = 2000;                       /* ค้างท่าเท่านี้ = ตอบ (ผู้ใช้กำหนด 2 วิ) */
 const HP_OPEN_HI = 1.60, HP_OPEN_LO = 1.35;
-function setHandOpenMode(on){ hpOpenMode = !!on; if(!on) hpOpenHand = false; }
-window.setHandOpenMode = setHandOpenMode;
-/* ให้ชุดเทสตรวจได้ว่าโหมดแบมือถูกเปิดเฉพาะเกมนกฮูกสั่งจริง */
-window.getHandOpenMode = () => hpOpenMode;
+let hpPoseMode = false, hpPose = null, hpPoseAt = 0, hpPoseLatch = null;
+function setHandPoseMode(on){
+  hpPoseMode = !!on;
+  hpPose = null; hpPoseAt = 0; hpPoseLatch = null;
+  hpPosePaint(null, 0);
+  /* 🏷️ **บอกเด็กบนปุ่มเลยว่าท่าไหนคือคำตอบไหน** — เด็ก 5 ขวบไม่มีทางเดาเองได้
+     ⚠ ยังกดปุ่มด้วยนิ้วได้ตามปกติ ท่ามือเป็นทางเพิ่ม ไม่ใช่ทางเดียว */
+  const tap = document.getElementById('ef-tap-btn'), skip = document.getElementById('ef-skip-btn');
+  if(tap) tap.textContent = on ? '✋ แบมือค้าง = แตะเลย!' : '✋ แตะเลย!';
+  if(skip) skip.textContent = on ? '✊ กำมือค้าง = ไม่แตะ' : '🚫 ไม่แตะ';
+}
+window.setHandPoseMode = setHandPoseMode;
+/* ให้ชุดเทสตรวจได้ว่าโหมดนี้ถูกเปิดเฉพาะเกมนกฮูกสั่งจริง */
+window.getHandPoseMode = () => hpPoseMode;
+
+/* ปุ่มคำตอบของท่านั้น — คืน null ถ้าไม่ได้อยู่ในเกมนกฮูกสั่ง (วาล์วนิรภัย) */
+function hpPoseBtn(pose){
+  const id = pose === 'open' ? 'ef-tap-btn' : (pose === 'fist' ? 'ef-skip-btn' : null);
+  if(!id) return null;
+  const el = document.getElementById(id);
+  return (el && !el.disabled && el.getClientRects().length) ? el : null;
+}
+/* วาดความคืบหน้าลงบนปุ่มคำตอบโดยตรง — เด็กเห็นว่า "ท่านี้กำลังจะตอบข้อไหน" */
+let hpPoseEl = null;
+function hpPosePaint(btn, p){
+  if(hpPoseEl && hpPoseEl !== btn){
+    hpPoseEl.classList.remove('hp-dwell');
+    hpPoseEl.style.removeProperty('--hp-dwell-p');
+  }
+  hpPoseEl = btn || null;
+  if(!btn) return;
+  btn.classList.add('hp-dwell');
+  btn.style.setProperty('--hp-dwell-p', p.toFixed(3));
+}
+/* เรียกทุกเฟรมที่มีมืออยู่ในกล้อง — `spread` คือค่าที่คำนวณจากภาพมือ */
+function hpPoseTick(spread){
+  if(!hpPoseMode) return;
+  /* แยกท่าด้วย hysteresis — อยู่ระหว่างกลางถือว่า "ยังไม่ตัดสินใจ" ไม่รีเซ็ตท่าเดิมทิ้ง */
+  let pose = hpPose;
+  if(spread > HP_OPEN_HI) pose = 'open';
+  else if(spread < HP_OPEN_LO) pose = 'fist';
+  if(pose !== hpPose){ hpPose = pose; hpPoseAt = Date.now(); hpPoseLatch = null; }
+  const btn = hpPoseBtn(hpPose);
+  if(!btn){ hpPosePaint(null, 0); return; }
+  /* ตอบไปแล้วด้วยท่านี้ = ต้องเปลี่ยนท่าก่อนถึงจะตอบใหม่ได้ (กันค้างท่าเดิมแล้วยิงรัว) */
+  if(hpPoseLatch === hpPose){ hpPosePaint(btn, 1); return; }
+  const p = Math.min(1, (Date.now() - hpPoseAt) / HP_POSE_MS);
+  hpPosePaint(btn, p);
+  if(p >= 1){
+    hpPoseLatch = hpPose;
+    hpClickAt = Date.now();
+    hpFire(btn);
+  }
+}
 let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = null, hpLandmarks = null,
     hpRaf = null, hpSmooth = null, hpWasPinching = false, hpResizeHandler = null, hpHoverEl = null, hpClickAt = 0,
     hpHintShown = false, hpResCount = 0, hpSawHand = false, hpWatchdog = null;
@@ -687,19 +741,17 @@ function hpDrawLoop(){
          กันสั่นตรงรอยต่อ ไม่งั้นมือค้างกลางๆ จะกด-ปล่อยรัวเป็นสิบครั้งต่อวินาที
        ⚠ **จีบนิ้วยังใช้ได้เหมือนเดิม ไม่ได้เอาออก** (กติกาที่ล็อกไว้ใน CLAUDE.md)
          ⇒ แตะได้ทั้ง 2 ท่า เด็กถนัดแบบไหนใช้แบบนั้น */
-    const pinching0 = Math.sqrt((ix-tx)*(ix-tx)+(iy-ty)*(iy-ty)) < Math.max(28, canvas.width*0.07);
+    const pinching = Math.sqrt((ix-tx)*(ix-tx)+(iy-ty)*(iy-ty)) < Math.max(28, canvas.width*0.07);
+    /* ✋ เกมนกฮูกสั่ง: ท่ามือคือคำตอบ (แบ/กำ ค้าง 2 วิ) — ไม่เกี่ยวกับเคอร์เซอร์/การคลิกทั่วไป */
     const palm = Math.hypot(pts[9].x-pts[0].x, pts[9].y-pts[0].y) || 1;
     const spread = [8,12,16,20].reduce((a,i)=>a + Math.hypot(pts[i].x-pts[0].x, pts[i].y-pts[0].y), 0) / 4 / palm;
-    if(hpOpenMode){
-      if(hpOpenHand){ if(spread < HP_OPEN_LO) hpOpenHand = false; }
-      else          { if(spread > HP_OPEN_HI) hpOpenHand = true;  }
-    }else hpOpenHand = false;
-    const pinching = pinching0 || hpOpenHand;
+    hpPoseTick(spread);
     const rect = canvas.getBoundingClientRect();
     updateHandCursor(rect.left + ix*rect.width/canvas.width, rect.top + iy*rect.height/canvas.height, pinching);
   } else {
     hpSmooth = null;
-    hpOpenHand = false;          /* มือหลุดออกนอกกล้อง = ถือว่ากำมือ (ไม่แตะ) */
+    /* มือหลุดออกนอกกล้อง = ล้างท่าที่กำลังนับ ไม่งั้นเอามือกลับเข้ามาแล้วตอบเองทันที */
+    if(hpPoseMode){ hpPose = null; hpPoseAt = 0; hpPoseLatch = null; hpPosePaint(null, 0); }
     hpSetHover(null);
     hpDwellClear();          /* มือหลุดออกนอกกล้อง = เริ่มนับใหม่รอบหน้า */
     $('hp-cursor').classList.remove('active');
