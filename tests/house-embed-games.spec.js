@@ -112,3 +112,33 @@ test('🪟 เกมยิงผลลัพธ์หลังถูกปิด
   expect(r.houseOpen, 'ต้องยังอยู่ในเมืองตามปกติ').toBe(true);
   expect(errors, 'ห้ามมี error').toEqual([]);
 });
+
+test('🎨 ผสมสี: ใต้หม้อต้องมีวงกลมเส้นประครบตามจำนวนสีที่ต้องใช้ · หยอดแล้วสีมาแทนที่', async ({ page }) => {
+  await openHouse(page);
+  await play(page, 'mix');
+  const before = await page.evaluate(() => ({
+    empty: document.querySelectorAll('#mix-pot-chips .mix-chip-empty').length,
+    filled: document.querySelectorAll('#mix-pot-chips .mix-chip:not(.mix-chip-empty)').length,
+    dashed: (function(){ const e = document.querySelector('.mix-chip-empty');
+      return e ? getComputedStyle(e).borderStyle : null; })(),
+    tag: (function(){ const e = document.querySelector('.mix-chip-empty');
+      return e ? e.tagName : null; })(),
+  }));
+  /* ⚠ ต้องโชว์ตั้งแต่ยังไม่หยอดสีเลย — เดิมแถวนี้ว่างเปล่า เด็กไม่รู้ว่าต้องใช้กี่สี */
+  expect(before.empty + before.filled, 'ต้องมีช่องครบตามจำนวนสีของด่าน').toBeGreaterThanOrEqual(2);
+  expect(before.empty, 'ต้องมีช่องว่างเส้นประอย่างน้อย 1 ช่อง').toBeGreaterThan(0);
+  expect(before.dashed, 'ช่องว่างต้องเป็นเส้นประ').toBe('dashed');
+  /* ⚠ ช่องว่างต้องกดไม่ได้ — ทางหยอดสีมีทางเดียวคือกดกระปุกสี */
+  expect(before.tag, 'ช่องว่างต้องไม่ใช่ปุ่ม').not.toBe('BUTTON');
+
+  await page.locator('.mix-jar').first().click();
+  await page.waitForTimeout(2200);
+  const after = await page.evaluate(() => ({
+    empty: document.querySelectorAll('#mix-pot-chips .mix-chip-empty').length,
+    filled: document.querySelectorAll('#mix-pot-chips .mix-chip:not(.mix-chip-empty)').length,
+  }));
+  /* 🎨 หัวใจของสิ่งที่ผู้ใช้สั่ง: หยอดสีแล้ว **สีมาแทนที่ช่องเส้นประ** จำนวนรวมต้องเท่าเดิม */
+  expect(after.filled, 'หยอดแล้วต้องมีจุดสีเพิ่ม').toBe(before.filled + 1);
+  expect(after.empty, 'ช่องเส้นประต้องลดลง 1').toBe(before.empty - 1);
+  expect(after.empty + after.filled, 'จำนวนช่องรวมต้องเท่าเดิม').toBe(before.empty + before.filled);
+});

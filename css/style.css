@@ -1996,12 +1996,26 @@
   @keyframes mixSlosh{ 0%,100%{transform:translateX(-10px);} 50%{transform:translateX(10px);} }
   .mix-pot.happy{animation:popCorrect .38s ease;}
   .mix-pot.sad{animation:shakeX .45s ease;}
-  .mix-pot-chips{display:flex; gap:8px; justify-content:center; min-height:30px;}
+  /* ⚠ ขนาดจุดสีใต้หม้อ **ต้องใหญ่พอให้เด็ก 5 ขวบเห็นชัดจากระยะเล่นจริง**
+     28px เดิมเล็กเกินไปเมื่อเทียบกับหม้อ (ผู้ใช้แจ้งว่าอยากเห็นช่องว่างชัดๆ 2026-08-17) */
+  .mix-pot-chips{display:flex; gap:10px; justify-content:center; min-height:36px; margin-top:2px;}
   .mix-chip{
-    width:28px; height:28px; border-radius:50%; padding:0; cursor:default;
+    width:34px; height:34px; border-radius:50%; padding:0; cursor:default;
     border:2px solid rgba(0,0,0,.18); box-shadow:0 2px 0 rgba(0,0,0,.08);
   }
   .mix-chip.removable{cursor:pointer; outline:3px dashed rgba(0,0,0,.25); outline-offset:2px;}
+  /* 🎨 ช่องว่างเส้นประ = ยังต้องหยอดอีกกี่สี (ผู้ใช้สั่ง 2026-08-17)
+     ⚠ เส้นประของช่องว่างเป็น **border** ส่วนของจุดที่ตักออกได้เป็น **outline** — คนละความหมาย
+       ห้ามทำให้เหมือนกัน เด็กจะแยกไม่ออกว่าอันไหนกดได้ */
+  .mix-chip-empty{
+    box-sizing:border-box; background:transparent; cursor:default;
+    border:3px dashed #C9B79A; box-shadow:none;
+    animation:mixSlotPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes mixSlotPulse{
+    0%,100%{border-color:#C9B79A; transform:scale(1);}
+    50%    {border-color:#E8A94B; transform:scale(1.08);}
+  }
   .mix-jars{display:flex; flex-wrap:wrap; justify-content:center; gap:14px; max-width:620px;}
   .mix-jar{
     display:flex; flex-direction:column; align-items:center; gap:6px;

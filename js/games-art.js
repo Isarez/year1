@@ -137,7 +137,13 @@ function renderMixLevel(){
 }
 
 /* แถวจุดสีใต้หม้อ: โชว์สีที่หยอดไปแล้ว (สีตั้งต้นของโหมดหาสีที่หายไปมีแม่กุญแจ ตักออกไม่ได้)
-   จุดสีที่เพิ่งหยอดและยังไม่ถูกคนผสม แตะซ้ำเพื่อตักออกได้ */
+   จุดสีที่เพิ่งหยอดและยังไม่ถูกคนผสม แตะซ้ำเพื่อตักออกได้
+
+   🎨 **ช่องว่างเส้นประ = ยังต้องหยอดอีกกี่สี** (ผู้ใช้สั่ง 2026-08-17)
+      เดิมแถวนี้ว่างเปล่าจนกว่าจะหยอดสีแรก เด็กจึงไม่รู้เลยว่าด่านนี้ต้องใช้กี่สี
+      ⇒ วาดช่องครบตามจำนวนที่ต้องการตั้งแต่แรก แล้ว **หยอดสีไหนสีนั้นมาแทนที่ช่องเส้นประ**
+      ⚠ ช่องเส้นประต้องเป็น `<span>` ไม่ใช่ `<button>` — เด็กกดแล้วต้องไม่มีอะไรเกิดขึ้น
+        (ทางหยอดสีมีทางเดียวคือกดกระปุกสี) */
 function renderMixChips(){
   const g = mixGame;
   const wrap = $('mix-pot-chips');
@@ -160,10 +166,21 @@ function renderMixChips(){
     }
     wrap.appendChild(chip);
   };
-  if(g.prefill) addChip(g.prefill, false);
+  const addSlot = ()=>{
+    const slot = document.createElement('span');
+    slot.className = 'mix-chip mix-chip-empty';
+    slot.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(slot);
+  };
+  let used = 0;
+  if(g.prefill != null){ addChip(g.prefill, false); used++; }
   g.pours.forEach(id=>{
     addChip(id, g.pours.length===1 && g.mixedCount===0 && !g.locked);
+    used++;
   });
+  /* ช่องที่ยังว่าง — จำนวนสีทั้งหมดของด่านนี้ลบสีที่หยอดไปแล้ว */
+  const total = (g.needed || []).length;
+  for(let i = used; i < total; i++) addSlot();
 }
 
 /* effect กระปุกสีลอยไปเทที่ปากหม้อ: clone กระปุกเป็น ghost ตำแหน่ง fixed แล้ว transition ไปเหนือหม้อพร้อมเอียงเท */
