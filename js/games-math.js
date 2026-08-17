@@ -24,6 +24,14 @@ function finishP2Game(catId, mistakes, totalLevels, doneWord){
      แล้วจบตรงนี้ — ห้ามเด้งหน้าสรุป/แจกสติกเกอร์ของหน้าหลักทับ (ดู js/owl-games.js) */
   if(window.OwlGames && OwlGames.handleFinish(catId, mistakes, totalLevels, doneWord)) return;
   const cat = catById(catId);
+  /* 🛟 **ผลลัพธ์มาถึงตอนที่ไม่มีโฮสต์รับแล้ว** — เด็กปิดการ์ดเควสต์ไปก่อน หรือ engine ที่มี
+     ตัวจับเวลา/อนิเมชันยิงผลออกมาหลังถูก unmount ไปแล้ว
+     ⚠ ของเดิมสั่ง `showOnlyView(resultView)` **ก่อน** จะรู้ว่า `cat` เป็น undefined
+       ⇒ หน้าสรุปของหน้าหลักถูกเปิดค้างไว้ใน `<main>` ซึ่งอยู่ **หลังฉากเมือง**
+         (`#house-view` z-index 70) เด็กเห็นเป็น "popup หลุดไปอยู่หลังเมือง"
+         แล้วโค้ดบรรทัดถัดไปก็ throw ที่ `cat.id` ตามมาอีก (ผู้ใช้แจ้ง 2026-08-17)
+     ⇒ ไม่มีหมวดจริง หรือกำลังอยู่ในโหมดบ้าน = **จบเงียบๆ ห้ามเปิดหน้าสรุปของหน้าหลัก** */
+  if(!cat || document.body.classList.contains('house-open')) return;
   showOnlyView(resultView);
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];

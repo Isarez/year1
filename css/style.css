@@ -1481,7 +1481,14 @@
   .memory-card-icon-svg{ width:60%; height:60%; fill:#fff; }
 
   /* การ์ดจุดแบบโดมิโน: แบ่งครึ่งบน-ล่าง แต่ละครึ่งวางจุดได้สูงสุด 6 จุดตามแพทเทิร์นโดมิโนจริง (ค่าสูงสุดรวม 12) */
-  .domino-card{ width:82%; height:88%; display:flex; flex-direction:column; gap:5px; }
+  /* 🁣 **โดมิโนจริงคือสี่เหลี่ยม 1:2 — ครึ่งบน/ล่างต้องเป็นจัตุรัส**
+     ของเดิมกว้าง 82% ของการ์ดความจำ (อัตราส่วน ~0.77) ⇒ แต่ละครึ่งกว้างกว่าสูงเกือบเท่าตัว
+     ตารางจุด 3×3 เลยยืดออกข้าง ดูไม่เป็นโดมิโน (ผู้ใช้แจ้ง 2026-08-17)
+     ⇒ ล็อกด้วย `aspect-ratio:1/2` แล้วให้ความสูงเป็นตัวคุมขนาด ความกว้างคิดตามเอง */
+  .domino-card{
+    height:88%; aspect-ratio:1 / 2; width:auto; max-width:82%; margin:0 auto;
+    display:flex; flex-direction:column; gap:5px;
+  }
   .domino-half{
     flex:1; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
     gap:3px; padding:3px;
@@ -3257,11 +3264,25 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     #clock-view.og-embedded .clock-frame{width:168px; height:168px;}
   }
   /* 🎴 จับคู่ความจำ — การ์ดเล็กลงให้ครบทุกใบในหน้าเดียว */
+  /* 🎨 ป้าย "ผสมกี่สี" ข้างสีเป้าหมายของเกมผสมสี (ผู้ใช้สั่ง 2026-08-17) */
+  .mix-need{
+    display:inline-block; margin-left:8px; padding:2px 12px; border-radius:999px;
+    background:#FFE3AE; color:#7A5A2E; font-size:14px; font-weight:700; line-height:1.6;
+    vertical-align:middle;
+  }
   #memory-view.og-embedded .memory-card{width:74px; height:96px;}
-  /* จัดให้ 2 คอลัมน์ชิดกลาง — เดิมกางออกสุดขอบจนมีช่องว่างกลางจอใหญ่มาก */
-  #memory-view.og-embedded .memory-board{gap:26px; padding:2px 0 4px; justify-content:center; width:auto; max-width:none;}
-  #memory-view.og-embedded .memory-col{flex:0 0 auto;}
-  #memory-view.og-embedded .memory-col{gap:8px;}
+  /* จัดให้ 2 คอลัมน์ชิดกลาง — เดิมกางออกสุดขอบจนมีช่องว่างกลางจอใหญ่มาก
+     ⚠ **ห้ามตั้ง `flex:0 0 auto` ให้คอลัมน์** — คอลัมน์จะกว้างเท่าการ์ดทุกใบเรียงแถวเดียว
+       (7 ใบ ≈ 560px × 2 คอลัมน์) แล้วล้นออกนอกการ์ดเควสต์จนการ์ดฝั่งขวาโดนตัดหาย
+       (เห็นจากภาพจริง 2026-08-17) ⇒ ต้องให้ยืดหดตามพื้นที่จริงแล้วปล่อยให้ตัดขึ้นบรรทัดเอง */
+  /* ⚠ ต้องล้าง `margin-left/right: calc(50% - 50vw)` ของกระดานหน้าเต็มจอด้วย
+     ไม่งั้นกระดานยังกางเต็มความกว้างจอ **แล้วยื่นออกไปนอกการ์ดเควสต์ทางซ้าย**
+     (วัดจริง 2026-08-17: การ์ดใบแรกอยู่ที่ x 23 ทั้งที่การ์ดเควสต์เริ่มที่ 80) */
+  #memory-view.og-embedded .memory-board{
+    gap:16px; padding:2px 0 4px; justify-content:center;
+    width:auto; max-width:100%; margin-left:0; margin-right:0;
+  }
+  #memory-view.og-embedded .memory-col{flex:1 1 0; min-width:0; max-width:none; gap:8px; padding:10px 6px;}
   @media (max-width:560px){
     #memory-view.og-embedded .memory-card{width:58px; height:76px;}
     #memory-view.og-embedded .memory-board{gap:8px;}

@@ -106,7 +106,12 @@ function renderMixLevel(){
 
   $('mix-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('mix-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
-  $('mix-target-text').innerHTML = 'ช่วยทำ<b>'+rec.out.n+'</b>ให้หน่อยนะ!';
+  /* 🎨 **บอกจำนวนสีที่ต้องผสมตรงข้างเป้าหมายเสมอ** (ผู้ใช้สั่ง 2026-08-17)
+     ของเดิมบอกไว้ในแถบคำใบ้อย่างเดียว ซึ่งอยู่คนละที่กับสีเป้าหมาย เด็กมองไม่เห็นพร้อมกัน
+     ⚠ ด่านที่มีสีตั้งต้นในหม้ออยู่แล้ว ต้องนับเฉพาะ "สีที่ยังต้องเติม" ไม่ใช่จำนวนสีในสูตร */
+  const needN = g.needed.length - (g.prefill != null ? 1 : 0);
+  $('mix-target-text').innerHTML = 'ช่วยทำ<b>'+rec.out.n+'</b>ให้หน่อยนะ!'
+    + '<span class="mix-need">' + (g.prefill != null ? 'เติมอีก ' : 'ผสม ') + needN + ' สี</span>';
   $('mix-target-swatch').style.background = rec.out.c;
   $('mix-msg').hidden = true;
 
