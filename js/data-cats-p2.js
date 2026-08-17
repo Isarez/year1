@@ -964,5 +964,12 @@ const CATS_P2 = [
   { id:'p2-money', name:'ร้านค้านกฮูก', emoji:'🪙', icon:'assets/icons/p2-money.svg', color:'#E5A93B', light:'#FBEBCB', type:'skill', mode:'money', levels:10, grade:'p2', isNew:true },
   { id:'p2-fraction', name:'พิซซ่าเศษส่วน', emoji:'🍕', icon:'assets/icons/p2-fraction.svg', color:'#E1503A', light:'#FBDBD4', type:'skill', mode:'fraction', levels:10, grade:'p2', isNew:true },
   { id:'p2-balance', name:'ตาชั่งวิเศษ', emoji:'⚖️', icon:'assets/icons/p2-balance.svg', color:'#7C8CFF', light:'#E4E8FF', type:'skill', mode:'balance', levels:10, grade:'p2', isNew:true },
-  { id:'p2-calendar', name:'ปฏิทินวิเศษ', emoji:'📅', icon:'assets/icons/p2-calendar.svg', color:'#E67E9C', light:'#FBE1EA', type:'skill', mode:'calendar', levels:10, grade:'p2', isNew:true }
+  { id:'p2-calendar', name:'ปฏิทินวิเศษ', emoji:'📅', icon:'assets/icons/p2-calendar.svg', color:'#E67E9C', light:'#FBE1EA', type:'skill', mode:'calendar', levels:10, grade:'p2', isNew:true },
+  /* ---------- 🔌🧩 ต่อวงจรไฟฟ้า + แท็งแกรม — **เปิดให้เล่นตั้งแต่ ป.1** (ผู้ใช้สั่ง 2026-08-17) ----------
+     เดิมมีเฉพาะ ป.5-6 ⇒ เด็กชั้นเล็กเล่นไม่ได้เลย และในโหมดบ้าน `pickCat()` หาหมวดของชั้นตัวเองไม่เจอ
+     จึงไม่เคยถูกแจกเป็นเควสต์ (ห้ามแก้ด้วยการผ่อนกฎให้ข้ามชั้น — กติกาที่ล็อกไว้)
+     ⚠ ชั้นเล็กได้เนื้อหาที่ง่ายกว่าผ่าน `circuitMax` (ขนาดกระดาน) และ `tangramMax` (จำนวนชิ้น)
+     ⚠ ใช้ไอคอนร่วมกับรุ่น ป.5-6 โดยตั้งใจ — เป็นเกมเดียวกัน คนละระดับความยาก */
+  { id:'p2-circuit', name:'ต่อวงจรไฟฟ้า ป.2', emoji:'🔌', icon:'assets/icons/p6-circuit.svg', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'circuit', circuitMax:3, levels:10, grade:'p2', isNew:true },
+  { id:'p2-tangram', name:'ต่อรูปทรง ป.2', emoji:'🔷', icon:'assets/icons/p6-tangram.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'tangram', tangramMax:3, levels:10, grade:'p2', isNew:true },
 ];

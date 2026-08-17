@@ -1019,5 +1019,12 @@ const CATS_P4 = [
   /* ---------- mechanic ใหม่ของ ป.4 (engine ใหม่ 3 แบบ ตรงตัวชี้วัด ค 2.1 / ค 3.1) ---------- */
   { id:'p4-chart', name:'อ่านแผนภูมิแท่ง', emoji:'📊', icon:'assets/icons/p4-chart.svg', color:'#2F8FD6', light:'#D7ECFA', type:'skill', mode:'chart', levels:10, handPlay:true, grade:'p4', isNew:true },
   { id:'p4-area', name:'พื้นที่ตารางหน่วย', emoji:'🔶', icon:'assets/icons/p4-area.svg', color:'#E0904C', light:'#FBE7D4', type:'skill', mode:'area', levels:10, handPlay:true, grade:'p4', isNew:true },
-  { id:'p4-angle', name:'มุมมหัศจรรย์', emoji:'🈷️', icon:'assets/icons/p4-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', levels:10, grade:'p4', isNew:true }
+  { id:'p4-angle', name:'มุมมหัศจรรย์', emoji:'🈷️', icon:'assets/icons/p4-angle.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'angle', levels:10, grade:'p4', isNew:true },
+  /* ---------- 🔌🧩 ต่อวงจรไฟฟ้า + แท็งแกรม — **เปิดให้เล่นตั้งแต่ ป.1** (ผู้ใช้สั่ง 2026-08-17) ----------
+     เดิมมีเฉพาะ ป.5-6 ⇒ เด็กชั้นเล็กเล่นไม่ได้เลย และในโหมดบ้าน `pickCat()` หาหมวดของชั้นตัวเองไม่เจอ
+     จึงไม่เคยถูกแจกเป็นเควสต์ (ห้ามแก้ด้วยการผ่อนกฎให้ข้ามชั้น — กติกาที่ล็อกไว้)
+     ⚠ ชั้นเล็กได้เนื้อหาที่ง่ายกว่าผ่าน `circuitMax` (ขนาดกระดาน) และ `tangramMax` (จำนวนชิ้น)
+     ⚠ ใช้ไอคอนร่วมกับรุ่น ป.5-6 โดยตั้งใจ — เป็นเกมเดียวกัน คนละระดับความยาก */
+  { id:'p4-circuit', name:'ต่อวงจรไฟฟ้า ป.4', emoji:'🔌', icon:'assets/icons/p6-circuit.svg', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'circuit', circuitMax:4, levels:10, grade:'p4', isNew:true },
+  { id:'p4-tangram', name:'ต่อรูปทรง ป.4', emoji:'🔻', icon:'assets/icons/p6-tangram.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'tangram', tangramMax:4, levels:10, grade:'p4', isNew:true },
 ];

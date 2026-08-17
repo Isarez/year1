@@ -498,9 +498,19 @@ function hpFire(el){
   }
   el.click();
 }
-/* ✋ สถานะ "แบมืออยู่ไหม" + เกณฑ์ขาขึ้น/ขาลง (hysteresis) — ดูคำอธิบายที่จุดคำนวณ */
-let hpOpenHand = false;
-const HP_OPEN_HI = 1.85, HP_OPEN_LO = 1.55;
+/* ✋ ท่า "แบมือ = แตะ · กำมือ = ไม่แตะ"
+   🔒 **ใช้กับเกมนกฮูกสั่ง (ef) เท่านั้น** (ผู้ใช้สั่ง 2026-08-17) — เกมอื่นยังเป็นจีบนิ้ว/ชี้ค้างเหมือนเดิม
+     เพราะเกมที่ต้องเล็งแม่นๆ (ลากเส้น/กดคีย์เปียโน) เด็กจะเผลอแบมือแล้วกดโดนของที่ไม่ได้ตั้งใจ
+     ส่วนนกฮูกสั่งเป็นปุ่มใหญ่ 4 ตัวเลือก แบ/กำ จึงเหมาะกว่า
+   สวิตช์เปิดที่ `setHandOpenMode()` ซึ่ง js/house-games.js เรียกตอน mount/unmount เกม ef
+   เกณฑ์: ระยะเฉลี่ยปลายนิ้ว 4 นิ้วถึงข้อมือ ÷ ขนาดฝ่ามือ — แบได้ ~1.9-2.2 · กำได้ ~1.0-1.2
+   ⚠ ใช้คนละค่าขาขึ้น/ขาลง (hysteresis) กันมือค้างกลางๆ แล้วกด-ปล่อยรัวเป็นสิบครั้งต่อวินาที */
+let hpOpenHand = false, hpOpenMode = false;
+const HP_OPEN_HI = 1.60, HP_OPEN_LO = 1.35;
+function setHandOpenMode(on){ hpOpenMode = !!on; if(!on) hpOpenHand = false; }
+window.setHandOpenMode = setHandOpenMode;
+/* ให้ชุดเทสตรวจได้ว่าโหมดแบมือถูกเปิดเฉพาะเกมนกฮูกสั่งจริง */
+window.getHandOpenMode = () => hpOpenMode;
 let hpBtn = null, hpActive = false, hpStream = null, hpCamera = null, hpHands = null, hpLandmarks = null,
     hpRaf = null, hpSmooth = null, hpWasPinching = false, hpResizeHandler = null, hpHoverEl = null, hpClickAt = 0,
     hpHintShown = false, hpResCount = 0, hpSawHand = false, hpWatchdog = null;
@@ -680,8 +690,10 @@ function hpDrawLoop(){
     const pinching0 = Math.sqrt((ix-tx)*(ix-tx)+(iy-ty)*(iy-ty)) < Math.max(28, canvas.width*0.07);
     const palm = Math.hypot(pts[9].x-pts[0].x, pts[9].y-pts[0].y) || 1;
     const spread = [8,12,16,20].reduce((a,i)=>a + Math.hypot(pts[i].x-pts[0].x, pts[i].y-pts[0].y), 0) / 4 / palm;
-    if(hpOpenHand){ if(spread < HP_OPEN_LO) hpOpenHand = false; }
-    else          { if(spread > HP_OPEN_HI) hpOpenHand = true;  }
+    if(hpOpenMode){
+      if(hpOpenHand){ if(spread < HP_OPEN_LO) hpOpenHand = false; }
+      else          { if(spread > HP_OPEN_HI) hpOpenHand = true;  }
+    }else hpOpenHand = false;
     const pinching = pinching0 || hpOpenHand;
     const rect = canvas.getBoundingClientRect();
     updateHandCursor(rect.left + ix*rect.width/canvas.width, rect.top + iy*rect.height/canvas.height, pinching);

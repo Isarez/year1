@@ -59,17 +59,24 @@ let moneyGame = null;
 const MONEY_ITEMS = [ {e:'🍎',n:'แอปเปิล'},{e:'🍌',n:'กล้วย'},{e:'🍞',n:'ขนมปัง'},{e:'🍭',n:'อมยิ้ม'},{e:'🥤',n:'น้ำ'},{e:'🍪',n:'คุกกี้'},{e:'🧃',n:'น้ำกล่อง'},{e:'✏️',n:'ดินสอ'},{e:'📒',n:'สมุด'},{e:'🎈',n:'ลูกโป่ง'},{e:'🍩',n:'โดนัท'},{e:'🧸',n:'ตุ๊กตา'} ];
 const MONEY_CUSTOMERS = ['🐰','🐻','🐱','🐶','🐼','🦊','🐨','🐯'];
 function moneyLevelConfig(level, hard){
+  /* 🪙 **เหรียญในเกมมีแค่ 4 แบบ: 1 · 2 · 5 · 10** (ผู้ใช้สั่ง 2026-08-17)
+     ทั้งแอปใช้หน้าตาเหรียญชุดเดียวกัน (`.hqz-coinface` cv1/cv2/cv5/cv10) ⇒ เหรียญ 20/50/100
+     ไม่มีหน้าตารองรับ และเด็กที่เพิ่งเรียนจากเกมจ่ายเงิน/ทอนเงินจะเจอเหรียญคนละชุดแล้วสับสน
+     ⚠ **ตัดเหรียญออกแล้วต้องลดช่วงราคาลงด้วย** — ทอน 300 บาทด้วยเหรียญ 10 = ต้องหยิบ 30 เหรียญ
+       เด็กหยิบไม่ไหวและการ์ดวางไม่พอ ⇒ คุมให้ทอนได้ภายใน ~8 เหรียญทุกระดับ
+     💵 "เงินที่ลูกค้าจ่ายมา" (`bills`) ยังเป็นหลักสิบ/ร้อยได้ เพราะโชว์เป็น **ตัวเลขในฟองคำพูด**
+       ไม่ได้วาดเป็นเหรียญ (ธนบัตร 20/50/100 มีจริงอยู่แล้ว) */
   if(hard==='p6'){
-    /* ป.6: ราคาหลักร้อย ทอนจากแบงก์ใหญ่ และมีโจทย์ส่วนลดร้อยละ/ภาษี */
-    if(level<=3) return { coins:[1,5,10,20,50], mode:'pay', priceMin:40, priceMax:150, step:5, discount:[10,20] };
-    if(level<=7) return { coins:[1,5,10,20,50,100], mode:'change', bills:[200,500], priceMin:60, priceMax:250, step:5, discount:[10,20,25] };
-    return { coins:[1,5,10,20,50,100], mode:'change', bills:[500], priceMin:150, priceMax:400, step:10, discount:[20,25,50] };
+    /* ป.6: ราคาหลักสิบ ทอนจากธนบัตร และมีโจทย์ส่วนลดร้อยละ */
+    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:24, priceMax:60, step:1, discount:[10,20] };
+    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[50,100], priceMin:20, priceMax:60, step:1, discount:[10,20,25] };
+    return { coins:[1,2,5,10], mode:'change', bills:[100], priceMin:55, priceMax:95, step:1, discount:[20,25,50] };
   }
   if(hard==='p5'){
-    /* ป.5: ราคาหลักสิบ-ร้อย เริ่มมีส่วนลดร้อยละอย่างง่าย */
-    if(level<=3) return { coins:[1,5,10,20], mode:'pay', priceMin:20, priceMax:80, step:5 };
-    if(level<=7) return { coins:[1,5,10,20,50], mode:'change', bills:[100,200], priceMin:30, priceMax:120, step:5, discount:[10,50] };
-    return { coins:[1,5,10,20,50,100], mode:'change', bills:[200,500], priceMin:60, priceMax:200, step:10, discount:[10,20,25] };
+    /* ป.5: ราคาหลักสิบ เริ่มมีส่วนลดร้อยละอย่างง่าย */
+    if(level<=3) return { coins:[1,2,5,10], mode:'pay', priceMin:16, priceMax:45, step:1 };
+    if(level<=7) return { coins:[1,2,5,10], mode:'change', bills:[50], priceMin:14, priceMax:45, step:1, discount:[10,50] };
+    return { coins:[1,2,5,10], mode:'change', bills:[50,100], priceMin:30, priceMax:80, step:1, discount:[10,20,25] };
   }
   if(level<=3) return { coins:[1,2,5], mode:'pay', priceMin:2, priceMax:10 };
   if(level<=7) return { coins:[1,2,5,10], mode:'pay', priceMin:11, priceMax:30 };
@@ -1521,13 +1528,18 @@ function circuitMaskTo(from, to){ /* บิตของทิศจาก from �
 }
 function startCircuitGame(catId){
   const cat = beginSkillGame(catId, 'circuit', circuitView, 'circuit-cat-label');
-  circuitGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false };
+  circuitGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), locked:false, maxSize:(cat.circuitMax||0) };
   renderCircuitLevel();
   endSkillGameStart();
 }
 function pickCircuitLevel(used){
-  let avail = CIRCUIT_LEVELS.map((l,i)=>i).filter(i=>!used.has(i));
-  if(!avail.length){ used.clear(); avail = CIRCUIT_LEVELS.map((l,i)=>i); }
+  /* 🔌 **เปิดให้เด็กเล่นได้ตั้งแต่ ป.1** (ผู้ใช้สั่ง 2026-08-17)
+     ⚠ ชั้นเล็กต้องได้เฉพาะกระดานเล็ก — `cat.circuitMax` คุมขนาดสูงสุดของกระดาน
+       ไม่ใส่มา = ได้ทุกด่านเหมือนเดิม (ป.5-6) */
+  const cap = (circuitGame && circuitGame.maxSize) || 99;
+  const fits = i => CIRCUIT_LEVELS[i].size <= cap;
+  let avail = CIRCUIT_LEVELS.map((l,i)=>i).filter(i=>!used.has(i) && fits(i));
+  if(!avail.length){ used.clear(); avail = CIRCUIT_LEVELS.map((l,i)=>i).filter(fits); }
   const pick = avail[Math.floor(Math.random()*avail.length)];
   used.add(pick);
   return CIRCUIT_LEVELS[pick];
@@ -1653,14 +1665,19 @@ function tangramSvg(type, colorFill, colorStroke, rot){
 }
 function startTangramGame(catId){
   const cat = beginSkillGame(catId, 'tangram', tangramView, 'tangram-cat-label');
-  tangramGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), sel:null, locked:false, color:cat.color };
+  tangramGame = { catId, level:1, mistakes:0, totalLevels:cat.levels, used:new Set(), sel:null, locked:false, color:cat.color, maxPieces:(cat.tangramMax||0) };
   renderTangramLevel();
   endSkillGameStart();
 }
 function renderTangramLevel(){
   const g = tangramGame;
-  let avail = TANGRAM_FIGURES.map((f,i)=>i).filter(i=>!g.used.has(i));
-  if(!avail.length){ g.used.clear(); avail = TANGRAM_FIGURES.map((f,i)=>i); }
+  /* 🧩 **เปิดให้เด็กเล่นได้ตั้งแต่ ป.1** (ผู้ใช้สั่ง 2026-08-17)
+     ⚠ ชั้นเล็กต้องได้เฉพาะรูปที่ใช้ชิ้นน้อย — `cat.tangramMax` คุมจำนวนชิ้นสูงสุด
+       ไม่ใส่มา = ได้ทุกรูปเหมือนเดิม (ป.5-6) */
+  const capP = g.maxPieces || 99;
+  const fitP = i => TANGRAM_FIGURES[i].slots.length <= capP;
+  let avail = TANGRAM_FIGURES.map((f,i)=>i).filter(i=>!g.used.has(i) && fitP(i));
+  if(!avail.length){ g.used.clear(); avail = TANGRAM_FIGURES.map((f,i)=>i).filter(fitP); }
   const idx = avail[Math.floor(Math.random()*avail.length)];
   g.used.add(idx);
   const fig = TANGRAM_FIGURES[idx];

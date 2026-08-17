@@ -229,11 +229,18 @@ test('เฟส 6: เกมที่มีหมวดเฉพาะชั้�
     return out;
   });
   console.log('พร้อมเล่นตามชั้น: ' + JSON.stringify(r));
-  /* วงจรไฟฟ้ามีหมวดเดียวคือ ป.6 · แท็งแกรมมี ป.5-6 */
-  expect(r['p1'].circuit).toBe(false);
-  expect(r['p5'].circuit).toBe(false);
+  /* 🔌🧩 **ผู้ใช้สั่งเปิดให้เล่นตั้งแต่ ป.1 เมื่อ 2026-08-17** (เดิมวงจรไฟมีแต่ ป.6 · แท็งแกรม ป.5-6)
+     ⚠ เกณฑ์เดิมถูก "กลับด้าน" ไม่ได้ลบเทสทิ้ง — กติกาที่ยังต้องคุมคือ
+       **ห้ามแจกหมวดที่ชั้นสูงกว่าเด็ก** ซึ่งตอนนี้ผ่านได้เพราะมีหมวดของทุกชั้นจริงๆ
+       (ไม่ได้แก้ด้วยการผ่อนกฎ `pickCat` ให้ข้ามชั้น — ข้อนั้นยังห้ามเหมือนเดิม)
+     ⚠ ระดับเตรียม ป.1 ยังไม่มีหมวด 2 ตัวนี้ ⇒ ต้องยังไม่ถูกแจก */
+  expect(r['prep-p1'].circuit).toBe(false);
+  expect(r['p1'].circuit).toBe(true);
+  expect(r['p5'].circuit).toBe(true);
   expect(r['p6'].circuit).toBe(true);
-  expect(r['p2'].shape).toBe(false);
+  expect(r['prep-p1'].shape).toBe(false);
+  expect(r['p1'].shape).toBe(true);
+  expect(r['p2'].shape).toBe(true);
   expect(r['p5'].shape).toBe(true);
   /* คำสั่งวนซ้ำเริ่มมีที่ ป.2 — เด็กเล็กกว่านั้นต้องได้ชุดเดินตามคำสั่งธรรมดาแทน */
   expect(r['p1'].loop).toBe(false);

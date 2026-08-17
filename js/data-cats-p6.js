@@ -1180,6 +1180,8 @@ const CATS_P6 = [
   { id:'p4-order', name:'เรียงลำดับวิเศษ ป.4', emoji:'🥁', icon:'assets/icons/p4-order.svg', color:'#4A9EDF', light:'#DCEEFB', type:'skill', mode:'order', orderTag:'p4', levels:10, grade:'p4', isNew:true },
   { id:'p4-mirror', name:'กระจกวิเศษ ป.4', emoji:'🪕', icon:'assets/icons/p4-mirror.svg', color:'#C94FB6', light:'#F7DFF3', type:'skill', mode:'mirror', levels:10, grade:'p4', isNew:true },
   /* ป.5: ค 2.2 จำแนกรูปสี่เหลี่ยมและปริซึม — เพิ่มแท็งแกรมให้ฝึกมองรูปทรง */
+  /* 🔌 ป.5 ก็ต้องมีต่อวงจรไฟฟ้าด้วย — ไม่งั้นเป็นชั้นเดียวที่ขาดไป (เปิดครบทุกชั้น 2026-08-17) */
+  { id:'p5-circuit', name:'ต่อวงจรไฟฟ้า ป.5', emoji:'🔦', icon:'assets/icons/p6-circuit.svg', color:'#2E86C1', light:'#D6EAF8', type:'skill', mode:'circuit', levels:10, grade:'p5', isNew:true },
   { id:'p5-tangram', name:'แท็งแกรมวิเศษ ป.5', emoji:'🪧', icon:'assets/icons/p5-tangram.svg', color:'#8E5CD6', light:'#EBE1FA', type:'skill', mode:'tangram', levels:10, grade:'p5', isNew:true },
 
   /* ---------- เกมฟังประโยคเติมคำ (cloze) — ชั้นละ 2 เกม ไล่ระดับ ---------- */
