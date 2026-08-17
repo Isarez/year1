@@ -3258,10 +3258,13 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
      ============================================================ */
   /* 🕐 นาฬิกาวิเศษ — **นาฬิกาอยู่ซ้าย · โจทย์+เลขดิจิทัล+ปุ่มตอบอยู่ขวา** (ผู้ใช้สั่ง)
      เดิมเรียงลงล่างทั้งหมด ⇒ สูงเกินการ์ดจนต้องเลื่อน */
+  /* 🕐 **แบ่งครึ่ง: นาฬิกาซ้ายครึ่งหนึ่ง · โจทย์+ดิจิทัลขวาครึ่งหนึ่ง** (ผู้ใช้สั่ง 2026-08-17)
+     ของเดิมคอลัมน์ซ้ายเป็น `auto` ⇒ กว้างเท่าหน้าปัด 200px ที่ล็อกไว้ ที่เหลือยกให้โจทย์หมด
+     นาฬิกาเลยเล็กเทียบกับการ์ดเควสต์ที่กว้าง ~1,120px */
   #clock-view.og-embedded .clock-board{
-    display:grid; grid-template-columns:auto minmax(0,1fr);
+    display:grid; grid-template-columns:1fr 1fr;
     grid-template-areas:'clock task' 'clock digi';
-    align-items:center; gap:10px 16px; padding:2px 4px 4px;
+    align-items:center; justify-items:center; gap:10px 20px; padding:2px 4px 4px;
   }
   #clock-view.og-embedded .clock-stage{grid-area:clock; margin:0;}
   #clock-view.og-embedded .clock-task-card{
@@ -3269,13 +3272,15 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   }
   #clock-view.og-embedded .clock-bottom-row{grid-area:digi; width:100%; gap:8px;}
   #clock-view.og-embedded .clock-msg-slot{display:none;}   /* ข้อความเชียร์ซ้ำกับ toast ของโหมดบ้าน */
-  /* ย่อหน้าปัดลง — ยังลากเข็มได้สบายที่ ~200px (ปุ่มนิ้วเด็กต้องการ 44px หน้าปัดนี้ให้เกินพอ) */
-  #clock-view.og-embedded .clock-frame{width:200px; height:200px; padding:10px;}
+  /* หน้าปัดกินครึ่งซ้ายเต็มที่ — ยิ่งใหญ่ยิ่งลากเข็มง่าย (เพดาน 340px กันล้นความสูงการ์ด) */
+  #clock-view.og-embedded .clock-frame{
+    width:min(340px, 100%); height:auto; aspect-ratio:1 / 1; padding:12px;
+  }
   #clock-view.og-embedded .clock-task-text{font-size:16px;}
   #clock-view.og-embedded .clock-digital{font-size:24px;}
   @media (max-width:560px){
     #clock-view.og-embedded .clock-board{grid-template-columns:1fr; grid-template-areas:'task' 'clock' 'digi'; gap:8px;}
-    #clock-view.og-embedded .clock-frame{width:168px; height:168px;}
+    #clock-view.og-embedded .clock-frame{width:min(200px, 100%); height:auto;}
   }
   /* 🎴 จับคู่ความจำ — การ์ดเล็กลงให้ครบทุกใบในหน้าเดียว */
   /* 🎨 ป้าย "ผสมกี่สี" ข้างสีเป้าหมายของเกมผสมสี (ผู้ใช้สั่ง 2026-08-17) */
@@ -3514,6 +3519,21 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   /* ---- หน้าปัดนาฬิกา (ตื่นให้ตรงเวลา) ---- */
   .hqz-clock{display:flex; justify-content:center;}
   .hqz-clock svg{width:min(196px,52vw); height:auto;}
+  /* 🕐 การ์ดที่มีหน้าปัด — แบ่งครึ่ง: หน้าปัดซ้าย · โจทย์+ตัวเลือกขวา (ผู้ใช้สั่ง 2026-08-17)
+     คลาส `hqz-split` ติดจาก JS ตอนวาดหน้าปัด (ดู renderClock ใน js/house.js)
+     ⚠ หน้าปัดกินแถวเดียวยาวคร่อมทั้ง 2 แถว ⇒ ใหญ่ได้เต็มความสูงการ์ด ไม่ต้องเบียดกับตัวเลือก */
+  .hqz-stage.hqz-split{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    align-items:center; gap:14px 22px;
+  }
+  .hqz-stage.hqz-split > .hqz-clock{grid-row:1 / span 2; align-self:center;}
+  .hqz-stage.hqz-split .hqz-clock svg{width:min(330px, 100%);}
+  /* จอแคบกลับไปเรียงลงมาเหมือนเดิม — 2 คอลัมน์บนจอเล็กจะบีบจนกดตัวเลือกไม่โดน */
+  @media (max-width:640px){
+    .hqz-stage.hqz-split{grid-template-columns:1fr;}
+    .hqz-stage.hqz-split > .hqz-clock{grid-row:auto;}
+    .hqz-stage.hqz-split .hqz-clock svg{width:min(196px,52vw);}
+  }
   /* ---- บีกเกอร์ตวงน้ำ (แล็บ measure-lab · เฟส 6) ---- */
   .hqz-beaker{display:flex; justify-content:center;}
   .hqz-beaker svg{width:min(168px,44vw); height:auto;}

@@ -142,3 +142,70 @@ test('🎨 ผสมสี: ใต้หม้อต้องมีวงกล�
   expect(after.empty, 'ช่องเส้นประต้องลดลง 1').toBe(before.empty - 1);
   expect(after.empty + after.filled, 'จำนวนช่องรวมต้องเท่าเดิม').toBe(before.empty + before.filled);
 });
+
+test('🕐 การ์ดนาฬิกา: แบ่งครึ่งจอ หน้าปัดซ้าย โจทย์ขวา และหน้าปัดต้องใหญ่พอ', async ({ page }) => {
+  await openHouse(page);
+  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'clock', title: 'ทดสอบ clock' }));
+  await page.locator('#hqz-stage button').first().click();
+  await page.waitForTimeout(1800);
+  const r = await page.evaluate(() => {
+    const st = document.getElementById('hqz-stage');
+    const sv = document.querySelector('.hqz-clock svg');
+    const q = document.querySelector('.hqz-q');
+    if (!sv || !q) return null;
+    const a = sv.getBoundingClientRect(), b = q.getBoundingClientRect();
+    return { split: st.classList.contains('hqz-split'), clockW: a.width,
+             clockRight: a.right, qLeft: b.left, stageW: st.getBoundingClientRect().width };
+  });
+  expect(r, 'ต้องมีทั้งหน้าปัดและโจทย์').not.toBeNull();
+  expect(r.split, 'เวทีต้องอยู่โหมดแบ่งครึ่ง').toBe(true);
+  /* ⚠ ของเดิมหน้าปัดล็อกไว้ 196px บนการ์ดกว้าง ~1,000px ⇒ เล็กจนดูเวลายาก (ผู้ใช้แจ้ง) */
+  expect(r.clockW, 'หน้าปัดต้องใหญ่กว่าเดิมชัดเจน').toBeGreaterThan(240);
+  expect(r.clockW / r.stageW, 'หน้าปัดควรกินราวครึ่งหนึ่งของเวที').toBeGreaterThan(0.3);
+  /* หน้าปัดอยู่ซ้าย โจทย์อยู่ขวา — ต้องไม่ทับกัน */
+  expect(r.qLeft, 'โจทย์ต้องอยู่ขวาของหน้าปัด').toBeGreaterThanOrEqual(r.clockRight - 2);
+});
+
+test('🕐 เลย์เอาต์แบ่งครึ่งต้องไม่ค้างไปข้อถัดไปที่ไม่มีหน้าปัด', async ({ page }) => {
+  await openHouse(page);
+  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'clock', title: 'clock' }));
+  await page.locator('#hqz-stage button').first().click();
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => window.HouseQuestUI.close());
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'quiz', title: 'quiz' }));
+  await page.locator('#hqz-stage button').first().click();
+  await page.waitForTimeout(1500);
+  const split = await page.evaluate(() => document.getElementById('hqz-stage').classList.contains('hqz-split'));
+  /* 🐞 เจอจริงตอนเทส: คลาสค้าง ⇒ ข้อถัดไปโจทย์ไปอยู่ขวา อิโมจิไปอยู่ซ้าย */
+  expect(split, 'ข้อที่ไม่มีหน้าปัดต้องกลับเป็นคอลัมน์เดียว').toBe(false);
+});
+
+test('🪙 ร้านค้านกฮูก: ต้องใช้เหรียญชุดเดียวกับเกมจ่ายเงิน/ทอนเงิน', async ({ page }) => {
+  await page.addInitScript(c => {
+    localStorage.setItem('p1quiz_children', JSON.stringify([c]));
+    localStorage.setItem('p1quiz_active_child', c.id);
+    localStorage.setItem('p1quiz_music', 'off');
+    window.__TUT_OFF = true;
+  }, CHILD);
+  await page.goto('/');
+  await page.locator('#child-select-view .child-card').first().click();
+  await page.locator('#landing-quiz').click();
+  await page.waitForTimeout(600);
+  await page.evaluate(() => {
+    const t = Array.from(document.querySelectorAll('.cat-card'))
+      .find(x => (x.textContent || '').indexOf('ร้านค้านกฮูก') >= 0);
+    if (t) t.click();
+  });
+  await page.waitForTimeout(2000);
+  const r = await page.evaluate(() => ({
+    owl: document.querySelectorAll('#money-view .hqz-coinface').length,
+    old: document.querySelectorAll('#money-view .money-coin').length,
+    cls: Array.from(document.querySelectorAll('#money-view .hqz-coinface'))
+      .map(e => Array.from(e.classList).find(c => c.indexOf('cv') === 0)),
+  }));
+  /* 🔒 ห้ามมีหน้าตาเหรียญชุดที่ 2 ในแอป — เด็กเจอเหรียญคนละแบบระหว่างเกมแล้วนับผิด */
+  expect(r.owl, 'ต้องใช้เหรียญนกฮูก (.hqz-coinface)').toBeGreaterThan(0);
+  expect(r.old, 'ห้ามเหลือเหรียญแบบเก่า (.money-coin)').toBe(0);
+  r.cls.forEach(c => expect(['cv1', 'cv2', 'cv5', 'cv10'], 'ต้องเป็นเหรียญ 1/2/5/10').toContain(c));
+});

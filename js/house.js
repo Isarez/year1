@@ -6908,7 +6908,17 @@ function qzShow(){
      ปุ่มกล้องไปติดที่แถบบนของโหมดบ้าน กดเองถึงจะเปิดกล้อง (ไม่ขอสิทธิ์เอง) */
   if(typeof mountHandPlayHouse === 'function') mountHandPlayHouse();
 }
-function qzStage(){ const el = $('hqz-stage'); if(el) el.innerHTML = ''; return el; }
+function qzStage(){
+  const el = $('hqz-stage');
+  if(el){
+    el.innerHTML = '';
+    /* 🕐 เลย์เอาต์ 2 คอลัมน์ของการ์ดนาฬิกา **ต้องถอดทุกครั้งที่ล้างเวที**
+       ไม่งั้นข้อถัดไปที่ไม่มีหน้าปัดจะถูกจัดเป็น 2 คอลัมน์ค้าง (โจทย์ไปอยู่ขวา อิโมจิไปอยู่ซ้าย
+       — เห็นจากภาพจริงตอนเทส 2026-08-17) */
+    el.classList.remove('hqz-split');
+  }
+  return el;
+}
 function qzHead(spec, sub){
   const who = $('hqz-who');
   /* spec.title มีเฉพาะรอบทดสอบจากหน้าคลังคำถาม (ไม่มี NPC เจ้าของงาน) */
@@ -7459,6 +7469,11 @@ function renderClockFace(st, it){
     + hand(ma, 60, 6, '#8A5A2B') + hand(ha, 40, 9, '#E07A3F')
     + '<circle cx="' + C + '" cy="' + C + '" r="7" fill="#8A5A2B"/></svg>';
   st.appendChild(wrap);
+  /* 🕐 **แบ่งครึ่งการ์ด: หน้าปัดซ้าย · โจทย์+ตัวเลือกขวา** (ผู้ใช้สั่ง 2026-08-17)
+     ของเดิมเรียงลงมาเป็นคอลัมน์เดียว หน้าปัดเลยถูกบีบให้เล็ก (196px) เพื่อเผื่อที่ให้ตัวเลือกด้านล่าง
+     ⚠ ติดคลาสจาก JS **ห้ามใช้ `:has()` ใน CSS** — แท็บเล็ตรุ่นเก่าที่เป็นเครื่องเป้าหมายยังไม่รองรับ
+     ⚠ `qzStageClear()` ต้องถอดคลาสนี้ออกด้วย ไม่งั้นข้อถัดไปที่ไม่มีนาฬิกาจะโดนจัดเป็น 2 คอลัมน์ค้าง */
+  st.classList.add('hqz-split');
 }
 /* ================= เฟส 6: บีกเกอร์ตวงน้ำ (แล็บ measure-lab) =================
    วาดเป็น SVG อ่านออกในโค้ด (ไม่ใช่ base64) แบบเดียวกับหน้าปัดนาฬิกา
@@ -8127,7 +8142,11 @@ function startShelfDrag(ev, btn, tile, it, paint){
   document.addEventListener('pointercancel', up);
 }
 /* ล้างเนื้อในการ์ดแล้ววาดใหม่ (กระดานร้านค้าวาดใหม่ทุกครั้งที่แตะ) */
-function qzStageClear(){ const st = qzStage(); if(st) st.innerHTML = ''; }
+function qzStageClear(){ const st = qzStage();
+  if(!st) return;
+  st.innerHTML = '';
+  st.classList.remove('hqz-split');   /* 🕐 เลย์เอาต์ 2 คอลัมน์ของนาฬิกา ห้ามค้างไปข้อถัดไป */
+}
 
 /* ================= เฟส 5 ตกค้าง: ทายเสียง (sound-guess) =================
    ใช้ `playMusicSequence()` ของหน้าหลักตรงๆ (js/games-art.js) ไม่โหลดไฟล์เสียงเพิ่ม

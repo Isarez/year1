@@ -111,7 +111,15 @@ function renderMoneyLevel(){
   $('money-hint').textContent = cfg.mode==='change' ? 'หยิบเหรียญ "ทอน" ให้พอดี แล้วกดจ่ายเงิน!' : 'หยิบเหรียญใส่ถาดให้ครบราคา แล้วกดจ่ายเงิน!';
   renderMoneyCoins(); renderMoneyTray();
 }
-function coinFace(v){ const cls = v>=10?'c10':(v>=5?'c5':(v>=2?'c2':'c1')); return '<span class="money-coin '+cls+'">'+v+'</span>'; }
+/* 💰 **เหรียญต้องเป็นชุดเดียวกับเกมจ่ายเงิน/ทอนเงินของโหมดบ้าน** (ผู้ใช้สั่ง 2026-08-17)
+   ดีไซน์ที่ผู้ใช้กำหนดไว้: 1 = เงินเล็ก · 2 = ทองเล็ก · 5 = เงินใหญ่ · 10 = เงินใหญ่วงในทอง
+   ⚠ ใช้คลาส `.hqz-coinface` ชุดเดิม **ห้ามเขียนหน้าตาเหรียญชุดที่ 2** ไม่งั้นเด็กเจอเหรียญ
+     คนละแบบระหว่างเกม แล้วนับผิด (คลาสนี้เป็น global ไม่ได้ผูกกับโหมดบ้าน)
+   ⚠ เลขต้องอยู่ใน element ของตัวเอง (`.hqz-cn`) จะได้ทับชั้นในของเหรียญ 10 ได้ */
+function coinFace(v){
+  const cls = [1,2,5,10].indexOf(v) >= 0 ? v : 1;
+  return '<span class="hqz-coinface cv'+cls+'"><span class="hqz-cn">'+v+'</span></span>';
+}
 function renderMoneyCoins(){
   const g = moneyGame, wrap = $('money-coins'); wrap.innerHTML='';
   g.cfg.coins.forEach(v=>{
