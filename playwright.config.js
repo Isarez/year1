@@ -7,6 +7,10 @@ const { defineConfig, devices } = require('@playwright/test');
    ไม่ได้ตั้งใจทดสอบ UI ละเอียดทุกพิกเซล */
 module.exports = defineConfig({
   testDir: './tests',
+  /* ⚠ ไฟล์ที่ขึ้นต้นด้วย `_` = **สคริปต์เครื่องมือ** (ถ่ายแผ่นไอคอน/โมเดล 3D ไว้รีวิวด้วยตา)
+     ไม่ใช่เทส · บางตัวใช้เวลาเกิน timeout โดยธรรมชาติ ⇒ ต้องไม่ถูกนับรวมในชุดเทส
+     เรียกตรงๆ ได้เสมอ: `npx playwright test tests/_shotZoom.spec.js` */
+  testIgnore: /_.*\.spec\.js$/,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   /* ⚠️ **เคยลองจูนความเร็วแล้ว 2 ทาง เมื่อ 2026-08-13 — ทั้งคู่ไม่คุ้ม อย่าลองซ้ำ**

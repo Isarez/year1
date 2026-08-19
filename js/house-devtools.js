@@ -35,6 +35,7 @@
     {id:'pet',    ic:'🐾', name:'ความหิวสัตว์'},
     {id:'coins',  ic:'🪙', name:'เงิน'},
     {id:'unlock', ic:'🔓', name:'ปลดล็อกของ'},
+    {id:'book',   ic:'📔', name:'สมุดสะสม'},
     {id:'garden', ic:'🌱', name:'เร่งเวลาผัก'},
     {id:'day',    ic:'🔄', name:'กิจกรรมรายวัน'},
   ];
@@ -94,6 +95,7 @@
     if(tab === 'pet')    return renderPet(body);
     if(tab === 'coins')  return renderCoins(body);
     if(tab === 'unlock') return renderUnlock(body);
+    if(tab === 'book')   return renderBook(body);
     if(tab === 'garden') return renderGarden(body);
     if(tab === 'day')    return renderDay(body);
   }
@@ -236,6 +238,43 @@
       {t:'20,000',       fn: ()=> window.OwlCoins.set(20000)},
     ]);
     note(body, 'ของทั้งเกมรวมกันราว 15,800 🪙 — ตั้ง 20,000 แล้วซื้อได้ทุกอย่างเพื่อเทสหน้าร้าน');
+  }
+
+  /* ---------- แท็บสมุดสะสม (เฟส 16) — ปลดล็อกทุกช่องเพื่อดูรูปไอคอนครบทั้งเล่ม ----------
+     ทำไมต้องมี: 70 ช่องของสมุดต้องหามาจริง (ตกปลา 48 ชนิด · ปลูกผัก 6 · แตะสัตว์ 11 ·
+     สอนท่าน้อง 5) ⇒ ตรวจว่า "ไอคอนทุกตัววาดถูกไหม" ด้วยการเล่นจริงแทบเป็นไปไม่ได้
+     ⚠ ผ่าน API สาธารณะ `HouseBook.devUnlockAll()` เท่านั้น — ของแต่ละแท็บอยู่คนละที่กันจริงๆ
+       (ปลา/รูปอยู่ฝั่ง HousePlay · ผัก/สัตว์/ท่าอยู่คีย์ `book`) ห้ามเขียน state เอง */
+  function renderBook(body){
+    const BK = window.HouseBook;
+    if(!BK){ note(body, 'สมุดสะสมยังโหลดไม่เสร็จ'); return; }
+    const c = BK.counts();
+    note(body, 'ตอนนี้เก็บได้ ' + c.total.got + '/' + c.total.total + ' ช่อง'
+             + ' — 🐟 ปลา ' + c.fish.got + '/' + c.fish.total
+             + ' · 🌱 ผัก ' + c.crop.got + '/' + c.crop.total
+             + ' · 🐛 สัตว์ ' + c.critter.got + '/' + c.critter.total
+             + ' · 🎪 ท่าน้อง ' + c.trick.got + '/' + c.trick.total
+             + ' · 📷 รูป ' + c.photo.got + '/' + c.photo.total);
+    row(body, 'ทั้งเล่มรวดเดียว', [{t:'📔 ปลดล็อกทุกช่อง', fn: ()=>{
+      const o = BK.devUnlockAll();
+      toast('📔', 'ปลดล็อกสมุดสะสมครบแล้ว (ปลา ' + o.fish + ' · ผัก ' + o.crop
+                + ' · สัตว์ ' + o.critter + ' · ท่า ' + o.trick + ' · รูป ' + o.photo + ')');
+    }}]);
+    row(body, 'ทีละแท็บ', [
+      {t:'🐟 ปลา 48',   fn: ()=>{ const p = window.HousePlay;
+        toast('🐟', 'สมุดปลาเต็ม ' + ((p && p.devFishAll) ? p.devFishAll(true) : 0) + ' ชนิด'); }},
+      {t:'🌱 ผัก',      fn: ()=> toast('🌱', 'จดพืชครบ ' + BK.devMarkAll('crop') + ' ชนิด')},
+      {t:'🐛 สัตว์',    fn: ()=> toast('🐛', 'จดสัตว์ครบ ' + BK.devMarkAll('critter') + ' ชนิด')},
+      {t:'🎪 ท่าน้อง',  fn: ()=> toast('🎪', 'จดท่าครบ ' + BK.devMarkAll('trick') + ' ท่า')},
+      {t:'📷 รูป',      fn: ()=>{ const p = window.HousePlay;
+        toast('📷', 'ยัดรูปตัวอย่างให้ ' + ((p && p.devPhotoFill) ? p.devPhotoFill(true) : 0) + ' ใบ'); }},
+    ]);
+    row(body, 'เปิดดู', [{t:'📖 เปิดสมุดสะสม', fn: ()=>{ close(); BK.open(); }}]);
+    row(body, 'ล้างสมุด', [{t:'คืนค่าเป็นเล่มเปล่า', warn:true, fn: ()=>{
+      BK.devClearAll(); toast('📔', 'ล้างสมุดสะสมทั้งเล่มแล้ว (รวมสมุดปลาและอัลบั้มรูป)');
+    }}]);
+    note(body, '⚠ ของรางวัลนักสะสม (12/26/45 ช่อง) จะถูกปลดให้ทันทีตอนกดปลดล็อก '
+             + 'เหมือนเก็บครบเองจริงๆ — รูปในอัลบั้มเป็นภาพตัวอย่างที่วาดขึ้นเอง ไม่ใช่ภาพหน้าจอจริง');
   }
 
   /* ---------- แท็บปลดล็อกของ ---------- */

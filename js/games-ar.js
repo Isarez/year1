@@ -1018,11 +1018,20 @@ function loadHouseMode(curtain){
     .then(()=>loadScriptOnce('js/house-avatar.js'+v))
     /* โมเดลตึก/ร้านค้า — ต้องมาก่อน house.js (house.js เรียก HOUSE_MODELS ตอนโหลด) */
     .then(()=>loadScriptOnce('js/house-models.js'+v))
+    /* 🎨 คลังไอคอน SVG ของโหมดบ้าน — ต้องมาก่อนไฟล์ที่วาด UI ทุกตัว (แทน emoji ที่แสดงผลต่างกันข้าม OS) */
+    .then(()=>loadScriptOnce('js/shared/icons.js'+v))     /* แกนกลางคลังไอคอน (หน้าหลักโหลดไว้แล้ว — กันพลาด) */
+    .then(()=>loadScriptOnce('js/house-icons.js'+v))
+    /* 🪑 ของตกแต่งที่ใช้งานได้จริง (เฟส 17) — ต้องมาก่อน house.js เช่นกัน (เรียก HOUSE_USABLE ตอนโหลด) */
+    .then(()=>loadScriptOnce('js/house-usable.js'+v))
+    /* 👋 ความจำของเพื่อนบ้าน (เฟส 18) — ต้องมาก่อน house.js (เรียก HOUSE_NEIGHBOUR ตอนโหลด) */
+    .then(()=>loadScriptOnce('js/house-neighbour.js'+v))
     .then(()=>{ step(.16, 'ขนเฟอร์นิเจอร์เข้าบ้าน…');   return loadScriptOnce('js/house.js'+v); })
     /* สะพานไปหา engine เกมของหน้าหลัก (เฟส 5) — ต้องมาหลัง house.js เพราะใช้ window.HouseQuestUI */
     .then(()=>loadScriptOnce('js/house-games.js'+v))
     /* มินิเกมกลุ่ม A ที่เล่นในโลก 3D (เฟส 11) — ต้องมาหลัง house.js เพราะใช้ window.HouseWorld */
     .then(()=>loadScriptOnce('js/house-play.js'+v))
+    /* 📔 สมุดสะสม (เฟส 16) — ต้องมาหลัง house-play.js เพราะอ่านคลังปลา/เมล็ดจาก HousePlay */
+    .then(()=>loadScriptOnce('js/house-book.js'+v))
     /* 🎵 เพลงธีมฟาร์ม (เฟส 14) — ต้องมาหลัง house.js เพราะ enterHouseGame() เรียก window.HouseMusic
        ⚠ ไฟล์นี้เก็บแต่โน้ต ไม่พึ่งอะไรจาก house.js ตอนโหลด ⇒ วางตรงไหนก็ได้หลัง shared/audio.js */
     .then(()=>loadScriptOnce('js/house-music.js'+v))

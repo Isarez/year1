@@ -164,3 +164,52 @@ test('ปิดหน้าปรับค่า: ปิดด้วยปุ่
   expect(await page.locator('#house-view').isHidden()).toBe(false);   /* ยังไม่ออกจากบ้าน */
   expect(page.__errors).toEqual([]);
 });
+
+/* ---------- 📔 แท็บสมุดสะสม (เพิ่ม 2026-08-19 ตามคำสั่งผู้ใช้) ----------
+   ของสะสม 70 ช่องต้องหามาจริง (ตกปลา 48 ชนิด · ปลูกผัก · แตะสัตว์ · สอนท่าน้อง)
+   ⇒ ตรวจว่าไอคอนทุกตัววาดถูกไหมด้วยการเล่นจริงแทบเป็นไปไม่ได้ จึงต้องมีปุ่มปลดล็อกทั้งเล่ม
+   ⚠ ของแต่ละแท็บอยู่คนละที่กันจริงๆ (ปลา/รูป = ฝั่ง HousePlay · ผัก/สัตว์/ท่า = คีย์ `book`)
+     ปลดล็อกแล้วตัวเลขทุกแท็บต้องเต็ม **และต้องลงถึง save จริง** ไม่ใช่แค่ตัวเลขบนจอ */
+test('แท็บสมุดสะสม: ปลดล็อกทั้งเล่มแล้วเต็มทุกแท็บจริง (ลงถึง save) และล้างกลับได้', async ({ page }) => {
+  await openTab(page, 'สมุดสะสม');
+  const before = await page.evaluate(() => window.HouseBook.counts().total.got);
+  expect(before).toBe(0);
+
+  await clickBtn(page, '📔 ปลดล็อกทุกช่อง');
+  const after = await page.evaluate(() => {
+    const c = window.HouseBook.counts();
+    const st = window.HousePlay.state();
+    return {
+      c,
+      savedFish: (st.fish.book || []).length,
+      savedShots: (st.photo.shots || []).length,
+      savedCrop: (window.HouseBook.state().crop || []).length,
+    };
+  });
+  expect(after.c.total.got).toBe(after.c.total.total);       /* ครบทุกช่อง */
+  expect(after.c.fish.got).toBe(after.c.fish.total);
+  expect(after.c.photo.got).toBe(after.c.photo.total);
+  expect(after.savedFish).toBe(after.c.fish.total);          /* ⚠ ปลาต้องลงที่ play.fish.book จริง */
+  expect(after.savedShots).toBe(after.c.photo.total);
+  expect(after.savedCrop).toBe(after.c.crop.total);
+
+  await clickBtn(page, 'คืนค่าเป็นเล่มเปล่า');
+  expect(await page.evaluate(() => window.HouseBook.counts().total.got)).toBe(0);
+  expect(await page.evaluate(() => (window.HousePlay.state().photo.shots || []).length)).toBe(0);
+  expect(page.__errors).toEqual([]);
+});
+
+/* ⚠ ปลดล็อกทั้งเล่ม = ของรางวัลนักสะสม (12/26/45 ช่อง) ต้องถูกปลดให้เหมือนเก็บครบเองจริงๆ
+   **แต่ห้ามจ่ายเหรียญ** (กติกาข้อ 44.4 กันเงินเฟ้อ — เหมือนเก็บครบเองก็ไม่ได้เงิน) */
+test('แท็บสมุดสะสม: ปลดล็อกแล้วได้ของรางวัลนักสะสมครบ **โดยไม่จ่ายเหรียญ**', async ({ page }) => {
+  await openTab(page, 'สมุดสะสม');
+  const before = await page.evaluate(() => window.OwlCoins.get());
+  await clickBtn(page, '📔 ปลดล็อกทุกช่อง');
+  const out = await page.evaluate(() => ({
+    coins: window.OwlCoins.get(),
+    prizes: window.HouseBook.PRIZES.map(p => window.HouseShop.ownsFurn(p.id)),
+  }));
+  expect(out.coins).toBe(before);
+  expect(out.prizes).toEqual([true, true, true]);
+  expect(page.__errors).toEqual([]);
+});

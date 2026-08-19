@@ -193,11 +193,16 @@ test('เฟส 12G: เมนูฟองมี 4 กิจกรรม + เ�
   const menu = page.locator('#house-pet-menu');
   await expect(menu).toBeVisible();
   /* 2026-08-15: ปุ่ม 🍽️ ให้อาหารย้ายมาอยู่ในเมนูนี้เป็นปุ่มแรก ⇒ หน้าแรกมี 5 ปุ่ม
-     2026-08-17: เพิ่มปุ่ม 🎀 ปลอกคอ (ผู้ใช้สั่งให้เปลี่ยนปลอกคอ/สีได้จากเมนูนี้ด้วย) ⇒ เป็น 6 ปุ่ม */
-  await expect(menu.locator('.hpm-btn')).toHaveCount(6);
-  /* ปุ่มทุกใบต้องมีทั้งไอคอนและคำอธิบาย (เด็ก 5 ขวบดูรูปเป็นหลัก) */
+     2026-08-17: เพิ่มปุ่ม 🎀 ปลอกคอ ⇒ เป็น 6 ปุ่ม
+     2026-08-19: **ถอดปุ่มปลอกคอออก** (ผู้ใช้สั่ง) — ย้ายไปเมนูสัตว์เลี้ยงมุมขวาบนที่เดียว ⇒ กลับเป็น 5 */
+  await expect(menu.locator('.hpm-btn')).toHaveCount(5);
+  await expect(menu.locator('.hpm-btn').filter({ hasText: 'ปลอกคอ' }),
+    'ปุ่มปลอกคอต้องไม่อยู่ในเมนูฟองแล้ว').toHaveCount(0);
+  /* ปุ่มทุกใบต้องมีทั้งไอคอนและคำอธิบาย (เด็ก 5 ขวบดูรูปเป็นหลัก)
+     ⚠ ตั้งแต่ 2026-08-18 ไอคอนเป็น **SVG** ไม่ใช่ emoji ⇒ ต้องวัดด้วย innerHTML
+       (textContent ของ <svg> เป็นค่าว่างเสมอ) · ส่วนที่ว่า "ต้องเป็น SVG จริง" มีเทส IC7 คุมอยู่แล้ว */
   const shape = await menu.evaluate(el => Array.from(el.querySelectorAll('.hpm-btn')).map(b => ({
-    ic: (b.querySelector('.hpm-ic') || {}).textContent || '',
+    ic: (b.querySelector('.hpm-ic') || {}).innerHTML || '',
     lb: (b.querySelector('.hpm-lb') || {}).textContent || '',
   })));
   shape.forEach(s => { expect(s.ic.length).toBeGreaterThan(0); expect(s.lb.length).toBeGreaterThan(0); });
@@ -327,4 +332,32 @@ test('เฟส 12L: ให้อาหารอยู่ในเมนูฟ�
   await expect.poll(() => page.evaluate(() => document.getElementById('hpb-left').textContent))
     .toBe('×' + (meals0 - 1));
   expect(errs).toEqual([]);
+});
+
+/* 🔒 เมนูฟองต้องจัดกึ่งกลางทุกส่วน (ผู้ใช้สั่ง 2026-08-19)
+   ของเดิม `.hpm-note` เป็น block กว้างคงที่ 250px ในกล่องที่กว้างกว่านั้น
+   ⇒ คำอธิบายใต้ปุ่มไปกองชิดริมข้างหนึ่ง ไม่ได้อยู่กลางกล่อง
+   ⚠ วัดจากพิกัดจริง (ขอบซ้าย/ขวาต้องห่างเท่ากัน) ไม่ใช่ดูจาก CSS */
+test('เฟส 12M: เมนูฟองสัตว์เลี้ยง — หัวข้อ/ปุ่ม/คำอธิบาย อยู่กึ่งกลางกล่องเสมอ', async ({ page }) => {
+  const errs = await house(page);
+  await page.evaluate(() => window.__houseDbg.petTap());
+  const menu = page.locator('#house-pet-menu');
+  await expect(menu).toBeVisible();
+  /* เข้าเมนูสอนท่า — หน้านี้มีคำอธิบายใต้ปุ่ม */
+  await menu.locator('.hpm-btn').filter({ hasText: 'สอนท่า' }).first().click();
+  await expect(page.locator('#hpm-note')).toBeVisible();
+  const r = await page.evaluate(() => {
+    const b = document.getElementById('house-pet-menu').getBoundingClientRect();
+    const pick = id => { const e = document.getElementById(id); if (!e) return null;
+      const q = e.getBoundingClientRect(); return { l: q.left - b.left, r: b.right - q.right, w: q.width }; };
+    return { box: b.width, note: pick('hpm-note'), grid: pick('hpm-grid'), title: pick('hpm-title') };
+  });
+  ['note', 'grid', 'title'].forEach(k => {
+    expect(r[k], k + ' หายไปจากกล่อง').not.toBeNull();
+    expect(Math.abs(r[k].l - r[k].r), k + ' ไม่ได้อยู่กึ่งกลาง (ซ้าย ' + r[k].l + ' ขวา ' + r[k].r + ')')
+      .toBeLessThanOrEqual(2);
+  });
+  /* คำอธิบายต้องไม่ล้นออกนอกกล่อง */
+  expect(r.note.l).toBeGreaterThanOrEqual(-1);
+  expect(errs, 'ห้ามมี error').toEqual([]);
 });

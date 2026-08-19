@@ -313,6 +313,9 @@
     box-shadow:0 8px 24px rgba(0,0,0,.22);
   }
   .toast.visible{opacity:1; transform:translateX(-50%) translateY(0);}
+  /* ไอคอนใน toast รับได้ทั้ง emoji และ SVG (โหมดบ้านส่ง SVG มาตั้งแต่ 2026-08-18) */
+  #toast-emoji{display:flex; align-items:center; flex:0 0 auto;}
+  #toast-emoji svg{display:block; width:26px; height:26px;}
 
   /* ---------- sticker book ---------- */
   #sticker-book{
@@ -2716,6 +2719,11 @@
   background:rgba(255,255,255,.97); border:3px solid #ffd98a; border-radius:20px;
   padding:9px 11px 10px; box-shadow:0 6px 18px rgba(70,40,10,.24);
   animation:petMenuPop .22s ease forwards;
+  /* 🔒 จัดกึ่งกลางทั้งกล่อง (ผู้ใช้สั่ง 2026-08-19) — เดิมเป็น block ธรรมดา
+     คำอธิบายใต้ปุ่มเลยไปกองชิดริมข้างหนึ่งแทนที่จะอยู่กลางกล่อง
+     และเพดานความกว้างกันแถวปุ่มยาวเกินจอ (ปลอกคอ/ของเล่นมีอย่างละ 8-9 ปุ่ม) */
+  display:flex; flex-direction:column; align-items:center;
+  max-width:min(430px,92vw);
 }
 body.night-mode .house-pet-menu{background:rgba(38,44,72,.97); border-color:#6b7bb5;}
 @keyframes petMenuPop{
@@ -2723,19 +2731,44 @@ body.night-mode .house-pet-menu{background:rgba(38,44,72,.97); border-color:#6b7
   70%{transform:translate(-50%,-100%) scale(1.05); opacity:1;}
   100%{transform:translate(-50%,-100%) scale(1); opacity:1;}
 }
+/* 🧩 ไอคอนที่แทรกแทน emoji กลางข้อความ (OwlIcons.text) — ต้องนั่งพอดีบรรทัดเดียวกับตัวหนังสือ */
+.oi{display:inline-flex; align-items:center; vertical-align:-.18em;}
+.oi svg{display:block;}
+/* ⭐❗ ไอคอน SVG ที่วางหน้าข้อความในหน้าเควสต์ (หัวข้อ/ป้ายหลอดดาว/หมุดโบนัส)
+   ⚠ **ห้ามใช้ชื่อ `.hq-ic`** — ชื่อนั้นถูกใช้อยู่แล้วกับไอคอนในแถวของกระดานเควสต์ (font-size 24px)
+     ตั้งชื่อซ้ำแล้วกฎนี้จะไปทับแถวกระดานด้วย */
+.hqs-ic{display:inline-flex; align-items:center; vertical-align:-4px;}
+.hqs-ic svg{display:block;}
+.hqsum-mark svg{display:block; margin:0 auto;}
+
+/* 💬 ฟองคำพูดของชาวบ้าน/พ่อแม่ — รูปตัวละครวงกลมชิดซ้าย · ชื่อ+บทพูดอยู่ทางขวา
+   (ผู้ใช้เลือกแบบนี้ 2026-08-20 · ของเดิมไอคอนเล็กๆ ต่อหน้าชื่อบรรทัดบน) */
+.hnb-av{
+  flex:0 0 auto; width:46px; height:46px; border-radius:50%;
+  background:#FFF3DF; border:2.5px solid #F0C58B;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.hnb-av svg{display:block; width:40px; height:40px;}
+.hnb-body{display:flex; flex-direction:column; align-items:flex-start; min-width:0;}
+/* 🧑 ไอคอนชาวบ้าน (SVG) ที่วางหน้าชื่อ — ต้องนั่งพอดีบรรทัดเดียวกับตัวหนังสือ */
+.hnpc-ic{display:inline-flex; align-items:center; vertical-align:-5px;}
+.hnpc-ic svg{display:block;}
+.hqsum-ic svg{display:block;}
 .hpm-title{
   font-size:13px; font-weight:700; color:var(--ink); text-align:center;
-  margin:0 16px 7px 0; white-space:nowrap;
+  /* ⚠ เว้นที่ให้ปุ่ม ✕ **ทั้งสองข้างเท่ากัน** ไม่งั้นหัวข้อเยื้องไปข้างเดียว */
+  margin:0 0 7px; padding:0 20px; white-space:nowrap;
 }
 body.night-mode .hpm-title{color:#f4f7ff;}
-.hpm-grid{display:flex; gap:7px;}
+.hpm-grid{display:flex; flex-wrap:wrap; justify-content:center; gap:7px; width:100%;}
 .hpm-btn{
   width:60px; padding:6px 2px 5px; border:2px solid #ffe3ae; border-radius:15px;
   background:#fff8ea; color:var(--ink); cursor:pointer; font-family:inherit;
   display:flex; flex-direction:column; align-items:center; gap:2px;
   transition:transform .12s ease, background .12s ease;
 }
-.hpm-btn .hpm-ic{font-size:22px; line-height:1;}
+.hpm-btn .hpm-ic{font-size:22px; line-height:1; display:flex; align-items:center; justify-content:center;}
+.hpm-btn .hpm-ic svg{display:block;}
 .hpm-btn .hpm-lb{font-size:10.5px; font-weight:700; line-height:1.5; text-align:center;}
 .hpm-btn:active{transform:scale(.93);}
 .hpm-btn:hover{background:#ffeec9;}
@@ -2755,8 +2788,10 @@ body.night-mode .hpm-btn:hover{background:#47507f;}
 .hpm-btn.done .hpm-lb{color:#2e9e5b;}
 body.night-mode .hpm-btn.done .hpm-lb{color:#8ff0b6;}
 .hpm-note{
-  margin-top:7px; font-size:10.5px; font-weight:700; line-height:1.55;
-  color:var(--ink-soft); text-align:center; max-width:250px;
+  /* 🔒 คำอธิบายต้องอยู่กึ่งกลางกล่องเสมอ **ห้ามใช้ max-width คงที่โดยไม่มี margin auto**
+     (ของเดิม 250px ในกล่องกว้าง 334px ⇒ ข้อความไปกองชิดริม · ผู้ใช้แจ้ง 2026-08-19) */
+  margin:7px auto 0; font-size:10.5px; font-weight:700; line-height:1.55;
+  color:var(--ink-soft); text-align:center; max-width:300px;
 }
 body.night-mode .hpm-note{color:#c9d2f0;}
 .hpm-close{
@@ -2769,7 +2804,7 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .hpm-btn{width:53px;}
   .hpm-btn .hpm-ic{font-size:19px;}
   .hpm-btn .hpm-lb{font-size:9.5px;}
-  .hpm-note{max-width:210px;}
+  .hpm-note{max-width:236px;}
 }
 
 /* ม่าน fade ขาวตอนเปลี่ยนฉาก/สลับโหมด — .5s ให้รู้สึกนุ่ม ไม่กระตุก */
@@ -2929,7 +2964,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   }
   .he-tab:active{transform:scale(.94);}
   .he-tab.active{border-color:#33B7EE; box-shadow:0 0 0 3px rgba(51,183,238,.22); background:#EAF7FE;}
-  .he-tab-emoji{font-size:17px; line-height:1;}
+  .he-tab-emoji{font-size:17px; line-height:1; display:inline-flex; align-items:center;}
+  .he-tab-emoji svg{display:block; width:20px; height:20px;}
   .he-items{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(72px,1fr)); gap:8px;
     overflow-y:auto; padding:4px 2px 2px; min-height:0;
@@ -2942,7 +2978,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   }
   .he-item:active{transform:scale(.9);}
   .he-item:hover{border-color:#FFCF7A;}
-  .he-item-emoji{font-size:28px; line-height:1;}
+  .he-item-emoji{font-size:28px; line-height:1; display:flex; align-items:center; justify-content:center; height:28px;}
+  .he-item-emoji svg{display:block;}
   .he-item-name{font-size:11.5px; font-weight:700; text-align:center; line-height:1.5;}
   /* เฟส 1 เศรษฐกิจ: ของที่ยังไม่ได้ซื้อ — จางลงแต่ยังเห็นชัด (ให้เด็กเห็นเป้าหมาย) พร้อมป้ายราคา */
   .he-item.he-locked{background:#F1EADF; border-style:dashed; border-color:rgba(0,0,0,.10);}
@@ -3058,7 +3095,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .hs-card:hover{border-color:#FFCF7A;}
   /* ใบที่กำลังเลือกดูตัวอย่างอยู่ */
   .hs-card.hs-sel{border-color:#33B7EE; box-shadow:0 0 0 3px rgba(51,183,238,.25);}
-  .hs-emoji{font-size:28px; line-height:1; flex:0 0 auto;}
+  .hs-emoji{font-size:28px; line-height:1; flex:0 0 auto; display:flex; align-items:center; justify-content:center;}
+  .hs-emoji svg{display:block;}
   .hs-sw{width:34px; height:34px; border-radius:11px; border:2px solid rgba(0,0,0,.12); display:block; flex:0 0 auto;}
   .hs-name{
     font-size:11.5px; font-weight:700; text-align:center; line-height:1.5;
@@ -3178,14 +3216,15 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   /* ฟองคำพูดของ NPC — กว้างกว่าฟองของเด็กเพราะมีทั้งชื่อและประโยคเต็ม */
   .house-npc-bubble{
     position:fixed; z-index:6; transform:translate(-50%,-100%) scale(.6);
-    background:rgba(255,255,255,.96); border-radius:16px; padding:7px 12px;
-    max-width:min(260px,72vw); text-align:center; color:var(--ink);
+    background:rgba(255,255,255,.96); border-radius:20px; padding:8px 13px 8px 9px;
+    max-width:min(300px,80vw); text-align:left; color:var(--ink);
     box-shadow:0 4px 14px rgba(70,40,10,.2);
+    display:flex; align-items:center; gap:9px;
     opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
   }
   .house-npc-bubble.on{opacity:1; transform:translate(-50%,-100%) scale(1);}
-  .house-npc-bubble b{display:block; font-size:13px; font-weight:700; color:#E07A3F; margin-bottom:2px;}
-  .house-npc-bubble span{display:block; font-size:14.5px; font-weight:700; line-height:1.55;}
+  .house-npc-bubble b{display:block; font-size:13px; font-weight:700; color:#E07A3F; margin-bottom:1px;}
+  .house-npc-bubble .hnb-body span{display:block; font-size:14.5px; font-weight:700; line-height:1.5;}
 
   .hq-list{display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding:2px 0; min-height:0;}
   .hq-row{
@@ -3194,7 +3233,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     border:3px solid transparent; transition:background .2s ease, border-color .2s ease;
   }
   .hq-row.done{background:#E4F6E0; border-color:#8ED08A;}
-  .hq-ic{flex:0 0 auto; font-size:24px; line-height:1;}
+  .hq-ic{flex:0 0 auto; font-size:24px; line-height:1; display:flex; align-items:center;}
+  .hq-ic svg{display:block;}
   .hq-txt{flex:1 1 auto; font-size:15px; font-weight:700; color:var(--ink); line-height:1.55;}
   .hq-row.done .hq-txt{text-decoration:line-through; color:var(--ink-soft);}
   .hq-prog{
@@ -4006,6 +4046,10 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     min-width:34px; text-align:center; border-radius:999px; padding:3px 8px;
     font-size:13.5px; font-weight:700; line-height:1.5; white-space:nowrap;
   }
+  /* ไอคอน SVG ในเม็ดตัวเลข — ต้องนั่งกลางบรรทัดเดียวกับตัวเลข */
+  .hqb-chipic{display:inline-flex; align-items:center; vertical-align:-3px;}
+  .hqb-chipic svg{display:block;}
+  .hqb-alert svg{display:block;}
   .hqb-left{background:#FFE2B8; color:#B4650F;}
   .hqb-side{background:#E4DBF5; color:#6B4FA8;}   /* งานรอง — ม่วงอ่อน แยกจากงานหลักชัดเจน */
   .hqb-done{background:#D6EFD0; color:#3B8F45;}
@@ -4199,7 +4243,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     background:#FFF6E6; border-radius:16px; padding:10px 12px;
   }
   .hsp-item:active{transform:translateY(2px);}
-  .hsp-e{font-size:26px; line-height:1; flex:0 0 auto;}
+  .hsp-e{font-size:26px; line-height:1; flex:0 0 auto; display:flex; align-items:center; justify-content:center;}
+  .hsp-e svg{display:block;}
   .hsp-tx{display:flex; flex-direction:column; gap:2px; flex:1 1 auto; min-width:0;}
   .hsp-tx b{font-size:15px; font-weight:700; color:var(--ink);}
   .hsp-tx i{font-size:12.5px; font-weight:700; color:var(--ink-soft); font-style:normal;}
@@ -4212,7 +4257,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
             background:#FFF6E6; border-radius:14px; padding:9px 12px; grid-column:1/-1;}
   .hpt-row{display:flex; align-items:center; gap:10px; grid-column:1/-1;
            background:#FFF6E6; border-radius:16px; padding:9px 12px;}
-  .hpt-e{font-size:24px; line-height:1; flex:0 0 auto;}
+  .hpt-e{font-size:24px; line-height:1; flex:0 0 auto; display:flex; align-items:center; justify-content:center;}
+  .hpt-e svg{display:block;}
   .hpt-tx{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto;}
   .hpt-tx b{font-size:14.5px; font-weight:700; color:var(--ink);}
   /* ⚠ ห้ามใช้ word-break กับข้อความไทย (เบราว์เซอร์ตัดกลางคำ) */
@@ -4330,7 +4376,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .house-playpanel{width:min(560px,94vw);}
   .hpl-row{display:flex; align-items:center; gap:10px;
            background:#FFF6E6; border-radius:16px; padding:9px 12px;}
-  .hpl-ic{font-size:22px; line-height:1; flex:0 0 auto;}
+  .hpl-ic{font-size:22px; line-height:1; flex:0 0 auto; display:flex; align-items:center;}
+  .hpl-ic svg{display:block;}
   .hpl-tx{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto;}
   .hpl-name{font-size:14.5px; font-weight:700; color:var(--ink);}
   /* ⚠ ห้ามใช้ word-break:break-word กับข้อความไทย — เบราว์เซอร์ตัดกลางคำ (กับดักเดิมของ .hs-sub) */
@@ -4344,6 +4391,74 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .hpl-btn-alt{background:#8FC4E8; color:#1F5679;}
   .hpl-btn:active{transform:translateY(2px); box-shadow:none;}
   .hpl-btn:disabled{background:#E7DCC8; color:#9A8B74; cursor:inherit; box-shadow:none;}
+
+  /* ---------- 📔 สมุดสะสม (เฟส 16) ----------
+     ⚠ ช่องที่ยังไม่ได้ต้องเป็น **เงา** ของชิ้นนั้นจริงๆ ไม่ใช่ช่องว่างเปล่า
+       (เด็กต้องเห็นทรงคร่าวๆ ว่ายังขาดอะไร — กติกาเดียวกับของในร้าน)
+       ทำด้วย filter บน emoji: brightness(0) = ดำสนิท แล้วหรี่ opacity ลง */
+  .house-book{width:min(620px,95vw);}
+  .hbk-body{gap:8px;}
+  .hbk-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:8px;
+  }
+  .hbk-cell{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:#F6EFE3; border-radius:14px; padding:9px 5px; min-width:0;
+  }
+  .hbk-cell.has{background:#FFF6E6; box-shadow:inset 0 0 0 2px #F0C58B;}
+  .hbk-e{font-size:26px; line-height:1.1; display:flex; align-items:center; justify-content:center;
+         width:30px; height:30px;}
+  /* ⚠ ช่องที่ยังไม่เจอ = **เงาของรูปจริง** (ไม่ใช่ช่องว่าง) — ใช้ได้ทั้ง SVG และ emoji
+     `brightness(0)` ทำให้ทุกสีในไอคอนกลายเป็นดำ แล้วหรี่ opacity ลงเป็นเงา */
+  .hbk-cell:not(.has) .hbk-e{filter:brightness(0) opacity(.22);}
+  .hbk-e svg{display:block;}
+  /* ชิปแท็บของสมุด: ไอคอน + (ชื่อ / ตัวเลข) เรียง 2 บรรทัด
+     🔒 **แท็บทั้ง 5 ต้องอยู่แถวเดียวเสมอ** (ผู้ใช้สั่ง 2026-08-19)
+        เดิมชื่อกับตัวเลขต่อกันเป็นบรรทัดเดียว ⇒ ชิปรวมกันกว้างเกินการ์ด แท็บ 📷 ตกไปแถวสอง
+        ⇒ ห้ามเอา `flex-wrap:nowrap` ออก และห้ามเอาตัวเลขกลับไปต่อท้ายชื่อในบรรทัดเดียวกัน */
+  #hbk-tabs{flex-wrap:nowrap; gap:6px;}
+  #hbk-tabs .hqb-chip{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    flex:1 1 0; min-width:0; padding:6px 8px;
+  }
+  #hbk-tabs .hqb-chip svg{display:block; flex:0 0 auto;}
+  .hbk-tabtx{
+    display:flex; flex-direction:column; align-items:flex-start; gap:1px;
+    line-height:1.15; min-width:0; white-space:nowrap;
+  }
+  .hbk-tabtx i{font-style:normal; font-size:11px; font-weight:700; opacity:.72;}
+  .hbk-n{
+    font-size:11.5px; font-weight:700; color:var(--ink-soft); text-align:center;
+    line-height:1.4; white-space:pre-line;
+  }
+  .hbk-cell.has .hbk-n{color:var(--ink);}
+  .hbk-tip{
+    margin-top:2px; padding:8px 12px; border-radius:13px; text-align:center;
+    background:#E8F4E4; color:#3B6B34; font-size:12.5px; font-weight:700; line-height:1.55;
+  }
+  .hbk-prize{
+    flex:0 0 auto; margin:8px 0 2px; padding:9px 13px; border-radius:14px; text-align:center;
+    background:#FFF1D8; color:#8A4B1E; font-size:13px; font-weight:700; line-height:1.55;
+  }
+  .hbk-photo{
+    display:flex; align-items:center; gap:10px;
+    background:#FFF6E6; border-radius:16px; padding:12px 14px;
+  }
+  .hbk-photo-e{font-size:26px; flex:0 0 auto; display:flex; align-items:center;}
+  .hbk-photo-e svg{display:block;}
+  .hbk-photo-tx{display:flex; flex-direction:column; gap:2px; flex:1 1 auto; min-width:0;
+                font-size:14.5px; font-weight:700; color:var(--ink);}
+  .hbk-photo-tx i{font-style:normal; font-size:12.5px; color:var(--ink-soft); line-height:1.55;}
+  @media (max-width:480px){
+    .hbk-grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:6px;}
+    .hbk-e{font-size:23px;}
+    .hbk-n{font-size:11px;}
+    /* จอแคบ: บีบชิปให้ยังอยู่แถวเดียว (ไอคอนเล็กลง + ตัวหนังสือเล็กลง ไม่ตัดตัวเลขทิ้ง) */
+    #hbk-tabs{gap:4px;}
+    #hbk-tabs .hqb-chip{font-size:11px; padding:5px 4px; gap:4px;}
+    #hbk-tabs .hqb-chip svg{width:16px; height:16px;}
+    .hbk-tabtx i{font-size:10px;}
+  }
   @media (max-width:480px){
     .house-quest-bar{height:38px; font-size:13px; padding:0 9px; gap:6px;}
     .hqb-ic{width:21px; height:21px;}
@@ -4385,6 +4500,7 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
            overflow:hidden; text-overflow:ellipsis; max-width:120px;}
   /* ไอคอนอาหาร + จำนวนมื้อคงเหลือ อยู่หลังหลอดความอิ่ม (ผู้ใช้สั่ง 2026-08-09) */
   .hpb-food{font-size:18px; line-height:1; flex:0 0 auto; display:inline-flex; align-items:center; gap:2px;}
+  .hpb-food svg{display:block;}
   .hpb-left{font-size:13px; font-weight:700; color:var(--ink-soft);}
   .hpb-food.hpb-food-out{opacity:.42;}       /* อาหารหมด = จางลง เตือนให้ไปซื้อเพิ่ม */
   .hpb-meter{

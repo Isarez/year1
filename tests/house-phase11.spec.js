@@ -72,8 +72,15 @@ test('เฟส 11B: ปุ่ม 🎈 + แผงรายการ — โผ�
 
   await btn.click();
   await expect(page.locator('#house-playpanel')).toBeVisible();
-  /* ต้องมีครบทั้ง 5 เกมในแผงเดียว */
-  await expect(page.locator('#hpl-list .hpl-row')).toHaveCount(5);
+  /* ต้องมีครบทั้ง 5 เกมในแผงเดียว
+     ⚠ เฟส 16 เพิ่ม "แถวสมุดสะสม" ต่อท้ายอีก 1 แถว (ทางเข้าเดียวของสมุด) ⇒ รวมเป็น 6 แถว
+       **เกณฑ์ถูกปรับ ไม่ได้ลบเทสทิ้ง** — ยังคุมว่า 5 เกมของกลุ่ม A ต้องอยู่ครบเหมือนเดิม */
+  await expect(page.locator('#hpl-list .hpl-row')).toHaveCount(6);
+  const names = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#hpl-list .hpl-name')).map(e => e.textContent));
+  ['ซ่อนแอบ', 'ตกปลา', 'แปลงผัก'].forEach(k =>
+    expect(names.some(n => n.indexOf(k) >= 0), 'ต้องมีเกม ' + k).toBe(true));
+  expect(names.some(n => n.indexOf('สมุดสะสม') >= 0), 'ต้องมีทางเข้าสมุดสะสม').toBe(true);
 
   /* แตะพื้นที่นอกกล่อง = ปิด (กติกาเดียวกับกล่องอื่นทุกใบในโหมดบ้าน) */
   await page.mouse.click(60, 400);

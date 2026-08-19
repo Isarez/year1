@@ -73,51 +73,32 @@ test('🐞 บทเรียนสัตว์เลี้ยง: ขั้น 
   expect(errs).toEqual([]);
 });
 
-test('🎀 เมนูสัตว์เลี้ยง: เปลี่ยนแบบปลอกคอและสีได้ และน้องในฉากเปลี่ยนตามทันที', async ({ page }) => {
+test('🎀 ปลอกคอเปลี่ยนที่ "เมนูสัตว์เลี้ยง" มุมขวาบนเท่านั้น — เมนูฟองต้องไม่มีปุ่มนี้แล้ว', async ({ page }) => {
+  /* 🔒 ผู้ใช้สั่ง 2026-08-19: ถอดปุ่มปลอกคอออกจากฟองแตะน้อง ให้เปลี่ยนได้ที่หน้าสัตว์เลี้ยง
+     (ปุ่ม 🐾 มุมขวาบน ซึ่งโผล่เฉพาะตอนอยู่ในบริเวณบ้าน) **ที่เดียว**
+     ⚠ เทสเดิมที่กดปุ่มปลอกคอในฟอง **ถูกกลับด้าน ไม่ได้ลบทิ้ง** — ตอนนี้ยืนยันว่า "ต้องไม่มี" */
   const errs = await openHouse(page, true);
   await page.waitForFunction(()=>!!(window.__houseDbg.petPos && window.__houseDbg.petPos()), null, {timeout:20000});
   await page.evaluate(()=>window.__houseDbg.petTap());
   await page.waitForTimeout(400);
+  const bubble = await page.evaluate(()=>
+    Array.from(document.querySelectorAll('#hpm-grid .hpm-btn')).map(b => b.textContent).join('|'));
+  expect(bubble, 'เมนูฟองต้องไม่มีปุ่มปลอกคอแล้ว').not.toContain('ปลอกคอ');
+  expect(bubble, 'ปุ่มอื่นต้องยังอยู่ครบ').toContain('ลูบหัว');
+  await page.evaluate(()=>{ const c = document.getElementById('hpm-close'); if(c) c.click(); });
 
-  const labels = ()=> page.evaluate(()=>
-    Array.from(document.querySelectorAll('#hpm-grid .hpm-btn')).map(b => b.textContent));
-  const tap = (txt)=> page.evaluate((t)=>{
-    Array.from(document.querySelectorAll('#hpm-grid .hpm-btn')).find(b => b.textContent.includes(t)).click();
-  }, txt);
-
-  expect((await labels()).join('|'), 'เมนูหลักต้องมีปุ่มปลอกคอ').toContain('ปลอกคอ');
-  await tap('ปลอกคอ');
-  await page.waitForTimeout(300);
-  const list = (await labels()).join('|');
-  expect(list, 'ต้องเห็นเฉพาะปลอกคอที่ซื้อแล้ว').toContain('กระดิ่ง');
-  expect(list, 'ต้องมีทางไปเลือกสี').toContain('เปลี่ยนสี');
-
-  await tap('กระดิ่ง');
-  await page.waitForTimeout(400);
-  expect(await page.evaluate(()=>window.HousePetCare.collar()), 'เปลี่ยนแบบแล้วต้องบันทึกจริง')
-    .toEqual({s:'bell', c:0});
-  /* ⚠ ต้องเช็คโมเดล 3D ด้วย — ลืม restylePet() แล้วค่าจะบันทึกแต่น้องยังใส่ของเดิมอยู่ */
-  expect((await page.evaluate(()=>window.__houseDbg.petGear())).style,
-         'น้องในฉากต้องเปลี่ยนปลอกคอตามทันที').toBe('bell');
-
-  await tap('เปลี่ยนสี');
-  await page.waitForTimeout(300);
-  await tap('ฟ้า');
-  await page.waitForTimeout(400);
-  expect(await page.evaluate(()=>window.HousePetCare.collar()), 'เปลี่ยนสีแล้วต้องคงแบบเดิมไว้')
-    .toEqual({s:'bell', c:4});
+  /* ---- ทางที่เหลือทางเดียว: หน้าสัตว์เลี้ยงมุมขวาบน ต้องเปิดได้และมีแถวปลอกคอจริง ----
+     (การกดเปลี่ยนแบบ/สีจริงมีเทสถัดไปคุมอยู่แล้ว ที่นี่แค่ยืนยันว่า "ทางไม่ตัน") */
+  await page.evaluate(()=>document.getElementById('house-pet-btn').click());
+  await page.waitForFunction(()=>!document.getElementById('house-pet-picker').hidden, null, {timeout:20000});
+  const rows = await page.evaluate(()=>({
+    style: document.querySelectorAll('#house-pet-collars .house-chip').length,
+    color: document.querySelectorAll('#house-pet-collar-colors .house-chip').length,
+  }));
+  expect(rows.style, 'หน้าสัตว์เลี้ยงต้องมีแถวแบบปลอกคอ').toBeGreaterThan(0);
+  expect(rows.color, 'หน้าสัตว์เลี้ยงต้องมีแถวสีปลอกคอ').toBeGreaterThan(0);
   expect(errs).toEqual([]);
 });
-
-const uiVisible = (page, id) => page.evaluate(i => {
-  const e = document.getElementById(i); return !!e && !e.hidden;
-}, id);
-const CHROME = ['house-photo-btn', 'house-ctrl-gear'];
-async function chrome(page){
-  const out = [];
-  for(const id of CHROME) out.push(await uiVisible(page, id));
-  return out;
-}
 
 test('🎀 หน้า "สัตว์เลี้ยงของหนู": มีแถวปลอกคอ + สีปลอกคอ และเปลี่ยนแล้วบันทึกจริง', async ({ page }) => {
   const errs = await openHouse(page, true);
@@ -144,6 +125,16 @@ test('🎀 หน้า "สัตว์เลี้ยงของหนู": �
     .toEqual({s:'bell', c:4});
   expect(errs).toEqual([]);
 });
+
+const uiVisible = (page, id) => page.evaluate(i => {
+  const e = document.getElementById(i); return !!e && !e.hidden;
+}, id);
+const CHROME = ['house-photo-btn', 'house-ctrl-gear'];
+async function chrome(page){
+  const out = [];
+  for(const id of CHROME) out.push(await uiVisible(page, id));
+  return out;
+}
 
 test('📷⚙️ ปุ่มกล้อง/เฟืองต้องหายตอนเปิดแผงเต็มจอ และกลับมาตอนออก', async ({ page }) => {
   const errs = await openHouse(page, true);
@@ -239,8 +230,11 @@ test('🗑️ ตู้ปลา: popup ต้องหายหมด แต่
   });
   expect(r.panel, 'แผง #house-tank ต้องถูกลบออกจากหน้า').toBe(false);
   expect(r.api, 'API ตู้ปลาต้องไม่เหลืออยู่ใน HousePlay').toEqual([]);
-  /* ⚠ `action` ต้องหายไป ⇒ แตะแล้วตกลงมาที่ decorBounce เหมือนของตกแต่งชิ้นอื่น */
-  expect(r.actions, 'ตู้ปลาต้องไม่มี action พิเศษแล้ว').toEqual([undefined, undefined]);
+  /* ⚠ **เกณฑ์ข้อนี้ถูกกลับด้านเมื่อ 2026-08-18 (เฟส 17) ไม่ได้ลบทิ้ง**
+     ตอนแก้ 0817 ตู้ปลาถูกถอด popup ทิ้งและไม่มี `action` เลย (แตะแล้วเด้งเฉยๆ)
+     เฟส 17 เอา "ให้อาหารปลาในตู้" กลับมาเป็น **action ในโลก 3D จริง** (`action:'tank'`)
+     ⇒ มี action ได้ **แต่ห้ามกลับไปเป็น popup** (แผง #house-tank + API ชุดเดิมต้องไม่มี) */
+  expect(r.actions, 'ตู้ปลาใช้ action ในโลก 3D ของเฟส 17').toEqual(['tank', 'tank']);
   /* 🔒 แต่ **ห้ามลบตัวเฟอร์นิเจอร์ทิ้ง** — เด็กที่ซื้อ/วางไว้แล้วต้องยังมีของอยู่ (กติกาเหล็กข้อ 3) */
   expect(r.buildable, 'ตู้ปลาต้องยังสร้างโมเดลได้ปกติ').toBe(true);
   /* วางตู้ปลาไว้ในบ้านแล้วต้องไม่มี error ตอนวาดฉาก */

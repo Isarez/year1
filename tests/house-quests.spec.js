@@ -553,8 +553,11 @@ test('แถบสรุปเควสต์วันนี้: นับเห
   await expect(page.locator('#hqbar-left')).toContainText('6');
   await expect(page.locator('#hqbar-done')).toContainText('0');
   /* ต้องมีสัญลักษณ์ให้เด็กอ่านออกโดยไม่ต้องอ่านคำ */
-  await expect(page.locator('#hqbar-left')).toContainText('❗');
-  await expect(page.locator('#hqbar-done')).toContainText('✅');
+  /* ⚠ ❗ เป็นไอคอน SVG แล้ว (2026-08-20) ⇒ เช็คว่ามีไอคอน + ตัวเลข ไม่ใช่ตัวอักษร emoji */
+  expect(await page.locator('#hqbar-left').evaluate(el => !!el.querySelector('svg')),
+         'เม็ดงานที่เหลือต้องมีไอคอน SVG').toBe(true);
+  expect(await page.locator('#hqbar-done').evaluate(el => !!el.querySelector('svg')),
+         'เม็ดงานที่เสร็จแล้วต้องมีไอคอน SVG').toBe(true);
 
   /* เล่น**งานรอง** (NPC) 1 ชุดจนจบ → ✅ ขยับ แต่ ❗ ของงานหลักต้องไม่ขยับ */
   await page.evaluate(() => {
@@ -815,7 +818,8 @@ test('โบนัสดาวรายวัน: กดรับได้เม
   });
   expect(lock.coinIcon, 'ต้องมีรูปเหรียญบนหมุด').toBe(true);
   expect(lock.coinTxt).toBe(String(wantFull));
-  expect(lock.need).toBe('42⭐');
+  /* ⚠ ⭐ บนหมุดเป็นไอคอน SVG แล้ว ⇒ ข้อความเหลือแต่ตัวเลข */
+  expect(lock.need.replace(/\s/g, '')).toBe('42');
   await page.locator('#hqsum-close').click();
   /* ปุ่มบน HUD ต้องขึ้นแจ้งเตือน */
   await expect.poll(() => page.evaluate(() =>
@@ -884,7 +888,8 @@ test('โบนัสดาวเต็มวัน: ได้ดาวครบ
              need: e.querySelector('.hqsum-pinneed').textContent,
              coinTxt: e.querySelector('.hqsum-pincoin').textContent };
   });
-  expect(pin.need).toMatch(/^\d+⭐$/);
+  /* ⚠ ⭐ บนหมุดเป็นไอคอน SVG แล้ว (2026-08-20) ⇒ ข้อความเหลือแต่ตัวเลข */
+  expect(pin.need.replace(/\s/g, '')).toMatch(/^\d+$/);
   expect(parseInt(pin.need, 10)).toBe(42);       /* เต็มวัน = 14 ชุด × 3 ดาว */
   expect(pin.taken).toBe(true);
   expect(pin.coinTxt).toContain('✓');            /* รับแล้วโชว์ ✓ แทนจำนวนเงิน */
@@ -892,4 +897,38 @@ test('โบนัสดาวเต็มวัน: ได้ดาวครบ
   expect(parseInt(pos.half, 10)).toBeGreaterThanOrEqual(50);
   expect(parseInt(pos.half, 10)).toBeLessThanOrEqual(52);
   expect(errors).toEqual([]);
+});
+
+/* 🎲 กระดานเควสต์ต้อง "เฉลี่ยเจอหลายหมวดหมู่เกม" (ผู้ใช้สั่ง 2026-08-20)
+   เดิม `quiz` ถูกล็อกไว้ 40% + `count` 15% ⇒ กว่าครึ่งของงานเป็นการ์ดตอบคำถาม
+   เด็กเปิดกระดานมาเจอ "ตอบคำถาม" ซ้ำๆ ทั้งที่มีกลไกให้เล่น 65 แบบ
+   ⚠ ตรวจจากการสุ่มจริงหลายสิบวัน ไม่ใช่ดูโค้ด — สูตรสุ่มเปลี่ยนเมื่อไหร่เทสนี้ต้องจับได้ */
+test('กระดานเควสต์: กลไกไม่ซ้ำกันในกระดานเดียว · ไม่มีกลไกไหนครองเกินสัดส่วน · คนไม่ซ้ำ', async ({ page }) => {
+  await openHouse(page);
+  const r = await page.evaluate(() => {
+    const Q = window.HouseQuests, days = [];
+    for(let d = 0; d < 60; d++){
+      days.push(Q.devBoardFor('2026-' + String(1 + d % 12).padStart(2, '0')
+                            + '-' + String(1 + d % 28).padStart(2, '0')));
+    }
+    const slots = days.flatMap(b => b.map(x => x.m));
+    const cnt = {};
+    slots.forEach(m => { cnt[m] = (cnt[m] || 0) + 1; });
+    return {
+      boards: days.length,
+      slots: slots.length,
+      minUniqMech: Math.min(...days.map(b => new Set(b.map(x => x.m)).size)),
+      npcDupBoards: days.filter(b => new Set(b.map(x => x.npc)).size < b.length).length,
+      mechKinds: Object.keys(cnt).length,
+      topShare: Math.max(...Object.values(cnt)) / slots.length,
+      quizShare: (cnt.quiz || 0) / slots.length,
+    };
+  });
+  expect(r.slots, 'ต้องสุ่มกระดานได้ครบทุกวัน').toBe(r.boards * 5);
+  expect(r.minUniqMech, 'ทุกกระดานต้องมีกลไกไม่ซ้ำกันครบ 5 ช่อง').toBe(5);
+  expect(r.npcDupBoards, 'ห้ามมีชื่อคนซ้ำในกระดานเดียว').toBe(0);
+  expect(r.mechKinds, 'ตลอด 60 วันต้องเจอกลไกหลากหลาย').toBeGreaterThanOrEqual(20);
+  /* 🔒 ห้ามกลับไปฮาร์ดโค้ดเปอร์เซ็นต์ให้กลไกใดกลไกหนึ่งครองกระดาน */
+  expect(r.topShare, 'กลไกที่เจอบ่อยสุดต้องไม่เกิน 20% ของช่องทั้งหมด').toBeLessThan(.20);
+  expect(r.quizShare, 'ตอบคำถามต้องไม่เกิน 15%').toBeLessThan(.15);
 });

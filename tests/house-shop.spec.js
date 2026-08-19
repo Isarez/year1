@@ -498,3 +498,37 @@ test('ผังเมือง: ล็อตที่ย้าย/เพิ่�
   expect(fash.face).toBe(furn.face);
   expect(errors).toEqual([]);
 });
+
+/* 🏪 ของทุกชิ้นต้อง "รู้ว่าไปซื้อที่ร้านไหน" (ผู้ใช้ถาม 2026-08-19 ว่าของนอกบ้านซื้อที่ไหน)
+   ⚠ ข้อความในโหมดตกแต่งเคยฮาร์ดโค้ดว่า "ไปซื้อได้ที่ห้างเฟอร์นิเจอร์" แต่ของนอกบ้าน
+     (กองไฟ/รถเข็นสวน/บ่อน้ำโบราณ) ย้ายไปร้านต้นไม้ตั้งแต่ 2026-08-08 ⇒ เด็กเดินไปแล้วหาไม่เจอ */
+test('บอกทางซื้อของ: ของทุกชิ้นแมปกับร้านที่ขายจริงได้ · ของนอกบ้านต้องไม่ชี้ไปห้างเฟอร์นิเจอร์', async ({ page }) => {
+  const errors = await openHouse(page);
+  const r = await page.evaluate(() => {
+    const S = window.HouseShop, F = window.__houseDbg.furn();
+    const miss = [], wrong = [];
+    F.items.forEach(it => {
+      const sh = S.shopForFurn(it.id);
+      if (!sh) { miss.push(it.id + ' (' + it.scope + '/' + it.cat + ')'); return; }
+      /* ห้างเฟอร์นิเจอร์ขายเฉพาะของในบ้าน ⇒ ของนอกบ้านชี้ไปที่นั่นถือว่าชี้ผิดร้าน */
+      if (it.scope === 'out' && sh.id === 'mall-furniture') wrong.push(it.id);
+    });
+    return { miss, wrong,
+      out3: ['campfire', 'wheelbarrow', 'well'].map(id => (S.shopForFurn(id) || {}).id || null) };
+  });
+  expect(r.miss, 'ของที่ไม่มีร้านไหนขายเลย = เด็กซื้อไม่ได้ตลอดกาล').toEqual([]);
+  expect(r.wrong, 'ของนอกบ้านต้องไม่ชี้ไปห้างเฟอร์นิเจอร์ (ที่นั่นขายแต่ของในบ้าน)').toEqual([]);
+  expect(r.out3, 'กองไฟ/รถเข็นสวน/บ่อน้ำ ขายที่ร้านต้นไม้').toEqual(['shop-garden', 'shop-garden', 'shop-garden']);
+  expect(errors).toEqual([]);
+});
+
+/* ข้อความ "ไปซื้อได้ที่…" ในโหมดตกแต่ง ต้องถามชื่อร้านจาก shopForFurn() เสมอ
+   ⚠ เทสนี้อ่านซอร์สตรงๆ **โดยตั้งใจ** — กติกาที่ต้องคุมคือ "ห้ามฮาร์ดโค้ดชื่อร้านลงในข้อความ"
+     ซึ่งเป็นเรื่องของโค้ด ไม่ใช่ผลลัพธ์บนจอ (ของนอกบ้านต้องเข้าโหมดตกแต่งนอกบ้านถึงจะเห็น) */
+test('บอกทางซื้อของ: ข้อความในโหมดตกแต่งต้องไม่ฮาร์ดโค้ดชื่อร้าน', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'house.js'), 'utf8');
+  const line = src.split('\n').find(l => l.includes('ยังไม่มีนะ ไปซื้อได้ที่'));
+  expect(line, 'ไม่เจอข้อความบอกทางซื้อของในโหมดตกแต่ง').toBeTruthy();
+  expect(line.includes('ห้างเฟอร์นิเจอร์'), 'ห้ามฮาร์ดโค้ดชื่อร้านลงในข้อความ').toBe(false);
+  expect(src.includes('SHOP.shopForFurn(it.id)'), 'ต้องถามชื่อร้านจาก shopForFurn()').toBe(true);
+});

@@ -394,6 +394,8 @@
   window.HOUSE_SHOP = function(kit){
     const FURN   = kit.FURN;
     const ICONS  = kit.H_ROW_ICONS || {};
+    /* 🎨 ไอคอน SVG (js/house-icons.js) — ไม่มีไอคอนนั้น = คืนค่าว่าง แล้วฝั่งเรียกถอยไปใช้ emoji เดิม */
+    const ICO = (id, size)=> (window.HouseIcons ? window.HouseIcons.html(id, size || 20) : '');
     const H_ROWS = kit.H_ROWS;
     const DEF    = kit.H_DEFAULT_CHAR || {};
     const load   = kit.load, save = kit.save;
@@ -794,6 +796,20 @@
       {sec:'👕 ตัวเรา',   keys:['hair','eyeC','pattern','bottom','shoeStyle','shoes']},
       {sec:'🎀 ของแต่ง',  keys:['hat','glass','bag','hold']},
     ];
+    /* 🏪 ของชิ้นนี้ขายอยู่ร้านไหน — อ่านจาก `SHOPS` ตัวเดียวกับที่หน้าร้านใช้จริง
+       ⚠ **ห้ามฮาร์ดโค้ดชื่อร้านลงในข้อความบอกเด็ก** — ของนอกบ้าน (กองไฟ/รถเข็นสวน/บ่อน้ำ)
+         ย้ายออกจากห้างเฟอร์นิเจอร์ไปร้านต้นไม้ตั้งแต่ 2026-08-08 แต่ข้อความในโหมดตกแต่ง
+         ยังบอกว่า "ไปซื้อที่ห้างเฟอร์นิเจอร์" อยู่ ⇒ เด็กเดินไปแล้วหาไม่เจอ (ผู้ใช้ถาม 2026-08-19) */
+    function shopForFurn(id){
+      const it = FURN.byId[id];
+      if(!it) return null;
+      const key = Object.keys(SHOPS).find(k=>{
+        const cfg = SHOPS[k];
+        if(cfg.kind !== 'furn') return false;
+        return (cfg.groups || []).some(gp => gp[0] === it.scope && (!gp[2] || gp[2].indexOf(it.cat) >= 0));
+      });
+      return key ? {id:key, title:SHOPS[key].title, icon:SHOPS[key].icon} : null;
+    }
     function tabsFor(){
       const cfg = SHOPS[openId];
       if(!cfg) return [];
@@ -816,14 +832,15 @@
       /* ร้านสัตว์เลี้ยง: แท็บตามกลุ่มราคา (สีขนของสัตว์แต่ละตัวไปต่อท้ายในแท็บเดียวกัน ไม่แยกหมวด
          ตามกติกา "ตัวของ + สีของมัน อยู่แท็บเดียวกัน" ข้อ 17.4) */
       if(cfg.kind === 'pet'){
+        /* 🎨 แท็บกลุ่มราคา — ไอคอน SVG มาก่อน emoji เป็นแค่ fallback (ผู้ใช้สั่ง 2026-08-19) */
         PET_GROUPS.forEach(g=>{
-          out.push({id:'petg:' + g.id, label:g.label, emoji:g.emoji});
+          out.push({id:'petg:' + g.id, label:g.label, emoji:g.emoji, svg:ICO('petg-' + g.id, 20)});
         });
         /* เฟส 3B — อาหารสัตว์อยู่แท็บสุดท้าย (ข้อ 18.2) ต่อท้ายกลุ่มราคาสัตว์ */
-        if(care()) out.push({id:'petfood', label:'อาหาร', emoji:'🍖'});
+        if(care()) out.push({id:'petfood', label:'อาหาร', emoji:'🍖', svg:ICO('food-meat', 20)});
         /* เฟส 12 — ปลอกคอกับของเล่นของน้อง (คนละหมวดกับของตกแต่งบ้าน) */
-        out.push({id:'petgear', label:'ปลอกคอ', emoji:'🎀'});
-        out.push({id:'pettoy',  label:'ของเล่น', emoji:'🎾'});
+        out.push({id:'petgear', label:'ปลอกคอ', emoji:'🎀', svg:ICO('ui-collar', 20)});
+        out.push({id:'pettoy',  label:'ของเล่น', emoji:'🎾', svg:ICO('toy-ball', 20)});
         return out;
       }
       /* ร้านที่ขายเฟอร์นิเจอร์ — หมวดที่ขายมาจาก cfg.groups ของร้านนั้น (ห้างเฟอร์/ร้านต้นไม้/ร้านของเล่น) */
@@ -896,7 +913,11 @@
           : hex(opts.color);
       }else{
         pic.className = 'hs-emoji';
-        pic.textContent = opts.emoji || '🎁';
+        /* 🎨 มีไอคอน SVG (js/house-icons.js) = ใช้รูปวาด · ไม่มี = emoji เดิม
+           (ผู้ใช้สั่ง 2026-08-18 — emoji แสดงผลไม่เหมือนกันข้าม OS) */
+        const svg = (opts.ico && window.HouseIcons) ? window.HouseIcons.html(opts.ico, 30) : '';
+        if(svg) pic.innerHTML = svg;
+        else pic.textContent = opts.emoji || '🎁';
       }
       b.appendChild(pic);
       const nm = document.createElement('span');
@@ -1071,7 +1092,7 @@
               key: 'food:' + f.id,
               name: f.name + (mine ? ' ⭐' : ''),
               sub: 'สำหรับ\n' + who + (left ? '\nเหลือ ' + left + ' มื้อ' : ''),
-              price: f.price, owned: false, repeat: true, emoji: f.emoji,
+              price: f.price, owned: false, repeat: true, emoji: f.emoji, ico: 'food-' + f.id,
               onBuy: ()=>{
                 if(coins() < f.price){ toast('💰', 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!'); return false; }
                 if(!C.buyBag(f.id)) return false;
@@ -1104,7 +1125,7 @@
               key: collarKey(it.id),
               name: it.name + (on ? ' (ใส่อยู่)' : ''),
               sub: it.price === 0 ? 'แถมฟรีมากับน้อง' : 'ซื้อครั้งเดียว ใช้ได้กับน้องทุกตัว',
-              price: it.price, owned: own, emoji: it.emoji,
+              price: it.price, owned: own, emoji: it.emoji, ico: 'collar-' + it.id,
               preview: {kind:'pet', type: shownType, color: shownCol,
                         collar: {s: it.id, c: worn.c | 0}},
               onBuy: ()=> buyCollar(it.id),
@@ -1139,7 +1160,7 @@
               key: toyKey(it.id),
               name: it.name,
               sub: it.sub || ('เล่นแล้วน้องมีความสุขขึ้น +' + (it.gain | 0)),
-              price: it.price, owned: own, emoji: it.emoji,
+              price: it.price, owned: own, emoji: it.emoji, ico: 'toy-' + it.id,
               onBuy: ()=> buyToy(it.id),
             }));
           });
@@ -1153,6 +1174,7 @@
           wrap.appendChild(makeCard({
             key: petKey(type),
             name: info.label, price: pricePet(type), owned: ownsPet(type), emoji: info.emoji,
+            ico: 'pet-' + type,
             preview: {kind:'pet', type, color:0},
             onBuy: ()=> buyPet(type),
           }));
@@ -1202,6 +1224,7 @@
           name: furnLabel(it),
           nameFn: ()=> furnLabel(it),
           price: priceFurn(it.id), owned: furnFull(it), repeat: !furnFull(it), emoji: it.emoji,
+          ico: 'furn-' + it.id,
           maxed: furnFull(it), maxedFn: ()=> furnFull(it),
           preview: {kind:'furn', id: it.id},
           onBuy: ()=> buyFurn(it.id),
@@ -1217,6 +1240,7 @@
       migrate, invalidate,
       priceFurn, priceFit, ownsFurn, ownsFit,
       furnCount, addFurnCount,          /* เฟส 11: เฟอร์นิเจอร์นับเป็นจำนวนชิ้น */
+      shopForFurn,                      /* ของชิ้นนี้ขายร้านไหน (ใช้บอกทางในโหมดตกแต่ง) */
       FURN_MAX, furnMax,                /* เพดานจำนวนต่อไอดี (js/house-play.js กับหน้าเทสอ่านค่านี้) */
       buyFurn, buyFit,
       /* สัตว์เลี้ยง (เฟส 3A) — house.js ใช้ล็อกหน้าเลือกสัตว์ + เทสเรียกตรวจสิทธิ์ */

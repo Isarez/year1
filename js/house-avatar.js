@@ -263,12 +263,10 @@ function addEyes(head, style, hex){
     /* ---- เฟส 8 (+4) ---- */
     case 8: mk(s=>{ const f = white(.16*s,.04,.085); pupil(.16*s,.02,.045,f);                             /* ตาง่วง (เปลือกตาตก) */
                     const lid = box(.16,.05,.03,0xffd9b8); lid.position.set(.16*s,.1,f-.005); head.add(lid); }); break;
-    case 9: mk(s=>{ const h1 = sphere(.05,0xff5a7a,8); h1.scale.set(1,1,.5);                               /* ตาหัวใจ */
-                    h1.position.set(.16*s-.025,.06,F); head.add(h1);
-                    const h2 = sphere(.05,0xff5a7a,8); h2.scale.set(1,1,.5);
-                    h2.position.set(.16*s+.025,.06,F); head.add(h2);
-                    const tip = box(.06,.06,.02,0xff5a7a); tip.rotation.z=Math.PI/4;
-                    tip.position.set(.16*s,.0,F); head.add(tip); }); break;
+    /* ตาหัวใจ — ⚠ ของเดิมเป็น "ลูกกลม 2 ลูก + กล่องหมุน 45°" ดูเป็นก้อนสีชมพู ไม่ใช่หัวใจ
+       ⇒ ใช้ทรงหัวใจกลาง `chHeart()` ตัวเดียวกับลายเสื้อ/แว่น (ผู้ใช้แจ้ง 2026-08-19) */
+    case 9: mk(s=>{ const h = chHeart(.075, 0xff5a7a);
+                    h.position.set(.16*s, .06, F + .01); head.add(h); }); break;
     case 10: mk(s=>{ const f = white(.17*s,.04,.11); pupil(.17*s,.04,.062,f);                             /* ตากลมโตมาก */
                      const h = sphere(.026,0xffffff,6); h.scale.z = EYE_FLAT;
                      h.position.set(.21*s,.09,f+.012); head.add(h);
@@ -307,11 +305,16 @@ function chStar(r, t, col){
   for(let i=0;i<3;i++){ const b = box(r*2, t, .022, col, .008); b.rotation.z = i*Math.PI/3; g.add(b); }
   return g;
 }
-/* หัวใจแบนๆ (พู่ 2 ลูก + ปลายแหลม) — ใช้ทั้งลายเสื้อและแว่นหัวใจ */
+/* 💗 หัวใจแบนๆ (พู 2 พู + ปลายแหลมล่าง) — **ทรงหัวใจกลางของทั้งไฟล์**
+   ใช้กับ: ลายเสื้อหัวใจ · แว่นหัวใจ · แว่นกันแดดทรงหัวใจ · ตาหัวใจ
+   ⚠ สัดส่วนเดิม (พู .52 ที่ y=.3 · กรวย .78×1.05 ที่ y=-.16) **กรวยแคบและสูงเกินไป**
+     ปลายแหลมแทบไม่โผล่พ้นพู ⇒ เห็นเป็น "ลูกกลม 2 ลูกติดกัน" ไม่ใช่หัวใจ
+     (ผู้ใช้แจ้ง 2026-08-19) — ชุดใหม่ให้กรวยกว้างกว่าพูและลงมาต่ำพอจนเห็นปลายแหลมชัด
+   ⚠ **ห้ามวาดหัวใจด้วยทรงอื่นในไฟล์นี้อีก** (เคยมีลูกกลม 2 ลูก + กล่องหมุน 45° อยู่ 2 จุด) */
 function chHeart(s, col){
   const g = new THREE.Group();
-  [-1,1].forEach(k=>{ const lb = sphere(s*.52, col, 10); lb.scale.z = .3; lb.position.set(k*s*.4, s*.3, 0); g.add(lb); });
-  const tip = cone(s*.78, s*1.05, col, 12); tip.rotation.z = Math.PI; tip.scale.z = .3; tip.position.y = -s*.16; g.add(tip);
+  [-1,1].forEach(k=>{ const lb = sphere(s*.62, col, 10); lb.scale.z = .3; lb.position.set(k*s*.5, s*.38, 0); g.add(lb); });
+  const tip = cone(s*1.12, s*1.5, col, 12); tip.rotation.z = Math.PI; tip.scale.z = .3; tip.position.y = -s*.42; g.add(tip);
   return g;
 }
 /* แถบพันรอบแขนทั้ง 2 ข้างที่ระดับความสูง y เดียวกับแถบบนลำตัว
@@ -759,8 +762,10 @@ function addGlasses(head, style, col){
       { const br = box(.1,.05,.035, col,.02); br.position.set(0, EY+.03, Z); head.add(br); }
       temples(col); break;
     case 4:                                          /* แว่นหัวใจ */
-      [-1,1].forEach(s=>{ const h = chHeart(.145, 0xff8fb0); h.position.set(EX*s, EY, Z); head.add(h);
-        const rim = torus(.135,.02, col, 16); rim.position.set(EX*s, EY, Z-.01); head.add(rim); });
+      /* ⚠ ขนาดหัวใจ: `chHeart(s)` สูงราว 2.2s **ไม่ใช่ 1.5s** เหมือนสัดส่วนเดิมก่อน 2026-08-19
+         ⇒ ใส่เลขเดิม (.145) แล้วเลนส์ใหญ่เกินหน้าเด็ก (ผู้ใช้แจ้ง) — ลดเป็น .10 */
+      [-1,1].forEach(s=>{ const h = chHeart(.10, 0xff8fb0); h.position.set(EX*s, EY, Z); head.add(h);
+        const rim = torus(.115,.018, col, 16); rim.position.set(EX*s, EY, Z-.01); head.add(rim); });
       { const br = box(.09,.028,.03, col,.012); br.position.set(0, EY+.02, Z); head.add(br); }
       temples(col); break;
     case 5:                                          /* แว่นดาว */
@@ -776,11 +781,12 @@ function addGlasses(head, style, col){
       break; }
     /* ================= เฟส 8 (+5) ================= */
     case 7: {                                        /* กันแดดทรงหัวใจ */
+      /* ⚠ ของเดิมเป็นทรงกระบอก 2 อัน + กล่องหมุน 45° — ไม่ใช่ทรงหัวใจ
+         ⇒ ใช้ `chHeart()` ตัวเดียวกับแว่นหัวใจ (ต่างกันที่อันนี้ทึบสีเลนส์ ไม่มีขอบวงแหวน) */
       [-1,1].forEach(s=>{
-        [[-.03,.02],[.03,.02]].forEach(([dx,dy])=>{ const lob = cyl(.05,.05,.03, col, 12);
-          lob.rotation.x = Math.PI/2; lob.position.set(EX*s+dx, EY+dy, Z); head.add(lob); });
-        const tip = box(.08,.08,.03, col,.01); tip.rotation.z = Math.PI/4;
-        tip.position.set(EX*s, EY-.045, Z); head.add(tip); });
+        const h = chHeart(.105, col); h.position.set(EX*s, EY, Z); head.add(h);
+        const gl = box(.045,.026,.02, 0xffffff,.012); gl.position.set(EX*s-.032*s, EY+.035, Z+.02);
+        head.add(gl); });
       const br = box(.1,.03,.03, col,.01); br.position.set(0, EY+.02, Z); head.add(br);
       temples(col); break; }
     case 8: {                                        /* แว่นดำน้ำ (บานเดียวเต็มหน้า) */

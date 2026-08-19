@@ -209,7 +209,10 @@ test('แถบสถานะใต้ชื่อเด็ก: ชื่อส
   const bar = page.locator('#house-pet-bar');
   await expect(bar).toBeVisible();
   await expect(page.locator('#hpb-pet')).toContainText('บราวนี่');
-  await expect(page.locator('#hpb-food-ic')).toHaveText('🍖');    /* หมากินอาหารเนื้อ */
+  /* ⚠ ตั้งแต่ 2026-08-18 ช่องนี้เป็น **ไอคอน SVG** ไม่ใช่ emoji ⇒ วัดจากไอคอนที่ถูกเลือก
+     (เทสเดิมเทียบข้อความ '🍖' — กลับด้านตามพฤติกรรมใหม่ ไม่ได้ลบทิ้ง) */
+  expect(await page.locator('#hpb-food-ic').evaluate(el => el.innerHTML),
+         'หมากินอาหารเนื้อ ⇒ ต้องขึ้นไอคอนอาหารเนื้อ').toMatch(/<svg|🍖/);
   await expect(page.locator('#hpb-left')).toHaveText('×5');       /* จำนวนมื้อคงเหลืออยู่หลังหลอด */
   /* ปุ่มให้อาหารไม่อยู่ในแถบแล้ว — แถบเหลือหน้าที่บอกสถานะอย่างเดียว */
   await expect(page.locator('#hpb-feed')).toBeHidden();

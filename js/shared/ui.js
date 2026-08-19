@@ -3,7 +3,12 @@
    ================================================================================ */
 
 function showToast(emoji, msg){
-  $('toast-emoji').textContent = emoji;
+  /* 🎨 รับได้ทั้ง emoji และ **ไอคอน SVG** (โหมดบ้านเปลี่ยนมาใช้ SVG แล้ว 2026-08-18
+     เพราะ emoji แสดงผลไม่เหมือนกันข้าม OS) — ของเดิมที่ส่ง emoji มายังทำงานเหมือนเดิมทุกประการ
+     ⚠ รับ HTML เฉพาะกรณีขึ้นต้นด้วย `<svg` เท่านั้น ที่เหลือยังเป็น textContent (กัน HTML หลุด) */
+  const te = $('toast-emoji');
+  if(typeof emoji === 'string' && emoji.slice(0, 4) === '<svg') te.innerHTML = emoji;
+  else te.textContent = emoji;
   $('toast-msg').textContent = msg;
   const t = $('toast');
   t.classList.remove('visible');

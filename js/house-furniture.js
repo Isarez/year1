@@ -37,6 +37,94 @@
     const GREEN  = [0x66bb6a, 0x4caf50, 0x81c784, 0x9ccc65];
     const PLASTIC= [0xff7043, 0x42a5f5, 0xffca28, 0x66bb6a, 0xab47bc, 0xec407a];
 
+    /* ---------- 💗 helper รูปหัวใจ 3D ----------
+       ⚠ **ห้ามใช้ลูกกลมลูกเดียวแทนหัวใจ** — ของเดิมทั้งเก้าอี้เด็กและป้ายชื่อบ้านใช้ `ball()`
+         ลูกเดียว มองยังไงก็เป็นเม็ดกลม ไม่ใช่หัวใจ (ผู้ใช้แจ้ง 2026-08-19)
+       ทรง: พูกลม 2 พูด้านบน + ปลายแหลมด้านล่าง · **แบนตามแนว Z** ให้อ่านออกจากด้านหน้า
+       จุดกำเนิด (0,0,0) อยู่กลางหัวใจ ⇒ ผู้เรียกวางตำแหน่งได้ตรงๆ */
+    function heartShape(r, hex){
+      const g = new T.Group();
+      [-1, 1].forEach(s=>{
+        const lobe = ball(r * .62, hex, 10);
+        lobe.scale.set(1, 1, .45);
+        lobe.position.set(s * r * .5, r * .38, 0);
+        g.add(lobe);
+      });
+      const tip = cone(r * 1.12, r * 1.5, hex, 10);
+      tip.rotation.x = Math.PI;                  /* กรวยคว่ำ ปลายแหลมชี้ลง */
+      tip.scale.set(1, 1, .45);
+      tip.position.y = -r * .42;
+      g.add(tip);
+      return g;
+    }
+
+    /* ---------- 🪑 helper ขาโยก (เก้าอี้โยก/เปลไกว) ----------
+       ⚠ **ห้ามใช้ `torus()` เต็มวง** — วงแหวนเต็มวงอ่านเป็น "ล้อ" ไม่ใช่ขาโยก
+         และครึ่งล่างจมลงใต้พื้น (ผู้ใช้แจ้ง 2026-08-19 ว่าของตกแต่งเพี้ยน)
+       ⇒ ใช้ TorusGeometry แบบระบุมุมส่วนโค้ง แล้วหมุนให้ท้องโค้งคว่ำลงแตะพื้นพอดี
+       คืน Mesh ที่ "จุดต่ำสุดของส่วนโค้งอยู่ที่ y=0 ของตัวมันเอง" ⇒ ผู้เรียกตั้ง position.y = r */
+    function rockerArc(r, arcFrac, th, hex){
+      const arc = Math.PI * arcFrac;
+      const geo = new T.TorusGeometry(r, th || .035, 8, 24, arc);
+      geo.rotateZ(-Math.PI / 2 - arc / 2);       /* เอาส่วนโค้งไปไว้ด้านล่าง (คว่ำ) */
+      geo.rotateY(Math.PI / 2);                  /* ระนาบส่วนโค้งหันไปตามแนวหน้า-หลัง (แกน Z) */
+      return new T.Mesh(geo, mat(hex));
+    }
+    /* ความสูงของส่วนโค้งที่ระยะ z จากกึ่งกลาง — ใช้หาว่าขาต้องยาวเท่าไหร่ถึงจะแตะขาโยกพอดี */
+    const rockerY = (r, z) => r - Math.sqrt(Math.max(0, r * r - z * z));
+
+    /* ---------- 🐠 helper ของตู้ปลา (แก้ 2026-08-18 ตามที่ผู้ใช้แจ้งว่า "ในตู้ปลาไม่มีปลา") ----------
+       ของเดิมน้ำเป็นกล่อง **ทึบแสง** ครอบปลาไว้ ⇒ มองยังไงก็ไม่เห็นปลาเลยสักตัว
+       ⚠ กระจกต้องโปร่งแสงและ `depthWrite:false` (แพทเทิร์นเดียวกับหน้าต่าง/น้ำในเมือง)
+       ⚠ **ห้ามใช้ `mat()` (toonMat) กับกระจก** — วัสดุนั้นถูกแคชรวมทั้งเมืองตามสี
+         ตั้ง transparent ทีเดียวของทุกชิ้นที่สีเดียวกันจะโปร่งตาม ⇒ สร้างวัสดุของตัวเองแล้วแคชในไฟล์นี้ */
+    const glassMatCache = {};
+    function glassMat(hex, op){
+      const k = 'g' + hex + '_' + op;
+      if(!glassMatCache[k])
+        glassMatCache[k] = new T.MeshBasicMaterial({color:hex, transparent:true, opacity:op, depthWrite:false});
+      return glassMatCache[k];
+    }
+    /* ตู้กระจก = **น้ำ** (ก้อนโปร่งสีฟ้า) + **ผิวน้ำ** (แผ่นบางสว่างด้านบน) + **ขอบตู้** (กรอบทึบ)
+       ⚠ ถ้ามีแต่กระจกใสๆ จะดูเหมือน "ปลาลอยอยู่ในอากาศ" ไม่ใช่ตู้ปลา (เห็นจากภาพจริงรอบแรก) */
+    function glassTank(g, col, w, h, d, y, waterHex){
+      const water = new T.Mesh(new T.BoxGeometry(w - .03, h - .07, d - .03), glassMat(waterHex || 0x29b6d6, .34));
+      water.position.y = y - .03; water.renderOrder = 2; g.add(water);
+      /* ⚠ ผิวน้ำต้อง **จางพอให้มองทะลุเห็นปลา** — กล้อง iso มองลงจากบน ผิวทึบ = บังปลาเกือบหมด
+         (ลอง .75 แล้วเห็นแต่ปลาที่โผล่พ้นผิวน้ำ) */
+      const surf = new T.Mesh(new T.BoxGeometry(w - .05, .012, d - .05), glassMat(0xe0f7fa, .3));
+      surf.position.y = y + h/2 - .07; surf.renderOrder = 3; g.add(surf);
+      const glass = new T.Mesh(new T.BoxGeometry(w, h, d), glassMat(col, .16));
+      glass.position.y = y; glass.renderOrder = 4; g.add(glass);
+      /* ขอบตู้ = **กรอบ 4 ด้าน ไม่ใช่แผ่นทึบเต็มหน้า** — กล้อง iso มองลงจากด้านบน
+         ถ้าปิดทึบทั้งฝาจะบังปลาข้างในหมด (เห็นจากภาพจริงรอบแรกของการแก้ครั้งนี้) */
+      const fr = shade(col, .62);
+      [y + h/2, y - h/2].forEach(yy=>{
+        [[w + .02, .026, .035, 0, (d + .02)/2], [w + .02, .026, .035, 0, -(d + .02)/2],
+         [.035, .026, d + .02, (w + .02)/2, 0], [.035, .026, d + .02, -(w + .02)/2, 0]].forEach(([bw,bh,bd,ox,oz])=>{
+          const rim = box(bw, bh, bd, fr, .008); rim.position.set(ox, yy, oz); g.add(rim);
+        });
+      });
+    }
+    /* ปลา 1 ตัว: ลำตัวรี + หางแผ่นกางออก + ครีบบน + ตา — ต้องอ่านออกว่าเป็นปลาตอนมองมุม iso
+       ⚠ ที่ระยะจริงตัวปลาสูงราว 12 พิกเซล ⇒ **หางต้องเป็นแผ่นแบนกางออก ไม่ใช่กรวยแหลม**
+       spec = [x, y, สี, ความเร็วว่าย, เฟส] */
+    function fishInTank(g, list){
+      list.forEach(([x, y, c, sp, ph])=>{
+        const f = new T.Group();
+        const body = ball(.075, c, 10); body.scale.set(1.5, 1, .55); f.add(body);
+        const tail = box(.075, .085, .012, shade(c, .92), .01);
+        tail.position.x = -.115; tail.rotation.z = .35; f.add(tail);
+        const tail2 = box(.075, .085, .012, shade(c, .92), .01);
+        tail2.position.x = -.115; tail2.rotation.z = -.35; f.add(tail2);
+        const fin = cone(.032, .055, shade(c, 1.08), 6); fin.position.set(-.01, .055, 0); f.add(fin);
+        [-1, 1].forEach(sg=>{ const e = ball(.016, 0x33261d, 6); e.position.set(.06, .022, sg*.03); f.add(e); });
+        f.position.set(x, y, .02);
+        f.userData.anim = {kind:'swim', sp: sp, amp:.16, ph: ph};
+        g.add(f);
+      });
+    }
+
     /* helper: ขาเฟอร์นิเจอร์ 4 ขา */
     function legs(g, w, d, h, hex, r){
       r = r || .04;
@@ -71,6 +159,9 @@
           const back = box(1.8,.55,.2,col,.1); back.position.set(0,.62,-.32); g.add(back);
           [-1,1].forEach(s=>{ const arm=box(.2,.4,.85,shade(col,1.08),.09); arm.position.set(s*.8,.5,0); g.add(arm); });
           [-.45,.45].forEach(x=>{ const c=cushion(.75,.16,.7,shade(col,1.12)); c.position.set(x,.5,.04); g.add(c); });
+          /* ⚠ ตัวโซฟาเริ่มที่ y=.125 ⇒ **ลอยเหนือพื้น 12.5 ซม.** ถ้าไม่มีขา (ผู้ใช้แจ้ง 2026-08-19) */
+          [[-.78,-.3],[.78,-.3],[-.78,.3],[.78,.3]].forEach(([x,z])=>{
+            const L=cyl(.055,.05,.13,shade(col,.7),8); L.position.set(x,.065,z); g.add(L); });
         } },
       { id:'armchair', name:'เก้าอี้นวม', cat:'seat', scope:'in', emoji:'💺', colors:SOFT,
         action:'sit', sit:{sy:.55},
@@ -79,6 +170,9 @@
           const back=box(.85,.55,.18,col,.1); back.position.set(0,.62,-.3); g.add(back);
           [-1,1].forEach(s=>{ const arm=box(.16,.38,.8,shade(col,1.08),.08); arm.position.set(s*.38,.5,0); g.add(arm); });
           const cu=cushion(.7,.16,.66,shade(col,1.12)); cu.position.set(0,.5,.04); g.add(cu);
+          /* ขาสั้น — เหตุผลเดียวกับโซฟา (ตัวเบาะเริ่มที่ y=.125) */
+          [[-.33,-.28],[.33,-.28],[-.33,.28],[.33,.28]].forEach(([x,z])=>{
+            const L=cyl(.05,.045,.13,shade(col,.7),8); L.position.set(x,.065,z); g.add(L); });
         } },
       { id:'beanbag', name:'เก้าอี้ถุงถั่ว', cat:'seat', scope:'in', emoji:'🫘', colors:BRIGHT,
         action:'sit', sit:{sy:.42},
@@ -166,6 +260,7 @@
           const oven=box(.5,.4,.02,0x263238,.03); oven.position.set(0,.4,.34); g.add(oven);
         } },
       { id:'sink', wall:true, name:'อ่างล้างจาน', cat:'kitchen', scope:'in', emoji:'🚰', colors:WOOD,
+        action:'wash',
         build(g,col){
           const body=box(.8,.8,.6,col,.04); body.position.y=.4; g.add(body);
           const top=box(.84,.08,.64,0xeceff1); top.position.y=.82; g.add(top);
@@ -185,18 +280,25 @@
       { id:'toilet', name:'ชักโครก', cat:'bath', scope:'in', emoji:'🚽', colors:[0xfdfdf8,0xe1f5fe],
         action:'sit', sit:{sy:.5},
         build(g,col){
+          /* ⚠ ฐานรองต้องต่อลงถึงพื้น — ของเดิมโถเริ่มที่ y=.125 เห็นเป็นโถลอย (ผู้ใช้แจ้ง 2026-08-19) */
+          const foot=cyl(.17,.22,.14,shade(col,.96),14); foot.position.y=.07; g.add(foot);
           const bowl=cyl(.24,.2,.35,col,16); bowl.position.y=.3; g.add(bowl);
           const seat=torus(.2,.06,0xffffff,10); seat.rotation.x=Math.PI/2; seat.position.y=.48; g.add(seat);
           const tank=box(.4,.4,.16,col,.04); tank.position.set(0,.6,-.28); g.add(tank);
           const btn=ball(.03,0xb0bec5,8); btn.position.set(0,.82,-.28); g.add(btn);
         } },
       { id:'bathtub', name:'อ่างอาบน้ำ', cat:'bath', scope:'in', emoji:'🛁', fw:2, fd:1, colors:[0xfdfdf8,0x90caf9,0xf48fb1],
+        action:'wash',
         build(g,col){
           const body=box(1.6,.5,.75,col,.2); body.position.y=.35; g.add(body);
           const inner=box(1.3,.3,.5,0xb3e5fc,.15); inner.position.set(0,.45,0); g.add(inner);
           const tap=cyl(.03,.03,.2,0xcfd8dc,8); tap.position.set(-.7,.6,0); g.add(tap);
+          /* ⚠ ตัวอ่างเริ่มที่ y=.1 ⇒ ต้องมีขา 4 ขาเหมือนอ่างขาสิงห์ ไม่งั้นเห็นเป็นอ่างลอย */
+          [[-.62,-.26],[.62,-.26],[-.62,.26],[.62,.26]].forEach(([x,z])=>{
+            const L=cyl(.06,.05,.11,shade(col,.78),8); L.position.set(x,.055,z); g.add(L); });
         } },
       { id:'bath-sink', wall:true, name:'อ่างล้างหน้า', cat:'bath', scope:'in', emoji:'🪥', colors:[0xfdfdf8,0xe1f5fe],
+        action:'wash',
         build(g,col){
           const stand=cyl(.12,.14,.6,col,12); stand.position.y=.3; g.add(stand);
           const basin=cyl(.28,.18,.2,col,16); basin.position.y=.68; g.add(basin);
@@ -204,8 +306,9 @@
           const mirror=box(.4,.5,.04,0xb3e5fc,.03); mirror.position.set(0,1.25,-.16); g.add(mirror);
           const frame=box(.46,.56,.02,shade(0xc98d4e,.9)); frame.position.set(0,1.25,-.18); g.add(frame);
         } },
+      /* 🚿 เฟส 17: แตะแล้วล้างหน้าล้างมือจริง (ท่า + ฟองสบู่) — js/house-usable.js */
       { id:'shower', wall:true, name:'ฝักบัว', cat:'bath', scope:'in', emoji:'🚿', colors:[0xb3e5fc,0xc8e6c9,0xffe0b2],
-        action:'toggle',
+        action:'wash',
         build(g,col){
           const tray=box(.8,.1,.8,0xeceff1,.04); tray.position.y=.05; g.add(tray);
           [[-1,-1],[-1,1]].forEach(([sx,sz])=>{ const w=box(.06,1.8,.8,col,.02); w.position.set(sx*.37,.9,0); g.add(w); });
@@ -236,14 +339,19 @@
           const pole=cyl(.02,.02,.3,0xb0bec5,8); pole.position.y=.2; g.add(pole);
           const shade_=cyl(.18,.12,.2,col,14); shade_.position.y=.42; shade_.userData.bulb=true; g.add(shade_);
         } },
+      /* 📺 เฟส 17: แตะแล้ว **เปิด/ปิดจริง มีภาพขยับในจอ** (ตัวทำงานอยู่ใน js/house-usable.js)
+         ⚠ `disp.userData.tvScreen` คือชิ้นที่ฝั่งนั้นตามหา — เปลี่ยนชื่อคีย์แล้วทีวีจะเงียบไปเฉยๆ */
       { id:'tv', wall:true, name:'โทรทัศน์', cat:'decor', scope:'in', emoji:'📺', fw:2, fd:1, colors:WOOD,
-        action:'toggle',
+        action:'tv',
         build(g,col){
           const stand=box(1.4,.4,.45,col,.04); stand.position.y=.2; g.add(stand);
           const screen=box(1.1,.66,.08,0x263238,.03); screen.position.set(0,.85,-.02); g.add(screen);
-          const disp=box(1.0,.56,.02,0x4dd0e1,.02); disp.position.set(0,.85,.04); g.add(disp);
+          const disp=box(1.0,.56,.02,0x4dd0e1,.02); disp.position.set(0,.85,.04);
+          disp.userData.tvScreen = true; g.add(disp);
         } },
+      /* 📚 เฟส 17: แตะแล้วอ่านนิทานสั้น 1 หน้า (ฟองคำพูดในโลก 3D ไม่ใช่ popup) */
       { id:'bookshelf', name:'ชั้นหนังสือ', cat:'decor', scope:'in', emoji:'📚', colors:WOOD, wall:true,
+        action:'read',
         build(g,col){
           const W=.9, H=1.6, D=.36, t=.05;
           /* หลังตู้ + ข้าง 2 ด้าน (เปิดหน้าไป +z) */
@@ -593,7 +701,9 @@
           const seat=box(.42,.08,.42,col,.05); seat.position.y=.36; g.add(seat);
           legs(g,.16,.16,.36,shade(col,.85),.03);
           const back=box(.42,.34,.08,col,.05); back.position.set(0,.58,-.17); g.add(back);
-          const heart=ball(.06,shade(col,1.2),8); heart.position.set(0,.72,-.13); g.add(heart);
+          /* ⚠ หัวใจต้องตัดกับสีเก้าอี้ให้เห็นชัด — `shade(col,1.2)` เป็นสีเดียวกันแค่จางลง
+             มองที่ระยะกล้อง iso แทบไม่เห็นว่ามีลาย (สีพลาสติกทุกสีเป็นสีสด ⇒ ใช้ขาวนวลได้หมด) */
+          const heart=heartShape(.07,0xfff6f2); heart.position.set(0,.66,-.125); g.add(heart);
         } },
       { id:'rocking-chair', name:'เก้าอี้โยก', cat:'seat', scope:'in', emoji:'🎀', colors:WOOD,
         action:'sit', sit:{sy:.5},
@@ -601,7 +711,14 @@
           const seat=box(.56,.1,.54,col,.05); seat.position.y=.46; g.add(seat);
           const back=box(.56,.5,.08,col,.05); back.position.set(0,.72,-.23); g.add(back);
           [-1,1].forEach(s=>{ const arm=box(.08,.26,.5,shade(col,1.08),.04); arm.position.set(s*.28,.56,0); g.add(arm); });
-          [-1,1].forEach(s=>{ const run=torus(.4,.03,shade(col,.8),16); run.rotation.y=Math.PI/2; run.scale.set(1,.5,1); run.position.set(s*.24,.1,0); g.add(run); });
+          /* ขาโยก = ส่วนโค้งคว่ำ + ขาสั้นต่อขึ้นไปรับเบาะ (ของเดิมเป็นวงแหวนเต็มวงดูเหมือนล้อรถเข็น) */
+          const R=.6;
+          [-1,1].forEach(s=>{
+            const TH=.035;                                   /* ⚠ บวกความหนาท่อ ไม่งั้นท้องโค้งจมใต้พื้น */
+            const run=rockerArc(R,.42,TH,shade(col,.8)); run.position.set(s*.24,R+TH,0); g.add(run);
+            [-.2,.2].forEach(z=>{ const y0=rockerY(R,z)+TH;
+              const L=cyl(.035,.035,.41-y0,shade(col,.9),8); L.position.set(s*.24,(y0+.41)/2,z); g.add(L); });
+          });
         } },
       { id:'floor-cushion', name:'เบาะรองนั่ง', cat:'seat', scope:'in', emoji:'🟧', colors:FABRIC,
         action:'sit', sit:{sy:.22},
@@ -621,8 +738,19 @@
       { id:'egg-chair', name:'เก้าอี้ไข่', cat:'seat', scope:'in', emoji:'🥚', colors:SOFT,
         action:'sit', sit:{sy:.5},
         build(g,col){
-          const shell=ball(.44,col,16); shell.scale.set(1,1.15,1); shell.position.y=.6; g.add(shell);
-          const cu=cushion(.5,.14,.4,shade(col,1.15)); cu.position.set(0,.46,.12); g.add(cu);
+          /* ⚠ เดิมเปลือกเป็นลูกกลม **ทึบทั้งใบ** ⇒ เบาะอยู่ข้างในถูกบังมิด เห็นเป็นไข่ตันไม่มีที่นั่ง
+             (ผู้ใช้แจ้ง 2026-08-20 · กับดักเดียวกับตู้ปลาที่ "น้ำ" ทึบจนไม่เห็นปลา)
+             ⇒ ตัดเปลือกให้เปิดด้านหน้าด้วย phiStart/phiLength แล้วเปิด DoubleSide ให้เห็นผิวใน
+             ⚠ **ต้อง clone วัสดุก่อนตั้ง side** — วัสดุถูกแคชรวมทั้งเมือง แก้ตรงๆ จะลามไปทั้งฉาก */
+          /* ⚠ ใน THREE `phi=0` อยู่ที่แกน **−X ไม่ใช่ +Z** ⇒ ถ้าเปิดช่องที่ phi=0 ตรงๆ
+             ปากเก้าอี้จะหันไปทางซ้ายของฉาก ไม่ใช่หันออกหน้า (เจอตอนแก้รอบแรก 2026-08-20) */
+          const GAP=1.7;                                   /* ช่องเปิดหน้า ~97° */
+          const sg=new T.SphereGeometry(.44,20,14,Math.PI/2+GAP/2,Math.PI*2-GAP);
+          const shell=new T.Mesh(sg, mat(col).clone());
+          shell.material.side=T.DoubleSide;
+          shell.scale.set(1,1.15,1); shell.position.y=.6; g.add(shell);
+          const cu=cushion(.46,.14,.34,shade(col,1.2)); cu.position.set(0,.5,.06); g.add(cu);
+          const bk=cushion(.4,.26,.12,shade(col,1.1)); bk.position.set(0,.68,-.2); g.add(bk);
           const stand=cyl(.06,.14,.4,shade(col,.7),12); stand.position.y=.2; g.add(stand);
           const base=cyl(.22,.22,.05,shade(col,.7),16); base.position.y=.03; g.add(base);
         } },
@@ -676,7 +804,14 @@
           const body=box(.8,.34,.56,col,.14); body.position.y=.5; g.add(body);
           const mat_=cushion(.66,.12,.44,0xfdfdf8); mat_.position.set(0,.62,0); g.add(mat_);
           const hood=ball(.34,shade(col,1.1),12); hood.scale.set(1,.7,.7); hood.position.set(0,.62,-.24); g.add(hood);
-          [-1,1].forEach(s=>{ const run=torus(.34,.03,shade(col,.8),16); run.rotation.y=Math.PI/2; run.scale.set(1,.5,1); run.position.set(s*.34,.16,0); g.add(run); });
+          /* ขาโยกแบบเดียวกับเก้าอี้โยก — ส่วนโค้งคว่ำ ไม่ใช่วงแหวนเต็มวงที่จมใต้พื้น */
+          const R=.5;
+          [-1,1].forEach(s=>{
+            const TH=.032;
+            const run=rockerArc(R,.42,TH,shade(col,.8)); run.position.set(s*.34,R+TH,0); g.add(run);
+            [-.18,.18].forEach(z=>{ const y0=rockerY(R,z)+TH;
+              const L=cyl(.03,.03,.34-y0,shade(col,.9),8); L.position.set(s*.34,(y0+.34)/2,z); g.add(L); });
+          });
         } },
       { id:'dresser', wall:true, name:'ตู้ลิ้นชัก', cat:'bed', scope:'in', emoji:'🧦', fw:2, fd:1, top:.92, colors:WOOD,
         build(g,col){
@@ -795,34 +930,39 @@
          🗑️ `action:'tank'` (แตะแล้วเปิด popup ตู้ปลา) **ถูกยกเลิก 2026-08-17 ตามที่ผู้ใช้สั่ง**
             popup ไม่เหมือนตู้ปลาจริง ไอคอน/อนิเมชันปลาไม่สวย ⇒ ปลาที่ตกได้ย้ายไปสมุดสะสม (เฟส 16)
             ตู้ปลายังเป็นของตกแต่งเต็มตัว มีปลาว่ายอยู่ในโมเดล 3D เหมือนเดิม แตะแล้วเด้งเหมือนของชิ้นอื่น */
+      /* 🐠 เฟส 17: แตะแล้ว **ให้อาหารปลาในโมเดล 3D** ปลาว่ายเร็วขึ้นชั่วครู่
+         ⚠ ห้ามกลับไปทำ popup ตู้ปลาอีก (ผู้ใช้สั่งถอดทั้งระบบ 2026-08-17) */
       { id:'aquarium', name:'ตู้ปลาน้ำจืด', cat:'decor', scope:'in', emoji:'🐠', top:.9, colors:[0xb3e5fc,0x90caf9],
+        action:'tank',
         build(g,col){
           const stand=box(.9,.5,.4,shade(0xc98d4e,.9),.04); stand.position.y=.25; g.add(stand);
-          const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);
-          const water=box(.8,.4,.32,0x4dd0e1,.02); water.position.y=.74; g.add(water);
-          const fish=ball(.06,0xff8a65,8); fish.scale.set(1.4,1,.6); fish.position.set(-.1,.78,.1);
-          fish.userData.anim={kind:'bob', sp:1.3, amp:.06}; g.add(fish);           /* ปลาว่ายขึ้นลงในตู้ */
-          const fish2=ball(.05,0xffd54f,8); fish2.scale.set(1.4,1,.6); fish2.position.set(.16,.68,0);
-          fish2.userData.anim={kind:'bob', sp:1.7, amp:.05, ph:2.4}; g.add(fish2);
-          [[-.28,.66],[.3,.8],[.02,.6]].forEach(([x,y],i)=>{ const bb=ball(.025,0xe0f7fa,6);
-            bb.position.set(x,y,.05); bb.userData.anim={kind:'bob', sp:2.4, amp:.12, ph:i*1.9}; g.add(bb); });
+          const sand=box(.78,.06,.3,0xf0cd93,.02); sand.position.y=.578; g.add(sand);
+          /* สาหร่าย 3 กอ — ทำให้รู้ว่าข้างในเป็นน้ำ ไม่ใช่กล่องเปล่า */
+          [[-.3,0x66bb6a,.2],[-.18,0x81c784,.14],[.3,0x4caf50,.17]].forEach(([x,c,h])=>{
+            const w=box(.05,h,.05,c,.02); w.position.set(x,.6+h/2,-.06); g.add(w);
+          });
+          /* 🐠 ปลา 3 ตัว — ตัว+หาง+ตา ให้ดูออกว่าเป็นปลาจริงตอนมองมุม iso
+             ⚠ ต้องอยู่**ก่อน**กระจกน้ำ และกระจกต้องโปร่งแสง ไม่งั้นปลาถูกบังมิด (บั๊กเดิม) */
+          fishInTank(g, [[-.16,.80,0xff8a65,1.25,.9],[.14,.72,0xffd54f,1.6,.6],[-.02,.88,0xf06292,2.0,2.3]]);
+          [[-.28,.66],[.3,.8],[.02,.62]].forEach(([x,y],i)=>{ const bb=ball(.022,0xe0f7fa,6);
+            bb.position.set(x,y,.06); bb.userData.anim={kind:'bob', sp:2.4, amp:.12, ph:i*1.9}; g.add(bb); });
+          glassTank(g, col, .86, .5, .38, .76, 0x29b6d6);
         } },
       /* ตู้ปลาทะเล (เฟส 11) — โทนน้ำเข้มกว่า + ปะการัง ให้แยกออกจากตู้น้ำจืดด้วยเงารวม */
       { id:'aquarium-sea', name:'ตู้ปลาทะเล', cat:'decor', scope:'in', emoji:'🐡', top:.9, colors:[0x81d4fa,0x4fc3f7],
+        action:'tank',
         build(g,col){
           const stand=box(.9,.5,.4,shade(0x6d4c41,.95),.04); stand.position.y=.25; g.add(stand);
-          const glass=box(.86,.5,.38,col,.03); glass.position.y=.76; g.add(glass);
-          const water=box(.8,.4,.32,0x0288d1,.02); water.position.y=.74; g.add(water);
           /* ปะการัง 2 กอ + ทรายก้นตู้ ให้ดูเป็นทะเลชัดๆ */
-          const sand=box(.78,.06,.3,0xffe0b2,.02); sand.position.y=.57; g.add(sand);
+          const sand=box(.78,.06,.3,0xf3dcae,.02); sand.position.y=.578; g.add(sand);
           [[-.22,0xff8a65],[.24,0xba68c8]].forEach(([x,c])=>{
-            const cor=cyl(.03,.05,.2,c,6); cor.position.set(x,.68,-.02); g.add(cor);
-            const cor2=cyl(.025,.04,.14,c,6); cor2.position.set(x+.07,.65,.04); g.add(cor2);
+            const cor=cyl(.03,.05,.2,c,6); cor.position.set(x,.7,-.04); g.add(cor);
+            const cor2=cyl(.025,.04,.14,c,6); cor2.position.set(x+.07,.67,.03); g.add(cor2);
           });
-          const fish=ball(.06,0xffd54f,8); fish.scale.set(1.4,1,.6); fish.position.set(-.08,.82,.1);
-          fish.userData.anim={kind:'bob', sp:1.5, amp:.05}; g.add(fish);
-          [[-.3,.7],[.28,.84]].forEach(([x,y],i)=>{ const bb=ball(.025,0xe1f5fe,6);
-            bb.position.set(x,y,.05); bb.userData.anim={kind:'bob', sp:2.2, amp:.12, ph:i*2.1}; g.add(bb); });
+          fishInTank(g, [[-.1,.84,0xffd54f,1.45,.4],[.16,.74,0xff7043,1.15,1.8],[-.04,.68,0x4fc3f7,1.9,2.7]]);
+          [[-.3,.7],[.28,.84]].forEach(([x,y],i)=>{ const bb=ball(.022,0xe1f5fe,6);
+            bb.position.set(x,y,.06); bb.userData.anim={kind:'bob', sp:2.2, amp:.12, ph:i*2.1}; g.add(bb); });
+          glassTank(g, col, .86, .5, .38, .76, 0x0288d1);
         } },
       /* ⚠ เฟส 9 ย้ายจากหมวด `decor` มา `music` + ให้แตะแล้วเปิดหน้าเล่นจริง
          **id เดิมห้ามเปลี่ยน** — สิทธิ์ที่เด็กซื้อไว้ผูกกับ id นี้ (ย้ายหมวด = ย้ายแค่แท็บที่ขาย/ที่วาง) */
@@ -843,7 +983,7 @@
           const head=ball(.26,col,12); head.position.y=.98; g.add(head);
           [-1,1].forEach(s=>{ const ear=ball(.1,col,8); ear.position.set(s*.18,1.16,0); g.add(ear);
             const arm=ball(.11,col,8); arm.scale.set(1,1.4,1); arm.position.set(s*.34,.56,.06); g.add(arm);
-            const leg=ball(.13,col,8); leg.position.set(s*.16,.2,.06); g.add(leg); });
+            const leg=ball(.13,col,8); leg.position.set(s*.16,.13,.06); g.add(leg); });   /* ⚠ y=.2 เดิม ⇒ ขาลอยเหนือพื้น 7 ซม. */
           const snout=ball(.1,shade(col,1.15),8); snout.position.set(0,.92,.24); g.add(snout);
           const nose=ball(.04,0x37474f,8); nose.position.set(0,.94,.33); g.add(nose);
           [-1,1].forEach(s=>{ const eye=ball(.03,0x37474f,8); eye.position.set(s*.09,1.02,.24); g.add(eye); });
@@ -964,7 +1104,9 @@
       { id:'monkey-bars', name:'ราวโหน', cat:'play', scope:'out', emoji:'🐒', fw:2, fd:1, colors:PLASTIC,
         build(g,col){
           [[-.7,-.35],[.7,-.35],[-.7,.35],[.7,.35]].forEach(([x,z])=>{ const post=cyl(.06,.06,1.5,col,8); post.position.set(x,.75,z); g.add(post); });
-          [-1,1].forEach(s=>{ const rail=cyl(.05,.05,1.5,shade(col,.85),8); rail.rotation.x=Math.PI/2; rail.position.set(s*.7,1.5,0); g.add(rail); });
+          /* ⚠ รางบนต้องยาวเท่า "ระยะห่างเสาหน้า-หลัง" (.7) — ของเดิมใส่ 1.5 (ความยาวของเสา)
+             ⇒ รางยื่นพ้นเสาออกไปข้างละ .4 ดูเหมือนโครงบิดพัง (ผู้ใช้แจ้ง 2026-08-19) */
+          [-1,1].forEach(s=>{ const rail=cyl(.05,.05,.7,shade(col,.85),8); rail.rotation.x=Math.PI/2; rail.position.set(s*.7,1.5,0); g.add(rail); });
           for(let i=0;i<5;i++){ const rung=cyl(.03,.03,1.4,0xffd54f,8); rung.rotation.z=Math.PI/2; rung.position.set(0,1.5,-.35+i*.175); g.add(rung); }
         } },
       { id:'spring-rider', name:'ม้าโยกสปริง', cat:'play', scope:'out', emoji:'🐴', colors:PLASTIC,
@@ -1256,7 +1398,9 @@
       { id:'swing-chair', name:'เก้าอี้แขวน', cat:'seat', scope:'in', emoji:'🪺', colors:SOFT,
         action:'sit', sit:{sy:.55},
         build(g,col){
-          const rope=cyl(.02,.02,.7,0xbcaaa4,6); rope.position.y=1.42; g.add(rope);
+          /* ⚠ เชือกต้องยาวลงมาจรด "ขอบบนของเปลือก" (y=.96) — ของเดิมยาว .7 อยู่ที่ 1.07-1.77
+             ⇒ ขาดจากตัวเก้าอี้ .11 เห็นเป็นเชือกลอยไม่ต่อกับอะไร (ผู้ใช้แจ้ง 2026-08-19) */
+          const rope=cyl(.02,.02,1.0,0xbcaaa4,6); rope.position.y=1.46; g.add(rope);
           const shell=ball(.42,col,16); shell.scale.set(1,.9,1); shell.position.y=.72; g.add(shell);
           const rim=torus(.4,.045,shade(col,.85),16); rim.rotation.x=Math.PI/2; rim.position.y=.96; g.add(rim);
           /* ⚠ เบาะต้องอยู่ **บนผิวบนของเปลือก** ไม่ใช่กลางลูก — ของเดิม y=.6 อยู่ต่ำกว่าจุดศูนย์กลาง
@@ -1298,7 +1442,11 @@
       { id:'nest-tables', top:.46, name:'โต๊ะซ้อนคู่', cat:'table', scope:'in', emoji:'🪆', colors:WOOD,
         build(g,col){
           const t1=box(.5,.06,.5,col,.03); t1.position.set(-.12,.44,0); g.add(t1);
-          legs(g,.2,.2,.44,shade(col,.82),.035);
+          /* ⚠ `legs()` วางขาที่ x=0 เสมอ **ไม่รู้จักการเลื่อนหน้าโต๊ะ** — หน้าโต๊ะตัวใหญ่อยู่ที่ x=-.12
+             ⇒ ขาเยื้องออกจากหน้าโต๊ะ 12 ซม. เห็นเป็นขาเก (ผู้ใช้แจ้ง 2026-08-19)
+             ของที่หน้าโต๊ะไม่ได้อยู่กลาง **ห้ามใช้ `legs()`** ให้วางขาเองตามตำแหน่งจริง */
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const L=cyl(.035,.035,.44,shade(col,.82),8);
+            L.position.set(-.12+sx*.2,.22,sz*.2); g.add(L); });
           const t2=box(.42,.06,.42,shade(col,1.12),.03); t2.position.set(.26,.3,.1); g.add(t2);
           [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const L=cyl(.03,.03,.3,shade(col,.86),6);
             L.position.set(.26+sx*.16,.15,.1+sz*.16); g.add(L); });
@@ -1306,8 +1454,10 @@
       { id:'craft-cart', top:.7, name:'รถเข็นของ', cat:'table', scope:'in', emoji:'🧰', colors:PLASTIC,
         build(g,col){
           [0,.34,.66].forEach((y,i)=>{ const sh=box(.6,.05,.44,i?shade(col,1.05):col,.03); sh.position.y=y+.16; g.add(sh); });
-          [-1,1].forEach(s=>{ const bar=cyl(.025,.025,.7,shade(col,.8),8); bar.position.set(s*.28,.42,0); g.add(bar); });
-          const handle=cyl(.02,.02,.5,shade(col,.8),8); handle.rotation.z=Math.PI/2; handle.position.set(0,.9,-.2); g.add(handle);
+          /* ⚠ ที่จับต้องอยู่ "ปลายบนของเสา" พอดี — ของเดิมเสาสูงถึง .77 แต่ที่จับอยู่ y=.9 และเยื้องไป
+             z=-.2 คนละแนวกับเสา ⇒ ลอยอยู่กลางอากาศ (ผู้ใช้แจ้ง 2026-08-19) */
+          [-1,1].forEach(s=>{ const bar=cyl(.025,.025,.74,shade(col,.8),8); bar.position.set(s*.28,.44,-.19); g.add(bar); });
+          const handle=cyl(.02,.02,.5,shade(col,.8),8); handle.rotation.z=Math.PI/2; handle.position.set(0,.81,-.19); g.add(handle);
           [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const w=torus(.05,.02,0x546e7a,10);
             w.position.set(sx*.26,.06,sz*.18); g.add(w); });
         } },
@@ -1369,8 +1519,27 @@
       { id:'night-light', name:'โคมไฟดวงจันทร์', cat:'bed', scope:'in', emoji:'🌙', colors:[0xfff59d,0xb3e5fc,0xf8bbd0],
         action:'toggle', light:{y:.5, color:0xfff2c0, dist:3, intensity:.7},
         build(g,col){
-          const moon=ball(.2,col,16); moon.position.y=.5; moon.userData.bulb=true; g.add(moon);
-          const bite=ball(.13,0xfffdf7,12); bite.position.set(.13,.56,.06); g.add(bite);
+          /* ⚠ เดิมทำเสี้ยวด้วย "ลูกกลมสีขาวแปะทับ" — ในโลก 3D ลูกที่แปะเป็นวัตถุทึบ
+             ไม่ได้เจาะเนื้อออก ⇒ เห็นเป็นลูกกลม 2 ลูกติดกัน ไม่ใช่พระจันทร์ (ผู้ใช้แจ้ง 2026-08-20)
+             ⇒ ต้องเจาะจริงด้วย Shape + hole แล้ว extrude ออกมาเป็นแผ่นเสี้ยว
+             ⚠ รู **ต้องอยู่ในวงนอกทั้งใบ** (off + hr ≤ R) ไม่งั้น ExtrudeGeometry เพี้ยน */
+          /* 🌙 เสี้ยวจริงต้องให้ "วงใน **ใหญ่กว่า** วงนอกและตัดกัน" ⇒ ทำเป็นรูเจาะไม่ได้
+             (ExtrudeGeometry รับรูที่ล้นออกนอกรูปไม่ได้ · ทำแบบรูเจาะแล้วได้ทรงตัว C หนาเท่ากันทั้งเส้น)
+             ⇒ วาดเส้นรอบรูปเองด้วยส่วนโค้ง 2 เส้นที่บรรจบกันที่ปลายแหลม 2 ปลาย
+             R/A = วงนอก · CX/R2/B = วงในที่เลื่อนไปทางซ้ายแล้วโค้งกลับมาทางขวา */
+          /* ⚠ วงในต้อง **โค้งเข้าหาเนื้อ (ไปทางซ้าย)** ไม่ใช่โค้งออก — รอบแรกวางจุดศูนย์กลางวงในไว้
+             ทางซ้ายแล้วให้โค้งไปทางขวา ผลคือเส้นรอบรูปกินพื้นที่เกือบทั้งวง ได้ก้อนกลมตัน */
+          const R=.2, A=1.15, CX=.05;
+          const HX=R*Math.cos(A), HY=R*Math.sin(A);          /* ปลายเสี้ยวบน (สะท้อนเป็นปลายล่าง) */
+          const R2=Math.sqrt((HX-CX)*(HX-CX)+HY*HY);
+          const B=Math.atan2(-HY, HX-CX);                    /* มุมของปลายล่างเมื่อมองจากวงใน */
+          const sh=new T.Shape();
+          sh.absarc(0, 0, R, A, Math.PI*2 - A, false);        /* ขอบนอก อ้อมทางซ้าย */
+          sh.absarc(CX, 0, R2, B, -B - Math.PI*2, true);      /* ขอบใน โค้งเว้าเข้าหาเนื้อ */
+          const mg=new T.ExtrudeGeometry(sh,{depth:.05,bevelEnabled:false,curveSegments:20});
+          mg.translate(0,0,-.025);
+          const moon=new T.Mesh(mg, mat(col));
+          moon.position.y=.55; moon.userData.bulb=true; g.add(moon);
           const post=cyl(.03,.04,.34,0xbcaaa4,8); post.position.y=.17; g.add(post);
           const base=cyl(.14,.15,.05,0xbcaaa4,14); base.position.y=.025; g.add(base);
         } },
@@ -1646,14 +1815,28 @@
       { id:'tree-house', name:'บ้านต้นไม้', cat:'play', scope:'out', emoji:'🏚️', fw:2, fd:2, colors:WOOD,
         leafy:true, leafyTall:true,
         build(g,col){
+          /* ⚠ ของเดิม **พุ่มใบ (r .6 ที่ y 1.9) กลืนตัวบ้านกับหลังคาหายไปทั้งหลัง**
+             (ช่วง 1.3-2.5 ทับพอดีกับผนัง 1.25-1.85 และหลังคา 1.83-2.28) ⇒ เห็นเป็นลูกบอลเขียว
+             บนแท่งไม้ (ผู้ใช้แจ้ง 2026-08-20)
+             ⇒ ย้ายพุ่มใบขึ้นไป **เหนือหลังคา** และแตกเป็น 3 พุ่มเล็กรอบยอด · เพิ่มราวกันตกกับบันได
+             ⚠ หลังคากรวย 4 เหลี่ยมหมุน 45° กว้างจริง = r×√2×2 ⇒ r .62 ⇒ 1.75 ยังพอดีช่อง 2×2 */
           const trunk=cyl(.2,.26,1.3,0x8d6e63,12); trunk.position.y=.65; g.add(trunk);
-          const leaf=ball(.6,0x66bb6a,14); leaf.position.y=1.9; g.add(leaf);
-          const floor=box(1.2,.1,1.2,col,.04); floor.position.y=1.2; g.add(floor);
-          const wall=box(.9,.6,.9,shade(col,1.1),.05); wall.position.y=1.55; g.add(wall);
-          /* ⚠ กับดักเดียวกับเรือนกระจก: r=.85 หมุน 45° ⇒ กว้างจริง 2.40 ล้นช่อง 2×2 */
-          const roof=cone(.62,.45,0xef5350,4); roof.rotation.y=Math.PI/4; roof.position.y=2.05; g.add(roof);
-          for(let i=0;i<5;i++){ const r=box(.36,.05,.1,shade(col,.85),.02);
-            r.position.set(0,.2+i*.22,.62); g.add(r); }
+          const floor=box(1.3,.1,1.3,col,.04); floor.position.y=1.22; g.add(floor);
+          [[-.6,-.6],[.6,-.6],[-.6,.6],[.6,.6]].forEach(([x,z])=>{
+            const p=cyl(.035,.035,.3,shade(col,.8),6); p.position.set(x,1.42,z); g.add(p); });
+          [[0,-.62],[0,.62],[-.62,0],[.62,0]].forEach(([x,z])=>{
+            const r2=box(x?.06:1.26,.05,x?1.26:.06,shade(col,.8),.02); r2.position.set(x,1.55,z); g.add(r2); });
+          const wall=box(.86,.55,.86,shade(col,1.12),.05); wall.position.y=1.55; g.add(wall);
+          const door=box(.3,.4,.04,shade(col,.62),.02); door.position.set(0,1.48,.44); g.add(door);
+          const roof=cone(.62,.45,0xef5350,4); roof.rotation.y=Math.PI/4; roof.position.y=2.06; g.add(roof);
+          /* ⚠ เพดานความสูงของของตกแต่งคือ 3.0 (เทส house-furn-fit) — พุ่มบนสุดต้องไม่เกิน */
+          [[-.5,2.4,-.35],[.5,2.4,-.3],[0,2.54,.22]].forEach(([x,y,z])=>{
+            const lf=ball(.38,0x66bb6a,12); lf.position.set(x,y,z); g.add(lf); });
+          /* บันไดพาดขึ้นชานพัก — เสาข้าง 2 ต้น + ขั้นบันได */
+          [-1,1].forEach(sx=>{ const rail=cyl(.035,.035,1.25,shade(col,.78),6);
+            rail.position.set(sx*.16,.62,.72); g.add(rail); });
+          for(let i=0;i<5;i++){ const r=box(.34,.045,.09,shade(col,.86),.02);
+            r.position.set(0,.28+i*.22,.72); g.add(r); }
         } },
       { id:'jungle-net', name:'ตาข่ายปีนป่าย', cat:'play', scope:'out', emoji:'🕸️', fw:2, fd:1, colors:[0xff7043,0x42a5f5],
         build(g,col){
@@ -1733,7 +1916,7 @@
         build(g,col){
           const post=cyl(.05,.06,.9,shade(col,.8),8); post.position.y=.45; g.add(post);
           const board=box(.62,.28,.05,col,.04); board.position.y=.95; g.add(board);
-          const heart=ball(.07,0xef5350,10); heart.scale.set(1,1,.4); heart.position.set(-.2,.95,.04); g.add(heart);
+          const heart=heartShape(.06,0xef5350); heart.position.set(-.2,.95,.035); g.add(heart);
           [0,1,2].forEach(i=>{ const w=box(.08,.03,.02,shade(col,.6),.01); w.position.set(0+i*.12,.95,.04); g.add(w); });
         } },
       { id:'garden-lantern', name:'โคมไฟญี่ปุ่น', cat:'decorout', scope:'out', emoji:'🕯️', colors:[0xef5350,0xffca28,0xfffdf7],
@@ -1845,13 +2028,20 @@
       { id:'ins-ranat', name:'ระนาด', cat:'music', scope:'in', emoji:'🎼', fw:2, fd:1, colors:WOOD,
         voice:'xylo', action:'music', music:2, tune:[0,1,2,3,4,5,6],
         build(g,col){
-          const boat=box(1.1,.24,.4,col,.1); boat.position.y=.26; g.add(boat);
-          [-1,1].forEach(s=>{ const leg=box(.12,.26,.3,petShadeF(col,.82),.04); leg.position.set(s*.42,.13,0); g.add(leg); });
-          for(let i=0;i<9;i++){ const bar=box(.09,.03,.3-i*.018,0xffd54f,.01);
-            bar.position.set(-.44+i*.11,.4,0); g.add(bar); }
-          [-1,1].forEach(s=>{ const mal=cyl(.012,.012,.24,0xfff3d0,6); mal.rotation.x=Math.PI/2.6;
-            mal.position.set(s*.16,.5,.18); g.add(mal);
-            const hd=ball(.035,0xef5350,8); hd.position.set(s*.16,.44,.28); g.add(hd); });
+          /* ⚠ ของเดิมลูกระนาดกว้าง .09 เรียงห่าง .11 (เหลือร่องแค่ .02) และสีเดียวกันหมด
+             ⇒ ที่ระยะกล้อง iso เห็นเป็นแผ่นเหลืองแผ่นเดียว ไม่ใช่ระนาด (ผู้ใช้แจ้ง 2026-08-20)
+             ⇒ ลดความกว้างลูก + ถ่างร่อง + ยกให้ลอยเหนือรางบนเชือก 2 เส้น + ไม้ตีวางบนลูกระนาด */
+          const boat=box(1.1,.26,.42,col,.1); boat.position.y=.24; g.add(boat);
+          [-1,1].forEach(s=>{ const leg=box(.13,.24,.32,petShadeF(col,.82),.04); leg.position.set(s*.44,.12,0); g.add(leg); });
+          [-1,1].forEach(s=>{ const cord=box(.94,.02,.02,petShadeF(col,.6)); cord.position.set(0,.38,s*.11); g.add(cord); });
+          /* ⚠ ลูกระนาดสีเดียวกันหมด + ร่องแคบ ⇒ ที่ระยะกล้อง iso เห็นเป็นแผ่นเหลืองแผ่นเดียว
+             (วัสดุ toon ไม่มีเส้นขอบให้แยกชิ้น) ⇒ **สลับ 2 เฉดทีละลูก** ถึงจะนับลูกออก */
+          for(let i=0;i<9;i++){ const w=.3-i*.02;
+            const bar=box(.066,.04,w,i%2 ? 0xf0a92e : 0xffd54f,.012);
+            bar.position.set(-.4+i*.1,.435,0); g.add(bar); }
+          [-1,1].forEach(s=>{ const mal=cyl(.011,.011,.22,0xfff3d0,6);
+            mal.rotation.set(0,0,Math.PI/2); mal.position.set(s*.2,.45,.24); g.add(mal);
+            const hd=ball(.032,0xef5350,8); hd.position.set(s*.2+s*.12,.45,.24); g.add(hd); });
         } },
       { id:'ins-flute', name:'ขลุ่ย', cat:'music', scope:'in', emoji:'🪈', colors:WOOD,
         voice:'flute', action:'music', music:2, tune:[4,5,6,7,6,4],
@@ -1859,8 +2049,13 @@
           const stand=cyl(.14,.16,.05,petShadeF(col,.75),14); stand.position.y=.025; g.add(stand);
           const post=cyl(.03,.035,.5,petShadeF(col,.8),8); post.position.y=.26; g.add(post);
           const tube=cyl(.045,.045,.66,col,12); tube.rotation.z=.35; tube.position.set(0,.6,0); g.add(tube);
-          for(let i=0;i<5;i++){ const h=cyl(.012,.012,.02,0x4a3a2a,8); h.rotation.x=Math.PI/2;
-            h.position.set(-.09+i*.05,.5+i*.115,.045); g.add(h); }
+          /* 🕳 รูขลุ่ยต้องเรียงไป "ตามแนวท่อ" ที่เอียง .35 rad — ของเดิมเรียงสวนทาง
+             (x เพิ่มขึ้นตาม i ทั้งที่แกนท่อ x ลดลง) ⇒ รูลอยอยู่นอกตัวขลุ่ยเป็นแถวเฉียงคนละทาง
+             (ผู้ใช้แจ้ง 2026-08-19) · คำนวณจากแกนจริง: จุดบนแกน = กลางท่อ + t·(-sin, cos) */
+          const TILT=.35, SN=Math.sin(TILT), CS=Math.cos(TILT);
+          for(let i=0;i<5;i++){ const t=-.22+i*.11;
+            const h=cyl(.012,.012,.02,0x4a3a2a,8); h.rotation.x=Math.PI/2; h.rotation.y=-TILT;
+            h.position.set(-SN*t,.6+CS*t,.042); g.add(h); }
         } },
       /* ---- ระดับ 3: เปิดหน้าเล่นเต็ม (แบบ "เปียโนของหนู") ---- */
       { id:'ins-keyboard', name:'คีย์บอร์ด', cat:'music', scope:'in', emoji:'🎛️', fw:2, fd:1, colors:[0x455a64,0x37474f],

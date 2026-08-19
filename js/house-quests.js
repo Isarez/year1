@@ -212,6 +212,9 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     /* 🌍 "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" — {leaf, water, photo}
        ⚠ ถ้าไม่มี kit ส่งมา ให้คืน 0 ทุกคีย์ ⇒ งานแนวนี้จะไม่ถูกแจกเลย (ปลอดภัยไว้ก่อน ไม่มีทางตัน) */
     const worldStock = kit.worldStock || function(){ return {leaf:0, water:0, photo:0}; };
+    /* 👋 เฟส 18 — กลไกที่เด็ก "ถนัด" กับคนคนนี้ (js/house-neighbour.js เป็นคนจำ)
+       ⚠ ไม่มี kit ส่งมา = คืนค่าว่าง ⇒ สุ่มงานแบบเดิมเป๊ะ (ไฟล์นั้นหายไปก็ไม่พัง) */
+    const favMech = kit.favMech || function(){ return ''; };
     /* 🕰️ หมวดของในบ้านที่เด็กวางไว้จริง — เควสต์กิจวัตรสั่งได้เฉพาะหมวดพวกนี้ (ผู้ใช้สั่ง 2026-08-16) */
     const routineCats = kit.routineCats || function(){ return []; };
     /* บ้านหลังนี้มีโต๊ะ/เก้าอี้ในบ้านไหม (เควสต์ "ไปนั่งกินข้าว") — ฝั่งหน้าจอเป็นคนตอบ */
@@ -355,26 +358,69 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       if(spec.engine && !engineReady(m)) return false;
       return true;
     }
-    function rollWorkMech(rng, npcId){
+    /* ================= พูลกลไกของ NPC/กระดาน (เขียนใหม่ 2026-08-20 ตามคำสั่งผู้ใช้) =================
+       **เดิม `quiz` ถูกล็อกไว้ที่ 40% + `count` 15%** ⇒ กว่าครึ่งของงานทั้งวันเป็นการ์ดตอบคำถาม
+       เด็กเปิดกระดานมาเจอ "ตอบคำถาม" ซ้ำๆ ทั้งที่มีกลไกให้เล่นอยู่ 65 แบบ
+       ผู้ใช้สั่ง 2026-08-20: **"ไม่ต้องเจอ quiz บ่อยที่สุด ให้เฉลี่ยกันเจอหลายๆ แบบ"**
+
+       ⇒ ตอนนี้รวมทุกกลไกที่คนคนนี้แจกได้เป็น **พูลเดียว แล้วสุ่มแบบเฉลี่ยเท่ากัน**
+       🔒 **`quiz` ยังอยู่ในพูลของทุกคนเสมอ** (สรุปบริบทข้อ 4: ทุก NPC ต้องตอบคำถามได้)
+          — ที่เปลี่ยนคือ "ความถี่" ไม่ใช่ "ความมีอยู่" ⇒ ไม่มีทางตัน ไม่ขัดกติกาเดิม
+       🔒 **ห้ามกลับไปฮาร์ดโค้ดเปอร์เซ็นต์รายกลไกอีก** — พูลโตขึ้นทุกเฟส ตัวเลขตายตัวจะเพี้ยนเงียบๆ
+          ทุกครั้งที่เพิ่มกลไกใหม่ (เป็นสาเหตุที่ quiz ค้างอยู่ 40% มาตั้งแต่เฟส 5) */
+    /* น้ำหนักพิเศษรายกลไก — ค่าปกติคือ 1 (เฉลี่ยเท่ากันหมด) ใส่ที่นี่เฉพาะตัวที่มีเหตุผลจริงๆ
+       ⚠ `deliver` = งานเดินข้ามเมืองที่ไม่มีอะไรให้เล่นระหว่างทาง (ข้อ 15.2 "เชื่อม NPC เข้าหากัน")
+         เจอบ่อยเท่าเกมอื่นแล้วเด็กจะรู้สึกว่าวันนี้ได้แต่เดิน ⇒ ให้ครึ่งเดียวของตัวอื่น */
+    const MECH_WEIGHT = { deliver: .5 };
+    /* กลไกทั้งหมดที่ "คนคนนี้แจกได้จริงวันนี้" — กรองด้วย mechOk ทุกทางเข้าเสมอ
+       ⚠ คนในตึกแล็บ/ร้านดนตรีใช้พูลแทนที่ (LAB_MECHS/SPOT_MECHS) **ไม่ผสมกับพูลทั่วไป** */
+    function workPool(npcId){
       const lab = labMechsFor(npcId);
-      if(lab){
-        const pool = lab.filter(m => mechOk(m));
-        if(pool.length) return pool[(rng() * pool.length) | 0];
-        return 'quiz';
+      if(lab) return lab.filter(m => mechOk(m));
+      const out = [];
+      const add = m => { if(MECHS[m] && out.indexOf(m) < 0 && mechOk(m)) out.push(m); };
+      ['quiz', 'count', 'deliver'].forEach(add);   /* พื้นฐานที่ทุกคนแจกได้ */
+      bonusMechsFor(npcId).forEach(add);           /* งานที่เข้ากับร้าน/อาชีพของคนนี้ (เฟส 7) */
+      ENGINE_MECHS.forEach(add);                   /* เกมที่ยืม engine หน้าหลัก (เฟส 5) */
+      return out;
+    }
+    function pickFromPool(rng, pool){
+      let sum = 0;
+      for(let i = 0; i < pool.length; i++) sum += (MECH_WEIGHT[pool[i]] || 1);
+      let t = rng() * sum;
+      for(let i = 0; i < pool.length; i++){
+        t -= (MECH_WEIGHT[pool[i]] || 1);
+        if(t <= 0) return pool[i];
       }
-      const r = rng();
-      if(r < .40) return 'quiz';                    /* quiz ต้องเจอบ่อยที่สุดเสมอ (กติกาข้อ 4) */
-      if(r < .55) return 'count';
-      /* งานส่งของ — ให้ทุกคนแจกได้ (ข้อ 15.2: "เชื่อม NPC เข้าหากัน") แต่โอกาสน้อยกว่าตัวอื่น
-         เพราะเป็นงานเดินข้ามเมืองที่กินเวลานานกว่าเควสต์ที่จบในการ์ดใบเดียว */
-      if(r < .61) return 'deliver';
-      /* เฟส 7: งานที่ "เข้ากับร้านของคนนี้" มาก่อนเกมทั่วไป — เด็กจะรู้สึกว่างานสมเหตุสมผลกับที่ที่ยืนอยู่ */
-      const bonus = bonusMechsFor(npcId);
-      if(bonus.length && r < .78) return bonus[(rng() * bonus.length) | 0];
-      const pool = ENGINE_MECHS.filter(m => engineReady(m));
-      if(!pool.length) return bonus.length ? bonus[(rng() * bonus.length) | 0]
-                                           : (rng() < .5 ? 'count' : 'quiz');
-      return pool[(rng() * pool.length) | 0];
+      return pool[pool.length - 1];
+    }
+    /* `avoid` = กลไกที่ชุดอื่นของวันนี้ใช้ไปแล้ว — เลี่ยงได้ก็เลี่ยง (ดู rollBoard)
+       ⚠ **เลี่ยงเท่านั้น ห้ามตัดทิ้ง** ถ้าเลี่ยงแล้วไม่เหลืออะไรต้องกลับไปใช้พูลเต็มเสมอ */
+    function rollWorkMech(rng, npcId, avoid){
+      /* 👋 เฟส 18 — "ช่วยคนเดิมบ่อยๆ เขาจะขอเป็นงานที่หนูถนัด" (ข้อ 57.3)
+         ⚠ **เพิ่มโอกาสเท่านั้น (9%) ห้ามล็อก** — ล็อกเมื่อไหร่เด็กจะเจอโจทย์แบบเดิมทุกวัน
+         ⚠ ต้องผ่าน `mechOk` ด้วยเสมอ (กลไกที่ถูกปิดอยู่ห้ามหลุดออกทางนี้ — บทเรียนของ
+           `bonusMechsFor()` เมื่อ 2026-08-16)
+         📌 ย้ายมาไว้หัวฟังก์ชันได้แล้วเพราะ quiz ไม่ได้ถูกล็อกเปอร์เซ็นต์ไว้อีกต่อไป
+            (ข้อห้ามเดิม "ห้ามกินโควตาของ quiz" หมดเงื่อนไขไปพร้อมกับตัวเลข 40%) */
+      if(rng() < .09){
+        const fav = favMech(npcId);
+        if(fav && MECHS[fav] && mechOk(fav)) return fav;
+      }
+      const pool = workPool(npcId);
+      if(!pool.length) return 'quiz';              /* กันเหนียว — ไม่มีทางว่างจริงเพราะ quiz ผ่านเสมอ */
+      const fresh = (avoid && avoid.length) ? pool.filter(m => avoid.indexOf(m) < 0) : pool;
+      return pickFromPool(rng, fresh.length ? fresh : pool);
+    }
+    /* กลไกที่จดไว้ตอนเช้าอาจ "เล่นไม่ได้แล้ว" ตอนเด็กเปิดการ์ดจริง (ของในโลกหมด · ขายเครื่องดนตรีทิ้ง ·
+       เปลี่ยนระดับชั้น) ⇒ ต้องหาตัวแทน
+       ⚠ **เดิมตกกลับไปเป็น `quiz` เสมอแบบเงียบๆ** ⇒ ยิ่งเล่นไปในวัน กระดานยิ่งกลายเป็นตอบคำถามล้วน
+         (ผู้ใช้แจ้ง 2026-08-20 ว่ากระดาน "มีแต่หมวดตอบคำถาม" — นี่คือต้นเหตุครึ่งหนึ่ง)
+       ⇒ สุ่มตัวแทนจากพูลของคนคนนั้นแทน · **seed คงที่** เปิดการ์ดกี่รอบก็ได้กลไกเดิม */
+    function mechFallback(mech, npcId, key){
+      if(mechOk(mech)) return mech;
+      const rng = rngFrom(fnv(childId() + '|' + dayKey() + '|' + key + '|refill'));
+      return rollWorkMech(rng, npcId);
     }
     function rollNpcs(day){
       const rng = rngFrom(fnv(childId() + '|' + day + '|npcs'));
@@ -398,11 +444,23 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const rng = rngFrom(fnv(childId() + '|' + day + '|board'));
       const ids = questableIds();
       const out = [];
+      /* 🎲 กลไกที่กระดานหยิบไปแล้ววันนี้ — ช่องถัดไปจะเลี่ยงตัวซ้ำ (ผู้ใช้สั่ง 2026-08-20)
+         สุ่มอิสระล้วนมีโอกาสออกกลไกเดิม 2-3 ช่องในกระดานเดียว ⇒ เด็กยังรู้สึกว่า "มีแต่แบบเดิม"
+         ⚠ เป็นแค่การ **เลี่ยง** ไม่ใช่การห้าม — คนที่พูลเล็ก (เด็กชั้นเล็ก) ยังซ้ำได้ตามปกติ
+           ไม่งั้นกระดานจะแจกไม่ครบ 5 ชุด = ผิดข้อ 19 (กระดานต้องมี 5 ชุด/วันทุกชั้น) */
+      const used = [], usedNpc = [];
       for(let i=0; i<BOARD_N; i++){
         /* ⚠ ต้องสุ่ม **คน** ก่อน **งาน** เสมอ — งานของตึกแล็บผูกกับตัวคน (ดู LAB_MECHS)
-             ถ้าสลับลำดับ กระดานจะแจกงานแล็บให้ชาวบ้านทั่วไปมั่วไปหมด */
-        const npc = ids.length ? pick(rng, ids) : '';
-        out.push({ m: rollWorkMech(rng, npc), npc: npc });
+             ถ้าสลับลำดับ กระดานจะแจกงานแล็บให้ชาวบ้านทั่วไปมั่วไปหมด
+           🧑 เลี่ยงคนซ้ำในกระดานเดียวด้วย (ผู้ใช้สั่ง 2026-08-20 "ให้เฉลี่ยเจอหลายหมวดหมู่")
+             เดิมสุ่มอิสระ ⇒ ราว 1 ใน 6 ของกระดานมีชื่อคนเดิม 2 ช่อง
+             ⚠ **เลี่ยง ไม่ใช่ห้าม** — เมืองมีคนพอเสมอ แต่ถ้าวันไหนไม่พอต้องยังแจกครบ 5 ชุด */
+        const freshIds = ids.filter(x => usedNpc.indexOf(x) < 0);
+        const npc = ids.length ? pick(rng, freshIds.length ? freshIds : ids) : '';
+        if(npc) usedNpc.push(npc);
+        const m = rollWorkMech(rng, npc, used);
+        used.push(m);
+        out.push({ m: m, npc: npc });
       }
       return out;
     }
@@ -2035,7 +2093,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const rng = rngFrom(fnv(childId() + '|' + s.d + '|' + npcId));
       const mech = rec.m || rollWorkMech(rng, npcId);
       const done = rec.st === 'done';
-      const um = mechOk(mech) ? mech : 'quiz';
+      const um = mechFallback(mech, npcId, npcId);
       return { src:'npc', key:npcId, npc:npcId, mech: um,
                fam:'A', chal: done ? !!rec.chal : rollChal(npcId),
                done: done, stars: rec.stars | 0 };
@@ -2099,7 +2157,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       const b = s.board.q[i];
       if(!b) return null;
       const done = s.board.done.indexOf(i) >= 0;
-      const bm = mechOk(b.m) ? b.m : 'quiz';
+      const bm = mechFallback(b.m, b.npc, 'b' + i);
       return { src:'board', key:'b' + i, idx:i, npc:b.npc, mech: bm,
                fam:'board', chal: done ? false : rollChal('b' + i), done: done };
     }
@@ -2468,6 +2526,8 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       mechShape, mechSecPerQ, goalSets,
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
+      /* 🧪 ชุดเทส: สุ่มกระดานของ "วันสมมติ" โดยไม่แตะ state จริง — ใช้วัดความหลากหลายของกลไก */
+      devBoardFor: day => rollBoard(day),
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
       STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
       buildRun, answer, submit, starsOf, coinsFor, finish, itemSig,
@@ -2480,7 +2540,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       /* เฟส 7 — กลุ่ม D */
       SPOT_SCENES, DRESS_ITEMS, HIDDEN_ITEMS, HIDDEN_ZONES,
       SOUND_SONGS: (typeof MUSIC_LEVEL2_SONGS !== 'undefined') ? MUSIC_LEVEL2_SONGS : [],
-      labMechsFor, isLabNpc, engineReady, rollWorkMech, mechOk,
+      labMechsFor, isLabNpc, engineReady, rollWorkMech, workPool, mechOk,
       /* หน้าคลังคำถาม (js/house-qbrowse.js) — อ่านอย่างเดียว ไม่แตะ state */
       catalogQuiz, catalogCats, catalogCount, countKinds, testRun, GRADES:GR,
       ownGrade: () => gradeId(),      /* ระดับชั้นของเด็กคนที่เล่นอยู่ (หน้าคลังคำถามเปิดมาที่ชั้นนี้ก่อน) */

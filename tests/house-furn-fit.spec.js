@@ -26,7 +26,7 @@ const OVERHANG_OK = ['tree-round', 'pine', 'palm-tall', 'sandbox', 'pet-house',
 /* ของที่ "ลอยโดยตั้งใจ" — แขวนเพดาน/ติดผนัง */
 const FLOAT_OK = ['swing-chair', 'star-mobile'];
 /* ของที่ขอบล่างต่ำกว่าพื้นโดยตั้งใจ (ฝังลงดิน/แผ่ราบกับพื้น) */
-const SUNK_OK = ['rocking-chair', 'clover-patch', 'kite'];
+const SUNK_OK = ['clover-patch', 'kite'];
 
 async function openHouse(page) {
   await page.addInitScript(c => {
@@ -75,7 +75,10 @@ test('เฟอร์นิเจอร์ทุกชิ้น: สร้าง
     if (r.err) { broken.push(r.id + ': ' + r.err); return; }
     if (r.empty) { broken.push(r.id + ': ไม่มีรูปเลย'); return; }
     if (r.y0 < -0.06 && SUNK_OK.indexOf(r.id) < 0) sunk.push(r.id + ' y0=' + r.y0);
-    if (r.y0 > 0.30 && !r.wall && FLOAT_OK.indexOf(r.id) < 0) float.push(r.id + ' y0=' + r.y0);
+    /* ⚠ เกณฑ์เดิม 0.30 หลวมเกินไป — โซฟา/เก้าอี้นวม/ชักโครก/อ่างอาบน้ำลอยอยู่ 10-12.5 ซม.
+       มาตลอดโดยเทสไม่จับ (ผู้ใช้แจ้ง 2026-08-19 ว่าของตกแต่งเพี้ยน) ⇒ บีบเหลือ 0.08
+       **ห้ามผ่อนกลับ** — ของที่ตั้งใจให้ลอยจริงๆ ให้ใส่ชื่อใน FLOAT_OK แทน */
+    if (r.y0 > 0.08 && !r.wall && FLOAT_OK.indexOf(r.id) < 0) float.push(r.id + ' y0=' + r.y0);
     if (OVERHANG_OK.indexOf(r.id) < 0) {
       if (r.x > r.fw + 0.35) over.push(r.id + ' กว้าง ' + r.x + ' > ' + r.fw + ' ช่อง');
       if (r.z > r.fd + 0.35) over.push(r.id + ' ลึก ' + r.z + ' > ' + r.fd + ' ช่อง');

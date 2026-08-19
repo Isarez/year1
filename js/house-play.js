@@ -21,6 +21,8 @@
 
   const $ = id => document.getElementById(id);
   const W = () => window.HouseWorld;
+  /* 🎨 ไอคอน SVG (js/house-icons.js) — ไม่มีไฟล์/ไม่มีไอคอนตัวนั้น = ถอยไปใช้ emoji เดิม ห้ามพัง */
+  const ICO = (id, emoji, size)=> (window.HouseIcons ? window.HouseIcons.htmlOr(id, emoji, size) : String(emoji || ''));
   const Q = () => window.HouseQuests;
 
   /* ---------- ตัวสุ่มแบบ seeded (ต้นแบบเดียวกับ house-quests.js — เด็ก+วัน+คีย์เดิม ได้ผลเดิมเสมอ) ---------- */
@@ -311,7 +313,7 @@
       seekIntro = null;
       if(w.bigCount) w.bigCount(null);
       seekBuild();                               /* วางกลับที่จุดแอบให้ตรงเป๊ะ */
-      w.toast('🙈', 'เพื่อนแอบเรียบร้อยแล้ว ไปตามหากันเลย!');
+      w.toast(ICO('ui-seek', '🙈'), 'เพื่อนแอบเรียบร้อยแล้ว ไปตามหากันเลย!');
     }
   }
   function seekIntroSkip(){
@@ -374,7 +376,7 @@
     const w = W();
     if(typeof playCorrect === 'function') playCorrect();
     if(left > 0){
-      w.toast('🙈', 'เจอแล้ว 1 คน! เหลืออีก ' + left + ' คนนะ');
+      w.toast(ICO('ui-seek', '🙈'), 'เจอแล้ว 1 คน! เหลืออีก ' + left + ' คนนะ');
       seekBuild();
       renderPanel();
       return;
@@ -398,7 +400,7 @@
     persist();
     seekClear();
     renderPanel();
-    W().toast('🙈', 'พักก่อนได้เลย เพื่อนยังแอบรออยู่ที่เดิมนะ');
+    W().toast(ICO('ui-seek', '🙈'), 'พักก่อนได้เลย เพื่อนยังแอบรออยู่ที่เดิมนะ');
     return true;
   }
   function seekResume(){
@@ -542,7 +544,7 @@
     if(w.questCaught) w.questCaught('leaf', '');
     const left = P.col.items.length - P.col.got.length;
     if(left > 0){
-      w.toast(th.emoji, 'เก็บ' + th.name + 'ได้แล้ว ' + P.col.got.length + '/' + P.col.items.length);
+      w.toast(ICO('col-' + th.id, th.emoji), 'เก็บ' + th.name + 'ได้แล้ว ' + P.col.got.length + '/' + P.col.items.length);
     }else{
       P.col.sets = (P.col.sets | 0) + 1;
       w.toast('🎉', 'เก็บครบทั้ง ' + P.col.items.length + ' ชิ้นแล้ว! (สะสมมา ' + P.col.sets + ' วัน)');
@@ -562,7 +564,7 @@
       const ok = window.HouseShop && window.HouseShop.grantFree
         ? window.HouseShop.grantFree(pz.id) : false;
       P.col.prizes = (P.col.prizes || []).concat([pz.id]);
-      if(ok) w.toast('🎁', 'ปลด "' + pz.label + '" แล้ว! ไปหยิบได้ในโหมดตกแต่งบ้าน');
+      if(ok) w.toast(ICO('ui-gift', '🎁'), 'ปลด "' + pz.label + '" แล้ว! ไปหยิบได้ในโหมดตกแต่งบ้าน');
     });
   }
 
@@ -817,7 +819,7 @@
     const w = W();
     if(fishState) return false;
     if(!atFishSpot()){
-      w.toast('🎣', 'ต้องไปที่จุดตกปลาก่อนนะ — มองหาป้าย 🎣 ที่บ่อน้ำหรือริมทะเล');
+      w.toast(ICO('ui-fishing', '🎣'), 'ต้องไปที่จุดตกปลาก่อนนะ — มองหาป้าย 🎣 ที่บ่อน้ำหรือริมทะเล');
       return false;
     }
     const rng = rngFrom(fnv(childKey() + '|' + Date.now() + '|fish'));
@@ -886,7 +888,7 @@
       fishState = null; fishBobClear();
       /* ⚠ ต้องสั่งท่า **หลัง** fishBobClear() เพราะตัวนั้นเรียก pose(null) คลายท่าถือคันทิ้ง */
       if(w.pose) w.pose('pull', 850);        /* ดึงเปล่าก็ยังต้องเห็นว่าเด็กกระตุกคันเบ็ดจริง */
-      w.toast('🎣', 'ยังไม่ถึงจังหวะ ปลาว่ายหนีไปแล้ว — ลองใหม่ได้เลยนะ');
+      w.toast(ICO('ui-fishing', '🎣'), 'ยังไม่ถึงจังหวะ ปลาว่ายหนีไปแล้ว — ลองใหม่ได้เลยนะ');
       renderPanel();
       return false;
     }
@@ -896,6 +898,9 @@
     P.fish.today = (P.fish.today | 0) + 1;
     const isNew = (P.fish.book || []).indexOf(f.id) < 0;
     if(isNew) P.fish.book = (P.fish.book || []).concat([f.id]);
+    /* 📔 เฟส 16: สมุดปลาเป็นแท็บหนึ่งของสมุดสะสม ⇒ ได้ตัวใหม่ต้องเช็ครางวัลระหว่างทางด้วย
+       (ปลาไม่ผ่าน `HouseBook.mark()` เพราะจดอยู่ใน play state มาตั้งแต่เฟส 11 — ห้ามจดซ้ำ 2 ที่) */
+    if(isNew && window.HouseBook) window.HouseBook.checkPrize();
     /* เก็บตัวจริงเข้าถัง เอาไปขายที่ร้านสะดวกซื้อได้ (สมุดปลาเป็นแค่ "เคยเจออะไรบ้าง" ถาวร) */
     P.fish.bag = Object.assign({}, P.fish.bag);
     P.fish.bag[f.id] = (P.fish.bag[f.id] | 0) + 1;
@@ -904,7 +909,7 @@
     { const t2 = w.tile();
       spawnFx({x:w.wx(t2.x), y:w.groundY(t2.x, t2.z), z:w.wz(t2.z)},
               {col:0xffd166, col2:0xfff3b0, up:true, h:1.1, n:12}); }
-    w.toast(f.e, (isNew ? 'ได้ตัวใหม่! ' : 'ได้ ') + f.n + ' แล้ว (สมุดปลา ' + P.fish.book.length + '/' + FISH.length + ')');
+    w.toast(ICO('fish-' + f.id, f.e), (isNew ? 'ได้ตัวใหม่! ' : 'ได้ ') + f.n + ' แล้ว (สมุดปลา ' + P.fish.book.length + '/' + FISH.length + ')');
     /* 🎣 เควสต์ "ตกปลาไปส่ง" (2026-08-16) — บอกฝั่งเควสต์ว่าได้ปลาเพิ่ม 1 ตัวแล้ว
        ⚠ ต้องอยู่ **หลัง** toast ของเกม ไม่งั้น toast ความคืบหน้าเควสต์จะถูกทับทันที */
     if(w.questCaught) w.questCaught('fish', f.id);
@@ -937,13 +942,13 @@
      ⚠ ต้องเป็นคำที่เด็ก 5 ขวบมองหาในฉากได้จริง ห้ามใช้ชื่อโซนในโค้ด */
   const PHOTO_ORDERS = [
     {id:'water',  name:'ถ่ายรูปริมน้ำ',        hint:'ไปยืนใกล้แม่น้ำหรือสะพานแล้วกดถ่าย',
-     where:'ริมแม่น้ำ หรือบนสะพาน 🌉', look:'มองหาน้ำสีฟ้า ยืนให้น้ำอยู่ใกล้ๆ ตัว'},
+     where:'ริมแม่น้ำ หรือบนสะพาน', look:'มองหาน้ำสีฟ้า ยืนให้น้ำอยู่ใกล้ๆ ตัว'},
     {id:'home',   name:'ถ่ายรูปหน้าบ้านของหนู', hint:'กลับไปที่บริเวณบ้านแล้วกดถ่าย',
-     where:'บริเวณบ้านของหนูเอง 🏠', look:'เดินกลับไปที่บ้านที่มีรั้วกับสวนของหนู'},
+     where:'บริเวณบ้านของหนูเอง', look:'เดินกลับไปที่บ้านที่มีรั้วกับสวนของหนู'},
     {id:'market', name:'ถ่ายรูปที่ตลาด',        hint:'เดินไปที่ลานตลาดรถเข็นแล้วกดถ่าย',
-     where:'ลานตลาดที่มีรถเข็นขายของ 🛒', look:'มองหาร่มสีสดๆ กับรถเข็นเรียงกันหลายคัน'},
+     where:'ลานตลาดที่มีรถเข็นขายของ', look:'มองหาร่มสีสดๆ กับรถเข็นเรียงกันหลายคัน'},
     {id:'any',    name:'ถ่ายรูปมุมที่หนูชอบ',   hint:'เดินไปมุมไหนก็ได้ที่ชอบ แล้วกดถ่ายเลย',
-     where:'มุมไหนก็ได้ที่หนูชอบ ✨', look:'วันนี้ไม่มีจุดบังคับ ถ่ายตรงไหนก็สำเร็จเลย'},
+     where:'มุมไหนก็ได้ที่หนูชอบ', look:'วันนี้ไม่มีจุดบังคับ ถ่ายตรงไหนก็สำเร็จเลย'},
   ];
   function photoOrder(){
     if(!P) return PHOTO_ORDERS[3];
@@ -1001,7 +1006,7 @@
          ส่วน **ใบสั่งประจำวัน** จะติ๊กว่าสำเร็จก็ต่อเมื่อยืนตรงจุดจริงเท่านั้น — ระบบตรวจให้เอง
        ⚠ ยืนผิดจุดต้อง **ชมก่อนแล้วค่อยบอกทาง** ไม่ใช่บอกว่าทำผิด */
     if((P.photo.shots || []).length >= PHOTO_MAX){
-      w.toast('📷', 'อัลบั้มเต็มแล้ว (' + PHOTO_MAX + ' รูป) ลบรูปเก่าออกก่อนนะ');
+      w.toast(ICO('ui-camera', '📷'), 'อัลบั้มเต็มแล้ว (' + PHOTO_MAX + ' รูป) ลบรูปเก่าออกก่อนนะ');
       photoAlbumOpen();
       return false;
     }
@@ -1010,7 +1015,7 @@
     const wasDone = !!P.photo.done;
     playShutter();
     const url = grabShot();
-    if(!url){ w.toast('📷', 'ถ่ายรูปไม่สำเร็จ ลองใหม่อีกครั้งนะ'); return false; }
+    if(!url){ w.toast(ICO('ui-camera', '📷'), 'ถ่ายรูปไม่สำเร็จ ลองใหม่อีกครั้งนะ'); return false; }
     P.photo.shots = (P.photo.shots || []).concat([{u:url, d:dayKey()}]);
     if(onSpot) P.photo.done = true;      /* ใบสั่งวันนี้สำเร็จ — เฉพาะตอนยืนถูกจุด */
     persist();
@@ -1018,7 +1023,7 @@
     if(w.questCaught) w.questCaught('photo', '');
     photoPreview(url);
     if(onSpot && !wasDone) w.toast('🎉', 'ตรงจุดพอดีเลย! ทำใบสั่ง "' + o.name + '" สำเร็จแล้ว');
-    else if(!onSpot)       w.toast('📷', 'ได้รูปสวยแล้ว เก็บไว้ในอัลบั้มให้นะ · '
+    else if(!onSpot)       w.toast(ICO('ui-camera', '📷'), 'ได้รูปสวยแล้ว เก็บไว้ในอัลบั้มให้นะ · '
                                        + 'ใบสั่งวันนี้คือ "' + o.name + '" — ' + o.hint);
     renderPanel();
     return true;
@@ -1176,15 +1181,15 @@
     const w = W();
     if(!P) return false;
     const n = beds().length;
-    if(!n){ w.toast('🌱', 'ไม่มีแปลงผักในบริเวณบ้านแล้ว ลองหยิบกลับมาวางในโหมดตกแต่งนะ'); return false; }
+    if(!n){ w.toast(ICO('ui-garden', '🌱'), 'ไม่มีแปลงผักในบริเวณบ้านแล้ว ลองหยิบกลับมาวางในโหมดตกแต่งนะ'); return false; }
     if(i == null) i = [...Array(n).keys()].find(k => !slotAt(k));
-    if(i == null){ w.toast('🌱', 'ปลูกครบทุกแปลงแล้ว รดน้ำรอให้โตก่อนนะ'); return false; }
-    if(slotAt(i)){ w.toast('🌱', 'แปลงนี้มีต้นไม้อยู่แล้วนะ'); return false; }
+    if(i == null){ w.toast(ICO('ui-garden', '🌱'), 'ปลูกครบทุกแปลงแล้ว รดน้ำรอให้โตก่อนนะ'); return false; }
+    if(slotAt(i)){ w.toast(ICO('ui-garden', '🌱'), 'แปลงนี้มีต้นไม้อยู่แล้วนะ'); return false; }
     /* ⚠ **ต้องมีเมล็ดในคลังก่อนถึงจะปลูกได้** (ผู้ใช้สั่ง 2026-08-13) — ซื้อกี่เม็ดปลูกได้เท่านั้น
        ⚠ ไม่ใช่ dead end: เมล็ดถูกสุด 6 🪙 ซึ่งเด็กหาได้จากเควสต์ชุดเดียว และร้านบอกทางไว้ชัด */
     const kinds = SEEDS.filter(x => seedCount(x.id) > 0);
     if(!kinds.length){
-      w.toast('🌰', 'ยังไม่มีเมล็ดพันธุ์เลย ไปซื้อที่ร้านต้นไม้ก่อนนะ');
+      w.toast(ICO('ui-seedbag', '🌰'), 'ยังไม่มีเมล็ดพันธุ์เลย ไปซื้อที่ร้านต้นไม้ก่อนนะ');
       return false;
     }
     /* ⚠ **มีเมล็ดหลายพันธุ์ต้องให้เด็กเลือกเอง** (ผู้ใช้แจ้ง 2026-08-14 ว่าเลือกไม่ได้)
@@ -1194,7 +1199,7 @@
       else { seedPick(i, kinds); return false; }
     }
     if(seedCount(seedId) <= 0){
-      w.toast('🌰', 'เมล็ดพันธุ์นี้หมดแล้ว ไปซื้อเพิ่มที่ร้านต้นไม้นะ');
+      w.toast(ICO('ui-seedbag', '🌰'), 'เมล็ดพันธุ์นี้หมดแล้ว ไปซื้อเพิ่มที่ร้านต้นไม้นะ');
       return false;
     }
     const sd = seedById(seedId);
@@ -1204,7 +1209,7 @@
     if(typeof playCorrect === 'function') playCorrect();
     gardenFx(i, 'plant', sd);
     actPose('plant', 1250, i);
-    w.toast(sd.e, 'ปลูก' + sd.n + 'แล้ว! อย่าลืมมารดน้ำทุกวันนะ');
+    w.toast(ICO('seed-' + sd.id, sd.e), 'ปลูก' + sd.n + 'แล้ว! อย่าลืมมารดน้ำทุกวันนะ');
     return true;
   }
   /* หน้าต่างเลือกเมล็ด — ใช้แผงเดียวกับรายการกิจกรรม (เด็กไม่ต้องเรียนรู้หน้าตาใหม่) */
@@ -1216,7 +1221,7 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'hsp-item';
-      b.innerHTML = '<span class="hsp-e">' + sd.e + '</span>'
+      b.innerHTML = '<span class="hsp-e">' + ICO('seed-' + sd.id, sd.e, 26) + '</span>'
         + '<span class="hsp-tx"><b>' + sd.n + '</b><i>รดน้ำ ' + sd.days + ' วัน · ขายได้ ' + sd.pay + '</i></span>'
         + '<span class="hsp-n">×' + seedCount(sd.id) + '</span>';
       b.onclick = ()=>{
@@ -1302,9 +1307,9 @@
     /* รดได้เฉพาะแปลงที่ยังไม่โตเต็ม **และยังไม่ได้รดวันนี้** */
     const all = beds().map((_, k) => k).filter(k => { const s = slotAt(k); return s && s.stage < growMax(s.seed); });
     const growing = (i != null && all.indexOf(i) >= 0) ? [i] : all.filter(k => slotAt(k).wd !== dayKey());
-    if(!all.length){ w.toast('🌱', 'ยังไม่มีต้นไม้ให้รดน้ำเลย ลองปลูกดูสิ'); return false; }
+    if(!all.length){ w.toast(ICO('ui-garden', '🌱'), 'ยังไม่มีต้นไม้ให้รดน้ำเลย ลองปลูกดูสิ'); return false; }
     if(!growing.length || (i != null && slotAt(i).wd === dayKey())){
-      w.toast('💧', 'แปลงนี้รดน้ำไปแล้ววันนี้ พรุ่งนี้ค่อยมารดใหม่นะ');
+      w.toast(ICO('ui-water', '💧'), 'แปลงนี้รดน้ำไปแล้ววันนี้ พรุ่งนี้ค่อยมารดใหม่นะ');
       return false;
     }
     growing.forEach(k => { const s = slotAt(k); setSlot(k, {seed:s.seed, stage:s.stage + 1, wd:dayKey()}); });
@@ -1314,7 +1319,7 @@
     /* 🌱 เควสต์ "รดน้ำแปลงผัก" — นับตามจำนวนแปลงที่รดได้จริงในครั้งนี้ */
     if(w.questCaught) growing.forEach(()=> w.questCaught('water', ''));
     actPose('water', 1500, growing[0]);
-    w.toast('💧', 'รดน้ำแล้ว! ต้นไม้โตขึ้นอีกขั้น ' + growing.length + ' ต้น');
+    w.toast(ICO('ui-water', '💧'), 'รดน้ำแล้ว! ต้นไม้โตขึ้นอีกขั้น ' + growing.length + ' ต้น');
     return true;
   }
   function gardenHarvest(i){
@@ -1322,7 +1327,7 @@
     if(!P) return false;
     const ripe = beds().map((_, k) => k).filter(k => { const s = slotAt(k); return s && s.stage >= growMax(s.seed); });
     const take = (i != null && ripe.indexOf(i) >= 0) ? [i] : ripe;
-    if(!take.length){ w.toast('🌱', 'ยังไม่มีต้นไหนโตพอเก็บเลย รดน้ำอีกสักวันนะ'); return false; }
+    if(!take.length){ w.toast(ICO('ui-garden', '🌱'), 'ยังไม่มีต้นไหนโตพอเก็บเลย รดน้ำอีกสักวันนะ'); return false; }
     /* ⚠ **เก็บแล้วยังไม่ได้เงินทันที** — ผลผลิตเข้าตะกร้าก่อน แล้วเอาไปขายที่ร้านต้นไม้
        (ผู้ใช้สั่ง 2026-08-13) ⇒ เด็กได้เรียนรู้วงจร ปลูก → เก็บ → เอาไปขาย จริงๆ
        และเอาไปทำเควสต์ของพ่อแม่ได้ด้วย */
@@ -1330,13 +1335,15 @@
     take.forEach(k => {
       const s = slotAt(k);
       P.garden.crop[s.seed] = (P.garden.crop[s.seed] | 0) + 1;
+      /* 📔 เฟส 16: พันธุ์ที่ปลูกจนโตแล้วเก็บได้ = จดลงสมุดสะสม (ชนิดใหม่จะขึ้น toast ให้เอง) */
+      if(window.HouseBook) window.HouseBook.mark('crop', s.seed);
       gardenFx(k, 'harvest', seedById(s.seed));
       setSlot(k, null);
     });
     actPose('harvest', 1400, take[0]);        /* ⚠ นอกลูป — อยู่ในลูปจะรีสตาร์ตท่าทุกแปลงที่เก็บ */
     persist(); gardenBuild(); renderPanel();
     if(typeof playCongrats === 'function') playCongrats();
-    w.toast('🧺', 'เก็บผักได้ ' + take.length + ' ต้น! เอาไปขายที่ร้านต้นไม้ได้เลย');
+    w.toast(ICO('ui-basket', '🧺'), 'เก็บผักได้ ' + take.length + ' ต้น! เอาไปขายที่ร้านต้นไม้ได้เลย');
     return true;
   }
   /* ---------- ทรงต้นผักแยกตามพันธุ์ (ผู้ใช้สั่ง 2026-08-14) ----------
@@ -1446,6 +1453,7 @@
     if(window.HouseQuestUI) window.HouseQuestUI.close();
     if(window.HouseQB) window.HouseQB.close();
     if(window.HouseDev) window.HouseDev.close();
+    if(window.HouseBook) window.HouseBook.close();
     const e = $('house-playpanel'); if(!e) return;
     e.hidden = false;
     renderPanel();
@@ -1455,7 +1463,10 @@
   function row(icon, title, sub, btns){
     const d = document.createElement('div');
     d.className = 'hpl-row';
-    const ic = document.createElement('span'); ic.className = 'hpl-ic'; ic.textContent = icon;
+    const ic = document.createElement('span'); ic.className = 'hpl-ic';
+    /* ไอคอนเป็น SVG (ขึ้นต้น `<svg`) หรือ emoji ก็ได้ — ของเก่ายังส่ง emoji มาได้เหมือนเดิม */
+    if(typeof icon === 'string' && icon.slice(0, 4) === '<svg') ic.innerHTML = icon;
+    else ic.textContent = icon;
     const tx = document.createElement('span'); tx.className = 'hpl-tx';
     const t1 = document.createElement('span'); t1.className = 'hpl-name'; t1.textContent = title;
     const t2 = document.createElement('span'); t2.className = 'hpl-sub'; t2.textContent = sub;
@@ -1507,32 +1518,32 @@
 
     /* 🙈 ซ่อนแอบ */
     if(P.seek.done){
-      list.appendChild(row('🙈', 'ซ่อนแอบกับเพื่อนบ้าน', 'วันนี้เล่นครบแล้ว พรุ่งนี้เพื่อนจะมาแอบใหม่นะ', []));
+      list.appendChild(row(ICO('ui-seek', '🙈'), 'ซ่อนแอบกับเพื่อนบ้าน', 'วันนี้เล่นครบแล้ว พรุ่งนี้เพื่อนจะมาแอบใหม่นะ', []));
     }else if(P.seek.on){
       const h = seekHint();
-      const r = row('🙈', 'ซ่อนแอบกับเพื่อนบ้าน',
+      const r = row(ICO('ui-seek', '🙈'), 'ซ่อนแอบกับเพื่อนบ้าน',
         'เจอแล้ว ' + P.seek.found.length + '/' + P.seek.spots.length + ' คน · ' + (h ? h.text : ''),
         [{label:'พักก่อน', alt:true, id:'hpl-seek-pause', fn: seekPause}]);
       r.insertBefore(seekFaces(), r.querySelector('.hpl-btns'));
       list.appendChild(r);
     }else if(seekPaused()){
-      const r = row('🙈', 'ซ่อนแอบกับเพื่อนบ้าน',
+      const r = row(ICO('ui-seek', '🙈'), 'ซ่อนแอบกับเพื่อนบ้าน',
         'พักอยู่ · เจอแล้ว ' + P.seek.found.length + '/' + P.seek.spots.length + ' คน เพื่อนยังแอบที่เดิม',
         [{label:'เล่นต่อ', id:'hpl-seek-resume', fn: ()=>{ if(seekResume()) closePanel(); }}]);
       r.insertBefore(seekFaces(), r.querySelector('.hpl-btns'));
       list.appendChild(r);
     }else{
-      const r = row('🙈', 'ซ่อนแอบกับเพื่อนบ้าน', 'เพื่อนจะไปแอบในเมือง เดินไปหาให้เจอทุกคน',
+      const r = row(ICO('ui-seek', '🙈'), 'ซ่อนแอบกับเพื่อนบ้าน', 'เพื่อนจะไปแอบในเมือง เดินไปหาให้เจอทุกคน',
         [{label:'เริ่มเล่น', id:'hpl-seek', fn: ()=>{
-          if(seekStart()){ closePanel(); W().toast('🙈', 'เพื่อนไปแอบแล้ว! ออกไปหาให้เจอนะ'); }
-          else W().toast('🙈', 'วันนี้เล่นไปแล้ว พรุ่งนี้มาใหม่นะ');
+          if(seekStart()){ closePanel(); W().toast(ICO('ui-seek', '🙈'), 'เพื่อนไปแอบแล้ว! ออกไปหาให้เจอนะ'); }
+          else W().toast(ICO('ui-seek', '🙈'), 'วันนี้เล่นไปแล้ว พรุ่งนี้มาใหม่นะ');
         }}]);
       r.insertBefore(seekFaces(true), r.querySelector('.hpl-btns'));
       list.appendChild(r);
     }
 
     /* 🍃 เก็บของประจำวัน */
-    list.appendChild(row(th.emoji, 'เก็บ' + th.name + 'ทั่วเมือง',
+    list.appendChild(row(ICO('col-' + th.id, th.emoji), 'เก็บ' + th.name + 'ทั่วเมือง',
       'วันนี้เก็บแล้ว ' + P.col.got.length + '/' + (P.col.items.length || COL_N)
       + ' ชิ้น · สะสมครบมา ' + (P.col.sets | 0) + ' วัน', []));
 
@@ -1542,10 +1553,10 @@
     /* ⚠ **ไม่มีปุ่มลงมือทำในแผงนี้แล้ว** (ผู้ใช้สั่ง 2026-08-14) — แผงนี้ทำหน้าที่ "บอกว่าวันนี้มีอะไรให้ทำ"
        อย่างเดียว ส่วนการลงมือให้เด็กออกไปแตะของจริงในเมือง (ป้ายลอย 🎣/🌱 · ปุ่มกล้องมุมขวาบน)
        เหตุผล: ถ้ากดจากแผงได้หมด เด็กจะไม่ได้ออกไปเดินเล่นในเมืองเลย ซึ่งขัดเจตนาของกลุ่ม A */
-    list.appendChild(row('🎣', 'ตกปลา',
+    list.appendChild(row(ICO('ui-fishing', '🎣'), 'ตกปลา',
       fishState
         ? (fishState.phase === 'bite' ? '‼️ ทุ่นจมแล้ว! รีบแตะทุ่นเลย!' : 'กำลังตกอยู่ · รอทุ่นจม…')
-        : (fishSub + ' · มีจุดตกปลาที่บ่อน้ำใหญ่กับริมทะเล มองหาป้าย 🎣 แล้วแตะได้เลย'), []));
+        : (fishSub + ' · มีจุดตกปลาที่บ่อน้ำใหญ่กับริมทะเล มองหาป้ายรูปเบ็ดตกปลาแล้วแตะได้เลย'), []));
 
     /* 📷 ช่างภาพ
        ⚠ ต้องบอกให้ชัดว่า **ถ่ายที่ไหนก็ได้** ไม่งั้นเด็กยังนึกว่าต้องเดินไปจุดนั้นก่อนถึงจะกดได้
@@ -1557,10 +1568,10 @@
     let atSpot = false, here = '';
     try{ atSpot = photoSpotOk(); here = (W().zoneName(W().tile().x, W().tile().z) || '').trim(); }
     catch(e){ atSpot = false; here = ''; }
-    const status = P.photo.done ? '✅ ใบสั่งวันนี้สำเร็จแล้ว ถ่ายเก็บเพิ่มได้อีกตามใจเลย'
-      : atSpot ? '✅ ตอนนี้หนูยืนตรงจุดแล้ว! กดปุ่ม 📷 มุมขวาบนได้เลย'
-      : '🚶 ตอนนี้หนูอยู่' + (here ? 'ที่ ' + here : 'ไกลจากจุดนั้น') + ' · ' + po.look;
-    list.appendChild(row('📷', po.name,
+    const status = P.photo.done ? '✓ ใบสั่งวันนี้สำเร็จแล้ว ถ่ายเก็บเพิ่มได้อีกตามใจเลย'
+      : atSpot ? '✓ ตอนนี้หนูยืนตรงจุดแล้ว! กดปุ่มกล้องมุมขวาบนได้เลย'
+      : 'ตอนนี้หนูอยู่' + (here ? 'ที่ ' + here : 'ไกลจากจุดนั้น') + ' · ' + po.look;
+    list.appendChild(row(ICO('ui-camera', '📷'), po.name,
       'วันนี้อยากได้รูปที่ ' + po.where + ' · ' + status
       + ' · ถ่ายมุมไหนก็ได้นะ เก็บเข้าอัลบั้มให้ทุกใบ (ใบสั่งจะติ๊กเองเมื่อถ่ายตรงจุด)'
       + ' · อัลบั้ม ' + ((P.photo.shots || []).length) + '/' + PHOTO_MAX, []));
@@ -1569,10 +1580,21 @@
     const nb = beds().length;
     const growing = beds().map((_, i) => slotAt(i)).filter(Boolean);
     const ripe = growing.filter(x => x.stage >= GROW_MAX).length;
-    list.appendChild(row('🌱', 'แปลงผักหน้าบ้าน',
+    list.appendChild(row(ICO('ui-garden', '🌱'), 'แปลงผักหน้าบ้าน',
       nb ? ('มี ' + nb + ' แปลง · ปลูกแล้ว ' + growing.length + ' · โตพร้อมเก็บ ' + ripe
             + ' · เมล็ดในกระเป๋า ' + seedTotal() + ' เม็ด · แตะที่แปลงหน้าบ้านได้เลย (ดูป้ายเหนือแปลง)')
          : 'ไม่มีแปลงผักในบริเวณบ้าน ลองหยิบกลับมาวางในโหมดตกแต่งนะ', []));
+
+    /* 📔 สมุดสะสม (เฟส 16) — ทางเข้าเดียวของสมุด อยู่ท้ายแผงเพราะไม่ใช่ "กิจกรรมของวันนี้"
+       แต่เป็นภาพรวมของทุกอย่างที่เด็กสะสมมา */
+    if(window.HouseBook){
+      const bc = window.HouseBook.counts();
+      list.appendChild(row(ICO('ui-book', '📔'), 'สมุดสะสมของหนู',
+        'เก็บได้แล้ว ' + bc.total.got + '/' + bc.total.total + ' ช่อง · ปลา ' + bc.fish.got
+        + ' · พืช ' + bc.crop.got + ' · สัตว์ ' + bc.critter.got + ' · ท่าน้อง ' + bc.trick.got
+        + ' · รูป ' + bc.photo.got,
+        [{label:'เปิดสมุด', id:'hpl-book', fn: ()=>{ closePanel(); window.HouseBook.open(); }}]));
+    }
   }
 
   /* ============================================================
@@ -1582,19 +1604,20 @@
        (ประตูเดียวคือ tradeAvailable/tradeLabel/tradeEmoji/renderTrade)
      ⚠ เงินเข้า-ออกผ่าน `OwlCoins` เหมือนร้านอื่นทุกประการ (ข้อ 5) */
   const TRADE = {
-    seed: {label:'ซื้อเมล็ดพันธุ์', emoji:'🌰'},
-    crop: {label:'ขายผักของหนู',   emoji:'🧺'},
-    fish: {label:'ขายปลาที่ตกได้',  emoji:'🐟'},
+    seed: {label:'ซื้อเมล็ดพันธุ์', emoji:'🌰', ico:'ui-seedbag'},
+    crop: {label:'ขายผักของหนู',   emoji:'🧺', ico:'ui-basket'},
+    fish: {label:'ขายปลาที่ตกได้',  emoji:'🐟', ico:'ui-fishing'},
   };
   function tradeAvailable(kind){ return !!TRADE[kind]; }
   function tradeLabel(kind){ return (TRADE[kind] || {}).label || ''; }
-  function tradeEmoji(kind){ return (TRADE[kind] || {}).emoji || '🛍️'; }
+  /* คืน **ไอคอน SVG** ถ้ามี (ไม่งั้น emoji เดิม) — ฝั่งร้านค้าใส่ลง innerHTML ได้ทั้งคู่ */
+  function tradeEmoji(kind){ const t = TRADE[kind] || {}; return ICO(t.ico, t.emoji || '🛍️', 30); }
 
   function coinIcon(n){ return '<i class="hs-coin"></i>' + n; }
   function tradeCard(o){
     const d = document.createElement('div');
     d.className = 'hpt-row' + (o.dim ? ' dim' : '');
-    d.innerHTML = '<span class="hpt-e">' + o.emoji + '</span>'
+    d.innerHTML = '<span class="hpt-e">' + (o.ico ? ICO(o.ico, o.emoji, 30) : o.emoji) + '</span>'
       + '<span class="hpt-tx"><b>' + o.name + '</b><i>' + o.sub + '</i></span>'
       + '<span class="hpt-price">' + coinIcon(o.price) + '</span>';
     const b = document.createElement('button');
@@ -1619,7 +1642,7 @@
       wrap.appendChild(note);
       SEEDS.forEach(sd=>{
         wrap.appendChild(tradeCard({
-          emoji: sd.e, name: sd.n + ' (' + GRADE_NAME[sd.grade] + ')',
+          emoji: sd.e, ico: 'seed-' + sd.id, name: sd.n + ' (' + GRADE_NAME[sd.grade] + ')',
           sub: 'รดน้ำ ' + sd.days + ' วันก็เก็บได้ · ขายได้ ' + sd.pay + ' บาท · มีอยู่ ' + seedCount(sd.id) + ' เม็ด',
           price: sd.cost, btn: 'ซื้อ 1 เม็ด', off: coins() < sd.cost,
           /* ⚠ ผู้ใช้แจ้ง 2026-08-14: กดซื้อแล้วกดซ้ำไม่ได้ ต้องไปกดที่อื่นก่อน
@@ -1627,11 +1650,11 @@
              ⇒ เลื่อนการวาดใหม่ไปหลังจบ event ปัจจุบัน ปุ่มใหม่จะพร้อมรับคลิกถัดไปทันที */
           fn: ()=>{
             if(!window.OwlCoins || !window.OwlCoins.spend(sd.cost)){
-              W().toast('💰', 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!');
+              W().toast(ICO('ui-coin', '💰'), 'เงินยังไม่พอนะ เก็บเงินเพิ่มอีกนิดแล้วค่อยกลับมา!');
               return;
             }
             addSeed(sd.id, 1);
-            W().toast(sd.e, 'ได้เมล็ด' + sd.n + ' 1 เม็ด! เอาไปปลูกที่แปลงหน้าบ้านได้เลย');
+            W().toast(ICO('seed-' + sd.id, sd.e), 'ได้เมล็ด' + sd.n + ' 1 เม็ด! เอาไปปลูกที่แปลงหน้าบ้านได้เลย');
             setTimeout(done, 0);
           },
         }));
@@ -1651,7 +1674,7 @@
       have.forEach(sd=>{
         const n = cropCount(sd.id);
         wrap.appendChild(tradeCard({
-          emoji: sd.e, name: sd.n, sell: true,
+          emoji: sd.e, ico: 'seed-' + sd.id, name: sd.n, sell: true,
           sub: 'เก็บไว้ ' + n + ' ชิ้น · ขายได้ชิ้นละ ' + sd.pay + ' บาท',
           price: sd.pay * n, btn: 'ขายทั้งหมด',
           fn: ()=>{
@@ -1659,7 +1682,7 @@
             P.garden.crop = Object.assign({}, P.garden.crop);
             P.garden.crop[sd.id] = 0;
             W().award(got);
-            W().toast('🪙', 'ขาย' + sd.n + ' ' + n + ' ชิ้น ได้ ' + got + ' บาท!');
+            W().toast(ICO('ui-coin', '🪙'), 'ขาย' + sd.n + ' ' + n + ' ชิ้น ได้ ' + got + ' บาท!');
             W().refreshHud();
             setTimeout(done, 0);
           },
@@ -1681,7 +1704,7 @@
       have.forEach(f=>{
         const n = bag[f.id] | 0;
         wrap.appendChild(tradeCard({
-          emoji: f.e, name: f.n, sell: true,
+          emoji: f.e, ico: 'fish-' + f.id, name: f.n, sell: true,
           sub: (f.where === 'sea' ? 'ปลาทะเล' : 'ปลาน้ำจืด') + ' · '
              + ['', 'หาง่าย', 'หายาก', 'หายากมาก'][f.rare] + ' · มี ' + n + ' ตัว',
           price: f.pay * n, btn: 'ขายทั้งหมด',
@@ -1690,7 +1713,7 @@
             P.fish.bag = Object.assign({}, P.fish.bag);
             P.fish.bag[f.id] = 0;
             W().award(got);
-            W().toast('🪙', 'ขาย' + f.n + ' ' + n + ' ตัว ได้ ' + got + ' บาท!');
+            W().toast(ICO('ui-coin', '🪙'), 'ขาย' + f.n + ' ' + n + ' ตัว ได้ ' + got + ' บาท!');
             W().refreshHud();
             setTimeout(done, 0);
           },
@@ -1740,10 +1763,10 @@
     list.innerHTML = '';
     const rows = [];
     SEEDS.forEach(sd=>{ const n = cropCount(sd.id);
-      if(n > 0) rows.push({e:sd.e, n:sd.n, cnt:n, pay:sd.pay, where:'ขายที่ร้านต้นไม้'}); });
+      if(n > 0) rows.push({e:sd.e, ico:'seed-' + sd.id, n:sd.n, cnt:n, pay:sd.pay, where:'ขายที่ร้านต้นไม้'}); });
     const bag = (P.fish.bag) || {};
     FISH.forEach(f=>{ const n = bag[f.id] | 0;
-      if(n > 0) rows.push({e:f.e, n:f.n, cnt:n, pay:f.pay, where:'ขายที่ร้านสะดวกซื้อ'}); });
+      if(n > 0) rows.push({e:f.e, ico:'fish-' + f.id, n:f.n, cnt:n, pay:f.pay, where:'ขายที่ร้านสะดวกซื้อ'}); });
     const total = rows.reduce((a, r) => a + r.pay * r.cnt, 0);
     if(sub) sub.textContent = rows.length
       ? ('ถ้าขายหมดจะได้ ' + total + ' บาท · เอาไปขายที่ร้านได้เลย')
@@ -1751,7 +1774,7 @@
     rows.forEach(r=>{
       const d = document.createElement('div');
       d.className = 'hpt-row';
-      d.innerHTML = '<span class="hpt-e">' + r.e + '</span>'
+      d.innerHTML = '<span class="hpt-e">' + ICO(r.ico, r.e, 30) + '</span>'
         + '<span class="hpt-tx"><b>' + r.n + ' ×' + r.cnt + '</b><i>ชิ้นละ ' + r.pay + ' · ' + r.where + '</i></span>'
         + '<span class="hpt-price"><i class="hs-coin"></i>' + (r.pay * r.cnt) + '</span>';
       list.appendChild(d);
@@ -1818,7 +1841,7 @@
     if(window.HouseQuestUI) window.HouseQuestUI.close();
     document.body.classList.add('house-photo');
     const f = $('house-photo-ui'); if(f) f.hidden = false;
-    w.toast('📷', photoOrder().hint);
+    w.toast(ICO('ui-camera', '📷'), photoOrder().hint);
     return true;
   }
   function photoExit(){
@@ -1918,7 +1941,7 @@
         renderPanel();
       }else if(fishState.phase === 'bite' && fishState.t <= 0){
         fishState = null; fishBobClear();
-        W().toast('🐟', 'ปลาว่ายหนีไปแล้ว ไม่เป็นไรนะ ลองใหม่ได้เลย');
+        W().toast(ICO('ui-fishing', '🐟'), 'ปลาว่ายหนีไปแล้ว ไม่เป็นไรนะ ลองใหม่ได้เลย');
         renderPanel();
       }
       /* ⚠ **ต้องเช็คซ้ำ** — สาขา "ปลาหนี" ข้างบนเคลียร์ `fishState` ทิ้งไปแล้วในเฟรมเดียวกัน
@@ -1982,7 +2005,7 @@
     const w = W(); if(!w || !pick) return false;
     /* ⚠ **อยู่ในโหมดถ่ายรูปห้ามทำกิจกรรมใดๆ** (ผู้ใช้สั่ง 2026-08-14)
        เด็กกำลังเล็งกล้องอยู่ ถ้าแตะโดนของแล้วเด้งหน้าต่างขึ้นมาจะเสียจังหวะถ่าย */
-    if(photoMode()){ w.toast('📷', 'กำลังถ่ายรูปอยู่นะ กดปุ่ม ✕ ออกจากโหมดถ่ายรูปก่อนได้เลย'); return true; }
+    if(photoMode()){ w.toast(ICO('ui-camera', '📷'), 'กำลังถ่ายรูปอยู่นะ กดปุ่ม ✕ ออกจากโหมดถ่ายรูปก่อนได้เลย'); return true; }
     if(pick.game === 'fish'){ fishPull(); return true; }
     if(pick.game === 'fishspot' && fishState){ fishPull(); return true; }   /* กำลังตกอยู่ = แตะเพื่อดึง */
     const t = w.nearWalkable(pick.x, pick.z);
@@ -2003,7 +2026,7 @@
       if(act === 'plant') gardenPlant(pick.i);
       else if(act === 'water') gardenWater(pick.i);
       else if(act === 'harvest') gardenHarvest(pick.i);
-      else W().toast('💧', 'วันนี้รดน้ำไปแล้ว พรุ่งนี้ต้นนี้จะโตขึ้นอีกขั้นนะ');
+      else W().toast(ICO('ui-water', '💧'), 'วันนี้รดน้ำไปแล้ว พรุ่งนี้ต้นนี้จะโตขึ้นอีกขั้นนะ');
     }
   }
 
@@ -2040,6 +2063,36 @@
         const st = Math.min(m, (pl.stage | 0) + (n || 1));
         if(st !== pl.stage){ setSlot(i2, {seed:pl.seed, stage:st, wd:''}); c++; } });
       persist(); gardenBuild(); renderPanel(); return c; },
+    /* 🔓 เครื่องมือเทส — เติม "สมุดปลา" ให้ครบทุกชนิด / ล้างทิ้ง (js/house-devtools.js)
+       ⚠ ปลาเป็นของสะสมที่ **สมุดสะสมอ่านจาก `play.fish.book` ตรงๆ** (ไม่จดซ้ำที่ house-book)
+         ⇒ ปลดล็อกสมุดสะสมต้องมาแก้ที่นี่ ห้ามไปเขียน state ของสมุดแทน */
+    devFishAll: (on)=>{
+      if(!P) return 0;
+      P.fish = Object.assign({}, P.fish, {book: on === false ? [] : FISH.map(f => f.id)});
+      persist(); renderPanel();
+      return (P.fish.book || []).length;
+    },
+    /* 🔓 เครื่องมือเทส — ยัดรูปตัวอย่างลงอัลบั้มให้เต็ม (แท็บ 📷 ของสมุดสะสม)
+       รูปวาดเองด้วย canvas เล็กๆ ไม่ได้แคปหน้าจอจริง (เร็วกว่ามากและไม่ต้องรอเฟรม) */
+    devPhotoFill: (on)=>{
+      if(!P) return 0;
+      if(on === false){ P.photo = Object.assign({}, P.photo, {shots: []}); persist(); return 0; }
+      const shots = (P.photo.shots || []).slice();
+      for(let i = shots.length; i < PHOTO_MAX; i++){
+        const cv = document.createElement('canvas');
+        cv.width = 160; cv.height = 120;
+        const g = cv.getContext('2d');
+        const hue = (i * 47) % 360;
+        g.fillStyle = 'hsl(' + hue + ',62%,72%)'; g.fillRect(0, 0, 160, 120);
+        g.fillStyle = 'hsl(' + hue + ',52%,42%)';
+        g.font = 'bold 46px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(String(i + 1), 80, 62);
+        shots.push({u: cv.toDataURL('image/jpeg', .7), d: dayKey()});
+      }
+      P.photo = Object.assign({}, P.photo, {shots});
+      persist(); renderPanel();
+      return shots.length;
+    },
     gardenPlant, gardenWater, gardenHarvest,
     objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
     /* 🧭 ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" — ลูกศรนำทางของเควสต์เก็บของใช้ (2026-08-16)

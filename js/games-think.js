@@ -319,7 +319,10 @@ function renderShadowLevel(){
 
   const prompt = $('shadow-prompt');
   prompt.classList.remove('revealed');
-  prompt.textContent = answer.e;
+  /* 🎨 ใช้ไอคอน SVG ถ้ามี (เงาทำด้วย filter:brightness(0) ⇒ ใช้ได้ทั้ง emoji และ SVG) */
+  { const OI = window.OwlIcons;
+    if(OI && OI.hasEmoji(answer.e)) prompt.innerHTML = OI.text(answer.e, 96);
+    else prompt.textContent = answer.e; }
   $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');
@@ -411,7 +414,9 @@ function renderShadowOverlapLevel(){
 
   const prompt = $('shadow-prompt');
   prompt.classList.remove('revealed');
-  prompt.innerHTML = ansItems.map(x=>'<span class="sp-i">'+x.e+'</span>').join('');
+  { const OI = window.OwlIcons;
+    prompt.innerHTML = ansItems.map(x=>'<span class="sp-i">'
+      + ((OI && OI.hasEmoji(x.e)) ? OI.text(x.e, 84) : x.e) + '</span>').join(''); }
   $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');
@@ -569,7 +574,9 @@ function renderEfRound(first){
     ? '🦉 นกฮูกสั่ง: แตะทุกอย่างที่ <b>ไม่ใช่'+ruleCat.name+' '+ruleCat.items[0]+'</b>'
     : '🦉 นกฮูกสั่ง: แตะเฉพาะ <b>'+ruleCat.name+' '+ruleCat.items[0]+'</b>';
   const itemEl = $('ef-item');
-  itemEl.textContent = g.item;
+  { const OI = window.OwlIcons;
+    if(OI && OI.hasEmoji(g.item)) itemEl.innerHTML = OI.text(g.item, 76);
+    else itemEl.textContent = g.item; }
   itemEl.classList.remove('ef-correct','ef-wrong');
   $('ef-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('ef-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';

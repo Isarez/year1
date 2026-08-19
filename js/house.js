@@ -314,6 +314,32 @@ const PET_TOYS3D = (typeof window.HOUSE_PET_TOYS === 'function')
   ? window.HOUSE_PET_TOYS({THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat})
   : {SPECS:{}, pose:()=>null, POSE_KINDS:[]};
 
+/* 🪑 ของตกแต่งที่ใช้งานได้จริง เฟส 17 (js/house-usable.js โหลดก่อนไฟล์นี้)
+   ⚠ **ไม่มีไฟล์นี้ก็ต้องไม่พัง** — ของทุกชิ้นถอยไปเด้ง (`decorBounce`) เหมือนก่อนเฟส 17
+   ⚠ ฟังก์ชันที่ส่งไปเป็น callback ล้วน (ประกาศใต้บรรทัดนี้ทั้งหมด) ⇒ ห่อด้วย arrow กัน TDZ */
+const USABLE = (typeof window.HOUSE_USABLE === 'function')
+  ? window.HOUSE_USABLE({
+      box, ball:sphere,
+      charBubble: (t, say)=> charBubble(t, say),
+      toast: (ic, m)=>{ if(typeof showToast === 'function') showToast(ic, m); },
+      /* อนุภาคฟุ้งรอบของชิ้นนั้น (ชุดเดียวกับที่ decorToggle ใช้) */
+      particles: (g, n, col, spread)=>{
+        const p = g.position;
+        for(let i = 0; i < n; i++)
+          spawnParticle(p.x + (Math.random() - .5) * (spread * 3), .9 + Math.random() * .9,
+                        p.z + (Math.random() - .5) * (spread * 3), col, g.parent);
+      },
+      pose: (kind, ms)=>{ charAct = {kind, t0: performance.now(), dur: ms || 900, hold:false}; },
+      later: (fn, ms)=> setTimeout(fn, ms),
+      isNight: ()=> (typeof isNightMode === 'function') && isNightMode(),
+      setNight: (v)=>{ if(typeof setTheme === 'function') setTheme(!!v, true); },
+      fade: (fn)=> fadeSwap(fn),
+      petDirty: ()=> !!(PETCARE && PETCARE.isDirty && PETCARE.isDirty()),
+      /* เพิ่ม/ลบชิ้นส่วนที่มี anim ระหว่างเกม (แถบภาพในจอทีวี) ⇒ ต้องเก็บรายชื่อใหม่ */
+      recollectAnim: (g)=>{ g.userData.animParts = collectDecorAnim(g); },
+    })
+  : null;
+
 /* ร้านค้า/เศรษฐกิจเฟส 1 (js/house-shop.js โหลดก่อนไฟล์นี้) — ตารางราคา + คลังสิทธิ์ + migration + หน้าร้าน
    ไฟล์นั้นไม่แตะ localStorage เอง ใช้ load/save ที่ส่งไปให้ตรงนี้ (ข้อมูลจึงอยู่ก้อนเดียวกับบ้าน export ตามไปเอง) */
 const SHOP = (typeof window.HOUSE_SHOP === 'function')
@@ -356,6 +382,9 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
                                      voice:it.voice || 'piano'})),
       hasInstrument: ()=> hasInstrument(),
       routineCats: ()=> routineCats(),   /* 🕰️ หมวดของในบ้านที่เด็กวางไว้จริง (เควสต์กิจวัตรใช้) */
+      /* 👋 เฟส 18 — งานที่เด็กถนัดกับคนคนนี้ (เพิ่มโอกาสเจอ ไม่ล็อก)
+         ⚠ NEIGH ประกาศ**ใต้**บล็อกนี้ ⇒ ต้องเรียกแบบ lazy กัน TDZ (แพทเทิร์นเดียวกับ petTypes) */
+      favMech: (npcId)=> NEIGH ? NEIGH.favMech(npcId) : '',
       /* 🚪 "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" — ใช้กันงานตัน (เก็บของหมดแล้ว/ไม่มีแปลงให้รด)
          ⚠ ต้องอ่านจาก js/house-play.js ตัวจริง ไม่ใช่เดาจากของที่ซื้อไว้ */
       worldStock: ()=>{
@@ -379,6 +408,16 @@ const QUESTS = (typeof window.HOUSE_QUESTS === 'function')
       hasGame: (id, gid, pick) => !!(window.OwlGames && OwlGames.has(id)
                         && window.HouseGames && HouseGames.ALLOW[id]
                         && HouseGames.pickCat(id, gid || 'prep-p1', pick)),
+    })
+  : null;
+
+/* 👋 ความจำของเพื่อนบ้าน เฟส 18 (js/house-neighbour.js โหลดก่อนไฟล์นี้)
+   ⚠ **ไม่มีไฟล์นี้ก็ต้องไม่พัง** — NPC จะกลับไปทักแบบเดิมทุกครั้งเหมือนก่อนเฟส 18
+   ⚠ ไฟล์นั้นไม่แตะ DOM/WebGL เลย ใช้ load/save ก้อนเดียวกับบ้าน ⇒ export/import พาไปเอง */
+const NEIGH = (typeof window.HOUSE_NEIGHBOUR === 'function')
+  ? window.HOUSE_NEIGHBOUR({
+      load: loadHouseData, save: saveHouseData,
+      dayKey: ()=> questDayKey(),
     })
   : null;
 /* การดูแลสัตว์เลี้ยงเฟส 3B (js/house-pet-care.js โหลดก่อนไฟล์นี้) — ความหิว/อาหาร/ป่วย/ค่ารักษา
@@ -1139,6 +1178,17 @@ SIGN_ICONS.push('🌷');                     /* ป้ายทุ่งดอ�
 SIGN_ICONS.push('🎠');                     /* ป้ายสนามเด็กเล่นกลางเมือง */
 SIGN_ICONS.push('🍢');                     /* ป้ายตลาดรถเข็นหน้าโรงเรียน */
 let signMat = null;
+/* 🎨 ป้ายร้าน: emoji → ไอคอน SVG (เฟส B ของ ICON-PLAN.md · ผู้ใช้สั่ง 2026-08-19)
+   ป้ายพวกนี้ลอยอยู่เหนือตึกทั่วเมือง = จุดที่ "emoji ข้าม OS ได้คนละรูป" เจ็บที่สุด
+   ⚠ ป้ายที่ยังไม่มีไอคอน (หรือ HouseIcons โหลดไม่ทัน) **ต้องได้ emoji เดิมเสมอ** */
+const SIGN_SVG = {
+  '🏪':'sign-mart', '🐾':'sign-paw', '🏥':'sign-hospital', '🍜':'sign-noodle',
+  '🏛️':'sign-cityhall', '🏨':'sign-hotel', '🚓':'sign-police', '🌾':'sign-rice',
+  '🏫':'sign-school', '🪚':'sign-saw', '🔬':'sign-lab', '👗':'sign-dress',
+  '🎠':'sign-carousel', '🦉':'sign-owl', '🍢':'sign-skewer',
+  '🎸':'furn-ins-guitar', '🐄':'critter-cow', '🐮':'critter-cow',
+  '🎣':'ui-fishing', '🌷':'furn-tulip-pot', '🐟':'fish-nil', '🛋️':'furn-sofa',
+};
 function signAtlasMat(){
   if(signMat) return signMat;
   const cv = document.createElement('canvas');
@@ -1146,13 +1196,31 @@ function signAtlasMat(){
   const ctx = cv.getContext('2d');
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '84px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif';
+  const cell = i => ({x:(i % SIGN_COLS) * SIGN_CELL, y:((i / SIGN_COLS) | 0) * SIGN_CELL});
+  /* ① วาด emoji ลงไปก่อนทั้งแผ่น — ป้ายจะไม่ว่างระหว่างรอรูป SVG โหลด */
   SIGN_ICONS.forEach((ic, i)=>{
-    const c = i % SIGN_COLS, r = (i / SIGN_COLS) | 0;
-    ctx.fillText(ic, c*SIGN_CELL + SIGN_CELL/2, r*SIGN_CELL + SIGN_CELL/2 + 4);
+    const p = cell(i);
+    ctx.fillText(ic, p.x + SIGN_CELL/2, p.y + SIGN_CELL/2 + 4);
   });
   const tex = new THREE.CanvasTexture(cv);
   tex.minFilter = THREE.LinearFilter;
   signMat = new THREE.MeshBasicMaterial({map:tex, transparent:true, alphaTest:.3, side:THREE.DoubleSide});
+  /* ② ช่องไหนมีไอคอน SVG ให้โหลดเป็นรูปแล้ววาดทับ (async — เสร็จเมื่อไหร่ค่อยสั่งอัปเดต texture)
+     ⚠ ต้องล้างช่องก่อนวาดทับ ไม่งั้น emoji เดิมจะทะลุออกมาตามขอบไอคอน */
+  if(window.HouseIcons){
+    SIGN_ICONS.forEach((ic, i)=>{
+      const id = SIGN_SVG[ic];
+      if(!id || !window.HouseIcons.has(id)) return;
+      const img = new Image();
+      img.onload = ()=>{
+        const p = cell(i), pad = 6;
+        ctx.clearRect(p.x, p.y, SIGN_CELL, SIGN_CELL);
+        ctx.drawImage(img, p.x + pad, p.y + pad, SIGN_CELL - pad*2, SIGN_CELL - pad*2);
+        tex.needsUpdate = true;
+      };
+      img.src = window.HouseIcons.svgUri(id, SIGN_CELL - 12);   /* ⚠ ต้องผ่าน svgUri() — ต้องมี xmlns */
+    });
+  }
   return signMat;
 }
 function signPlane(icon, size){
@@ -2531,7 +2599,7 @@ function collectDecorAnim(g){
     const a = o.userData && o.userData.anim;
     if(!a || o === g) return;
     a.brx = o.rotation.x; a.bry = o.rotation.y; a.brz = o.rotation.z;
-    a.by = o.position.y;
+    a.bx = o.position.x; a.by = o.position.y; a.bz = o.position.z;
     a.sx = o.scale.x; a.sy = o.scale.y; a.sz = o.scale.z;
     if(a.ph == null) a.ph = parts.length * 1.7;
     parts.push(o);
@@ -2572,6 +2640,15 @@ function updateDecorAnimParts(g, s, ph0){
         o.rotation.z = a.brz + Math.sin(s*7 + ph)*.13;
         break;
       }
+      case 'swim': {                                 /* 🐠 ปลาว่ายไปมาในตู้ปลา (เฟส 17 รอบแก้)
+                                                        ⚠ ต้องกลับหัวตอนเปลี่ยนทิศ ไม่งั้นเห็นเป็นปลาถอยหลัง */
+        const w = Math.sin(s*sp + ph);
+        o.position.x = a.bx + w*(a.amp || .18);
+        o.position.y = a.by + Math.sin(s*sp*1.9 + ph)*.025;
+        o.rotation.y = a.bry + (Math.cos(s*sp + ph) >= 0 ? 0 : Math.PI);
+        o.rotation.z = a.brz + Math.sin(s*sp*2.4 + ph)*.12;
+        break;
+      }
       case 'bob':                                    /* ลอยขึ้นลงเบาๆ (ว่าว/นก) */
         o.position.y = a.by + Math.sin(s*1.5*sp + ph)*(a.amp || .1);
         o.rotation.z = a.brz + Math.sin(s*1.1*sp + ph)*.1;
@@ -2608,7 +2685,13 @@ function updateDecorWind(t, dt){
   const s = t*.001;
   for(let i=0; i<windList.length; i++){
     const g = windList[i], ph = g.userData.windPh;
-    if(g.userData.animParts) updateDecorAnimParts(g, s, ph);   /* ธง/กังหัน/น้ำพุ/ไฟ — ขยับเฉพาะชิ้นส่วนข้างใน */   /* ธง/กังหัน/น้ำพุ/ไฟ — ขยับเฉพาะชิ้นส่วนข้างใน */
+    if(g.userData.animParts){
+      /* 🐠 เฟส 17: ตู้ปลาที่เพิ่งให้อาหาร ปลาว่ายเร็วขึ้นชั่วครู่
+         ⚠ เร่งด้วย "เวลาชดเชยสะสม" ไม่ใช่คูณ s ตรงๆ — คูณตรงๆ เฟสจะกระโดด ปลาวาร์ปตำแหน่ง */
+      if(USABLE && USABLE.tickBoost && g.userData.tankBoost)
+        g.userData.animShift = (g.userData.animShift || 0) + USABLE.tickBoost(g, dt);
+      updateDecorAnimParts(g, s + (g.userData.animShift || 0), ph);   /* ธง/กังหัน/น้ำพุ/ไฟ — ขยับเฉพาะชิ้นส่วนข้างใน */
+    }
     if(g.userData.windSwing){                         /* ชิงช้า: ไกวเบาๆ ตามลมตอนไม่มีใครนั่ง */
       const piv = g.userData.swingPiv;
       if(piv && !(sitState && sitState.group === g)) piv.rotation.x = Math.sin(s*1.15 + ph)*.07;
@@ -4554,12 +4637,25 @@ function buildQuestBoard(){
 /* ดาวลอยเหนือกระดาน — บอกเด็กว่า "มีภารกิจใหม่" (แยกกลุ่มเพื่อขยับ/ซ่อนได้) */
 function buildQuestMark(){
   const g = new THREE.Group();
-  const st = sphere(.17,0xffd54f,10); st.scale.set(1,1,.5); g.add(st);
-  for(let i=0;i<5;i++){
-    const sp = cone(.09,.2,0xffc857,4);
-    sp.position.set(Math.sin(i*Math.PI*2/5)*.2, Math.cos(i*Math.PI*2/5)*.2, 0);
-    sp.rotation.z = -i*Math.PI*2/5; sp.scale.z = .45; g.add(sp);
+  /* ⭐ ดาวลอยเหนือกระดานเควสต์ — เดิมเป็น "ลูกกลมแบน + กรวย 5 อันแปะรอบ"
+     แฉกไม่ต่อเนื่องกับตัวดาว มองเห็นเป็นก้อนกลมมีหนาม (ผู้ใช้แจ้ง 2026-08-20)
+     ⇒ วาดเส้นรอบรูปดาว 5 แฉกจริงแล้ว extrude + ลบเหลี่ยม (bevel) ให้ดูนุ่มเข้าธีม */
+  /* ⚠ **แกน y ของโลก 3D ชี้ขึ้น** (ต่างจาก SVG ที่ y ชี้ลง) ⇒ มุมเริ่ม −π/2 จะได้แฉกชี้ลง
+     = ดาวกลับหัว (ผู้ใช้แจ้ง 2026-08-20) ⇒ ต้องเริ่มที่ +π/2 */
+  const R = .27, r = .12;
+  const sh = new THREE.Shape();
+  for(let i = 0; i < 10; i++){
+    const a = Math.PI/2 + i * Math.PI/5, rad = i % 2 ? r : R;
+    const x = Math.cos(a) * rad, y = Math.sin(a) * rad;
+    if(i) sh.lineTo(x, y); else sh.moveTo(x, y);
   }
+  sh.closePath();
+  const geo = new THREE.ExtrudeGeometry(sh, {depth:.05, bevelEnabled:true,
+                                             bevelThickness:.022, bevelSize:.022, bevelSegments:2});
+  geo.translate(0, 0, -.045);
+  const st = new THREE.Mesh(geo, toonMat(0xffd54f));
+  st.castShadow = hShadows;
+  g.add(st);
   return g;
 }
 
@@ -5853,6 +5949,7 @@ function handleTap(cx, cy){
   if(questPlayOpen()){ closeQuestPanel(); return; }    /* การ์ดเควสต์/การ์ดคุยพ่อแม่ */
   if(SHOP && SHOP.isOpen()){ SHOP.close(); return; }   /* หน้าร้านเปิดอยู่ → แตะนอกกล่อง = ออกจากร้าน */
   if(window.HousePlay && window.HousePlay.isOpen()){ window.HousePlay.close(); return; }   /* แผงเล่นในเมือง (เฟส 11) */
+  if(window.HouseBook && window.HouseBook.isOpen()){ window.HouseBook.close(); return; }   /* สมุดสะสม (เฟส 16) */
   if(petMenuOn){ closePetMenu(); return; }             /* เมนูฟองของสัตว์เลี้ยง (เฟส 12) */
   raycaster.setFromCamera(ndcFromClient(cx,cy), camera);
   /* 🎣 **กำลังตกปลาอยู่ = แตะอย่างอื่นในโลกไม่ได้เลย** (ผู้ใช้สั่ง 2026-08-14)
@@ -5901,6 +5998,8 @@ function handleTap(cx, cy){
           decorInteract(o); return;
         }
         if(o.userData.hPlay != null){ tapPlayItem(o.userData.hPlay); return; }
+        /* 📔 เฟส 16: แตะสัตว์ในคอกฟาร์ม = จดลงสมุดสะสม แล้ว **ไม่ return** ให้เดินไปหาต่อตามปกติ */
+        if(o.userData.hFarm && window.HouseBook) window.HouseBook.mark('critter', o.userData.hFarm);
         if(o.userData.hStatic){ tapStaticScene(hits[0].point); return; }
         o = o.parent;
       }
@@ -6018,6 +6117,12 @@ function finishArrive(){
          popup ไม่เหมือนตู้ปลาจริง ไอคอน/อนิเมชันปลาไม่สวย ⇒ ปลาที่ตกได้ย้ายไปสมุดสะสม (เฟส 16)
          ตอนนี้ตู้ปลาตกลงมาที่ `decorBounce` เหมือนของตกแต่งชิ้นอื่น — แตะแล้วเด้ง ไม่เงียบ */
       else if(act==='basket'){ if(window.HousePlay) window.HousePlay.basketOpen(); }
+      /* 🪑 เฟส 17 — ของตกแต่งที่ใช้งานได้จริง (ตัวทำงานอยู่ใน js/house-usable.js)
+         ⚠ ไม่มีไฟล์นั้น/ไม่รู้จักชิ้นนี้ = ตกไปเด้งเหมือนเดิม **ห้ามเงียบ** */
+      else if(act==='tv'   && USABLE){ if(!USABLE.tvToggle(g)) decorBounce(g); }
+      else if(act==='tank' && USABLE){ USABLE.tankFeed(g); decorBounce(g); }
+      else if(act==='wash' && USABLE){ USABLE.washUp(g); }
+      else if(act==='read' && USABLE){ USABLE.readBook(g); }
       else decorBounce(g);
       /* ต้นไม้/พุ่มที่เด็กปลูกเอง: เขย่าแล้วใบร่วงด้วย ให้เหมือนต้นไม้ในป่า
          (ธง leafy/leafyTall อยู่ในคลังเฟอร์นิเจอร์ js/house-furniture.js) */
@@ -6591,16 +6696,18 @@ function talkToNpc(n){
     ? OWL_MSGS.cheer
     : (d.lines || ['สวัสดีจ้ะ!']).concat(d.quest ? [d.quest] : []);
   n.li = (n.li == null ? 0 : (n.li + 1) % say.length);
-  const el = $('house-npc-bubble');
-  if(el){
-    el.innerHTML = '';
-    const nm = document.createElement('b'); nm.textContent = (d.icon||'🙂') + ' ' + d.name;
-    const tx = document.createElement('span'); tx.textContent = say[n.li];
-    el.appendChild(nm); el.appendChild(tx);
-    el.classList.add('on');
+  /* 👋 เฟส 18: เคยช่วยคนนี้มาก่อน = ทักถึงเรื่องที่เคยช่วยก่อนเข้าบทปกติ
+     ⚠ **ไม่ทับบทของนกฮูกมาสคอต** (คลังคำให้กำลังใจของหน้าหลัก) และไม่ทับบทเชิญรับงาน */
+  let memLine = '';
+  if(NEIGH && !d.mascot){
+    memLine = NEIGH.greeting(d.id) || '';
+    if(memLine) NEIGH.bumpTalk(d.id);
   }
+  showTalkBubble($('house-npc-bubble'), d.id, d.icon || '🙂', d.name,
+                 memLine ? (memLine + ' ' + say[n.li]) : say[n.li]);
   /* ประโยคยาวให้ฟองคำพูดค้างนานขึ้น จะได้อ่านทัน */
-  npcTalk = {n, until: performance.now() + Math.max(3600, (say[n.li] || '').length * 130)};
+  npcTalk = {n, until: performance.now()
+             + Math.max(3600, ((memLine ? memLine + ' ' : '') + (say[n.li] || '')).length * 130)};
   /* ตอนแตะเรียกคุย ตั้ง hold ไว้ 14 วิ (ยืนรอให้เด็กเดินมาถึง) — พอคุยจบแล้วต้องปล่อยให้เดินต่อทันที
      ไม่ใช่ยืนแข็งรอจนครบ 14 วิ (นกฮูกมาสคอตเห็นชัดสุดเพราะเดินได้ทั้งแผนที่) */
   n.hold = Math.max(0, (npcTalk.until - performance.now())/1000) + .4;
@@ -6788,9 +6895,21 @@ function questIcon(spec){
   const d = npcDefById(spec.npc);
   return (d && d.icon) || (spec.mech === 'count' ? '🔢' : '❓');
 }
+/* id ไอคอน SVG ของงานชุดนั้น — งานจากกระดานไม่มี NPC เจ้าของ ⇒ ใช้ไอคอนกระดาน */
+function questIcoId(spec){
+  const d = npcDefById(spec.npc);
+  return (d && d.id) || 'ui-board';
+}
 function renderQuestList(){
   const list = $('hq-list');
   if(!list || !QUESTS) return;
+  /* หัวข้อกระดานเขียนไว้ใน index.html เป็น emoji (ตอนโหลดหน้ายังไม่มี HouseIcons)
+     ⇒ พอเปิดกระดานจริงค่อยเปลี่ยนเป็นไอคอน SVG ทับ (แพทเทิร์นเดียวกับหน้าเควสต์วันนี้) */
+  {
+    const hd = document.querySelector('#house-quest .house-creator-title');
+    if(hd && !hd.querySelector('svg'))
+      hd.innerHTML = '<span class="hqs-ic">' + hIcon('ui-board', '📋', 24) + '</span><span>กระดานเควสต์วันนี้</span>';
+  }
   const st = QUESTS.state();
   list.innerHTML = '';
   for(let i=0; i<QUESTS.BOARD_N; i++){
@@ -6799,7 +6918,9 @@ function renderQuestList(){
     const row = document.createElement(spec.done ? 'div' : 'button');
     row.className = 'hq-row' + (spec.done ? ' done' : ' hq-go');
     const ic = document.createElement('span'); ic.className = 'hq-ic';
-    ic.textContent = spec.done ? '✅' : questIcon(spec);
+    /* 🎨 ไอคอนแถวเป็น SVG (ผู้ใช้สั่ง 2026-08-20) — เสร็จแล้วใช้เครื่องหมายถูก · ยังไม่เสร็จใช้รูปคนที่สั่งงาน */
+    ic.innerHTML = spec.done ? hIcon('ui-check', '✅', 26)
+                             : hIcon(questIcoId(spec), questIcon(spec), 26);
     const tx = document.createElement('span'); tx.className = 'hq-txt'; tx.textContent = questTitle(spec);
     const pg = document.createElement('span'); pg.className = 'hq-prog';
     pg.textContent = spec.done ? 'เสร็จ' : 'เล่นเลย';
@@ -6820,7 +6941,10 @@ function renderQuestList(){
     btn.innerHTML = 'รับโบนัสครบ 5 ชุด <i class="hs-coin"></i>' + QUESTS.BOARD_BONUS;
   }
   const stEl = $('hq-stars');
-  if(stEl) stEl.textContent = '⭐ ดาวสะสม ' + (st.stars|0) + ' ดวง';
+  if(stEl){
+    stEl.innerHTML = '<span class="hqs-ic">' + hIcon('ui-star', '⭐', 18) + '</span>';
+    stEl.appendChild(document.createTextNode(' ดาวสะสม ' + (st.stars | 0) + ' ดวง'));
+  }
 }
 function openQuestBoard(){
   if(!QUESTS){
@@ -6925,8 +7049,11 @@ function qzStage(){
 function qzHead(spec, sub){
   const who = $('hqz-who');
   /* spec.title มีเฉพาะรอบทดสอบจากหน้าคลังคำถาม (ไม่มี NPC เจ้าของงาน) */
-  if(who) who.textContent = spec.title ||
-    (questIcon(spec) + ' ' + (npcDefById(spec.npc) ? npcDefById(spec.npc).name : 'กระดานเควสต์'));
+  const nd = npcDefById(spec.npc);
+  if(who){
+    if(spec.title) who.textContent = spec.title;
+    else setIconName(who, nd ? nd.id : '', questIcon(spec), nd ? nd.name : 'กระดานเควสต์');
+  }
   const s = $('hqz-sub');
   if(s) s.textContent = sub || '';
 }
@@ -8571,6 +8698,9 @@ function finishQuest(){
   if(qRun.spec && qRun.spec.test){ finishTestQuest(qRun); return; }
   const run = qRun, res = QUESTS.finish(run);
   qRun = null;
+  /* 👋 เฟส 18: จดลงความจำของเพื่อนบ้าน — **นับตอนงานจบจริงเท่านั้น** ไม่ใช่ตอนรับงาน */
+  const nb = (NEIGH && run.spec && run.spec.npc)
+    ? NEIGH.onQuestDone(run.spec.npc, run.spec.mech) : null;
   /* 💸 คืนเงินที่จ่ายไปเพื่อทำเควสต์นี้ (ถ้ามี) — ทบกับค่าตอบแทนปกติ ไม่ใช่แทนที่ */
   const back = run.spent | 0;
   awardCoins(res.coins + back);
@@ -8604,6 +8734,16 @@ function finishQuest(){
     tag.textContent = '🩺 ขอบคุณที่ช่วยงานนะ ' + nm + ' หายป่วยแล้ว!';
     st.appendChild(tag);
     curedCelebrate(nm);
+  }
+  /* 👋 เฟส 18: สนิทขึ้นขั้น = บอกให้เด็กรู้ (เป็นคำชมล้วน **ไม่มีของรางวัล ไม่มีการล็อกอะไร**
+     ความสนิทเปลี่ยนแค่คำทักของคนนั้น เด็กที่ไม่สนใจก็ไม่เสียอะไรเลย) */
+  if(nb && nb.levelUp){
+    const tag = document.createElement('div'); tag.className = 'hqz-chal';
+    const who = (NPC_DEFS.find(x => x.id === run.spec.npc) || {}).name || 'เพื่อนบ้าน';
+    tag.textContent = nb.level >= 3 ? '💛 ' + who + 'นับหนูเป็นเพื่อนคนสำคัญแล้ว!'
+                    : nb.level === 2 ? '🌼 ' + who + 'เริ่มสนิทกับหนูแล้วนะ'
+                                     : '😊 ' + who + 'จำหนูได้แล้ว!';
+    st.appendChild(tag);
   }
   const row = document.createElement('div'); row.className = 'hqz-row';
   row.appendChild(qzBtn('เยี่ยม!', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
@@ -8895,6 +9035,8 @@ function startleCritter(c0){
   const c = critters.find(k=>k.group===c0);
   if(!c || c.state==='exit') return;
   questEvent('critter', null);
+  /* 📔 เฟส 16: จดลงสมุดสะสม (ชนิดใหม่จะขึ้น toast ให้เอง) */
+  if(window.HouseBook) window.HouseBook.mark('critter', c.type);
   if(typeof playClick==='function') playClick();
   c.startle = .5;                       /* กระโดดตกใจสั้นๆ ก่อนวิ่ง/บิน/ว่ายหนี */
   if(c.type==='fish') c.jump = {k:0};   /* ปลาตกใจ = กระโดดพ้นน้ำ */
@@ -8905,6 +9047,8 @@ function startleCritter(c0){
 /* ---------- สัตว์ในคอกฟาร์ม (เดินไปมาในคอกของตัวเอง) ----------
    merge geometry ตัวละ 1 ก้อน (ตัวละ 1 draw call) แล้วขยับทั้งกลุ่ม → ยังลื่นเหมือนของตายตัว */
 let penAnimals = [];
+/* ชนิดสัตว์ฟาร์มที่จดลงสมุดสะสมได้ (เฟส 16) — ต้องตรงกับ CRITTERS ใน js/house-book.js */
+const FARM_BOOK_KINDS = {cow:1, sheep:1, pig:1, chick:1};
 function penInnerTiles(pen){
   const out = [];
   for(let x=pen.x0+1; x<=pen.x1-1; x++) for(let z=pen.z0+1; z<=pen.z1-1; z++){
@@ -8922,7 +9066,14 @@ function spawnPenAnimals(){
      ถ้าใส่ผิด ตัวสัตว์จะเดินแบบเอียงข้าง (หน้าไม่ตรงทางที่เดิน) */
   const addPenAnimal = (g, x, z, kind, speed, face)=>{
     mergeDecorGroup(g);
-    g.children.forEach(m=>{ m.userData.hStatic = true; });     /* แตะโดนแล้วนับเป็นฉาก ไม่ใช่ของวาง */
+    /* ⚠ ตั้ง userData **หลัง** merge เสมอ — ตั้งก่อนแล้ว mergeDecorGroup จะยกเลิกการรวมทั้งก้อน
+       (บั๊กเดิมของผมชาวบ้านเมื่อ 2026-08-09 ทำให้ NPC ทุกคนไม่เคยถูก merge เลย) */
+    g.children.forEach(m=>{
+      m.userData.hStatic = true;                               /* แตะโดนแล้วนับเป็นฉาก ไม่ใช่ของวาง */
+      /* 📔 เฟส 16: สัตว์ในคอกฟาร์มจดลงสมุดสะสมได้ — **เฉพาะ 4 ชนิดของฟาร์มจริง**
+         (สัตว์ในคอกร้านสัตว์เลี้ยงใช้ฟังก์ชันเดียวกันนี้ และ kind ของมันชนกับ 'cat' ของสัตว์ป่า) */
+      if(FARM_BOOK_KINDS[kind]) m.userData.hFarm = kind;
+    });
     g.position.set(outWX(x), 0, outWZ(z));
     g.rotation.y = ((x*3 + z*7) % 4) * Math.PI/2;
     worldGroup.add(g);
@@ -9312,7 +9463,13 @@ function updateNpcs(dt, t){
     const n = npcs[i], g = n.g;
     g.rotation.z = Math.sin(t*.0016 + n.ph) * .022;            /* ยืนโยกตัวเบาๆ ให้ดูมีชีวิต */
     /* คนที่กำลังยื่นงาน/คุมงานให้เด็กอยู่ → ตรึงไว้ให้ยืนหันหน้าหาเด็กตลอดรอบเล่น ไม่เดินหนี */
-    if(qzNpcId && n.def.id === qzNpcId){ n.hold = 1; n.faceT = Math.max(n.faceT || 0, .5); }
+    /* ⚠ ลุงตกปลา **ห้ามหันหน้ามาหาเด็ก** — เบ็ดเป็นส่วนหนึ่งของตัวโมเดล พอหันตัวแล้วปลายเบ็ด
+       กวาดขึ้นมาอยู่บนฝั่งแทนที่จะทิ้งลงน้ำ (ผู้ใช้แจ้ง 2026-08-20)
+       `talkToNpc()` กันไว้แล้วด้วย `!d.fisher` แต่จุดนี้ (ตอนถือเควสต์อยู่) ตกหล่นไป */
+    if(qzNpcId && n.def.id === qzNpcId){
+      n.hold = 1;
+      if(!n.def.fisher) n.faceT = Math.max(n.faceT || 0, .5);
+    }
     /* 🎺 เฟส 13 — วงดนตรีข้างถนน: เด็กเล่นเครื่องดนตรี → คนแถวนั้นหยุดเดินแล้วเต้นตาม
        **ไม่มีโจทย์ ไม่มีคะแนน ไม่มีจบเกม** เล่นจนพอใจแล้วเดินจากไปได้เลย (ข้อ 52.2)
        ใช้ `hold` ตัวเดิมกันไม่ให้เดินหนี แล้วบวกท่าโยกทับ ⇒ ไม่ต้องแตะระบบเดินเลย */
@@ -9648,10 +9805,14 @@ function collarCharm(style, col){
     });
     const knot = sphere(.014, petShade(col,.85), 6); gg.add(knot);
   }else if(style === 'heart'){
-    /* หัวใจ = ลูกกลม 2 ลูก + กรวยคว่ำ (ทรงเดียวกับหัวใจในเอฟเฟกต์อนุภาคของเกม) */
-    [-1,1].forEach(s=>{ const l = sphere(.017, 0xf2557f, 7); l.position.set(.013*s, .012, 0); gg.add(l); });
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(.026,.036,7), toonMat(0xf2557f));
-    tip.castShadow = hShadows; tip.rotation.x = Math.PI; tip.position.y = -.016; gg.add(tip);
+    /* หัวใจ = พูกลม 2 พู + ปลายแหลมล่าง · **แบนตามแนว Z** ให้เห็นเป็นหัวใจจากด้านหน้า
+       (ของเดิมพูกลมไม่ได้แบน + ก้อนติดกันจนดูเป็นเม็ดกลม 2 เม็ดกับกรวย) */
+    const HC = 0xf2557f, HR = .022;
+    [-1,1].forEach(s=>{ const l = sphere(HR*.62, HC, 8); l.scale.set(1,1,.5);
+      l.position.set(HR*.5*s, HR*.38, 0); gg.add(l); });
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(HR*1.12, HR*1.5, 10), toonMat(HC));
+    tip.castShadow = hShadows; tip.rotation.x = Math.PI; tip.scale.set(1,1,.5);
+    tip.position.y = -HR*.42; gg.add(tip);
   }else if(style === 'star'){
     const st = new THREE.Mesh(new THREE.ConeGeometry(.028,.02,5), toonMat(gold));
     st.castShadow = hShadows; st.rotation.x = -Math.PI/2; gg.add(st);
@@ -10024,7 +10185,7 @@ function renderPetMenu(){
     list.forEach(tk=>{
       const pr = PETCARE ? PETCARE.trickProg(tk.id) : 0;
       const got = PETCARE ? PETCARE.trickLearned(tk.id) : false;
-      e.grid.appendChild(hpmBtn(got ? tk.emoji : tk.emoji, got ? tk.name + ' ✓' : tk.name, {
+      e.grid.appendChild(hpmBtn(hIcon('trick-' + tk.id, tk.emoji, 26), got ? tk.name + ' ✓' : tk.name, {
         pips: Math.min(need, pr), pipMax: need, done: got,
         run: ()=>{ closePetMenu(); startPetAct('trick', tk.id); },
       }));
@@ -10036,7 +10197,7 @@ function renderPetMenu(){
     e.title.textContent = 'เล่นอะไรกับ' + name + 'ดี?';
     const toys = (SHOP && SHOP.ownedToys) ? SHOP.ownedToys() : [];
     toys.forEach(t=>{
-      e.grid.appendChild(hpmBtn(t.emoji, t.name, {
+      e.grid.appendChild(hpmBtn(hIcon('toy-' + t.id, t.emoji, 26), t.name, {
         /* เฟส 12.1 — แต่ละชิ้นมีท่าของตัวเอง · ลูกบอลยังใช้ท่าเดิมของเฟส 12 */
         run: ()=>{ closePetMenu(); startPetAct(t.id === 'ball' ? 'ball' : 'toy', t.id); },
       }));
@@ -10045,42 +10206,11 @@ function renderPetMenu(){
     return;
   }
 
-  /* ---------- 🎀 ปลอกคอ (ย้ายมาไว้ในเมนูน้องด้วย · ผู้ใช้สั่ง 2026-08-17) ----------
-     เดิมเปลี่ยนปลอกคอได้ **ที่ร้านสัตว์เลี้ยงที่เดียว** ⇒ อยากสลับสีเล่นทีต้องเดินข้ามเมืองไปร้าน
-     ทั้งที่เป็นของที่ซื้อมาแล้วและสีก็แจกฟรีทุกสี ⇒ ให้เปลี่ยนได้จากเมนูน้องตรงนี้เลย ทุกที่ทุกเวลา
-     ⚠ **แยกเป็น 2 หน้า** (แบบ / สี) — รวมหน้าเดียวจะได้ปุ่ม 16 อันเรียงยาวเกินจอ
-     ⚠ ต้อง `restylePet()` ทุกครั้งหลังเปลี่ยน ไม่งั้นน้องในฉากยังใส่ของเดิมจนกว่าจะรีโหลด */
-  if(petMenuPage === 'collar' || petMenuPage === 'collarcol'){
-    const worn = PETCARE ? PETCARE.collar() : {s:'classic', c:0};
-    const wear = (sid, ci)=>{
-      if(!PETCARE) return;
-      PETCARE.setCollar(sid, ci);
-      restylePet();
-      renderPetMenu();                       /* วาดใหม่ให้เครื่องหมาย ✓ ย้ายมาที่อันที่เพิ่งเลือก */
-    };
-    if(petMenuPage === 'collarcol'){
-      e.title.textContent = 'เลือกสีปลอกคอ';
-      const cols = (SHOP && SHOP.COLLAR_COLORS) || [];
-      cols.forEach((col, i)=>{
-        const hex = '#' + col.c.toString(16).padStart(6, '0');
-        const on = (worn.c | 0) === i;
-        e.grid.appendChild(hpmBtn('<i class="hpm-sw" style="background:' + hex + '"></i>',
-          on ? col.n + ' ✓' : col.n, {done: on, run: ()=> wear(worn.s, i)}));
-      });
-      petMenuNote('สีปลอกคอแจกฟรีทุกสี เปลี่ยนกี่ครั้งก็ได้เลย 🎨');
-      return;
-    }
-    e.title.textContent = 'ปลอกคอของ' + name;
-    const owned = (SHOP && SHOP.ownedCollars) ? SHOP.ownedCollars() : [];
-    owned.forEach(it=>{
-      const on = worn.s === it.id;
-      e.grid.appendChild(hpmBtn(it.emoji, on ? it.name + ' ✓' : it.name,
-        {done: on, run: ()=> wear(it.id, worn.c | 0)}));
-    });
-    e.grid.appendChild(hpmBtn('🎨', 'เปลี่ยนสี', {run: ()=> openPetMenu('collarcol')}));
-    petMenuNote('อยากได้ปลอกคอแบบอื่นอีก? ไปเลือกซื้อที่ร้านสัตว์เลี้ยงได้เลย 🐾');
-    return;
-  }
+  /* 🎀 หน้า "ปลอกคอ/สีปลอกคอ" ถูกย้ายออกจากเมนูฟองแล้ว (ผู้ใช้สั่ง 2026-08-19)
+     ⇒ เปลี่ยนปลอกคอได้ที่ **เมนูสัตว์เลี้ยงมุมขวาบน** (ปุ่ม 🐾 `#house-pet-btn`) ที่เดียว
+       ซึ่งโผล่เฉพาะตอนอยู่ในบริเวณบ้าน — หน้านั้นมีแถวปลอกคอ + แถวสีอยู่แล้ว
+       (`buildPetCollarChips()`) และเห็นตัวน้องตัวใหญ่หมุนดูได้ เลือกง่ายกว่าปุ่มเล็กๆ ในฟอง
+     ⚠ **ห้ามเอาปุ่มปลอกคอกลับเข้าเมนูฟอง** — ทางเปลี่ยนปลอกคอต้องมีจุดเดียว */
 
   e.title.textContent = 'อยากทำอะไรกับ' + name + '?';
   /* 🍽️ ให้อาหาร — ย้ายมาจากแถบสถานะ (ผู้ใช้สั่ง 2026-08-15)
@@ -10094,7 +10224,7 @@ function renderPetMenu(){
     const food = PETCARE ? PETCARE.FOOD.filter(x => x.id === fid)[0] : null;
     const left = (PETCARE && fid) ? PETCARE.meals(fid) : 0;
     const sick = petCareHud.sick;
-    e.grid.appendChild(hpmBtn(food ? food.emoji : '🍽️',
+    e.grid.appendChild(hpmBtn(food ? hIcon('food-' + food.id, food.emoji, 26) : hIcon('food-meat', '🍖', 26),
       sick ? 'พาไปหาหมอ' : (left > 0 ? 'ให้อาหาร ×' + left : 'อาหารหมดแล้ว'), {
       done: !sick && petCareHud.full >= 100,       /* อิ่มเต็มแล้ว = ติ๊กถูก ไม่ใช่ปิดปุ่ม */
       run: ()=>{
@@ -10110,11 +10240,11 @@ function renderPetMenu(){
     }));
   }
   /* 🤚 ลูบหัว — ทำได้ทุกที่ ทุกเวลา แม้น้องกำลังงีบอยู่ (ผู้ใช้สั่ง 2026-08-14) */
-  e.grid.appendChild(hpmBtn('🤚', 'ลูบหัว', {
+  e.grid.appendChild(hpmBtn(hIcon('ui-pat', '🤚', 26), 'ลูบหัว', {
     run: ()=>{ closePetMenu(); startPetAct('pat'); },
   }));
   const bathed = PETCARE ? PETCARE.bathedToday() : false;
-  e.grid.appendChild(hpmBtn('🫧', bathed ? 'อาบแล้ว ✓' : 'อาบน้ำ', {
+  e.grid.appendChild(hpmBtn(hIcon('ui-bath', '🫧', 26), bathed ? 'อาบแล้ว ✓' : 'อาบน้ำ', {
     off: bathed || !home, done: bathed,
     run: ()=>{
       if(bathed){ petMenuNote('วันนี้อาบน้ำให้' + name + 'แล้ว พรุ่งนี้มาอาบใหม่นะ 🫧'); return; }
@@ -10122,7 +10252,7 @@ function renderPetMenu(){
       closePetMenu(); startPetAct('bath');
     },
   }));
-  e.grid.appendChild(hpmBtn('🎾', 'เล่นด้วยกัน', {
+  e.grid.appendChild(hpmBtn(hIcon('toy-ball', '🎾', 26), 'เล่นด้วยกัน', {
     off: !home || lonely,
     run: ()=>{
       if(lonely){ petMenuNote(name + 'ยังไม่ค่อยมีแรงเล่น ลองลูบหัวหรืออาบน้ำให้ก่อนนะ 💗'); return; }
@@ -10135,7 +10265,7 @@ function renderPetMenu(){
       closePetMenu(); startPetAct(only.id === 'ball' ? 'ball' : 'toy', only.id);
     },
   }));
-  e.grid.appendChild(hpmBtn('🎪', 'สอนท่า', {
+  e.grid.appendChild(hpmBtn(hIcon('ui-teach', '🎪', 26), 'สอนท่า', {
     off: !home || lonely,
     run: ()=>{
       if(lonely){ petMenuNote(name + 'กำลังงีบอยู่ ลองลูบหัวหรืออาบน้ำให้ก่อนนะ 💗'); return; }
@@ -10143,8 +10273,6 @@ function renderPetMenu(){
       openPetMenu('trick');
     },
   }));
-  /* 🎀 ปลอกคอ — ไม่ต้องอยู่บ้านก็เปลี่ยนได้ (เป็นของแต่งตัว ไม่ใช่กิจกรรมที่ต้องใช้พื้นที่) */
-  e.grid.appendChild(hpmBtn('🎀', 'ปลอกคอ', {run: ()=> openPetMenu('collar')}));
   if(lonely) petMenuNote(name + 'กำลังงีบอยู่ในบ้าน ลูบหัวหรืออาบน้ำให้ก่อน เดี๋ยว' + name + 'ก็ออกมาเองนะ 💗');
   else if(!home) petMenuNote('กลับไปที่สนามหน้าบ้านก่อนนะ แล้วจะเล่นกับ' + name + 'ได้ทุกอย่างเลย 🏡');
 }
@@ -10775,6 +10903,9 @@ function finishTeach(id){
   petJingle();
   if(typeof playCorrect === 'function') playCorrect();
   if(r.justLearned){
+    /* 📔 เฟส 16: ท่าที่น้องทำเองได้แล้ว = จดลงสมุดสะสม **ถาวร**
+       (ปล่อยน้องคืนแล้ว `data.care` ถูกล้าง ถ้าไม่จดไว้ที่สมุด ของสะสมของเด็กจะหาย) */
+    if(window.HouseBook) window.HouseBook.mark('trick', id);
     petBubble('🏆');
     petPuff(14, 0xffd54f, .9, .5);
     charBubble((hPet.cfg ? hPet.cfg.name : 'น้อง') + 'ทำท่า "' + (tk ? tk.name : '') + '" เองได้แล้ว! 🏆', true);
@@ -11207,11 +11338,7 @@ function parentBubble(w, text){
   const p = FAMILY.one(w);
   const el = $('house-npc-bubble');
   if(!el) return;
-  el.innerHTML = '';
-  const nm = document.createElement('b'); nm.textContent = p.icon + ' ' + p.name;
-  const tx = document.createElement('span'); tx.textContent = text;
-  el.appendChild(nm); el.appendChild(tx);
-  el.classList.add('on');
+  showTalkBubble(el, 'fam-' + w, p.icon, p.name, text);
   parentTalk = {w, until: performance.now() + Math.max(3200, text.length * 120)};
 }
 let parentTalk = null;
@@ -11302,6 +11429,8 @@ function refreshQuestBar(){
       const pw = want && hScene === 'out' && !!window.HousePlay;
       if(pb.hidden === pw) pb.hidden = !pw;
       if(!pw && window.HousePlay && window.HousePlay.isOpen()) window.HousePlay.close();
+      /* 📔 สมุดสะสมเปิดจากแผงกิจกรรม ⇒ ต้องหายพร้อมกันเมื่อออกจากฉากนอกบ้าน/เข้าโหมดตกแต่ง */
+      if(!pw && window.HouseBook && window.HouseBook.isOpen()) window.HouseBook.close();
     } }
   if(!want) return;
   const sum = QUESTS.daySummary();
@@ -11313,15 +11442,29 @@ function refreshQuestBar(){
   if(key === questBarKey) return;
   questBarKey = key;
   const l = $('hqbar-left'), sd = $('hqbar-side'), d = $('hqbar-done');
-  if(l) l.textContent = '❗ ' + sum.mainLeft;
-  if(sd){ sd.textContent = '⭐ ' + sum.sideLeft; sd.hidden = !sum.sideLeft; }
-  if(d) d.textContent = '✅ ' + sum.done;
+  /* ⚠ ตัวเลขเป็น textContent (ปลอดภัย) แต่ไอคอนต้องเป็น element แยก ⇒ ประกอบเอง */
+  const chip = (el, ico, emoji, n)=>{
+    if(!el) return;
+    el.innerHTML = '';
+    const ic = document.createElement('span');
+    ic.className = 'hqb-chipic';
+    ic.innerHTML = hIcon(ico, emoji, 15);
+    el.appendChild(ic);
+    el.appendChild(document.createTextNode(' ' + n));
+  };
+  chip(l,  'ui-alert', '❗', sum.mainLeft);
+  chip(sd, 'ui-star',  '⭐', sum.sideLeft);
+  if(sd) sd.hidden = !sum.sideLeft;
+  chip(d,  'ui-check', '✅', sum.done);
   if(l) l.title = 'งานสำคัญของวันนี้ที่ยังไม่ได้ทำ';
   if(sd) sd.title = 'งานช่วยเพื่อนบ้าน ทำเพิ่มได้ ไม่ทำก็ได้';
   if(d) d.title = 'ทำเสร็จแล้ววันนี้';
   /* มีโบนัสดาวรอรับ → ขึ้นไอคอนของขวัญ + แถบเด้งเรียกให้เด็กกดเข้ามารับ */
   const al = $('hqbar-alert');
-  if(al) al.hidden = !alert;
+  if(al){
+    if(!al.querySelector('svg')) al.innerHTML = hIcon('ui-gift', '🎁', 16);
+    al.hidden = !alert;
+  }
   b.classList.toggle('hqbar-gift', !!alert);
   /* ทำ**งานหลัก**ครบแล้ว = เปลี่ยนโทนเป็นเขียว ให้เด็กภูมิใจว่า "วันนี้ครบแล้ว" */
   b.classList.toggle('hqbar-clear', sum.mainLeft === 0);
@@ -11329,10 +11472,11 @@ function refreshQuestBar(){
 /* แปลงรายการดิบจาก engine → ชื่อคน/ชื่อร้านที่เด็กอ่านรู้เรื่อง */
 function questItemInfo(it){
   if(it.src === 'board')
-    return {icon:'📋', name:'กระดานเควสต์', place:'ข้างน้ำพุกลางหมู่บ้าน'};
+    return {icon:'📋', ico:'ui-board', name:'กระดานเควสต์', place:'ข้างน้ำพุกลางหมู่บ้าน'};
   if(it.src === 'family'){
     const p = FAMILY ? FAMILY.one(it.who) : null;
-    return {icon: p ? p.icon : '👪', name: p ? p.name : 'ครอบครัว', place:'ที่บ้านของหนู'};
+    return {icon: p ? p.icon : '👪', ico: 'fam-' + (it.who || 'mom'),
+            name: p ? p.name : 'ครอบครัว', place:'ที่บ้านของหนู'};
   }
   const d = npcDefById(it.id) || {};
   /* หาชื่อสถานที่ตามลำดับ: ล็อตที่ผูกไว้ในผัง → ล็อตที่ยืนอยู่/ใกล้ที่สุดจากพิกัดจริง → ย่านจากพิกัด
@@ -11342,7 +11486,7 @@ function questItemInfo(it){
   if(!lot && d.x != null){
     lot = lotAt(d.x, d.z, 0) || lotAt(d.x, d.z, 3);   /* ยืนในล็อต หรือยืนหน้าร้านในระยะ 3 ช่อง */
   }
-  return {icon: d.icon || '🙂', name: d.name || 'ชาวบ้าน',
+  return {icon: d.icon || '🙂', ico: d.id || '', name: d.name || 'ชาวบ้าน',
           place: lot ? ((lot.icon ? lot.icon + ' ' : '') + lot.name) : zoneNameAt(d.x, d.z)};
 }
 /* ย่านของคนที่ไม่ได้ยืนติดล็อตไหนเลย
@@ -11382,7 +11526,8 @@ function renderStarBonus(){
        เหรียญวาดด้วย CSS (.hs-coin) ไม่ใช้ emoji 🪙 — บางเครื่องไม่มี glyph ตัวนั้น (กับดักเดิม) */
     el.innerHTML = '<span class="hqsum-pincoin">'
                  + (it.claimed ? '✓' : '<i class="hs-coin"></i>' + it.coins) + '</span>'
-                 + '<span class="hqsum-pinneed">' + it.need + '⭐</span>';
+                 + '<span class="hqsum-pinneed">' + it.need
+                 + '<span class="hqs-ic">' + hIcon('ui-star', '⭐', 13) + '</span></span>';
     el.disabled = !it.ready;
     el.title = it.claimed ? ('รับโบนัส ' + it.coins + ' บาทไปแล้ว')
              : it.ready ? ('กดรับโบนัส ' + it.coins + ' บาท')
@@ -11407,6 +11552,16 @@ function starSvg(tone){
 function renderQuestSummary(){
   const e = $('house-qsum');
   if(!e || e.hidden || !QUESTS) return;
+  /* หัวข้อหน้า + ป้ายหลอดดาวเขียนไว้ใน index.html เป็น emoji (ตอนโหลดหน้ายังไม่มี HouseIcons)
+     ⇒ พอเปิดหน้านี้จริงค่อยเปลี่ยนเป็นไอคอน SVG ทับ */
+  {
+    const hd = e.querySelector('.hqz-who');
+    if(hd && !hd.querySelector('svg'))
+      hd.innerHTML = '<span class="hqs-ic">' + hIcon('ui-board', '📋', 22) + '</span><span>เควสต์วันนี้</span>';
+    const lb = e.querySelector('.hqsum-starlab');
+    if(lb && !lb.querySelector('svg'))
+      lb.innerHTML = '<span class="hqs-ic">' + hIcon('ui-star', '⭐', 20) + '</span><span>ดาววันนี้</span>';
+  }
   const sum = QUESTS.daySummary();
   const cnt = $('hqsum-count');
   /* นับ "เหลือ" จากงานหลักเท่านั้น (เฟส 10 · ข้อ 45.6) — งานรองไม่ใช่หนี้ */
@@ -11434,7 +11589,9 @@ function renderQuestSummary(){
     if(!arr.length) return;
     const h = document.createElement('div');
     h.className = 'hqsum-sec';
-    h.textContent = label + ' (' + arr.length + ')';
+    /* ⚠ ป้ายหัวข้อรับ "id ไอคอน + ข้อความ" แยกกัน — ห้ามต่อ emoji เข้ากับข้อความเหมือนเดิม */
+    h.innerHTML = '<span class="hqs-ic">' + hIcon(label[0], label[1], 20) + '</span>'
+                + '<span>' + label[2] + ' (' + arr.length + ')</span>';
     list.appendChild(h);
     arr.forEach(it=>{
       const info = questItemInfo(it);
@@ -11448,8 +11605,9 @@ function renderQuestSummary(){
          ⚠ ใช้ emoji ⭐ ไม่ได้เพราะสีตายตัวเปลี่ยนไม่ได้ (และบางเครื่องไม่มี glyph ☆) */
       const star = '<span class="hqsum-stars' + (done ? '' : ' hqsum-stars-todo') + '">'
                  + [0,1,2].map(i => starSvg(i < n ? n : 0)).join('') + '</span>';
-      row.innerHTML = '<span class="hqsum-mark">' + (done ? '✅' : '❗') + '</span>'
-                    + '<span class="hqsum-ic">' + info.icon + '</span>'
+      row.innerHTML = '<span class="hqsum-mark">'
+                    + hIcon(done ? 'ui-check' : 'ui-alert', done ? '✅' : '❗', 20) + '</span>'
+                    + '<span class="hqsum-ic">' + hIcon(info.ico, info.icon, 22) + '</span>'
                     + '<span class="hqsum-name">' + info.name + '</span>'
                     + star
                     + '<span class="hqsum-place">' + info.place + '</span>';
@@ -11459,9 +11617,9 @@ function renderQuestSummary(){
   /* เฟส 10 (ข้อ 45.6) — แยก **งานสำคัญของวันนี้** (กระดาน + ครอบครัว) ออกจาก **งานช่วยเพื่อนบ้าน**
      งานหลักที่ยังไม่ทำมาก่อนเสมอ แล้วค่อยงานรอง แล้วปิดท้ายด้วยที่ทำเสร็จแล้ว (ขีดฆ่า ไม่ซ่อนทิ้ง)
      ⚠ ห้ามซ่อนงานรองที่ยังไม่ทำ — เด็กที่อยากเล่นต่อต้องหาเจอว่าเหลือใครบ้าง (ห้ามกั้นสิทธิ์) */
-  sec('❗ งานสำคัญของวันนี้',  sum.items.filter(x => !x.done &&  x.main), false);
-  sec('⭐ ช่วยเพื่อนบ้าน (ทำเพิ่มได้)', sum.items.filter(x => !x.done && !x.main), false);
-  sec('✅ ทำเสร็จแล้ว', sum.items.filter(x => x.done), true);
+  sec(['ui-alert', '❗', 'งานสำคัญของวันนี้'],  sum.items.filter(x => !x.done &&  x.main), false);
+  sec(['ui-star', '⭐', 'ช่วยเพื่อนบ้าน (ทำเพิ่มได้)'], sum.items.filter(x => !x.done && !x.main), false);
+  sec(['ui-check', '✅', 'ทำเสร็จแล้ว'], sum.items.filter(x => x.done), true);
 }
 /* ---------- แถบสถานะเพื่อนตัวน้อย ใต้ชื่อเด็ก (#house-pet-bar) ----------
    ชื่อสัตว์ · ไอคอนอาหารที่น้องกิน · หลอดความอิ่ม · ปุ่มให้อาหาร — โผล่เฉพาะตอนมีสัตว์เลี้ยงจริง
@@ -11573,7 +11731,7 @@ function petBarPaint(){
   if(nm) nm.textContent = info.emoji + ' ' + hPet.cfg.name;
   const f = PETCARE.FOOD.filter(x => x.id === fid)[0];
   const ic = $('hpb-food-ic');
-  if(ic) ic.textContent = f ? f.emoji : '';
+  if(ic) ic.innerHTML = f ? hIcon('food-' + f.id, f.emoji, 22) : '';
   const lf = $('hpb-left');
   if(lf) lf.textContent = '×' + left;
   const fd = $('hpb-food');
@@ -11619,7 +11777,7 @@ function offerCure(npcDef){
   closeQuestBoard();
   qzNpcId = npcDef.id;                        /* คุณหมอต้องยืนอยู่กับเด็กจนกว่าจะรักษาเสร็จ/กดไว้ก่อน */
   qzShow();
-  const who = $('hqz-who'); if(who) who.textContent = (npcDef.icon || '🩺') + ' ' + npcDef.name;
+  setIconName($('hqz-who'), npcDef.id, npcDef.icon || '🩺', npcDef.name);
   const s = $('hqz-sub'); if(s) s.textContent = 'รักษาเพื่อนตัวน้อย';
   const st = qzStage(); if(!st) return true;
   const line = document.createElement('div');
@@ -12101,6 +12259,40 @@ function compassGoHome(){
    ============================================================ */
 function cloneGrid(g){ return g.map(r=>r.slice()); }
 function decorKit(){ return {THREE, box, ball:sphere, cyl, cone, torus, mat:toonMat, shade:petShade}; }
+/* 🎨 ไอคอน SVG ของโหมดบ้าน (js/house-icons.js) — ไม่มีไอคอนตัวนั้น = ถอยไปใช้ emoji เดิม (ห้ามพัง)
+   ⚠ ใช้กับ "ไอคอนของของ/ปุ่ม/สถานะ" เท่านั้น · **อารมณ์/ท่าทางในฟองคำพูดยังเป็น emoji ตามเดิม**
+     (ผู้ใช้สั่ง 2026-08-18: emoji แสดงผลไม่เหมือนกันข้าม OS แต่ฟองอารมณ์ยังใช้ได้) */
+/* 💬 ฟองคำพูด: รูปตัวละครวงกลมชิดซ้าย + (ชื่อ / บทพูด) ทางขวา (ผู้ใช้เลือกแบบนี้ 2026-08-20)
+   ⚠ **ห้ามเอา `name`/`text` ไปต่อกับ innerHTML** — ชื่อ/ข้อความบางส่วนมาจากผู้ใช้ ⇒ ใส่ผ่าน textContent */
+function showTalkBubble(el, iconId, emoji, name, text){
+  if(!el) return;
+  el.innerHTML = '';
+  const av = document.createElement('span');
+  av.className = 'hnb-av';
+  av.innerHTML = hIcon(iconId, emoji, 40);
+  const body = document.createElement('span');
+  body.className = 'hnb-body';
+  const nm = document.createElement('b'); nm.textContent = name || '';
+  const tx = document.createElement('span'); tx.textContent = text || '';
+  body.appendChild(nm); body.appendChild(tx);
+  el.appendChild(av); el.appendChild(body);
+  el.classList.add('on');
+}
+/* 🧑 ตั้งข้อความ "ไอคอน + ชื่อ" ลง element โดยไอคอนเป็น SVG ได้ (เฟส B ของ ICON-PLAN.md)
+   ⚠ **ห้ามเอา `name` ไปต่อกับ innerHTML** — ชื่อบางที่มาจากผู้ใช้ (ชื่อเด็ก/ชื่อสัตว์เลี้ยง)
+     ⇒ ไอคอนใส่ผ่าน element ของตัวเอง · ชื่อใส่ผ่าน text node เสมอ */
+function setIconName(el, iconId, emoji, name){
+  if(!el) return;
+  el.textContent = '';
+  const ic = document.createElement('span');
+  ic.className = 'hnpc-ic';
+  ic.innerHTML = hIcon(iconId, emoji, 22);
+  el.appendChild(ic);
+  el.appendChild(document.createTextNode(' ' + (name == null ? '' : name)));
+}
+function hIcon(id, emoji, size){
+  return window.HouseIcons ? window.HouseIcons.htmlOr(id, emoji, size) : String(emoji || '');
+}
 function itemFootprint(item, rot){ const w=item.fw||1, d=item.fd||1; return (rot%2) ? {w:d, d:w} : {w, d}; }
 function footTiles(item, anchor, rot){
   const f = itemFootprint(item, rot), out = [];
@@ -12483,12 +12675,19 @@ function renderEditItems(){
     const locked = own <= 0;
     const empty = !locked && left <= 0;
     b.className = 'he-item' + (locked ? ' he-locked' : '') + (empty ? ' he-used' : '');
-    b.innerHTML = '<span class="he-item-emoji">'+it.emoji+'</span><span class="he-item-name">'+it.name+'</span>'
+    /* 🎨 ไอคอน SVG ของเฟอร์นิเจอร์ (เฟส A ของ ICON-PLAN.md) — ไม่มี = ถอยไปใช้ emoji เดิม */
+    b.innerHTML = '<span class="he-item-emoji">'+hIcon('furn-'+it.id, it.emoji, 26)+'</span><span class="he-item-name">'+it.name+'</span>'
                 + (locked ? '<span class="he-item-price"><i class="hs-coin"></i>'+SHOP.priceFurn(it.id)+'</span>'
                           : '<span class="he-item-left">'+left+'/'+own+'</span>');
     b.onclick = locked
       ? ()=>{ if(typeof playClick==='function') playClick();
-              if(typeof showToast==='function') showToast('🛋️', it.name+' ยังไม่มีนะ ไปซื้อได้ที่ห้างเฟอร์นิเจอร์ในเมือง!'); }
+              /* ⚠ **ห้ามฮาร์ดโค้ดว่า "ห้างเฟอร์นิเจอร์"** — ของนอกบ้าน (กองไฟ/รถเข็นสวน/บ่อน้ำ)
+                 ขายที่ร้านต้นไม้ · เครื่องเล่นขายที่ร้านของเล่น ⇒ ถามร้านจาก SHOP.shopForFurn()
+                 (ผู้ใช้ถาม 2026-08-19 ว่าของตกแต่งนอกบ้านซื้อที่ไหน — ข้อความเดิมชี้ผิดร้าน) */
+              const sh = (SHOP && SHOP.shopForFurn) ? SHOP.shopForFurn(it.id) : null;
+              if(typeof showToast==='function')
+                showToast(sh ? sh.icon : '🛋️',
+                          it.name+' ยังไม่มีนะ ไปซื้อได้ที่'+(sh ? sh.title : 'ร้านในเมือง')+'นะ!'); }
       : (empty
           ? ()=>{ if(typeof playClick==='function') playClick();
                   if(typeof showToast==='function') showToast('🛒', 'วาง'+it.name+'ครบทุกชิ้นที่มีแล้ว ถ้าอยากวางอีกต้องไปซื้อเพิ่มนะ'); }
@@ -12834,7 +13033,8 @@ function gatherCrowd(g){
     if(d > BAND_RANGE) continue;
     const was = n.dance > 0;
     n.dance = Math.min(BAND_MAX, (n.dance > 0 ? n.dance : 0) + 3.2);
-    n.faceT = Math.max(n.faceT || 0, 1.2);        /* หันหน้ามาทางคนเล่นดนตรี */
+    /* ⚠ ลุงตกปลาไม่หันตาม — เบ็ดจะกวาดขึ้นมาบนฝั่ง (กติกาเดียวกับตอนคุย/ตอนถือเควสต์) */
+    if(!n.def.fisher) n.faceT = Math.max(n.faceT || 0, 1.2);   /* หันหน้ามาทางคนเล่นดนตรี */
     if(!was) joined++;
   }
   if(joined > 0 && typeof spawnParticle === 'function'){
@@ -12883,6 +13083,18 @@ function startSit(g, item, act){
     sitState.spin = {piv:g.userData.spinPiv, anc:g.userData.spinSeat};
   }
   charBubble(act==='sleep' ? '💤' : (Math.random()<.5?'😊':'🎵'));
+  /* 🛏️ เฟส 17 — นอนบนเตียงตอนกลางคืน = ข้ามไปเช้าวันใหม่ (ข้อ 57.2)
+     ⚠ เปลี่ยนแค่ **แสงกลางวัน/กลางคืนของฉาก** เท่านั้น (ธีมเดียวกับปุ่มบนหน้าหลัก)
+       **ห้ามข้ามวันของระบบเกม** — เควสต์รายวัน/ผักที่ปลูก/ความหิวสัตว์ ยังผูกกับวันจริง
+       ไม่งั้นเด็กนอนรัวๆ = รีเซ็ตเควสต์และเร่งผักได้ไม่จำกัด
+     ⚠ ต้องเป็นเตียงจริง (`item.cat === 'bed'`) เก้าอี้ผ้าใบก็ใช้ act 'sleep' เหมือนกันแต่แค่เอนพัก
+     ⚠ หน่วงให้เห็นตัวเองนอนลงก่อน แล้วค่อยเปลี่ยนฉาก (จังหวะเดียวกับเควสต์กินข้าวพร้อมหน้า) */
+  if(act === 'sleep' && item && item.cat === 'bed' && USABLE)
+    setTimeout(()=>{ if(sitState && sitState.group === g) USABLE.sleepWake(); }, 900);
+  /* 📖 มุมอ่านหนังสือ: นั่งลงแล้วอ่านนิทานให้ 1 หน้า (ของชิ้นนี้ยังเป็น `action:'sit'` เหมือนเดิม
+     เพราะเด็กต้องได้นั่งจริง — ตัวอ่านนิทานอยู่ใน js/house-usable.js ชุดเดียวกับชั้นหนังสือ) */
+  if(act === 'sit' && item && USABLE && USABLE.useOf && (USABLE.useOf(item.id) || {}).viaSit)
+    setTimeout(()=>{ if(sitState && sitState.group === g) USABLE.readBook(g); }, 700);
 }
 function endSit(){
   if(sitState && sitState.swing) sitState.swing.piv.rotation.x = 0;   /* คืนชิงช้าให้หยุดนิ่ง */
@@ -13090,7 +13302,9 @@ function charPoseAt(kind, pr){
   const p = {lean:0, legX:0, hop:0, aL:0, aR:0, zL:CH_ARM_Z[0], zR:CH_ARM_Z[1]};
   /* เฟส 12.1 — ท่าประจำของเล่นสัตว์เลี้ยงอยู่ใน js/house-pet-toys.js ถามไฟล์นั้นก่อน
      ไม่รู้จักชื่อท่านี้ = ตกมาใช้ตารางข้างล่างตามเดิม (เพดาน lean ยังหนีบให้ท้ายฟังก์ชันเหมือนกัน) */
-  const tp = PET_TOYS3D.pose ? PET_TOYS3D.pose(kind, pr, {ARM_Z: CH_ARM_Z}) : null;
+  let tp = PET_TOYS3D.pose ? PET_TOYS3D.pose(kind, pr, {ARM_Z: CH_ARM_Z}) : null;
+  /* 🪑 เฟส 17 — ท่าใหม่ของของตกแต่งที่ใช้งานได้ (อ่านหนังสือ ฯลฯ) อยู่ใน js/house-usable.js */
+  if(!tp && USABLE && USABLE.pose) tp = USABLE.pose(kind, pr, {ARM_Z: CH_ARM_Z});
   if(tp){
     Object.assign(p, tp);
   }else if(kind === 'talk'){
@@ -13298,6 +13512,12 @@ function frame(t){
       const from = hChar.segFrom || hChar.tile;
       const to = hChar.path[hChar.seg];
       hChar.segT += dt*WALK_SPEED;
+      /* เดินอยู่ = ยกเลิกท่ากิจกรรมที่ค้าง ⚠ ต้องล้างข้อต่อด้วย ไม่ใช่แค่ทิ้ง charAct
+         (สาขาเดินเขียนทับแค่ rotation.x ของแขน/ขา ตัวจะเอียงค้างตามท่าเดิม)
+         ⚠ **ต้องอยู่ก่อน `finishArrive()` ของบล็อกข้างล่าง** — ของเดิมอยู่ท้ายสาขา ⇒ ท่าที่
+           `finishArrive()` เพิ่งตั้ง (อ่านหนังสือ/ล้างหน้า ฯลฯ) ถูกล้างทิ้งในเฟรมเดียวกันแบบเงียบๆ
+           (บั๊กจริงที่เจอตอนทำเฟส 17 · ท่าของเฟส 11 ไม่โดนเพราะตั้งท่าแบบหน่วงเวลาไว้) */
+      if(charAct){ charAct = null; clearCharPose(u); }
       const a = tileWorld(from), b = tileWorld(to);
       const k = Math.min(1, hChar.segT);
       charGroup.position.lerpVectors(a, b, k);
@@ -13317,9 +13537,6 @@ function frame(t){
         u.arms[0].rotation.x = -sw*.8; u.arms[1].rotation.x = sw*.8;
         u.rig.position.y = Math.abs(Math.sin(t*.014))*.05;
       }
-      /* เดินอยู่ = ยกเลิกท่ากิจกรรมที่ค้าง ⚠ ต้องล้างข้อต่อด้วย ไม่ใช่แค่ทิ้ง charAct
-         (สาขาเดินเขียนทับแค่ rotation.x ของแขน/ขา ตัวจะเอียงค้างตามท่าเดิม) */
-      if(charAct){ charAct = null; clearCharPose(u); }
     }else if(u && charAct){
       /* ---------- ท่าทางตอนทำกิจกรรม (เฟส 11) ----------
          ⚠ ต้องอยู่ **ก่อน** สาขา sitState/ยืนเฉยๆ ไม่งั้นท่ายืนจะเขียนทับทุกเฟรมจนไม่เห็นอะไร */
@@ -14394,6 +14611,13 @@ if(!homeView.hidden) houseBuddyRefresh();
   tp:(x,z)=>{ charGroup.position.set(outWX(x),0,outWZ(z));
               hChar.tile.x = x; hChar.tile.z = z; hChar.path = []; hChar.walking = false; },
   grid:()=>outGrid,
+  /* 📔 เฟส 16 — ชุดเทสสมุดสะสม (ชื่อคีย์ grep แล้วว่าไม่ซ้ำของเดิม)
+     critters = ชนิดสัตว์ป่าที่อยู่ในฉากตอนนี้ · startleAt = แตะตัวที่ i ผ่านทางเดินโค้ดจริง
+     farmTagged = สัตว์ในคอกที่ติด tag ให้จดสมุดได้ (ต้องเป็น 4 ชนิดของฟาร์มเท่านั้น) */
+  critters:()=>critters.map(c=>c.type),
+  startleAt:(i)=>{ const c = critters[i]; if(c) startleCritter(c.group); return !!c; },
+  farmTagged:()=>penAnimals.filter(a=>(a.g.children||[]).some(m=>m.userData && m.userData.hFarm))
+                           .map(a=>a.kind),
   npcTiles:()=>npcs.filter(n=>(n.tiles||[]).some(t=>inHomeZone(t.x,t.z))).map(n=>n.def.id),
   /* จำลอง "แตะฉากตรงช่องนี้" ผ่านทางเดินโค้ดจริงทั้งเส้น (ใช้เทสว่าม้านั่งในเมืองนั่งได้จริงไหม) */
   tapScene:(x,z)=>tapStaticScene(new THREE.Vector3(outWX(x),0,outWZ(z))),
@@ -14530,6 +14754,32 @@ if(!homeView.hidden) houseBuddyRefresh();
     decorInteract(g);
     return true;
   },
+  /* 🪑 เฟส 17 — ชุดเทสของตกแต่งที่ใช้งานได้: แตะของชิ้นที่ id นี้ในบ้านผ่านทางเดินโค้ดจริง
+     (ชื่อคีย์ grep แล้วว่าไม่ซ้ำของเดิม) · useState = สถานะที่มองเห็นได้ของชิ้นนั้น */
+  useIndoor: (id)=>{
+    const g = (decorGroups.in || []).filter(x=>{
+      const d = x.userData && x.userData.deco;
+      return d && d.item && d.item.id === id;
+    })[0];
+    if(!g) return false;
+    decorInteract(g);
+    return true;
+  },
+  /* 👋 เฟส 18 — ความจำของเพื่อนบ้าน (ชุดเทส) */
+  neigh: ()=> NEIGH,
+  /* action ที่ผูกกับของชิ้นนั้นในคลังเฟอร์นิเจอร์ (ชุดเทสเฟส 17) */
+  furnAct: (id)=>{ const it = FURN.byId[id]; return it ? (it.action || '') : null; },
+  /* คลังนิทาน/ตารางของที่ใช้งานได้ของเฟส 17 (ชุดเทสไล่ตรวจ) */
+  usable: ()=> USABLE ? {tales: (USABLE.TALES || []).length, use: Object.keys(USABLE.USE || {})} : null,
+  useState: (id)=>{
+    const g = (decorGroups.in || []).filter(x=>{
+      const d = x.userData && x.userData.deco;
+      return d && d.item && d.item.id === id;
+    })[0];
+    if(!g) return null;
+    return {tvOn: !!g.userData.tvOn, bars: (g.userData.tvBars || []).length,
+            boost: g.userData.tankBoost || 0, shift: g.userData.animShift || 0};
+  },
   /* งานเดินที่กำลังค้างอยู่ (ชุดเทสเควสต์ family-time / shopping-list) */
   walkQuest: ()=> walkQuest ? {target: walkQuest.target, idx: walkQuest.run.idx} : null,
   /* รอยเท้าบอกจุดหมาย — ชุดเทสตรวจว่าปักตรงช่องปลายทางจริงและหายเมื่อเดินถึง */
@@ -14591,5 +14841,14 @@ if(!homeView.hidden) houseBuddyRefresh();
   feeding:()=>!!feedAnim,
   petPos:()=>hPet.group ? {x:hPet.group.position.x, z:hPet.group.position.z} : null,
   charPos:()=>charGroup ? {x:charGroup.position.x, z:charGroup.position.z} : null,
-  sitting:()=>!!sitState, tile:()=>({x:hChar.tile.x, z:hChar.tile.z})};
+  sitting:()=>!!sitState, tile:()=>({x:hChar.tile.x, z:hChar.tile.z}),
+  /* แผ่น atlas ของป้ายร้าน — ชุดเทสใช้ดูว่าป้ายในเมืองวาดด้วยไอคอน SVG จริงไหม */
+  signAtlas:()=> (signMat && signMat.map ? signMat.map.image : null),
+  /* ป้ายร้านทุกอันในเมือง + ไอคอน SVG ที่ผูกไว้ (null = ยังไม่มี ⇒ ป้ายนั้นยังเป็น emoji) */
+  signIcons:()=> SIGN_ICONS.map(e => ({e, id: SIGN_SVG[e] || null})),
+  /* ชาวบ้านทั้งหมด (id ใช้เป็น id ไอคอนตรงๆ) — ชุดเทสใช้ตรวจว่ามีไอคอนครบ */
+  npcDefs:()=> NPC_DEFS.map(d => ({id:d.id, name:d.name})),
+  /* ชุดเทส: วาดฟองคำพูดผ่านทางเดินโค้ดจริง */
+  talkBubble:(ico, emoji, name, text)=> showTalkBubble($('house-npc-bubble'), ico, emoji, name, text),
+  openBoard:()=> openQuestBoard()};
 })();

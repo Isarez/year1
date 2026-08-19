@@ -65,12 +65,20 @@ function renderQuestion(){
 
   if(q.pattern){
     $('q-emoji').innerHTML = '<div class="pattern-row">'+
-      q.pattern.map(p=>'<span class="pat-tile'+(graphemeLen(p)>1?' pat-multi':'')+'">'+p+'</span>').join('')+
+      q.pattern.map(p=>{
+        const OI = window.OwlIcons;
+        const body = (OI && OI.hasEmoji(p)) ? OI.text(p, 30) : p;
+        return '<span class="pat-tile'+(graphemeLen(p)>1?' pat-multi':'')+'">'+body+'</span>';
+      }).join('')+
       '<span class="pat-tile pat-missing">?</span></div>';
   } else if(q.img){
     $('q-emoji').innerHTML = '<img src="'+q.img+'" alt="" style="max-width:100%;border-radius:12px;display:block;margin:0 auto;">';
   } else {
-    $('q-emoji').textContent = q.emoji||'';
+    /* 🎨 รูปประกอบโจทย์: emoji ตัวไหนมีไอคอน SVG ให้ใช้รูปวาด (ผู้ใช้สั่ง — emoji ข้าม OS ได้คนละรูป)
+       ⚠ **ไม่แตะข้อความบนปุ่มตัวเลือก** เพราะข้อความนั้นคือเฉลยที่ระบบใช้เทียบคำตอบ */
+    const OI = window.OwlIcons;
+    if(OI && OI.hasEmoji(q.emoji || '')) $('q-emoji').innerHTML = OI.text(q.emoji, 46);
+    else $('q-emoji').textContent = q.emoji||'';
   }
   $('q-text').textContent = q.q;
 

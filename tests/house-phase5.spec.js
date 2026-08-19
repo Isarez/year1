@@ -35,7 +35,12 @@ test('เฟส 5: เควสต์สุ่มกลไกกลุ่ม C �
   });
   console.log(JSON.stringify(r.cnt));
   const total = Object.values(r.cnt).reduce((a,b)=>a+b,0);
-  expect(r.cnt.quiz/total).toBeGreaterThan(0.35);
+  /* ⚠ **เกณฑ์นี้ถูกกลับด้านเมื่อ 2026-08-20 ไม่ได้ลบทิ้ง**
+     เดิม `quiz` ถูกล็อกไว้ 40% ("ต้องเจอบ่อยที่สุดเสมอ") ⇒ กว่าครึ่งของงานเป็นการ์ดตอบคำถาม
+     ผู้ใช้สั่งให้ **เฉลี่ยเจอหลายหมวดหมู่** ⇒ ตอนนี้ทุกกลไกในพูลมีโอกาสใกล้เคียงกัน
+     สิ่งที่ยังต้องจริงคือ **quiz ต้องยังอยู่ในพูลเสมอ** (ทุก NPC ตอบคำถามได้) ไม่ใช่ต้องเจอบ่อยสุด */
+  expect(r.cnt.quiz, 'quiz ต้องยังถูกแจกอยู่ (ห้ามหายไปจากพูล)').toBeGreaterThan(0);
+  expect(r.cnt.quiz/total, 'แต่ต้องไม่ครองกระดานอีกต่อไป').toBeLessThan(0.30);
   const engHits = r.engines.reduce((a,m)=>a+(r.cnt[m]||0),0);
   expect(engHits, 'ต้องสุ่มเจอเกมกลุ่ม C บ้าง').toBeGreaterThan(0);
   expect(errs).toEqual([]);
