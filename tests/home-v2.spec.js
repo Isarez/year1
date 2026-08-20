@@ -153,3 +153,36 @@ test('HV9: ช่องตัวละครเป็นฉากจำลอง
   expect(r.n, 'ฉากต้องมีของมากกว่าแค่ไฟกับตัวละคร').toBeGreaterThan(5);
   expect(r.cap, 'ป้ายชื่อสัตว์เลี้ยงต้องอยู่ในกรอบฉาก').toBe(true);
 });
+
+test('HV10: ปุ่ม "ย้อนกลับ" ในหน้าทำโจทย์ → กลับหน้าเลือกเด็ก (ไม่ใช่หน้าเลือกโหมด)', async ({ page }) => {
+  const errs = await open(page, true);
+  await card(page, 1).click();
+  await page.locator('.h2-mode-quiz').click();
+  await expect(page.locator('#home-view')).toBeVisible();
+  const btn = page.locator('#home-exit-btn');
+  await expect(btn).toBeVisible();
+  await expect(btn, 'ป้ายปุ่มต้องเป็น "ย้อนกลับ"').toContainText('ย้อนกลับ');
+  await btn.click();
+  await expect(page.locator('#child-select-view')).toBeVisible();
+  await expect(page.locator('#landing-view'), 'หน้าเลือกโหมดต้องไม่โผล่อีก').toBeHidden();
+  expect(errs).toEqual([]);
+});
+
+test('HV11: โปรไฟล์เก่าที่ยังไม่มีวันเกิด — ใส่วันเกิดแล้วกลับมากางแถวเดิม ไม่ผ่านหน้าเลือกโหมด', async ({ page }) => {
+  await page.addInitScript(()=>{
+    localStorage.setItem('p1quiz_children', JSON.stringify([
+      { id:'old1', name:'เด็กเก่า', emoji:'🐧' }]));      /* ไม่มี birthDate */
+    localStorage.setItem('p1quiz_music', 'off');
+  });
+  await page.goto('/?home=v2');
+  await page.waitForSelector('#child-list .child-card');
+  await card(page, 0).click();
+  await expect(page.locator('#age-modal')).toBeVisible();
+  await page.selectOption('#age-modal .dob-day', '5');
+  await page.selectOption('#age-modal .dob-mon', '3');
+  await page.selectOption('#age-modal .dob-year', String(new Date().getFullYear() - 7));
+  await page.locator('#age-modal-confirm-btn').click();
+  await expect(page.locator('#child-select-view')).toBeVisible();
+  await expect(page.locator('#landing-view')).toBeHidden();
+  await expect(page.locator('.h2-panel'), 'ต้องกางแถวของเด็กคนนั้นให้เลย').toHaveCount(1);
+});

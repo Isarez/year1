@@ -205,6 +205,20 @@
   /* เรียกจาก renderChildSelect() ทุกครั้งที่วาดรายชื่อใหม่ */
   function reset(){ collapse(); }
 
+  /* กลับมาหน้าเลือกเด็กแล้วกางแถวของเด็กคนนี้ให้เลย — ใช้ตอนจบ popup ถามวันเกิด
+     (ไม่งั้นเด็กจะถูกโยนไปหน้าเลือกโหมดซึ่งกำลังเลิกใช้) · คืน false ถ้าใช้ไม่ได้ ให้ผู้เรียกทำทางเดิม */
+  function openFor(id){
+    if(!on()) return false;
+    if(typeof renderChildSelect !== 'function') return false;
+    renderChildSelect();
+    const kids = (typeof children !== 'undefined' && children) || [];
+    const i = kids.findIndex(c => c.id === id);
+    const rows = $('child-list') ? $('child-list').querySelectorAll('.child-row') : [];
+    if(i < 0 || !rows[i]) return false;
+    toggle(kids[i], rows[i]);
+    return true;
+  }
+
   /* เรียกจาก INIT — มีเด็กที่เคยเข้าเมืองอยู่แล้ว ⇒ โหลดชุด 3D พร้อมม่านก่อนให้เลือก
      เด็กใหม่ล้วน (ยังไม่มีใครมีบ้าน) ⇒ ไม่โหลดอะไรเลย จะได้ไม่ต้องรอ 2 MB ฟรีๆ */
   function boot(){
@@ -221,6 +235,6 @@
 
   window.addEventListener('resize', ()=>{ if(openId && window.HouseCharView) HouseCharView.resize(); });
 
-  window.OwlHome2 = {on, toggle, reset, boot, collapse,
+  window.OwlHome2 = {on, toggle, reset, boot, collapse, openFor,
     /* ชุดเทส */ _openId:()=>openId, _enabled:()=>enabled};
 })();

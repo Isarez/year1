@@ -352,6 +352,8 @@ function confirmAgeModal(){
     selectedGrade = activeChild.grade;
   }
   closeOverlay('age-modal');
+  /* หน้าแรกแบบรวมร่าง: กลับไปกางแถวของเด็กคนนี้ต่อ **ไม่ผ่านหน้าเลือกโหมด** (กำลังเลิกใช้) */
+  if(window.OwlHome2 && activeChild && OwlHome2.openFor(activeChild.id)) return;
   enterHome();
 }
 

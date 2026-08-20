@@ -461,7 +461,12 @@
      แตะชื่อเด็ก → แถวนั้นกางออก โชว์ตัวละคร 3D เต็มตัว + ปุ่มเลือกโหมด
      ⚠ แผงกางออกเป็น element พี่น้องของ .child-row (ไม่ได้อยู่ข้างใน)
        เพราะ .child-row เป็น flex แนวนอนที่มีปุ่มแก้ไข emoji อยู่ขวาสุด */
-  .child-row.h2-open{border-color:var(--eng); border-bottom-left-radius:0; border-bottom-right-radius:0;}
+  /* ⚠ เส้นล่างต้องกลืนกับพื้นแผง (ไม่ใช่เขียว) แถวกับแผงจะได้ดูเป็นบล็อกเดียวกัน
+     ใช้สีพื้นแทนการลบเส้นทิ้ง — ลบแล้วความสูงแถวจะขยับ 3px ตอนกาง */
+  .child-row.h2-open{
+    border-color:var(--eng); border-bottom-color:var(--cream);
+    border-bottom-left-radius:0; border-bottom-right-radius:0;
+  }
   .child-row.h2-open .cnav{transform:rotate(90deg);}
   .child-card .cnav{transition:transform .2s;}
   .child-row.h2-open .child-card .cname{color:#2E8F63;}

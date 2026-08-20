@@ -118,32 +118,41 @@ test('🎨 จานสีตัวละคร/สัตว์เลี้ย�
   expect(errs).toEqual([]);
 });
 
-/* 🚪 ปุ่มออกจากโหมดทำโจทย์ (ผู้ใช้แจ้ง 2026-08-17)
-   เดิมทางออกเดียวของหน้าเลือกหมวดคือ "กดที่ชื่อเด็กบนแถบบน" ซึ่งไม่มีอะไรบอกว่ากดได้ */
-test('🚪 หน้าเลือกหมวดต้องมีปุ่มออกที่อ่านออก และกดแล้วกลับหน้าเลือกโหมด', async ({ page }) => {
+/* 🚪 ปุ่มย้อนกลับบนหน้าเลือกหมวด (ผู้ใช้แจ้ง 2026-08-17)
+   เดิมทางออกเดียวของหน้าเลือกหมวดคือ "กดที่ชื่อเด็กบนแถบบน" ซึ่งไม่มีอะไรบอกว่ากดได้
+   ⚠ **เทสนี้ถูกกลับด้าน ไม่ได้ลบทิ้ง (2026-08-20 · ผู้ใช้สั่ง)**
+     เดิมกดแล้วกลับ "หน้าเลือกโหมด" — ตอนนี้หน้านั้นกำลังเลิกใช้ (แทนด้วยหน้าแรกแบบรวมร่าง)
+     ⇒ ปลายทางใหม่คือ **หน้าเลือกเด็ก** และป้ายปุ่มเปลี่ยนเป็น "ย้อนกลับ" */
+test('🚪 หน้าเลือกหมวดต้องมีปุ่มย้อนกลับที่อ่านออก และกดแล้วกลับหน้าเลือกเด็ก', async ({ page }) => {
   const errs = await seed(page, null);
   await page.locator('#landing-quiz').click();
   await expect(page.locator('#home-view')).toBeVisible();
 
   const btn = page.locator('#home-exit-btn');
-  await expect(btn, 'ต้องเห็นปุ่มออกบนหน้าเลือกหมวด').toBeVisible();
+  await expect(btn, 'ต้องเห็นปุ่มย้อนกลับบนหน้าเลือกหมวด').toBeVisible();
   /* ⚠ **ต้องมีข้อความ ไม่ใช่ลูกศรเปล่า** — ต้นเหตุเดิมคือทางออกไม่มีคำอธิบาย เด็กไม่รู้ว่ากดได้ */
-  expect((await btn.textContent()).replace(/\s+/g, ' ').trim()).toContain('ออก');
+  expect((await btn.textContent()).replace(/\s+/g, ' ').trim()).toContain('ย้อนกลับ');
   expect((await btn.textContent()).length, 'ต้องยาวกว่าลูกศรตัวเดียว').toBeGreaterThan(3);
 
   await btn.click();
-  await expect(page.locator('#landing-view'), 'กดแล้วต้องกลับหน้าเลือกโหมด').toBeVisible();
+  await expect(page.locator('#child-select-view'), 'กดแล้วต้องกลับหน้าเลือกเด็ก').toBeVisible();
+  await expect(page.locator('#landing-view'), 'ห้ามแวะหน้าเลือกโหมดอีก').toBeHidden();
   await expect(page.locator('#home-view')).toBeHidden();
   expect(errs).toEqual([]);
 });
 
-test('🚪 โหมดบ้านปิดอยู่ = ต้องซ่อนปุ่มออก (ไม่มีหน้าเลือกโหมดให้กลับไป)', async ({ page }) => {
+/* ⚠ **กลับด้านจากเทสเดิม (2026-08-20)** — เดิมบังคับว่า "โหมดบ้านปิด = ต้องซ่อนปุ่ม"
+   เพราะปลายทางคือหน้าเลือกโหมดซึ่งไม่โผล่ กดแล้วเป็นทางตัน
+   ตอนนี้ปลายทางคือหน้าเลือกเด็กซึ่งมีอยู่จริงเสมอ ⇒ ต้องโชว์ปุ่มได้ทุกกรณี */
+test('🚪 โหมดบ้านปิดอยู่ ปุ่มย้อนกลับก็ยังต้องใช้ได้ (ปลายทางคือหน้าเลือกเด็ก มีอยู่เสมอ)', async ({ page }) => {
   await seed(page, null);
-  /* จำลองสภาพ branch ที่ปิดโหมดบ้าน: ปุ่มเข้าเมืองถูกซ่อน ⇒ หน้าเลือกโหมดไม่โผล่ */
+  await page.locator('#landing-quiz').click();
+  await expect(page.locator('#home-view')).toBeVisible();
   await page.evaluate(()=>{
     document.getElementById('house-entry-btn').hidden = true;
     if(window.OwlLanding) OwlLanding.refreshQuizExitBtn();
   });
-  /* 🔒 กดแล้วไม่มีอะไรเกิดขึ้น = ทางตัน ผิดกติกาเหล็กข้อ 1 ⇒ ต้องซ่อนไปเลย */
-  await expect(page.locator('#home-exit-row')).toBeHidden();
+  await expect(page.locator('#home-exit-row')).toBeVisible();
+  await page.locator('#home-exit-btn').click();
+  await expect(page.locator('#child-select-view')).toBeVisible();
 });
