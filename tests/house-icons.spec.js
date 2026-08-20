@@ -6,6 +6,7 @@
    ชุดนี้คุม: คลังไอคอนครบทุกไอเทม · เป็น SVG จริง · ไม่ซ้ำกัน · หน้าจอใช้ SVG จริงไม่ใช่ emoji
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'ico', name: 'ไอคอน', emoji: '🎨', birthDate: '2018-06-01', grade: 'p3' };
 const CHAR = { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 };
@@ -23,7 +24,7 @@ async function house(page, extra) {
   }, [CHILD, CHAR, extra]);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HouseIcons && !!window.HouseBook && !!window.HousePlay, null, { timeout: 30000 });
   return errs;

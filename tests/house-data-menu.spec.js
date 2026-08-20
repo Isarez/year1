@@ -23,7 +23,10 @@ async function pick(page) {
       char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
     }));
   }, CHILD);
-  await page.goto('/');
+  /* ⚠ `?home=v1` — ตั้งแต่ 2026-08-20 หน้าแรกเป็นแบบรวมร่างซึ่ง **ไม่มีหน้าเลือกโหมดแล้ว**
+     ทางเข้า "จัดการข้อมูล" ของหน้านั้นจึงเหลือปุ่มบนแถบหน้าเลือกเด็ก (#clear-btn) กับเมนูเฟือง
+     ในโหมดบ้าน — เทสในไฟล์นี้คุมทั้ง 3 ทางเหมือนเดิม แต่ทางที่ 2 ต้องเปิดหน้าเก่ามาดู */
+  await page.goto('/?home=v1');
   await page.locator('#child-select-view .child-card').first().click();
   await page.waitForSelector('#landing-view:not([hidden])', { timeout: 20000 });
 }

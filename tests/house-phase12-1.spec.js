@@ -14,6 +14,7 @@
      7. **ราคาต้องไล่ขึ้นตามคุณค่า** และของแถมฟรีต้องยังฟรีอยู่
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p121', name: 'ปั้นหยา', emoji: '🐰', birthDate: '2019-03-02', grade: 'p2' };
 
@@ -34,7 +35,7 @@ async function house(page, unlockAll) {
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HousePetCare && !!window.HouseShop, null, { timeout: 30000 });
   if (unlockAll) {

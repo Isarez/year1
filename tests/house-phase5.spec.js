@@ -3,6 +3,7 @@
    ไม่ได้เขียนเกมใหม่ · ตัวจริงอยู่ js/games-*.js ห่อด้วย js/owl-games.js
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 const CHILD = { id: 'p5a', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
 async function house(page){
   const errs=[]; page.on('pageerror', e=>errs.push(String(e)));
@@ -16,7 +17,7 @@ async function house(page){
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(()=>window.__houseDbg && window.__houseDbg.ready(), null, {timeout:30000});
   return errs;
 }

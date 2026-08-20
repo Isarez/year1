@@ -14024,10 +14024,14 @@ function hbLoop(now){
     let armLT = -.16 - swing, armRT = .16 + swing, headT = Math.sin(t*1.1)*.05;
     if(hbWaveK>0){                                                /* โบกมือทักทาย */
       hbWaveK = Math.max(0, hbWaveK - dt);
-      /* ยกแขนขึ้น-ลงด้วย ease (เดิมเป็นเส้นตรง หัว-ท้ายจะสะดุด) แล้วค่อยสะบัดมือ */
+      /* ยกแขนขึ้น-ลงด้วย ease (เดิมเป็นเส้นตรง หัว-ท้ายจะสะดุด) แล้วค่อยสะบัดมือ
+         🖐️ **ต้องเป็นแขนข้าง `arms[0]` เท่านั้น** (ผู้ใช้สั่ง 2026-08-20)
+            อีกข้าง (`arms[1]`) คือแขนที่ `addHoldItem()` เอาของไปแขวนไว้ในหน้าแต่งตัว
+            โบกข้างนั้นแล้วของที่ถือจะเหวี่ยงตามขึ้นไปด้วย
+         ⚠ ทิศหมุนของ 2 ข้างกลับด้านกัน (สร้างจาก `[-1,1].map`) ⇒ เป้าหมายต้องติดลบ */
       const k = hbEase(Math.min((HB_WAVE_DUR-hbWaveK)*2.6, hbWaveK*2.6));
-      armRT = (1-k)*armRT + k*(2.35 + Math.sin(t*13)*.38);
-      headT += k*.07;                                             /* เอียงหัวเข้าหามือที่โบก */
+      armLT = (1-k)*armLT + k*(-(2.35 + Math.sin(t*13)*.38));
+      headT -= k*.07;                                             /* เอียงหัวเข้าหามือที่โบก */
     }
     /* ไล่เข้าหาเป้าแบบ exponential — ท่าเปลี่ยนกลางคันก็ไหลต่อเนื่อง ไม่กระชาก */
     hbArmL  = hbDamp(hbArmL,  armLT, 16, dt);
@@ -14240,10 +14244,11 @@ function cvLoop(now){
     const swing = Math.sin(t*2.4)*.03;
     let armLT = -.16 - swing, armRT = .16 + swing, headT = Math.sin(t*1.1)*.05;
     if(cvWaveK>0){
+      /* 🖐️ โบกด้วยแขน `arms[0]` เหมือน home buddy — อีกข้างเป็นแขนที่ถือของ (ดูหมายเหตุที่ hbLoop) */
       cvWaveK = Math.max(0, cvWaveK - dt);
       const k = hbEase(Math.min((HB_WAVE_DUR-cvWaveK)*2.6, cvWaveK*2.6));
-      armRT = (1-k)*armRT + k*(2.35 + Math.sin(t*13)*.38);
-      headT += k*.07;
+      armLT = (1-k)*armLT + k*(-(2.35 + Math.sin(t*13)*.38));
+      headT -= k*.07;
     }
     cvArmL  = hbDamp(cvArmL,  armLT, 16, dt);
     cvArmR  = hbDamp(cvArmR,  armRT, 16, dt);

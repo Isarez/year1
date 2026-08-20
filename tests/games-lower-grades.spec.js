@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { clickEnterQuiz } = require('./helpers');
 
 /* ============================================================
    ชุดแก้ 2026-08-17 (ผู้ใช้แจ้ง 3 ข้อ)
@@ -47,7 +48,7 @@ test('🔌🧩 ป.1 เล่นได้จริง และได้เน�
   });
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-quiz').click();
+  await clickEnterQuiz(page);
   await page.waitForTimeout(500);
   const r = await page.evaluate(() => {
     startCircuitGame('p1-circuit');
@@ -211,7 +212,7 @@ test('✋ นกฮูกสั่ง: ค้างท่าครบ 2 วิ �
   });
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-quiz').click();
+  await clickEnterQuiz(page);
   await page.waitForTimeout(500);
   const r = await page.evaluate(async () => {
     startEfGame('p1-iq3');

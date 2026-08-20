@@ -3,6 +3,7 @@
    ⚠ แยกไฟล์เพราะ launchOptions ต้องอยู่ระดับบนสุดของไฟล์ (Playwright บังคับ)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 /* เทสพฤติกรรมจริง — เปิดกล้อง (กล้องปลอมของ chromium) แล้วดูว่ากราฟคายผลลัพธ์ออกมาไหม
  ⚠ กล้องปลอมเป็นลายเคลื่อนไหว ไม่ใช่มือคน ⇒ ตรวจได้แค่ว่า "ท่อทำงาน" ไม่ใช่ "เจอมือ"
@@ -27,7 +28,7 @@ test('เปิดกล้องในการ์ดเควสต์แล�
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.evaluate(() => window.HouseQuestUI.playTest({ mech: 'quiz', title: '🧪 กล้อง' }));
   await expect(page.locator('#handplay-toggle')).toBeVisible();
@@ -69,7 +70,7 @@ test('ปิดการ์ดคำถามแล้วเปิดกล้�
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
 
   const got = [];

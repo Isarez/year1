@@ -9,6 +9,7 @@
      ④ **ห้ามแตะข้อความบนปุ่มตัวเลือก** — ข้อความนั้นคือเฉลยที่ระบบใช้เทียบคำตอบ
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterQuiz } = require('./helpers');
 
 const CHILD = { id: 'icomain', name: 'ไอคอน', emoji: '🎨', birthDate: '2018-06-01', grade: 'p1' };
 
@@ -87,8 +88,7 @@ test('IM4: โจทย์ควิซ — รูปประกอบเป็�
   const errs = await main(page);
   await page.locator('#child-select-view .child-card').first().click();
   /* เปิดหน้าเลือกโหมด → ทำโจทย์ */
-  const quiz = page.locator('#landing-quiz');
-  if(await quiz.count()) await quiz.click();
+  await clickEnterQuiz(page);
   await page.locator('#cat-grid .cat-card').first().click();
   await page.waitForSelector('#choice-grid .choice-btn', { timeout: 20000 });
   const r = await page.evaluate(() => {

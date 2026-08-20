@@ -15,6 +15,7 @@
      4. **ห้ามมี dead end** — เกมที่มีแต่หมวดชั้นสูงต้องไม่ถูกแจกให้เด็กเล็ก
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = g => ({ id: 'eng-' + g, name: 'มะปราง', emoji: '🦊', birthDate: '2016-04-01', grade: g });
 
@@ -49,7 +50,7 @@ async function house(page, grade) {
   }, CHILD(grade || 'p6'));
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HouseGames && !!window.OwlGames, null, { timeout: 30000 });
   return errs;

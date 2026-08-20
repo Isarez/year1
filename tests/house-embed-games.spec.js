@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { clickEnterQuiz } = require('./helpers');
 
 /* ============================================================
    🎮 เกมของหน้าหลักที่ยืมมาเล่นในการ์ดเควสต์ — 3 ข้อที่ผู้ใช้แจ้ง 2026-08-17
@@ -190,7 +191,7 @@ test('🪙 ร้านค้านกฮูก: ต้องใช้เหร�
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-quiz').click();
+  await clickEnterQuiz(page);
   await page.waitForTimeout(600);
   await page.evaluate(() => {
     const t = Array.from(document.querySelectorAll('.cat-card'))

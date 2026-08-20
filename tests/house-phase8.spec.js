@@ -8,6 +8,7 @@
      4. ปุ่มเลือกในหน้าแต่งตัวต้องเป็น "รูปของชิ้นนั้น" ไม่ใช่ตัวเลข (เด็ก 5 ขวบอ่านเลขแล้วไม่รู้ว่าคืออะไร)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p8a', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
 async function house(page){
@@ -23,7 +24,7 @@ async function house(page){
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   return errs;
 }

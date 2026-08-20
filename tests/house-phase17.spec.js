@@ -9,6 +9,7 @@
      - ของที่กดแล้วต้องมีอะไรเกิดขึ้นเสมอ (ห้ามเงียบ)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p17', name: 'บ้านหนู', emoji: '🪑', birthDate: '2018-06-01', grade: 'p3' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
@@ -37,7 +38,7 @@ async function house(page, extra) {
   }, [CHILD, HKEY, CHAR, DECOR_IN, extra]);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.evaluate(() => window.__houseDbg.enterHouse());
   await page.waitForFunction(() => window.__houseDbg.scene() === 'in', null, { timeout: 20000 });

@@ -31,18 +31,18 @@ async function open(page, flag){
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_house_hv1', JSON.stringify(house));
   }, [KIDS, HOUSE]);
-  await page.goto(flag ? '/?home=v2' : '/');
+  await page.goto(flag ? '/?home=v2' : '/?home=v1');
   await page.waitForSelector('#child-list .child-card');
   return errs;
 }
 const card = (page, i) => page.locator('#child-list .child-card').nth(i);
 
-test('HV1: ไม่ใส่ธง = ของเดิมเป๊ะ (เลือกเด็กแล้วไปหน้าเลือกโหมด ไม่มีแถวกาง)', async ({ page }) => {
+test('HV1: ?home=v1 = ทางเดิมยังใช้ได้ (เลือกเด็กแล้วไปหน้าเลือกโหมด ไม่มีแถวกาง)', async ({ page }) => {
   const errs = await open(page, false);
   expect(await page.evaluate(()=> window.OwlHome2 && OwlHome2.on())).toBe(false);
   await card(page, 0).click();
   await expect(page.locator('#landing-view')).toBeVisible();
-  expect(await page.locator('.h2-panel').count(), 'ธงปิดต้องไม่มีแผงกางเลย').toBe(0);
+  expect(await page.locator('.h2-panel').count(), 'ปิดธงแล้วต้องไม่มีแผงกางเลย').toBe(0);
   expect(errs).toEqual([]);
 });
 
@@ -134,7 +134,7 @@ test('HV7: ฟอร์มเพิ่มเด็กมี 2 ปุ่ม (เ�
   expect(errs).toEqual([]);
 });
 
-test('HV8: ไม่ใส่ธง → ฟอร์มเพิ่มเด็กเหมือนเดิมทุกอย่าง (ปุ่มเดียว ไม่มีปุ่มเข้าเมือง)', async ({ page }) => {
+test('HV8: ?home=v1 → ฟอร์มเพิ่มเด็กเป็นแบบเดิม (ปุ่มเดียว ไม่มีปุ่มเข้าเมือง)', async ({ page }) => {
   await open(page, false);
   await page.locator('#child-add-new-btn').click();
   await expect(page.locator('#child-submit-house')).toBeHidden();

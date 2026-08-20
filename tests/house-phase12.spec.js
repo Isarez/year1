@@ -11,6 +11,7 @@
      6. **ลูกบอลแถมฟรีมากับน้อง** — ซื้อสัตว์แล้วต้องเล่นโยนบอลได้ทันทีโดยไม่ต้องซื้ออะไรอีก
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p12a', name: 'ข้าวปั้น', emoji: '🐣', birthDate: '2019-05-10', grade: 'p2' };
 
@@ -31,7 +32,7 @@ async function house(page, seed) {
   }, [CHILD, seed || null]);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HousePetCare && !!window.HouseShop, null, { timeout: 30000 });
   return errs;

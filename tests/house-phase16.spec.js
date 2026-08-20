@@ -9,6 +9,7 @@
      - สมุดสะสม **ไม่จ่ายเหรียญ** (กันเงินเฟ้อ — ของสะสมทั้งเกมไม่จ่ายเงินเลย)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p16', name: 'นักสะสม', emoji: '📔', birthDate: '2018-06-01', grade: 'p3' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
@@ -27,7 +28,7 @@ async function houseSeed(page, seed) {
   }, [CHILD, HKEY, seed || {}, CHAR]);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HouseBook && !!window.HousePlay, null, { timeout: 30000 });
   return errs;

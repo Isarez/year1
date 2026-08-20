@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { openApp, visibleViews } = require('./helpers');
+const { openApp, visibleViews, clickEnterQuiz } = require('./helpers');
 
 test.describe('โหลดแอปและหน้าหลัก', () => {
   test('เปิดแอปได้ ไม่มี error และมีหมวดครบตามข้อมูล', async ({ page }) => {
@@ -57,8 +57,7 @@ test.describe('โหลดแอปและหน้าหลัก', () => {
     await page.locator('#child-select-view .child-card').first().click();
     /* branch นี้เปิดโหมดบ้านไว้ ⇒ เลือกเด็กแล้วแวะหน้าเลือกโหมดก่อน (บน main ที่ปิดไว้จะข้ามไปเลย)
        เทสนี้ยกมาจาก main ตอน merge v2.0.2 จึงตกขั้นนี้ไป — ต้องรองรับทั้ง 2 ฝั่ง */
-    const landing = page.locator('#landing-quiz');
-    if(await landing.isVisible()) await landing.click();
+    await clickEnterQuiz(page);
     await expect(page.locator('#home-view')).toBeVisible();
     await expect(page.locator('#reload-btn')).toBeHidden();           // หน้าหลัก → ซ่อน
 

@@ -10,6 +10,7 @@
      6. มินิเกมที่เล่าเรื่องในบ้านยังต้องเป็นของเควสต์ครอบครัวล้วน (ดู tests/house-family-games.spec.js)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p67a', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
 async function house(page){
@@ -25,7 +26,7 @@ async function house(page){
   }, CHILD);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   /* ⚠ ต้องรอ __houseDbg.ready() เสมอ ห้ามรอแค่ mode()==='world' (hMode มีค่า 'world' ตั้งแต่โหลดไฟล์) */
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   return errs;

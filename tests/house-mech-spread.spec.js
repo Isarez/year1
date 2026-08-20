@@ -14,6 +14,7 @@
      - **`deliver` ต้องยังน้อยกว่าเพื่อน** (งานเดินข้ามเมืองที่ไม่มีอะไรให้เล่นระหว่างทาง)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'msp', name: 'เฉลี่ยงาน', emoji: '🎲', birthDate: '2018-06-01', grade: 'p3' };
 const HKEY = 'p1quiz_house_' + CHILD.id;
@@ -34,7 +35,7 @@ async function house(page, extra) {
   }, [CHILD, HKEY, CHAR, extra]);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HouseQuests, null, { timeout: 30000 });
   return errs;

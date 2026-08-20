@@ -8,6 +8,7 @@
      4. เสียงทั้งหมดใช้ Web Audio ชุดเดิม ห้ามโหลดไฟล์เสียงเพิ่ม
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = { id: 'p9a', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
 async function house(page, opts){
@@ -25,7 +26,7 @@ async function house(page, opts){
   }, [CHILD, !!(opts && opts.withInstrument)]);
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   return errs;
 }

@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { clickEnterQuiz } = require('./helpers');
 
 /* ============================================================
    ของใหม่ 2026-08-17 (ผู้ใช้สั่ง 3 อย่าง)
@@ -125,7 +126,7 @@ test('🎨 จานสีตัวละคร/สัตว์เลี้ย�
      ⇒ ปลายทางใหม่คือ **หน้าเลือกเด็ก** และป้ายปุ่มเปลี่ยนเป็น "ย้อนกลับ" */
 test('🚪 หน้าเลือกหมวดต้องมีปุ่มย้อนกลับที่อ่านออก และกดแล้วกลับหน้าเลือกเด็ก', async ({ page }) => {
   const errs = await seed(page, null);
-  await page.locator('#landing-quiz').click();
+  await clickEnterQuiz(page);
   await expect(page.locator('#home-view')).toBeVisible();
 
   const btn = page.locator('#home-exit-btn');
@@ -146,7 +147,7 @@ test('🚪 หน้าเลือกหมวดต้องมีปุ่ม
    ตอนนี้ปลายทางคือหน้าเลือกเด็กซึ่งมีอยู่จริงเสมอ ⇒ ต้องโชว์ปุ่มได้ทุกกรณี */
 test('🚪 โหมดบ้านปิดอยู่ ปุ่มย้อนกลับก็ยังต้องใช้ได้ (ปลายทางคือหน้าเลือกเด็ก มีอยู่เสมอ)', async ({ page }) => {
   await seed(page, null);
-  await page.locator('#landing-quiz').click();
+  await clickEnterQuiz(page);
   await expect(page.locator('#home-view')).toBeVisible();
   await page.evaluate(()=>{
     document.getElementById('house-entry-btn').hidden = true;

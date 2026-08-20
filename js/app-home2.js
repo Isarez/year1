@@ -26,16 +26,19 @@
   function $(id){ return document.getElementById(id); }
   function click(){ if(typeof playClick === 'function') playClick(); }
 
-  /* ธงเปิด/ปิด — จำไว้ใน sessionStorage ด้วย เพราะปุ่ม "โหลดเวอร์ชันใหม่" เขียน URL ใหม่ทั้งเส้น
-     (location.replace(base+'?r=…')) ธงใน query string จะหลุดหายไปเฉยๆ */
+  /* 🚩 **ค่าเริ่มต้น = เปิด** (ผู้ใช้สั่งใช้จริง 2026-08-20 · เดิมต้องใส่ `?home=v2` เอง)
+     เปิดหน้าเลือกโหมดแบบเก่ากลับมาได้ด้วย `?home=v1` — ยังไม่ลบทิ้งเพราะเป็นทางถอย
+     และเป็นเส้นทางที่ใช้จริงตอนโหมดบ้านถูกปิด (ดู on() ด้านล่าง)
+     ⚠ จำไว้ใน sessionStorage ด้วย เพราะปุ่ม "โหลดเวอร์ชันใหม่" เขียน URL ใหม่ทั้งเส้น
+       (`location.replace(base+'?r=…')`) ธงใน query string จะหลุดหายไปเฉยๆ */
   (function readFlag(){
     let q = '';
     try{ q = new URLSearchParams(location.search).get('home') || ''; }catch(e){}
     try{
-      if(q === 'v2'){ sessionStorage.setItem(FLAG_KEY, '1'); }
-      else if(q){ sessionStorage.removeItem(FLAG_KEY); }
-      enabled = sessionStorage.getItem(FLAG_KEY) === '1';
-    }catch(e){ enabled = (q === 'v2'); }
+      if(q === 'v1') sessionStorage.setItem(FLAG_KEY, '0');
+      else if(q === 'v2') sessionStorage.setItem(FLAG_KEY, '1');
+      enabled = sessionStorage.getItem(FLAG_KEY) !== '0';
+    }catch(e){ enabled = (q !== 'v1'); }
   })();
 
   function houseOn(){ return !!(window.OwlLanding && OwlLanding.houseOn()); }

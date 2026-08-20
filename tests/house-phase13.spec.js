@@ -7,6 +7,7 @@
    ทำแล้ว: 🍰 ร้านขนมตามใบสั่ง (ทรงลาก `slots`)
    ============================================================ */
 const { test, expect } = require('@playwright/test');
+const { clickEnterHouse } = require('./helpers');
 
 const CHILD = g => ({ id: 'p13' + g, name: 'ขนมจีน', emoji: '🍰', birthDate: '2018-06-01', grade: g });
 
@@ -25,7 +26,7 @@ async function house(page, grade) {
   }, CHILD(grade || 'p3'));
   await page.goto('/');
   await page.locator('#child-select-view .child-card').first().click();
-  await page.locator('#landing-house').click();
+  await clickEnterHouse(page);
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready(), null, { timeout: 30000 });
   await page.waitForFunction(() => !!window.HouseQuests, null, { timeout: 30000 });
   return errs;
