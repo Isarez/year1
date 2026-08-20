@@ -187,6 +187,15 @@ function updateHeaderChild(){
 }
 
 function renderChildSelect(){
+  /* 🐞 กลับมาหน้าเลือกเด็กแล้ว **แถบชื่อเด็กบน header ยังค้างอยู่** (ผู้ใช้แจ้ง 2026-08-20)
+     ต้นเหตุ: ปุ่ม "เปลี่ยนเด็ก" เรียก renderChildSelect() อย่างเดียว ไม่ได้แตะ header เลย
+     ⇒ ซ่อนที่นี่จุดเดียว เพราะทุกทางที่กลับมาหน้าเลือกเด็กวิ่งผ่านฟังก์ชันนี้เสมอ
+       (ทางเดียวกับที่ `OwlLanding.reset()` ถูกเรียกอยู่แล้ว)
+     ⚠ **ไม่แตะ `activeChild`** — แค่ซ่อนของที่เห็นบนจอ ไม่ยุ่งกับ state ที่ระบบอื่นอ่านอยู่ */
+  { const chipGroup = $('child-chip-group');
+    if(chipGroup) chipGroup.hidden = true;
+    const bs = $('brand-sub');
+    if(bs) bs.textContent = 'เก็บสติกเกอร์ให้ครบทุกหมวด!'; }
   const listEl = $('child-list');
   const addForm = $('child-add-form');
   const addNewBtn = $('child-add-new-btn');

@@ -232,6 +232,28 @@ function musicSchedulerLayered(track){
   }
   musicNextTime = musicLayerT ? musicLayerT.lead : musicNextTime;
 }
+/* ============================================================
+   🎹 เสียงของเพลงพื้นหลังชั้นเดียว (เพลย์ลิสต์หน้าหลัก + หน้าครู)
+   ผู้ใช้สั่ง 2026-08-20: **"ปรับ background music ให้เป็นเสียงเปียโน โดยใช้เพลงเดิม"**
+   ⇒ เปลี่ยนแค่ "เสียง" ไม่แตะโน้ต/จังหวะ/ลำดับเพลงเลย (`MUSIC_TRACKS` เหมือนเดิมทุกตัว)
+
+   ⚠ ก่อนหน้านี้เพลย์ลิสต์นี้ไม่เคยส่ง `opt` เข้า `scheduleMusicNote()` ⇒ ได้ **sine เปล่า**
+     ตัวเดียว (parts เริ่มต้น [[1,.9]]) — เสียงจืดๆ ที่ฟังไม่ออกว่าเป็นเครื่องอะไร
+   ⚠ **ความดังต้องไม่เพิ่ม** (กติกาเดิม: เพลงต้องเบากว่าเสียงกดปุ่มเสมอ)
+     ของเดิม: โอเวอร์โทนรวม .90 + เสียงต่ำ .35 = 1.25
+     เปียโน: โอเวอร์โทนรวม 1.16 + เสียงต่ำ .35 ⇒ คูณ `gain .85` ให้เหลือ .99 + .30 = 1.29
+     ใกล้ของเดิมมาก (+3%) และยังต่ำกว่าพีคของ playClick/playCorrect เหมือนเดิม
+   ⚠ ยังเป็น **sine ล้วนทุกโอเวอร์โทน** ตามข้อห้ามเดิม (ห้าม triangle/square)
+   🎼 เพลงระบุ `voices:{lead:'…'}` ทับรายเพลงได้ (เผื่ออนาคตอยากให้บางเพลงใช้เครื่องอื่น)
+   ============================================================ */
+const MUSIC_MAIN_VOICE = 'piano';
+const MUSIC_MAIN_GAIN  = .85;
+function musicMainVoiceOpt(track){
+  const vName = (track && track.voices && track.voices.lead) || MUSIC_MAIN_VOICE;
+  const v = MUSIC_VOICES[vName];
+  if(!v) return undefined;                 /* ไม่รู้จักเสียงนี้ = พฤติกรรมเดิมเป๊ะ (sine เปล่า) */
+  return {gain:MUSIC_MAIN_GAIN, parts:v.parts, atk:v.atk, rel:v.rel, sub:v.sub};
+}
 function musicScheduler(){
   if(!musicOn || !audioCtx) return;
   const list = musicList();
@@ -246,7 +268,7 @@ function musicScheduler(){
     const beat = 60/track.bpm;
     const [freq, beats] = track.notes[musicNoteIndex];
     const dur = beats*beat;
-    scheduleMusicNote(freq, musicNextTime, dur);
+    scheduleMusicNote(freq, musicNextTime, dur, musicMainVoiceOpt(track));
     musicNextTime += dur;
     musicNoteIndex++;
     if(musicNoteIndex >= track.notes.length){
