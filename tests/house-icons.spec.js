@@ -328,3 +328,20 @@ test('IC15: ทุกจุดที่สั่ง NPC หันหน้าห
     expect(/fisher/.test(ctx), 'บรรทัด ' + (i + 1) + ' ตั้ง faceT โดยไม่ยกเว้นลุงตกปลา: ' + l.trim()).toBe(true);
   });
 });
+
+/* 🔒 IC16 — ป้ายพิกัดมุมขวาล่างเป็น **เครื่องมือเทส** ต้องปิดได้จากสวิตช์จุดเดียว
+   (ผู้ใช้สั่ง 2026-08-20: ให้ใช้เฉพาะบน branch feature เหมือนเมนูในเมนูเฟือง)
+   ⚠ กติกาเดียวกับ QB_ENABLED / DEV_ENABLED / MUSIC_PANEL_ENABLED — ต้องเป็น `false` ตอน deploy */
+test('IC16: ป้ายพิกัดมุมขวาล่างผูกกับสวิตช์ POS_CHIP_ENABLED (ปิดแล้วต้องไม่โผล่เลย)', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(async () => {
+    const on = window.__houseDbg.posChipEnabled();
+    const el = document.getElementById('house-pos-chip');
+    /* เดินไปช่องอื่นให้ป้ายมีโอกาสอัปเดต แล้วรอสัก 1 เฟรม */
+    await new Promise(r2 => setTimeout(r2, 600));
+    return { on, hidden: !el || el.hidden, txt: el ? el.textContent : '' };
+  });
+  if(r.on) expect(r.hidden, 'สวิตช์เปิดอยู่ ⇒ ป้ายต้องโผล่ตอนเดินในเมือง').toBe(false);
+  else expect(r.hidden, 'สวิตช์ปิดอยู่ ⇒ ป้ายต้องไม่โผล่เลย').toBe(true);
+  expect(errs).toEqual([]);
+});

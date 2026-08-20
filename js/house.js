@@ -12226,12 +12226,25 @@ function updateQuestArrow(){
   if(d) d.textContent = tgt.dist + ' ช่อง';
   el.hidden = false;
 }
+/* ============================================================
+   🔒 POS_CHIP_ENABLED — สวิตช์ป้ายพิกัดมุมขวาล่าง **จุดเดียวในทั้งโปรเจค**
+
+   `true`  = เห็นป้าย "x21 z37" ตอนเดินในเมือง (ใช้บน branch ระหว่างพัฒนา/เทสแผนที่)
+   `false` = ไม่โผล่เลย (**ค่าที่ต้องใช้ทุกครั้งที่ merge ขึ้น `main`/deploy จริง**)
+
+   ⚠️ **ก่อน merge เข้า `main` ทุกครั้งต้องตั้งเป็น `false`** (ผู้ใช้สั่ง 2026-08-20)
+      กติกาเดียวกับ QB_ENABLED / DEV_ENABLED / MUSIC_PANEL_ENABLED เป๊ะ:
+      เครื่องมือเทส = ปิดตอน deploy เสมอ ไม่ต้องถามผู้ใช้ซ้ำ
+   ⚠️ ปิดที่นี่ที่เดียวพอ ไม่ต้องแก้ index.html/CSS
+   ============================================================ */
+const POS_CHIP_ENABLED = true;
 /* ป้ายพิกัดมุมขวาล่าง — บอกช่องที่ตัวละครยืนอยู่ (ไว้ดูตำแหน่งตอนทดสอบแผนที่)
    อัปเดตเฉพาะตอนเปลี่ยนช่องจริงๆ ไม่แตะ DOM ทุกเฟรม */
 let posChipKey = '';
 function updatePosChip(){
   const el = $('house-pos-chip');
   if(!el) return;
+  if(!POS_CHIP_ENABLED){ if(!el.hidden){ el.hidden = true; posChipKey = ''; } return; }
   const show = houseOpen && hMode==='world' && !editMode && charGroup && hChar && hChar.tile;
   if(!show){ if(!el.hidden){ el.hidden = true; posChipKey = ''; } return; }
   const key = hScene + ':' + hChar.tile.x + ',' + hChar.tile.z;
@@ -14848,6 +14861,7 @@ if(!homeView.hidden) houseBuddyRefresh();
   signIcons:()=> SIGN_ICONS.map(e => ({e, id: SIGN_SVG[e] || null})),
   /* ชาวบ้านทั้งหมด (id ใช้เป็น id ไอคอนตรงๆ) — ชุดเทสใช้ตรวจว่ามีไอคอนครบ */
   npcDefs:()=> NPC_DEFS.map(d => ({id:d.id, name:d.name})),
+  posChipEnabled:()=> POS_CHIP_ENABLED,
   /* ชุดเทส: วาดฟองคำพูดผ่านทางเดินโค้ดจริง */
   talkBubble:(ico, emoji, name, text)=> showTalkBubble($('house-npc-bubble'), ico, emoji, name, text),
   openBoard:()=> openQuestBoard()};
