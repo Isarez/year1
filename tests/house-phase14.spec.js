@@ -252,13 +252,16 @@ test('🎵 ของเดิมต้องไม่พัง: playlist หน�
   const r = await page.evaluate(async () => {
     setMusicPlaylist(null);                       /* กลับไปชุดหน้าหลัก */
     const list = musicList();
-    const plain = list.every(t => !t.layers && Array.isArray(t.notes));
+    /* ⚠ **เทสนี้ถูกกลับด้าน ไม่ได้ลบ (2026-08-21)** — เดิมคุมว่าเพลงหน้าหลักต้องเป็น
+       "ชั้นเดียว (notes)" ตอนนี้ผู้ใช้สั่งแต่งใหม่เป็น 3 ชั้นทั้งชุดเพื่อให้เบาลงเท่าโหมดบ้าน
+       ⇒ เปลี่ยนเป็นคุมว่า **สลับ playlist กลับมาแล้วต้องได้ชุดหน้าหลักจริง และเล่นต่อได้** */
+    const plain = list.every(t => !!t.layers && !t.notes);
     startMusic();
     await new Promise(r2 => setTimeout(r2, 400));
     return { n: list.length, plain, running: !!musicSchedulerId, advanced: musicNoteIndex > 0 };
   });
-  expect(r.n, 'หน้าหลักต้องยังมีเพลงเดิมครบ').toBeGreaterThanOrEqual(5);
-  expect(r.plain, 'เพลงหน้าหลักต้องยังเป็นรูปแบบเดิม (notes ชั้นเดียว)').toBe(true);
+  expect(r.n, 'หน้าหลักต้องยังมีเพลงครบ').toBeGreaterThanOrEqual(5);
+  expect(r.plain, 'เพลงหน้าหลักเป็นแบบหลายชั้นทั้งชุดแล้ว (js/music-quiz.js)').toBe(true);
   expect(r.running).toBe(true);
   expect(r.advanced, 'scheduler ต้องเดินหน้าเล่นเพลงชุดเดิมได้จริง').toBe(true);
   expect(errs).toEqual([]);

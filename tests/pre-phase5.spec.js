@@ -7,8 +7,8 @@ const { clickEnterHouse } = require('./helpers');
 const OUT = '/private/tmp/claude-501/-Users-isarez-year1/f9a3c903-3574-4a5e-9675-beac6680d146/scratchpad/';
 
 const CHILD = { id: 'og1', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
-/* home: 'v1' = บังคับใช้หน้าเลือกโหมดแบบเก่า (ค่าเริ่มต้นของแอปตั้งแต่ 2026-08-20
-   คือหน้าแรกแบบรวมร่าง ซึ่งไม่มีหน้าเลือกโหมดแล้ว) — ใช้กับเทสที่ทดสอบ "หน้าเลือกโหมด" โดยตรง */
+/* home: 'v1' = ปิดโหมดบ้านให้หน้าเลือกโหมดแบบเก่าโผล่ (หน้าแรกปกติเป็นแบบรวมร่างซึ่ง
+   ไม่มีหน้าเลือกโหมดแล้ว) — ใช้กับเทสที่ทดสอบ "หน้าเลือกโหมด" โดยตรงเท่านั้น */
 async function pickChild(page, home){
   const errs = [];
   page.on('pageerror', e => errs.push(String(e)));
@@ -20,7 +20,9 @@ async function pickChild(page, home){
     localStorage.setItem('p1quiz_house_og1', JSON.stringify({ v:1, mapV: 3,
       char:{gender:0,hair:0,hairC:0,eyes:1,eyeC:0,shirt:5,bottom:0,shoes:0} }));
   }, CHILD);
-  await page.goto(home ? '/?home=' + home : '/');
+  /* home:'v1' = ปิดโหมดบ้านเพื่อบังคับให้หน้าเลือกโหมดแบบเก่าโผล่ (ธง ?home=v2 ถูกถอดแล้ว) */
+  await page.goto('/');
+  if(home === 'v1') await page.evaluate(()=>{ const b=document.getElementById('house-entry-btn'); if(b) b.hidden = true; });
   await page.locator('#child-select-view .child-card').first().click();
   return errs;
 }
@@ -68,43 +70,26 @@ test('OwlGames: mount เกมของหน้าหลักลงกล่�
   expect(errs).toEqual([]);
 });
 
-test('หน้าเลือกทาง (?home=v1): โผล่หลังเลือกเด็ก · เลือกทำโจทย์แล้วเข้าหน้าหมวด · ไม่เด้งซ้ำ', async ({ page }) => {
-  const errs = await pickChild(page, 'v1');
-  await expect(page.locator('#landing-view')).toBeVisible();
-  await expect(page.locator('#home-view')).toBeHidden();
-  await page.screenshot({ path: OUT + 'landing.png' });
+/* ⚠ **เทส 2 ตัวเดิมของ "หน้าเลือกทาง" ถูกยุบมาเป็นตัวนี้ ไม่ได้ลบทิ้ง (2026-08-21)**
+   หน้าเลือกโหมด (`#landing-view`) ถูกเลิกใช้แล้ว — แทนด้วยหน้าแรกแบบรวมร่างที่เลือกโหมด
+   ได้ในหน้าเลือกเด็กเลย ⇒ หน้านั้นเข้าไม่ถึงอีกต่อไปทั้งตอนโหมดบ้านเปิดและปิด
+   สิ่งที่ยัง **มีชีวิตอยู่** ใน js/app-landing.js คือตัวส่งเข้าโหมด (`OwlLanding.go`) ซึ่งเป็น
+   ประตูเดียวที่ทุกทางเข้าใช้ร่วมกัน — เทสนี้จึงคุม 2 อย่าง: หน้านั้นต้องไม่โผล่ · ประตูต้องยังส่งถูกที่ */
+test('หน้าเลือกโหมดถูกเลิกใช้แล้ว — ต้องไม่โผล่เลย แต่ประตูส่งเข้าโหมดต้องยังทำงาน', async ({ page }) => {
+  const errs = await pickChild(page);
+  await expect(page.locator('#landing-view'), 'หน้าเลือกโหมดต้องไม่โผล่อีกแล้ว').toBeHidden();
+  await expect(page.locator('.h2-panel'), 'ต้องกางแถวของเด็กคนนั้นแทน').toHaveCount(1);
 
-  await page.locator('#landing-quiz').click();
-  await expect(page.locator('#landing-view')).toBeHidden();
+  /* ประตูเดียวที่ทุกทางเข้าใช้ร่วมกัน — ต้องพาไปหน้าหมวดได้จริง */
+  await page.evaluate(()=> OwlLanding.go('quiz'));
   await expect(page.locator('#home-view')).toBeVisible();
-
-  /* เข้าเกมแล้วกลับมา ต้องไม่เจอหน้าเลือกซ้ำ */
-  await page.evaluate(()=>renderHome());
-  await expect(page.locator('#landing-view')).toBeHidden();
-  expect(errs).toEqual([]);
-});
-/* บั๊กจริงที่ผู้ใช้เจอ 2026-08-11 — กลับไปหน้าเลือกเด็กแล้วเข้าใหม่ ไม่เจอหน้าเลือกโหมดอีกเลย
-   (ตัวคุม `chosen` ไม่เคยถูกล้าง) + ต้องมีปุ่มย้อนกลับเพื่อเปลี่ยนคนเล่นได้จากหน้านี้ */
-test('หน้าเลือกทาง (?home=v1): ปุ่ม ← กลับไปเลือกเด็กได้ · เข้าใหม่ต้องเจอหน้าเลือกโหมดอีกครั้ง', async ({ page }) => {
-  const errs = await pickChild(page, 'v1');
-  await expect(page.locator('#landing-view')).toBeVisible();
-
-  /* ปุ่มย้อนกลับ → หน้าเลือกเด็ก */
-  await page.locator('#landing-back').click();
-  await expect(page.locator('#child-select-view')).toBeVisible();
   await expect(page.locator('#landing-view')).toBeHidden();
 
-  /* เลือกเด็กใหม่ → หน้าเลือกโหมดต้องเด้งอีกครั้ง */
-  await page.locator('#child-select-view .child-card').first().click();
-  await expect(page.locator('#landing-view')).toBeVisible();
-
-  /* เข้าหน้าหมวดแล้วกดเปลี่ยนเด็กจาก header → เลือกใหม่ ก็ต้องเจอหน้าเลือกโหมดอีก */
-  await page.locator('#landing-quiz').click();
-  await expect(page.locator('#home-view')).toBeVisible();
+  /* กลับไปหน้าเลือกเด็กแล้วเลือกใหม่ ต้องกางแถวได้อีก (ไม่มีธง `chosen` ค้าง) */
   await page.locator('#switch-child-btn').click();
   await expect(page.locator('#child-select-view')).toBeVisible();
   await page.locator('#child-select-view .child-card').first().click();
-  await expect(page.locator('#landing-view')).toBeVisible();
+  await expect(page.locator('.h2-panel')).toHaveCount(1);
   expect(errs).toEqual([]);
 });
 

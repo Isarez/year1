@@ -6,7 +6,7 @@
    ต้องโหลดหลัง js/data.js + js/owl-messages.js และก่อนไฟล์เกมทุกไฟล์
    ================================================================================ */
 
-window.APP_ASSET_VER = '?v=2.1.0-dev10';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
+window.APP_ASSET_VER = '?v=2.1.0-dev11';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
                                         ⚠️ ตัวนี้อยู่นอก index.html คำสั่ง sed ที่แก้ ?v= ตอน release จับไม่ถึง ต้องแก้มือทุกครั้ง
                                         ⚠️ **ระหว่างพัฒนาโหมดบ้านต้องปั๊มเลขนี้ทุกครั้งที่แก้ js/house*.js ด้วย**
                                            ไฟล์ชุดนั้นโหลดแบบ lazy พร้อม ?v= นี้ ถ้าไม่ปั๊ม เบราว์เซอร์จะเสิร์ฟไฟล์เก่าจาก cache
@@ -138,9 +138,18 @@ function selectChild(id){
 /* ห้ามใช้ชื่อซ้ำกับเด็กที่มีอยู่แล้วใน localStorage (ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ถ้าซ้ำ แจ้งเตือนให้เปลี่ยนชื่อใหม่ และไม่บันทึกลง storage เลย */
 /* mode = 'house' | 'quiz' | undefined — หน้าแรกแบบรวมร่างเลือกโหมดตั้งแต่ตอนสร้างโปรไฟล์
    (หน้านั้นไม่มีหน้าเลือกโหมดคั่นแล้ว) · undefined = ทางเดิม ไปตามเส้น enterHome() */
+/* 📦 เพดานจำนวนโปรไฟล์เด็ก (ผู้ใช้กำหนด 2026-08-20)
+   ที่มา: localStorage มี ~5,242,880 ตัวอักษร · เด็ก 1 คนแบบเต็มเพดาน (รูป 15 ใบที่ 900px
+   + โจทย์ครบทุกหมวด + ของครบ) ≈ 300,000 ⇒ 10 คน ≈ 3.0 MB ราว 57% ของโควตา เหลือที่ว่างพอ
+   🔒 **แก้เลขนี้ต้องคำนวณใหม่ทุกครั้ง** คู่กับ PHOTO_MAX/PHOTO_W ใน js/house-play.js */
+const MAX_CHILDREN = 10;
 function addChild(name, mode){
   name = name.trim();
   if(!name) return;
+  if(children.length >= MAX_CHILDREN){
+    showToast('👨‍👩‍👧‍👦','เพิ่มได้สูงสุด '+MAX_CHILDREN+' คนนะ ถ้าอยากเพิ่มคนใหม่ ลบคนที่ไม่ได้เล่นแล้วออกก่อน');
+    return;
+  }
   if(children.some(c=>c.name.toLowerCase()===name.toLowerCase())){
     showToast('⚠️','ชื่อ "'+name+'" มีอยู่แล้วนะ ลองเปลี่ยนชื่อใหม่ดูสิ');
     const input = document.getElementById('child-name-input');
@@ -243,7 +252,7 @@ function renderChildSelect(){
       card.appendChild(arrow);
       card.addEventListener('click', ()=>{
         playClick();
-        /* หน้าแรกแบบรวมร่าง (ธง ?home=v2) → กางแถวนี้แทนการข้ามไปหน้าเลือกโหมด */
+        /* หน้าแรกแบบรวมร่าง → กางแถวนี้แทนการข้ามไปหน้าเลือกโหมด */
         if(window.OwlHome2 && OwlHome2.on()){ OwlHome2.toggle(child, row); return; }
         selectChild(child.id);
       });
@@ -258,7 +267,9 @@ function renderChildSelect(){
       listEl.appendChild(row);
     });
     addForm.hidden = true;
-    addNewBtn.hidden = false;
+    /* ครบเพดานแล้วซ่อนปุ่มเพิ่ม + บอกเหตุผลไว้ใต้หัวข้อ (ไม่ปล่อยให้กดแล้วเจอ toast อย่างเดียว) */
+    addNewBtn.hidden = children.length >= MAX_CHILDREN;
+    if(addNewBtn.hidden) csSub.textContent = 'มีครบ ' + MAX_CHILDREN + ' คนแล้ว — ลบคนที่ไม่ได้เล่นออกก่อนถึงจะเพิ่มใหม่ได้';
   }
   /* ปุ่ม "เข้าเมือง" ในฟอร์มสร้างโปรไฟล์มีเฉพาะหน้าแรกแบบรวมร่าง (ไม่งั้นซ้ำกับหน้าเลือกโหมด)
      ปุ่มยกเลิกมีเฉพาะตอนมีเด็กอยู่แล้ว — คนแรกของบ้านยกเลิกไปก็ไม่มีอะไรให้กลับไปดู */

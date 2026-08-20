@@ -1,10 +1,9 @@
 /* ============================================================
-   🏡 หน้าแรกแบบรวมร่าง (ทดลอง · ธง ?home=v2 · js/app-home2.js)
+   🏡 หน้าแรกแบบรวมร่าง (ใช้จริงแล้ว · js/app-home2.js)
 
    สิ่งที่ชุดนี้คุม:
-     ① **ไม่ใส่ธง = ต้องเป็นของเดิมเป๊ะ** (เลือกเด็ก → หน้าเลือกโหมด)
-        ธงทดลองต้องไม่รั่วไปกระทบผู้ใช้จริงเด็ดขาด
-     ② ใส่ธงแล้ว แถวกางออก โชว์ตัวละคร 3D ของเด็กคนนั้น + ปุ่มเลือกโหมด
+     ① **โหมดบ้านปิด (main) = ต้องถอยไปทางเดิมเป๊ะ** (เลือกเด็ก → หน้าเลือกโหมด)
+     ② แถวกางออก โชว์ตัวละคร 3D ของเด็กคนนั้น + ปุ่มเลือกโหมด
      ③ เด็กที่ยังไม่มีตัวละคร → ปุ่ม "สร้างตัวละคร" (ไม่ใช่ช่องว่าง)
      ④ **กางได้ทีละคน** — WebGL context ต้องมีตัวเดียวเสมอ
      ⑤ โหมดบ้านปิดอยู่ → ถอยกลับไปพฤติกรรมเดิมทั้งหมด
@@ -23,31 +22,40 @@ const HOUSE = {
   coins:120, decor:{in:[], out:[]},
 };
 
-async function open(page, flag){
+/* houseOff = จำลอง branch main ที่ปิดโหมดบ้าน (HOUSE_FEATURE_OFF) — ทางถอยเดียวที่เหลือ
+   หลังถอดธง ?home=v2 ออกแล้ว (2026-08-21) */
+async function open(page, houseOff){
   const errs = [];
   page.on('pageerror', e => errs.push(String(e)));
+
   await page.addInitScript(([kids, house])=>{
     localStorage.setItem('p1quiz_children', JSON.stringify(kids));
     localStorage.setItem('p1quiz_music', 'off');
     localStorage.setItem('p1quiz_house_hv1', JSON.stringify(house));
   }, [KIDS, HOUSE]);
-  await page.goto(flag ? '/?home=v2' : '/?home=v1');
+  await page.goto('/');
   await page.waitForSelector('#child-list .child-card');
+  if(houseOff) await page.evaluate(()=>{
+    document.getElementById('house-entry-btn').hidden = true;
+    renderChildSelect();                 /* วาดรายชื่อใหม่ให้ตรงกับสภาพ "โหมดบ้านปิด" */
+  });
   return errs;
 }
 const card = (page, i) => page.locator('#child-list .child-card').nth(i);
 
-test('HV1: ?home=v1 = ทางเดิมยังใช้ได้ (เลือกเด็กแล้วไปหน้าเลือกโหมด ไม่มีแถวกาง)', async ({ page }) => {
-  const errs = await open(page, false);
+test('HV1: โหมดบ้านปิด (main) = ถอยไปทางเดิมทั้งหมด — ไม่กางแถว ไม่มีหน้าเลือกโหมด', async ({ page }) => {
+  const errs = await open(page, true);   /* โหมดบ้านปิด */
   expect(await page.evaluate(()=> window.OwlHome2 && OwlHome2.on())).toBe(false);
   await card(page, 0).click();
-  await expect(page.locator('#landing-view')).toBeVisible();
-  expect(await page.locator('.h2-panel').count(), 'ปิดธงแล้วต้องไม่มีแผงกางเลย').toBe(0);
+  /* มีโหมดเดียว ⇒ เข้าหน้าหมวดตรงๆ ไม่ต้องถามอะไรเลย */
+  await expect(page.locator('#home-view')).toBeVisible();
+  await expect(page.locator('#landing-view')).toBeHidden();
+  expect(await page.locator('.h2-panel').count(), 'โหมดบ้านปิดแล้วต้องไม่มีแผงกางเลย').toBe(0);
   expect(errs).toEqual([]);
 });
 
 test('HV2: ใส่ธง → แถวกางออก โชว์ตัวละคร 3D + ปุ่มโหมดครบ 2 ปุ่ม', async ({ page }) => {
-  const errs = await open(page, true);
+  const errs = await open(page);
   await card(page, 0).click();
   await expect(page.locator('.h2-panel')).toBeVisible();
   /* ชุด 3D โหลดแบบ lazy — รอจนตัวละครถูกวาดจริง */
@@ -71,7 +79,7 @@ test('HV2: ใส่ธง → แถวกางออก โชว์ตัว
 });
 
 test('HV3: เด็กที่ยังไม่เคยเข้าเมือง → ปุ่มสร้างตัวละคร + มีปุ่มโหมดเดียว', async ({ page }) => {
-  const errs = await open(page, true);
+  const errs = await open(page);
   await card(page, 1).click();
   await expect(page.locator('.h2-create')).toBeVisible();
   const r = await page.evaluate(()=>({
@@ -86,7 +94,7 @@ test('HV3: เด็กที่ยังไม่เคยเข้าเมื
 });
 
 test('HV4: กางได้ทีละคนเท่านั้น (WebGL context ตัวเดียว)', async ({ page }) => {
-  await open(page, true);
+  await open(page);
   await card(page, 0).click();
   await expect(page.locator('.h2-panel')).toHaveCount(1);
   await card(page, 1).click();
@@ -98,7 +106,7 @@ test('HV4: กางได้ทีละคนเท่านั้น (WebGL c
 });
 
 test('HV5: ปุ่ม "ทำโจทย์" พาเข้าหน้าหมวด · กลับมาแล้วแผงต้องยุบ', async ({ page }) => {
-  const errs = await open(page, true);
+  const errs = await open(page);
   await card(page, 1).click();
   await page.locator('.h2-mode-quiz').click();
   await expect(page.locator('#home-view')).toBeVisible();
@@ -112,7 +120,7 @@ test('HV5: ปุ่ม "ทำโจทย์" พาเข้าหน้า�
 });
 
 test('HV6: โหมดบ้านปิดอยู่ → ถอยกลับไปพฤติกรรมเดิม (ไม่กางแถว)', async ({ page }) => {
-  await open(page, true);
+  await open(page);
   await page.evaluate(()=>{ document.getElementById('house-entry-btn').hidden = true; });
   expect(await page.evaluate(()=> OwlHome2.on())).toBe(false);
   await card(page, 1).click();
@@ -121,7 +129,7 @@ test('HV6: โหมดบ้านปิดอยู่ → ถอยกลั�
 });
 
 test('HV7: ฟอร์มเพิ่มเด็กมี 2 ปุ่ม (เข้าเมือง/เริ่มเรียน) + ปุ่มยกเลิกที่กลับไปรายชื่อได้', async ({ page }) => {
-  const errs = await open(page, true);
+  const errs = await open(page);
   await page.locator('#child-add-new-btn').click();
   await expect(page.locator('#child-submit-house')).toBeVisible();
   await expect(page.locator('#child-submit-btn')).toBeVisible();
@@ -134,15 +142,15 @@ test('HV7: ฟอร์มเพิ่มเด็กมี 2 ปุ่ม (เ�
   expect(errs).toEqual([]);
 });
 
-test('HV8: ?home=v1 → ฟอร์มเพิ่มเด็กเป็นแบบเดิม (ปุ่มเดียว ไม่มีปุ่มเข้าเมือง)', async ({ page }) => {
-  await open(page, false);
+test('HV8: โหมดบ้านปิด → ฟอร์มเพิ่มเด็กเป็นแบบเดิม (ปุ่มเดียว ไม่มีปุ่มเข้าเมือง)', async ({ page }) => {
+  await open(page, true);   /* โหมดบ้านปิด */
   await page.locator('#child-add-new-btn').click();
   await expect(page.locator('#child-submit-house')).toBeHidden();
   await expect(page.locator('#child-submit-btn')).toHaveText('เริ่มเรียนเลย! 🚀');
 });
 
 test('HV9: ช่องตัวละครเป็นฉากจำลองเมืองจริง (ไม่ใช่พื้นหลังเปล่า)', async ({ page }) => {
-  await open(page, true);
+  await open(page);
   await card(page, 0).click();
   await page.waitForSelector('.h2-panel #h2-canvas', { timeout: 30000 });
   const r = await page.evaluate(()=>({
@@ -155,7 +163,7 @@ test('HV9: ช่องตัวละครเป็นฉากจำลอง
 });
 
 test('HV10: ปุ่ม "ย้อนกลับ" ในหน้าทำโจทย์ → กลับหน้าเลือกเด็ก (ไม่ใช่หน้าเลือกโหมด)', async ({ page }) => {
-  const errs = await open(page, true);
+  const errs = await open(page);
   await card(page, 1).click();
   await page.locator('.h2-mode-quiz').click();
   await expect(page.locator('#home-view')).toBeVisible();
@@ -174,7 +182,7 @@ test('HV11: โปรไฟล์เก่าที่ยังไม่มี�
       { id:'old1', name:'เด็กเก่า', emoji:'🐧' }]));      /* ไม่มี birthDate */
     localStorage.setItem('p1quiz_music', 'off');
   });
-  await page.goto('/?home=v2');
+  await page.goto('/');
   await page.waitForSelector('#child-list .child-card');
   await card(page, 0).click();
   await expect(page.locator('#age-modal')).toBeVisible();
@@ -185,4 +193,48 @@ test('HV11: โปรไฟล์เก่าที่ยังไม่มี�
   await expect(page.locator('#child-select-view')).toBeVisible();
   await expect(page.locator('#landing-view')).toBeHidden();
   await expect(page.locator('.h2-panel'), 'ต้องกางแถวของเด็กคนนั้นให้เลย').toHaveCount(1);
+});
+
+test('HV12: เพดานข้อมูล — เด็กสูงสุด 10 คน · รูป 15 ใบที่ 900px', async ({ page }) => {
+  /* 🔒 3 ค่านี้ผูกกันเป็นชุด: 10 คน × (15 รูป × ~16,000 + ข้อมูลอื่น ~31,600) ≈ 3.0 MB
+     จากโควตา localStorage 5,242,880 ตัวอักษร (วัดจริง 2026-08-20)
+     **แก้ค่าไหนต้องคำนวณใหม่ทั้งชุด** */
+  await open(page);
+  const r = await page.evaluate(()=>({ max: typeof MAX_CHILDREN !== 'undefined' ? MAX_CHILDREN : null }));
+  expect(r.max, 'เพดานจำนวนเด็ก').toBe(10);
+  const src = await (await page.request.get('/js/house-play.js')).text();
+  expect(src, 'จำนวนรูปสูงสุด').toContain('const PHOTO_MAX = 15;');
+  expect(src, 'ความกว้างรูป').toContain('const PHOTO_W = 900;');
+});
+
+test('HV13: เพิ่มเด็กครบ 10 คนแล้วต้องกดเพิ่มไม่ได้ (ซ่อนปุ่ม + บอกเหตุผล)', async ({ page }) => {
+  await page.addInitScript(()=>{
+    const kids = Array.from({length:10}, (_,i)=>(
+      { id:'k'+i, name:'เด็ก'+i, emoji:'🦉', birthDate:'2018-06-01', grade:'p1' }));
+    localStorage.setItem('p1quiz_children', JSON.stringify(kids));
+    localStorage.setItem('p1quiz_music', 'off');
+  });
+  await page.goto('/');
+  await page.waitForSelector('#child-list .child-card');
+  expect(await page.locator('#child-list .child-card').count()).toBe(10);
+  await expect(page.locator('#child-add-new-btn'), 'ครบแล้วต้องซ่อนปุ่มเพิ่ม').toBeHidden();
+  await expect(page.locator('#cs-sub'), 'ต้องบอกเหตุผลด้วย ไม่ใช่ปุ่มหายเฉยๆ').toContainText('10');
+  /* เรียก addChild ตรงๆ ก็ต้องไม่เพิ่มให้ */
+  const after = await page.evaluate(()=>{ addChild('เกินโควตา'); return children.length; });
+  expect(after, 'ห้ามเพิ่มเกินเพดานแม้เรียกฟังก์ชันตรงๆ').toBe(10);
+});
+
+test('HV14: เด็กที่ยังไม่มีตัวละคร — กด ← ในหน้าสร้างตัวละคร ต้องกลับหน้าเลือกเด็ก', async ({ page }) => {
+  const errs = await open(page);
+  await card(page, 1).click();                       /* hv2 = ยังไม่เคยเข้าเมือง */
+  await page.locator('.h2-create').click();          /* ปุ่มสร้างตัวละคร → เข้าเมือง+เปิดหน้าสร้าง */
+  await page.waitForFunction(()=> window.__houseDbg && __houseDbg.ready && __houseDbg.ready(),
+    null, { timeout: 60000 });
+  await page.waitForSelector('#house-creator:not([hidden])', { timeout: 20000 });
+  await page.locator('#house-back').click();
+  /* 🔒 ต้องกลับ "หน้าเลือกเด็ก" ไม่ใช่หน้าทำโจทย์ (ผู้ใช้แจ้ง 2026-08-20) */
+  await expect(page.locator('#child-select-view')).toBeVisible();
+  await expect(page.locator('#home-view'), 'ห้ามโผล่หน้าทำโจทย์').toBeHidden();
+  await expect(page.locator('#house-view')).toBeHidden();
+  expect(errs).toEqual([]);
 });

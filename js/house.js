@@ -14768,6 +14768,17 @@ $('house-back').addEventListener('click', ()=>{
   if(editMode){ exitEditMode(); return; }
   if(hMode==='pet'){ fadeSwap(()=>closePetPicker(null)); return; }
   if(hMode==='creator' && creatorState.fromWorld){ fadeSwap(()=>cancelCreator()); return; }
+  /* 🚪 หน้าสร้างตัวละคร "ครั้งแรก" (เด็กยังไม่มีตัวละคร · ไม่ได้เข้ามาจากในเมือง)
+     ⇒ กดย้อนกลับต้องไป **หน้าเลือกเด็ก** ไม่ใช่หน้าทำโจทย์ (ผู้ใช้สั่ง 2026-08-20)
+     เพราะเด็กเข้ามาทางปุ่ม "สร้างตัวละครของหนู" บนหน้าแรก ⇒ ที่ที่ควรกลับไปคือหน้าแรกนั้น
+     ⚠ ใช้ทางเดียวกับปุ่ม "ออกจากบ้าน" ในเมนูเฟือง (stopHouseGame แล้วกด #switch-child-btn)
+       **ห้ามเรียก renderChildSelect() ตรงๆ** — ปุ่มนั้นทำงานอย่างอื่นให้ด้วย (ล้าง state/หยุดเพลง) */
+  if(hMode==='creator' && !creatorState.fromWorld){
+    stopHouseGame();
+    const sw = $('switch-child-btn');
+    if(sw) sw.click();
+    return;
+  }
   stopHouseGame();
 });
 $('house-edit-btn').addEventListener('click', ()=>{

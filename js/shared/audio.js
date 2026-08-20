@@ -7,7 +7,18 @@ function playCorrect(){ playTone(523.25,.15,'sine',0,.14); playTone(659.25,.18,'
 
 function playWrong(){ playTone(190,.28,'sawtooth',0,.07); }
 
-function playClick(){ playTone(659.25,.08,'sine',0,.12); playTone(1318.5,.05,'sine',0,.04); }
+/* 🔇 กันเสียงคลิกซ้อนกัน (ผู้ใช้แจ้ง 2026-08-20: กดปุ่มเข้าเมือง/สร้างตัวละคร/ทำโจทย์
+   ครั้งแรกแล้ว "เสียงเหมือนกดสองที") ต้นเหตุ: ทางเข้าโหมดวิ่งผ่านหลายชั้น —
+   ปุ่มบนหน้าแรกยิงเสียงเอง แล้วส่งต่อไปกด `#house-entry-btn` ซึ่งยิงเสียงของตัวเองอีกรอบ
+   ⇒ กันที่ต้นทางจุดเดียว: เรียกซ้ำภายใน 90 ms ถือเป็นเสียงเดียวกัน
+   ⚠ ไม่มี UI ไหนตั้งใจให้ดัง 2 ครั้งติดกันเร็วขนาดนี้ · หน้าครูใช้ไฟล์นี้ร่วม ได้ผลเหมือนกัน */
+let lastClickAt = 0;
+function playClick(){
+  const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+  if(now - lastClickAt < 90) return;
+  lastClickAt = now;
+  playTone(659.25,.08,'sine',0,.12); playTone(1318.5,.05,'sine',0,.04);
+}
 
 /* แฟนแฟร์แสดงความยินดีตอนจบเกม (จังหวะเดียวกับพลุ) — โทน C major เดียวกับ playCorrect */
 function playCongrats(){

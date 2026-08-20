@@ -1,12 +1,14 @@
 /* ================================================================================
-   🏡 หน้าแรกแบบรวมร่าง (v2) — เลือกเด็กแล้วเลือกโหมดในหน้าเดียว
-   ทดลองอยู่หลังธง URL: เปิดด้วย  index.html?home=v2   (ปกติปิด = ของเดิมทุกอย่าง)
+   🏡 หน้าแรก — เลือกเด็กแล้วเลือกโหมดในหน้าเดียว (**ใช้จริงแล้ว ไม่มีธงแล้ว 2026-08-21**)
+   เคยอยู่หลังธง `?home=v2` ช่วงทดลอง — ถอดออกแล้วตามคำสั่งผู้ใช้
 
    ของเดิม: หน้าเลือกเด็ก → หน้าเลือกโหมด (js/app-landing.js) → หน้าหมวด/เมือง
    ของใหม่: แตะชื่อเด็ก → แถวนั้น "กางออก" โชว์ตัวละคร 3D เต็มตัวของเด็กคนนั้น
             + ปุ่มเลือกโหมดใต้ตัวละคร  (ไม่ต้องข้ามหน้า)
 
    ⚠ กติกาที่ยึด
+   - **หน้าเลือกโหมดเดิม (js/app-landing.js) ยังอยู่** — ใช้เป็นทางถอยตอนโหมดบ้านถูกปิด
+     (`HOUSE_FEATURE_OFF` บน main) ซึ่ง `on()` จะคืน false แล้วทุกอย่างกลับไปทางเดิมเอง
    - **renderer ตัวเดียวใช้ซ้ำทุกคน** — กางได้ทีละคนเท่านั้น ⇒ WebGL context เดียวตลอด
      (canvas เป็น element เดียวที่ย้ายไปมาระหว่างแถว ไม่ใช่ canvas ต่อแถว)
    - เด็กที่ยังไม่เคยเข้าโหมดบ้าน = ยังไม่มีตัวละคร ⇒ โชว์ปุ่ม "สร้างตัวละคร" แทนช่องว่าง
@@ -17,8 +19,6 @@
 (function(){
   'use strict';
 
-  const FLAG_KEY = 'p1quiz_home_v2';
-  let enabled = false;
   let openId = '';            /* id เด็กที่กางอยู่ตอนนี้ ('' = ไม่มี) */
   let canvasEl = null;        /* canvas ตัวเดียวของทั้งหน้า */
   let loading = null;         /* promise ตอนกำลังโหลดชุด 3D */
@@ -26,24 +26,9 @@
   function $(id){ return document.getElementById(id); }
   function click(){ if(typeof playClick === 'function') playClick(); }
 
-  /* 🚩 **ค่าเริ่มต้น = เปิด** (ผู้ใช้สั่งใช้จริง 2026-08-20 · เดิมต้องใส่ `?home=v2` เอง)
-     เปิดหน้าเลือกโหมดแบบเก่ากลับมาได้ด้วย `?home=v1` — ยังไม่ลบทิ้งเพราะเป็นทางถอย
-     และเป็นเส้นทางที่ใช้จริงตอนโหมดบ้านถูกปิด (ดู on() ด้านล่าง)
-     ⚠ จำไว้ใน sessionStorage ด้วย เพราะปุ่ม "โหลดเวอร์ชันใหม่" เขียน URL ใหม่ทั้งเส้น
-       (`location.replace(base+'?r=…')`) ธงใน query string จะหลุดหายไปเฉยๆ */
-  (function readFlag(){
-    let q = '';
-    try{ q = new URLSearchParams(location.search).get('home') || ''; }catch(e){}
-    try{
-      if(q === 'v1') sessionStorage.setItem(FLAG_KEY, '0');
-      else if(q === 'v2') sessionStorage.setItem(FLAG_KEY, '1');
-      enabled = sessionStorage.getItem(FLAG_KEY) !== '0';
-    }catch(e){ enabled = (q !== 'v1'); }
-  })();
-
   function houseOn(){ return !!(window.OwlLanding && OwlLanding.houseOn()); }
   /* ใช้ได้จริงก็ต่อเมื่อโหมดบ้านเปิดอยู่ — ไม่งั้นมีโหมดเดียว กางแถวไปก็ไม่มีอะไรให้เลือก */
-  function on(){ return enabled && houseOn(); }
+  function on(){ return houseOn(); }
 
   function hasHouseData(id){
     try{ return !!localStorage.getItem('p1quiz_house_' + id); }catch(e){ return false; }
@@ -160,6 +145,18 @@
       }
       modes.appendChild(modeBtn('h2-mode-quiz', 'assets/icons/landing-quiz.svg',
         'ทำโจทย์', 'เลือกหมวดที่อยากฝึก', ()=>go('quiz')));
+      /* 🗂️ จัดการข้อมูล — ย้ายมาจากหน้าเลือกโหมดที่ถูกเลิกใช้ (ผู้ใช้สั่งไว้ว่าต้องมีหลายทาง)
+         ⚠ **ต้องเล็กกว่าปุ่มโหมดชัดเจน** เด็กจะได้ไม่เข้าใจว่าเป็นทางเลือกที่ 3
+         ⚠ **เปิด #clear-modal ตัวเดิม ห้ามทำกล่องใหม่** (ย้ายข้อมูล/รีเซ็ต/ลบ ต้องมีจุดเดียว) */
+      const dat = document.createElement('button');
+      dat.type = 'button';
+      dat.className = 'h2-data';
+      dat.textContent = 'จัดการข้อมูลของ ' + child.name;
+      dat.addEventListener('click', e=>{
+        e.stopPropagation(); click();
+        if(typeof showClearModal === 'function') showClearModal();
+      });
+      modes.appendChild(dat);
     }
   }
 
@@ -239,5 +236,5 @@
   window.addEventListener('resize', ()=>{ if(openId && window.HouseCharView) HouseCharView.resize(); });
 
   window.OwlHome2 = {on, toggle, reset, boot, collapse, openFor,
-    /* ชุดเทส */ _openId:()=>openId, _enabled:()=>enabled};
+    /* ชุดเทส */ _openId:()=>openId};
 })();

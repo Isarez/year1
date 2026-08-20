@@ -527,6 +527,13 @@
   /* ⚠ ปุ่มโหมดอยู่บนพื้นครีมทั้งกลางวัน/กลางคืน (แผงไม่ได้เปลี่ยนสีตามธีม)
      **ห้ามใส่ override สีตัวอักษรแบบกลางคืนที่นี่** — ตัวหนังสือสว่างบนครีมจะหายไปเลย
      (ต่างจาก .h2-cap/.h2-create ที่อยู่ในช่องตัวละครซึ่งเป็นพื้นเข้มตอนกลางคืนจริง) */
+  /* ปุ่มจัดการข้อมูล — เล็กกว่าปุ่มโหมดชัดเจน และกินเต็มแถวของตัวเอง */
+  .h2-data{
+    flex:1 0 100%; margin-top:2px; padding:6px; border:none; background:transparent;
+    font-family:inherit; font-size:13px; font-weight:700; color:var(--ink-soft);
+    text-decoration:underline; text-underline-offset:3px; cursor:pointer;
+  }
+  .h2-data:active{color:var(--ink);}
   .h2-mode-house{border-color:#b6e0c4;}
   .h2-mode-quiz{border-color:#bcd8ef;}
   .cs-divider{font-size:13px; color:var(--ink-soft); font-weight:600; margin:14px 0 10px;}

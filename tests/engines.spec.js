@@ -99,5 +99,8 @@ test('โหมดบ้าน 3D: กดเข้าแล้วโหลดส
   await page.waitForFunction(() => !document.getElementById('house-view').hidden, null, { timeout: 30000 });
   expect(await visibleViews(page)).toEqual(['house-view']);   // chart-view ต้องถูกซ่อนไปแล้ว
   await page.click('#house-view .back-btn');
-  expect(await visibleViews(page)).toEqual(['home-view']);
+  /* ⚠ **เทสนี้ถูกกลับด้าน ไม่ได้ลบ (2026-08-21 · ผู้ใช้สั่ง)** — เด็กในเทสนี้ยังไม่มีตัวละคร
+     ⇒ เข้าบ้านแล้วเจอหน้าสร้างตัวละครก่อน · กด ← ตรงนั้นต้องกลับ **หน้าเลือกเด็ก**
+     ไม่ใช่หน้าทำโจทย์ (ของเดิมตกไปที่ stopHouseGame() เฉยๆ) */
+  expect(await visibleViews(page)).toEqual(['child-select-view']);
 });

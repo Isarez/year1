@@ -1,10 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
 /* ============================================================
-   🗂️ ปุ่ม "จัดการข้อมูล" ต้องเข้าถึงได้จาก 3 ที่  · 2026-08-17 (ผู้ใช้สั่ง)
+   🗂️ ปุ่ม "จัดการข้อมูล" ต้องเข้าถึงได้เสมอ · 2026-08-17 (ผู้ใช้สั่ง)
      ① แถบบนของหน้าเลือกเด็ก (`#clear-btn` — ของเดิม)
-     ② หน้าเลือกโหมด (`#landing-data` — ใหม่)
-     ③ เมนูเฟืองในโหมดบ้านของหนู (`#house-data-btn` — ใหม่)
+     ② เมนูเฟืองในโหมดบ้านของหนู (`#house-data-btn`)
+   ⚠ **เดิมมีทางที่ 3 คือปุ่มบนหน้าเลือกโหมด (`#landing-data`)** — ตั้งแต่ 2026-08-21
+     หน้าเลือกโหมดถูกเลิกใช้ (แทนด้วยหน้าแรกแบบรวมร่าง) ทางนั้นจึงเข้าไม่ถึงแล้ว
+     เทสของทางที่ 3 **ถูกเปลี่ยนเป็นตัวคุมว่า "หน้าเลือกเด็กต้องมีปุ่มนี้อยู่จริง" ไม่ได้ลบทิ้ง**
+     (หน้าแรกใหม่ = หน้าเลือกเด็ก ⇒ ทางที่ ① อยู่ตรงหน้าเด็กอยู่แล้ว)
 
    🔒 **ทั้ง 3 ทางต้องเปิด `#clear-modal` ตัวเดียวกัน ห้ามทำกล่องใหม่ซ้ำ**
       ระบบย้ายข้อมูล/รีเซ็ต/ลบ ต้องมีทางเดียวจุดเดียว ไม่งั้นวันหลังแก้ที่หนึ่งแล้วอีกที่ค้างของเก่า
@@ -23,28 +26,26 @@ async function pick(page) {
       char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 },
     }));
   }, CHILD);
-  /* ⚠ `?home=v1` — ตั้งแต่ 2026-08-20 หน้าแรกเป็นแบบรวมร่างซึ่ง **ไม่มีหน้าเลือกโหมดแล้ว**
-     ทางเข้า "จัดการข้อมูล" ของหน้านั้นจึงเหลือปุ่มบนแถบหน้าเลือกเด็ก (#clear-btn) กับเมนูเฟือง
-     ในโหมดบ้าน — เทสในไฟล์นี้คุมทั้ง 3 ทางเหมือนเดิม แต่ทางที่ 2 ต้องเปิดหน้าเก่ามาดู */
-  await page.goto('/?home=v1');
-  await page.locator('#child-select-view .child-card').first().click();
-  await page.waitForSelector('#landing-view:not([hidden])', { timeout: 20000 });
+  await page.goto('/');
+  await page.waitForSelector('#child-list .child-card');
 }
 
-test('หน้าเลือกโหมด: มีปุ่มจัดการข้อมูล และต้องเล็กกว่าการ์ด 2 ใบชัดเจน', async ({ page }) => {
+test('หน้าแรก: แตะชื่อเด็กแล้วต้องมีทางเข้าจัดการข้อมูล และเปิดกล่องเดิมได้', async ({ page }) => {
   await pick(page);
-  const size = await page.evaluate(() => {
-    const d = document.getElementById('landing-data').getBoundingClientRect();
-    const card = document.getElementById('landing-house').getBoundingClientRect();
-    const back = document.getElementById('landing-back').getBoundingClientRect();
-    return { dArea: d.width * d.height, cArea: card.width * card.height,
-             sameRow: Math.abs(d.top - back.top) < 4 };
+  await page.locator('#child-select-view .child-card').first().click();
+  const dat = page.locator('.h2-data');
+  await expect(dat, 'หน้าแรกต้องมีทางเข้าจัดการข้อมูลเสมอ').toBeVisible();
+  /* ⚠ ต้อง "เบา" กว่าปุ่มโหมดชัดเจน เด็กจะได้ไม่เข้าใจว่าเป็นทางเลือกที่ 3
+     วัดจาก **ความสูง** ไม่ใช่พื้นที่ — ตัวนี้เป็นลิงก์ข้อความกินเต็มแถวของตัวเอง
+     พื้นที่จึงกว้างกว่าปุ่มได้ทั้งที่ดูเบากว่ามาก */
+  const sz = await page.evaluate(()=>{
+    const d = document.querySelector('.h2-data').getBoundingClientRect();
+    const m = document.querySelector('.h2-mode').getBoundingClientRect();
+    return {d:d.height, m:m.height, own: d.top >= m.bottom - 1};
   });
-  /* ⚠ ปุ่มนี้ห้ามใหญ่จนเด็กเข้าใจว่าเป็น "ทางเลือกที่ 3" ข้างการ์ดเข้าเมือง/ทำโจทย์ */
-  expect(size.dArea, 'ต้องเล็กกว่าการ์ดหลักมาก').toBeLessThan(size.cArea * 0.25);
-  expect(size.sameRow, 'ต้องอยู่แถวเดียวกับปุ่มเปลี่ยนคนเล่น').toBe(true);
-
-  await page.locator('#landing-data').click();
+  expect(sz.d, 'ต้องเตี้ยกว่าปุ่มโหมดชัดเจน').toBeLessThan(sz.m * 0.6);
+  expect(sz.own, 'ต้องอยู่แถวของตัวเอง ไม่เรียงข้างปุ่มโหมด').toBe(true);
+  await dat.click();
   await expect(page.locator('#clear-modal')).not.toBeHidden();
   /* ต้องเป็นกล่องเดิมที่มีครบ 3 ทาง: ย้ายเครื่อง / รีเซ็ต / ลบ */
   await expect(page.locator('#export-child-btn')).toBeVisible();
@@ -54,6 +55,7 @@ test('หน้าเลือกโหมด: มีปุ่มจัดกา
 
 test('โหมดบ้านของหนู: เมนูเฟืองมีจัดการข้อมูล และกล่องต้องเปิดทับเมืองได้', async ({ page }) => {
   await pick(page);
+  await page.locator('#child-select-view .child-card').first().click();
   await page.locator('#house-entry-btn').dispatchEvent('click');
   /* ⚠ ต้องรอ ready() เสมอ — hMode เป็น 'world' ตั้งแต่ไฟล์โหลดเสร็จ ทั้งที่บ้านยังไม่พร้อม */
   await page.waitForFunction(() => window.__houseDbg && window.__houseDbg.ready && window.__houseDbg.ready(),
