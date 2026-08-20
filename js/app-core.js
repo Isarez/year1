@@ -163,6 +163,7 @@ function enterHomeReal(){
   $('child-select-view').hidden = true;
   $('owl-widget').hidden = false;
   $('clear-btn').hidden = false;
+  $('reload-btn').hidden = true;      /* ปุ่มโหลดใหม่มีเฉพาะหน้าเลือกเด็ก */
   homeView.hidden = false;
   updateHeaderChild();
   renderHome();
@@ -187,15 +188,6 @@ function updateHeaderChild(){
 }
 
 function renderChildSelect(){
-  /* 🐞 กลับมาหน้าเลือกเด็กแล้ว **แถบชื่อเด็กบน header ยังค้างอยู่** (ผู้ใช้แจ้ง 2026-08-20)
-     ต้นเหตุ: ปุ่ม "เปลี่ยนเด็ก" เรียก renderChildSelect() อย่างเดียว ไม่ได้แตะ header เลย
-     ⇒ ซ่อนที่นี่จุดเดียว เพราะทุกทางที่กลับมาหน้าเลือกเด็กวิ่งผ่านฟังก์ชันนี้เสมอ
-       (ทางเดียวกับที่ `OwlLanding.reset()` ถูกเรียกอยู่แล้ว)
-     ⚠ **ไม่แตะ `activeChild`** — แค่ซ่อนของที่เห็นบนจอ ไม่ยุ่งกับ state ที่ระบบอื่นอ่านอยู่ */
-  { const chipGroup = $('child-chip-group');
-    if(chipGroup) chipGroup.hidden = true;
-    const bs = $('brand-sub');
-    if(bs) bs.textContent = 'เก็บสติกเกอร์ให้ครบทุกหมวด!'; }
   const listEl = $('child-list');
   const addForm = $('child-add-form');
   const addNewBtn = $('child-add-new-btn');
@@ -262,6 +254,15 @@ function renderChildSelect(){
      (app-landing.js โหลดทีหลังไฟล์นี้ จึงต้องเช็คก่อนเรียกเสมอ) */
   if(window.OwlLanding) OwlLanding.reset();
   $('clear-btn').hidden = true;
+  $('reload-btn').hidden = false;     /* กลับมาหน้าเลือกเด็ก → โชว์ปุ่มโหลดใหม่อีกครั้ง */
+  /* 🐞 **แถบชื่อเด็กบน header ค้างอยู่หลังกดเปลี่ยนเด็ก** (ผู้ใช้แจ้ง 2026-08-20)
+     ต้นเหตุ: ปุ่ม "เปลี่ยนเด็ก" เรียก renderChildSelect() อย่างเดียว ไม่ได้แตะ header เลย
+     ⇒ ซ่อนรวมไว้กับกลุ่ม "กลับมาหน้าเลือกเด็ก" ตรงนี้ เพราะทุกทางกลับวิ่งผ่านฟังก์ชันนี้เสมอ
+     ⚠ **ไม่แตะ `activeChild`** — แค่คืนสภาพสิ่งที่เห็นบนจอ ไม่ยุ่งกับ state ที่ระบบอื่นอ่านอยู่ */
+  { const chipGroup = $('child-chip-group');
+    if(chipGroup) chipGroup.hidden = true;
+    const bs = $('brand-sub');
+    if(bs) bs.textContent = 'เก็บสติกเกอร์ให้ครบทุกหมวด!'; }
   homeView.hidden = true;
   $('owl-widget').hidden = true;
   $('free-piano-btn').hidden = true;

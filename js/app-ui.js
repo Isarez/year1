@@ -330,6 +330,30 @@ $('delete-child-btn').addEventListener('click', ()=>{
 
 $('clear-btn').addEventListener('click', ()=>{ playClick(); showClearModal(); });
 
+/* ---------- ปุ่มโหลดเวอร์ชันใหม่ (มีเฉพาะหน้าเลือกเด็ก) ----------
+   ปัญหา: แอปที่ Add to Home Screen บน iPad/iPhone เปิดแบบ standalone และโปรเจคนี้ไม่มี service worker
+   iOS จึงเสิร์ฟ index.html จาก HTTP cache เดิม เปิดแอปกี่ครั้งก็ยังได้ของเก่าทั้งที่ deploy ใหม่ไปแล้ว
+   (ไฟล์ js/css ไม่ใช่ปัญหา เพราะมี ?v= อยู่แล้ว แต่ตัว index.html ที่ชี้ ?v= ใหม่ต่างหากที่ค้าง)
+   location.reload() ไม่พอ — ยังหยิบจาก cache เดิมได้ ต้องทำให้ URL "ต่างจากเดิม" เพื่อบังคับ fetch จริง
+   ใช้ location.replace เพื่อไม่ให้ปุ่ม back ของเบราว์เซอร์ย้อนกลับมาหน้าเก่าที่ค้าง cache
+   ข้อมูลเด็กอยู่ใน localStorage ไม่หายจากการรีโหลด */
+async function hardReloadApp(){
+  try{
+    /* เผื่ออนาคตมี service worker/Cache Storage — เคลียร์ทิ้งก่อน (ตอนนี้ยังไม่มี ไม่มีผลอะไร) */
+    if(window.caches && caches.keys){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  const base = location.href.split('#')[0].split('?')[0];
+  location.replace(base + '?r=' + Date.now());
+}
+$('reload-btn').addEventListener('click', ()=>{
+  playClick();
+  showToast('\u{1F504}','กำลังโหลดเวอร์ชันใหม่…');
+  setTimeout(hardReloadApp, 350);   /* ให้ toast โผล่ทันก่อนหน้าเปลี่ยน */
+});
+
 /* ============================= EDIT EMOJI (สำหรับเด็กที่มีชื่อแล้ว อยากเปลี่ยน avatar)
    เปิดได้ 2 ทาง: ปุ่ม ✏️ คู่กับชื่อเด็กใน header (แก้ activeChild) และปุ่ม ✏️ คู่กับการ์ดเด็กแต่ละคน
    ในหน้าเลือกโปรไฟล์ (แก้เด็กคนไหนก็ได้ ไม่ต้อง select เข้าไปก่อน) — ใช้ editingChildId เก็บว่ากำลังแก้ใคร ============================= */

@@ -2376,9 +2376,11 @@
     box-shadow:var(--shadow-btn); cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
-  /* คงไว้แม้ตอนนี้เปิด feature แล้ว — display:inline-flex ด้านบนมี specificity สูงกว่า
-     [hidden]{display:none} ของเบราว์เซอร์ ถ้าจะซ่อนปุ่มด้วย attribute hidden อีกในอนาคต
-     ต้องมีบรรทัดนี้ ไม่งั้นใส่ hidden แล้วปุ่มก็ยังโผล่อยู่ดี */
+  /* บรรทัดนี้จริงๆ แล้ว "ไม่จำเป็น" (เคยเข้าใจผิดว่าจำเป็นตอนปิด HOUSE_FEATURE_OFF v2.0.0 แล้วเทสยืนยันแล้วว่าผิด)
+     UA stylesheet ของเบราว์เซอร์คือ [hidden]:not([hidden=until-found i]){display:none !important}
+     มี !important จึงชนะ display เดิมของ author เสมอ ไม่ว่า specificity จะเป็นเท่าไหร่
+     ⇒ attribute hidden ใช้ซ่อนปุ่มได้เองอยู่แล้ว (เหมือน .icon-btn ที่เป็น display:flex ก็ซ่อนด้วย hidden ได้)
+     คงบรรทัดไว้เฉยๆ ไม่มีผลเสีย ลบทิ้งได้ถ้าอยากเก็บกวาด */
   .house-entry-btn[hidden]{display:none;}
   .house-entry-btn:hover{transform:translateY(-2px) scale(1.03);}
   .house-entry-btn:active{transform:scale(.97);}

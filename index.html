@@ -83,6 +83,16 @@
     <button class="icon-btn" id="sound-toggle" aria-label="เปิด/ปิดเสียง" data-tooltip="เปิด/ปิดเสียง">🔊</button>
     <button class="icon-btn" id="clear-btn" aria-label="จัดการข้อมูล" data-tooltip="จัดการข้อมูล" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3D7FBF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#DCF0FB"/><polyline points="14 3 14 8 19 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/></svg></button>
     <button class="icon-btn" id="fullscreen-toggle" aria-label="เต็มหน้าจอ" data-tooltip="เต็มหน้าจอ">⛶</button>
+    <!-- โหลดใหม่: โชว์เฉพาะหน้าเลือกเด็ก (renderChildSelect โชว์ / enterHome ซ่อน)
+         แอปที่ Add to Home Screen บน iPad ไม่มี service worker iOS จึงกิน index.html จาก HTTP cache เดิม
+         เปิดแอปแล้วยังได้ของเก่าทั้งที่ deploy version ใหม่ไปแล้ว — ปุ่มนี้บังคับดึงใหม่ (ดู hardReloadApp ใน js/app-ui.js) -->
+    <button class="icon-btn" id="reload-btn" aria-label="โหลดเวอร์ชันใหม่" data-tooltip="โหลดเวอร์ชันใหม่">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="#D8F3DC"/>
+        <path d="M12 7.4a4.6 4.6 0 1 0 4.4 3.2" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round"/>
+        <path d="M11.4 4.3 L15.4 7.4 L11.4 10.5 Z" fill="#2E8F63"/>
+      </svg>
+    </button>
   </div>
 </header>
 
