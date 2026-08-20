@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.1.0-dev8">
+<link rel="stylesheet" href="css/style.css?v=2.1.0-dev9">
 </head>
 <body>
 
@@ -111,7 +111,13 @@
         <input class="child-name-input" id="child-name-input" type="text" placeholder="ใส่ชื่อเล่นหรือชื่อจริง" maxlength="20" autocomplete="off">
         <div class="age-picker-label">เกิดวันไหน? 🎂</div>
         <div class="dob-picker" id="dob-picker"></div>
-        <button class="child-submit-btn" id="child-submit-btn">เริ่มเรียนเลย! 🚀</button>
+        <!-- ปุ่มยืนยันสร้างโปรไฟล์ — ปุ่ม "เข้าเมือง" โผล่เฉพาะหน้าแรกแบบรวมร่าง (?home=v2)
+             เพราะหน้านั้นไม่มีหน้าเลือกโหมดคั่นแล้ว ต้องเลือกตั้งแต่ตรงนี้เลย -->
+        <div class="child-submit-row">
+          <button class="child-submit-btn child-submit-house" id="child-submit-house" hidden><img class="child-submit-ic" src="assets/icons/my-house.svg" alt=""> เข้าเมือง</button>
+          <button class="child-submit-btn" id="child-submit-btn">เริ่มเรียนเลย! 🚀</button>
+        </div>
+        <button class="child-cancel-btn" id="child-cancel-btn" hidden>ยกเลิก</button>
       </div>
       <button class="child-add-new-btn" id="child-add-new-btn" hidden><svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E8F63" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#D8F3DC"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> เพิ่มเด็กคนใหม่</button>
       <button class="child-import-btn" id="child-import-btn"><svg class="btn-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2E8F63" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#D8F3DC"/><polyline points="14 3 14 8 19 8"/><path d="M12 11 V17 M9.5 14.5 L12 17 L14.5 14.5"/></svg> นำเข้าข้อมูลเด็กจากอุปกรณ์อื่น</button>
@@ -1621,41 +1627,41 @@
 
 <!-- ข้อมูลหมวด: แยกไฟล์ตามระดับชั้น แล้วต่อกันเป็น CATS ใน data-cats.js
      (data-cats.js ต้องอยู่หลัง data-cats-*.js ทุกไฟล์) -->
-<script src="js/data-cats-prep.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats-p1.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats-p2.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats-p3.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats-p4.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats-p5.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats-p6.js?v=2.1.0-dev8"></script>
-<script src="js/data-cats.js?v=2.1.0-dev8"></script>
-<script src="js/data-pools.js?v=2.1.0-dev8"></script>
+<script src="js/data-cats-prep.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats-p1.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats-p2.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats-p3.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats-p4.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats-p5.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats-p6.js?v=2.1.0-dev9"></script>
+<script src="js/data-cats.js?v=2.1.0-dev9"></script>
+<script src="js/data-pools.js?v=2.1.0-dev9"></script>
 <!-- โค้ดกลางที่ใช้ร่วมกับโหมดครู (teacher/) — แก้ที่นี่ที่เดียวมีผลทั้งสองหน้า -->
-<script src="js/shared/char-colors.js?v=2.1.0-dev8"></script>
-<script src="js/shared/audio.js?v=2.1.0-dev8"></script>
-<script src="js/shared/ui.js?v=2.1.0-dev8"></script>
-<script src="js/shared/icons.js?v=2.1.0-dev8"></script>
-<script src="js/icons-quiz.js?v=2.1.0-dev8"></script>
-<script src="js/shared/speech.js?v=2.1.0-dev8"></script>
-<script src="js/shared/piano.js?v=2.1.0-dev8"></script>
-<script src="js/shared/ar-core.js?v=2.1.0-dev8"></script>
-<script src="js/owl-messages.js?v=2.1.0-dev8"></script>
+<script src="js/shared/char-colors.js?v=2.1.0-dev9"></script>
+<script src="js/shared/audio.js?v=2.1.0-dev9"></script>
+<script src="js/shared/ui.js?v=2.1.0-dev9"></script>
+<script src="js/shared/icons.js?v=2.1.0-dev9"></script>
+<script src="js/icons-quiz.js?v=2.1.0-dev9"></script>
+<script src="js/shared/speech.js?v=2.1.0-dev9"></script>
+<script src="js/shared/piano.js?v=2.1.0-dev9"></script>
+<script src="js/shared/ar-core.js?v=2.1.0-dev9"></script>
+<script src="js/owl-messages.js?v=2.1.0-dev9"></script>
 <!-- ชุดไฟล์ของแอป: app-core ต้องมาก่อนไฟล์เกมทุกไฟล์ และ app-ui ต้องอยู่ท้ายสุด
      (บรรทัด INIT อยู่ท้าย app-ui และเรียกใช้ฟังก์ชันจากทุกไฟล์) -->
-<script src="js/owl-games.js?v=2.1.0-dev8"></script>
-<script src="js/app-core.js?v=2.1.0-dev8"></script>
-<script src="js/game-quiz.js?v=2.1.0-dev8"></script>
-<script src="js/games-think.js?v=2.1.0-dev8"></script>
-<script src="js/games-math.js?v=2.1.0-dev8"></script>
-<script src="js/games-code.js?v=2.1.0-dev8"></script>
-<script src="js/games-write.js?v=2.1.0-dev8"></script>
-<script src="js/games-art.js?v=2.1.0-dev8"></script>
-<script src="js/games-listen.js?v=2.1.0-dev8"></script>
-<script src="js/games-ar.js?v=2.1.0-dev8"></script>
-<script src="js/app-landing.js?v=2.1.0-dev8"></script>
+<script src="js/owl-games.js?v=2.1.0-dev9"></script>
+<script src="js/app-core.js?v=2.1.0-dev9"></script>
+<script src="js/game-quiz.js?v=2.1.0-dev9"></script>
+<script src="js/games-think.js?v=2.1.0-dev9"></script>
+<script src="js/games-math.js?v=2.1.0-dev9"></script>
+<script src="js/games-code.js?v=2.1.0-dev9"></script>
+<script src="js/games-write.js?v=2.1.0-dev9"></script>
+<script src="js/games-art.js?v=2.1.0-dev9"></script>
+<script src="js/games-listen.js?v=2.1.0-dev9"></script>
+<script src="js/games-ar.js?v=2.1.0-dev9"></script>
+<script src="js/app-landing.js?v=2.1.0-dev9"></script>
 <!-- หน้าแรกแบบรวมร่าง (ทดลอง · เปิดด้วย ?home=v2) — ต้องมาหลัง app-landing.js เพราะเรียก OwlLanding.go() -->
-<script src="js/app-home2.js?v=2.1.0-dev8"></script>
-<script src="js/app-ui.js?v=2.1.0-dev8"></script>
+<script src="js/app-home2.js?v=2.1.0-dev9"></script>
+<script src="js/app-ui.js?v=2.1.0-dev9"></script>
 <!-- โหมด "บ้านของหนู" (three.min.js + house-furniture.js + house.js) โหลดแบบ lazy จาก js/games-ar.js
      เฉพาะตอนกดเข้าบ้าน หรือตอนเด็กคนนี้มีบ้านอยู่แล้ว (ต้องโชว์เพื่อนซี้หน้าหลัก)
      ทำให้เด็กที่ไม่เคยเข้าบ้านไม่ต้องโหลด/แปลไฟล์ 3D ก้อนใหญ่ทุกครั้งที่เปิดแอป -->

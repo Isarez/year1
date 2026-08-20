@@ -14131,6 +14131,57 @@ let cvR=null, cvS=null, cvCam=null, cvChar=null, cvPet=null, cvShadC=null, cvSha
 let cvRaf=null, cvLast=0, cvT=0, cvKey='', cvCanvas=null;
 let cvArmL=0, cvArmR=0, cvHeadZ=0, cvWaveT=1.2, cvWaveK=0, cvHopT=1.4, cvHopK=0, cvJumpK=0;
 const CV_IDLE_MS = 1000/30;
+let CV_HALF = 1.72;
+let CV_AIM  = 1.50;   /* จุดเล็งกล้อง — ยกสูงเพื่อดันตัวละครลงมาอยู่ล่างเฟรม เหลือที่ว่างด้านบนให้ฉาก */   /* ครึ่งความสูงกรอบกล้อง (world unit) — เล็กลง = ซูมเข้า */
+/* ฉากจำลองรอบตัวละคร — สนามหญ้าลายตาราง + รั้วขาว + ต้นไม้ + พุ่ม (สี/ทรงชุดเดียวกับเมืองจริง)
+   🎥 กล้องใช้มุมเดียวกับในเมือง (CAM_DIR) ⇒ แกนบนจอไม่ตรงกับแกนโลก:
+      "ขวาบนจอ" = (1,0,-1)/√2 · "บนของจอ" = (-1,1.73,-1)/2
+   ⇒ ของประกอบฉากอยู่ใน group ที่หมุน 45° ให้แกน local ตรงกับแกนจอ **จัดตำแหน่งง่ายกว่ามาก**
+      (รั้วในเมืองมีทั้ง 2 แนวอยู่แล้ว แนวนี้จึงยังดูเป็นเมืองเหมือนเดิม)
+   ⚠ พื้นหญ้า **ไม่หมุน** — ลายตารางต้องเอียงเป็นข้าวหลามตัดเหมือนบล็อกพื้นในเมือง
+   ⚠ สร้างครั้งเดียวตอน init สลับเด็กเปลี่ยนเฉพาะตัวละคร/สัตว์เลี้ยง */
+function cvDiorama(){
+  const g = new THREE.Group();
+  const tileGeo = new THREE.BoxGeometry(1, .2, 1);
+  for(let x=-6; x<=6; x++) for(let z=-6; z<=6; z++){
+    const t = new THREE.Mesh(tileGeo, toonMat((x+z)%2 ? 0x7cc25a : 0x8fd06c));
+    t.position.set(x, -.1, z);
+    g.add(t);
+  }
+  const P = new THREE.Group();
+  P.rotation.y = Math.PI/4;          /* แกน local = แกนบนจอ (ดูหมายเหตุด้านบน) */
+  g.add(P);
+  /* รั้วไม้ขาวพาดหลังตัวละคร */
+  const FZ = -2.4;
+  for(let x=-5; x<=5; x++){
+    const post = box(.13, .66, .13, 0xfdfaf2, .04);
+    post.position.set(x, .33, FZ); P.add(post);
+  }
+  [.14, .46].forEach(y=>{
+    const rail = box(10.3, .11, .1, 0xfdfaf2, .03);
+    rail.position.set(0, y, FZ); P.add(rail);
+  });
+  /* ต้นไม้ทรงเดียวกับในเมือง (ลำต้น + พุ่ม 2 ก้อน) */
+  const tree = (x, z, sc, leaf, leaf2)=>{
+    const t = new THREE.Group();
+    const tr = cyl(.17, .22, 1.15, 0x9c6b45, 8); tr.position.y = .57; t.add(tr);
+    const a = sphere(.72, leaf, 12); a.position.y = 1.5; a.scale.y = .88; t.add(a);
+    const b = sphere(.5, leaf2, 10); b.position.set(.34, 1.98, .12); t.add(b);
+    t.position.set(x, 0, z); t.scale.setScalar(sc);
+    P.add(t);
+  };
+  tree(-2.1, -3.3, 1.0, 0x66bb6a, 0x81c784);
+  tree( 2.0, -3.7,  .9, 0x81c784, 0x66bb6a);
+  /* พุ่มเตี้ย + ดอกไม้แซมริมรั้ว ให้ฉากไม่โล่ง */
+  [[-1.0,-2.8,.34],[.9,-2.9,.3],[3.0,-2.7,.26],[-3.3,-2.8,.28]].forEach(([x,z,r])=>{
+    const bu = sphere(r, 0x7cc25a, 9); bu.position.set(x, r*.6, z); bu.scale.y = .8; P.add(bu);
+  });
+  [[-1.6,-2.0,0xff8fb3],[1.5,-2.1,0xffd54f],[2.4,-1.9,0xb388ff],[-2.7,-2.05,0xff8a65]].forEach(([x,z,c])=>{
+    const st = cyl(.03,.03,.22,0x7cc25a,6); st.position.set(x,.11,z); P.add(st);
+    const fl = sphere(.11, c, 8); fl.position.set(x,.25,z); fl.scale.y = .7; P.add(fl);
+  });
+  return g;
+}
 function cvInit(canvas){
   if(cvR && cvCanvas === canvas) return true;
   if(cvR){                       /* ย้ายไป canvas ใหม่ = ต้องสร้าง renderer ใหม่ (context ผูกกับ canvas) */
@@ -14145,13 +14196,15 @@ function cvInit(canvas){
   if(!cvS){
     cvS = new THREE.Scene();
     /* เฟรมเต็มตัว: กล้องเล็งกลางลำตัว (y .95) กรอบสูง ±1.25 ⇒ เห็นตั้งแต่ปลายเท้าถึงเหนือหัว */
-    cvCam = new THREE.OrthographicCamera(-1.08, 1.08, 1.12, -1.12, .1, 30);
-    cvCam.position.set(1.7, 1.7, 4.4);
-    cvCam.lookAt(0, .88, 0);
-    cvS.add(new THREE.HemisphereLight(0xfff6e0, 0xcde8b0, .85));
-    const dl = new THREE.DirectionalLight(0xffffff, .65);
-    dl.position.set(3, 6, 5);
+    /* 🎥 มุมกล้องเดียวกับในเมืองเป๊ะ (CAM_DIR) — ฉากหลังจะได้ดูเป็น "เมืองจริง" ไม่ใช่สตูดิโอถ่ายรูป */
+    cvCam = new THREE.OrthographicCamera(-CV_HALF, CV_HALF, CV_HALF, -CV_HALF, .1, 40);
+    cvCam.position.copy(CAM_DIR).multiplyScalar(14);
+    cvCam.lookAt(0, CV_AIM, 0);
+    cvS.add(new THREE.HemisphereLight(0xfff6e0, 0xcde8b0, .72));
+    const dl = new THREE.DirectionalLight(0xffffff, .68);
+    dl.position.copy(LIGHT_DIR).multiplyScalar(10);
     cvS.add(dl);
+    cvS.add(cvDiorama());
     const shadMat = new THREE.MeshBasicMaterial({color:0x1d3a1d, transparent:true, opacity:.14, depthWrite:false});
     cvShadC = new THREE.Mesh(new THREE.CircleGeometry(.46, 24), shadMat);
     cvShadC.rotation.x = -Math.PI/2; cvShadC.scale.set(1.15,1,.7); cvShadC.position.y = .01;
@@ -14166,7 +14219,7 @@ function cvSize(){
   if(!cvR || !cvCanvas) return;
   const w = cvCanvas.clientWidth || 260, h = cvCanvas.clientHeight || 300;
   cvR.setSize(w, h, false);
-  const half = 1.12, halfW = half * (w/h);          /* คงสัดส่วนไว้เสมอ ไม่ให้ตัวละครแบน */
+  const half = CV_HALF, halfW = half * (w/h);          /* คงสัดส่วนไว้เสมอ ไม่ให้ตัวละครแบน */
   cvCam.left = -halfW; cvCam.right = halfW;
   cvCam.updateProjectionMatrix();
 }
@@ -14250,7 +14303,7 @@ window.HouseCharView = {
       cvShadC.position.x = cvChar.position.x;
       if(data.pet){
         cvPet = buildPet(data.pet.type, data.pet.color||0);
-        cvPet.position.set(.66, 0, .16);
+        cvPet.position.set(.62, 0, -.02);
         cvPet.rotation.y = -.4;
         cvS.add(cvPet);
       }
@@ -15025,5 +15078,11 @@ if(!homeView.hidden) houseBuddyRefresh();
   posChipEnabled:()=> POS_CHIP_ENABLED,
   /* ชุดเทส: วาดฟองคำพูดผ่านทางเดินโค้ดจริง */
   talkBubble:(ico, emoji, name, text)=> showTalkBubble($('house-npc-bubble'), ico, emoji, name, text),
-  openBoard:()=> openQuestBoard()};
+  openBoard:()=> openQuestBoard(),
+  /* จำนวนชิ้นในฉากตัวละครหน้าเลือกเด็ก — ชุดเทสใช้ยืนยันว่าฉากจำลองเมืองถูกสร้างจริง */
+  cvSceneSize:()=> cvS ? cvS.children.length : 0,
+  /* จูนกรอบกล้องของตัวละครหน้าเลือกเด็ก (เครื่องมือ: เรียกแล้วถ่ายภาพเทียบ) */
+  cvZoom:(h,a)=>{ CV_HALF = h; if(a!=null) CV_AIM = a;
+    if(cvCam){ cvCam.top=h; cvCam.bottom=-h; cvCam.lookAt(0, CV_AIM, 0); }
+    if(window.HouseCharView) HouseCharView.resize(); }};
 })();

@@ -119,3 +119,37 @@ test('HV6: โหมดบ้านปิดอยู่ → ถอยกลั�
   await expect(page.locator('#home-view')).toBeVisible();
   expect(await page.locator('.h2-panel').count()).toBe(0);
 });
+
+test('HV7: ฟอร์มเพิ่มเด็กมี 2 ปุ่ม (เข้าเมือง/เริ่มเรียน) + ปุ่มยกเลิกที่กลับไปรายชื่อได้', async ({ page }) => {
+  const errs = await open(page, true);
+  await page.locator('#child-add-new-btn').click();
+  await expect(page.locator('#child-submit-house')).toBeVisible();
+  await expect(page.locator('#child-submit-btn')).toBeVisible();
+  await expect(page.locator('#child-cancel-btn')).toBeVisible();
+  expect(await page.locator('#child-submit-house img').count(), 'ไอคอนต้องเป็นไฟล์ SVG').toBe(1);
+  await page.locator('#child-cancel-btn').click();
+  await expect(page.locator('#child-add-form')).toBeHidden();
+  await expect(page.locator('#child-add-new-btn')).toBeVisible();
+  expect(await page.locator('#child-list .child-card').count(), 'ยกเลิกแล้วต้องไม่มีเด็กเพิ่ม').toBe(2);
+  expect(errs).toEqual([]);
+});
+
+test('HV8: ไม่ใส่ธง → ฟอร์มเพิ่มเด็กเหมือนเดิมทุกอย่าง (ปุ่มเดียว ไม่มีปุ่มเข้าเมือง)', async ({ page }) => {
+  await open(page, false);
+  await page.locator('#child-add-new-btn').click();
+  await expect(page.locator('#child-submit-house')).toBeHidden();
+  await expect(page.locator('#child-submit-btn')).toHaveText('เริ่มเรียนเลย! 🚀');
+});
+
+test('HV9: ช่องตัวละครเป็นฉากจำลองเมืองจริง (ไม่ใช่พื้นหลังเปล่า)', async ({ page }) => {
+  await open(page, true);
+  await card(page, 0).click();
+  await page.waitForSelector('.h2-panel #h2-canvas', { timeout: 30000 });
+  const r = await page.evaluate(()=>({
+    n: window.__houseDbg.cvSceneSize(),
+    cap: !!document.querySelector('.h2-cap'),
+  }));
+  /* พื้นหญ้า + รั้ว + ต้นไม้ + พุ่ม + ดอกไม้ + ไฟ + เงา + ตัวละคร + สัตว์เลี้ยง */
+  expect(r.n, 'ฉากต้องมีของมากกว่าแค่ไฟกับตัวละคร').toBeGreaterThan(5);
+  expect(r.cap, 'ป้ายชื่อสัตว์เลี้ยงต้องอยู่ในกรอบฉาก').toBe(true);
+});

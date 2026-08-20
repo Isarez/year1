@@ -6,7 +6,7 @@
    ต้องโหลดหลัง js/data.js + js/owl-messages.js และก่อนไฟล์เกมทุกไฟล์
    ================================================================================ */
 
-window.APP_ASSET_VER = '?v=2.1.0-dev8';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
+window.APP_ASSET_VER = '?v=2.1.0-dev9';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
                                         ⚠️ ตัวนี้อยู่นอก index.html คำสั่ง sed ที่แก้ ?v= ตอน release จับไม่ถึง ต้องแก้มือทุกครั้ง
                                         ⚠️ **ระหว่างพัฒนาโหมดบ้านต้องปั๊มเลขนี้ทุกครั้งที่แก้ js/house*.js ด้วย**
                                            ไฟล์ชุดนั้นโหลดแบบ lazy พร้อม ?v= นี้ ถ้าไม่ปั๊ม เบราว์เซอร์จะเสิร์ฟไฟล์เก่าจาก cache
@@ -136,7 +136,9 @@ function selectChild(id){
 }
 
 /* ห้ามใช้ชื่อซ้ำกับเด็กที่มีอยู่แล้วใน localStorage (ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ถ้าซ้ำ แจ้งเตือนให้เปลี่ยนชื่อใหม่ และไม่บันทึกลง storage เลย */
-function addChild(name){
+/* mode = 'house' | 'quiz' | undefined — หน้าแรกแบบรวมร่างเลือกโหมดตั้งแต่ตอนสร้างโปรไฟล์
+   (หน้านั้นไม่มีหน้าเลือกโหมดคั่นแล้ว) · undefined = ทางเดิม ไปตามเส้น enterHome() */
+function addChild(name, mode){
   name = name.trim();
   if(!name) return;
   if(children.some(c=>c.name.toLowerCase()===name.toLowerCase())){
@@ -156,6 +158,8 @@ function addChild(name){
   try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
   progress = {};
   selectedGrade = child.grade;
+  if(!mode && window.OwlHome2 && OwlHome2.on()) mode = 'quiz';
+  if(mode && window.OwlLanding && OwlLanding.go){ OwlLanding.go(mode); return; }
   enterHome();
 }
 
@@ -256,6 +260,12 @@ function renderChildSelect(){
     addForm.hidden = true;
     addNewBtn.hidden = false;
   }
+  /* ปุ่ม "เข้าเมือง" ในฟอร์มสร้างโปรไฟล์มีเฉพาะหน้าแรกแบบรวมร่าง (ไม่งั้นซ้ำกับหน้าเลือกโหมด)
+     ปุ่มยกเลิกมีเฉพาะตอนมีเด็กอยู่แล้ว — คนแรกของบ้านยกเลิกไปก็ไม่มีอะไรให้กลับไปดู */
+  { const v2 = !!(window.OwlHome2 && OwlHome2.on());
+    $('child-submit-house').hidden = !v2;
+    $('child-submit-btn').textContent = v2 ? 'เริ่มเรียน' : 'เริ่มเรียนเลย! 🚀';
+    $('child-cancel-btn').hidden = children.length === 0; }
   $('child-name-input').value = '';
   selectedEmoji = CHILD_AVATARS[0];
   selectedDob = null;
@@ -282,13 +292,13 @@ function renderChildSelect(){
 }
 
 /* child-select submit */
-function handleChildSubmit(){
+function handleChildSubmit(mode){
   const input = document.getElementById('child-name-input');
   const name = input.value.trim();
   if(!name){ input.focus(); showToast('✏️','ใส่ชื่อก่อนนะ'); return; }
   if(!selectedDob){ showToast('🎂','เลือกวันเกิดให้ครบด้วยนะ จะได้จัดระดับชั้นให้พอดี'); return; }
   playClick();
-  addChild(name);
+  addChild(name, mode);
 }
 function pad2(n){ return (n<10?'0':'')+n; }
 /* {d,m,y(ค.ศ.)} → 'YYYY-MM-DD' (ค.ศ.) */
@@ -426,8 +436,14 @@ function initEmojiPicker(){
 }
 
 function wireChildSelectEvents(){
-  document.getElementById('child-submit-btn').addEventListener('click', handleChildSubmit);
-  document.getElementById('child-name-input').addEventListener('keydown', e=>{ if(e.key==='Enter') handleChildSubmit(); });
+  document.getElementById('child-submit-btn').addEventListener('click', ()=>handleChildSubmit('quiz'));
+  document.getElementById('child-submit-house').addEventListener('click', ()=>handleChildSubmit('house'));
+  document.getElementById('child-name-input').addEventListener('keydown', e=>{ if(e.key==='Enter') handleChildSubmit('quiz'); });
+  /* ⬅ ยกเลิกการเพิ่มเด็ก — กลับไปรายชื่อเดิม (โผล่เฉพาะตอนมีเด็กอยู่แล้ว ไม่งั้นกดแล้วหน้าว่างเปล่า) */
+  document.getElementById('child-cancel-btn').addEventListener('click', ()=>{
+    playClick();
+    renderChildSelect();
+  });
   document.getElementById('child-add-new-btn').addEventListener('click', ()=>{
     playClick();
     selectedEmoji = CHILD_AVATARS[0];

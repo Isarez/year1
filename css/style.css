@@ -422,7 +422,7 @@
   }
   .cs-inner{
     background:var(--white); border-radius:var(--radius-xl);
-    padding:32px 24px 28px; max-width:400px; width:100%;
+    padding:32px 24px 28px; max-width:520px; width:100%;
     box-shadow:var(--shadow-card); text-align:center;
   }
   .cs-mascot{font-size:60px; display:inline-block; animation:idleBounce 1.2s ease-in-out infinite alternate; margin-bottom:8px;}
@@ -468,21 +468,28 @@
   .h2-panel{
     background:var(--cream); border:3px solid var(--eng); border-top:none;
     border-radius:0 0 var(--radius-md) var(--radius-md); padding:12px 14px 16px;
+    margin-top:-10px;                    /* หักช่องไฟ gap ของ .child-list ให้แผงติดกับแถวชื่อสนิท */
     display:flex; flex-direction:column; align-items:center; gap:14px;
     animation:h2Open .22s ease-out;
   }
   @keyframes h2Open{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:none;}}
+  /* ช่องตัวละคร = "หน้าต่างมองเข้าไปในเมือง" — ฉาก 3D เต็มกรอบ ไม่มีขอบพื้นหลังโผล่
+     (ตัวฉากวาดพื้นหญ้าเต็มอยู่แล้ว สีพื้นข้างล่างเป็นแค่กันวูบตอนยังไม่ทันวาดเฟรมแรก) */
   .h2-stage{
-    width:100%; min-height:270px; display:flex; flex-direction:column;
+    position:relative; width:100%; display:flex; flex-direction:column;
     align-items:center; justify-content:center; gap:6px;
     background:linear-gradient(180deg,#eaf6ff 0%,#dff0d8 100%);
-    border-radius:var(--radius-md); padding:10px;
+    border-radius:var(--radius-md); overflow:hidden;
   }
   body.night-mode .h2-stage{background:linear-gradient(180deg,#2b3560 0%,#243049 100%);}
-  .h2-stage.h2-empty{min-height:0;}
-  .h2-canvas{width:100%; max-width:300px; height:270px; display:block; touch-action:manipulation;}
-  .h2-cap{font-size:14px; font-weight:700; color:var(--ink-soft);}
-  body.night-mode .h2-cap{color:#B7C2E8;}
+  /* สถานะ "ยังไม่มีตัวละคร" — ไม่มีฉาก 3D จึงต้องมีระยะขอบให้ปุ่มหายใจ */
+  .h2-stage.h2-empty{padding:14px;}
+  .h2-canvas{width:100%; height:clamp(240px,46vw,300px); display:block; touch-action:manipulation;}
+  /* ชื่อสัตว์เลี้ยง — ป้ายลอยมุมล่างซ้ายของฉาก (ถ้าวางใต้ฉากจะดันกรอบภาพเตี้ยลง) */
+  .h2-cap{
+    position:absolute; left:10px; bottom:9px; padding:3px 11px; border-radius:999px;
+    background:rgba(255,255,255,.86); font-size:13.5px; font-weight:700; color:var(--ink);
+  }
   .h2-wait{display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; color:var(--ink-soft);}
   .h2-spin{
     width:20px; height:20px; border-radius:50%; display:inline-block;
@@ -532,6 +539,19 @@
     box-shadow:0 5px 0 #C47E00; transition:transform .15s,box-shadow .15s;
   }
   .child-submit-btn:active{transform:translateY(4px); box-shadow:0 1px 0 #C47E00;}
+  .child-submit-row{display:flex; gap:10px;}
+  .child-submit-row .child-submit-btn{flex:1 1 0; min-width:0;}
+  .child-submit-house{background:#8FD6A8; color:#1F5636; box-shadow:0 5px 0 #5AA97A;
+    display:flex; align-items:center; justify-content:center; gap:7px;}
+  .child-submit-house:active{box-shadow:0 1px 0 #5AA97A;}
+  .child-submit-ic{width:26px; height:26px; flex:none;}
+  .child-cancel-btn{
+    margin-top:10px; width:100%; padding:9px; border-radius:var(--radius-md);
+    border:none; background:transparent; cursor:pointer; font-family:inherit;
+    font-size:clamp(14px,3.6vw,16px); font-weight:700; color:var(--ink-soft);
+    text-decoration:underline; text-underline-offset:3px;
+  }
+  .child-cancel-btn:active{color:var(--ink);}
   .child-add-new-btn{
     margin-top:14px; width:100%; padding:11px; border-radius:var(--radius-md);
     border:3px dashed var(--cream-2); background:transparent;
