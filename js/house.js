@@ -14120,6 +14120,167 @@ function houseBuddyRefresh(){
   if(!hbRaf){ hbLast = performance.now(); hbRaf = requestAnimationFrame(hbLoop); }
 }
 window.houseBuddyRefresh = houseBuddyRefresh;
+
+/* ---------- 👤 ตัวละครเต็มตัวบนหน้าเลือกเด็ก (หน้าแรกรวมร่าง · js/app-home2.js) ----------
+   ต่างจาก "เพื่อนซี้หน้าหลัก" (hb* ด้านบน) ตรงที่:
+     • อ่านข้อมูลจาก childId ที่ส่งเข้ามา ไม่ใช่ activeChild (ตอนนั้นยังไม่ได้เลือกเด็ก)
+     • กล้องเฟรมเต็มตัว (hb เฟรมครึ่งบนเพราะกล่องเตี้ย)
+   🔒 renderer/canvas ตัวเดียวใช้ซ้ำทุกคน — แตะเด็กคนใหม่ = สลับเฉพาะโมเดล
+      **ห้ามสร้าง renderer ต่อแถว** แท็บเล็ตเด็กเปิด WebGL context พร้อมกันได้ไม่กี่ตัว */
+let cvR=null, cvS=null, cvCam=null, cvChar=null, cvPet=null, cvShadC=null, cvShadP=null;
+let cvRaf=null, cvLast=0, cvT=0, cvKey='', cvCanvas=null;
+let cvArmL=0, cvArmR=0, cvHeadZ=0, cvWaveT=1.2, cvWaveK=0, cvHopT=1.4, cvHopK=0, cvJumpK=0;
+const CV_IDLE_MS = 1000/30;
+function cvInit(canvas){
+  if(cvR && cvCanvas === canvas) return true;
+  if(cvR){                       /* ย้ายไป canvas ใหม่ = ต้องสร้าง renderer ใหม่ (context ผูกกับ canvas) */
+    cvR.dispose();
+    cvR = null;
+  }
+  try{ cvR = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true}); }
+  catch(e){ return false; }
+  cvCanvas = canvas;
+  cvR.setClearColor(0x000000, 0);
+  cvR.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  if(!cvS){
+    cvS = new THREE.Scene();
+    /* เฟรมเต็มตัว: กล้องเล็งกลางลำตัว (y .95) กรอบสูง ±1.25 ⇒ เห็นตั้งแต่ปลายเท้าถึงเหนือหัว */
+    cvCam = new THREE.OrthographicCamera(-1.08, 1.08, 1.12, -1.12, .1, 30);
+    cvCam.position.set(1.7, 1.7, 4.4);
+    cvCam.lookAt(0, .88, 0);
+    cvS.add(new THREE.HemisphereLight(0xfff6e0, 0xcde8b0, .85));
+    const dl = new THREE.DirectionalLight(0xffffff, .65);
+    dl.position.set(3, 6, 5);
+    cvS.add(dl);
+    const shadMat = new THREE.MeshBasicMaterial({color:0x1d3a1d, transparent:true, opacity:.14, depthWrite:false});
+    cvShadC = new THREE.Mesh(new THREE.CircleGeometry(.46, 24), shadMat);
+    cvShadC.rotation.x = -Math.PI/2; cvShadC.scale.set(1.15,1,.7); cvShadC.position.y = .01;
+    cvS.add(cvShadC);
+    cvShadP = new THREE.Mesh(new THREE.CircleGeometry(.34, 24), shadMat);
+    cvShadP.rotation.x = -Math.PI/2; cvShadP.scale.set(1.1,1,.7); cvShadP.position.y = .01;
+    cvS.add(cvShadP);
+  }
+  return true;
+}
+function cvSize(){
+  if(!cvR || !cvCanvas) return;
+  const w = cvCanvas.clientWidth || 260, h = cvCanvas.clientHeight || 300;
+  cvR.setSize(w, h, false);
+  const half = 1.12, halfW = half * (w/h);          /* คงสัดส่วนไว้เสมอ ไม่ให้ตัวละครแบน */
+  cvCam.left = -halfW; cvCam.right = halfW;
+  cvCam.updateProjectionMatrix();
+}
+function cvLoop(now){
+  if(!cvR || !cvCanvas || !cvCanvas.isConnected || document.hidden){ cvRaf = null; return; }
+  cvRaf = requestAnimationFrame(cvLoop);
+  const busy = cvWaveK>0 || cvJumpK>0 || cvHopK>0;
+  if(!busy && now - cvLast < CV_IDLE_MS) return;
+  const dt = Math.min(.05, (now - cvLast)/1000 || .016);
+  cvLast = now; cvT += dt;
+  const t = cvT;
+  if(cvChar){
+    const u = cvChar.userData;
+    u.rig.position.y = Math.sin(t*2.4)*.03;
+    u.rig.rotation.z = Math.sin(t*.75)*.018;
+    cvWaveT -= dt;
+    if(cvWaveT<=0 && cvWaveK<=0){ cvWaveK = HB_WAVE_DUR; cvWaveT = 4 + Math.random()*4; }
+    const swing = Math.sin(t*2.4)*.03;
+    let armLT = -.16 - swing, armRT = .16 + swing, headT = Math.sin(t*1.1)*.05;
+    if(cvWaveK>0){
+      cvWaveK = Math.max(0, cvWaveK - dt);
+      const k = hbEase(Math.min((HB_WAVE_DUR-cvWaveK)*2.6, cvWaveK*2.6));
+      armRT = (1-k)*armRT + k*(2.35 + Math.sin(t*13)*.38);
+      headT += k*.07;
+    }
+    cvArmL  = hbDamp(cvArmL,  armLT, 16, dt);
+    cvArmR  = hbDamp(cvArmR,  armRT, 16, dt);
+    cvHeadZ = hbDamp(cvHeadZ, headT, 10, dt);
+    u.arms[0].rotation.z = cvArmL;
+    u.arms[1].rotation.z = cvArmR;
+    u.head.rotation.z = cvHeadZ;
+    if(cvJumpK>0){
+      cvJumpK = Math.max(0, cvJumpK - dt*2.4);
+      const p = 1 - cvJumpK;
+      cvChar.position.y = Math.sin(p*Math.PI)*.32;
+      const sq = Math.sin(p*Math.PI*2)*.07;
+      cvChar.scale.set(1-sq, 1+sq, 1-sq);
+      if(cvJumpK===0){ cvChar.position.y = 0; cvChar.scale.set(1,1,1); }
+    }
+  }
+  if(cvPet){
+    const u = cvPet.userData.anim || {};
+    cvHopT -= dt;
+    if(cvHopT<=0 && cvHopK<=0){ cvHopT = 1.8 + Math.random()*2.4; cvHopK = HB_HOP_DUR; }
+    if(cvHopK>0){
+      cvHopK = Math.max(0, cvHopK - dt);
+      const p = 1 - cvHopK/HB_HOP_DUR;
+      cvPet.position.y = Math.sin(p*Math.PI)*.16;
+      const sq = Math.sin(p*Math.PI*2)*.09;
+      cvPet.scale.set(1-sq, 1+sq, 1-sq);
+      cvPet.rotation.x = -Math.sin(p*Math.PI)*.12;
+      if(cvHopK===0){ cvPet.position.y = 0; cvPet.scale.set(1,1,1); cvPet.rotation.x = 0; }
+    }
+    if(u.tail) u.tail.rotation.z = Math.sin(t*7)*.3 + Math.sin(t*11.3)*.06;
+    if(u.wings) u.wings.forEach(w=>{
+      const flap = cvHopK>0 ? Math.sin(t*22)*.6 : Math.sin(t*3)*.1;
+      w.rotation.z = hbDamp(w.rotation.z, flap*w.userData.side, 24, dt);
+    });
+    if(u.head) u.head.rotation.z = Math.sin(t*1.4)*.06;
+  }
+  cvR.render(cvS, cvCam);
+}
+window.HouseCharView = {
+  /* วาดตัวละครของเด็กคนนี้ลง canvas — คืน false ถ้าเด็กยังไม่มีตัวละคร (ผู้เรียกไปโชว์ปุ่มสร้างแทน) */
+  mount(canvas, childId){
+    if(!canvas || !childId) return false;
+    let data = null;
+    try{ data = JSON.parse(localStorage.getItem(HOUSE_KEY(childId)) || 'null'); }catch(e){}
+    if(!data || !data.char) return false;
+    if(!cvInit(canvas)) return false;
+    cvSize();
+    const key = childId + '|' + JSON.stringify(data.char) + '|' + JSON.stringify(data.pet||null);
+    if(key !== cvKey){
+      cvKey = key;
+      if(cvChar){ cvS.remove(cvChar); disposeGroup(cvChar); cvChar = null; }
+      if(cvPet){ cvS.remove(cvPet); disposeGroup(cvPet); cvPet = null; }
+      cvChar = buildCharacter(data.char);
+      cvChar.position.set(data.pet ? -.42 : 0, 0, 0);
+      cvChar.rotation.y = data.pet ? .3 : .1;
+      cvS.add(cvChar);
+      cvShadC.position.x = cvChar.position.x;
+      if(data.pet){
+        cvPet = buildPet(data.pet.type, data.pet.color||0);
+        cvPet.position.set(.66, 0, .16);
+        cvPet.rotation.y = -.4;
+        cvS.add(cvPet);
+      }
+      cvShadP.visible = !!cvPet;
+      if(cvPet) cvShadP.position.set(cvPet.position.x, .01, cvPet.position.z);
+      cvArmL = cvArmR = cvHeadZ = 0;
+      cvWaveK = cvJumpK = cvHopK = 0;
+      cvWaveT = .8;                    /* ทักทายไวๆ ทันทีที่เด็กถูกเลือก */
+    }
+    if(!cvRaf){ cvLast = performance.now(); cvRaf = requestAnimationFrame(cvLoop); }
+    return true;
+  },
+  /* ชื่อสัตว์เลี้ยงของเด็กคนนี้ (ถ้ามี) — ใช้ทำข้อความใต้ตัวละคร */
+  petName(childId){
+    try{
+      const d = JSON.parse(localStorage.getItem(HOUSE_KEY(childId)) || 'null');
+      return (d && d.pet && d.pet.name) || '';
+    }catch(e){ return ''; }
+  },
+  hasChar(childId){
+    try{
+      const d = JSON.parse(localStorage.getItem(HOUSE_KEY(childId)) || 'null');
+      return !!(d && d.char);
+    }catch(e){ return false; }
+  },
+  cheer(){ cvJumpK = 1; cvWaveK = HB_WAVE_DUR; cvHopK = HB_HOP_DUR; },
+  resize(){ cvSize(); },
+  /* หยุดลูป (ยุบแถว/ออกจากหน้า) — เก็บ renderer ไว้ใช้ซ้ำ ไม่ dispose ทิ้ง */
+  unmount(){ if(cvRaf){ cancelAnimationFrame(cvRaf); cvRaf = null; } },
+};
 /* กลับมาที่แท็บนี้อีกครั้ง → ปลุกลูปเพื่อนซี้ที่หยุดไปตอนแท็บถูกซ่อน */
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden || hbRaf) return;

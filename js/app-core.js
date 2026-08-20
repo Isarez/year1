@@ -6,7 +6,7 @@
    ต้องโหลดหลัง js/data.js + js/owl-messages.js และก่อนไฟล์เกมทุกไฟล์
    ================================================================================ */
 
-window.APP_ASSET_VER = '?v=2.1.0-dev7';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
+window.APP_ASSET_VER = '?v=2.1.0-dev8';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
                                         ⚠️ ตัวนี้อยู่นอก index.html คำสั่ง sed ที่แก้ ?v= ตอน release จับไม่ถึง ต้องแก้มือทุกครั้ง
                                         ⚠️ **ระหว่างพัฒนาโหมดบ้านต้องปั๊มเลขนี้ทุกครั้งที่แก้ js/house*.js ด้วย**
                                            ไฟล์ชุดนั้นโหลดแบบ lazy พร้อม ?v= นี้ ถ้าไม่ปั๊ม เบราว์เซอร์จะเสิร์ฟไฟล์เก่าจาก cache
@@ -117,16 +117,22 @@ function progressKey(){ return 'p1quiz_progress_'+(activeChild ? activeChild.id 
 function loadProgressForChild(){
   try{ progress = JSON.parse(localStorage.getItem(progressKey()) || '{}'); }catch(e){ progress = {}; }
 }
-function selectChild(id){
+/* ตั้งเด็กคนนี้เป็นคนเล่นปัจจุบัน **โดยยังไม่เข้าโหมดไหน**
+   คืน 'ok' = พร้อมไปต่อ · 'age' = เปิด popup ถามวันเกิดแล้ว · 'none' = ไม่เจอเด็กคนนี้
+   ⚠ แยกออกมาจาก selectChild() เพื่อให้หน้าแรกแบบรวมร่าง (js/app-home2.js) เรียกใช้ได้
+     โดยไม่ต้องเข้าหน้าหมวดทันที — **ห้ามให้ฟังก์ชันนี้พาไปหน้าไหนเอง** */
+function activateChild(id){
   activeChild = children.find(c=>c.id===id) || null;
-  if(activeChild){
-    try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
-    loadProgressForChild();
-    /* โปรไฟล์ที่ยังไม่เคยใส่วันเกิด (รวมโปรไฟล์เก่าที่มีแต่อายุ) → ถามวันเกิดก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
-    if(!activeChild.birthDate){ openAgeModal(); return; }
-    selectedGrade = resolveGradeForChild(activeChild);
-    enterHome();
-  }
+  if(!activeChild) return 'none';
+  try{ localStorage.setItem('p1quiz_active_child', id); }catch(e){}
+  loadProgressForChild();
+  /* โปรไฟล์ที่ยังไม่เคยใส่วันเกิด (รวมโปรไฟล์เก่าที่มีแต่อายุ) → ถามวันเกิดก่อน (popup) แล้วค่อยเข้าหน้าหลัก */
+  if(!activeChild.birthDate){ openAgeModal(); return 'age'; }
+  selectedGrade = resolveGradeForChild(activeChild);
+  return 'ok';
+}
+function selectChild(id){
+  if(activateChild(id) === 'ok') enterHome();
 }
 
 /* ห้ามใช้ชื่อซ้ำกับเด็กที่มีอยู่แล้วใน localStorage (ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ถ้าซ้ำ แจ้งเตือนให้เปลี่ยนชื่อใหม่ และไม่บันทึกลง storage เลย */
@@ -225,12 +231,18 @@ function renderChildSelect(){
         cinfo.appendChild(csub);
       }
       const arrow = document.createElement('span');
+      arrow.className = 'cnav';      /* หมุนเป็นลูกศรชี้ลงตอนแถวถูกกางในหน้าแรกแบบรวมร่าง */
       arrow.style.cssText = 'font-size:20px;color:var(--ink-soft)';
       arrow.textContent = '▶';
       card.appendChild(avSpan);
       card.appendChild(cinfo);
       card.appendChild(arrow);
-      card.addEventListener('click', ()=>{ playClick(); selectChild(child.id); });
+      card.addEventListener('click', ()=>{
+        playClick();
+        /* หน้าแรกแบบรวมร่าง (ธง ?home=v2) → กางแถวนี้แทนการข้ามไปหน้าเลือกโหมด */
+        if(window.OwlHome2 && OwlHome2.on()){ OwlHome2.toggle(child, row); return; }
+        selectChild(child.id);
+      });
       const editBtn = document.createElement('button');
       editBtn.className = 'child-edit-btn';
       editBtn.type = 'button';
@@ -253,6 +265,7 @@ function renderChildSelect(){
   /* กลับมาหน้าเลือกเด็ก = เริ่มรอบใหม่ ⇒ หน้าเลือกโหมด (เข้าเมือง/ทำโจทย์) ต้องเด้งอีกครั้ง
      (app-landing.js โหลดทีหลังไฟล์นี้ จึงต้องเช็คก่อนเรียกเสมอ) */
   if(window.OwlLanding) OwlLanding.reset();
+  if(window.OwlHome2) OwlHome2.reset();       /* ยุบแถวที่กางค้างอยู่ + หยุดลูปวาดตัวละคร */
   $('clear-btn').hidden = true;
   $('reload-btn').hidden = false;     /* กลับมาหน้าเลือกเด็ก → โชว์ปุ่มโหลดใหม่อีกครั้ง */
   /* 🐞 **แถบชื่อเด็กบน header ค้างอยู่หลังกดเปลี่ยนเด็ก** (ผู้ใช้แจ้ง 2026-08-20)

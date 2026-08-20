@@ -114,5 +114,9 @@
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
-  window.OwlLanding = {maybeShow, reopen, reset, hide, houseOn, refreshQuizExitBtn};
+  /* ทางเข้าโหมดสำหรับหน้าอื่น (js/app-home2.js) — ใช้เส้นทางเดียวกับปุ่มบนหน้านี้เป๊ะ
+     ⚠ **ห้ามให้ที่อื่นเขียนทางเข้าเมือง/หน้าหมวดขึ้นใหม่เอง** ไม่งั้นวันหลังแก้ที่นี่แล้วอีกทางค้างของเก่า */
+  function go(mode){ if(mode === 'house') goHouse(); else goQuiz(); }
+
+  window.OwlLanding = {maybeShow, reopen, reset, hide, houseOn, refreshQuizExitBtn, go};
 })();

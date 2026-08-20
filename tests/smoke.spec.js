@@ -55,6 +55,10 @@ test.describe('โหลดแอปและหน้าหลัก', () => {
     await expect(page.locator('#reload-btn')).toBeVisible();          // หน้าเลือกเด็ก → เห็น
 
     await page.locator('#child-select-view .child-card').first().click();
+    /* branch นี้เปิดโหมดบ้านไว้ ⇒ เลือกเด็กแล้วแวะหน้าเลือกโหมดก่อน (บน main ที่ปิดไว้จะข้ามไปเลย)
+       เทสนี้ยกมาจาก main ตอน merge v2.0.2 จึงตกขั้นนี้ไป — ต้องรองรับทั้ง 2 ฝั่ง */
+    const landing = page.locator('#landing-quiz');
+    if(await landing.isVisible()) await landing.click();
     await expect(page.locator('#home-view')).toBeVisible();
     await expect(page.locator('#reload-btn')).toBeHidden();           // หน้าหลัก → ซ่อน
 

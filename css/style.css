@@ -456,6 +456,67 @@
   .child-card .cname{font-size:clamp(18px,4.5vw,21px); font-weight:700; color:var(--ink);}
   .child-card .csub{font-size:13px; font-weight:700; color:var(--ink-soft); margin-top:1px;}
   body.night-mode .child-card .csub{color:#B7C2E8;}
+
+  /* ---------- 🏡 หน้าแรกแบบรวมร่าง (ทดลอง · ?home=v2 · js/app-home2.js) ----------
+     แตะชื่อเด็ก → แถวนั้นกางออก โชว์ตัวละคร 3D เต็มตัว + ปุ่มเลือกโหมด
+     ⚠ แผงกางออกเป็น element พี่น้องของ .child-row (ไม่ได้อยู่ข้างใน)
+       เพราะ .child-row เป็น flex แนวนอนที่มีปุ่มแก้ไข emoji อยู่ขวาสุด */
+  .child-row.h2-open{border-color:var(--eng); border-bottom-left-radius:0; border-bottom-right-radius:0;}
+  .child-row.h2-open .cnav{transform:rotate(90deg);}
+  .child-card .cnav{transition:transform .2s;}
+  .child-row.h2-open .child-card .cname{color:#2E8F63;}
+  .h2-panel{
+    background:var(--cream); border:3px solid var(--eng); border-top:none;
+    border-radius:0 0 var(--radius-md) var(--radius-md); padding:12px 14px 16px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    animation:h2Open .22s ease-out;
+  }
+  @keyframes h2Open{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:none;}}
+  .h2-stage{
+    width:100%; min-height:270px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:6px;
+    background:linear-gradient(180deg,#eaf6ff 0%,#dff0d8 100%);
+    border-radius:var(--radius-md); padding:10px;
+  }
+  body.night-mode .h2-stage{background:linear-gradient(180deg,#2b3560 0%,#243049 100%);}
+  .h2-stage.h2-empty{min-height:0;}
+  .h2-canvas{width:100%; max-width:300px; height:270px; display:block; touch-action:manipulation;}
+  .h2-cap{font-size:14px; font-weight:700; color:var(--ink-soft);}
+  body.night-mode .h2-cap{color:#B7C2E8;}
+  .h2-wait{display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; color:var(--ink-soft);}
+  .h2-spin{
+    width:20px; height:20px; border-radius:50%; display:inline-block;
+    border:3px solid rgba(46,143,99,.25); border-top-color:var(--eng);
+    animation:h2Spin .8s linear infinite;
+  }
+  @keyframes h2Spin{to{transform:rotate(360deg);}}
+  .h2-create{
+    width:100%; display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:18px 22px; border-radius:var(--radius-md); cursor:pointer;
+    border:3px dashed var(--eng); background:rgba(255,255,255,.7);
+    font-family:inherit; font-size:17px; font-weight:700; color:var(--ink);
+  }
+  .h2-create small{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .h2-create:active{transform:translateY(2px);}
+  body.night-mode .h2-create{background:rgba(255,255,255,.12); color:#F2F5FF;}
+  body.night-mode .h2-create small{color:#B7C2E8;}
+  .h2-modes{display:flex; flex-wrap:wrap; gap:10px; width:100%; justify-content:center;}
+  .h2-mode{
+    flex:1 1 190px; max-width:280px; display:flex; align-items:center; gap:11px;
+    padding:12px 14px; border-radius:var(--radius-md); cursor:pointer;
+    border:3px solid var(--cream-2); background:var(--cream);
+    box-shadow:var(--shadow-btn); font-family:inherit; text-align:left;
+  }
+  .h2-mode:active{transform:translateY(3px); box-shadow:none;}
+  .h2-mode-ic{width:40px; height:40px; flex:none;}
+  .h2-mode-tx{display:flex; flex-direction:column; min-width:0;}
+  .h2-mode-name{font-size:17px; font-weight:700; color:var(--ink);}
+  .h2-mode-sub{font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; color:var(--ink-soft);}
+  /* ⚠ ปุ่มโหมดอยู่บนพื้นครีมทั้งกลางวัน/กลางคืน (แผงไม่ได้เปลี่ยนสีตามธีม)
+     **ห้ามใส่ override สีตัวอักษรแบบกลางคืนที่นี่** — ตัวหนังสือสว่างบนครีมจะหายไปเลย
+     (ต่างจาก .h2-cap/.h2-create ที่อยู่ในช่องตัวละครซึ่งเป็นพื้นเข้มตอนกลางคืนจริง) */
+  .h2-mode-house{border-color:#b6e0c4;}
+  .h2-mode-quiz{border-color:#bcd8ef;}
   .cs-divider{font-size:13px; color:var(--ink-soft); font-weight:600; margin:14px 0 10px;}
   .child-name-input{
     width:100%; padding:13px 16px; border-radius:var(--radius-md);

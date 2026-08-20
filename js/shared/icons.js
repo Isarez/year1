@@ -199,6 +199,13 @@
            + '<path d="M22 28v-8c0-6 4-10 10-10s10 4 10 10v8" fill="none" stroke="' + d + '" stroke-width="5" stroke-linecap="round"/>'
            + '<circle cx="32" cy="40" r="4.5" fill="' + dk(c, .7) + '"/>'; },
   };
+  /* 👤➕ สร้างตัวละครใหม่ — ใช้บนหน้าแรกแบบรวมร่าง (js/app-home2.js)
+     เงาคนแบบเรียบๆ + ป้าย + มุมขวาล่าง (ห้ามใช้ emoji ตามกติกาไอคอนของโปรเจกต์) */
+  REG['ui-newchar'] = ()=>{ const c = '#8fb8e0', d = dk(c), g = '#5aa54f';
+    return G('<circle cx="28" cy="21" r="11" fill="' + c + '"/>'
+           + '<path d="M8 54c0-11 9-19 20-19s20 8 20 19z" fill="' + lt(c, .22) + '"/>', d)
+         + G('<circle cx="49" cy="47" r="13" fill="' + g + '"/>', dk(g))
+         + '<path d="M49 40v14M42 47h14" fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round"/>'; };
   Object.keys(UI).forEach(id=>{ REG['ui-' + id] = UI[id]; });
   REG['ui-star'] = ()=>{
     let p2 = '';
