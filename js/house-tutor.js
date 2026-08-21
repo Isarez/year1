@@ -85,6 +85,7 @@
             go:$('house-tut-go'), ok:$('house-tut-ok'), bar:$('house-tut-bar')};
   }
   function hideUi(){
+    document.body.style.removeProperty('--tut-lift'); liftPx = 0;
     const e = els();
     if(e.wrap) e.wrap.hidden = true;
     if(e.hole) e.hole.hidden = true;
@@ -176,6 +177,18 @@
     marker.children[2].rotation.y = markerT * 1.6;
   }
 
+  /* ================= 🧭 ลูกศรบอกทาง =================
+     📌 **ตัวลูกศรจริงย้ายไปอยู่ `js/house.js` แล้ว (2026-08-21)** เพื่อให้ **เควสต์ที่ต้องเดิน
+        ใช้ตัวเดียวกัน** — ที่นี่เหลือแค่ "บอกว่าตอนนี้ให้ชี้ไปไหน" ผ่าน `HouseWorld.guideTo()`
+     ⚠ ต้องเคลียร์ทุกครั้งที่เปลี่ยนขั้น/จบบท ไม่งั้นลูกศรค้างชี้จุดเดิมหลังบทเรียนจบ */
+  function arrowClear(){ const w = W(); if(w && w.guideTo) w.guideTo(null); }
+  function arrowTick(dt, s){
+    const w = W();
+    const t = s ? val(s.at) : null;
+    if(!w || !w.guideTo){ return; }
+    w.guideTo(t ? standTile(t) || t : null);
+  }
+
   /* ================= ตัวช่วยของ step ================= */
   function val(v){ return (typeof v === 'function') ? v() : v; }
 
@@ -238,6 +251,7 @@
     run.mark = s.mark ? val(s.mark) : null;
     disarmTap();
     markerClear();
+    arrowClear();
 
     /* ขั้นที่ทำไปแล้ว (เช่นเด็กซื้อของชิ้นนั้นไว้ก่อนเปิดบทเรียน) ⇒ ข้ามเลย ไม่ต้องให้ทำซ้ำ */
     if(s.skipIf && val(s.skipIf)){ next(); return; }
@@ -272,6 +286,22 @@
     /* ปุ่ม "เข้าใจแล้ว" มีเฉพาะขั้นพูดล้วน — ขั้น action ไม่มีทางกดข้าม */
     if(e.ok) e.ok.hidden = true;
     if(e.bar) e.bar.textContent = progressText();
+    liftPanels();
+  }
+  /* 📏 บอก CSS ว่าต้องยกการ์ด/แผงขึ้นเท่าไรถึงจะพ้นฟองนกฮูก
+     ⚠ ต้องวัด **ความสูงจริง** ไม่ใช่ค่าคงที่ — ฟองที่มีคำอธิบาย 2 บรรทัดสูงกว่าแบบบรรทัดเดียว
+       ~40px ถ้าใช้ค่าคงที่ ฟองจะยังทับปุ่มในกรณีที่ข้อความยาว */
+  let liftPx = 0;
+  function liftPanels(){
+    const e = els();
+    if(!e.say || e.say.hidden) return;
+    const r = e.say.getBoundingClientRect();
+    if(!r.height) return;
+    /* 🔑 วัดจาก **ขอบบนของฟองถึงก้นจอ** ไม่ใช่ความสูงของฟองเฉยๆ —
+       ฟองมีระยะห่างจากก้นจอของตัวเองอยู่แล้ว (bottom:16px) ถ้าคิดแค่ความสูง
+       ค่าที่ได้จะขาดไปเท่ากับระยะนั้น แล้วปุ่มก้นการ์ดยังโดนทับอยู่ดี (วัดจริง 166 vs ต้องการ 202) */
+    const px = Math.round(window.innerHeight - r.top) + 8;
+    if(px !== liftPx){ liftPx = px; document.body.style.setProperty('--tut-lift', px + 'px'); }
   }
   function progressText(){
     const c = chapter();
@@ -299,6 +329,7 @@
     run = null;
     disarmTap();
     markerClear();
+    arrowClear();
     hideUi();
     /* บทถัดไปที่ยังไม่ได้เรียนและพร้อมเรียนแล้ว ⇒ ต่อให้เลย (เว้นบทที่เป็น event-driven) */
     setTimeout(()=>{ if(started) autoStart(); }, 1400);
@@ -328,7 +359,8 @@
     }
     markerTick(dt);
     const s = step();
-    if(!s) return;
+    if(!s){ arrowClear(); return; }
+    arrowTick(dt, s);
     const el = (Date.now() - run.t0) / 1000;        /* วินาทีจริงตั้งแต่เข้าขั้นนี้ */
 
     /* ปุ่ม "เข้าใจแล้ว" ของขั้นพูดล้วน — โผล่ช้ากว่าข้อความ กันกดรัวผ่าน */
@@ -338,6 +370,7 @@
     }
     /* เจาะรูตามปุ่มทุกเฟรม (ปุ่มขยับได้ — แถบเควสต์/แถบสัตว์เลี้ยงยืดหดตามเนื้อหา)
        ⚠ ขั้น `say` ก็เจาะรูได้ถ้าบอก `el` มา — ใช้ตอน "แนะนำว่าปุ่มนี้คืออะไร" โดยยังไม่ต้องให้กด */
+    liftPanels();                  /* ฟองสูงไม่เท่ากันแต่ละขั้น + จอหมุนได้ ⇒ วัดทุกเฟรม */
     if(s.el) paintHole($(s.el));
     else hideHole(els());
 
@@ -347,7 +380,13 @@
       if(e.bar) e.bar.textContent = progressText() + (d > 0 ? ' · อีก ' + d + ' ก้าว' : '');
     }
 
-    if(stepDone(s)){ next(); return; }
+    if(stepDone(s)){
+      /* 📍 ถึงจุดหมายแล้ว → บอกทันทีว่า "ต่อไปให้แตะตรงไหน" (ผู้ใช้สั่ง 2026-08-21)
+         ขั้นถัดไปมีฟองข้อความอยู่แล้วก็จริง แต่เด็กเพิ่งเดินมาไกล สายตายังอยู่ที่ตัวละคร
+         ⇒ toast เด้งกลางจอเป็นตัวดึงสายตากลับมา แล้วฟองค่อยอธิบายต่อ */
+      if(s.k === 'goto' && s.arrive){ const w = W(); if(w) w.toast(s.icon || '📍', val(s.arrive)); }
+      next(); return;
+    }
 
     /* 🛟 วาล์วนิรภัย — ค้างนานเกินไปแล้วข้ามเองเงียบๆ ดีกว่าปล่อยให้เด็กติด */
     if(el > STEP_TIMEOUT) next();
@@ -366,6 +405,12 @@
       if(typeof playClick === 'function') playClick();
       const s = step(), w = W();
       if(!s || !w) return;
+      /* 🏪 **ปิดร้าน/แผงที่เปิดค้างอยู่ก่อนเสมอ** (ผู้ใช้แจ้ง 2026-08-21)
+         กดพาไปเลยขณะร้านเปิดอยู่ ⇒ ตัวเด็กเดินอยู่ข้างหลังแต่จอถูกร้านบังมิด
+         เด็กเห็นแต่หน้าร้านนิ่งๆ นึกว่าเกมค้าง */
+      if(window.HouseShop && HouseShop.isOpen && HouseShop.isOpen()) HouseShop.close();
+      if(window.HouseBook && HouseBook.isOpen && HouseBook.isOpen()) HouseBook.close();
+      if(window.HousePlay && HousePlay.isOpen && HousePlay.isOpen()) HousePlay.close();
       /* อยู่ในบ้านอยู่ ⇒ พาออกไปหน้าบ้านก่อน แล้ว onScene('out') จะเดินต่อให้เอง
          (ผู้ใช้แจ้ง 2026-08-17: อยู่ในบ้านแล้วกด "พาไปเลย" ไปตกปลาไม่ได้เลย) */
       if(w.scene() !== 'out'){
@@ -425,6 +470,9 @@
     run = null;
     disarmTap();
     markerClear();
+    /* 🧭 **ต้องปิดลูกศรด้วย** (ผู้ใช้แจ้ง 2026-08-21: กดข้ามบทเรียนแล้วลูกศรยังค้างชี้อยู่)
+       `skipAll()` เรียก stop() ⇒ คุมที่นี่ที่เดียวครอบทุกทางที่บทเรียนหยุด */
+    arrowClear();
     hideUi();
   }
   function onScene(){
@@ -484,5 +532,8 @@
     /* ค่าตั้งต้นที่ขั้นนี้จดไว้ — ไฟล์บทเรียนใช้เทียบว่า "เพิ่มขึ้นแล้วหรือยัง" */
     mark: () => run ? run.mark : null,
     force: () => { if(run) next(); },      /* เทส: ผ่านขั้นนี้ไปโดยไม่ต้องทำจริง */
+    /* เทส: ลูกศรบอกทางอยู่ตรงไหน หันไปทางไหน (null = ไม่มีลูกศรตอนนี้) */
+    /* เทส: ลูกศรบอกทาง — ตัวจริงอยู่ house.js แล้ว อ่านผ่าน __houseDbg.guide() */
+    arrowAt: () => (window.__houseDbg && window.__houseDbg.guide) ? window.__houseDbg.guide() : null,
   };
 })();

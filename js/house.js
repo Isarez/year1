@@ -482,7 +482,13 @@ function clearPrevModel(){
   if(prevModel){ prevHolder.remove(prevModel); disposeGroup(prevModel); prevModel = null; }
 }
 /* ย่อ/ขยาย + จัดกึ่งกลางให้โมเดลพอดีกรอบพรีวิวเสมอ (ของในคลังขนาดต่างกันหลายเท่าตัว) */
-function fitPreviewModel(g, targetH){
+/* keepAxis = จัดกึ่งกลางเฉพาะแกน Y (วางก้นแตะแท่น) **ไม่ขยับ X/Z**
+   🐞 ใช้กับ "ตัวละคร" เท่านั้น (ผู้ใช้แจ้ง 2026-08-22: จุดหมุนของตัวเด็กในห้างแฟชั่นไม่ถูก)
+      ของทั่วไปจัดกึ่งกลางจาก **กล่องครอบ** ได้ เพราะทรงสมมาตรรอบตัวเอง
+      แต่ตัวละครมี **ของถือ/กระเป๋า/หมวก ยื่นออกไปข้างเดียว** ⇒ กลางกล่องครอบไม่ใช่กลางตัว
+      พอเอากลางกล่องไปวางที่จุดหมุน ตัวเด็กเลย **โคจรรอบจุดที่ว่างข้างตัว** แทนที่จะหมุนอยู่กับที่
+      ⇒ ตัวละครถูกสร้างโดยมีแกนกลางลำตัวอยู่ที่ x=0,z=0 อยู่แล้ว ปล่อยไว้ตามนั้นถูกที่สุด */
+function fitPreviewModel(g, targetH, keepAxis){
   const bb = new THREE.Box3().setFromObject(g);
   if(!isFinite(bb.min.y)) return;
   const size = new THREE.Vector3(); bb.getSize(size);
@@ -494,7 +500,8 @@ function fitPreviewModel(g, targetH){
   g.scale.setScalar(Math.max(.4, Math.min(2.6, s)));
   const bb2 = new THREE.Box3().setFromObject(g);
   const c = new THREE.Vector3(); bb2.getCenter(c);
-  g.position.set(-c.x, -bb2.min.y, -c.z);   /* วางก้นโมเดลแตะแท่นพอดี ไม่ลอย/ไม่จม */
+  if(keepAxis) g.position.set(0, -bb2.min.y, 0);
+  else g.position.set(-c.x, -bb2.min.y, -c.z);   /* วางก้นโมเดลแตะแท่นพอดี ไม่ลอย/ไม่จม */
 }
 function savedCharCfg(){
   const saved = loadHouseData() || {};
@@ -509,7 +516,7 @@ function openShopPreview(spec){
     const cfg = savedCharCfg();
     cfg[spec.row] = spec.i;
     g = buildCharacter(cfg);          /* ตัวละครแยกก้อนของตัวเอง ไม่แตะ charGroup ที่เดินอยู่ในเมือง */
-    fitPreviewModel(g, 2.0);
+    fitPreviewModel(g, 2.0, true);   /* ตัวละคร — หมุนรอบแกนลำตัว ไม่ใช่กลางกล่องครอบ */
   }else if(spec.kind === 'pet'){      /* เฟส 3A: ดูตัวจริงของเพื่อนตัวน้อยก่อนซื้อ */
     /* เฟส 12: แท็บปลอกคอส่ง spec.collar มาด้วย ⇒ เห็นน้อง**ใส่ปลอกคออันนั้นจริงๆ** ก่อนจ่ายเงิน
        (ไม่ส่งมา = ใช้ปลอกคอที่น้องใส่อยู่ตอนนี้ตามปกติ) · พรีวิวไม่โชว์รอยเปื้อนเสมอ */
@@ -5572,6 +5579,15 @@ function findPath(grid, W, D, from, to, avoid){
 const CAM_DIR = new THREE.Vector3(1,1.15,1).normalize();
 const SHADOW_HALF = 12;                 /* ครึ่งกว้างกรอบเงาเริ่มต้น (ปรับตามซูมใน updateShadowCam) */
 const LIGHT_DIR = new THREE.Vector3(6,12,4).normalize();   /* ทิศแสงพระอาทิตย์ (คงที่) */
+/* 📱 "เครื่องจอสัมผัส" — ใช้แทน `isMobileViewport()` (ที่ดูแค่ `innerWidth < 768`)
+   ⚠ iPad แนวตั้งกว้าง 810-1024 px ⇒ **ถูกนับเป็นเดสก์ท็อป** ทั้งที่เป็นเครื่องเป้าหมายจริงของแอป
+     ต้องดูจาก "ความสามารถของเครื่อง" ไม่ใช่ความกว้างจอ */
+function isTouchDevice(){
+  try{
+    if(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return true;
+    return (navigator.maxTouchPoints || 0) > 0;
+  }catch(e){ return false; }
+}
 function applyCamera(){
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   if(hMode==='creator' || hMode==='pet'){   /* แผงสัตว์เลี้ยงใช้เฟรมกล้องเดียวกับ creator */
@@ -5695,7 +5711,25 @@ function initThreeCore(){
      ฉากเป็นการ์ตูนสีแบน ไม่มีรายละเอียดเล็กๆ จึงแทบไม่เห็นความต่างของความคม */
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
   renderer.setSize(window.innerWidth, window.innerHeight);
-  if(hShadows){ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
+  if(hShadows){
+    renderer.shadowMap.enabled = true;
+    /* 📊 จูนจากตัวเลขที่วัดบน iPad จริง (2026-08-22): JS 0.3-0.6 ms · ส่งวาด 2.6 ms
+       แต่เฟรมจริง 25-33 ms ⇒ **~90% เป็นงานฝั่ง GPU** และ **fps เท่ากันหมดทั้งหน้าบ้านโล่งๆ
+       กับกลางตลาดที่ของแน่น** ⇒ ตัวถ่วงไม่ใช่จำนวนของ/สามเหลี่ยม/draw call
+       แต่เป็น **งานต่อพิกเซล** (shadow map + ตัวกรองเงา + fill rate)
+
+       ⇒ บนเครื่องจอสัมผัส (แท็บเล็ตเด็ก = เครื่องเป้าหมาย) ใช้ `PCFShadowMap` แทน `PCFSoftShadowMap`
+         soft สุ่ม texture หลายจุดต่อ 1 พิกเซลที่อยู่ในเงา ⇒ แพงกว่ามาก
+         ขอบเงาคมขึ้นนิดเดียว ฉากเป็นสีแบนการ์ตูนอยู่แล้วแทบดูไม่ออก
+       🔒 **เดสก์ท็อปยังได้ของเดิมทุกอย่าง** (มีกำลังเหลือ ไม่มีเหตุผลต้องลดคุณภาพ)
+       🔒 **ห้ามปิดเงา** — ผู้ใช้ยืนยัน 2026-08-22 ว่าไม่ต้องการให้เงาหายไป */
+    renderer.shadowMap.type = isTouchDevice() ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    /* 🕐 อัปเดต shadow map **เว้นเฟรม** บนเครื่องจอสัมผัส — shadow pass คือการวาดฉากซ้ำอีกรอบ
+       ทำทุกเฟรมทั้งที่ตัวละครการ์ตูนเดินช้ามาก ⇒ เงาตามช้ากว่าตัว 1 เฟรม (~25 ms) มองไม่ออก
+       ⚠ ตั้ง `autoUpdate=false` แล้ว **ต้องสั่ง `needsUpdate=true` เองทุกครั้งที่อยากให้อัปเดต**
+         ลืมสั่ง = เงาค้างเฟรมแรกตลอดกาล (ดู frame()) */
+    renderer.shadowMap.autoUpdate = !isTouchDevice();
+  }
 
   scene = new THREE.Scene();
   camera = new THREE.OrthographicCamera(-8,8,5,-5,.1,80);
@@ -5800,7 +5834,7 @@ function bindCanvasInput(canvas){
     if(pointers.size===2 && hMode==='world'){
       const [a,b] = [...pointers.values()];
       const d = Math.hypot(a.x-b.x, a.y-b.y);
-      if(pinchDist>0){ setZoom(hZoom * (d/pinchDist)); }
+      if(pinchDist>0){ fishZoomWant = 0; fishZoomBase = 0; fishZoomOff = true; setZoom(hZoom * (d/pinchDist)); }
       pinchDist = d;
     }
   });
@@ -5873,11 +5907,139 @@ function bindCanvasInput(canvas){
   canvas.addEventListener('wheel', e=>{
     if(hMode!=='world') return;
     e.preventDefault();
+    fishZoomWant = 0; fishZoomBase = 0; fishZoomOff = true;   /* คนปรับเอง = เลิกคุมอัตโนมัติ */
     setZoom(hZoom * (e.deltaY > 0 ? .92 : 1.08));
   }, {passive:false});
 }
 /* เฟส 5: แผนที่ใหญ่ขึ้นอีก แต่จำกัดการซูมออกไว้ที่ .6 (ซูมออกกว่านี้ของจะเล็กจนเด็กแตะพลาด) */
 function setZoom(z){ hZoom = Math.min(1.8, Math.max(.85, z)); applyCamera(); }
+
+/* ================= 📊 แผงวัดเฟรมเรต (เครื่องมือวัดบนเครื่องจริง · 2026-08-22) =================
+   ⚠ **เปิดด้วย URL `?fps=1` เท่านั้น** — จงใจไม่ผูกกับสวิตช์ `DEV_ENABLED`
+     เพราะสวิตช์ชุดนั้นต้องเป็น `false` เสมอตอน deploy ⇒ ถ้าผูกไว้ จะวัดบนเครื่องจริงไม่ได้เลย
+     ส่วนแบบนี้เด็กไม่มีวันเห็น (ต้องพิมพ์ต่อท้าย URL เอง) และไม่ต้องแก้โค้ดก่อน/หลัง deploy
+
+   ทำไมต้องแยก "เวลา JS" ออกจาก "เวลาเรนเดอร์": เครื่องเทส headless เรนเดอร์ด้วย CPU
+   (SwiftShader) วัดแทน iPad ไม่ได้เลย ⇒ ต้องรู้ให้ได้ว่าคอขวดอยู่ที่ GPU (เงา/สามเหลี่ยม)
+   หรือที่ CPU (งาน JS ต่อเฟรม) **ก่อน** จะลงมือแก้ ไม่งั้นเดาผิดทางเสียเวลาทั้งวัน
+   ⚠ `renderer.render()` เป็น **asynchronous** — ตัวเลข "เรนเดอร์" ที่วัดได้คือเวลาที่ใช้
+     ส่งคำสั่งลง GPU ไม่ใช่เวลาที่ GPU วาดเสร็จจริง · ถ้า JS+เรนเดอร์รวมกันน้อยกว่าคาบเฟรมมาก
+     แต่ fps ยังต่ำ = **คอขวดอยู่ที่ GPU** (นี่คือวิธีอ่านผลของแผงนี้) */
+const FPS_PANEL = (function(){
+  try{ return new URLSearchParams(location.search).get('fps') === '1'; }catch(e){ return false; }
+})();
+let fpsEl = null, fpsT = 0, fpsJs = 0, fpsRen = 0, fpsN = 0;
+const fpsLog = [];
+function fpsPanelTick(dtMs, jsMs, renMs){
+  if(!FPS_PANEL) return;
+  if(!fpsEl){
+    fpsEl = document.createElement('div');
+    fpsEl.id = 'house-fps';
+    fpsEl.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;pointer-events:none;'
+      + 'background:rgba(20,12,4,.82);color:#FFE9B8;font:600 12px/1.5 ui-monospace,monospace;'
+      + 'padding:7px 10px;border-radius:10px;white-space:pre;';
+    document.body.appendChild(fpsEl);
+  }
+  fpsLog.push(dtMs); if(fpsLog.length > 60) fpsLog.shift();
+  fpsJs += jsMs; fpsRen += renMs; fpsN++;
+  fpsT += dtMs;
+  if(fpsT < 500) return;                       /* อัปเดตข้อความวินาทีละ 2 ครั้งพอ (กันแผงเองกินเฟรม) */
+  fpsT = 0;
+  const srt = fpsLog.slice().sort((a, b) => a - b);
+  const med = srt[srt.length >> 1] || 1;
+  const p95 = srt[Math.min(srt.length - 1, Math.floor(srt.length * .95))] || 1;
+  const inf = renderer ? renderer.info.render : {calls:0, triangles:0};
+  const dpr = renderer ? renderer.getPixelRatio() : 0;
+  fpsEl.textContent =
+      'fps ' + (1000 / med).toFixed(0) + '  (แย่สุด ' + (1000 / p95).toFixed(0) + ')\n'
+    + 'เฟรม ' + med.toFixed(1) + ' ms\n'
+    + 'JS ' + (fpsJs / fpsN).toFixed(1) + ' ms · ส่งวาด ' + (fpsRen / fpsN).toFixed(1) + ' ms\n'
+    + 'draw ' + inf.calls + ' · ' + (inf.triangles / 1000).toFixed(0) + 'K tri\n'
+    + (hShadows ? 'เงา ON' : 'เงา OFF') + ' · dpr ' + dpr + ' · ' + window.innerWidth + 'px';
+  fpsJs = 0; fpsRen = 0; fpsN = 0;
+}
+
+/* ================= 🧭 เป้าหมายของลูกศรนำทาง (ผู้ใช้สั่ง 2026-08-21) =================
+   🔒 **ลูกศรมีแบบเดียวในเกม = ลูกศร 2 มิติที่โคจรรอบตัวเด็ก (`#house-qarrow`)**
+      ของเดิมทำไว้ให้เควสต์เก็บของตั้งแต่ 2026-08-16 แล้ว — รอบนี้เอามาใช้กับ
+      **บทเรียนสอนเล่นและเควสต์ที่ต้องเดินทุกแบบ**
+   ❌ เคยลองทำลูกศร 3 มิติลอยเหนือหัวเด็ก ผู้ใช้สั่งให้เอาออก (2026-08-21) —
+      **ห้ามทำกลับมาอีก** ตัวโคจรรอบตัวเด็กอ่านง่ายกว่าและไม่ชนป้ายชื่อเหนือหัว
+
+   ที่นี่มีแค่ "ตอนนี้ควรชี้ไปช่องไหน" ส่วนการวาดอยู่ที่ `updateQuestArrow()` */
+let guideForce = null;                  /* บทเรียนสั่งเป้าหมายเองได้ — มาก่อนเควสต์เสมอ */
+/* เป้าหมายของเควสต์ที่กำลังทำอยู่ (null = ไม่มี/ปลายทางเป็นพื้นที่กว้าง ไม่ใช่จุดเดียว) */
+function questGuideTile(){
+  if(!walkQuest) return null;
+  const npc = () => { const n = NPCS.find(v => v.id === walkQuest.toNpc); return n ? {x:n.x, z:n.z} : null; };
+  if(walkQuest.target === 'npc') return npc();
+  if(walkQuest.target === 'mart'){
+    if(walkQuest.leg !== 1) return npc();
+    const l = LOT_BY_ID['shop-mart']; const d = l ? lotDoorTile(l) : null;
+    return d ? {x:d.x, z:d.z} : null;
+  }
+  if(walkQuest.target === 'catch'){
+    if(catchDone()) return npc();
+    /* ยังทำไม่ครบ → ชี้ไปจุดตกปลาของแหล่งน้ำที่สั่งไว้ (งานเก็บของมีตัวเลือกของตัวเองด้านล่าง) */
+    if(walkQuest.need.some(r => r.k === 'fish')){
+      const sea = walkQuest.where === 'sea';
+      const sp = POND_FISH_SPOTS.concat(seaFishSpots()).filter(x => !!x.sea === sea)[0];
+      return sp ? sp.stand : null;
+    }
+  }
+  return null;
+}
+
+/* ================= 🎣 ซูมเข้าอัตโนมัติตอนยืนจุดตกปลา (ผู้ใช้สั่ง 2026-08-21) =================
+   ทุ่นอยู่ห่างจากช่องที่ยืน 2 ช่อง ⇒ ที่ซูมปกติทุ่นเล็กมาก เด็กแตะพลาดบ่อย
+   ⇒ ก้าวขึ้นท่าเมื่อไหร่ กล้องค่อยๆ ซูมเข้า · เดินออกไปก็ค่อยๆ ซูมกลับ **ระยะเดิมก่อนซูมเข้า**
+
+   🔒 กติกา
+   - **จำระยะเดิมไว้ตอนเริ่มซูมเข้า** แล้วคืนค่านั้นเป๊ะ — เด็กอาจตั้งซูมเองไว้ก่อนแล้ว
+     (`hZoom` เปลี่ยนได้จากล้อเมาส์/นิ้วหนีบ) การรีเซ็ตเป็น 1 จะกลืนค่าที่เด็กตั้งไว้
+   - **เด็กปรับซูมเองระหว่างอยู่บนท่า = ยกเลิกระบบอัตโนมัติทันที** (ให้คนชนะเครื่องเสมอ)
+   - ไล่ค่าแบบไม่ขึ้นกับเฟรมเรต (`1 - exp(-k·dt)`) เครื่องช้า/เร็วได้ความเร็วเท่ากัน
+   - เช็คจาก **`pondFishSpots()` ของจริง ห้ามเขียนพิกัดตายตัวที่นี่** (ผังย้ายจุดตกปลามาแล้ว)
+     นับ "อยู่บนท่า" = ยืนทับช่องนั้นหรือช่องข้างเคียง 1 ช่อง (ท่าไม้ยาวกว่า 1 ช่อง) */
+const FISH_ZOOM = 1.55;               /* เพดานคือ 1.8 — เผื่อให้เด็กหนีบนิ้วซูมต่อได้อีก */
+let fishZoomBase = 0;                 /* ระยะซูมก่อนเข้าโหมดตกปลา (0 = ยังไม่ได้ซูมเข้า) */
+let fishZoomWant = 0;                 /* ระยะที่กำลังไล่เข้าหา (0 = ไม่ได้คุมอยู่) */
+/* 🖐️ เด็กปรับซูมเองระหว่างยืนบนท่า = ยกให้คนคุมจนกว่าจะเดินออกจากท่า
+   ⚠ ล้างแค่ base/want ไม่พอ — เฟรมถัดไปจะเห็นว่า "ยืนบนท่าแต่ยังไม่ได้ซูม" แล้วซูมเข้าใหม่ทันที
+     (คนหมุนล้อออก เครื่องดึงกลับเข้า = แย่งกันไปมา) จึงต้องมีธงแยกที่อยู่จนกว่าจะออกจากท่า */
+let fishZoomOff = false;
+function nearFishStand(){
+  const t = hChar && hChar.tile; if(!t || hScene !== 'out') return false;
+  const list = POND_FISH_SPOTS.concat(seaFishSpots());
+  for(let i = 0; i < list.length; i++){
+    const st = list[i].stand;
+    if(Math.abs(st.x - t.x) <= 1 && Math.abs(st.z - t.z) <= 1) return true;
+  }
+  return false;
+}
+function updateFishZoom(dt){
+  const on = nearFishStand();
+  if(!on) fishZoomOff = false;                 /* ออกจากท่าแล้ว = ระบบกลับมาทำงานรอบหน้าได้ */
+  if(on && fishZoomOff) return;                /* คนสั่งเองอยู่ ไม่ต้องไปยุ่ง */
+  if(on && !fishZoomBase){                     /* ก้าวขึ้นท่า → จำระยะเดิมแล้วเริ่มซูมเข้า */
+    fishZoomBase = hZoom;
+    fishZoomWant = Math.max(hZoom, FISH_ZOOM); /* ซูมอยู่ใกล้กว่านั้นแล้วก็ไม่ต้องถอยออก */
+  }else if(!on && fishZoomBase){               /* เดินออก → กลับระยะเดิมเป๊ะ */
+    fishZoomWant = fishZoomBase;
+    fishZoomBase = 0;
+  }
+  if(!fishZoomWant) return;
+  const d = fishZoomWant - hZoom;
+  if(Math.abs(d) < .004){
+    /* 🐞 **ต้องลงล็อกให้ตรงเป๊ะ ห้ามปล่อยค่าเศษค้างไว้** — การไล่ค่าแบบ exponential
+       ไม่มีวันถึงเป้าพอดี ถ้าหยุดตรงนี้เฉยๆ เศษที่เหลือจะกลายเป็น "ระยะเดิม" ของรอบถัดไป
+       ⇒ เข้า-ออกท่าซ้ำๆ แล้วซูมค่อยๆ ไหลขึ้นเรื่อยๆ (วัดจริง: 1.000 → 1.015 → 1.022 → 1.032) */
+    setZoom(fishZoomWant);
+    if(!on) fishZoomWant = 0;                  /* ถึงแล้วและออกมาแล้ว = ปล่อยการควบคุมคืนให้เด็ก */
+    return;
+  }
+  setZoom(hZoom + d * (1 - Math.exp(-4.5 * dt)));
+}
 
 /* แตะฉากตายตัว (ต้นไม้/พุ่ม/ดอกไม้/อาคารในชุมชน) — geometry ถูกรวมเป็นก้อนต่อโซนแล้ว
    จึงดูว่าแตะโดนอะไรจาก "จุดที่ ray ชน" แล้วแปลงกลับเป็นช่องบนแผนที่ */
@@ -7304,6 +7466,19 @@ function renderWalkStep(st, it){
   const line = document.createElement('div'); line.className = 'hqz-line';
   line.textContent = it.q;
   st.appendChild(line);
+  /* 🐞 **งานส่งของไม่เคยบอกว่าให้ส่งให้ใคร** (ผู้ใช้แจ้ง 2026-08-21)
+     ตัวกลไก (`js/house-quests.js`) ไม่รู้จักผังเมือง จึงส่งมาแค่ `toNpc` แล้วเขียนคอมเมนต์ว่า
+     "หน้าจอต่อท้ายด้วยชื่อคน + สถานที่" — **แต่ฝั่งหน้าจอไม่เคยทำจริง**
+     ⇒ เด็กได้การ์ดว่า "ช่วยเอากระเป๋าไปส่งให้หน่อยได้ไหม?" แล้วไม่รู้ว่าส่งให้ใคร
+     ⚠ ต้องบอกทั้ง **ชื่อ + สถานที่** เพราะเมืองกว้าง 56×42 ช่อง รู้แต่ชื่อก็ยังหาไม่เจอ */
+  /* ⚠ **ยกเว้นเกม "ทายว่าใคร" (`whois`)** — โจทย์คือดูเงาแล้วเดาเองว่าเป็นใคร
+     บอกชื่อตรงนี้ = เฉลยให้ฟรี เกมหมดความหมายทันที */
+  if(it.target === 'npc' && it.toNpc && !it.whois){
+    const info = questItemInfo({src:'npc', id: it.toNpc});
+    const who = document.createElement('div'); who.className = 'hqz-line hqz-line-to';
+    setIconName(who, info.ico, info.icon, 'ส่งให้ ' + info.name + ' ที่ ' + info.place);
+    st.appendChild(who);
+  }
   if(it.list && it.list.length){
     const row = document.createElement('div'); row.className = 'hqz-tray hqz-memlist';
     it.list.forEach(x=>{
@@ -7322,6 +7497,7 @@ function renderWalkStep(st, it){
     const run = qRun;
     /* `toNpc` = ปลายทางของงานส่งของ (เฟส 7) — เก็บไว้ที่นี่เพราะ closeQuestPanel() ล้าง qRun ทิ้ง */
     walkQuest = {run: run, target: it.target, toNpc: it.toNpc || '', zone: it.zone || '',
+                 whois: !!it.whois,      /* เกมทายว่าใคร — คำใบ้ห้ามเอ่ยชื่อคนปลายทาง */
                  /* 🎣 งานแบบ "ทำจริงแล้วค่อยเอาไปส่ง" — `need` เป็น **ใบสั่งรายชนิด**
                     [{id, e, name, n}] · `got` = {ชนิด: ที่ได้แล้ว} · `where` = บ่อ/ทะเล */
                  where: it.where || '', need: (it.need && it.need.length) ? it.need : [], got: {},
@@ -7480,6 +7656,12 @@ function walkHint(){
       if(typeof showToast==='function') showToast('✅', msg);
       return;
     }
+  }
+  /* 🎯 งานส่งของ/งานที่ต้องไปหาคน — คำใบ้ต้องบอก **ชื่อคน + สถานที่** เสมอ
+     (กลไกส่งมาแค่ "เอากระเป๋าไปส่งให้" ปลายเปิด ตัวเติมอยู่ฝั่งนี้ที่เดียว) */
+  if(walkQuest.target === 'npc' && walkQuest.toNpc && !walkQuest.whois){
+    const info = questItemInfo({src:'npc', id: walkQuest.toNpc});
+    msg = msg.replace(/\s*$/, '') + ' ' + info.name + ' ที่ ' + info.place;
   }
   const hint = $('house-hint');
   if(hint){ hint.textContent = '📋 ' + msg; showHint(); }
@@ -9873,24 +10055,49 @@ function addPetCollar(g, type, cl){
    ⚠ **ห้ามผูกกับความป่วย/บทลงโทษใดๆ** (กติกาเหล็กข้อ 2) — ผลเดียวคือความสุขลดเร็วขึ้น
      และเป็น "คำใบ้ทางสายตา" ให้เด็กรู้ว่าถึงเวลาอาบน้ำแล้ว */
 function addPetDirt(g){
+  /* 🐞 ผู้ใช้แจ้ง 2026-08-22: "รอยเปื้อนเห็นไม่ชัด"
+     ของเดิม: จุด r=.038 สี 0x8d6e4e — เล็กมากและเป็นสีน้ำตาลที่**ใกล้เคียงสีขนของน้องหลายตัว**
+     (หมา/แฮมสเตอร์/กระต่ายสีน้ำตาล) ⇒ กลืนไปกับตัวจนแทบมองไม่เห็นบนจอแท็บเล็ต
+     ⇒ แก้ 3 ทาง: จุดใหญ่ขึ้น · สีเข้มขึ้นมากให้ตัดกับขนทุกสี · เพิ่มจุดและกระจายให้ทั่วตัว
+        แล้วทำ **ไอเหม็นลอยขึ้น-จางหาย** ให้ตาจับความเคลื่อนไหวได้แต่ไกล (ดู updatePetDirt) */
   const spots = [];
-  const at = [[.09,.2,.08],[-.1,.15,-.05],[.04,.31,.16],[-.07,.26,.12],[.11,.12,-.12]];
+  const at = [[.09,.2,.08],[-.1,.15,-.05],[.04,.31,.16],[-.07,.26,.12],[.11,.12,-.12],
+              [-.02,.36,-.09],[.13,.27,.02]];
   at.forEach(p=>{
-    const s = sphere(.038, 0x8d6e4e, 6);
-    s.scale.set(1,.35,1);
+    const s = sphere(.058, 0x5C3D24, 7);     /* โคลนเข้ม ตัดกับขนทุกสีในเกม */
+    s.scale.set(1, .34, 1);
     s.position.set(p[0], p[1], p[2]);
+    s.castShadow = false;
     g.add(s); spots.push(s);
   });
   const stink = new THREE.Group();
-  [-1,1].forEach(k=>{
-    const w = new THREE.Mesh(new THREE.TorusGeometry(.035, .008, 5, 10, Math.PI), toonMat(0xb7c4a8));
+  /* ไอเหม็น 3 เส้น ใหญ่ขึ้นและเยื้องกันเป็นชั้น — ลอยขึ้นแล้วจางหายวนไป */
+  [-1, 1, 0].forEach((k, i)=>{
+    const w = new THREE.Mesh(new THREE.TorusGeometry(.055, .013, 5, 12, Math.PI),
+                             new THREE.MeshToonMaterial({color:0x9DB58A, transparent:true, opacity:.9}));
     w.castShadow = false;
-    w.position.set(.07*k, .52 + .07*(k>0?1:0), .04);
-    w.rotation.z = .4*k;
+    w.position.set(.085 * k, .52, .04);
+    w.rotation.z = .45 * k;
+    w.userData.ph = i / 3;                   /* เหลื่อมเฟสกัน ไม่ลอยพร้อมกันเป็นก้อนเดียว */
     stink.add(w);
   });
   g.add(stink);
   return {spots, stink};
+}
+/* ไอเหม็นลอยขึ้นแล้วจางหาย — เรียกทุกเฟรมจาก frame()
+   ⚠ ต้องทำงานแม้ตอนน้องกำลังเล่นของเล่นอยู่ (petAct ยึดการควบคุมตัวน้องไว้) จึงเรียกแยกต่างหาก
+     ไม่ได้ฝังไว้ใน updatePet() */
+let petDirtT = 0;
+function updatePetDirt(dt){
+  const u = hPet.group && hPet.group.userData && hPet.group.userData.anim;
+  if(!u || !u.dirt || !u.dirt.stink) return;
+  petDirtT += dt;
+  u.dirt.stink.children.forEach(w=>{
+    const p = (petDirtT * .55 + w.userData.ph) % 1;      /* 0→1 แล้ววนใหม่ */
+    w.position.y = .52 + p * .34;
+    w.scale.setScalar(.7 + p * .7);
+    w.material.opacity = .9 * (1 - p) * (p < .12 ? p / .12 : 1);   /* โผล่นุ่มๆ แล้วจางหาย */
+  });
 }
 
 /* โมเดลสัตว์เลี้ยงสไตล์เดียวกับ critter (บล็อกมน ไม่มีขา เด้งตามจังหวะ)
@@ -12177,20 +12384,34 @@ function questArrowTarget(){
      ⇒ ลูกศรโชว์ตลอดเวลาจนรบกวนเด็กที่แค่อยากเดินเล่น
      ⇒ เควสต์เท่านั้น เพราะเควสต์มีจุดเริ่ม-จุดจบชัดเจน และเด็ก "รับงานมา" จริงๆ
      🔒 ห้ามเปิดให้กิจกรรมรายวันใช้อีก เว้นแต่ผู้ใช้สั่งใหม่ */
-  if(!walkQuest || walkQuest.target !== 'catch') return null;
-  const row = walkQuest.need.filter(r => r.k === 'leaf')[0];
-  if(!row || catchGot(row) >= row.n) return null;
-  const P = window.HousePlay;
-  const left = (P && P.colLeft) ? P.colLeft() : [];
-  if(!left.length) return null;
-  /* ใกล้ที่สุดจากตัวเด็ก — วัดเป็นช่องแบบตรงๆ พอ (ใช้แค่เลือกเป้า ไม่ได้เอาไปคิดงบเวลา) */
-  let best = null, bd = 1e9;
   const t = hChar.tile;
-  left.forEach(it=>{
-    const d = Math.abs(it.x - t.x) + Math.abs(it.z - t.z);
-    if(d < bd){ bd = d; best = it; }
-  });
-  return best ? {tile:best, dist:bd} : null;
+  const at = tl => tl ? {tile:tl, dist: Math.abs(tl.x - t.x) + Math.abs(tl.z - t.z)} : null;
+  /* 🧭 เป้าหมายที่เป็น "จุดหมายให้เดินไป" ต้องซ่อนลูกศรเมื่อถึงแล้ว
+     ไม่งั้นเด็กยืนอยู่หน้าร้านแล้วยังมีลูกศรชี้ลงที่เท้าตัวเอง หมุนไปมาน่ารำคาญ
+     ⚠ **ไม่ใช้กับงานเก็บของ** — ของชิ้นใกล้สุดมักอยู่ข้างตัวพอดี ซ่อนแล้วเด็กจะไม่เห็นลูกศรเลย
+       (กติกาเดิมของ 2026-08-16: โชว์ตลอดตราบใดที่ยังเก็บไม่ครบ) */
+  const goTo = tl => { const r = at(tl); return (r && r.dist > 2) ? r : null; };
+  /* 🎓 บทเรียนสอนเล่นสั่งเป้าหมายเองได้ และ **มาก่อนเควสต์เสมอ**
+     (ระหว่างสอนเล่นต้องไม่มีลูกศร 2 อันชี้คนละทาง) */
+  if(guideForce) return goTo(guideForce);
+  if(!walkQuest) return null;
+  /* 🍃 งานเก็บของ — ชี้ไป **ชิ้นที่ใกล้ที่สุดที่ยังไม่ได้เก็บ** (เก็บแล้วเด้งไปชิ้นถัดไปเอง) */
+  if(walkQuest.target === 'catch'){
+    const row = walkQuest.need.filter(r => r.k === 'leaf')[0];
+    if(row && catchGot(row) < row.n){
+      const P = window.HousePlay;
+      const left = (P && P.colLeft) ? P.colLeft() : [];
+      if(!left.length) return null;
+      let best = null, bd = 1e9;
+      left.forEach(it=>{
+        const d = Math.abs(it.x - t.x) + Math.abs(it.z - t.z);
+        if(d < bd){ bd = d; best = it; }
+      });
+      return at(best);
+    }
+  }
+  /* 🚶 เควสต์เดินแบบอื่น (ส่งของ · ไปร้าน · ตกปลาแล้วเอาไปส่ง) — ใช้ลูกศรตัวเดียวกัน */
+  return goTo(questGuideTile());
 }
 function updateQuestArrow(){
   const el = $('house-qarrow');
@@ -13291,6 +13512,9 @@ const WALK_SPEED = 3;      /* ช่อง/วินาที */
      ⇒ ของในโลกขยับกระตุกเป็นช่วงๆ (ผู้ใช้แจ้ง 2026-08-12) · เว้นเฟรมได้จังหวะสม่ำเสมอ ~30fps
      และ dt ~33ms ยังไม่ถึงเพดาน ความเร็วจึงตรงกับของจริง */
 let houseFrameThrottle = false, frameOdd = false;
+/* ⚠ **ตัวนับของเงาต้องแยกจาก `frameOdd`** — ตัวนั้นเป็นของระบบหรี่เฟรมตอนเปิดกล้อง (MediaPipe)
+   ใช้ร่วมกันแล้วพังทั้งคู่: เปิดกล้องเมื่อไหร่จังหวะอัปเดตเงาจะเพี้ยนตาม และกลับกัน */
+let shadowOdd = false;
 const frameLog = [];        /* เวลาที่ "วาดจริง" 120 เฟรมหลังสุด (เทสอ่านผ่าน __houseDbg.frameLog) */
 window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; frameOdd = false; };
 
@@ -13482,6 +13706,7 @@ function frame(t){
     if(frameOdd) return;                /* วาดเว้นเฟรม = ~30fps จังหวะเท่ากันทุกเฟรม */
   }
   const dt = Math.min(.05, (t - lastT)/1000 || 0);
+  const _fpsDt = t - lastT, _fps0 = FPS_PANEL ? performance.now() : 0;
   lastT = t;
   frameLog.push(t); if(frameLog.length > 120) frameLog.shift();
   updateLightLerp(dt);
@@ -13491,6 +13716,7 @@ function frame(t){
   updateWalkMark(t);              /* รอยเท้าปลายทาง — ซ่อน/โชว์ตามสถานะเดินจริงทุกเฟรม */
   if(window.HousePlay) window.HousePlay.tick(dt, t);   /* มินิเกมกลุ่ม A (เฟส 11) */
   if(window.HouseTutor) window.HouseTutor.tick(dt);    /* 🎓 ระบบสอนเล่น (เฟส 15) */
+  updateFishZoom(dt);             /* 🎣 ซูมเข้า/ออกนุ่มๆ ตอนยืนจุดตกปลา */
   const u = charGroup && charGroup.userData;
 
   if(hMode==='creator' || hMode==='pet'){
@@ -13656,6 +13882,7 @@ function frame(t){
     updateNpcMarks(t);
     updateFx(t, dt);
     if(petAct) updatePetAct(dt); else updatePet(dt);   /* กำลังทำกิจกรรมอยู่ = ยึดการควบคุมน้องไว้ทั้งตัว */
+    updatePetDirt(dt);            /* ไอเหม็นลอยขึ้น — ต้องขยับแม้ตอนน้องกำลังเล่นของเล่น */
     updatePetCare(dt);
     syncPetSick();
     syncPetMood();
@@ -13672,7 +13899,11 @@ function frame(t){
   updatePosChip();
   updateLamps(t, dt);
   updateStreetLamps(dt);
+  /* 🕐 เงาอัปเดตเว้นเฟรมบนเครื่องจอสัมผัส (ดูเหตุผลที่ initThreeCore) */
+  if(hShadows && !renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = shadowOdd = !shadowOdd;
+  const _fps1 = FPS_PANEL ? performance.now() : 0;
   renderer.render(scene, camera);
+  if(FPS_PANEL) fpsPanelTick(_fpsDt, _fps1 - _fps0, performance.now() - _fps1);
   /* กรอบพรีวิวสินค้าลอยข้างกล่องร้าน — วาดทับเป็นรอบที่ 2 หลังฉากเมือง (ดู renderPreviewInset) */
   if(prevModel){
     if(prevSpin) prevRotY += dt*.7;
@@ -14683,6 +14914,9 @@ window.HouseWorld = {
     return w ? {x:w.x, z:w.z} : null;
   },
   npcTile: id => { const n = NPCS.find(v => v.id === id); return n ? {x:n.x, z:n.z} : null; },
+  /* 🧭 สั่งลูกศรบอกทางให้ชี้ไปช่องนี้ (null = เลิกสั่ง แล้วปล่อยให้เควสต์เป็นคนกำหนดเอง)
+     ⚠ ของบทเรียนมาก่อนเควสต์เสมอ — ระหว่างสอนเล่นต้องไม่มีลูกศร 2 อันชี้คนละทาง */
+  guideTo: t => { guideForce = t ? {x:t.x, z:t.z} : null; },
   /* 🚪 เดินออกจากตัวบ้านไปฉากนอกบ้าน — **จุดหมายของบทเรียนอยู่นอกบ้านเกือบทั้งหมด**
      ⚠ `walkTo()` ของฉากในบ้านใช้กริดคนละใบกับฉากนอก ⇒ สั่งเดินไปพิกัดนอกบ้านตอนอยู่ในบ้าน
        จะไม่เกิดอะไรขึ้นเลย (ผู้ใช้แจ้ง 2026-08-17: อยู่ในบ้านแล้วกด "พาไปเลย" ไปตกปลาไม่ได้)
@@ -14886,6 +15120,12 @@ if(!homeView.hidden) houseBuddyRefresh();
                  return {collar: !!(u && u.collar), style: u && u.collar ? u.collar.style : null,
                          dirty: !!(u && u.dirt)}; },
   restylePet: ()=> restylePet(),
+  /* ตำแหน่งไอเหม็นเส้นแรก — ชุดเทสใช้ยืนยันว่ามันขยับจริง ไม่ใช่ภาพนิ่ง */
+  petStink: ()=>{
+    const u = hPet.group && hPet.group.userData.anim;
+    const w = u && u.dirt && u.dirt.stink && u.dirt.stink.children[0];
+    return w ? +w.position.y.toFixed(4) : null;
+  },
   buildPetAt: (type, col, opt)=> buildPet(type, col, opt),
   /* ---- จุดต่อชุดเทสเฟส 12.1 (ของเล่นสัตว์เลี้ยง) ----
      เดินไปซื้อ+เปิดเมนู+กดเล่นทีละชิ้นในฉาก 3D ทำในเทสไม่ไหว ⇒ เรียกผ่านทางเดินโค้ดจริงแทน */
@@ -15092,6 +15332,38 @@ if(!homeView.hidden) houseBuddyRefresh();
   /* ชาวบ้านทั้งหมด (id ใช้เป็น id ไอคอนตรงๆ) — ชุดเทสใช้ตรวจว่ามีไอคอนครบ */
   npcDefs:()=> NPC_DEFS.map(d => ({id:d.id, name:d.name})),
   posChipEnabled:()=> POS_CHIP_ENABLED,
+  /* ทำให้น้องเลอะ/สะอาดทันที (ชุดเทส + ดูรอยเปื้อนด้วยตา) — เขียนผ่าน save แล้วประกอบโมเดลใหม่ */
+  setPetDirty:(v)=>{
+    const d = loadHouseData() || {};
+    const c = Object.assign({}, d.care || {});
+    /* ⚠ `dayKey()` เป็นของ js/house-pet-care.js (คนละไฟล์) ⇒ เรียกจากที่นี่ไม่ได้
+       ใช้ค่าที่ทำให้ระบบตีความว่า "เพิ่งอาบ" แทน: noBath 0 + dirty false ก็พอ */
+    c.dirty = !!v; c.noBath = v ? 9 : 0;
+    saveHouseData({care: c});
+    petCareHud.t = 0;
+    restylePet();
+    const u = hPet.group && hPet.group.userData.anim;   /* ⚠ dirt เก็บใน userData.anim ไม่ใช่ userData ตรงๆ */
+    return !!(u && u.dirt);
+  },
+  /* กรอบพรีวิวสินค้า — ชุดเทสใช้ยืนยันว่า "หมุนรอบตัวเอง" ไม่ใช่ "โคจรรอบจุดข้างตัว" */
+  previewOpen:(spec)=>openShopPreview(spec),
+  /* ตำแหน่งโมเดลในกรอบพรีวิว — ตัวละครต้องอยู่ที่ x=0,z=0 เป๊ะ (หมุนรอบแกนลำตัว) */
+  previewPos:()=> prevModel ? {x:+prevModel.position.x.toFixed(4),
+                               z:+prevModel.position.z.toFixed(4)} : null,
+  previewRot:(r)=>{ prevSpin = false; prevRotY = r; if(prevHolder) prevHolder.rotation.y = r; },
+  previewCenter:()=>{
+    if(!prevModel || !prevCam) return null;
+    const bb = new THREE.Box3().setFromObject(prevModel);
+    const c = new THREE.Vector3(); bb.getCenter(c);
+    c.project(prevCam);
+    return {x:+c.x.toFixed(3), y:+c.y.toFixed(3)};
+  },
+  zoom:()=> hZoom,
+  /* 🧭 ลูกศรนำทาง (ตัวโคจรรอบตัวเด็ก) — null = ตอนนี้ไม่มีลูกศร */
+  guide:()=>{ const e = $('house-qarrow');
+              return (e && !e.hidden) ? {left:e.style.left, top:e.style.top} : null; },
+  guideGoal:()=> guideForce || questGuideTile(),
+  fishZoom:()=> ({base:fishZoomBase, want:fishZoomWant, off:fishZoomOff, near:nearFishStand()}),
   /* ชุดเทส: วาดฟองคำพูดผ่านทางเดินโค้ดจริง */
   talkBubble:(ico, emoji, name, text)=> showTalkBubble($('house-npc-bubble'), ico, emoji, name, text),
   openBoard:()=> openQuestBoard(),

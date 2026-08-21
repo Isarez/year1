@@ -4290,8 +4290,23 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     position:absolute; top:-11px; right:16px; font-size:11.5px; font-weight:700; line-height:1.6;
     color:#7A5A2E; background:#FFE3AE; border-radius:999px; padding:1px 11px;
   }
-  /* กำลังสอนอยู่ = แถบซ่อนแอบต้องขยับขึ้นไม่ให้ทับฟองนกฮูก */
+  /* กำลังสอนอยู่ = ของที่อยู่ก้นจอต้องขยับขึ้นไม่ให้ทับฟองนกฮูก
+     🐞 ผู้ใช้แจ้ง 2026-08-21: เปิดร้านระหว่างเรียน แล้วฟองไปทับ **ปุ่มซื้อ + ปุ่มออกจากร้าน**
+        (วัดจริง: ฟอง y706-884 · ปุ่มออกจากร้าน y816-868 ⇒ ทับกันเต็มๆ)
+     ⇒ ยก **การ์ด/แผงทุกใบ** (`.house-creator` = ร้าน · การ์ดเควสต์ · สัตว์เลี้ยง · สมุด ·
+        แผงกิจกรรม) ขึ้นให้พ้นฟอง — ทำที่คลาสฐานที่เดียว ครอบทุกแผงอัตโนมัติ
+     ⚠ การ์ดยึด `bottom:0` ⇒ **ต้องยก `bottom` ไม่ใช่ลด `max-height`** (ลดความสูงแล้ว
+       ก้นการ์ดยังอยู่ที่เดิม ปุ่มก็ยังโดนทับเหมือนเดิม)
+     ⚠ `--tut-lift` ถูกตั้งจาก **ความสูงจริงของฟอง** ทุกครั้งที่วาดข้อความใหม่
+       (ฟอง 2 บรรทัดกับ 3 บรรทัดสูงไม่เท่ากัน) ดู paintSay() ใน js/house-tutor.js */
   body.house-tut-on .house-seek-hud{bottom:132px;}
+  body.house-tut-on .house-creator{
+    bottom:var(--tut-lift, 200px);
+    max-height:calc(100vh - var(--tut-lift, 200px) - 92px);
+    max-height:calc(100dvh - var(--tut-lift, 200px) - 92px);
+  }
+  /* แถบคำใบ้ก้นจอ + ปุ่มกิจกรรม ก็ต้องหลบเหมือนกัน */
+  body.house-tut-on .house-hint{bottom:calc(var(--tut-lift, 200px) + 6px);}
   @media (max-width:600px){
     .house-tut-say{width:96vw; padding:11px 13px 10px; gap:9px;}
     .ht-ic{font-size:25px;}
@@ -4838,6 +4853,14 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
       /* ⚠ 70vw เตี้ยไปสำหรับแท็บเล็ตแนวตั้ง (820px → ได้แค่ 574px ไม่ถึง 640 ที่ตั้งใจ)
          78vw ทำให้แท็บเล็ตได้เต็ม 640 ส่วนจอ desktop ยังชนเพดาน 760px เท่าเดิม */
       top:50%; bottom:auto; width:min(760px,78vw); max-height:88vh;
+    }
+    /* 🎓 จอใหญ่: การ์ดเควสต์/แผงกิจกรรม/สมุด ถูกจัด **กลางจอแนวตั้ง** (ไม่ได้ยึดก้นจอ)
+       ⇒ กฎยก `bottom` ใช้ไม่ได้ ต้องเลื่อนขึ้นด้วย transform แทน แล้วหดเพดานความสูงตามด้วย
+       (ไม่งั้นการ์ดสูงๆ จะโผล่พ้นขอบบนจอ) — ผู้ใช้แจ้ง 2026-08-21: ปุ่ม "เปิดสมุด" โดนฟองทับ */
+    body.house-tut-on .house-creator.house-qz{
+      bottom:auto;
+      transform:translate(-50%, calc(-50% - var(--tut-lift, 200px) / 2));
+      max-height:calc(88vh - var(--tut-lift, 200px));
     }
     /* เกมที่ยืม engine หน้าหลักมา (เฟส 5) ถูกออกแบบมาสำหรับ "ทั้งหน้าจอ" ไม่ใช่การ์ดใบเล็ก
        ⇒ ตอนถูก mount ให้การ์ดกว้างขึ้น ไม่งั้นกระดาน/คีย์เปียโนล้นจนต้องเลื่อนดู
