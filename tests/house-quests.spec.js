@@ -209,9 +209,12 @@ test('ตอบผิดไม่มีบทลงโทษ: ผิดรัว
   const out = await page.evaluate(() => {
     const q = window.HouseQuests;
     let run = null;
+    /* ⚠ **ต้องมีอย่างน้อย 3 ข้อด้วย** (แก้ 2026-08-22) — `starsOf()` ให้ "พลาดฟรี 1 ข้อ"
+       เควสต์ 1 ข้อจึงได้ 3 ดาวเสมอแม้ตอบผิด ⇒ เทสแดงในวันที่สุ่มได้ชุดสั้น ทั้งที่โปรแกรมถูก
+       (กระดานถูกทำให้หลากหลายขึ้นเมื่อ 2026-08-20 ⇒ ชุดแบบมีตัวเลือกหายากขึ้น เจอเคสนี้บ่อยขึ้น) */
     for (const id of q.state().npcIds) {
       const r = q.buildRun(q.specForNpc(id));
-      if (r.items.every(it => it.choices && it.choices.length > 1)) { run = r; break; }
+      if (r.items.length >= 3 && r.items.every(it => it.choices && it.choices.length > 1)) { run = r; break; }
     }
     if (!run) return { noChoiceQuest: true };
     let guard = 0;
@@ -713,9 +716,18 @@ test('หน้ารายการเควสต์: โชว์ดาวร
       const m = q.MECHS[sp.mech];
       if (!m || m.walk || m.engine) return false;
       const r = q.buildRun(sp);
-      return r.items.every(it => it.choices && it.choices.length > 1);
+      /* ⚠ ต้อง ≥ 3 ข้อ ไม่งั้น "ตอบผิดรัวๆ" ยังได้ 3 ดาว (พลาดฟรี 1 ข้อ) แล้วยอดดาวไม่ตรงที่คาด */
+      return r.items.length >= 3 && r.items.every(it => it.choices && it.choices.length > 1);
     };
-    const picks = ids.map(id => q.specForNpc(id)).filter(answerable);
+    /* ⚠ **หาจากกระดานด้วย ไม่ใช่เฉพาะ NPC** (แก้ 2026-08-22) — บางวันชาวบ้านทั้ง 8 คน
+       ได้กลไกแบบเดิน/ยืม engine กันหมด ⇒ `picks[1]` เป็น undefined แล้ว buildRun พังทั้งเทส
+       (กระดานถูกทำให้หลากหลายขึ้นเมื่อ 2026-08-20 ⇒ โอกาสเจอวันแบบนี้สูงขึ้นมาก) */
+    /* ⚠ `state().board` เป็น object `{q, done, st, claimed}` ไม่ใช่อาเรย์ — ชุดกระดานอยู่ใน `.q`
+       และ `specForBoard()` รับ **index** ไม่ใช่ id */
+    const bq = (q.state().board && q.state().board.q) || [];
+    const specs = ids.map(id => q.specForNpc(id))
+                     .concat(bq.map((_, i) => q.specForBoard(i)));
+    const picks = specs.filter(answerable);
     const a = q.buildRun(picks[0]);
     while (!a.over) q.answer(a, a.items[a.idx].correct);
     q.finish(a);
