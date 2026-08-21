@@ -237,8 +237,11 @@ test('15H: บทสัตว์เลี้ยงเป็น event-driven — 
   const r = await page.evaluate(async () => {
     const S = window.HouseTutorSteps, T = window.HouseTutor;
     const pet = S.chapters.find(c => c.id === 'c5');
-    /* ทำเหมือนเรียนบทปกติจบหมดแล้ว — บทสัตว์เลี้ยงต้องยังไม่เริ่มเอง */
-    window.HouseWorld.save({ tut: { ch: null, i: 0, done: ['c1', 'c2', 'c3', 'c4'], skip: false } });
+    /* ทำเหมือนเรียนบทปกติจบหมดแล้ว — บทสัตว์เลี้ยงต้องยังไม่เริ่มเอง
+       ⚠ **ห้ามเขียนชื่อบทตายตัว** — เพิ่มบทใหม่ทีไรเทสนี้จะแดงทั้งที่ระบบไม่ได้พัง
+         (เจอตอนเพิ่มบททัวร์ร้านค้า 2026-08-21) */
+    const allDone = S.chapters.filter(c => !c.event).map(c => c.id);
+    window.HouseWorld.save({ tut: { ch: null, i: 0, done: allDone, skip: false } });
     T.stop();
     const auto = T.autoStart();
     const before = T.active();
@@ -273,7 +276,9 @@ test('15I: ทุกขั้นของทุกบทต้องมีคำ
   });
   expect(r.bad, 'บทเรียนต้องไม่มีขั้นที่พัง').toEqual([]);
   expect(r.noNote, 'ทุกขั้น (ยกเว้น grant) ต้องมีคำอธิบายประกอบ').toEqual([]);
-  expect(r.n, 'ต้องมี 5 บท (4 บทหลัก + บทสัตว์เลี้ยงแบบ event)').toBe(5);
+  /* ⚠ **ห้ามล็อกจำนวนบทเป็นเลขตายตัว** — เพิ่มบทใหม่แล้วเทสจะแดงทั้งที่ไม่มีอะไรพัง
+     (เดิมล็อกไว้ 5 · เพิ่มบทปุ่มในเมือง + ทัวร์ร้านค้า 2 บท เมื่อ 2026-08-21 ⇒ 8) */
+  expect(r.n, 'ต้องมีบทเรียนอย่างน้อย 5 บท').toBeGreaterThanOrEqual(5);
   expect(r.steps, 'บทเรียนรวมต้องมีเนื้อหาพอสมควร').toBeGreaterThanOrEqual(30);
   expect(r.start, 'เงินเริ่มต้นล็อกไว้ที่ 20').toBe(20);
   expect(r.pay, 'เควสต์แรกจ่าย 25 พอดี').toBe(25);
@@ -380,7 +385,10 @@ test('15O: บทเรียนต้องเรียนเรียงลำ
     const T = window.HouseTutor, S = window.HouseTutorSteps;
     /* เรียนบท 1 จบแล้ว แต่เงินเป็น 0 ⇒ บท 2 (ต้องซื้อเมล็ด) ยังไม่พร้อม */
     window.OwlCoins.set(0);
-    window.HouseWorld.save({ tut: { ch: null, i: 0, done: ['c1'], skip: false, gotStart: true } });
+    /* เรียนจบทุกบทก่อนหน้าบทปลูกผักแล้ว (ไล่จากลำดับจริง ไม่เขียนชื่อบทตายตัว) */
+    const before = [];
+    for(const c of S.chapters){ if(c.id === 'c2') break; if(!c.event) before.push(c.id); }
+    window.HouseWorld.save({ tut: { ch: null, i: 0, done: before, skip: false, gotStart: true } });
     T.stop();
     const blocked = T.autoStart();
     /* พอมีเงินพอแล้วต้องเริ่มบท 2 ได้ (ไม่ใช่กระโดดไปบท 3) */

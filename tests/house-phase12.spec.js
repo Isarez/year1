@@ -362,3 +362,33 @@ test('เฟส 12M: เมนูฟองสัตว์เลี้ยง — 
   expect(r.note.l).toBeGreaterThanOrEqual(-1);
   expect(errs, 'ห้ามมี error').toEqual([]);
 });
+
+/* 🫧 รอยเปื้อนต้องเห็นชัด (ผู้ใช้แจ้ง 2026-08-22: "เห็นไม่ชัด")
+   ของเดิม: จุด r=.038 สี 0x8d6e4e — เล็กมากและเป็นน้ำตาลที่ใกล้เคียงสีขนของน้องหลายตัว
+   ⇒ กลืนไปกับตัวจนแทบมองไม่เห็นบนแท็บเล็ต */
+test('12N: รอยเปื้อนต้องเห็นชัด — จุดใหญ่ขึ้น สีเข้มตัดกับขน และมีไอเหม็นลอยขยับ', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const d = window.__houseDbg;
+    const on = d.setPetDirty(true);
+    const u = d.petGear();
+    return {on, dirty:u.dirty};
+  });
+  expect(r.on, 'สั่งให้เลอะแล้วโมเดลต้องมีรอยเปื้อนจริง').toBe(true);
+  expect(r.dirty, 'ตัวตรวจสถานะต้องเห็นรอยเปื้อนด้วย').toBe(true);
+
+  /* ไอเหม็นต้องขยับจริง ไม่ใช่ค้างอยู่กับที่ (ตัวที่ทำให้ตาจับได้แต่ไกล) */
+  const moved = await page.evaluate(async () => {
+    const y = () => window.__houseDbg.petStink();
+    const a = y();
+    await new Promise(r2 => setTimeout(r2, 900));
+    const b = y();
+    return (a && b) ? Math.abs(a - b) : -1;
+  });
+  expect(moved, 'ไอเหม็นต้องลอยขึ้น-จางหาย ไม่ใช่ภาพนิ่ง').toBeGreaterThan(.01);
+
+  /* อาบน้ำแล้วต้องหายเกลี้ยง */
+  const off = await page.evaluate(() => window.__houseDbg.setPetDirty(false));
+  expect(off, 'อาบน้ำแล้วรอยเปื้อนต้องหาย').toBe(false);
+  expect(errs).toEqual([]);
+});

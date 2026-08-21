@@ -84,4 +84,48 @@ test.describe('โหลดแอปและหน้าหลัก', () => {
       expect(r.heights.length, g + ' การ์ดสูงไม่เท่ากัน: ' + r.heights.join('/')).toBe(1);
     }
   });
+
+  /* 🦉 ไอคอนแอปบนหน้าจอโฮม (ผู้ใช้แจ้ง 2026-08-22 หลังลงบน iPad จริง)
+     ① iOS ครอบไอคอนด้วยมุมโค้ง ⇒ วาดชนขอบแล้วหูนกฮูกโดนตัด
+     ② apple-touch-icon ที่พื้นโปร่งใส iOS จะถมด้วยสีดำ ⇒ ต้องมีพื้นทึบ */
+  test('ไอคอนแอป: ต้องมีพื้นทึบและเว้นขอบให้พ้นมุมโค้งของ iOS', async ({ page, baseURL }) => {
+    for(const f of ['assets/apple-touch-icon.png', 'assets/icon-192.png', 'assets/icon-512.png',
+                    'assets/app-icon.svg']){
+      const res = await page.request.get(baseURL + '/' + f);
+      expect(res.status(), f).toBe(200);
+    }
+    /* ตรวจพื้นทึบ + ระยะขอบ ด้วยการอ่านพิกเซลจริงจากรูป */
+    await page.goto('/');
+    const r = await page.evaluate(async () => {
+      const img = new Image();
+      await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = 'assets/icon-512.png'; });
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const x = c.getContext('2d');
+      x.drawImage(img, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      const at = (px, py) => { const i = (py * c.width + px) * 4; return [d[i], d[i+1], d[i+2], d[i+3]]; };
+      /* หาขอบเขตของ "สิ่งที่ไม่ใช่พื้นหลัง"
+         ⚠ พื้นหลังเป็น **เกรเดียนต์แนวตั้ง** ⇒ เทียบกับสีมุมเดียวไม่ได้ ต้องเทียบกับ
+           สีพื้นของ "แถวเดียวกัน" (อ่านจากคอลัมน์ริมซ้ายของแถวนั้น) */
+      let minX = c.width, minY = c.height, maxX = 0, maxY = 0;
+      const alphaCorner = at(2, 2)[3];
+      for(let py = 0; py < c.height; py += 2){
+        const bg = at(1, py);
+        const near = p => Math.abs(p[0]-bg[0]) + Math.abs(p[1]-bg[1]) + Math.abs(p[2]-bg[2]) < 40;
+        for(let px = 0; px < c.width; px += 2){
+        if(near(at(px, py))) continue;
+        if(px < minX) minX = px; if(px > maxX) maxX = px;
+        if(py < minY) minY = py; if(py > maxY) maxY = py;
+      }}
+      return {w:c.width, alphaCorner, minX, minY, maxX, maxY};
+    });
+    expect(r.alphaCorner, 'พื้นหลังต้องทึบ (ไม่งั้น iOS ถมดำ)').toBe(255);
+    /* เนื้อไอคอนต้องเว้นขอบอย่างน้อย ~7% ของด้าน ทุกด้าน */
+    const pad = r.w * 0.07;
+    expect(r.minX, 'ขอบซ้าย').toBeGreaterThan(pad);
+    expect(r.minY, 'ขอบบน').toBeGreaterThan(pad);
+    expect(r.w - r.maxX, 'ขอบขวา').toBeGreaterThan(pad);
+    expect(r.w - r.maxY, 'ขอบล่าง').toBeGreaterThan(pad);
+  });
 });
