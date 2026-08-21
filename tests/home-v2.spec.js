@@ -2,7 +2,7 @@
    🏡 หน้าแรกแบบรวมร่าง (ใช้จริงแล้ว · js/app-home2.js)
 
    สิ่งที่ชุดนี้คุม:
-     ① **โหมดบ้านปิด (main) = ต้องถอยไปทางเดิมเป๊ะ** (เลือกเด็ก → หน้าเลือกโหมด)
+     ① **โหมดบ้านปิด (main) = ต้องถอยไปทางเดิมเป๊ะ** (เลือกเด็ก → เข้าหน้าหมวดตรงๆ)
      ② แถวกางออก โชว์ตัวละคร 3D ของเด็กคนนั้น + ปุ่มเลือกโหมด
      ③ เด็กที่ยังไม่มีตัวละคร → ปุ่ม "สร้างตัวละคร" (ไม่ใช่ช่องว่าง)
      ④ **กางได้ทีละคน** — WebGL context ต้องมีตัวเดียวเสมอ
@@ -43,13 +43,12 @@ async function open(page, houseOff){
 }
 const card = (page, i) => page.locator('#child-list .child-card').nth(i);
 
-test('HV1: โหมดบ้านปิด (main) = ถอยไปทางเดิมทั้งหมด — ไม่กางแถว ไม่มีหน้าเลือกโหมด', async ({ page }) => {
+test('HV1: โหมดบ้านปิด (main) = ถอยไปทางเดิมทั้งหมด — ไม่กางแถว เข้าหน้าหมวดตรงๆ', async ({ page }) => {
   const errs = await open(page, true);   /* โหมดบ้านปิด */
   expect(await page.evaluate(()=> window.OwlHome2 && OwlHome2.on())).toBe(false);
   await card(page, 0).click();
   /* มีโหมดเดียว ⇒ เข้าหน้าหมวดตรงๆ ไม่ต้องถามอะไรเลย */
   await expect(page.locator('#home-view')).toBeVisible();
-  await expect(page.locator('#landing-view')).toBeHidden();
   expect(await page.locator('.h2-panel').count(), 'โหมดบ้านปิดแล้วต้องไม่มีแผงกางเลย').toBe(0);
   expect(errs).toEqual([]);
 });
@@ -60,7 +59,6 @@ test('HV2: ใส่ธง → แถวกางออก โชว์ตัว
   await expect(page.locator('.h2-panel')).toBeVisible();
   /* ชุด 3D โหลดแบบ lazy — รอจนตัวละครถูกวาดจริง */
   await page.waitForSelector('.h2-panel #h2-canvas', { timeout: 30000 });
-  await expect(page.locator('#landing-view')).toBeHidden();
   const r = await page.evaluate(()=>{
     const c = document.getElementById('h2-canvas');
     return {
@@ -172,7 +170,7 @@ test('HV10: ปุ่ม "ย้อนกลับ" ในหน้าทำโ�
   await expect(btn, 'ป้ายปุ่มต้องเป็น "ย้อนกลับ"').toContainText('ย้อนกลับ');
   await btn.click();
   await expect(page.locator('#child-select-view')).toBeVisible();
-  await expect(page.locator('#landing-view'), 'หน้าเลือกโหมดต้องไม่โผล่อีก').toBeHidden();
+  expect(await page.locator('#landing-view').count(), 'หน้าเลือกโหมดถูกถอดออกทั้งหน้าแล้ว').toBe(0);
   expect(errs).toEqual([]);
 });
 
@@ -191,7 +189,6 @@ test('HV11: โปรไฟล์เก่าที่ยังไม่มี�
   await page.selectOption('#age-modal .dob-year', String(new Date().getFullYear() - 7));
   await page.locator('#age-modal-confirm-btn').click();
   await expect(page.locator('#child-select-view')).toBeVisible();
-  await expect(page.locator('#landing-view')).toBeHidden();
   await expect(page.locator('.h2-panel'), 'ต้องกางแถวของเด็กคนนั้นให้เลย').toHaveCount(1);
 });
 

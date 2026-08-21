@@ -7,9 +7,7 @@ const { clickEnterHouse } = require('./helpers');
 const OUT = '/private/tmp/claude-501/-Users-isarez-year1/f9a3c903-3574-4a5e-9675-beac6680d146/scratchpad/';
 
 const CHILD = { id: 'og1', name: 'มะลิ', emoji: '🐨', birthDate: '2019-03-20', grade: 'p3' };
-/* home: 'v1' = ปิดโหมดบ้านให้หน้าเลือกโหมดแบบเก่าโผล่ (หน้าแรกปกติเป็นแบบรวมร่างซึ่ง
-   ไม่มีหน้าเลือกโหมดแล้ว) — ใช้กับเทสที่ทดสอบ "หน้าเลือกโหมด" โดยตรงเท่านั้น */
-async function pickChild(page, home){
+async function pickChild(page){
   const errs = [];
   page.on('pageerror', e => errs.push(String(e)));
   await page.addInitScript(c => {
@@ -20,9 +18,7 @@ async function pickChild(page, home){
     localStorage.setItem('p1quiz_house_og1', JSON.stringify({ v:1, mapV: 3,
       char:{gender:0,hair:0,hairC:0,eyes:1,eyeC:0,shirt:5,bottom:0,shoes:0} }));
   }, CHILD);
-  /* home:'v1' = ปิดโหมดบ้านเพื่อบังคับให้หน้าเลือกโหมดแบบเก่าโผล่ (ธง ?home=v2 ถูกถอดแล้ว) */
   await page.goto('/');
-  if(home === 'v1') await page.evaluate(()=>{ const b=document.getElementById('house-entry-btn'); if(b) b.hidden = true; });
   await page.locator('#child-select-view .child-card').first().click();
   return errs;
 }
@@ -70,22 +66,23 @@ test('OwlGames: mount เกมของหน้าหลักลงกล่�
   expect(errs).toEqual([]);
 });
 
-/* ⚠ **เทส 2 ตัวเดิมของ "หน้าเลือกทาง" ถูกยุบมาเป็นตัวนี้ ไม่ได้ลบทิ้ง (2026-08-21)**
-   หน้าเลือกโหมด (`#landing-view`) ถูกเลิกใช้แล้ว — แทนด้วยหน้าแรกแบบรวมร่างที่เลือกโหมด
-   ได้ในหน้าเลือกเด็กเลย ⇒ หน้านั้นเข้าไม่ถึงอีกต่อไปทั้งตอนโหมดบ้านเปิดและปิด
-   สิ่งที่ยัง **มีชีวิตอยู่** ใน js/app-landing.js คือตัวส่งเข้าโหมด (`OwlLanding.go`) ซึ่งเป็น
-   ประตูเดียวที่ทุกทางเข้าใช้ร่วมกัน — เทสนี้จึงคุม 2 อย่าง: หน้านั้นต้องไม่โผล่ · ประตูต้องยังส่งถูกที่ */
-test('หน้าเลือกโหมดถูกเลิกใช้แล้ว — ต้องไม่โผล่เลย แต่ประตูส่งเข้าโหมดต้องยังทำงาน', async ({ page }) => {
+/* ⚠ **เทส 2 ตัวเดิมของ "หน้าเลือกทาง" ถูกยุบมาเป็นตัวนี้ ไม่ได้ลบทิ้ง**
+   หน้าเลือกโหมด (`#landing-view`) **ถูกถอดออกจาก index.html ทั้งหน้าแล้ว 2026-08-21**
+   (ผู้ใช้สั่ง) — แทนด้วยหน้าแรกแบบรวมร่างที่เลือกโหมดได้ในหน้าเลือกเด็กเลย
+   สิ่งที่ยัง **มีชีวิตอยู่** ใน js/app-landing.js คือ `OwlLanding.go()` ประตูเดียวที่ทุกทางเข้า
+   ใช้ร่วมกัน — เทสนี้จึงคุม 2 อย่าง: element นั้นต้องไม่มีอยู่แล้ว · ประตูต้องยังส่งถูกที่ */
+test('หน้าเลือกโหมดถูกถอดออกแล้ว — ต้องไม่มี element เหลือ แต่ประตูส่งเข้าโหมดต้องยังทำงาน', async ({ page }) => {
   const errs = await pickChild(page);
-  await expect(page.locator('#landing-view'), 'หน้าเลือกโหมดต้องไม่โผล่อีกแล้ว').toBeHidden();
+  expect(await page.locator('#landing-view').count(), 'ต้องไม่เหลือ element ของหน้านั้น').toBe(0);
+  expect(await page.locator('#landing-house, #landing-quiz, #landing-back, #landing-data').count(),
+    'ปุ่มของหน้านั้นต้องถูกลบไปด้วย').toBe(0);
   await expect(page.locator('.h2-panel'), 'ต้องกางแถวของเด็กคนนั้นแทน').toHaveCount(1);
 
   /* ประตูเดียวที่ทุกทางเข้าใช้ร่วมกัน — ต้องพาไปหน้าหมวดได้จริง */
   await page.evaluate(()=> OwlLanding.go('quiz'));
   await expect(page.locator('#home-view')).toBeVisible();
-  await expect(page.locator('#landing-view')).toBeHidden();
 
-  /* กลับไปหน้าเลือกเด็กแล้วเลือกใหม่ ต้องกางแถวได้อีก (ไม่มีธง `chosen` ค้าง) */
+  /* กลับไปหน้าเลือกเด็กแล้วเลือกใหม่ ต้องกางแถวได้อีก */
   await page.locator('#switch-child-btn').click();
   await expect(page.locator('#child-select-view')).toBeVisible();
   await page.locator('#child-select-view .child-card').first().click();

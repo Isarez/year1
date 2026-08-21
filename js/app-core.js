@@ -6,7 +6,7 @@
    ต้องโหลดหลัง js/data.js + js/owl-messages.js และก่อนไฟล์เกมทุกไฟล์
    ================================================================================ */
 
-window.APP_ASSET_VER = '?v=2.1.0-dev11';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
+window.APP_ASSET_VER = '?v=2.1.0-dev12';   /* cache-buster ของไฟล์ที่โหลดแบบ lazy (mediapipe/three/house) — ต้องตรงกับไฟล์ version
                                         ⚠️ ตัวนี้อยู่นอก index.html คำสั่ง sed ที่แก้ ?v= ตอน release จับไม่ถึง ต้องแก้มือทุกครั้ง
                                         ⚠️ **ระหว่างพัฒนาโหมดบ้านต้องปั๊มเลขนี้ทุกครั้งที่แก้ js/house*.js ด้วย**
                                            ไฟล์ชุดนั้นโหลดแบบ lazy พร้อม ?v= นี้ ถ้าไม่ปั๊ม เบราว์เซอร์จะเสิร์ฟไฟล์เก่าจาก cache
@@ -172,12 +172,10 @@ function addChild(name, mode){
   enterHome();
 }
 
-/* เข้าแอปหลังเลือกเด็ก — แวะ "หน้าเลือกทาง" ก่อน (js/app-landing.js)
-   ถ้าโหมดบ้านปิดอยู่ หรือเลือกไปแล้วในรอบนี้ จะตกมาที่ enterHomeReal() ตามเดิม */
-function enterHome(){
-  if(window.OwlLanding && OwlLanding.maybeShow()) return;
-  enterHomeReal();
-}
+/* เข้าแอปหลังเลือกเด็ก
+   📌 เคยแวะ "หน้าเลือกทาง" ก่อน — หน้านั้นถูกถอดออกทั้งหน้าแล้ว 2026-08-21
+      (เลือกโหมดได้ในหน้าเลือกเด็กเลย ดู js/app-home2.js) ⇒ เหลือทางเดียวตรงเข้าหน้าหมวด */
+function enterHome(){ enterHomeReal(); }
 function enterHomeReal(){
   $('child-select-view').hidden = true;
   $('owl-widget').hidden = false;
@@ -283,9 +281,6 @@ function renderChildSelect(){
   initEmojiPicker();
   initDobPicker();
   $('child-select-view').hidden = false;
-  /* กลับมาหน้าเลือกเด็ก = เริ่มรอบใหม่ ⇒ หน้าเลือกโหมด (เข้าเมือง/ทำโจทย์) ต้องเด้งอีกครั้ง
-     (app-landing.js โหลดทีหลังไฟล์นี้ จึงต้องเช็คก่อนเรียกเสมอ) */
-  if(window.OwlLanding) OwlLanding.reset();
   if(window.OwlHome2) OwlHome2.reset();       /* ยุบแถวที่กางค้างอยู่ + หยุดลูปวาดตัวละคร */
   $('clear-btn').hidden = true;
   $('reload-btn').hidden = false;     /* กลับมาหน้าเลือกเด็ก → โชว์ปุ่มโหลดใหม่อีกครั้ง */

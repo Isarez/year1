@@ -3349,14 +3349,8 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
 
   /* ---------- หน้าเลือกทาง (js/app-landing.js) ----------
      การ์ดใหญ่ 2 ใบ เด็ก 5 ขวบต้องกดโดนง่ายและอ่านออกด้วยภาพ ไม่ต้องอ่านตัวหนังสือก็รู้ */
-  #landing-view{padding:18px 14px 40px;}
-  .landing-wrap{max-width:760px; margin:0 auto; text-align:center;}
-  .landing-greet{
     font-size:24px; font-weight:700; color:var(--ink); margin:14px 0 20px; line-height:1.6;
   }
-  body.night-mode .landing-greet{color:#F3EBDA;}
-  .landing-cards{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;}
-  .landing-card{
     font-family:inherit; cursor:pointer; text-align:center;
     display:flex; flex-direction:column; align-items:center; gap:8px;
     background:#FFFDF7; border:4px solid #F0C58A; border-radius:26px;
@@ -3364,33 +3358,14 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     box-shadow:0 6px 18px rgba(70,40,10,.14);
     transition:transform .14s ease, box-shadow .2s ease, border-color .2s ease;
   }
-  .landing-card:hover{transform:translateY(-3px); box-shadow:0 10px 24px rgba(70,40,10,.2);}
-  .landing-card:active{transform:scale(.97);}
-  .landing-house{border-color:#7FC97F; background:linear-gradient(180deg,#F4FFF0,#FFFDF7);}
-  .landing-quiz{border-color:#6FA8DC; background:linear-gradient(180deg,#EFF7FF,#FFFDF7);}
-  .landing-ic{width:96px; height:96px; display:block;}
-  .landing-name{font-size:23px; font-weight:700; color:var(--ink);}
-  .landing-sub{font-size:14px; font-weight:700; color:var(--ink-soft); line-height:1.5;}
-  .landing-note{font-size:13px; font-weight:700; color:var(--ink-soft); margin-top:18px;}
-  body.night-mode .landing-note{color:#C9BEA8;}
   /* ปุ่มกลับไปหน้าเลือกเด็ก — เล็กกว่าการ์ด 2 ใบชัดเจน เด็กจะได้ไม่สับสนว่าเป็นทางเลือกที่ 3 */
-  .landing-back{
     margin-top:14px; padding:10px 20px; border:none; border-radius:999px; cursor:pointer;
     background:rgba(255,255,255,.72); color:var(--ink-soft); font-family:inherit;
     font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(0,0,0,.08);
     transition:transform .12s ease, background .2s ease;
   }
-  .landing-back:hover{background:#fff; transform:translateY(-1px);}
-  .landing-back:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.08);}
-  body.night-mode .landing-back{background:rgba(38,52,78,.8); color:#E6DCC8;}
   /* แถวปุ่มเล็กใต้การ์ด 2 ใบ — ห่อไว้เพื่อให้เรียงข้างกันบนจอกว้าง และซ้อนกันบนจอแคบ */
-  .landing-foot{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px;}
-  .landing-foot .landing-back{margin-top:0;}
-  body.night-mode .landing-back:hover{background:rgba(52,70,102,.92);}
   @media (max-width:560px){
-    .landing-cards{grid-template-columns:1fr;}
-    .landing-card{min-height:0; padding:18px 14px;}
-    .landing-ic{width:74px; height:74px;}
   }
 
   /* ---------- สัญญา Mount: เกมของหน้าหลักที่ถูกย้ายมาวางในกล่องอื่น (js/owl-games.js) ----------

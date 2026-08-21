@@ -22,16 +22,8 @@ async function openApp(page, { grade = null, birthYear = 2016 } = {}) {
   const cardSel = '#child-select-view .child-card';
   if (await page.locator(cardSel).count()) {
     await page.locator(cardSel).first().click();
-    /* ⚠ เมื่อโหมดบ้านเปิดอยู่ (branch feature/house-owl) เลือกเด็กแล้วจะเจอ **หน้าเลือกทาง**
-       (`#landing-view` จาก js/app-landing.js) คั่นก่อน ไม่ได้เข้าหน้าหมวดตรงๆ เหมือนตอน
-       โหมดบ้านปิด ⇒ ต้องกดการ์ด "ทำโจทย์" ต่ออีกที ไม่งั้นรอ home-view จนหมดเวลา
-       (หนี้ค้างจากงานก่อนเฟส 5 · ทำให้ smoke/curriculum/engines แดงยกแผง 22 เทส · แก้ 2026-08-12) */
-    /* หน้าแรกแบบรวมร่าง (ค่าเริ่มต้นตั้งแต่ 2026-08-20): แตะชื่อเด็กแล้วแถวกางออก
-       ต้องกดปุ่ม "ทำโจทย์" ในแถวนั้นต่อ · ถ้าเปิดด้วย ?home=v1 จะเจอหน้าเลือกโหมดแบบเดิมแทน */
-    const v2quiz = page.locator('.h2-mode-quiz');
-    if (await v2quiz.isVisible().catch(() => false)) await v2quiz.click();
-    const landing = page.locator('#landing-quiz');
-    if (await landing.isVisible().catch(() => false)) await landing.click();
+    /* แตะชื่อเด็กแล้วแถวกางออก ⇒ ต้องกดปุ่ม "ทำโจทย์" ในแถวนั้นต่อ */
+    await clickEnterQuiz(page);
     await page.waitForFunction(() => !document.getElementById('home-view').hidden);
   }
   if (grade) {
@@ -40,22 +32,17 @@ async function openApp(page, { grade = null, birthYear = 2016 } = {}) {
   return errors;
 }
 
-/** เข้าเมือง (โหมดบ้าน) จากหน้าเลือกเด็ก — รองรับทั้งหน้าแรกแบบรวมร่าง (ค่าเริ่มต้น)
- *  และหน้าเลือกโหมดแบบเก่า (`?home=v1` / branch ที่ปิดโหมดบ้าน)
- *  ⚠ ต้องกดการ์ดชื่อเด็กมาก่อนแล้ว */
+/** เข้าเมือง (โหมดบ้าน) จากหน้าเลือกเด็ก — ⚠ ต้องกดการ์ดชื่อเด็กมาก่อนแล้ว
+ *  ปุ่ม "เข้าเมือง" (มีตัวละครแล้ว) หรือ "สร้างตัวละคร" (ยังไม่มี) ในแถวที่กางออก */
 async function clickEnterHouse(page){
-  /* หน้าแรกแบบรวมร่าง: ปุ่ม "เข้าเมือง" (มีตัวละครแล้ว) หรือ "สร้างตัวละคร" (ยังไม่มี) */
-  const v2 = page.locator('.h2-mode-house, .h2-create').first();
-  if(await v2.isVisible().catch(()=>false)) return v2.click();
-  return page.locator('#landing-house').click();
+  return page.locator('.h2-mode-house, .h2-create').first().click();
 }
 
-/** เข้าหน้าทำโจทย์จากหน้าเลือกเด็ก — รองรับทั้ง 2 หน้าแรกเหมือน clickEnterHouse */
+/** เข้าหน้าทำโจทย์จากหน้าเลือกเด็ก
+ *  ⚠ โหมดบ้านปิดอยู่ (main) = แตะชื่อเด็กแล้วเข้าหน้าหมวดเลย ไม่มีปุ่มให้กด ⇒ ข้ามไปเงียบๆ */
 async function clickEnterQuiz(page){
-  const v2 = page.locator('.h2-mode-quiz');
-  if(await v2.isVisible().catch(()=>false)) return v2.click();
-  const old = page.locator('#landing-quiz');
-  if(await old.isVisible().catch(()=>false)) return old.click();
+  const b = page.locator('.h2-mode-quiz');
+  if(await b.isVisible().catch(()=>false)) return b.click();
 }
 
 /** id ของ section ที่กำลังแสดงอยู่ (ต้องเหลือทีละ 1 เสมอ) */
