@@ -1516,7 +1516,10 @@
           const roof=box(1.5,.06,1.7,shade(col,1.1),.03); roof.position.y=1.5; g.add(roof);
           [-1,1].forEach(s=>{ const drape=box(.06,.7,1.5,shade(col,1.18),.03); drape.position.set(s*.7,1.1,0); g.add(drape); });
         } },
-      { id:'night-light', name:'โคมไฟดวงจันทร์', cat:'bed', scope:'in', emoji:'🌙', colors:[0xfff59d,0xb3e5fc,0xf8bbd0],
+      /* 🌙 วางบนโต๊ะ/ตู้หัวเตียงได้ (ผู้ใช้สั่ง 2026-08-22) — โคมไฟหัวเตียงต้องอยู่บนตู้ข้างเตียงถึงจะสมจริง
+         ⚠ ชิ้นนี้มี `light` ⇒ ไม่ถูก merge เป็น mesh เดียว และ PointLight ผูกอยู่ใน group เดียวกัน
+           การยกทั้ง group ขึ้นไปนั่งบนโต๊ะจึงยกดวงไฟตามไปเองด้วย ไม่ต้องแก้ setupLamp */
+      { id:'night-light', stack:true, name:'โคมไฟดวงจันทร์', cat:'bed', scope:'in', emoji:'🌙', colors:[0xfff59d,0xb3e5fc,0xf8bbd0],
         action:'toggle', light:{y:.5, color:0xfff2c0, dist:3, intensity:.7},
         build(g,col){
           /* ⚠ เดิมทำเสี้ยวด้วย "ลูกกลมสีขาวแปะทับ" — ในโลก 3D ลูกที่แปะเป็นวัตถุทึบ
