@@ -14174,6 +14174,14 @@ function enterHouseGame(){
       removePetGroup();
     }
   }
+  /* 👪 **กลับเข้าเมืองตอนที่ออกไปขณะอยู่ในบ้าน — ต้องสร้างพ่อแม่ให้ด้วย**
+     (บั๊กที่ผู้ใช้แจ้ง 2026-08-22: ออกจากเกมตอนอยู่ในบ้าน กลับมาแล้วพ่อแม่หายไปทั้งคู่)
+     ปกติพ่อแม่ถูกสร้างตอน `switchScene('in')` = จังหวะ "เดินเข้าประตูบ้าน" เท่านั้น
+     แต่ `restoreCharSpot()` ตั้ง `hScene='in'` ตรงๆ โดยไม่ผ่าน switchScene ⇒ ไม่มีใครสร้างให้เลย
+     ⚠ ต้องอยู่ **ท้ายสุด หลัง `loadDecorForChild()`** — `buildParents()` snap จุดยืนด้วย `inGrid`
+       ซึ่งจะเป็นกริดของเด็กคนก่อนถ้าเรียกก่อนโหลดเฟอร์นิเจอร์
+     ⚠ ข้ามตอนอยู่หน้าสร้างตัวละคร (openCreator) — จบ creator แล้วมีทางสร้างของตัวเองอยู่แล้ว */
+  if(hScene === 'in' && hMode === 'world') buildParents();
   lastT = performance.now();
   /* เฟส 11 — มินิเกมกลุ่ม A ที่เล่นในโลก 3D (js/house-play.js) · ไฟล์นั้นอาจยังไม่โหลดก็ไม่พัง */
   if(window.HousePlay) window.HousePlay.start();
@@ -15226,6 +15234,8 @@ if(!homeView.hidden) houseBuddyRefresh();
      (เดาเวลาด้วย waitForTimeout แล้วเครื่องช้าตอนรันทั้งชุด = เทสแดงแบบไม่มีร่องรอย) */
   mode:()=>hMode, editing:()=>!!editMode,
   scene:()=>hScene, creatorWho:()=>creatorWho, charLook:()=>charCfgNow,
+  /* 🧪 ชุดเทส: พ่อแม่ที่มีตัวอยู่ในฉากจริงตอนนี้ (ไม่ใช่ข้อมูลใน save) */
+  parentsInScene: ()=> Object.keys(parentObjs).filter(w => parentObjs[w] && parentObjs[w].g),
   /* พาเด็กเข้าไปในบ้านทันที (ชุดเทสของเฟส 4A — เดินไปหน้าประตูเองในเทสช้ามาก) */
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
   leaveHouse:()=>{ if(hScene!=='out') switchScene('out'); },

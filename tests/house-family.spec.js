@@ -443,3 +443,18 @@ test('แถบบนต้องคลิกทะลุได้: แตะช
   expect(onBtn).toBe('btn');
   expect(errors).toEqual([]);
 });
+
+/* 👪 **ออกจากเกมตอนอยู่ในบ้าน แล้วกลับเข้ามาใหม่ พ่อแม่ต้องยังอยู่**
+   (บั๊กที่ผู้ใช้แจ้ง 2026-08-22) — พ่อแม่ถูกสร้างตอน `switchScene('in')` = จังหวะเดินเข้าประตูเท่านั้น
+   แต่การกู้ตำแหน่งที่บันทึกไว้ (`restoreCharSpot`) ตั้งฉากเป็น 'in' ตรงๆ โดยไม่ผ่าน switchScene
+   ⇒ กลับเข้ามาแล้วบ้านว่างเปล่าทั้งหลัง แตะรับเควสต์ครอบครัวไม่ได้เลย */
+test('กลับเข้าเมืองตอนที่ออกไปขณะอยู่ในบ้าน — พ่อแม่ต้องยังอยู่ครบ', async ({ page }) => {
+  const errors = await openHouse(page, Object.assign({}, SEED, { spot: { x: 7, z: 9, scene: 'in' } }));
+  const r = await page.evaluate(() => ({
+    scene: window.__houseDbg.scene(),
+    who: window.__houseDbg.parentsInScene(),
+  }));
+  expect(r.scene, 'ต้องกลับมาอยู่ในบ้านตามที่บันทึกไว้').toBe('in');
+  expect(r.who.sort(), 'ต้องมีพ่อกับแม่ครบ 2 คนในฉากจริง').toEqual(['dad', 'mom']);
+  expect(errors).toEqual([]);
+});
