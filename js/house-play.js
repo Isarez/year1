@@ -1503,7 +1503,16 @@
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'hpl-btn' + (b.alt ? ' hpl-btn-alt' : '');
-      el.textContent = b.label;
+      /* 🎨 ไอคอนบนปุ่มเป็น SVG (กฎถาวร: อะไรที่ต้องมีไอคอนให้วาดเป็น SVG)
+         ⚠ ใส่ผ่าน element ของตัวเอง แล้วชื่อปุ่มเป็น text node เสมอ — ห้ามต่อเข้า innerHTML รวมกัน */
+      if(b.ico){
+        el.classList.add('hpl-btn-ico');
+        const ic = document.createElement('span');
+        ic.className = 'hpl-btn-ic';
+        ic.innerHTML = ICO(b.ico, '', 20);
+        el.appendChild(ic);
+      }
+      el.appendChild(document.createTextNode(b.label));
       if(b.id) el.id = b.id;
       if(b.off) el.disabled = true;
       else el.onclick = ()=>{ if(typeof playClick === 'function') playClick(); b.fn(); };
@@ -1575,7 +1584,7 @@
     const colLeftN = (P.col.items || []).length - (P.col.got || []).length;
     const guiding = !!(W() && W().guidingCollect && W().guidingCollect());
     const colBtns = colLeftN > 0 ? [{
-      label: guiding ? 'พอแล้ว 🧭' : 'พาไปเก็บ 🧭', alt: guiding,
+      label: guiding ? 'พอแล้ว' : 'พาไปเก็บ', ico: 'ui-compass', alt: guiding,
       fn: ()=>{ if(W() && W().guideCollect){ W().guideCollect(!guiding); renderPanel(); } }
     }] : [];
     list.appendChild(row(ICO('col-' + th.id, th.emoji), 'เก็บ' + th.name + 'ทั่วเมือง',

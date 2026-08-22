@@ -660,6 +660,14 @@ test('11Q: แผงกิจกรรมมีปุ่มนำทางไป
   await expect(page.locator('#house-playpanel')).toBeVisible();
   const btn = page.locator('#house-playpanel .hpl-btn', { hasText: 'พาไปเก็บ' });
   await expect(btn, 'แผงกิจกรรมต้องมีปุ่มนำทางไปเก็บของ').toHaveCount(1);
+  /* 🎨 กฎถาวร: อะไรที่ต้องมีไอคอน ให้วาดเป็น SVG ห้ามใช้ emoji (ผู้ใช้สั่ง 2026-08-22) */
+  const ic = await page.evaluate(() => {
+    const b = Array.from(document.querySelectorAll('#house-playpanel .hpl-btn'))
+      .find(x => /พาไปเก็บ/.test(x.textContent));
+    return { svg: !!b.querySelector('.hpl-btn-ic svg'), emoji: /[\u{1F300}-\u{1FAFF}]/u.test(b.textContent) };
+  });
+  expect(ic.svg, 'ไอคอนบนปุ่มต้องเป็น SVG').toBe(true);
+  expect(ic.emoji, 'ห้ามเหลือ emoji บนปุ่ม').toBe(false);
   await btn.click();
   await expect.poll(() => page.evaluate(() => window.HouseWorld.guidingCollect())).toBe(true);
   const on = await page.evaluate(() => window.__houseDbg.qArrow());

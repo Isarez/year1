@@ -4484,6 +4484,10 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     background:#F0A14B; color:#fff; border-radius:999px; padding:8px 14px;
     font-size:13.5px; font-weight:700; box-shadow:var(--shadow-btn);
   }
+  /* ไอคอน SVG หน้าข้อความบนปุ่ม — ตัวปุ่มต้องเป็น flex ไม่งั้น svg ลอยสูงกว่าตัวอักษร */
+  .hpl-btn-ico{display:inline-flex; align-items:center; gap:6px;}
+  .hpl-btn-ic{display:inline-flex; align-items:center; flex:0 0 auto;}
+  .hpl-btn-ic svg{display:block;}
   .hpl-btn-alt{background:#8FC4E8; color:#1F5679;}
   .hpl-btn:active{transform:translateY(2px); box-shadow:none;}
   .hpl-btn:disabled{background:#E7DCC8; color:#9A8B74; cursor:inherit; box-shadow:none;}
