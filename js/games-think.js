@@ -319,10 +319,13 @@ function renderShadowLevel(){
 
   const prompt = $('shadow-prompt');
   prompt.classList.remove('revealed');
-  /* 🎨 ใช้ไอคอน SVG ถ้ามี (เงาทำด้วย filter:brightness(0) ⇒ ใช้ได้ทั้ง emoji และ SVG) */
-  { const OI = window.OwlIcons;
-    if(OI && OI.hasEmoji(answer.e)) prompt.innerHTML = OI.text(answer.e, 96);
-    else prompt.textContent = answer.e; }
+  /* 🔒 **เกมทายเงาต้องใช้ emoji ล้วนทั้งเกม ห้ามใช้ไอคอน SVG** (ผู้ใช้สั่ง 2026-08-22)
+     เคยแปลงเฉพาะ "ตัวเงา" เป็น SVG (รอบไอคอน 2026-08-20) แต่ **ปุ่มคำตอบยังเป็น emoji**
+     เพราะข้อความบนปุ่มคือเฉลยที่ระบบใช้เทียบคำตอบ (ห้ามแตะ)
+     ⇒ เงาเป็นทรงหนึ่ง คำตอบเป็นอีกทรงหนึ่ง เด็กเทียบไม่ได้ = เกมพัง
+     ⚠ กติกาไอคอนของโปรเจกต์ (อะไรที่ต้องมีไอคอนให้วาด SVG) **ยกเว้นเกมนี้**
+       เพราะที่นี่ "รูปคำถาม" กับ "รูปคำตอบ" ต้องเป็นของชุดเดียวกันเป๊ะเท่านั้นถึงจะเล่นได้ */
+  prompt.textContent = answer.e;
   $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');
@@ -414,9 +417,9 @@ function renderShadowOverlapLevel(){
 
   const prompt = $('shadow-prompt');
   prompt.classList.remove('revealed');
-  { const OI = window.OwlIcons;
-    prompt.innerHTML = ansItems.map(x=>'<span class="sp-i">'
-      + ((OI && OI.hasEmoji(x.e)) ? OI.text(x.e, 84) : x.e) + '</span>').join(''); }
+  /* 🔒 emoji ล้วนเช่นกัน — เหตุผลเดียวกับด่านเงาเดี่ยว (ดูหมายเหตุที่ renderShadowLevel) */
+  prompt.innerHTML = ansItems.map(x=>'<span class="sp-i"></span>').join('');
+  ansItems.forEach((x, i)=>{ prompt.children[i].textContent = x.e; });
   $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');

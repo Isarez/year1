@@ -5,7 +5,8 @@
      ① แกนกลาง `js/shared/icons.js` ต้องใช้ได้ **โดยไม่ต้องเข้าโหมดบ้าน**
         (ของเดิมคลังอยู่ใน house-icons.js ซึ่งโหลด lazy ⇒ หน้าหลักเรียกไม่ได้เลย)
      ② `OwlIcons.text()` ต้อง escape ข้อความเสมอ และปล่อย emoji ที่ยังไม่มีไอคอนไว้เหมือนเดิม
-     ③ รูปประกอบโจทย์/เงาปริศนา/ของในเกมนกฮูกสั่ง ต้องวาดด้วย SVG จริงเมื่อมีไอคอน
+     ③ รูปประกอบโจทย์/ของในเกมนกฮูกสั่ง ต้องวาดด้วย SVG จริงเมื่อมีไอคอน
+     ⑤ **ยกเว้นเกมทายเงา — ต้องเป็น emoji ล้วนทั้งเกม** (ดู IM5)
      ④ **ห้ามแตะข้อความบนปุ่มตัวเลือก** — ข้อความนั้นคือเฉลยที่ระบบใช้เทียบคำตอบ
    ============================================================ */
 const { test, expect } = require('@playwright/test');
@@ -104,5 +105,45 @@ test('IM4: โจทย์ควิซ — รูปประกอบเป็�
   /* ⚠ ปุ่มตัวเลือกต้องยังเป็นข้อความล้วน — ระบบเทียบคำตอบจาก textContent */
   expect(r.choiceHasSvg, 'ปุ่มตัวเลือกต้องไม่ถูกเปลี่ยนเป็นรูป').toBe(false);
   r.choiceTexts.forEach(t => expect(t.length, 'ปุ่มตัวเลือกต้องมีข้อความเสมอ').toBeGreaterThan(0));
+  expect(errs).toEqual([]);
+});
+
+test('IM5: เกมทายเงาต้องเป็น emoji ล้วน — รูปเงากับปุ่มคำตอบต้องเป็นของชุดเดียวกัน', async ({ page }) => {
+  /* 🔒 **ข้อยกเว้นของกติกา "อะไรที่ต้องมีไอคอนให้วาด SVG"** (ผู้ใช้สั่ง 2026-08-22)
+     เคยแปลงเฉพาะ "ตัวเงา" เป็น SVG แต่ **ปุ่มคำตอบยังเป็น emoji** เพราะข้อความบนปุ่ม
+     คือเฉลยที่ระบบใช้เทียบคำตอบ (ห้ามแตะ — ดู IM4)
+     ⇒ เงาเป็นทรงหนึ่ง คำตอบเป็นอีกทรงหนึ่ง เด็กเทียบไม่ได้ = เกมพัง
+     ⇒ เกมนี้ต้องใช้ emoji ทั้งคู่ "รูปคำถาม" กับ "รูปคำตอบ" จะได้เป็นของชุดเดียวกันเป๊ะ */
+  const errs = await main(page);
+  await page.locator('#child-select-view .child-card').first().click();
+  const quiz = page.locator('.h2-mode-quiz');
+  if(await quiz.isVisible().catch(()=>false)) await quiz.click();
+  const r = await page.evaluate(async () => {
+    const out = [];
+    for(const id of ['p1-shadow', 'p1-shadow2']){
+      /* ⚠ `CATS` เป็น const ระดับบนสุดของสคริปต์ธรรมดา — **ไม่ได้อยู่บน `window`** */
+      const all = (typeof CATS !== 'undefined') ? CATS : [];
+      const c = all.find(x => x.id === id);
+      if(!c) continue;
+      selectedGrade = c.grade || 'p1';
+      window.startShadowGame(id);
+      await new Promise(r2 => setTimeout(r2, 400));
+      const p = document.getElementById('shadow-prompt');
+      const b = document.querySelector('.shadow-choice-emoji');
+      out.push({id,
+        promptSvg: !!p.querySelector('svg'),
+        promptText: (p.textContent || '').trim(),
+        choiceSvg: !!(b && b.querySelector('svg')),
+        choiceText: (b ? b.textContent : '').trim()});
+    }
+    return out;
+  });
+  expect(r.length, 'ต้องเปิดเกมทายเงาได้').toBeGreaterThan(0);
+  r.forEach(x => {
+    expect(x.promptSvg, x.id + ': รูปเงาต้องเป็น emoji ห้ามเป็น SVG').toBe(false);
+    expect(x.choiceSvg, x.id + ': ปุ่มคำตอบต้องเป็น emoji').toBe(false);
+    expect(x.promptText.length, x.id + ': รูปเงาต้องมีเนื้อหา').toBeGreaterThan(0);
+    expect(x.choiceText.length, x.id + ': ปุ่มคำตอบต้องมีเนื้อหา').toBeGreaterThan(0);
+  });
   expect(errs).toEqual([]);
 });
