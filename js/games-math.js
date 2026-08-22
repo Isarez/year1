@@ -1608,6 +1608,14 @@ function finishClockGame(){
   const cat = catById(clockGame.catId);
   const mistakes = clockGame.mistakes, totalLevels = clockGame.totalLevels;
   try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){}
+  /* 🐞 **การ์ดเควสต์ค้างหลังตอบข้อสุดท้าย** (ผู้ใช้แจ้ง 2026-08-22)
+     เกมนาฬิกามีหน้าสรุปของตัวเอง **ไม่ได้วิ่งผ่าน `finishP2Game()`** จึงไม่มีตะเข็บส่งผลกลับโฮสต์
+     ⇒ เล่นในการ์ดเควสต์แล้วตอบข้อสุดท้าย มันไปสั่ง `showOnlyView(resultView)` ของหน้าหลัก
+       ซึ่งอยู่ใน `<main>` **หลังฉากเมือง** (`#house-view` z-index 70) ⇒ เด็กเห็นการ์ดค้างไม่ไปไหน
+     ⚠ **เกมที่มีหน้าสรุปของตัวเองทุกตัวต้องเรียก `reportGameResult()` เป็นบรรทัดแรกเสมอ**
+       (เทส OG1 ไล่ตรวจให้ทุกเกมที่ลงทะเบียนกับ OwlGames แล้ว) */
+  if(reportGameResult(clockGame.catId, mistakes, totalLevels, 'หมุนนาฬิกา')) return;
+  if(!cat || document.body.classList.contains('house-open')) return;
   showOnlyView(resultView);
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];

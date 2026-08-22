@@ -91,6 +91,13 @@
          + '" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
   }
   const UI = {
+    /* 🧭 เข็มทิศ — ใช้บนปุ่ม "พาไปเก็บ" ในแผงกิจกรรม (ผู้ใช้สั่งให้เป็น SVG 2026-08-22)
+       ⚠ ที่ 20px เห็นแค่ "เงารวม" ⇒ เข็มต้องเป็นสามเหลี่ยมทึบ 2 สีตัดกันชัด
+         (แดง = ทิศเหนือ · ขาว = หาง) ห้ามวาดขีดองศาเล็กๆ มองไม่ออกและกลายเป็นขอบสกปรก */
+    compass(){ const c = '#f6ead5', d = dk('#8fb8c9'), r = '#e05252', g = '#5b6a75';
+      return G('<circle cx="32" cy="32" r="26" fill="' + c + '"/>', d)
+           + '<path d="M32 12L41 32H23z" fill="' + r + '" stroke="' + dk(r) + '" stroke-width="2" stroke-linejoin="round"/>'
+           + '<path d="M32 52L23 32h18z" fill="' + g + '" stroke="' + dk(g) + '" stroke-width="2" stroke-linejoin="round"/>'; },
     /* 🙈 ซ่อนแอบ — หน้ายิ้มเอามือปิดตา */
     seek(){ const c = '#ffd9a8', d = dk(c), h = '#5b4a42';
       return G('<circle cx="32" cy="34" r="20" fill="' + c + '"/>'

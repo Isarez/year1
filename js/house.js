@@ -863,7 +863,9 @@ const WILD_BAN = new Set(['54,22', '11,19', '3,31', '4,31', '5,31', '7,29', '6,3
   '26,47', '27,47', '27,48',
   /* ผู้ใช้ชี้เองว่า 2 ต้นนี้เกะกะ (2026-08-09) — 27,42 คือหัวมุมต่อกับทางเดินใหม่ x19-27/z40-41
      (แนวพุ่ม x27 ถอยไปเริ่ม z43 แล้ว) · 17,45 คือต้นที่ยืนอยู่กลางทุ่งใต้บริเวณบ้าน */
-  '27,42', '17,45']);
+  '27,42', '17,45',
+  /* ต้นไม้ในชุมชนที่ 2 ที่ผู้ใช้ชี้เองว่าเกะกะ (2026-08-22) — ชุดเดียวกับ 34,61 / 35,60 ข้างบน */
+  '35,61', '33,65', '43,65', '45,65']);
 /* ---------- ต้นไม้ในชุมชน ----------
    กติกาป่า (wildPlantable แบบ tall) เว้นถนน 3 ช่อง + อาคาร 4 ช่อง → ในชุมชนแทบไม่เหลือช่องเลย ชุมชนจึงโล่งไม่มีต้นไม้
    ชุดกติกานี้ผ่อนให้เหลือ ถนน/ลาน 2 ช่อง + อาคาร 2 ช่อง + ใบไม้ล้ำบนจอสั้นลงเหลือ 2 ช่อง
@@ -5724,11 +5726,12 @@ function initThreeCore(){
        🔒 **เดสก์ท็อปยังได้ของเดิมทุกอย่าง** (มีกำลังเหลือ ไม่มีเหตุผลต้องลดคุณภาพ)
        🔒 **ห้ามปิดเงา** — ผู้ใช้ยืนยัน 2026-08-22 ว่าไม่ต้องการให้เงาหายไป */
     renderer.shadowMap.type = isTouchDevice() ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
-    /* 🕐 อัปเดต shadow map **เว้นเฟรม** บนเครื่องจอสัมผัส — shadow pass คือการวาดฉากซ้ำอีกรอบ
-       ทำทุกเฟรมทั้งที่ตัวละครการ์ตูนเดินช้ามาก ⇒ เงาตามช้ากว่าตัว 1 เฟรม (~25 ms) มองไม่ออก
-       ⚠ ตั้ง `autoUpdate=false` แล้ว **ต้องสั่ง `needsUpdate=true` เองทุกครั้งที่อยากให้อัปเดต**
-         ลืมสั่ง = เงาค้างเฟรมแรกตลอดกาล (ดู frame()) */
-    renderer.shadowMap.autoUpdate = !isTouchDevice();
+    /* 🕐 **เงาต้องอัปเดตทุกเฟรมเสมอ — ห้ามหรี่เป็นเว้นเฟรมอีก** (ผู้ใช้แจ้ง 2026-08-22)
+       เคยลองตั้ง `autoUpdate = false` แล้วสั่ง `needsUpdate` เว้นเฟรมเพื่อลดงาน GPU ครึ่งหนึ่ง
+       คิดว่าเงาตามช้า 1 เฟรมจะมองไม่ออก — **แต่บน iPad จริงเห็นเป็นเงากระตุกชัดเจน**
+       (เงาอยู่นิ่ง 1 เฟรมแล้วกระโดดตามตัว สลับกันไปตลอดเวลาที่เดิน = สะดุดตากว่าเฟรมเรตที่ได้คืนมา)
+       ⇒ คืนเป็นค่าเริ่มต้นของ three (อัปเดตทุกเฟรม) · ส่วนที่ยังเก็บไว้คือ **ตัวกรองเงาแบบเบา**
+         (`PCFShadowMap` บนเครื่องจอสัมผัส) ซึ่งลดงานต่อพิกเซลโดยไม่ทำให้จังหวะเงาเปลี่ยน */
   }
 
   scene = new THREE.Scene();
@@ -5968,6 +5971,11 @@ function fpsPanelTick(dtMs, jsMs, renMs){
 
    ที่นี่มีแค่ "ตอนนี้ควรชี้ไปช่องไหน" ส่วนการวาดอยู่ที่ `updateQuestArrow()` */
 let guideForce = null;                  /* บทเรียนสั่งเป้าหมายเองได้ — มาก่อนเควสต์เสมอ */
+/* 🍃 นำทางไปเก็บของประจำวัน — **เปิดจากปุ่มในแผงกิจกรรมเท่านั้น** (ผู้ใช้สั่ง 2026-08-22)
+   กติกาเดิม (2026-08-16) ห้ามให้กิจกรรมรายวันโชว์ลูกศรเอง เพราะกิจกรรมเปิดค้างทั้งวัน
+   ⇒ ลูกศรจะรบกวนเด็กที่แค่อยากเดินเล่น · ทางนี้ไม่ขัดข้อนั้นเพราะ **เด็กกดเปิดเอง กดปิดเองได้**
+   และดับเองอัตโนมัติเมื่อเก็บครบ */
+let guideCol = false;
 /* เป้าหมายของเควสต์ที่กำลังทำอยู่ (null = ไม่มี/ปลายทางเป็นพื้นที่กว้าง ไม่ใช่จุดเดียว) */
 function questGuideTile(){
   if(!walkQuest) return null;
@@ -6913,8 +6921,17 @@ function talkToNpc(n){
     }
     return;
   }
+  /* 🔒 งานของ "คนคนนี้" ที่เด็กรับไปแล้วและกำลังทำค้างอยู่ — ห้ามยื่นงานใหม่ทับเด็ดขาด
+     (ผู้ใช้เจอ 2026-08-22: รับงานนับเป็ดในบ่อจากลุงตกปลา แล้วลุงตกปลาถามใหม่เป็นเกมผสมสี)
+     3 สาขาข้างบนดักเฉพาะงานที่ **ปลายทางคือตัวเขาเอง** (`toNpc`) — งานที่ให้ไปทำที่อื่น
+     (นับของในย่าน · ไปนั่งโต๊ะ · ไปหาของที่หาย) ไม่มีใครดักเลย จึงหล่นมาถึงบรรทัดยื่นงานใหม่
+     ⇒ ตรงนี้ทวนคำสั่งเดิมให้ฟังแทน แล้วออกไป */
+  if(walkQuest && walkQuest.run && walkQuest.run.spec && walkQuest.run.spec.npc === d.id){
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkHint(); }, 320);
+    return;
+  }
   const spec = QUESTS ? QUESTS.specForNpc(d.id) : null;
-  if(spec && !spec.done){
+  if(spec && (!spec.done || canRedoQuest(spec))){
     setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 280);
     return;
   }
@@ -7227,8 +7244,27 @@ function qzBtn(label, cls, fn){
   return b;
 }
 /* 1) การ์ดชวนรับงาน — เด็กต้องกดรับเอง ไม่ลากเข้าเกมเงียบๆ */
+/* 🔒 งานชุดนี้เด็ก "รับไปแล้วและกำลังเดินไปทำอยู่" หรือเปล่า (บั๊กที่ผู้ใช้เจอ 2026-08-22)
+   กดซ้ำที่กระดาน / แตะตัวคนสั่งงาน / แตะพ่อแม่ ต้องไม่สร้างรอบใหม่ทับของเดิม
+   ไม่งั้นของที่เก็บมาแล้ว · ปลาที่ตกได้ · ขาที่เดินไปร้านมาแล้ว หายหมด เริ่มนับหนึ่งใหม่
+   ⇒ ทวนคำสั่งเดิมให้ฟังแทน (`walkHint()`) แล้วคืน true ให้ผู้เรียกออกไปเลย */
+function questInFlight(spec){
+  if(!spec || spec.test) return false;
+  if(!walkQuest || !walkQuest.run || !walkQuest.run.spec) return false;
+  if(walkQuest.run.spec.key !== spec.key) return false;
+  closeQuestBoard();
+  walkHint();
+  return true;
+}
+/* 🔁 เควสต์ของชาวบ้านที่ทำเสร็จไปแล้ว "เล่นซ้ำได้" (ผู้ใช้สั่ง 2026-08-22)
+   เผื่อเด็กอยากกลับไปเก็บดาวให้ครบ 3 ดวง — ได้ดาวมากกว่าเดิมถึงจะได้เงิน (ส่วนต่าง)
+   ⚠ เฉพาะงานของ **ชาวบ้าน** เท่านั้น กระดาน/ครอบครัวเป็นงานหลักประจำวัน ยังทำได้วันละครั้ง */
+function canRedoQuest(spec){ return !!(spec && spec.done && spec.src === 'npc' && !spec.test); }
 function offerQuest(spec){
-  if(!QUESTS || !spec || spec.done) return;
+  if(!QUESTS || !spec) return;
+  const redo = canRedoQuest(spec);
+  if(spec.done && !redo) return;
+  if(questInFlight(spec)) return;
   if(hMode !== 'world' || editMode) return;   /* กำลังแต่งตัว/เลือกสัตว์/ตกแต่งบ้านอยู่ → ไม่เด้งงานทับ */
   if(window.HouseQB && window.HouseQB.isOpen()) return;   /* เปิดหน้าคลังคำถามอยู่ → ไม่เด้งงานจริงทับหน้าเทส */
   closeQuestSummary();                                   /* กำลังดูรายการเควสต์อยู่ → ปิดก่อน ไม่ให้กล่องซ้อนกัน */
@@ -7236,14 +7272,28 @@ function offerQuest(spec){
   closeQuestBoard();
   const d = npcDefById(spec.npc);
   qzShow();
-  qzHead(spec, spec.src === 'board' ? 'งานจากกระดานเควสต์' : 'งานวันนี้');
+  qzHead(spec, redo ? 'งานที่ทำไปแล้ว · เล่นซ้ำได้'
+                    : (spec.src === 'board' ? 'งานจากกระดานเควสต์' : 'งานวันนี้'));
   const st = qzStage(); if(!st) return;
   const line = document.createElement('div');
   line.className = 'hqz-line';
-  line.textContent = (d && d.quest) ? d.quest : 'มาช่วยทำงานให้หน่อยได้ไหมจ๊ะ';
+  const got = spec.stars | 0;
+  line.textContent = redo
+    ? (got >= 3
+        ? 'งานนี้หนูทำได้ครบ 3 ดาวแล้ว! อยากเล่นสนุกอีกรอบก็ได้นะ (รอบนี้ไม่มีเงินเพิ่มแล้ว)'
+        : 'งานนี้หนูทำไปแล้วได้ ' + got + ' ดาว — ลองอีกรอบไหม? ถ้าได้ดาวมากกว่าเดิม จะได้เงินเพิ่มด้วยนะ')
+    : ((d && d.quest) ? d.quest : 'มาช่วยทำงานให้หน่อยได้ไหมจ๊ะ');
   const row = document.createElement('div'); row.className = 'hqz-row';
-  row.appendChild(qzBtn('รับงาน! 💪', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); startQuest(spec); }));
-  row.appendChild(qzBtn('ไว้ก่อน', 'hqz-no', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
+  row.appendChild(qzBtn(redo ? 'เล่นอีกรอบ 🔁' : 'รับงาน! 💪', 'hqz-yes',
+    ()=>{ if(typeof playClick==='function') playClick(); startQuest(spec); }));
+  /* ⚠ คนที่ดูแลร้าน: ปกติ "ทำงานเสร็จแล้ว = แตะแล้วเข้าร้าน" ⇒ พอมีการ์ดเล่นซ้ำมาคั่น
+     ปุ่มที่สองต้องพาเข้าร้านให้ ไม่งั้นเด็กเข้าร้านนั้นไม่ได้อีกเลย */
+  const toShop = redo && d && d.shop && SHOP;
+  row.appendChild(qzBtn(toShop ? 'เข้าร้าน 🛒' : 'ไว้ก่อน', 'hqz-no', ()=>{
+    if(typeof playClick==='function') playClick();
+    closeQuestPanel();
+    if(toShop) setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) SHOP.open(d.shop); }, 200);
+  }));
   st.appendChild(line); st.appendChild(row);
   if(typeof playClick==='function') playClick();
 }
@@ -8905,6 +8955,15 @@ function finishQuest(){
   gain.className = 'hqz-gain';
   gain.textContent = '+ ' + res.coins + ' บาท';
   st.appendChild(stars); st.appendChild(gain);
+  /* 🔁 รอบเล่นซ้ำ — บอกให้ชัดว่าทำไมได้เงินเท่านี้ ไม่งั้นเด็กนึกว่าระบบลืมจ่าย
+     🔒 โทนต้องไม่ดุ: ทำได้ไม่ดีกว่าเดิมก็ยังชม และดาวเดิมไม่หายไปไหน */
+  if(res.redo){
+    const tag = document.createElement('div'); tag.className = 'hqz-chal';
+    tag.textContent = res.better
+      ? '🔁 เล่นซ้ำ · เก่งขึ้นจาก ' + res.prevStars + ' ดาว เป็น ' + res.stars + ' ดาว! ได้เงินส่วนต่างเพิ่มเลย'
+      : '🔁 เล่นซ้ำ · รอบนี้ยังไม่มากกว่าเดิม (' + res.prevStars + ' ดาว) เลยยังไม่มีเงินเพิ่ม — ดาวเดิมยังอยู่ครบนะ';
+    st.appendChild(tag);
+  }
   if(res.chal){
     const tag = document.createElement('div'); tag.className = 'hqz-chal';
     tag.textContent = '🌟 โจทย์ท้าทาย ได้เงินเพิ่มพิเศษ';
@@ -11595,6 +11654,7 @@ function tapParent(w){
 /* ยื่นงานครอบครัว — ใช้การ์ด/เส้นทางเล่นชุดเดียวกับเควสต์ NPC ต่างแค่หัวการ์ดเป็นชื่อพ่อแม่ */
 function offerFamilyQuest(spec){
   if(!QUESTS || !spec || spec.done) return;
+  if(questInFlight(spec)) return;          /* งานครอบครัวที่เดินไปทำค้างอยู่ — ห้ามยื่นใหม่ทับ */
   if(hMode !== 'world' || editMode) return;
   if(window.HouseQB && window.HouseQB.isOpen()) return;
   const p = FAMILY.one(spec.who);
@@ -11678,8 +11738,14 @@ function refreshQuestBar(){
 }
 /* แปลงรายการดิบจาก engine → ชื่อคน/ชื่อร้านที่เด็กอ่านรู้เรื่อง */
 function questItemInfo(it){
-  if(it.src === 'board')
+  if(it.src === 'board'){
+    /* 🧑 งานบนกระดานก็มี "คนฝากงาน" จริงเสมอ — โชว์ตัวเขาเหมือนหน้าอื่นๆ (ผู้ใช้สั่ง 2026-08-22)
+       ของเดิมขึ้นไอคอนกระดานเหมือนกันหมดทั้ง 5 แถว เด็กแยกไม่ออกว่าแถวไหนเป็นงานของใคร */
+    const bd = it.npc ? npcDefById(it.npc) : null;
+    if(bd) return {icon: bd.icon || '🙂', ico: bd.id || '', name: bd.name || 'ชาวบ้าน',
+                   place:'📋 ฝากไว้ที่กระดานเควสต์'};
     return {icon:'📋', ico:'ui-board', name:'กระดานเควสต์', place:'ข้างน้ำพุกลางหมู่บ้าน'};
+  }
   if(it.src === 'family'){
     const p = FAMILY ? FAMILY.one(it.who) : null;
     return {icon: p ? p.icon : '👪', ico: 'fam-' + (it.who || 'mom'),
@@ -12377,6 +12443,19 @@ function updateCompass(){
    ⇒ ย้ายมาโคจรรอบตัวเด็ก เห็นแน่นอนเพราะเด็กมองตัวเองอยู่แล้ว */
 const QARROW_R = 104;
 const _qaV = new THREE.Vector3(), _qaV2 = new THREE.Vector3();
+/* ของประจำวันชิ้นที่ใกล้ที่สุดที่ยังไม่ได้เก็บ — เก็บครบแล้วดับโหมดนำทางให้เอง */
+function colGuideTarget(){
+  const P = window.HousePlay;
+  const left = (P && P.colLeft) ? P.colLeft() : [];
+  if(!left.length){ guideCol = false; return null; }
+  const t = hChar.tile;
+  let best = null, bd = 1e9;
+  left.forEach(it=>{
+    const d = Math.abs(it.x - t.x) + Math.abs(it.z - t.z);
+    if(d < bd){ bd = d; best = it; }
+  });
+  return best;
+}
 function questArrowTarget(){
   /* 🧭 **โชว์เฉพาะตอนทำเควสต์เท่านั้น ไม่โชว์ตอนเล่นกิจกรรมรายวัน** (ผู้ใช้สั่ง 2026-08-16)
 
@@ -12394,6 +12473,12 @@ function questArrowTarget(){
   /* 🎓 บทเรียนสอนเล่นสั่งเป้าหมายเองได้ และ **มาก่อนเควสต์เสมอ**
      (ระหว่างสอนเล่นต้องไม่มีลูกศร 2 อันชี้คนละทาง) */
   if(guideForce) return goTo(guideForce);
+  /* 🍃 โหมดนำทางไปของประจำวัน (เปิดจากปุ่มในแผงกิจกรรม) — ชี้ชิ้นใกล้สุดที่ยังไม่ได้เก็บ
+     ⚠ ห้ามซ่อนตอนเข้าใกล้ (ไม่ใช้ `goTo`) — ของมักอยู่ข้างตัวพอดี ซ่อนแล้วเด็กจะไม่เห็นเลย */
+  if(guideCol){
+    const r = colGuideTarget();
+    if(r) return at(r);
+  }
   if(!walkQuest) return null;
   /* 🍃 งานเก็บของ — ชี้ไป **ชิ้นที่ใกล้ที่สุดที่ยังไม่ได้เก็บ** (เก็บแล้วเด้งไปชิ้นถัดไปเอง) */
   if(walkQuest.target === 'catch'){
@@ -12593,13 +12678,15 @@ function buildDecorGroup(sc, rec){
 }
 function applyRecToGroup2(g, sc, item, rec){
   g.position.copy(decorWorldPos(sc, item, {x:rec.x,z:rec.z}, rec.rot||0));
-  g.position.y = decorYOffset(sc, item, {x:rec.x,z:rec.z}, rec.rot||0, rec);  /* ยกขึ้นถ้าวางบนของอื่น */
+  /* ยกขึ้นถ้าวางบนของอื่น + เลื่อนตามของที่รองอยู่ (โต๊ะติดผนังถูกเลื่อนเข้าหาผนังไปแล้ว) */
+  const st = decorStackAt(sc, item, {x:rec.x,z:rec.z}, rec.rot||0, rec);
+  g.position.y = st.y;
+  g.position.x += st.dx; g.position.z += st.dz;
   g.rotation.y = (rec.rot||0) * Math.PI/2;
   if(item.wall){   /* เลื่อนให้ขอบหลัง (local -z) ไปแนบผิวผนัง (ห่างกึ่งกลางช่องขอบ 0.5) — ชิ้นตื้น/ลึกแนบเท่ากัน */
-    const ang = (rec.rot||0) * Math.PI/2;
-    const sh = -(0.5 + (g.userData.localMinZ || 0));  /* ระยะเลื่อนตามแกน -z local */
-    g.position.x += sh * Math.sin(ang);
-    g.position.z += sh * Math.cos(ang);
+    const sh = wallSnapShift(item, rec.rot||0, g);
+    g.position.x += sh.dx;
+    g.position.z += sh.dz;
   }
 }
 function applyRecToGroup(g){ const d=g.userData.deco; applyRecToGroup2(g, d.scene, d.item, d.rec); }
@@ -12957,18 +13044,44 @@ function resetHomeSet(){
     if(typeof showToast==='function') showToast('✓','ของชุดเริ่มต้นอยู่ครบแล้วนะ');
   }
 }
-/* ความสูงที่วางซ้อน: ชิ้น stack (เช่นโคมไฟตั้งโต๊ะ) ยกขึ้นไปนั่งบนผิวของที่มี top อยู่ใต้ */
-function decorYOffset(sc, item, anchor, rot, ignoreRec){
-  if(!item.stack) return 0;
-  let y = 0;
+/* ของที่ "รองอยู่ข้างใต้" ของชิ้น stack (เช่นโคมไฟตั้งโต๊ะบนโต๊ะข้างเตียง)
+   คืนตัวที่ผิวสูงที่สุดที่ทับช่องกัน — ใช้ทั้งความสูงและตำแหน่งจริงของมัน
+   🐞 **บั๊กที่ผู้ใช้แจ้ง 2026-08-22: "โต๊ะติดกำแพงแล้วของบนโต๊ะลอย"**
+      ของที่ติดธง `wall` (ตู้หัวเตียง · เคาน์เตอร์ครัว · ชั้นวางทีวี · โต๊ะวางของ · ตู้ลิ้นชัก ·
+      โต๊ะเครื่องแป้ง · ตู้ถ้วยชาม) ถูก **เลื่อนไปแนบผนังจริง** ใน applyRecToGroup2 แต่ของที่วางทับ
+      ยังถูกวางที่ "กลางช่อง" ตามเดิม ⇒ โต๊ะขยับไปแล้ว ของค้างอยู่กลางอากาศข้างโต๊ะ
+   ⇒ ของที่วางซ้อนต้องรับ **ระยะเลื่อนของตัวที่รองอยู่** มาด้วยเสมอ */
+function decorStackUnder(sc, item, anchor, rot, ignoreRec){
+  if(!item.stack) return null;
+  let best = null;
   const tiles = footTiles(item, anchor, rot);
   for(const g of decorGroups[sc]){
     const r = g.userData.deco.rec; if(r===ignoreRec) continue;
     const it = g.userData.deco.item; if(it.top==null) continue;
     const oth = footTiles(it, {x:r.x,z:r.z}, r.rot);
-    if(tiles.some(a=>oth.some(bb=>bb.x===a.x && bb.z===a.z))) y = Math.max(y, it.top);
+    if(!tiles.some(a=>oth.some(bb=>bb.x===a.x && bb.z===a.z))) continue;
+    if(!best || it.top > best.item.top) best = {item:it, rec:r, g};
   }
-  return y;
+  return best;
+}
+/* ระยะที่ชิ้นติดผนังถูกเลื่อนเข้าหาผนัง (สูตรเดียวกับ applyRecToGroup2 — แก้ที่นี่ที่เดียวไม่พอ
+   ต้องแก้พร้อมกันทั้ง 2 จุดเสมอ) */
+function wallSnapShift(item, rot, g){
+  if(!item || !item.wall) return {dx:0, dz:0};
+  const ang = (rot || 0) * Math.PI/2;
+  const sh = -(0.5 + ((g && g.userData.localMinZ) || 0));
+  return {dx: sh * Math.sin(ang), dz: sh * Math.cos(ang)};
+}
+/* ความสูง + ระยะเลื่อนที่ชิ้น stack ต้องใช้เพื่อไปนั่งบนผิวของที่รองอยู่จริง */
+function decorStackAt(sc, item, anchor, rot, ignoreRec){
+  const sup = decorStackUnder(sc, item, anchor, rot, ignoreRec);
+  if(!sup) return {y:0, dx:0, dz:0};
+  /* ⚠ ถ้าตัวที่วางทับเป็นของติดผนังเอง มันเลื่อนของมันเองอยู่แล้ว ไม่ต้องเลื่อนซ้ำ */
+  const sh = item.wall ? {dx:0, dz:0} : wallSnapShift(sup.item, sup.rec.rot || 0, sup.g);
+  return {y: sup.item.top, dx: sh.dx, dz: sh.dz};
+}
+function decorYOffset(sc, item, anchor, rot, ignoreRec){
+  return decorStackAt(sc, item, anchor, rot, ignoreRec).y;
 }
 /* ---------- แพนกล้อง (โหมดตกแต่ง) ---------- */
 function groundPoint(cx, cy){
@@ -13146,7 +13259,15 @@ function editDragMove(cx, cy){
   if(!valid && sc==='out' && !footTiles(item, anchor, rot).every(t=>inHomeZone(t.x, t.z))) homeZoneToast();
   editSel.position.copy(decorWorldPos(sc, item, anchor, rot));
   editSel.rotation.y = rot * Math.PI/2;
-  editSel.position.y = valid ? decorYOffset(sc, item, anchor, rot, rec) : .12;
+  /* พรีวิวตอนลากต้องอยู่ตรงที่ที่มันจะไปอยู่จริง — รวมระยะเลื่อนของโต๊ะที่รองอยู่ด้วย
+     ไม่งั้นเด็กเห็นของลอยตอนลาก แล้วปล่อยแล้วกระโดดไปอีกที่ */
+  const stp = valid ? decorStackAt(sc, item, anchor, rot, rec) : null;
+  editSel.position.y = stp ? stp.y : .12;
+  if(stp){ editSel.position.x += stp.dx; editSel.position.z += stp.dz; }
+  if(valid && item.wall){
+    const sh = wallSnapShift(item, rot, editSel);
+    editSel.position.x += sh.dx; editSel.position.z += sh.dz;
+  }
   updateSelRing(); setSelTint(valid);
   if(valid) editDrag.lastValid = {x:anchor.x, z:anchor.z, rot};
   editDrag.moved = true;
@@ -13512,9 +13633,6 @@ const WALK_SPEED = 3;      /* ช่อง/วินาที */
      ⇒ ของในโลกขยับกระตุกเป็นช่วงๆ (ผู้ใช้แจ้ง 2026-08-12) · เว้นเฟรมได้จังหวะสม่ำเสมอ ~30fps
      และ dt ~33ms ยังไม่ถึงเพดาน ความเร็วจึงตรงกับของจริง */
 let houseFrameThrottle = false, frameOdd = false;
-/* ⚠ **ตัวนับของเงาต้องแยกจาก `frameOdd`** — ตัวนั้นเป็นของระบบหรี่เฟรมตอนเปิดกล้อง (MediaPipe)
-   ใช้ร่วมกันแล้วพังทั้งคู่: เปิดกล้องเมื่อไหร่จังหวะอัปเดตเงาจะเพี้ยนตาม และกลับกัน */
-let shadowOdd = false;
 const frameLog = [];        /* เวลาที่ "วาดจริง" 120 เฟรมหลังสุด (เทสอ่านผ่าน __houseDbg.frameLog) */
 window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; frameOdd = false; };
 
@@ -13899,8 +14017,6 @@ function frame(t){
   updatePosChip();
   updateLamps(t, dt);
   updateStreetLamps(dt);
-  /* 🕐 เงาอัปเดตเว้นเฟรมบนเครื่องจอสัมผัส (ดูเหตุผลที่ initThreeCore) */
-  if(hShadows && !renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = shadowOdd = !shadowOdd;
   const _fps1 = FPS_PANEL ? performance.now() : 0;
   renderer.render(scene, camera);
   if(FPS_PANEL) fpsPanelTick(_fpsDt, _fps1 - _fps0, performance.now() - _fps1);
@@ -14058,6 +14174,14 @@ function enterHouseGame(){
       removePetGroup();
     }
   }
+  /* 👪 **กลับเข้าเมืองตอนที่ออกไปขณะอยู่ในบ้าน — ต้องสร้างพ่อแม่ให้ด้วย**
+     (บั๊กที่ผู้ใช้แจ้ง 2026-08-22: ออกจากเกมตอนอยู่ในบ้าน กลับมาแล้วพ่อแม่หายไปทั้งคู่)
+     ปกติพ่อแม่ถูกสร้างตอน `switchScene('in')` = จังหวะ "เดินเข้าประตูบ้าน" เท่านั้น
+     แต่ `restoreCharSpot()` ตั้ง `hScene='in'` ตรงๆ โดยไม่ผ่าน switchScene ⇒ ไม่มีใครสร้างให้เลย
+     ⚠ ต้องอยู่ **ท้ายสุด หลัง `loadDecorForChild()`** — `buildParents()` snap จุดยืนด้วย `inGrid`
+       ซึ่งจะเป็นกริดของเด็กคนก่อนถ้าเรียกก่อนโหลดเฟอร์นิเจอร์
+     ⚠ ข้ามตอนอยู่หน้าสร้างตัวละคร (openCreator) — จบ creator แล้วมีทางสร้างของตัวเองอยู่แล้ว */
+  if(hScene === 'in' && hMode === 'world') buildParents();
   lastT = performance.now();
   /* เฟส 11 — มินิเกมกลุ่ม A ที่เล่นในโลก 3D (js/house-play.js) · ไฟล์นั้นอาจยังไม่โหลดก็ไม่พัง */
   if(window.HousePlay) window.HousePlay.start();
@@ -14123,6 +14247,7 @@ function restoreCharSpot(){
 function stopHouseGame(){
   saveCharSpot(true);    /* 📍 จำที่ที่เด็กยืนไว้ กลับเข้ามาใหม่จะได้อยู่จุดเดิม */
   walkQuest = null;      /* งานเดินที่ค้างอยู่ไม่ถือว่าทำเสร็จ — กลับมาคุยกับพ่อแม่รับใหม่ได้ */
+  guideCol = false;      /* 🍃 โหมดนำทางไปของประจำวันไม่ค้างข้ามรอบ */
   if(window.HouseMusic) HouseMusic.release();   /* 🎵 คืน playlist ให้หน้าหลัก */
   if(editMode) exitEditMode();
   if(sitState) endSit();
@@ -14844,6 +14969,9 @@ window.HouseWorld = {
      ⚠ ตัวนี้เป็นประตูเดียวของกลไกนี้ — กลไกใหม่ที่ทำแบบเดียวกันให้ส่ง kind ใหม่เข้ามา
        ('crop' ผัก · 'photo' รูป · 'leaf' ของที่เก็บได้) **ห้ามเปิดประตูใหม่รายเกม** */
   questCaught: (kind, id) => questCaught(kind, id),
+  /* 🎣 กำลังทำเควสต์ "ตกปลาไปส่ง" อยู่ไหม — เกมตกปลาใช้เช็คก่อนหรี่โอกาสได้ปลาหายาก
+     ⚠ **ห้ามหรี่ระหว่างทำเควสต์เด็ดขาด** ปลาที่เควสต์สั่งมีชนิดเจาะจง หรี่แล้ว = เควสต์ไม่มีวันจบ */
+  questFishing: () => !!(walkQuest && walkQuest.target === 'catch'),
   /* 💸 ร้านค้าแจ้งว่าเด็กเพิ่งจ่ายเงินไปเท่าไร — คืนให้ตอนจบถ้ากำลังทำเควสต์ที่ต้องซื้อของ */
   questSpend: n => questSpend(n),
 
@@ -14917,6 +15045,9 @@ window.HouseWorld = {
   /* 🧭 สั่งลูกศรบอกทางให้ชี้ไปช่องนี้ (null = เลิกสั่ง แล้วปล่อยให้เควสต์เป็นคนกำหนดเอง)
      ⚠ ของบทเรียนมาก่อนเควสต์เสมอ — ระหว่างสอนเล่นต้องไม่มีลูกศร 2 อันชี้คนละทาง */
   guideTo: t => { guideForce = t ? {x:t.x, z:t.z} : null; },
+  /* 🍃 สวิตช์นำทางไปของประจำวัน (ปุ่มในแผงกิจกรรมเป็นคนกด) */
+  guideCollect: on => { guideCol = !!on; },
+  guidingCollect: () => guideCol,
   /* 🚪 เดินออกจากตัวบ้านไปฉากนอกบ้าน — **จุดหมายของบทเรียนอยู่นอกบ้านเกือบทั้งหมด**
      ⚠ `walkTo()` ของฉากในบ้านใช้กริดคนละใบกับฉากนอก ⇒ สั่งเดินไปพิกัดนอกบ้านตอนอยู่ในบ้าน
        จะไม่เกิดอะไรขึ้นเลย (ผู้ใช้แจ้ง 2026-08-17: อยู่ในบ้านแล้วกด "พาไปเลย" ไปตกปลาไม่ได้)
@@ -15103,6 +15234,8 @@ if(!homeView.hidden) houseBuddyRefresh();
      (เดาเวลาด้วย waitForTimeout แล้วเครื่องช้าตอนรันทั้งชุด = เทสแดงแบบไม่มีร่องรอย) */
   mode:()=>hMode, editing:()=>!!editMode,
   scene:()=>hScene, creatorWho:()=>creatorWho, charLook:()=>charCfgNow,
+  /* 🧪 ชุดเทส: พ่อแม่ที่มีตัวอยู่ในฉากจริงตอนนี้ (ไม่ใช่ข้อมูลใน save) */
+  parentsInScene: ()=> Object.keys(parentObjs).filter(w => parentObjs[w] && parentObjs[w].g),
   /* พาเด็กเข้าไปในบ้านทันที (ชุดเทสของเฟส 4A — เดินไปหน้าประตูเองในเทสช้ามาก) */
   enterHouse:()=>{ if(hScene!=='in') switchScene('in'); },
   leaveHouse:()=>{ if(hScene!=='out') switchScene('out'); },

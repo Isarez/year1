@@ -2126,8 +2126,11 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
         const r = s.npc[id] || {};
         items.push({src:'npc', main:false, id, done: r.st === 'done', stars: r.stars | 0});
       });
+      /* 🧑 ส่งชื่อคนที่ฝากงานไว้บนกระดานไปด้วย (ผู้ใช้สั่ง 2026-08-22) — หน้ารายการเควสต์
+         จะได้โชว์ "ตัว NPC" เหมือนตอนเปิดการ์ดเล่นจริง ไม่ใช่ไอคอนกระดานเหมือนกันทั้ง 5 แถว */
       for(let i=0; i<BOARD_N; i++)
-        items.push({src:'board', main:true, idx:i, done: s.board.done.indexOf(i) >= 0, stars: bst[i] | 0});
+        items.push({src:'board', main:true, idx:i, npc: (s.board.q[i] || {}).npc || '',
+                    done: s.board.done.indexOf(i) >= 0, stars: bst[i] | 0});
       const f = s.fam || {};
       if(f.who) items.push({src:'family', main:true, who:f.who, done: f.st === 'done', stars: f.stars | 0});
       const left = items.filter(x => !x.done).length;
@@ -2201,8 +2204,35 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     }
 
     /* สร้าง "รอบเล่น" จริง — โจทย์ผูกกับ seed ของเควสต์ ⇒ ปิดแล้วเปิดใหม่ได้โจทย์เดิม ไม่ใช่สุ่มใหม่ */
+    /* 🔒 **ตรึงกลไกของเควสต์ตอนเด็กกดรับงาน** (บั๊กที่ผู้ใช้เจอ 2026-08-22)
+       `workPool()` กรองด้วย `mechOk()` ซึ่งอ่าน **สถานะโลกสดๆ** (ของในโลกเหลือเท่าไร ·
+       มีเครื่องดนตรีในบ้านไหม · engine ของชั้นนี้เล่นได้ไหม) ⇒ พูลโตขึ้น/เล็กลงระหว่างวันได้
+       แต่ `rollWorkMech()` สุ่มด้วย seed คงที่จาก **ดัชนีในพูล** ⇒ พูลเปลี่ยนขนาดเมื่อไหร่
+       เควสต์เดิมกลายเป็นกลไกอื่นทันทีทั้งที่ seed ไม่ขยับ
+       (อาการจริง: รับงาน "นับเป็ดในบ่อ" จากลุงตกปลา แล้วลุงตกปลาถามใหม่เป็นเกมผสมสี)
+       ⇒ พอเริ่มเล่นจริงให้จดกลไกลง state ทันที ตั้งแต่นั้น `specForNpc/Board/Family`
+         จะอ่านของที่จดไว้แทนการสุ่มใหม่ · ⚠ **ห้ามจดตอนแค่ "อ่าน" spec**
+         (จะเขียน localStorage ทุกครั้งที่วาดหน้ารายการเควสต์) */
+    function lockMech(spec){
+      if(!spec || spec.test) return;
+      const s = state();
+      if(spec.src === 'npc'){
+        const rec = s.npc[spec.key] || {};
+        if(rec.m === spec.mech) return;
+        s.npc[spec.key] = Object.assign({}, rec, {m: spec.mech});
+      }else if(spec.src === 'board'){
+        const b = s.board.q[spec.idx];
+        if(!b || b.m === spec.mech) return;
+        b.m = spec.mech;
+      }else if(spec.src === 'family'){
+        if(!s.fam || s.fam.m === spec.mech) return;
+        s.fam = Object.assign({}, s.fam, {m: spec.mech});
+      }else return;
+      persist();
+    }
     function buildRun(spec){
       const s = state();
+      lockMech(spec);
       const own = gradeId();
       /* โจทย์ท้าทาย = ระดับชั้นถัดไป (ข้อ 24) — เลือกเฉพาะตอนประตูเปิดแล้วและสุ่มติด */
       const chal = spec.chal && gradeIndex(own) < GR.length - 1;
@@ -2273,17 +2303,32 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
     function finish(run){
       const s = state();
       const stars = starsOf(run);
+      /* 🔁 **เล่นซ้ำเควสต์ของชาวบ้าน** (ผู้ใช้สั่ง 2026-08-22)
+         ทำเสร็จแล้วกลับไปคุยกับคนเดิมเล่นใหม่ได้ เพื่อเก็บดาวให้ได้มากกว่าเดิม
+         💰 **จ่ายเฉพาะ "ส่วนต่างของดาว" เท่านั้น** — ได้ดาวเท่าเดิมหรือน้อยกว่า = ไม่ได้เงินเลย
+            (ไม่งั้นวนเล่นชุดเดิมซ้ำๆ = เครื่องปั๊มเงินไม่จำกัด) เพดานคือค่าตอบแทน 3 ดาวของชุดนั้น
+         ⭐ ดาวที่จดไว้เก็บ **ค่าที่ดีที่สุด** เสมอ ทำได้แย่ลงไม่ทำให้ดาวเดิมหาย (ห้ามลงโทษเด็ก) */
+      const prevRec = (run.spec.src === 'npc') ? (s.npc[run.spec.key] || {}) : null;
+      const redo = !!(prevRec && prevRec.st === 'done');
+      const prevStars = redo ? (prevRec.stars | 0) : 0;
+      const bestStars = redo ? Math.max(prevStars, stars) : stars;
       let coins = coinsFor(run.spec.fam, stars, run.diff.tier, run.chal);
+      if(redo){
+        coins = stars > prevStars
+          ? coins - coinsFor(run.spec.fam, prevStars, run.diff.tier, run.chal)
+          : 0;
+      }
       /* เพดานเหรียญต่อวัน — ตัดที่เพดานแต่ไม่เคยติดลบ และไม่บอกเด็กว่า "หมดโควตา" แบบดุๆ */
       const room = Math.max(0, DAY_CAP - (s.earned | 0));
       const capped = coins > room;
       if(capped) coins = room;
       s.earned = (s.earned | 0) + coins;
-      s.stars  = (s.stars | 0) + stars;
-      s.total  = (s.total | 0) + 1;
+      /* ดาวสะสมทั้งชีวิต/จำนวนชุดที่ทำ — รอบเล่นซ้ำนับเฉพาะ "ดาวที่ดีขึ้น" ไม่นับเป็นชุดใหม่ */
+      s.stars  = (s.stars | 0) + (redo ? Math.max(0, bestStars - prevStars) : stars);
+      if(!redo) s.total = (s.total | 0) + 1;
 
       if(run.spec.src === 'npc'){
-        s.npc[run.spec.key] = {m:run.spec.mech, st:'done', stars:stars, chal:!!run.chal};
+        s.npc[run.spec.key] = {m:run.spec.mech, st:'done', stars:bestStars, chal:!!run.chal};
       }else if(run.spec.src === 'board'){
         if(s.board.done.indexOf(run.spec.idx) < 0) s.board.done.push(run.spec.idx);
         /* เก็บดาวรายชุดด้วย — หน้ารายการเควสต์ต้องโชว์ว่าแต่ละชุดได้กี่ดาว (ผู้ใช้สั่ง 2026-08-09)
@@ -2294,9 +2339,12 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
         s.fam = Object.assign({}, s.fam, {st:'done', stars:stars});
       }
 
-      /* ---------- ประตูเช็คความพร้อม: เก็บสถิติ ---------- */
+      /* ---------- ประตูเช็คความพร้อม: เก็บสถิติ ----------
+         ⚠ **รอบเล่นซ้ำไม่นับเข้าสถิติ** — เล่นชุดเดิมที่เคยเห็นโจทย์แล้วซ้ำๆ จะดันความแม่นยำ
+           จนประตูโจทย์ท้าทายเปิดทั้งที่เด็กยังไม่พร้อมจริง */
       const own = gradeId();
-      if(run.chal){
+      if(redo){ /* ข้ามการเก็บสถิติ */ }
+      else if(run.chal){
         if(stars <= 1){ s.chal.miss = (s.chal.miss | 0) + 1; }
         else s.chal.miss = 0;
         if(s.chal.miss >= CHAL_MISS){    /* พลาด 3 ชุดติด → พักไว้ก่อน ไม่หักเงิน ไม่หักดาว */
@@ -2309,6 +2357,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       }
       persist();
       return {stars, coins, capped, chal:!!run.chal,
+              redo: redo, prevStars: prevStars, better: redo && stars > prevStars,
               boardLeft: BOARD_N - s.board.done.length,
               boardBonus: boardBonusReady()};
     }
@@ -2530,7 +2579,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       devBoardFor: day => rollBoard(day),
       specForNpc, specForBoard, specForFamily, familyWho, familyDone, daySummary,
       STAR_BONUS, starBonus, starBonusReady, claimStarBonus,
-      buildRun, answer, submit, starsOf, coinsFor, finish, itemSig,
+      buildRun, lockMech, answer, submit, starsOf, coinsFor, finish, itemSig,
       FAM_MECHS, ENGINE_MECHS, SORT_SETS, ORDER_POOLS, DESSERT_SETS, ART_PICS, ART_PALETTE, PET_FACE, MARKET_GOODS, catalogSort, famMechOk,
       /* เฟส 6 — แล็บ STEM/coding (คลัง + ตารางแบ่งงานตาม NPC · เทสใช้ไล่นับว่าคลัง ≥ 40 จริง) */
       STEM_SETS, GROW_SETS, MEASURE_ITEMS, MEASURE_UNITS, CODE_TASKS, LAB_MECHS, SOUND_MOTIFS,

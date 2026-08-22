@@ -220,6 +220,10 @@ function finishDotsGame(){
   const totalLevels = dotsGame.totalLevels;
   dotsGame = null;
   document.body.classList.remove('dots-open');
+  /* ⚠ เกมนี้ลงทะเบียนกับ OwlGames ไว้แล้ว ⇒ ถ้าวันหลังถูกใส่เข้า `ALLOW` ของการ์ดเควสต์
+     ต้องมีตะเข็บนี้ไว้ก่อน ไม่งั้นจะค้างแบบเดียวกับเกมนาฬิกา (บั๊ก 2026-08-22) */
+  if(reportGameResult(dotsGame.catId, dotsGame.mistakes | 0, dotsGame.totalLevels, 'ลากเส้น')) return;
+  if(document.body.classList.contains('house-open')) return;
   showOnlyView(resultView);
 
   /* เกณฑ์ดาวจาก mistakes เดียวกับเกม AR/skill/listen เพื่อความสม่ำเสมอทั้งแอป */

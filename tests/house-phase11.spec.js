@@ -613,3 +613,94 @@ test('เฟส 11N: แถบเพื่อนตัวน้อยโชว�
   await expect(page.locator('#toast')).toContainText('ร้านสัตว์เลี้ยง', { timeout: 5000 });
   expect(errs).toEqual([]);
 });
+
+/* 💰 **กันเงินเฟ้อจากการตกปลารัวๆ** (ผู้ใช้สั่ง 2026-08-22)
+   ตกเกิน 10 ตัวในวันเดียว → เจอขยะมากขึ้น · ปลาหายากน้อยลงมากๆ
+   🔒 แต่ยังต้องตกได้เรื่อยๆ (ห้ามตัน) และ **ห้ามหรี่ตอนทำเควสต์ตกปลา** (เควสต์สั่งปลาเจาะจง) */
+test('11P: ตกปลาเยอะเกินไปในวันเดียว → ขยะเยอะขึ้น ปลาหายากน้อยลง แต่ยังตกได้เสมอ', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const P = window.HousePlay;
+    const roll = n => {
+      P.devFishToday(n);
+      const c = { junk: 0, r1: 0, r2: 0, r3: 0, nil: 0 };
+      for (let i = 0; i < 4000; i++) {
+        const f = P.devRollFish('pond');
+        if (!f) { c.nil++; continue; }
+        if (f.junk) c.junk++;
+        c['r' + f.rare]++;
+      }
+      return c;
+    };
+    return { fresh: roll(0), mid: roll(15), tired: roll(30) };
+  });
+  const pc = (o, k) => o[k] / 4000;
+  expect(r.fresh.nil + r.mid.nil + r.tired.nil, 'ต้องได้ของทุกครั้ง ห้ามตกแล้วไม่ได้อะไรเลย').toBe(0);
+  /* 10 ตัวแรก = โอกาสเดิมทุกอย่าง */
+  expect(pc(r.fresh, 'r3'), 'ยังไม่เหนื่อย: ปลาหายากมากต้องยังราว 10%').toBeGreaterThan(.07);
+  /* ยิ่งตกยิ่งเจอขยะ · ปลาหายากยิ่งหด */
+  expect(pc(r.mid, 'junk'), 'ตกไป 15 ตัวแล้วต้องเจอขยะมากกว่าเดิมชัดเจน').toBeGreaterThan(pc(r.fresh, 'junk') * 2);
+  expect(pc(r.tired, 'junk'), 'ตกไป 30 ตัวแล้วขยะต้องมากกว่านั้นอีก').toBeGreaterThan(pc(r.mid, 'junk'));
+  expect(pc(r.tired, 'r3'), 'ปลาหายากมากต้องเหลือน้อยมากๆ').toBeLessThan(.02);
+  expect(pc(r.tired, 'r2'), 'ปลาหายากต้องหดลงชัดเจน').toBeLessThan(pc(r.fresh, 'r2') / 3);
+  /* 🔒 ยังได้ปลาจริง (ไม่ใช่ขยะล้วน) — ห้ามลงโทษเด็กจนเล่นต่อไม่สนุก */
+  expect(pc(r.tired, 'r1') - pc(r.tired, 'junk'), 'ต้องยังได้ปลาธรรมดาเยอะกว่าขยะเสมอ').toBeGreaterThan(0);
+  expect(errs).toEqual([]);
+});
+
+/* 🧭 ปุ่มนำทางไปเก็บของประจำวัน (ผู้ใช้สั่ง 2026-08-22)
+   ⚠ ต้องเป็น **สวิตช์ที่เด็กกดเอง** ไม่ใช่ลูกศรที่โผล่เองตลอดวัน (กติกา 2026-08-16 ยังอยู่) */
+test('11Q: แผงกิจกรรมมีปุ่มนำทางไปเก็บของ · กดแล้วลูกศรขึ้น · กดซ้ำแล้วดับ', async ({ page }) => {
+  const errs = await house(page);
+  /* ลูกศรต้องยังไม่โผล่เองก่อนกดปุ่ม */
+  const before = await page.evaluate(() => window.__houseDbg.qArrow().shown);
+  expect(before, 'ยังไม่กดปุ่ม ลูกศรต้องไม่โผล่เอง').toBe(false);
+
+  await page.locator('#house-play-btn').click();
+  await expect(page.locator('#house-playpanel')).toBeVisible();
+  const btn = page.locator('#house-playpanel .hpl-btn', { hasText: 'พาไปเก็บ' });
+  await expect(btn, 'แผงกิจกรรมต้องมีปุ่มนำทางไปเก็บของ').toHaveCount(1);
+  /* 🎨 กฎถาวร: อะไรที่ต้องมีไอคอน ให้วาดเป็น SVG ห้ามใช้ emoji (ผู้ใช้สั่ง 2026-08-22) */
+  const ic = await page.evaluate(() => {
+    const b = Array.from(document.querySelectorAll('#house-playpanel .hpl-btn'))
+      .find(x => /พาไปเก็บ/.test(x.textContent));
+    return { svg: !!b.querySelector('.hpl-btn-ic svg'), emoji: /[\u{1F300}-\u{1FAFF}]/u.test(b.textContent) };
+  });
+  expect(ic.svg, 'ไอคอนบนปุ่มต้องเป็น SVG').toBe(true);
+  expect(ic.emoji, 'ห้ามเหลือ emoji บนปุ่ม').toBe(false);
+  await btn.click();
+  await expect.poll(() => page.evaluate(() => window.HouseWorld.guidingCollect())).toBe(true);
+  const on = await page.evaluate(() => window.__houseDbg.qArrow());
+  expect(on.shown, 'กดปุ่มแล้วต้องมีลูกศรชี้ทาง').toBe(true);
+  expect(on.target && on.target.tile, 'ลูกศรต้องชี้ไปที่ของจริงในเมือง').toBeTruthy();
+
+  await page.locator('#house-playpanel .hpl-btn', { hasText: 'พอแล้ว' }).click();
+  await expect.poll(() => page.evaluate(() => window.HouseWorld.guidingCollect())).toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__houseDbg.qArrow().shown)).toBe(false);
+  expect(errs).toEqual([]);
+});
+
+/* 🛒 ช่องรายการในร้าน — ของเหลือน้อยแล้วช่องต้องไม่ยืดสูงผิดปกติ และต้องเท่ากันทุกช่อง
+   (ผู้ใช้แจ้ง 2026-08-22 · ก่อนแก้: แถวขายปลา 2 แถวสูง 155px ทั้งที่เนื้อหาจริง ~55px) */
+test('11R: ช่องรายการในร้านสูงเท่ากันทุกช่อง ไม่ยืดตามที่ว่างเวลาของเหลือน้อย', async ({ page }) => {
+  const errs = await house(page, {
+    play: {
+      v: 1, day: '', seek: { on: false, spots: [], found: [], done: false },
+      col: { items: [], got: [], sets: 0, prizes: [] },
+      fish: { book: ['nil', 'carp'], bag: { nil: 2, carp: 1 }, today: 0, spot: null },
+      photo: { order: '', done: false, shots: [] },
+      garden: { plots: [], seeds: {}, crop: {} },
+    },
+  });
+  const r = await page.evaluate(async () => {
+    window.HouseShop.open('shop-mart');
+    await new Promise(z => setTimeout(z, 400));
+    const w = document.getElementById('house-shop-items');
+    const hs = Array.from(w.querySelectorAll('.hpt-row')).map(c => Math.round(c.getBoundingClientRect().height));
+    return { n: hs.length, min: Math.min.apply(null, hs), max: Math.max.apply(null, hs) };
+  });
+  expect(r.n, 'ต้องมีแถวขายปลา 2 ชนิด').toBe(2);
+  expect(r.max, 'ช่องต้องสูงเท่าเนื้อหาจริง ไม่ยืดเต็มที่ว่าง').toBeLessThan(100);
+  expect(r.max - r.min, 'ทุกช่องต้องสูงเท่ากัน').toBe(0);
+  expect(errs).toEqual([]);
+});

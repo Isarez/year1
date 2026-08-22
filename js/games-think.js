@@ -319,10 +319,13 @@ function renderShadowLevel(){
 
   const prompt = $('shadow-prompt');
   prompt.classList.remove('revealed');
-  /* 🎨 ใช้ไอคอน SVG ถ้ามี (เงาทำด้วย filter:brightness(0) ⇒ ใช้ได้ทั้ง emoji และ SVG) */
-  { const OI = window.OwlIcons;
-    if(OI && OI.hasEmoji(answer.e)) prompt.innerHTML = OI.text(answer.e, 96);
-    else prompt.textContent = answer.e; }
+  /* 🔒 **เกมทายเงาต้องใช้ emoji ล้วนทั้งเกม ห้ามใช้ไอคอน SVG** (ผู้ใช้สั่ง 2026-08-22)
+     เคยแปลงเฉพาะ "ตัวเงา" เป็น SVG (รอบไอคอน 2026-08-20) แต่ **ปุ่มคำตอบยังเป็น emoji**
+     เพราะข้อความบนปุ่มคือเฉลยที่ระบบใช้เทียบคำตอบ (ห้ามแตะ)
+     ⇒ เงาเป็นทรงหนึ่ง คำตอบเป็นอีกทรงหนึ่ง เด็กเทียบไม่ได้ = เกมพัง
+     ⚠ กติกาไอคอนของโปรเจกต์ (อะไรที่ต้องมีไอคอนให้วาด SVG) **ยกเว้นเกมนี้**
+       เพราะที่นี่ "รูปคำถาม" กับ "รูปคำตอบ" ต้องเป็นของชุดเดียวกันเป๊ะเท่านั้นถึงจะเล่นได้ */
+  prompt.textContent = answer.e;
   $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');
@@ -414,9 +417,9 @@ function renderShadowOverlapLevel(){
 
   const prompt = $('shadow-prompt');
   prompt.classList.remove('revealed');
-  { const OI = window.OwlIcons;
-    prompt.innerHTML = ansItems.map(x=>'<span class="sp-i">'
-      + ((OI && OI.hasEmoji(x.e)) ? OI.text(x.e, 84) : x.e) + '</span>').join(''); }
+  /* 🔒 emoji ล้วนเช่นกัน — เหตุผลเดียวกับด่านเงาเดี่ยว (ดูหมายเหตุที่ renderShadowLevel) */
+  prompt.innerHTML = ansItems.map(x=>'<span class="sp-i"></span>').join('');
+  ansItems.forEach((x, i)=>{ prompt.children[i].textContent = x.e; });
   $('shadow-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('shadow-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
   const wrap = $('shadow-choices');
@@ -574,9 +577,11 @@ function renderEfRound(first){
     ? '🦉 นกฮูกสั่ง: แตะทุกอย่างที่ <b>ไม่ใช่'+ruleCat.name+' '+ruleCat.items[0]+'</b>'
     : '🦉 นกฮูกสั่ง: แตะเฉพาะ <b>'+ruleCat.name+' '+ruleCat.items[0]+'</b>';
   const itemEl = $('ef-item');
-  { const OI = window.OwlIcons;
-    if(OI && OI.hasEmoji(g.item)) itemEl.innerHTML = OI.text(g.item, 76);
-    else itemEl.textContent = g.item; }
+  /* 🔒 **emoji ล้วน ห้ามใช้ไอคอน SVG** (ผู้ใช้สั่ง 2026-08-22 · เหตุผลเดียวกับเกมทายเงา)
+     บรรทัดกติกาข้างบนโชว์ตัวอย่างของหมวดเป็น emoji ("แตะเฉพาะ **ผลไม้ 🍎**")
+     ถ้าของกลางจอเป็น SVG แต่ตัวอย่างในกติกาเป็น emoji ⇒ **คนละทรงกัน** เด็กเทียบไม่ได้
+     ⇒ ที่ไหนที่ "โจทย์" กับ "คำตอบ/ตัวอย่าง" ต้องเป็นของชุดเดียวกัน ให้ใช้ emoji ทั้งคู่ */
+  itemEl.textContent = g.item;
   itemEl.classList.remove('ef-correct','ef-wrong');
   $('ef-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('ef-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
@@ -960,6 +965,9 @@ function finishScienceGame(){
   const cat = catById(sciGame.catId);
   const mistakes = sciGame.mistakes;
   const totalLevels = sciGame.totalLevels;
+  /* ⚠ เหตุผลเดียวกับ finishDotsGame — ลงทะเบียนไว้แล้ว กันไว้ก่อนถูกใส่เข้า ALLOW */
+  if(reportGameResult(scienceGame.catId, scienceGame.mistakes | 0, scienceGame.totalLevels, 'ทดลอง')) return;
+  if(document.body.classList.contains('house-open')) return;
   showOnlyView(resultView);
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
