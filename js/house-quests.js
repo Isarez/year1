@@ -1947,6 +1947,36 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       if(DRAG_MECHS.indexOf(k) >= 0)      { m.shape = 'drag';  m.secPerQ = SEC_DRAG; return; }
       m.shape = 'card'; m.secPerQ = SEC_CARD;
     });
+    /* ================= ไอคอนประจำกลไก (ย้ายมาไว้ที่นี่ 2026-08-23) =================
+       🐞 **บั๊กตระกูลเดียวกับ `questTitle()` ที่แก้ไปเมื่อ v3.2.1**
+       ของเดิมไอคอนของทั้ง 65 กลไกอยู่แต่ใน `MECH_TABS` ของ `js/house-qbrowse.js`
+       ซึ่งเป็น **หน้าเครื่องมือเทสที่ถูกปิด (`QB_ENABLED=false`) ตอน deploy ทุกครั้ง**
+       ⇒ ฝั่งเกมจริงไม่มีทางรู้ว่ากลไกไหนหน้าตายังไง `questIcon()` จึงได้แค่ 🔢 กับ ❓
+
+       🔒 **ตารางนี้คือแหล่งเดียวของไอคอนกลไก** — เพิ่มกลไกใหม่ต้องเติมที่นี่
+          (มีเทสไล่ตรวจว่าครบทุกตัวใน MECHS และห้ามมีตัวเกินที่ไม่มีกลไกจริง) */
+    const MECH_IC = {
+      quiz:         '📝', count:        '🔢', tidy:         '🧹', laundry:      '🧺',
+      cook:         '🍳', routine:      '🕰️', budget:       '💰', shopping:     '🛒',
+      clock:        '⏰', dinner:       '🍽️', market:       '🏪', orderlearn:   '📚',
+      sortcat:      '🗂️', mix:          '🎨', memory:       '🎴', balance:      '⚖️',
+      clockset:     '🕐', shadow:       '🫥', sortcat2:     '🗂️', orderg:       '🔢',
+      melody:       '🎹', shopmoney:    '💰', slicefrac:    '🍕', caldays:      '📅',
+      timeorder:    '⏳', chartread:    '📊', globespin:    '🌍', mirrorsym:    '🪞',
+      owlsay:       '🦉', dessert:      '🍰', vanish:       '🫥', whois:        '🕵️',
+      colornum:     '🎨', soundguess:   '👂', sinkfloat:    '🌊', magnet:       '🧲',
+      states:       '🧊', habitat:      '🗺️', plantgrow:    '🌱', measure:      '📏',
+      codeorder:    '🧾', codedebug:    '🐞', payexact:     '🧾', changeback:   '💵',
+      stockshelf:   '🏪', fishcatch:    '🎣', collectgive:  '🍃', watergarden:  '💧',
+      photogive:    '📷', petcare:      '🐾', pettrick:     '🐕', recipeseq:    '📋',
+      traffic:      '🚦', deliver:      '📦', spotdiff:     '🔍', flashcount:   '⚡',
+      dressorder:   '👗', findhidden:   '🗺️', playalong:    '🎵', findsound:    '🎺',
+      shapebuild:   '🧩', circuit:      '💡', robot:        '🤖', codeloop:     '🔁',
+      codecond:     '🔀',
+    };
+    function mechIcon(id){ return MECH_IC[id] || ''; }
+    Object.keys(MECHS).forEach(k => { if(MECH_IC[k]) MECHS[k].ic = MECH_IC[k]; });
+
     /* ทรงของกลไกหนึ่งตัว (ชุดเทส/ตัวคำนวณจำนวนข้อใช้) — 'card' | 'drag' | 'walk' | 'engine' */
     function mechShape(id){ const m = MECHS[id]; return m ? (m.shape || 'card') : 'card'; }
     function mechSecPerQ(id){ const m = MECHS[id]; return m ? m.secPerQ : SEC_CARD; }
@@ -2572,7 +2602,7 @@ const FAM_BASE   = { A:6, B:8, C:7, board:8, family:10 };
       SEC_CARD, SEC_DRAG, SEC_ENGINE, QUEST_SEC_LO, QUEST_SEC_HI,
       SEC_WALK_BASE, SEC_WALK_PER_TILE, secWalk, walkQCount,
       Q_CARD, Q_DRAG, qNFor,
-      mechShape, mechSecPerQ, goalSets,
+      mechShape, mechSecPerQ, mechIcon, MECH_IC, goalSets,
       MECHS, MECH_IDS, ITEM_SETS,
       sync, reset, state, difficulty, quizCats, themeOf, catSubject, questableIds,
       /* 🧪 ชุดเทส: สุ่มกระดานของ "วันสมมติ" โดยไม่แตะ state จริง — ใช้วัดความหลากหลายของกลไก */

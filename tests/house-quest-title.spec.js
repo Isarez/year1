@@ -1,5 +1,11 @@
 /* ============================================================
-   🏷️ ชื่องานบนกระดานเควสต์ต้องบอกว่าเป็นเกมอะไรจริงๆ
+   🏷️ ป้ายชื่อ/ไอคอนของงาน + ตะแกรงกันกลไกใหม่หลุดตาราง
+
+   ⚠️ **ตระกูลบั๊ก "ตัวแปลง state → ข้อความที่เด็กอ่าน แต่รู้จักเคสไม่ครบ"**
+      เจอ 2 ตัวแล้ว ทั้งคู่เขียนไว้ตอนระบบยังเล็กแล้วไม่ได้ตามตอนพูลโตเป็น 65 กลไก:
+        · `questTitle()` รู้จัก 2 กลไก ⇒ อีก 63 ตัวถูกป้ายว่า "ตอบคำถาม" (v3.2.1)
+        · `questIcon()`  รู้จัก 2 กลไก ⇒ งานที่ไม่มีเจ้าของได้ ❓ เสมอ (v3.2.2)
+      ⇒ ชุดนี้จึงไม่ได้ล็อกแค่ 2 ตัวนั้น แต่ไล่ตรวจ **ทุกตารางที่ต้องเติมเมื่อมีกลไกใหม่**
 
    🐞 บั๊กที่ชุดนี้กันไม่ให้กลับมา (ผู้ใช้แจ้ง 2026-08-22 · เจอจากภาพโปรโมท):
       `questTitle()` เขียนไว้ตั้งแต่เฟส 2 ตอนมีกลไกจริงแค่ 2 ตัว แล้วไม่เคยอัปเดต
@@ -92,5 +98,79 @@ test('QT3: ป้ายต้องบอกชื่อคนที่ฝาก
   await page.evaluate(() => window.__houseDbg.openBoard());
   const first = await page.locator('.hq-row .hq-txt').first().textContent();
   expect(first, 'ป้ายต้องมีชื่อคนที่ฝากงาน').toContain(r.npc);
+  expect(errs).toEqual([]);
+});
+
+/* ---------------------------------------------------------------- */
+
+test('QT4: ทุกกลไกต้องมีไอคอนของตัวเอง และตารางไอคอนห้ามมีตัวเกิน', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const Q = window.HouseQuests, ids = Object.keys(Q.MECHS);
+    const tblIds = Object.keys(Q.MECH_IC || {});
+    return {
+      total: ids.length,
+      noIcon: ids.filter(k => !Q.mechIcon(k)),
+      orphan: tblIds.filter(k => ids.indexOf(k) < 0),
+      sample: ids.slice(0, 4).map(k => Q.mechIcon(k) + ' ' + Q.MECHS[k].name),
+    };
+  });
+  console.log('ตัวอย่าง: ' + r.sample.join('  ·  '));
+  expect(r.total).toBeGreaterThan(50);
+  expect(r.noIcon, 'กลไกที่ไม่มีไอคอนจะได้ ❓ ตอนไม่มีคนฝากงาน').toEqual([]);
+  expect(r.orphan, 'ตารางไอคอนมีตัวที่ไม่มีกลไกจริงรองรับ').toEqual([]);
+  expect(errs).toEqual([]);
+});
+
+test('QT5: กลไกใหม่ห้ามหลุดตารางไหน — ชื่อ · ไอคอน · ทรง · แท็บคลังโจทย์', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const Q = window.HouseQuests, M = Q.MECHS, ids = Object.keys(M);
+    const tabs = ((window.HouseQB || {}).MECH_TABS || []).map(t => t.id);
+    return {
+      ids: ids.length,
+      noName: ids.filter(k => !(M[k] && M[k].name)),
+      noTab:  tabs.length ? ids.filter(k => tabs.indexOf(k) < 0) : [],
+      tabOrphan: tabs.filter(t => ids.indexOf(t) < 0),
+      /* ธง walk ต้องตรงกับทรงเสมอ — `whois` เคยตกหล่นจาก WALK_MECHS_SHAPE
+         ⇒ ถูกนับเป็นการ์ด คำนวณจำนวนข้อ/งบเวลาผิดมาตลอดตั้งแต่เฟส 13 */
+      walkMismatch: ids.filter(k => !!M[k].walk !== (Q.mechShape(k) === 'walk')),
+      /* กลไกที่ยืม engine ต้องมีทรง engine (ไม่งั้นคิดจำนวนข้อผิด) */
+      engineMismatch: ids.filter(k => !!M[k].engine !== (Q.mechShape(k) === 'engine')),
+    };
+  });
+  expect(r.ids).toBeGreaterThan(50);
+  expect(r.noName, 'ไม่มีชื่อ = ป้ายบนกระดานจะขึ้นค่าเริ่มต้น').toEqual([]);
+  expect(r.noTab, 'ไม่มีแท็บ = เปิดเล่นทดสอบจากคลังโจทย์ไม่ได้').toEqual([]);
+  expect(r.tabOrphan, 'แท็บที่ไม่มีกลไกจริงรองรับ').toEqual([]);
+  expect(r.walkMismatch, 'ธง walk ไม่ตรงกับทรง = คำนวณจำนวนข้อ/งบเวลาผิด').toEqual([]);
+  expect(r.engineMismatch, 'ธง engine ไม่ตรงกับทรง').toEqual([]);
+  expect(errs).toEqual([]);
+});
+
+test('QT6: ทุก kind ที่กลไกผลิต ต้องมีตัววาดรองรับ (ไม่งั้นเด็กเจอการ์ดเปล่า)', async ({ page }) => {
+  const errs = await house(page);
+  const r = await page.evaluate(() => {
+    const Q = window.HouseQuests, M = Q.MECHS;
+    const G = ['prep-p1','p1','p2','p3','p4','p5','p6'];
+    const kinds = {}, failed = [];
+    Object.keys(M).forEach(id => {
+      G.forEach(gid => {
+        let run = null;
+        try { run = Q.testRun({ mech: id, gid: gid, seed: 7 }); } catch (e) { failed.push(id + '@' + gid); return; }
+        (run && run.items || []).forEach(it => { if (it && it.kind) kinds[it.kind] = true; });
+      });
+    });
+    return { kinds: Object.keys(kinds).sort(), failed: failed.slice(0, 8) };
+  });
+  console.log('kind ที่ผลิตจริง: ' + r.kinds.join(', '));
+  expect(r.failed, 'สร้างชุดโจทย์ไม่ได้').toEqual([]);
+  /* ตัววาดอยู่ที่ renderQuestStep() ใน js/house.js — kind ที่ไม่มีสาขาจะตกไปวาดเป็น
+     การ์ด 4 ตัวเลือก ซึ่งของพวกนี้ไม่มีตัวเลือก ⇒ เด็กเจอการ์ดเปล่าตอบไม่ได้
+     (เคยพลาดมาแล้วกับ `img` ของหมวดเชาว์ เมื่อ 2026-08-08) */
+  const DRAWN = ['beaker','clock','code','coinpay','colornum','engine','flash',
+                 'mart','playalong','sort','sound','spot','vanish','walk'];
+  const missing = r.kinds.filter(k => DRAWN.indexOf(k) < 0);
+  expect(missing, 'kind ใหม่ที่ยังไม่มีตัววาดใน renderQuestStep()').toEqual([]);
   expect(errs).toEqual([]);
 });

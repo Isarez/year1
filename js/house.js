@@ -7084,9 +7084,13 @@ function questTitle(spec){
      ("ทายว่าใคร" · "ช่วยรดน้ำแปลงผัก") ต่อ "ให้พี่แตงโม" ท้ายแล้วอ่านไม่รู้เรื่อง */
   return who ? (job + ' · ' + who) : job;
 }
+/* ไอคอนของงานชุดนั้น — เอา **หน้าคนที่ฝากงาน** ก่อนเสมอ (เด็กจำคนได้ก่อนจำชื่อเกม)
+   🐞 ตัวสำรองเดิมรู้จักแค่ 2 กลไก (`count` กับ "อื่นๆ") แบบเดียวกับ `questTitle()`
+      ⇒ งานที่ไม่มีเจ้าของ (หน้าคลังโจทย์ · งานที่ NPC หายไปจากผัง) ได้ ❓ เสมอ
+   ⇒ ถอยไปใช้ไอคอนประจำกลไกจาก `QUESTS.mechIcon()` ก่อน แล้วค่อยเป็น ❓ */
 function questIcon(spec){
   const d = npcDefById(spec.npc);
-  return (d && d.icon) || (spec.mech === 'count' ? '🔢' : '❓');
+  return (d && d.icon) || QUESTS.mechIcon(spec.mech) || '❓';
 }
 /* id ไอคอน SVG ของงานชุดนั้น — งานจากกระดานไม่มี NPC เจ้าของ ⇒ ใช้ไอคอนกระดาน */
 function questIcoId(spec){

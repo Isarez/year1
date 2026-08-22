@@ -33,6 +33,14 @@
   const $ = id => document.getElementById(id);
 
   /* แท็บกลไก — เพิ่ม mechanic ใหม่ในเฟส 5-7 แล้วมาต่อแถวนี้ */
+  /* ⚠ **ไอคอนของกลไกย้ายไปอยู่ที่ `MECH_IC` ใน js/house-quests.js แล้ว (2026-08-23)**
+     เพราะไฟล์นี้เป็นเครื่องมือเทสที่ถูกปิดตอน deploy ⇒ ฝั่งเกมจริงมองไม่เห็นตารางนี้
+     ค่า `ic:` ที่เหลืออยู่ข้างล่างเป็นแค่ **ตัวสำรอง** — ตัวจริงอ่านผ่าน `mechIc()` เสมอ
+     ส่วน `name:` ยังอยู่ที่นี่โดยตั้งใจ (มีวงเล็บอธิบายเพิ่มสำหรับคนเทส เช่น "(เดิน · ทำจริง)") */
+  function mechIc(id, fallback){
+    const Q = window.HouseQuests;
+    return (Q && Q.mechIcon && Q.mechIcon(id)) || fallback || '';
+  }
   const MECH_TABS = [
     {id:'quiz',    ic:'📝', name:'ตอบคำถาม'},
     {id:'count',   ic:'🔢', name:'นับของ'},
@@ -298,7 +306,7 @@
     MECH_TABS.filter(m => groupOf(m.id) === grp).forEach(m=>{
       /* 🚶 = งานที่ต้อง "เดินไปทำตามตำแหน่งในเมือง" ไม่ได้ตอบจบในการ์ด (ผู้ใช้ขอให้เห็นชัด 2026-08-16) */
       const walk = !!((Q().MECHS[m.id] || {}).walk);
-      const c = chip(m.ic + ' ' + m.name + (walk ? ' 🚶' : ''), m.id === mech,
+      const c = chip(mechIc(m.id, m.ic) + ' ' + m.name + (walk ? ' 🚶' : ''), m.id === mech,
         ()=>{ mech = m.id; catId = ''; render(); });
       if(m.id === mech) onChip = c;
       mw.appendChild(c);
@@ -495,12 +503,12 @@
       });
       row.appendChild(jump);
     }else{
-      const b = el('button', 'hqb-go-btn', '▶ เล่นทดสอบ ' + (tab.ic || '') + ' ' + (tab.name || mech));
+      const b = el('button', 'hqb-go-btn', '▶ เล่นทดสอบ ' + mechIc(mech, tab.ic) + ' ' + (tab.name || mech));
       b.type = 'button';
       if(!playable) b.disabled = true;
       b.addEventListener('click', ()=>{
         if(typeof playClick === 'function') playClick();
-        play({mech:mech, gid:gid, title:'🧪 ' + (tab.ic || '') + ' ' + (tab.name || mech)});
+        play({mech:mech, gid:gid, title:'🧪 ' + mechIc(mech, tab.ic) + ' ' + (tab.name || mech)});
       });
       row.appendChild(b);
     }
