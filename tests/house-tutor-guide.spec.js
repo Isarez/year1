@@ -392,9 +392,10 @@ test('TG15: เครื่องจอสัมผัสต้องใช้�
   /* 🔒 ผู้ใช้ยืนยัน 2026-08-22: **ห้ามปิดเงา** — ลดต้นทุนได้ แต่เงาต้องอยู่ */
   expect(src, 'ต้องยังเปิด shadowMap').toContain('renderer.shadowMap.enabled = true');
   expect(src, 'จอสัมผัสใช้ตัวกรองเงาแบบเบา').toContain("isTouchDevice() ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap");
-  expect(src, 'จอสัมผัสอัปเดตเงาเว้นเฟรม').toContain('renderer.shadowMap.autoUpdate = !isTouchDevice()');
-  /* ⚠ ตัวนับของเงาต้องไม่ใช้ร่วมกับระบบหรี่เฟรมตอนเปิดกล้อง */
-  expect(src, 'ตัวนับเงาต้องแยกจาก frameOdd').toContain('shadowOdd = !shadowOdd');
+  /* 🔒 **ห้ามหรี่การอัปเดตเงาเป็นเว้นเฟรมอีก** (ผู้ใช้แจ้ง 2026-08-22: บน iPad จริงเห็นเงากระตุก)
+     เงาต้องอัปเดตทุกเฟรมตามค่าเริ่มต้นของ three — ที่ลดต้นทุนได้คือ "ตัวกรองเงา" เท่านั้น */
+  expect(src, 'ห้ามปิด autoUpdate ของ shadowMap').not.toContain('shadowMap.autoUpdate = false');
+  expect(src, 'ห้ามหรี่เงาเว้นเฟรม').not.toContain('shadowOdd');
   /* iPad กว้าง 810-1024 ⇒ ห้ามตัดสินจากความกว้างจอ */
   expect(src, 'ต้องดูจากความสามารถเครื่อง ไม่ใช่ความกว้างจอ').toContain("matchMedia('(pointer: coarse)')");
 });

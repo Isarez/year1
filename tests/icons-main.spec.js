@@ -147,3 +147,29 @@ test('IM5: เกมทายเงาต้องเป็น emoji ล้ว�
   });
   expect(errs).toEqual([]);
 });
+
+test('IM6: เกมนกฮูกสั่ง — ของในโจทย์ต้องเป็น emoji ให้ตรงกับตัวอย่างในบรรทัดกติกา', async ({ page }) => {
+  /* 🔒 เหตุผลเดียวกับ IM5: บรรทัดกติกาโชว์ตัวอย่างของหมวดเป็น emoji ("แตะเฉพาะ **ผลไม้ 🍎**")
+     ถ้าของกลางจอเป็น SVG ⇒ คนละทรงกับตัวอย่าง เด็กเทียบไม่ได้ */
+  const errs = await main(page);
+  await page.locator('#child-select-view .child-card').first().click();
+  const quiz = page.locator('.h2-mode-quiz');
+  if(await quiz.isVisible().catch(()=>false)) await quiz.click();
+  const r = await page.evaluate(async () => {
+    const all = (typeof CATS !== 'undefined') ? CATS : [];
+    const c = all.find(x => x.mode === 'ef');
+    if(!c) return null;
+    selectedGrade = c.grade || 'prep-p1';
+    window.startEfGame(c.id);
+    await new Promise(r2 => setTimeout(r2, 400));
+    const it = document.getElementById('ef-item');
+    const rule = document.getElementById('ef-rule');
+    return {itemSvg: !!it.querySelector('svg'), itemText: (it.textContent || '').trim(),
+            ruleSvg: !!rule.querySelector('svg')};
+  });
+  expect(r, 'ต้องมีเกมนกฮูกสั่งในคลัง').not.toBeNull();
+  expect(r.itemSvg, 'ของในโจทย์ต้องเป็น emoji ห้ามเป็น SVG').toBe(false);
+  expect(r.ruleSvg, 'บรรทัดกติกาต้องเป็น emoji เหมือนกัน').toBe(false);
+  expect(r.itemText.length, 'ของในโจทย์ต้องมีเนื้อหา').toBeGreaterThan(0);
+  expect(errs).toEqual([]);
+});

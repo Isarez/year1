@@ -5724,11 +5724,12 @@ function initThreeCore(){
        🔒 **เดสก์ท็อปยังได้ของเดิมทุกอย่าง** (มีกำลังเหลือ ไม่มีเหตุผลต้องลดคุณภาพ)
        🔒 **ห้ามปิดเงา** — ผู้ใช้ยืนยัน 2026-08-22 ว่าไม่ต้องการให้เงาหายไป */
     renderer.shadowMap.type = isTouchDevice() ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
-    /* 🕐 อัปเดต shadow map **เว้นเฟรม** บนเครื่องจอสัมผัส — shadow pass คือการวาดฉากซ้ำอีกรอบ
-       ทำทุกเฟรมทั้งที่ตัวละครการ์ตูนเดินช้ามาก ⇒ เงาตามช้ากว่าตัว 1 เฟรม (~25 ms) มองไม่ออก
-       ⚠ ตั้ง `autoUpdate=false` แล้ว **ต้องสั่ง `needsUpdate=true` เองทุกครั้งที่อยากให้อัปเดต**
-         ลืมสั่ง = เงาค้างเฟรมแรกตลอดกาล (ดู frame()) */
-    renderer.shadowMap.autoUpdate = !isTouchDevice();
+    /* 🕐 **เงาต้องอัปเดตทุกเฟรมเสมอ — ห้ามหรี่เป็นเว้นเฟรมอีก** (ผู้ใช้แจ้ง 2026-08-22)
+       เคยลองตั้ง `autoUpdate = false` แล้วสั่ง `needsUpdate` เว้นเฟรมเพื่อลดงาน GPU ครึ่งหนึ่ง
+       คิดว่าเงาตามช้า 1 เฟรมจะมองไม่ออก — **แต่บน iPad จริงเห็นเป็นเงากระตุกชัดเจน**
+       (เงาอยู่นิ่ง 1 เฟรมแล้วกระโดดตามตัว สลับกันไปตลอดเวลาที่เดิน = สะดุดตากว่าเฟรมเรตที่ได้คืนมา)
+       ⇒ คืนเป็นค่าเริ่มต้นของ three (อัปเดตทุกเฟรม) · ส่วนที่ยังเก็บไว้คือ **ตัวกรองเงาแบบเบา**
+         (`PCFShadowMap` บนเครื่องจอสัมผัส) ซึ่งลดงานต่อพิกเซลโดยไม่ทำให้จังหวะเงาเปลี่ยน */
   }
 
   scene = new THREE.Scene();
@@ -13512,9 +13513,6 @@ const WALK_SPEED = 3;      /* ช่อง/วินาที */
      ⇒ ของในโลกขยับกระตุกเป็นช่วงๆ (ผู้ใช้แจ้ง 2026-08-12) · เว้นเฟรมได้จังหวะสม่ำเสมอ ~30fps
      และ dt ~33ms ยังไม่ถึงเพดาน ความเร็วจึงตรงกับของจริง */
 let houseFrameThrottle = false, frameOdd = false;
-/* ⚠ **ตัวนับของเงาต้องแยกจาก `frameOdd`** — ตัวนั้นเป็นของระบบหรี่เฟรมตอนเปิดกล้อง (MediaPipe)
-   ใช้ร่วมกันแล้วพังทั้งคู่: เปิดกล้องเมื่อไหร่จังหวะอัปเดตเงาจะเพี้ยนตาม และกลับกัน */
-let shadowOdd = false;
 const frameLog = [];        /* เวลาที่ "วาดจริง" 120 เฟรมหลังสุด (เทสอ่านผ่าน __houseDbg.frameLog) */
 window.HouseFrameHint = function(on){ houseFrameThrottle = !!on; frameOdd = false; };
 
@@ -13899,8 +13897,6 @@ function frame(t){
   updatePosChip();
   updateLamps(t, dt);
   updateStreetLamps(dt);
-  /* 🕐 เงาอัปเดตเว้นเฟรมบนเครื่องจอสัมผัส (ดูเหตุผลที่ initThreeCore) */
-  if(hShadows && !renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = shadowOdd = !shadowOdd;
   const _fps1 = FPS_PANEL ? performance.now() : 0;
   renderer.render(scene, camera);
   if(FPS_PANEL) fpsPanelTick(_fpsDt, _fps1 - _fps0, performance.now() - _fps1);

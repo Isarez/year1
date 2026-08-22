@@ -577,9 +577,11 @@ function renderEfRound(first){
     ? '🦉 นกฮูกสั่ง: แตะทุกอย่างที่ <b>ไม่ใช่'+ruleCat.name+' '+ruleCat.items[0]+'</b>'
     : '🦉 นกฮูกสั่ง: แตะเฉพาะ <b>'+ruleCat.name+' '+ruleCat.items[0]+'</b>';
   const itemEl = $('ef-item');
-  { const OI = window.OwlIcons;
-    if(OI && OI.hasEmoji(g.item)) itemEl.innerHTML = OI.text(g.item, 76);
-    else itemEl.textContent = g.item; }
+  /* 🔒 **emoji ล้วน ห้ามใช้ไอคอน SVG** (ผู้ใช้สั่ง 2026-08-22 · เหตุผลเดียวกับเกมทายเงา)
+     บรรทัดกติกาข้างบนโชว์ตัวอย่างของหมวดเป็น emoji ("แตะเฉพาะ **ผลไม้ 🍎**")
+     ถ้าของกลางจอเป็น SVG แต่ตัวอย่างในกติกาเป็น emoji ⇒ **คนละทรงกัน** เด็กเทียบไม่ได้
+     ⇒ ที่ไหนที่ "โจทย์" กับ "คำตอบ/ตัวอย่าง" ต้องเป็นของชุดเดียวกัน ให้ใช้ emoji ทั้งคู่ */
+  itemEl.textContent = g.item;
   itemEl.classList.remove('ef-correct','ef-wrong');
   $('ef-level-counter').textContent = g.level+'/'+g.totalLevels;
   $('ef-progress-fill').style.width = ((g.level-1)/g.totalLevels*100)+'%';
