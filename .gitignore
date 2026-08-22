@@ -12,3 +12,6 @@ node_modules
 test-results/
 playwright-report/
 house_example/
+
+# ภาพ/ไฟล์งานโปรโมท — เก็บไว้ในเครื่องเท่านั้น ไม่เอาเข้า repo (ไฟล์ภาพหลาย MB)
+promo/
