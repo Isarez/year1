@@ -863,7 +863,9 @@ const WILD_BAN = new Set(['54,22', '11,19', '3,31', '4,31', '5,31', '7,29', '6,3
   '26,47', '27,47', '27,48',
   /* ผู้ใช้ชี้เองว่า 2 ต้นนี้เกะกะ (2026-08-09) — 27,42 คือหัวมุมต่อกับทางเดินใหม่ x19-27/z40-41
      (แนวพุ่ม x27 ถอยไปเริ่ม z43 แล้ว) · 17,45 คือต้นที่ยืนอยู่กลางทุ่งใต้บริเวณบ้าน */
-  '27,42', '17,45']);
+  '27,42', '17,45',
+  /* ต้นไม้ในชุมชนที่ 2 ที่ผู้ใช้ชี้เองว่าเกะกะ (2026-08-22) — ชุดเดียวกับ 34,61 / 35,60 ข้างบน */
+  '35,61', '33,65', '43,65', '45,65']);
 /* ---------- ต้นไม้ในชุมชน ----------
    กติกาป่า (wildPlantable แบบ tall) เว้นถนน 3 ช่อง + อาคาร 4 ช่อง → ในชุมชนแทบไม่เหลือช่องเลย ชุมชนจึงโล่งไม่มีต้นไม้
    ชุดกติกานี้ผ่อนให้เหลือ ถนน/ลาน 2 ช่อง + อาคาร 2 ช่อง + ใบไม้ล้ำบนจอสั้นลงเหลือ 2 ช่อง
@@ -5969,6 +5971,11 @@ function fpsPanelTick(dtMs, jsMs, renMs){
 
    ที่นี่มีแค่ "ตอนนี้ควรชี้ไปช่องไหน" ส่วนการวาดอยู่ที่ `updateQuestArrow()` */
 let guideForce = null;                  /* บทเรียนสั่งเป้าหมายเองได้ — มาก่อนเควสต์เสมอ */
+/* 🍃 นำทางไปเก็บของประจำวัน — **เปิดจากปุ่มในแผงกิจกรรมเท่านั้น** (ผู้ใช้สั่ง 2026-08-22)
+   กติกาเดิม (2026-08-16) ห้ามให้กิจกรรมรายวันโชว์ลูกศรเอง เพราะกิจกรรมเปิดค้างทั้งวัน
+   ⇒ ลูกศรจะรบกวนเด็กที่แค่อยากเดินเล่น · ทางนี้ไม่ขัดข้อนั้นเพราะ **เด็กกดเปิดเอง กดปิดเองได้**
+   และดับเองอัตโนมัติเมื่อเก็บครบ */
+let guideCol = false;
 /* เป้าหมายของเควสต์ที่กำลังทำอยู่ (null = ไม่มี/ปลายทางเป็นพื้นที่กว้าง ไม่ใช่จุดเดียว) */
 function questGuideTile(){
   if(!walkQuest) return null;
@@ -6914,8 +6921,17 @@ function talkToNpc(n){
     }
     return;
   }
+  /* 🔒 งานของ "คนคนนี้" ที่เด็กรับไปแล้วและกำลังทำค้างอยู่ — ห้ามยื่นงานใหม่ทับเด็ดขาด
+     (ผู้ใช้เจอ 2026-08-22: รับงานนับเป็ดในบ่อจากลุงตกปลา แล้วลุงตกปลาถามใหม่เป็นเกมผสมสี)
+     3 สาขาข้างบนดักเฉพาะงานที่ **ปลายทางคือตัวเขาเอง** (`toNpc`) — งานที่ให้ไปทำที่อื่น
+     (นับของในย่าน · ไปนั่งโต๊ะ · ไปหาของที่หาย) ไม่มีใครดักเลย จึงหล่นมาถึงบรรทัดยื่นงานใหม่
+     ⇒ ตรงนี้ทวนคำสั่งเดิมให้ฟังแทน แล้วออกไป */
+  if(walkQuest && walkQuest.run && walkQuest.run.spec && walkQuest.run.spec.npc === d.id){
+    setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) walkHint(); }, 320);
+    return;
+  }
   const spec = QUESTS ? QUESTS.specForNpc(d.id) : null;
-  if(spec && !spec.done){
+  if(spec && (!spec.done || canRedoQuest(spec))){
     setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode && !questPlayOpen()) offerQuest(spec); }, 280);
     return;
   }
@@ -7228,8 +7244,27 @@ function qzBtn(label, cls, fn){
   return b;
 }
 /* 1) การ์ดชวนรับงาน — เด็กต้องกดรับเอง ไม่ลากเข้าเกมเงียบๆ */
+/* 🔒 งานชุดนี้เด็ก "รับไปแล้วและกำลังเดินไปทำอยู่" หรือเปล่า (บั๊กที่ผู้ใช้เจอ 2026-08-22)
+   กดซ้ำที่กระดาน / แตะตัวคนสั่งงาน / แตะพ่อแม่ ต้องไม่สร้างรอบใหม่ทับของเดิม
+   ไม่งั้นของที่เก็บมาแล้ว · ปลาที่ตกได้ · ขาที่เดินไปร้านมาแล้ว หายหมด เริ่มนับหนึ่งใหม่
+   ⇒ ทวนคำสั่งเดิมให้ฟังแทน (`walkHint()`) แล้วคืน true ให้ผู้เรียกออกไปเลย */
+function questInFlight(spec){
+  if(!spec || spec.test) return false;
+  if(!walkQuest || !walkQuest.run || !walkQuest.run.spec) return false;
+  if(walkQuest.run.spec.key !== spec.key) return false;
+  closeQuestBoard();
+  walkHint();
+  return true;
+}
+/* 🔁 เควสต์ของชาวบ้านที่ทำเสร็จไปแล้ว "เล่นซ้ำได้" (ผู้ใช้สั่ง 2026-08-22)
+   เผื่อเด็กอยากกลับไปเก็บดาวให้ครบ 3 ดวง — ได้ดาวมากกว่าเดิมถึงจะได้เงิน (ส่วนต่าง)
+   ⚠ เฉพาะงานของ **ชาวบ้าน** เท่านั้น กระดาน/ครอบครัวเป็นงานหลักประจำวัน ยังทำได้วันละครั้ง */
+function canRedoQuest(spec){ return !!(spec && spec.done && spec.src === 'npc' && !spec.test); }
 function offerQuest(spec){
-  if(!QUESTS || !spec || spec.done) return;
+  if(!QUESTS || !spec) return;
+  const redo = canRedoQuest(spec);
+  if(spec.done && !redo) return;
+  if(questInFlight(spec)) return;
   if(hMode !== 'world' || editMode) return;   /* กำลังแต่งตัว/เลือกสัตว์/ตกแต่งบ้านอยู่ → ไม่เด้งงานทับ */
   if(window.HouseQB && window.HouseQB.isOpen()) return;   /* เปิดหน้าคลังคำถามอยู่ → ไม่เด้งงานจริงทับหน้าเทส */
   closeQuestSummary();                                   /* กำลังดูรายการเควสต์อยู่ → ปิดก่อน ไม่ให้กล่องซ้อนกัน */
@@ -7237,14 +7272,28 @@ function offerQuest(spec){
   closeQuestBoard();
   const d = npcDefById(spec.npc);
   qzShow();
-  qzHead(spec, spec.src === 'board' ? 'งานจากกระดานเควสต์' : 'งานวันนี้');
+  qzHead(spec, redo ? 'งานที่ทำไปแล้ว · เล่นซ้ำได้'
+                    : (spec.src === 'board' ? 'งานจากกระดานเควสต์' : 'งานวันนี้'));
   const st = qzStage(); if(!st) return;
   const line = document.createElement('div');
   line.className = 'hqz-line';
-  line.textContent = (d && d.quest) ? d.quest : 'มาช่วยทำงานให้หน่อยได้ไหมจ๊ะ';
+  const got = spec.stars | 0;
+  line.textContent = redo
+    ? (got >= 3
+        ? 'งานนี้หนูทำได้ครบ 3 ดาวแล้ว! อยากเล่นสนุกอีกรอบก็ได้นะ (รอบนี้ไม่มีเงินเพิ่มแล้ว)'
+        : 'งานนี้หนูทำไปแล้วได้ ' + got + ' ดาว — ลองอีกรอบไหม? ถ้าได้ดาวมากกว่าเดิม จะได้เงินเพิ่มด้วยนะ')
+    : ((d && d.quest) ? d.quest : 'มาช่วยทำงานให้หน่อยได้ไหมจ๊ะ');
   const row = document.createElement('div'); row.className = 'hqz-row';
-  row.appendChild(qzBtn('รับงาน! 💪', 'hqz-yes', ()=>{ if(typeof playClick==='function') playClick(); startQuest(spec); }));
-  row.appendChild(qzBtn('ไว้ก่อน', 'hqz-no', ()=>{ if(typeof playClick==='function') playClick(); closeQuestPanel(); }));
+  row.appendChild(qzBtn(redo ? 'เล่นอีกรอบ 🔁' : 'รับงาน! 💪', 'hqz-yes',
+    ()=>{ if(typeof playClick==='function') playClick(); startQuest(spec); }));
+  /* ⚠ คนที่ดูแลร้าน: ปกติ "ทำงานเสร็จแล้ว = แตะแล้วเข้าร้าน" ⇒ พอมีการ์ดเล่นซ้ำมาคั่น
+     ปุ่มที่สองต้องพาเข้าร้านให้ ไม่งั้นเด็กเข้าร้านนั้นไม่ได้อีกเลย */
+  const toShop = redo && d && d.shop && SHOP;
+  row.appendChild(qzBtn(toShop ? 'เข้าร้าน 🛒' : 'ไว้ก่อน', 'hqz-no', ()=>{
+    if(typeof playClick==='function') playClick();
+    closeQuestPanel();
+    if(toShop) setTimeout(()=>{ if(houseOpen && hMode==='world' && !editMode) SHOP.open(d.shop); }, 200);
+  }));
   st.appendChild(line); st.appendChild(row);
   if(typeof playClick==='function') playClick();
 }
@@ -8906,6 +8955,15 @@ function finishQuest(){
   gain.className = 'hqz-gain';
   gain.textContent = '+ ' + res.coins + ' บาท';
   st.appendChild(stars); st.appendChild(gain);
+  /* 🔁 รอบเล่นซ้ำ — บอกให้ชัดว่าทำไมได้เงินเท่านี้ ไม่งั้นเด็กนึกว่าระบบลืมจ่าย
+     🔒 โทนต้องไม่ดุ: ทำได้ไม่ดีกว่าเดิมก็ยังชม และดาวเดิมไม่หายไปไหน */
+  if(res.redo){
+    const tag = document.createElement('div'); tag.className = 'hqz-chal';
+    tag.textContent = res.better
+      ? '🔁 เล่นซ้ำ · เก่งขึ้นจาก ' + res.prevStars + ' ดาว เป็น ' + res.stars + ' ดาว! ได้เงินส่วนต่างเพิ่มเลย'
+      : '🔁 เล่นซ้ำ · รอบนี้ยังไม่มากกว่าเดิม (' + res.prevStars + ' ดาว) เลยยังไม่มีเงินเพิ่ม — ดาวเดิมยังอยู่ครบนะ';
+    st.appendChild(tag);
+  }
   if(res.chal){
     const tag = document.createElement('div'); tag.className = 'hqz-chal';
     tag.textContent = '🌟 โจทย์ท้าทาย ได้เงินเพิ่มพิเศษ';
@@ -11596,6 +11654,7 @@ function tapParent(w){
 /* ยื่นงานครอบครัว — ใช้การ์ด/เส้นทางเล่นชุดเดียวกับเควสต์ NPC ต่างแค่หัวการ์ดเป็นชื่อพ่อแม่ */
 function offerFamilyQuest(spec){
   if(!QUESTS || !spec || spec.done) return;
+  if(questInFlight(spec)) return;          /* งานครอบครัวที่เดินไปทำค้างอยู่ — ห้ามยื่นใหม่ทับ */
   if(hMode !== 'world' || editMode) return;
   if(window.HouseQB && window.HouseQB.isOpen()) return;
   const p = FAMILY.one(spec.who);
@@ -11679,8 +11738,14 @@ function refreshQuestBar(){
 }
 /* แปลงรายการดิบจาก engine → ชื่อคน/ชื่อร้านที่เด็กอ่านรู้เรื่อง */
 function questItemInfo(it){
-  if(it.src === 'board')
+  if(it.src === 'board'){
+    /* 🧑 งานบนกระดานก็มี "คนฝากงาน" จริงเสมอ — โชว์ตัวเขาเหมือนหน้าอื่นๆ (ผู้ใช้สั่ง 2026-08-22)
+       ของเดิมขึ้นไอคอนกระดานเหมือนกันหมดทั้ง 5 แถว เด็กแยกไม่ออกว่าแถวไหนเป็นงานของใคร */
+    const bd = it.npc ? npcDefById(it.npc) : null;
+    if(bd) return {icon: bd.icon || '🙂', ico: bd.id || '', name: bd.name || 'ชาวบ้าน',
+                   place:'📋 ฝากไว้ที่กระดานเควสต์'};
     return {icon:'📋', ico:'ui-board', name:'กระดานเควสต์', place:'ข้างน้ำพุกลางหมู่บ้าน'};
+  }
   if(it.src === 'family'){
     const p = FAMILY ? FAMILY.one(it.who) : null;
     return {icon: p ? p.icon : '👪', ico: 'fam-' + (it.who || 'mom'),
@@ -12378,6 +12443,19 @@ function updateCompass(){
    ⇒ ย้ายมาโคจรรอบตัวเด็ก เห็นแน่นอนเพราะเด็กมองตัวเองอยู่แล้ว */
 const QARROW_R = 104;
 const _qaV = new THREE.Vector3(), _qaV2 = new THREE.Vector3();
+/* ของประจำวันชิ้นที่ใกล้ที่สุดที่ยังไม่ได้เก็บ — เก็บครบแล้วดับโหมดนำทางให้เอง */
+function colGuideTarget(){
+  const P = window.HousePlay;
+  const left = (P && P.colLeft) ? P.colLeft() : [];
+  if(!left.length){ guideCol = false; return null; }
+  const t = hChar.tile;
+  let best = null, bd = 1e9;
+  left.forEach(it=>{
+    const d = Math.abs(it.x - t.x) + Math.abs(it.z - t.z);
+    if(d < bd){ bd = d; best = it; }
+  });
+  return best;
+}
 function questArrowTarget(){
   /* 🧭 **โชว์เฉพาะตอนทำเควสต์เท่านั้น ไม่โชว์ตอนเล่นกิจกรรมรายวัน** (ผู้ใช้สั่ง 2026-08-16)
 
@@ -12395,6 +12473,12 @@ function questArrowTarget(){
   /* 🎓 บทเรียนสอนเล่นสั่งเป้าหมายเองได้ และ **มาก่อนเควสต์เสมอ**
      (ระหว่างสอนเล่นต้องไม่มีลูกศร 2 อันชี้คนละทาง) */
   if(guideForce) return goTo(guideForce);
+  /* 🍃 โหมดนำทางไปของประจำวัน (เปิดจากปุ่มในแผงกิจกรรม) — ชี้ชิ้นใกล้สุดที่ยังไม่ได้เก็บ
+     ⚠ ห้ามซ่อนตอนเข้าใกล้ (ไม่ใช้ `goTo`) — ของมักอยู่ข้างตัวพอดี ซ่อนแล้วเด็กจะไม่เห็นเลย */
+  if(guideCol){
+    const r = colGuideTarget();
+    if(r) return at(r);
+  }
   if(!walkQuest) return null;
   /* 🍃 งานเก็บของ — ชี้ไป **ชิ้นที่ใกล้ที่สุดที่ยังไม่ได้เก็บ** (เก็บแล้วเด้งไปชิ้นถัดไปเอง) */
   if(walkQuest.target === 'catch'){
@@ -14119,6 +14203,7 @@ function restoreCharSpot(){
 function stopHouseGame(){
   saveCharSpot(true);    /* 📍 จำที่ที่เด็กยืนไว้ กลับเข้ามาใหม่จะได้อยู่จุดเดิม */
   walkQuest = null;      /* งานเดินที่ค้างอยู่ไม่ถือว่าทำเสร็จ — กลับมาคุยกับพ่อแม่รับใหม่ได้ */
+  guideCol = false;      /* 🍃 โหมดนำทางไปของประจำวันไม่ค้างข้ามรอบ */
   if(window.HouseMusic) HouseMusic.release();   /* 🎵 คืน playlist ให้หน้าหลัก */
   if(editMode) exitEditMode();
   if(sitState) endSit();
@@ -14840,6 +14925,9 @@ window.HouseWorld = {
      ⚠ ตัวนี้เป็นประตูเดียวของกลไกนี้ — กลไกใหม่ที่ทำแบบเดียวกันให้ส่ง kind ใหม่เข้ามา
        ('crop' ผัก · 'photo' รูป · 'leaf' ของที่เก็บได้) **ห้ามเปิดประตูใหม่รายเกม** */
   questCaught: (kind, id) => questCaught(kind, id),
+  /* 🎣 กำลังทำเควสต์ "ตกปลาไปส่ง" อยู่ไหม — เกมตกปลาใช้เช็คก่อนหรี่โอกาสได้ปลาหายาก
+     ⚠ **ห้ามหรี่ระหว่างทำเควสต์เด็ดขาด** ปลาที่เควสต์สั่งมีชนิดเจาะจง หรี่แล้ว = เควสต์ไม่มีวันจบ */
+  questFishing: () => !!(walkQuest && walkQuest.target === 'catch'),
   /* 💸 ร้านค้าแจ้งว่าเด็กเพิ่งจ่ายเงินไปเท่าไร — คืนให้ตอนจบถ้ากำลังทำเควสต์ที่ต้องซื้อของ */
   questSpend: n => questSpend(n),
 
@@ -14913,6 +15001,9 @@ window.HouseWorld = {
   /* 🧭 สั่งลูกศรบอกทางให้ชี้ไปช่องนี้ (null = เลิกสั่ง แล้วปล่อยให้เควสต์เป็นคนกำหนดเอง)
      ⚠ ของบทเรียนมาก่อนเควสต์เสมอ — ระหว่างสอนเล่นต้องไม่มีลูกศร 2 อันชี้คนละทาง */
   guideTo: t => { guideForce = t ? {x:t.x, z:t.z} : null; },
+  /* 🍃 สวิตช์นำทางไปของประจำวัน (ปุ่มในแผงกิจกรรมเป็นคนกด) */
+  guideCollect: on => { guideCol = !!on; },
+  guidingCollect: () => guideCol,
   /* 🚪 เดินออกจากตัวบ้านไปฉากนอกบ้าน — **จุดหมายของบทเรียนอยู่นอกบ้านเกือบทั้งหมด**
      ⚠ `walkTo()` ของฉากในบ้านใช้กริดคนละใบกับฉากนอก ⇒ สั่งเดินไปพิกัดนอกบ้านตอนอยู่ในบ้าน
        จะไม่เกิดอะไรขึ้นเลย (ผู้ใช้แจ้ง 2026-08-17: อยู่ในบ้านแล้วกด "พาไปเลย" ไปตกปลาไม่ได้)

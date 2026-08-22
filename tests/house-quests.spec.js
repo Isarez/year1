@@ -208,10 +208,17 @@ test('ตอบผิดไม่มีบทลงโทษ: ผิดรัว
      ⇒ เลือกเฉพาะชุดที่ตอบผิดได้จริงทุกข้อ แล้ว **ยืนยันว่าตอบผิดไปจริง** กันเทสผ่านลอยๆ */
   const out = await page.evaluate(() => {
     const q = window.HouseQuests;
+    /* ⚠ **ต้องกวาดทั้ง NPC + กระดาน + ครอบครัว** (แก้ 2026-08-22) — ตั้งแต่กระดานเฉลี่ยกลไก
+       ใหม่เมื่อ 2026-08-20 บางวันมีชุด "การ์ด 4 ตัวเลือก" ของ NPC เหลือชุดเดียวหรือไม่เหลือเลย
+       ⚠ และต้อง **ยาวอย่างน้อย 4 ข้อ** ด้วย — งานเดิน/เกมยืม engine มีข้อเดียว (ตัวเกมคือข้อนั้น)
+         พลาดข้อเดียวยังได้ 3 ดาวตามกติกา "พลาดฟรี 1 ข้อ" ⇒ ไม่ใช่ชุดที่ใช้วัดเรื่องนี้ได้ */
     let run = null;
-    for (const id of q.state().npcIds) {
-      const r = q.buildRun(q.specForNpc(id));
-      if (r.items.every(it => it.choices && it.choices.length > 1)) { run = r; break; }
+    const specs = q.state().npcIds.map(id => q.specForNpc(id))
+      .concat([0, 1, 2, 3, 4].map(i => q.specForBoard(i)))
+      .concat([q.specForFamily()]).filter(Boolean);
+    for (const sp of specs) {
+      const r = q.buildRun(sp);
+      if (r.items.length >= 4 && r.items.every(it => it.choices && it.choices.length > 1)) { run = r; break; }
     }
     if (!run) return { noChoiceQuest: true };
     let guard = 0;
@@ -703,7 +710,7 @@ test('จำนวนข้อต่อเควสต์: การ์ด 9-12 
 test('หน้ารายการเควสต์: โชว์ดาวรายชุด + แถบดาวรวมของวันนี้', async ({ page }) => {
   const errors = await openHouse(page);
   /* เล่น 2 ชุด: ชุดแรกเต็ม 3 ดาว · ชุดที่สองตอบผิดรัวๆ ให้เหลือ 1 ดาว */
-  await page.evaluate(() => {
+  const pre = await page.evaluate(() => {
     const q = window.HouseQuests, ids = q.state().npcIds;
     /* ⚠ ชุดที่ต้องการให้เหลือ 1 ดาว **ต้องเป็นเควสต์ที่ตอบผิดได้จริง** — งานเดิน (deliver/findhidden)
        กับเกมที่ยืม engine มาไม่มีปุ่มตัวเลือกให้กดผิด จะได้ 3 ดาวเสมอ ทำให้ยอดดาวไม่ตรงที่คาด
@@ -713,9 +720,15 @@ test('หน้ารายการเควสต์: โชว์ดาวร
       const m = q.MECHS[sp.mech];
       if (!m || m.walk || m.engine) return false;
       const r = q.buildRun(sp);
-      return r.items.every(it => it.choices && it.choices.length > 1);
+      /* ต้องยาว ≥ 4 ข้อ ไม่งั้นตอบผิดทุกข้อก็ยังได้ 3 ดาว (กติกา "พลาดฟรี 1 ข้อ") */
+      return r.items.length >= 4 && r.items.every(it => it.choices && it.choices.length > 1);
     };
-    const picks = ids.map(id => q.specForNpc(id)).filter(answerable);
+    /* ⚠ กวาดทั้ง NPC + กระดาน + ครอบครัว (แก้ 2026-08-22) — บางวัน NPC ไม่มีชุดการ์ดถึง 2 ชุด
+       ของเดิมดู `ids` อย่างเดียวแล้ว picks[1] เป็น undefined ⇒ เทสตายที่ buildRun(undefined) */
+    const picks = ids.map(id => q.specForNpc(id))
+      .concat([0, 1, 2, 3, 4].map(i => q.specForBoard(i)))
+      .concat([q.specForFamily()]).filter(answerable);
+    if (picks.length < 2) return { few: picks.length };
     const a = q.buildRun(picks[0]);
     while (!a.over) q.answer(a, a.items[a.idx].correct);
     q.finish(a);
@@ -728,8 +741,10 @@ test('หน้ารายการเควสต์: โชว์ดาวร
       q.answer(b, it.correct);
     }
     q.finish(b);
+    return { few: 0 };
   });
 
+  expect(pre.few, 'วันนี้ต้องมีชุดการ์ด 4 ตัวเลือกอย่างน้อย 2 ชุด').toBe(0);
   const sum = await page.evaluate(() => window.HouseQuests.daySummary());
   expect(sum.starsMax).toBe(sum.total * 3);
   expect(sum.stars).toBe(4);                     /* 3 ดาว + 1 ดาว */
@@ -931,4 +946,158 @@ test('กระดานเควสต์: กลไกไม่ซ้ำกั
   /* 🔒 ห้ามกลับไปฮาร์ดโค้ดเปอร์เซ็นต์ให้กลไกใดกลไกหนึ่งครองกระดาน */
   expect(r.topShare, 'กลไกที่เจอบ่อยสุดต้องไม่เกิน 20% ของช่องทั้งหมด').toBeLessThan(.20);
   expect(r.quizShare, 'ตอบคำถามต้องไม่เกิน 15%').toBeLessThan(.15);
+});
+
+/* 🔒 บั๊กที่ผู้ใช้เจอ 2026-08-22: รับงาน "นับของในบ่อ" จากลุงตกปลา แล้วลุงตกปลาถามใหม่เป็นเกมผสมสี
+   ต้นเหตุ: `workPool()` กรองด้วย `mechOk()` ที่อ่าน **สถานะโลกสดๆ** (ของในโลกเหลือเท่าไร ·
+   มีเครื่องดนตรีไหม · engine ของชั้นนี้เล่นได้ไหม) ⇒ ขนาดพูลเปลี่ยนได้ระหว่างวัน
+   แต่ `rollWorkMech()` สุ่มด้วย seed คงที่จาก **ดัชนีในพูล** ⇒ พูลขยับเมื่อไหร่ กลไกของเควสต์
+   เดิมเปลี่ยนตามทันทีทั้งที่ seed ไม่ขยับเลย (เด็กปิดการ์ดแล้วกลับไปคุยใหม่ = ได้คนละเกม)
+   ⇒ แก้ด้วย `lockMech()` จดกลไกลง state ตอนกดรับงาน */
+test('กลไกของเควสต์ต้องไม่เปลี่ยนหลังเด็กกดรับงานแล้ว แม้พูลกลไกจะเปลี่ยนขนาด', async ({ page }) => {
+  const errors = await openHouse(page);
+  const r = await page.evaluate(() => {
+    const q = window.HouseQuests, g0 = activeChild.grade;
+    const grades = ['prep-p1', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
+    const across = id => {
+      const seen = {};
+      grades.forEach(g => { activeChild.grade = g; const s = q.specForNpc(id); if (s) seen[s.mech] = 1; });
+      activeChild.grade = g0;
+      return Object.keys(seen);
+    };
+    /* หาคนที่กลไก "ไหลตามพูล" จริง (ก่อนแก้บั๊กจะมีเสมอ — คนที่มีกลไกยืม engine ในพูล) */
+    const drift = q.state().npcIds.filter(id => across(id).length > 1);
+    if (!drift.length) return { skip: true };
+    const id = drift[0];
+    const before = q.specForNpc(id).mech;
+    q.buildRun(q.specForNpc(id));            /* = เด็กกดรับงาน */
+    const locked = (q.state().npc[id] || {}).m;
+    const after = across(id);                /* พูลเปลี่ยนขนาดทุกแบบแล้วยังต้องได้กลไกเดิม */
+    return { id, before, locked, after, stable: after.length === 1 && after[0] === before };
+  });
+  if (!r.skip) {
+    expect(r.locked, 'ต้องจดกลไกลง state ตอนรับงาน').toBe(r.before);
+    expect(r.stable, 'กลไกของเควสต์ที่รับไปแล้วห้ามเปลี่ยน: ' + JSON.stringify(r)).toBe(true);
+  }
+  expect(errors).toEqual([]);
+});
+
+/* 🔒 งานที่ให้ "เดินไปทำที่อื่น" (นับของในย่าน · หาของที่หาย) — ตัว NPC เจ้าของงานห้ามยื่นงานใหม่ทับ
+   ของเดิมดักไว้เฉพาะงานที่ปลายทางคือตัวเขาเอง (`toNpc`) งานปลายทางอื่นจึงหล่นไปถึงบรรทัดยื่นงานใหม่ */
+test('คุยกับคนที่ยังทำงานให้เขาค้างอยู่ ต้องทวนคำสั่งเดิม ไม่ใช่ยื่นงานใหม่', async ({ page }) => {
+  const errors = await openHouse(page);
+  const id = await page.evaluate(() => {
+    const s = window.HouseQuests.state();
+    s.npc[s.npcIds[0]] = { m: 'findhidden' };     /* งานเดินไปหาของที่หาย (ปลายทาง = ย่าน) */
+    return s.npcIds[0];
+  });
+  await page.evaluate(i => window.HouseQuestUI.talk(i), id);
+  await expect(page.locator('#hqz-stage .hqz-yes')).toBeVisible();
+  await page.locator('#hqz-stage .hqz-yes').click();          /* รับงาน */
+  await page.locator('#hqz-stage .hqz-yes').click();          /* "ไปเลย!" → เริ่มงานเดิน */
+  await page.waitForFunction(() => !!window.__houseDbg.walkQuest(), null, { timeout: 15000 });
+  await page.evaluate(i => window.HouseQuestUI.talk(i), id);  /* กลับไปคุยกับคนเดิม */
+  await page.waitForTimeout(900);
+  const r = await page.evaluate(() => ({
+    run: !!window.HouseQuestUI.run(),
+    card: !document.getElementById('house-qz').hidden,
+    wq: window.__houseDbg.walkQuest(),
+  }));
+  expect(r.wq, 'งานเดินที่ทำค้างอยู่ต้องไม่ถูกล้างทิ้ง').not.toBeNull();
+  expect(r.card, 'ห้ามเด้งการ์ดรับงานใหม่ทับงานที่ทำค้างอยู่').toBe(false);
+  expect(r.run, 'ห้ามเริ่มรอบใหม่ทับ').toBe(false);
+  expect(errors).toEqual([]);
+});
+
+/* 🌳 ต้นไม้ที่ผู้ใช้ชี้เองว่าเกะกะ (WILD_BAN) — ถอนแล้วต้องไม่งอกกลับ */
+test('ช่องที่สั่งถอนต้นไม้ต้องว่างจริง', async ({ page }) => {
+  const errors = await openHouse(page);
+  const r = await page.evaluate(() => {
+    const g = window.__houseDbg.grid();
+    return ['35,61', '33,65', '43,65', '45,65', '34,61', '35,60']
+      .map(k => { const [x, z] = k.split(',').map(Number); return k + '=' + (g[z] ? g[z][x] : '?'); });
+  });
+  r.forEach(s => expect(s, 'ช่องนี้ต้องไม่มีต้นไม้: ' + s).toContain('=0'));
+  expect(errors).toEqual([]);
+});
+
+/* 🔁 **เล่นซ้ำเควสต์ของชาวบ้าน** (ผู้ใช้สั่ง 2026-08-22)
+   ทำเสร็จแล้วกลับไปคุยกับคนเดิม เล่นใหม่เพื่อเก็บดาวให้ครบได้
+   💰 จ่าย **เฉพาะส่วนต่างของดาว** — เท่าเดิม/แย่ลง = ไม่ได้เงิน (ไม่งั้นเป็นเครื่องปั๊มเงิน)
+   ⭐ ดาวที่จดไว้เก็บค่าที่ดีที่สุดเสมอ · ไม่นับเป็นชุดใหม่ของวันนี้ */
+test('เล่นซ้ำเควสต์ชาวบ้าน: ได้ดาวมากกว่าเดิมจึงได้เงินส่วนต่าง · เท่าเดิมไม่ได้เงิน', async ({ page }) => {
+  const errors = await openHouse(page);
+  const r = await page.evaluate(() => {
+    const q = window.HouseQuests;
+    window.OwlCoins.set(0);
+    /* หาเควสต์ NPC ที่ "ตอบผิดได้จริง" และยาวพอที่ตอบผิดหมดแล้วเหลือ 1 ดาว */
+    const pick = q.state().npcIds.map(i => ({ i, s: q.specForNpc(i) })).filter(o => {
+      const m = q.MECHS[o.s.mech];
+      if (!m || m.walk || m.engine) return false;
+      const r0 = q.buildRun(o.s);
+      if (r0.items.length < 4 || !r0.items.every(it => it.choices && it.choices.length > 1)) return false;
+      const t = q.buildRun(o.s), it = t.items[0];
+      const w = it.choices.map((_, k) => k).filter(k => k !== it.correct);
+      return !q.answer(t, w[0]).ok;          /* ตอบผิดแล้วต้องนับว่าผิดจริง */
+    })[0];
+    if (!pick) return { skip: true };
+    const worst = sp => {
+      const r0 = q.buildRun(sp);
+      let g = 0;
+      while (!r0.over && g++ < 300) {
+        const it = r0.items[r0.idx];
+        it.choices.map((_, k) => k).filter(k => k !== it.correct).forEach(k => q.answer(r0, k));
+        q.answer(r0, it.correct);
+      }
+      return q.finish(r0);
+    };
+    const best = sp => {
+      const r0 = q.buildRun(sp);
+      while (!r0.over) q.answer(r0, r0.items[r0.idx].correct);
+      return q.finish(r0);
+    };
+    const a = worst(q.specForNpc(pick.i));          /* รอบแรก — ดาวน้อย */
+    const doneSpec = q.specForNpc(pick.i);
+    const b = best(doneSpec);                        /* เล่นซ้ำ ทำได้ดีขึ้น */
+    const c = best(q.specForNpc(pick.i));            /* เล่นซ้ำอีก ดาวเท่าเดิม */
+    const tier = q.difficulty().tier;
+    return { done: doneSpec.done, redoable: doneSpec.src === 'npc',
+             full: q.coinsFor('A', 3, tier, false),
+             a, b, c, saved: (q.state().npc[pick.i] || {}).stars, total: q.state().total };
+  });
+  if (r.skip) return;
+  expect(r.done, 'รอบแรกจบแล้วต้องถูกจดว่าทำเสร็จ').toBe(true);
+  expect(r.a.stars, 'รอบแรกตอบผิดทุกข้อต้องได้ 1 ดาว').toBe(1);
+  expect(r.a.coins, 'รอบแรกต้องได้เงินเสมอ').toBeGreaterThan(0);
+  expect(r.b.redo, 'รอบที่ 2 ต้องถูกนับเป็นการเล่นซ้ำ').toBe(true);
+  expect(r.b.stars, 'รอบที่ 2 ตอบถูกหมดต้องได้ 3 ดาว').toBe(3);
+  expect(r.b.better).toBe(true);
+  expect(r.b.coins, 'ดาวเพิ่มขึ้นต้องได้เงินส่วนต่าง').toBeGreaterThan(0);
+  /* 🔒 รวมทั้งชีวิตของชุดนี้ต้องเท่ากับ "ค่าตอบแทน 3 ดาว" พอดี — เล่นซ้ำกี่รอบก็ไม่เกินนี้ */
+  expect(r.a.coins + r.b.coins + r.c.coins, 'เล่นซ้ำแล้วรวมต้องไม่เกินค่าตอบแทน 3 ดาว').toBe(r.full);
+  expect(r.c.coins, 'เล่นซ้ำแล้วดาวเท่าเดิม ต้องไม่ได้เงินเลย').toBe(0);
+  expect(r.saved, 'ดาวที่จดไว้ต้องเป็นค่าที่ดีที่สุด').toBe(3);
+  expect(r.total, 'เล่นซ้ำต้องไม่นับเป็นชุดใหม่').toBe(1);
+  expect(errors).toEqual([]);
+});
+
+/* 🧑 หน้ารายการเควสต์ต้องโชว์ "ตัวคนที่ฝากงาน" ในแถวของกระดานด้วย (ผู้ใช้สั่ง 2026-08-22)
+   ของเดิมขึ้นไอคอนกระดานเหมือนกันหมดทั้ง 5 แถว เด็กแยกไม่ออกว่าแถวไหนเป็นงานของใคร */
+test('หน้ารายการเควสต์: แถวงานกระดานโชว์ตัว NPC ที่ฝากงานไว้', async ({ page }) => {
+  const errors = await openHouse(page);
+  const ids = await page.evaluate(() =>
+    window.HouseQuests.daySummary().items.filter(x => x.src === 'board').map(x => x.npc));
+  expect(ids.length, 'กระดานต้องมี 5 ชุด').toBe(5);
+  ids.forEach(id => expect(id, 'ทุกชุดบนกระดานต้องรู้ว่าใครฝากงานไว้').toBeTruthy());
+
+  await page.locator('#house-quest-bar').click();
+  await expect(page.locator('#house-qsum')).toBeVisible();
+  const names = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#hqsum-list .hqsum-row'))
+      .map(r => ({ name: (r.querySelector('.hqsum-name') || {}).textContent || '',
+                   svg: !!(r.querySelector('.hqsum-ic svg')) })));
+  expect(names.some(n => n.name === 'กระดานเควสต์'),
+    'ห้ามเหลือแถวที่ขึ้นแค่ว่า "กระดานเควสต์"').toBe(false);
+  expect(names.every(n => n.svg), 'ทุกแถวต้องมีรูปคน/ไอคอนเป็น SVG').toBe(true);
+  expect(errors).toEqual([]);
 });

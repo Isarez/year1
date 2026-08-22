@@ -842,10 +842,36 @@
     const sp = fishSpots.find(s => Math.abs(s.sx - t.x) <= 1 && Math.abs(s.sz - t.z) <= 1);
     return sp ? sp.kind : 'pond';
   }
+  /* 💰 **กันเงินเฟ้อจากการตกปลารัวๆ** (ผู้ใช้สั่ง 2026-08-22)
+     ปลาขายได้ตัวละ 2-24 🪙 และตกได้ไม่จำกัด ⇒ เด็กที่นั่งตกทั้งวันทำเงินได้เกินเพดานเควสต์ไปมาก
+     ⇒ ตกเกิน `FISH_FREE` ตัวในวันเดียว ปลาเริ่ม "เบื่อเบ็ด": เจอขยะมากขึ้น · ปลาหายากน้อยลงมากๆ
+     🔒 **ห้ามทำให้ตกไม่ได้เลย** (กติกาเหล็ก: ไม่ลงโทษเด็ก) — ยังได้ปลาธรรมดาเรื่อยๆ ได้ของสะสมต่อ
+        แค่ "คุ้มน้อยลง" จนไม่มีใครอยากนั่งฟาร์มเงิน
+     🔒 **ห้ามหรี่ระหว่างทำเควสต์ตกปลา** — เควสต์สั่งปลาเจาะจงเป็นชนิด หรี่แล้วเควสต์ไม่มีวันจบ
+     ⏱ นับจาก `P.fish.today` ที่ล้างทุกวันอยู่แล้ว ⇒ พรุ่งนี้กลับมาเหมือนเดิม */
+  const FISH_FREE  = 10;    /* 10 ตัวแรกของวัน = โอกาสเดิมทุกอย่าง */
+  const FISH_TIRED = 20;    /* ตัวที่ 20 ขึ้นไป = แย่สุด แล้วคงที่ ไม่แย่ลงไปกว่านี้อีก */
+  const FISH_JUNK_MAX = .45;   /* โอกาสได้ขยะที่เพิ่มเข้ามาตอนเบื่อเบ็ดเต็มที่ */
+  function fishTired(){
+    const w = W();
+    if(w && w.questFishing && w.questFishing()) return 0;
+    const n = (P && P.fish) ? (P.fish.today | 0) : 0;
+    if(n < FISH_FREE) return 0;
+    return Math.min(1, (n - FISH_FREE) / (FISH_TIRED - FISH_FREE));
+  }
   function rollFish(rng, where){
-    const r = rng();
-    const want = r < .6 ? 1 : (r < .9 ? 2 : 3);
     const here = FISH.filter(f => f.where === where);
+    const k = fishTired();
+    /* ① ขยะที่ "แถมเข้ามา" ตอนเบื่อเบ็ด (ขยะในกองปลาหาง่ายยังมีเหมือนเดิม ไม่ได้เอาออก) */
+    if(k > 0 && rng() < FISH_JUNK_MAX * k){
+      const junk = here.filter(f => f.junk);
+      if(junk.length) return junk[(rng() * junk.length) | 0];
+    }
+    /* ② ปลาหายาก: 30% → 8% · หายากมาก: 10% → 1% */
+    const p3 = .10 - .09 * k;
+    const p2 = .30 - .22 * k;
+    const r = rng();
+    const want = r < p3 ? 3 : (r < p3 + p2 ? 2 : 1);
     const pool = here.filter(f => f.rare === want);
     return pool[(rng() * pool.length) | 0] || here[0] || FISH[0];
   }
@@ -1542,14 +1568,27 @@
       list.appendChild(r);
     }
 
-    /* 🍃 เก็บของประจำวัน */
+    /* 🍃 เก็บของประจำวัน
+       🧭 **ปุ่มนำทาง** (ผู้ใช้สั่ง 2026-08-22) — ของกระจายทั่วเมือง เด็กหาเองไม่เจอจนเลิกเล่น
+       ⚠ เป็นสวิตช์ที่ **เด็กกดเปิด/ปิดเอง** ไม่ใช่ลูกศรที่โผล่เอง (กติกา 2026-08-16 ยังอยู่ครบ)
+          และดับเองเมื่อเก็บครบ ⇒ ไม่มีทางค้างรบกวนทั้งวัน */
+    const colLeftN = (P.col.items || []).length - (P.col.got || []).length;
+    const guiding = !!(W() && W().guidingCollect && W().guidingCollect());
+    const colBtns = colLeftN > 0 ? [{
+      label: guiding ? 'พอแล้ว 🧭' : 'พาไปเก็บ 🧭', alt: guiding,
+      fn: ()=>{ if(W() && W().guideCollect){ W().guideCollect(!guiding); renderPanel(); } }
+    }] : [];
     list.appendChild(row(ICO('col-' + th.id, th.emoji), 'เก็บ' + th.name + 'ทั่วเมือง',
       'วันนี้เก็บแล้ว ' + P.col.got.length + '/' + (P.col.items.length || COL_N)
-      + ' ชิ้น · สะสมครบมา ' + (P.col.sets | 0) + ' วัน', []));
+      + ' ชิ้น · สะสมครบมา ' + (P.col.sets | 0) + ' วัน'
+      + (colLeftN > 0 ? ' · กดปุ่มแล้วจะมีลูกศรชี้ทางไปชิ้นที่ใกล้ที่สุดให้' : ''), colBtns));
 
     /* 🎣 ตกปลา */
-    const fishSub = 'สมุดปลา ' + ((P.fish.book || []).length) + '/' + FISH.length
+    let fishSub = 'สมุดปลา ' + ((P.fish.book || []).length) + '/' + FISH.length
                   + ' ชนิด · วันนี้ได้ ' + (P.fish.today | 0) + ' ตัว';
+    /* 🐟 บอกตรงๆ ว่าทำไมวันนี้ปลาหายากเริ่มไม่ติดเบ็ด — ไม่งั้นเด็กนึกว่าเกมพัง
+       (โทนเป็น "ปลาไปพักแล้ว" ไม่ใช่ "หนูเล่นเยอะเกินไป" — ห้ามทำให้รู้สึกถูกดุ) */
+    if(fishTired() > 0) fishSub += ' · วันนี้ปลาตัวใหญ่ๆ ไปพักกันหมดแล้ว พรุ่งนี้ค่อยมาใหม่นะ';
     /* ⚠ **ไม่มีปุ่มลงมือทำในแผงนี้แล้ว** (ผู้ใช้สั่ง 2026-08-14) — แผงนี้ทำหน้าที่ "บอกว่าวันนี้มีอะไรให้ทำ"
        อย่างเดียว ส่วนการลงมือให้เด็กออกไปแตะของจริงในเมือง (ป้ายลอย 🎣/🌱 · ปุ่มกล้องมุมขวาบน)
        เหตุผล: ถ้ากดจากแผงได้หมด เด็กจะไม่ได้ออกไปเดินเล่นในเมืองเลย ซึ่งขัดเจตนาของกลุ่ม A */
@@ -2066,6 +2105,9 @@
     /* 🔓 เครื่องมือเทส — เติม "สมุดปลา" ให้ครบทุกชนิด / ล้างทิ้ง (js/house-devtools.js)
        ⚠ ปลาเป็นของสะสมที่ **สมุดสะสมอ่านจาก `play.fish.book` ตรงๆ** (ไม่จดซ้ำที่ house-book)
          ⇒ ปลดล็อกสมุดสะสมต้องมาแก้ที่นี่ ห้ามไปเขียน state ของสมุดแทน */
+    /* 🧪 ชุดเทส: ตั้งจำนวนปลาที่ตกไปแล้ววันนี้ + สุ่มปลาตรงๆ (ใช้วัดว่าโอกาสหรี่ลงจริง) */
+    devFishToday: n => { if(P){ P.fish.today = n | 0; persist(); } },
+    devRollFish: where => rollFish(Math.random, where || 'pond'),
     devFishAll: (on)=>{
       if(!P) return 0;
       P.fish = Object.assign({}, P.fish, {book: on === false ? [] : FISH.map(f => f.id)});
