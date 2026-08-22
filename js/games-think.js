@@ -965,6 +965,9 @@ function finishScienceGame(){
   const cat = catById(sciGame.catId);
   const mistakes = sciGame.mistakes;
   const totalLevels = sciGame.totalLevels;
+  /* ⚠ เหตุผลเดียวกับ finishDotsGame — ลงทะเบียนไว้แล้ว กันไว้ก่อนถูกใส่เข้า ALLOW */
+  if(reportGameResult(scienceGame.catId, scienceGame.mistakes | 0, scienceGame.totalLevels, 'ทดลอง')) return;
+  if(document.body.classList.contains('house-open')) return;
   showOnlyView(resultView);
   const stars = mistakes===0 ? 3 : (mistakes<=4 ? 2 : 1);
   const prev = progress[cat.id];
