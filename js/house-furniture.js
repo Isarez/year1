@@ -1548,7 +1548,11 @@
         } },
 
       /* ============ ในบ้าน — ครัว (เฟส 8 · +8) ============ */
-      { id:'blender', top:.5, name:'เครื่องปั่น', cat:'kitchen', scope:'in', emoji:'🥤', colors:PLASTIC,
+      /* 🍳 ของใช้บนเคาน์เตอร์ครัว — ติดธง `stack` ให้ครบทั้งกลุ่ม (ผู้ใช้สั่ง 2026-08-22)
+         ⚠ ชุดนี้เพิ่มมาตอนเฟส 8 พร้อมกัน 5 ชิ้นแต่ **ลืมใส่ `stack`** (ไมโครเวฟ/หม้อหุงข้าวของเดิมมีครบ)
+           ⇒ เด็กวางบนเคาน์เตอร์ไม่ได้เลย ต้องตั้งกับพื้นอย่างเดียวมาตลอด
+         🔑 กฎของกลุ่มนี้: **ของเล็กที่ในชีวิตจริงตั้งบนเคาน์เตอร์ ต้องมี `stack` เสมอ** */
+      { id:'blender', stack:true, top:.5, name:'เครื่องปั่น', cat:'kitchen', scope:'in', emoji:'🥤', colors:PLASTIC,
         action:'toggle',
         build(g,col){
           const base=box(.24,.18,.24,col,.04); base.position.y=.1; g.add(base);
@@ -1556,7 +1560,7 @@
           const lid=cyl(.14,.14,.05,shade(col,.8),14); lid.position.y=.55; g.add(lid);
           const btn=ball(.03,0xef5350,8); btn.position.set(0,.14,.13); g.add(btn);
         } },
-      { id:'toaster', top:.42, name:'เครื่องปิ้งขนมปัง', cat:'kitchen', scope:'in', emoji:'🍞', colors:[0xef5350,0x90caf9,0xfff59d],
+      { id:'toaster', stack:true, top:.42, name:'เครื่องปิ้งขนมปัง', cat:'kitchen', scope:'in', emoji:'🍞', colors:[0xef5350,0x90caf9,0xfff59d],
         build(g,col){
           const body=box(.34,.24,.22,col,.06); body.position.y=.14; g.add(body);
           [-1,1].forEach(s=>{ const slot=box(.1,.03,.14,0x455a64,.01); slot.position.set(s*.08,.27,0); g.add(slot); });
@@ -1571,7 +1575,7 @@
           [1.1,.82].forEach((y,r)=>{ for(let i=0;i<4;i++){ const j=cyl(.035,.035,.13,BRIGHT[(i+r*2)%BRIGHT.length],10);
             j.position.set(-.2+i*.14,y+.09,0); g.add(j); } });
         } },
-      { id:'kettle-set', top:.4, name:'กาต้มน้ำ', cat:'kitchen', scope:'in', emoji:'♨️', colors:PLASTIC,
+      { id:'kettle-set', stack:true, top:.4, name:'กาต้มน้ำ', cat:'kitchen', scope:'in', emoji:'♨️', colors:PLASTIC,
         build(g,col){
           const body=cyl(.16,.14,.26,col,14); body.position.y=.15; g.add(body);
           const lid=cyl(.14,.12,.05,shade(col,.8),14); lid.position.y=.3; g.add(lid);
@@ -1579,7 +1583,7 @@
           const sp=cyl(.03,.05,.18,shade(col,.85),8); sp.rotation.z=-.9; sp.position.set(.17,.22,0); g.add(sp);
           const hd=torus(.09,.02,shade(col,.7),12); hd.position.set(-.16,.22,0); g.add(hd);
         } },
-      { id:'dish-rack', top:.36, name:'ที่คว่ำจาน', cat:'kitchen', scope:'in', emoji:'🥄', colors:[0xb0bec5,0x90caf9],
+      { id:'dish-rack', stack:true, top:.36, name:'ที่คว่ำจาน', cat:'kitchen', scope:'in', emoji:'🥄', colors:[0xb0bec5,0x90caf9],
         build(g,col){
           const tray=box(.5,.05,.34,col,.03); tray.position.y=.03; g.add(tray);
           for(let i=0;i<5;i++){ const bar=cyl(.012,.012,.24,shade(col,.85),6); bar.position.set(-.16+i*.08,.17,0); g.add(bar); }
