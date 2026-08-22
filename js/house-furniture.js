@@ -1598,7 +1598,9 @@
             hook.position.set(x,1.17,0); g.add(hook);
             const pot=cyl(r,r*.85,r*1.1,BRIGHT[i*3%BRIGHT.length],12); pot.position.set(x,1.02-r*.3,0); g.add(pot); });
         } },
-      { id:'fruit-bowl', top:.3, name:'ชามผลไม้', cat:'kitchen', scope:'in', emoji:'🍎', colors:[0xfffdf7,0xffcc80],
+      /* 🍎 วางบนโต๊ะ/เคาน์เตอร์ได้ (ผู้ใช้สั่ง 2026-08-22) — `stack` ทำให้ยกขึ้นไปนั่งบนผิวของที่มี `top`
+         และไม่กินช่องเดิน · ยังตั้งกับพื้นได้เหมือนเดิม */
+      { id:'fruit-bowl', stack:true, top:.3, name:'ชามผลไม้', cat:'kitchen', scope:'in', emoji:'🍎', colors:[0xfffdf7,0xffcc80],
         build(g,col){
           const bowl=ball(.2,col,16); bowl.scale.set(1,.5,1); bowl.position.y=.1; g.add(bowl);
           [[0,0,0xef5350],[.09,.04,0xffca28],[-.08,.03,0x66bb6a],[.02,.1,0xab47bc]].forEach(([x,z,c])=>{

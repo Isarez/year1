@@ -12678,13 +12678,15 @@ function buildDecorGroup(sc, rec){
 }
 function applyRecToGroup2(g, sc, item, rec){
   g.position.copy(decorWorldPos(sc, item, {x:rec.x,z:rec.z}, rec.rot||0));
-  g.position.y = decorYOffset(sc, item, {x:rec.x,z:rec.z}, rec.rot||0, rec);  /* ยกขึ้นถ้าวางบนของอื่น */
+  /* ยกขึ้นถ้าวางบนของอื่น + เลื่อนตามของที่รองอยู่ (โต๊ะติดผนังถูกเลื่อนเข้าหาผนังไปแล้ว) */
+  const st = decorStackAt(sc, item, {x:rec.x,z:rec.z}, rec.rot||0, rec);
+  g.position.y = st.y;
+  g.position.x += st.dx; g.position.z += st.dz;
   g.rotation.y = (rec.rot||0) * Math.PI/2;
   if(item.wall){   /* เลื่อนให้ขอบหลัง (local -z) ไปแนบผิวผนัง (ห่างกึ่งกลางช่องขอบ 0.5) — ชิ้นตื้น/ลึกแนบเท่ากัน */
-    const ang = (rec.rot||0) * Math.PI/2;
-    const sh = -(0.5 + (g.userData.localMinZ || 0));  /* ระยะเลื่อนตามแกน -z local */
-    g.position.x += sh * Math.sin(ang);
-    g.position.z += sh * Math.cos(ang);
+    const sh = wallSnapShift(item, rec.rot||0, g);
+    g.position.x += sh.dx;
+    g.position.z += sh.dz;
   }
 }
 function applyRecToGroup(g){ const d=g.userData.deco; applyRecToGroup2(g, d.scene, d.item, d.rec); }
@@ -13042,18 +13044,44 @@ function resetHomeSet(){
     if(typeof showToast==='function') showToast('✓','ของชุดเริ่มต้นอยู่ครบแล้วนะ');
   }
 }
-/* ความสูงที่วางซ้อน: ชิ้น stack (เช่นโคมไฟตั้งโต๊ะ) ยกขึ้นไปนั่งบนผิวของที่มี top อยู่ใต้ */
-function decorYOffset(sc, item, anchor, rot, ignoreRec){
-  if(!item.stack) return 0;
-  let y = 0;
+/* ของที่ "รองอยู่ข้างใต้" ของชิ้น stack (เช่นโคมไฟตั้งโต๊ะบนโต๊ะข้างเตียง)
+   คืนตัวที่ผิวสูงที่สุดที่ทับช่องกัน — ใช้ทั้งความสูงและตำแหน่งจริงของมัน
+   🐞 **บั๊กที่ผู้ใช้แจ้ง 2026-08-22: "โต๊ะติดกำแพงแล้วของบนโต๊ะลอย"**
+      ของที่ติดธง `wall` (ตู้หัวเตียง · เคาน์เตอร์ครัว · ชั้นวางทีวี · โต๊ะวางของ · ตู้ลิ้นชัก ·
+      โต๊ะเครื่องแป้ง · ตู้ถ้วยชาม) ถูก **เลื่อนไปแนบผนังจริง** ใน applyRecToGroup2 แต่ของที่วางทับ
+      ยังถูกวางที่ "กลางช่อง" ตามเดิม ⇒ โต๊ะขยับไปแล้ว ของค้างอยู่กลางอากาศข้างโต๊ะ
+   ⇒ ของที่วางซ้อนต้องรับ **ระยะเลื่อนของตัวที่รองอยู่** มาด้วยเสมอ */
+function decorStackUnder(sc, item, anchor, rot, ignoreRec){
+  if(!item.stack) return null;
+  let best = null;
   const tiles = footTiles(item, anchor, rot);
   for(const g of decorGroups[sc]){
     const r = g.userData.deco.rec; if(r===ignoreRec) continue;
     const it = g.userData.deco.item; if(it.top==null) continue;
     const oth = footTiles(it, {x:r.x,z:r.z}, r.rot);
-    if(tiles.some(a=>oth.some(bb=>bb.x===a.x && bb.z===a.z))) y = Math.max(y, it.top);
+    if(!tiles.some(a=>oth.some(bb=>bb.x===a.x && bb.z===a.z))) continue;
+    if(!best || it.top > best.item.top) best = {item:it, rec:r, g};
   }
-  return y;
+  return best;
+}
+/* ระยะที่ชิ้นติดผนังถูกเลื่อนเข้าหาผนัง (สูตรเดียวกับ applyRecToGroup2 — แก้ที่นี่ที่เดียวไม่พอ
+   ต้องแก้พร้อมกันทั้ง 2 จุดเสมอ) */
+function wallSnapShift(item, rot, g){
+  if(!item || !item.wall) return {dx:0, dz:0};
+  const ang = (rot || 0) * Math.PI/2;
+  const sh = -(0.5 + ((g && g.userData.localMinZ) || 0));
+  return {dx: sh * Math.sin(ang), dz: sh * Math.cos(ang)};
+}
+/* ความสูง + ระยะเลื่อนที่ชิ้น stack ต้องใช้เพื่อไปนั่งบนผิวของที่รองอยู่จริง */
+function decorStackAt(sc, item, anchor, rot, ignoreRec){
+  const sup = decorStackUnder(sc, item, anchor, rot, ignoreRec);
+  if(!sup) return {y:0, dx:0, dz:0};
+  /* ⚠ ถ้าตัวที่วางทับเป็นของติดผนังเอง มันเลื่อนของมันเองอยู่แล้ว ไม่ต้องเลื่อนซ้ำ */
+  const sh = item.wall ? {dx:0, dz:0} : wallSnapShift(sup.item, sup.rec.rot || 0, sup.g);
+  return {y: sup.item.top, dx: sh.dx, dz: sh.dz};
+}
+function decorYOffset(sc, item, anchor, rot, ignoreRec){
+  return decorStackAt(sc, item, anchor, rot, ignoreRec).y;
 }
 /* ---------- แพนกล้อง (โหมดตกแต่ง) ---------- */
 function groundPoint(cx, cy){
@@ -13231,7 +13259,15 @@ function editDragMove(cx, cy){
   if(!valid && sc==='out' && !footTiles(item, anchor, rot).every(t=>inHomeZone(t.x, t.z))) homeZoneToast();
   editSel.position.copy(decorWorldPos(sc, item, anchor, rot));
   editSel.rotation.y = rot * Math.PI/2;
-  editSel.position.y = valid ? decorYOffset(sc, item, anchor, rot, rec) : .12;
+  /* พรีวิวตอนลากต้องอยู่ตรงที่ที่มันจะไปอยู่จริง — รวมระยะเลื่อนของโต๊ะที่รองอยู่ด้วย
+     ไม่งั้นเด็กเห็นของลอยตอนลาก แล้วปล่อยแล้วกระโดดไปอีกที่ */
+  const stp = valid ? decorStackAt(sc, item, anchor, rot, rec) : null;
+  editSel.position.y = stp ? stp.y : .12;
+  if(stp){ editSel.position.x += stp.dx; editSel.position.z += stp.dz; }
+  if(valid && item.wall){
+    const sh = wallSnapShift(item, rot, editSel);
+    editSel.position.x += sh.dx; editSel.position.z += sh.dz;
+  }
   updateSelRing(); setSelTint(valid);
   if(valid) editDrag.lastValid = {x:anchor.x, z:anchor.z, rot};
   editDrag.moved = true;
