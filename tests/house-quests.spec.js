@@ -117,7 +117,7 @@ async function cardNpc(page) {
   });
 }
 
-test('เล่นเควสต์ NPC จนจบ: ได้เหรียญผ่าน OwlCoins · ป้ายเปลี่ยนเป็น ✓ · วันนี้คุยซ้ำไม่มีงานอีก', async ({ page }) => {
+test('เล่นเควสต์ NPC จนจบ: ได้เหรียญผ่าน OwlCoins · ป้ายเปลี่ยนเป็น ✓ · คุยซ้ำแล้วเล่นซ้ำได้', async ({ page }) => {
   const errors = await openHouse(page);
   const before = await coins(page);
   expect(before).toBe(0);
@@ -158,10 +158,16 @@ test('เล่นเควสต์ NPC จนจบ: ได้เหรีย�
     return !!m && !m.open;
   }, npcId, { timeout: 10000 });
 
-  /* คุยซ้ำวันนี้ → ไม่มีการ์ดชวนรับงานเด้งอีก (cooldown ถึงพรุ่งนี้) */
+  /* 🔄 **เกณฑ์กลับด้าน 2026-08-22 (ผู้ใช้สั่งเปิดให้เล่นซ้ำ · ไม่ได้ลบเทส)**
+     เดิม: คุยซ้ำวันนี้แล้วต้องไม่มีการ์ดเด้งอีก (cooldown ถึงพรุ่งนี้)
+     ตอนนี้: **เล่นซ้ำได้** เพื่อเก็บดาวให้ดีขึ้น ⇒ การ์ดต้องเด้งอีกครั้ง
+     🔒 กันเครื่องปั๊มเงิน: จ่ายเฉพาะ "ส่วนต่างของดาว" — ดาวเท่าเดิม = ไม่ได้เงินเลย
+        (เทสที่คุมเรื่องเงินอยู่ที่ 'เล่นซ้ำเควสต์ชาวบ้าน: ...' ท้ายไฟล์นี้)
+     ⚠ สถานะต้องยังเป็น 'done' อยู่ — ป้ายเหนือหัวยังเป็น ✓ ไม่ใช่กลับไปเป็นงานใหม่ */
   await page.evaluate(id => window.HouseQuestUI.talk(id), npcId);
-  await page.waitForTimeout(1200);
-  await expect(page.locator('#house-qz')).toBeHidden();
+  await expect(page.locator('#house-qz'), 'เล่นซ้ำได้ ⇒ คุยซ้ำต้องมีการ์ดเด้งอีก').toBeVisible();
+  expect(await page.evaluate(id => window.HouseQuests.npcStatus(id), npcId),
+         'เล่นซ้ำไม่ทำให้สถานะย้อนกลับเป็นยังไม่ได้ทำ').toBe('done');
   expect(errors).toEqual([]);
 });
 
@@ -605,8 +611,13 @@ test('รายการเควสต์: บอกชื่อคนและ
     expect(r.name.length, 'ชื่อต้องไม่ว่าง').toBeGreaterThan(0);
     expect(r.place.length, 'สถานที่ต้องไม่ว่าง').toBeGreaterThan(0);
   });
-  /* ต้องมีทั้งงานกระดานและงานครอบครัวอยู่ในรายการ */
-  expect(rows.filter(r => r.name.includes('กระดาน')).length).toBe(5);
+  /* ต้องมีทั้งงานกระดานและงานครอบครัวอยู่ในรายการ
+     🔄 **ย้ายจุดวัด 2026-08-22 (ผู้ใช้สั่ง · ไม่ได้ลบเทส)** — แถวกระดานโชว์ **ชื่อคนที่ฝากงาน**
+        แทนคำว่า "กระดานเควสต์" แล้ว (เดิม 5 แถวหน้าตาเหมือนกันหมด เด็กแยกไม่ออกว่างานของใคร)
+        ⇒ คำว่า "กระดาน" ย้ายไปอยู่ที่ **สถานที่** ("📋 ฝากไว้ที่กระดานเควสต์") */
+  expect(rows.filter(r => r.place.includes('กระดาน')).length).toBe(5);
+  rows.filter(r => r.place.includes('กระดาน')).forEach(r =>
+    expect(r.name, 'แถวกระดานต้องบอกชื่อคนที่ฝากงาน ไม่ใช่คำว่ากระดาน').not.toContain('กระดาน'));
   expect(rows.filter(r => r.place.includes('บ้านของหนู')).length).toBe(1);
 
   await page.locator('#hqsum-close').click();

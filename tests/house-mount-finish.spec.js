@@ -42,9 +42,18 @@ async function intoHouse(page){
 test('🔢 เกมที่ยืมมาเล่นในการ์ดต้องเห็น "ข้อที่เท่าไหร่ / ทั้งหมดกี่ข้อ" เสมอ', async ({ page }) => {
   const errs = await intoHouse(page);
   await page.evaluate(()=>window.HouseGames.play({gameId:'shadow', gradeId:'p2'}));
-  await expect(page.locator('#shadow-view .q-counter')).toBeVisible();
-  expect(await page.locator('#shadow-view .q-counter').textContent(),
-         'ต้องบอกทั้งข้อปัจจุบันและจำนวนข้อทั้งหมด').toMatch(/^\d+\/\d+$/);
+  /* 🔄 **เกณฑ์เปลี่ยนกลไก 2026-08-22 (ไม่ได้ลบเทส เจตนาเดิมยังอยู่ครบ)**
+     เดิมวัดที่ป้าย `.q-counter` ที่ลอยมุมขวาบน — แต่ป้ายนั้นไปทับกระดานของเกมจับคู่
+     ⇒ เปลี่ยนเป็น **แถวจุดนับข้อ `.og-dots`** (js/owl-games.js · startDots)
+     ⚠ `.q-counter` ยังต้องมีค่า `N/M` อยู่เหมือนเดิม เพราะเป็น**แหล่งข้อมูล**ที่ startDots อ่าน
+       (ถ้า engine เลิกอัปเดตป้ายนี้ จุดจะหยุดนิ่งโดยไม่มี error ให้จับ) */
+  const dots = page.locator('#shadow-view > .og-dots');
+  await expect(dots, 'เด็กต้องเห็นว่าเล่นถึงข้อไหน/ทั้งหมดกี่ข้อ').toBeVisible();
+  const counter = await page.locator('#shadow-view .q-counter').textContent();
+  expect(counter, 'แหล่งข้อมูลต้องบอกทั้งข้อปัจจุบันและจำนวนข้อทั้งหมด').toMatch(/^\d+\/\d+$/);
+  const total = +counter.split('/')[1];
+  expect(await dots.locator('i').count(), 'จำนวนจุดต้องเท่าจำนวนข้อทั้งหมด').toBe(total);
+  expect(await dots.locator('i.now').count(), 'ต้องมีจุดชี้ว่าอยู่ข้อไหน 1 จุด').toBe(1);
   /* ⚠ ธง og-keep ต้องถูกถอดออกตอน unmount ไม่งั้นหน้าเต็มจอจะเพี้ยนตามไปด้วย */
   await page.evaluate(()=>window.OwlGames.unmount());
   expect(await page.evaluate(()=>document.querySelector('#shadow-view > .quiz-top').className))

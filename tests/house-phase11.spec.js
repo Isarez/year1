@@ -670,8 +670,12 @@ test('11Q: แผงกิจกรรมมีปุ่มนำทางไป
   expect(ic.emoji, 'ห้ามเหลือ emoji บนปุ่ม').toBe(false);
   await btn.click();
   await expect.poll(() => page.evaluate(() => window.HouseWorld.guidingCollect())).toBe(true);
+  /* ⚠ `guidingCollect()` เป็น state ใน JS ที่พลิกทันทีตอนกดปุ่ม แต่ตัวลูกศร `#house-qarrow`
+     **ลูปวาดเป็นคนอัปเดต** ⇒ ต้อง poll ห้ามอ่านครั้งเดียวต่อจากบรรทัดบน
+     (เครื่องเทสวาดได้ ~3 fps จริง · กับดักเดิมที่บันทึกไว้ตั้งแต่เฟส 12.1) */
+  await expect.poll(() => page.evaluate(() => window.__houseDbg.qArrow().shown),
+                    { message: 'กดปุ่มแล้วต้องมีลูกศรชี้ทาง' }).toBe(true);
   const on = await page.evaluate(() => window.__houseDbg.qArrow());
-  expect(on.shown, 'กดปุ่มแล้วต้องมีลูกศรชี้ทาง').toBe(true);
   expect(on.target && on.target.tile, 'ลูกศรต้องชี้ไปที่ของจริงในเมือง').toBeTruthy();
 
   await page.locator('#house-playpanel .hpl-btn', { hasText: 'พอแล้ว' }).click();
