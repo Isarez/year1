@@ -248,3 +248,52 @@ test('🤖 พาหุ่นยนต์: แผนที่ต้องเห�
   expect(r.inView, 'แผนที่ต้องอยู่ในกรอบที่มองเห็น').toBe(true);
   expect(r.w, 'แผนที่ต้องใหญ่พอ').toBeGreaterThan(240);
 });
+
+/* ============================================================
+   🔵 จุดนับข้อของเกมที่ถูกยืมมาเล่นในการ์ดเควสต์ (2026-08-22)
+
+   🐞 ผู้ใช้แจ้ง: **แถบความคืบหน้าในเกมจับคู่บังการ์ด**
+      ของเดิม (`og-keep` · 2026-08-17) ดึง "ป้าย 1/3 + หลอด" กลับมาลอย `position:absolute`
+      มุมขวาบนของการ์ด เพื่อไม่ให้กินความสูง — แต่กระดานเกมจับคู่กว้างเต็มการ์ด
+      ⇒ ป้ายไปทับการ์ดใบขวาบนพอดี
+   ⇒ เปลี่ยนเป็น **แถวจุด** ใน flow (สูง ~11px) แบบเดียวกับจุดของการ์ดเควสต์เอง
+   ============================================================ */
+test('🔵 ทุกเกมที่เล่นในการ์ดต้องมีจุดนับข้อ และจุดต้องไม่ทับของในเกม', async ({ page }) => {
+  const errs = await openHouse(page);
+  const games = await page.evaluate(() => window.HouseGames.allowed());
+  expect(games.length, 'ต้องมีเกมให้เล่นในการ์ด').toBeGreaterThan(10);
+
+  const bad = [];
+  for(const gid of games){
+    const o = await page.evaluate(async g => {
+      window.OwlGames.unmount();
+      const ok = window.HouseGames.play({gameId:g, gradeId:'p4'});
+      await new Promise(r2 => setTimeout(r2, 700));
+      if(!ok) return {g, skip:true};
+      const v = document.querySelector('.og-embedded');
+      const dots = v && v.querySelector(':scope > .og-dots');
+      const dr = dots ? dots.getBoundingClientRect() : null;
+      let hit = 0;
+      if(dr) v.querySelectorAll('*').forEach(e => {
+        if(e === dots || dots.contains(e) || e.contains(dots)) return;
+        const b = e.getBoundingClientRect();
+        if(!b.width || !b.height) return;
+        if(!(dr.bottom <= b.top || b.bottom <= dr.top)) hit++;
+      });
+      return {g, dots: dots ? dots.children.length : 0, h: dr ? Math.round(dr.height) : 0, hit};
+    }, gid);
+    if(o.skip) continue;
+    if(!o.dots) bad.push(o.g + ': ไม่มีจุดนับข้อ');
+    if(o.hit)   bad.push(o.g + ': จุดไปทับของในเกม ' + o.hit + ' ชิ้น');
+    if(o.h > 20) bad.push(o.g + ': แถวจุดสูงเกินไป ' + o.h + 'px');
+  }
+  expect(bad).toEqual([]);
+  await page.evaluate(() => window.OwlGames.unmount());
+
+  /* 🔒 **ห้ามกลับไปลอยทับด้วย position:absolute อีก** — การ์ดเควสต์เตี้ยและกระดานแต่ละเกม
+     กว้างไม่เท่ากัน ของที่ลอยทับจะไปบังชิ้นส่วนของเกมบางเกมเสมอ */
+  const css = await (await page.request.get('/css/style.css')).text();
+  expect(css, 'ต้องมีสไตล์แถวจุด').toContain('.og-dots{');
+  expect(css, 'ต้องไม่เหลือกฎ og-keep ที่ลอยทับ').not.toContain('.og-keep');
+  expect(errs).toEqual([]);
+});

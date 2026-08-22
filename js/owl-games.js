@@ -65,11 +65,11 @@
     view.classList.add('og-embedded');
     /* 🔢 **ตัวนับข้อต้องรอดจากการซ่อนแถบบน** (ผู้ใช้แจ้ง 2026-08-17 จากเกมทายเงา)
        `.og-embedded > .quiz-top` ถูกซ่อนทั้งแถบ ⇒ เด็กไม่รู้เลยว่าต้องเล่นกี่ข้อ
-       ⇒ ติดธง `og-keep` ให้แถบบนของ view ที่ **มีตัวนับข้อจริง** แล้วให้ CSS ดึงเฉพาะ
-         ตัวนับ+หลอดความคืบหน้ากลับมาลอยมุมขวาบน (ดู .og-keep ใน css/style.css)
+       ⇒ วาด **แถวจุดนับข้อ** ไว้บนสุดของ view แทน (ดู startDots ด้านล่าง)
+         (เดิมดึงป้าย 1/3 + หลอดกลับมาลอยมุมขวาบน แต่ไปทับการ์ดของเกมจับคู่ — แก้ 2026-08-22)
        ⚠ ตัวที่ไม่มี `.q-counter` (เช่นเกมที่นับเป็นอย่างอื่น) ไม่ต้องติดธง จะได้ไม่มีกล่องเปล่าโผล่ */
     const top = view.querySelector(':scope > .quiz-top');
-    if(top && top.querySelector('.q-counter')) top.classList.add('og-keep');
+    if(top && top.querySelector('.q-counter')) startDots(view, top);
     document.body.classList.add('og-mounted');
 
     cur = {id, host, placeholder: ph, view, opts};
@@ -101,8 +101,7 @@
     const spec = REG[c.id];
     if(spec && spec.stop){ try{ spec.stop(); }catch(e){} }
     c.view.classList.remove('og-embedded');
-    const kept = c.view.querySelector(':scope > .quiz-top.og-keep');
-    if(kept) kept.classList.remove('og-keep');      /* คืนแถบบนให้หน้าเต็มจอเหมือนเดิม */
+    stopDots(c.view);
     c.view.hidden = true;
     if(c.placeholder && c.placeholder.parentNode){
       c.placeholder.parentNode.insertBefore(c.view, c.placeholder);
@@ -110,6 +109,48 @@
     }
     document.body.classList.remove('og-mounted');
     return true;
+  }
+
+  /* ================= 🔵 จุดนับข้อของเกมที่ถูกยืมมาเล่นในการ์ด =================
+     🐞 ผู้ใช้แจ้ง 2026-08-22: **แถบความคืบหน้าในเกมจับคู่บังการ์ด**
+        ของเดิม (`og-keep` · 2026-08-17) ดึง "ป้าย 1/3 + หลอดความคืบหน้า" กลับมาลอย
+        `position:absolute` มุมขวาบนของการ์ด เพื่อไม่ให้กินความสูง
+        ⇒ แต่กระดานของเกมจับคู่กว้างเต็มการ์ด **ป้ายจึงไปทับการ์ดใบขวาบนพอดี**
+     ⇒ เปลี่ยนเป็น **แถวจุดนับข้อ** แบบเดียวกับที่การ์ดเควสต์ใช้อยู่แล้ว (`.hqz-dot`)
+        วางใน flow ด้านบนสุดของ view สูงแค่ ~10px ⇒ ไม่ทับอะไรและแทบไม่กินที่
+
+     🔑 **ไม่ต้องแก้ engine สักตัว** — อ่านจำนวนข้อจาก `.q-counter` ("3/10") ที่ engine
+        ทุกตัวอัปเดตอยู่แล้ว แล้วเฝ้าดูด้วย MutationObserver
+     ⚠ engine บางตัวนับแบบ "ด่านที่กำลังทำ" (1/10 ตั้งแต่ยังไม่ตอบ) ⇒ จุดที่ `i < cur-1`
+       คือข้อที่ผ่านแล้ว · `i === cur-1` คือข้อปัจจุบัน (สีเดียวกับ .hqz-dot.now) */
+  let dotObs = null;
+  function paintDots(box, txt){
+    const m = String(txt || '').match(/(\d+)\s*\/\s*(\d+)/);
+    if(!m){ box.innerHTML = ''; return; }
+    const cur2 = +m[1], total = +m[2];
+    if(!(total > 0) || total > 40){ box.innerHTML = ''; return; }
+    if(box.children.length !== total){
+      box.innerHTML = '';
+      for(let i = 0; i < total; i++) box.appendChild(document.createElement('i'));
+    }
+    for(let i = 0; i < total; i++){
+      box.children[i].className = i < cur2 - 1 ? 'on' : (i === cur2 - 1 ? 'now' : '');
+    }
+  }
+  function startDots(view, top){
+    stopDots(view);
+    const counter = top.querySelector('.q-counter');
+    const box = document.createElement('div');
+    box.className = 'og-dots';
+    view.insertBefore(box, view.firstChild);
+    paintDots(box, counter.textContent);
+    dotObs = new MutationObserver(()=>paintDots(box, counter.textContent));
+    dotObs.observe(counter, {childList:true, characterData:true, subtree:true});
+  }
+  function stopDots(view){
+    if(dotObs){ dotObs.disconnect(); dotObs = null; }
+    const box = view && view.querySelector(':scope > .og-dots');
+    if(box) box.remove();
   }
 
   /* ตะเข็บผลลัพธ์ — finishP2Game() เรียกตัวนี้เป็นบรรทัดแรก
