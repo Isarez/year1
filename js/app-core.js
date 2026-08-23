@@ -241,10 +241,17 @@ function renderChildSelect(){
         csub.textContent = 'อายุ ' + Math.floor(ageY) + ' ปี · ' + gradeById(resolveGradeForChild(child)).short;
         cinfo.appendChild(csub);
       }
+      /* ลูกศรท้ายการ์ด — หมุนเป็นชี้ลงตอนแถวถูกกางในหน้าแรกแบบรวมร่าง
+         🎨 **ต้องเป็น SVG ห้ามใช้อักขระ `▶`** (ผู้ใช้แจ้ง 2026-08-23: แสดงผลไม่เหมือนกันข้าม OS)
+            U+25B6 มีทั้งร่าง glyph ธรรมดาและร่าง emoji สี ⇒ บางเครื่องได้สามเหลี่ยมดำบาง
+            บางเครื่องได้ปุ่มเล่นสีน้ำเงินทึบ ขนาดก็ไม่เท่ากัน
+         ⚠ ใช้ `currentColor` เพื่อให้เปลี่ยนสีตามธีมกลางวัน/กลางคืนได้จาก CSS ที่เดียว */
       const arrow = document.createElement('span');
-      arrow.className = 'cnav';      /* หมุนเป็นลูกศรชี้ลงตอนแถวถูกกางในหน้าแรกแบบรวมร่าง */
-      arrow.style.cssText = 'font-size:20px;color:var(--ink-soft)';
-      arrow.textContent = '▶';
+      arrow.className = 'cnav';
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" '
+        + 'stroke="currentColor" stroke-width="2.6" stroke-linecap="round" '
+        + 'stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg>';
       card.appendChild(avSpan);
       card.appendChild(cinfo);
       card.appendChild(arrow);

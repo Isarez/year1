@@ -468,7 +468,11 @@
     border-bottom-left-radius:0; border-bottom-right-radius:0;
   }
   .child-row.h2-open .cnav{transform:rotate(90deg);}
-  .child-card .cnav{transition:transform .2s;}
+  /* 🎨 ลูกศรเป็น SVG ไม่ใช่อักขระ `▶` (ข้าม OS แล้วหน้าตาไม่ตรงกัน — ผู้ใช้แจ้ง 2026-08-23)
+     สีมาจาก `currentColor` ⇒ เปลี่ยนธีมแล้วตามเอง ไม่ต้อง override เพิ่ม */
+  .child-card .cnav{transition:transform .2s; display:inline-flex; align-items:center;
+                    color:var(--ink-soft); flex:0 0 auto;}
+  .child-card .cnav svg{display:block;}
   .child-row.h2-open .child-card .cname{color:#2E8F63;}
   .h2-panel{
     background:var(--cream); border:3px solid var(--eng); border-top:none;

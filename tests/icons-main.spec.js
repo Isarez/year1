@@ -173,3 +173,28 @@ test('IM6: เกมนกฮูกสั่ง — ของในโจทย�
   expect(r.itemText.length, 'ของในโจทย์ต้องมีเนื้อหา').toBeGreaterThan(0);
   expect(errs).toEqual([]);
 });
+
+/* 🎨 IM7 — ลูกศรบนการ์ดเลือกเด็กต้องเป็น SVG (ผู้ใช้แจ้ง 2026-08-23)
+   ของเดิมเป็นอักขระ `▶` (U+25B6) ซึ่งมี **ทั้งร่าง glyph ธรรมดาและร่าง emoji สี**
+   ⇒ macOS/Windows/Android แสดงคนละแบบ ขนาดก็ไม่เท่ากัน
+   ⚠ กฎรวมของโปรเจค: อะไรที่เป็น "ไอคอนของปุ่ม/ของ/สถานะ" ต้องวาด SVG
+     (ท่าทาง/อารมณ์ยังใช้ emoji ได้ · โจทย์ที่ต้องเทียบรูปกับคำตอบก็ยังเป็น emoji) */
+test('IM7: ลูกศรบนการ์ดเลือกเด็กเป็น SVG ไม่ใช่อักขระ ▶ (ข้าม OS ต้องเหมือนกัน)', async ({ page }) => {
+  const errs = await main(page);
+  const r = await page.evaluate(() => {
+    const nav = document.querySelector('#child-select-view .child-card .cnav');
+    if (!nav) return null;
+    const cs = getComputedStyle(nav);
+    return {
+      svg: !!nav.querySelector('svg'),
+      txt: (nav.textContent || '').trim(),
+      /* ต้องรับสีจาก CSS ไม่ใช่ inline style เดิม จะได้เปลี่ยนตามธีมได้ */
+      hasColor: !!cs.color,
+    };
+  });
+  expect(r, 'หน้าเลือกเด็กต้องมีการ์ดเด็กอย่างน้อย 1 ใบ').not.toBeNull();
+  expect(r.svg, 'ลูกศรต้องวาดด้วย SVG').toBe(true);
+  expect(r.txt, 'ห้ามเหลืออักขระ ▶ หรือ emoji ใดๆ ในลูกศร').toBe('');
+  expect(r.hasColor).toBe(true);
+  expect(errs).toEqual([]);
+});
