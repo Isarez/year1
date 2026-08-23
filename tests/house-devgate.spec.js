@@ -97,3 +97,32 @@ test('DG2: hostname เป็น owlkids.net — เครื่องมือ�
   expect(r.paint,   '__housePaint คือโหมดช่างภาพ ห้ามหาย').toBe(true);
   expect(errs).toEqual([]);
 });
+
+/* ---------------------------------------------------------------- */
+
+/* 🔢 ป้ายนับผู้เข้าชม — ต้องเลือกตัวนับจาก hostname เองเหมือนกัน
+   ⚠ ข้อกำหนดจากผู้ใช้: **เทสต้องยิงลงตัวนับทดสอบเสมอ ยอดจริงห้ามขยับ**
+     (รันชุดเต็ม 864 เทสวันละหลายรอบ ถ้าโดน counter จริงยอดเพี้ยนถาวร) */
+async function badgeSrc(page, url) {
+  await page.goto(url);
+  await page.waitForFunction(
+    () => { const i = document.querySelector('img.visitor-badge'); return i && i.src; },
+    null, { timeout: 15000 });
+  return page.evaluate(() => {
+    const i = document.querySelector('img.visitor-badge');
+    return decodeURIComponent(new URL(i.src).searchParams.get('url') || '');
+  });
+}
+
+test('DG3: ป้ายนับผู้เข้าชม — รันในเครื่องต้องลงตัวนับทดสอบเท่านั้น', async ({ page }) => {
+  expect(await badgeSrc(page, '/'), 'หน้าเด็ก').toBe('https://owlkids.net/test');
+  expect(await badgeSrc(page, '/teacher/'), 'หน้าครู').toBe('https://owlkids.net/teacher-test');
+});
+
+test('DG4: ป้ายนับผู้เข้าชม — hostname เป็น owlkids.net ถึงจะนับของจริง', async ({ page }) => {
+  await serveAs(page, 'https://owlkids.net');
+  expect(await badgeSrc(page, 'https://owlkids.net/index.html'), 'หน้าเด็ก')
+    .toBe('https://owlkids.net');
+  expect(await badgeSrc(page, 'https://owlkids.net/teacher/index.html'), 'หน้าครู')
+    .toBe('https://owlkids.net/teacher');
+});
