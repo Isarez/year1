@@ -5883,11 +5883,11 @@ function bindCanvasInput(canvas){
     if(hoverTimer){ clearTimeout(hoverTimer); hoverTimer = 0; }
     setTalkHover(false);
   });
-  window.__houseTalkHover = ()=> hoverTalk;      /* จุดต่อชุดเทส */
+  if(DEV_API_ENABLED) window.__houseTalkHover = ()=> hoverTalk;   /* จุดต่อชุดเทส */
   /* จุดต่อชุดเทส: "พิกัดจอนี้มีตัวที่คุยได้อยู่ไหม" — เช็คเรขาคณิตล้วน ไม่ผ่าน throttle/สถานะ hover
      ⚠ เทสที่ต้องการ "ที่ว่าง" ต้องหาผ่านตัวนี้ **ห้าม hardcode พิกัด** เพราะแต่ละขนาดจอมุมกล้องต่างกัน
        จุดที่ว่างบนจอ desktop อาจมีคนยืนอยู่พอดีบนจอ tablet (เทสแดงแบบนี้มาแล้ว 2026-08-10) */
-  window.__houseTalkAt = (cx, cy)=> npcUnderPointer(cx, cy);
+  if(DEV_API_ENABLED) window.__houseTalkAt = (cx, cy)=> npcUnderPointer(cx, cy);
   const endPointer = e=>{
     pointers.delete(e.pointerId);
     if(hMode==='creator' || hMode==='pet') creatorState.dragging = false;
@@ -7064,30 +7064,19 @@ function questPanelOpen(){ const el = $('house-quest'); return !!el && !el.hidde
    โควตากระดานแยกจากเควสต์ NPC เด็ดขาด (ข้อ 19) ⇒ ทำกระดานครบแล้วยังเดินคุย NPC ต่อได้
    ============================================================ */
 function npcDefById(id){ return NPC_DEFS.find(d => d.id === id) || null; }
-/* ชื่อเรียกเควสต์ให้เด็กอ่าน — บอกว่า "ทำอะไร ของใคร" ไม่ใช้ศัพท์เทคนิค
-
-   🐞 **บั๊กที่แก้ 2026-08-22 (ผู้ใช้แจ้งว่า "กระดานมีแต่หมวดตอบคำถาม")**
-   ของเดิมเขียนไว้ตั้งแต่เฟส 2 ตอนที่มีกลไกจริงแค่ 2 ตัว:
-       return (spec.mech === 'count' ? 'นับของให้' : 'ตอบคำถามให้') + who;
-   พอพูลโตเป็น 65 กลไก **ทุกตัวที่ไม่ใช่ `count` ถูกป้ายว่า "ตอบคำถาม" หมด**
-   ⇒ กระดานที่แจก balance/memory/shadow/whois/quiz จริงๆ ขึ้นบนจอเป็น "ตอบคำถาม" 5 แถว
-     เด็กเห็นแล้วนึกว่าเกมมีอย่างเดียว ทั้งที่เนื้อในต่างกันหมด (ตัวสุ่มไม่ได้ผิดเลย)
-
-   🔒 **ห้ามกลับไปเดาชื่อจาก `spec.mech` ทีละตัวอีก** — ต้องอ่าน `MECHS[].name` เสมอ
-     กลไกใหม่จะได้มีชื่อถูกต้องทันทีโดยไม่ต้องมาแก้ที่นี่ (เทสล็อกไว้แล้วว่าห้ามตกไปใช้ค่าเริ่มต้น) */
+/* ชื่อเควสต์ที่เด็กอ่าน — "ทำอะไร · ของใคร"
+   🔒 **ห้ามเดาชื่อจาก `spec.mech` ทีละตัว** ต้องอ่าน `MECHS[].name` เสมอ กลไกใหม่จะได้ชื่อเองทันที
+      (ของเดิมรู้จักแค่ 2 กลไก ⇒ อีก 63 ตัวถูกป้ายว่า "ตอบคำถาม" หมด · แก้ 2026-08-22 · เทส QT2 ล็อกไว้) */
 function questTitle(spec){
   const d = npcDefById(spec.npc);
   const who = d ? d.name : '';
   const m = QUESTS.MECHS[spec.mech];
   const job = (m && m.name) ? m.name : 'ทำภารกิจ';
-  /* คั่นด้วย · แทนการต่อคำว่า "ให้" — ชื่องานหลายตัวเป็นประโยคเต็มอยู่แล้ว
-     ("ทายว่าใคร" · "ช่วยรดน้ำแปลงผัก") ต่อ "ให้พี่แตงโม" ท้ายแล้วอ่านไม่รู้เรื่อง */
+  /* คั่นด้วย · ไม่ใช่ต่อคำว่า "ให้" — ชื่องานหลายตัวเป็นประโยคเต็ม ("ทายว่าใครให้พี่แตงโม" อ่านไม่รู้เรื่อง) */
   return who ? (job + ' · ' + who) : job;
 }
-/* ไอคอนของงานชุดนั้น — เอา **หน้าคนที่ฝากงาน** ก่อนเสมอ (เด็กจำคนได้ก่อนจำชื่อเกม)
-   🐞 ตัวสำรองเดิมรู้จักแค่ 2 กลไก (`count` กับ "อื่นๆ") แบบเดียวกับ `questTitle()`
-      ⇒ งานที่ไม่มีเจ้าของ (หน้าคลังโจทย์ · งานที่ NPC หายไปจากผัง) ได้ ❓ เสมอ
-   ⇒ ถอยไปใช้ไอคอนประจำกลไกจาก `QUESTS.mechIcon()` ก่อน แล้วค่อยเป็น ❓ */
+/* ไอคอนของงาน — **หน้าคนที่ฝากงานมาก่อนเสมอ** (เด็กจำคนได้ก่อนจำชื่อเกม)
+   ไม่มีเจ้าของ (หน้าคลังโจทย์ · NPC หายจากผัง) ค่อยใช้ไอคอนประจำกลไก · บั๊กเดียวกับ questTitle */
 function questIcon(spec){
   const d = npcDefById(spec.npc);
   return (d && d.icon) || QUESTS.mechIcon(spec.mech) || '❓';
@@ -14085,6 +14074,7 @@ function houseLoadFail(msg, err){
   if(typeof showToast==='function') showToast('😢', msg);
 }
 function startHouseGame(){
+  lockDevApi();                                   /* 🔒 ถอด API ของเทสออกถ้า deploy จริง */
   if(typeof playClick==='function') playClick();
   if(!activeChild){ if(typeof showToast==='function') showToast('🙈','เลือกโปรไฟล์ก่อนนะ'); return; }
   if(houseLoading) return;                        /* กดรัวระหว่างโหลดแล้วสร้างฉากซ้อนกันไม่ได้ */
@@ -15231,6 +15221,25 @@ $('house-rot-right').addEventListener('click', ()=>{
 /* หน้าหลักเปิดค้างอยู่แล้วตอนไฟล์นี้โหลดเสร็จ (เช่น reload กลางเซสชัน) → โชว์เพื่อนซี้เลย
    กรณีปกติ (เลือกโปรไฟล์เด็กก่อน) renderHome ใน app.js จะเรียกให้เอง */
 if(!homeView.hidden) houseBuddyRefresh();
+/* 🔒 DEV_API_ENABLED — สวิตช์ของ `window.__houseDbg` + เมธอด `dev*` ทุกโมดูล (จุดเดียว)
+   `false` = ถอดออกหมด · **ต้องเป็น false ตอน deploy** (กติกาเดียวกับสวิตช์เครื่องมือเทสตัวอื่น)
+   เดิม production ship ทางโกงมาให้: `OwlCoins.set()` / `HouseShop.devUnlockAll()` (2026-08-23)
+   ⚠️ ไม่ใช่ระบบกันโกง — เว็บ static กันไม่ได้ แค่ตัดทางที่ง่ายที่สุดทิ้ง
+   ⚠️ ปิดแล้ว **ชุดเทสจะแดงยกแผง** เพราะเกือบทุกไฟล์พึ่ง `__houseDbg` — รันเทสบน branch ที่เปิดไว้ */
+const DEV_API_ENABLED = true;
+
+/* ⚠️ ต้องถอดตอน "เข้าบ้าน" ไม่ใช่ตอนไฟล์โหลด — book/play/devtools โหลดหลัง house.js
+   ⚠️ **ห้ามถอด `__housePaint` กับ `OwlCoins.add`** เกมจริงใช้ (ช่างภาพ / จ่ายรางวัลเควสต์) */
+function lockDevApi(){
+  if(DEV_API_ENABLED) return;
+  const strip = (o, keys) => { if(o) keys.forEach(k => { try{ delete o[k]; }catch(err){} }); };
+  strip(window.OwlCoins,  ['set']);                    /* add/spend ยังอยู่ — เกมจริงใช้ */
+  strip(window.HouseShop, ['devUnlockAll', 'devLockAll']);
+  strip(window.HouseBook, ['devMarkAll', 'devUnlockAll', 'devClearAll']);
+  strip(window.HousePlay, ['devGrow', 'devFishToday', 'devRollFish', 'devFishAll', 'devPhotoFill']);
+}
+
+if(DEV_API_ENABLED){
 /* DEBUG-TEMP */ window.__houseDbg = {
   /* ออกจากโหมดบ้านผ่านทางเดินโค้ดจริง (ชุดเทสเฟส 14 ใช้ดูว่า playlist ถูกคืนให้หน้าหลักไหม) */
   exit: ()=> stopHouseGame(),
@@ -15524,4 +15533,5 @@ if(!homeView.hidden) houseBuddyRefresh();
   cvZoom:(h,a)=>{ CV_HALF = h; if(a!=null) CV_AIM = a;
     if(cvCam){ cvCam.top=h; cvCam.bottom=-h; cvCam.lookAt(0, CV_AIM, 0); }
     if(window.HouseCharView) HouseCharView.resize(); }};
+}
 })();

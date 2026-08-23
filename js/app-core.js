@@ -241,11 +241,10 @@ function renderChildSelect(){
         csub.textContent = 'อายุ ' + Math.floor(ageY) + ' ปี · ' + gradeById(resolveGradeForChild(child)).short;
         cinfo.appendChild(csub);
       }
-      /* ลูกศรท้ายการ์ด — หมุนเป็นชี้ลงตอนแถวถูกกางในหน้าแรกแบบรวมร่าง
-         🎨 **ต้องเป็น SVG ห้ามใช้อักขระ `▶`** (ผู้ใช้แจ้ง 2026-08-23: แสดงผลไม่เหมือนกันข้าม OS)
-            U+25B6 มีทั้งร่าง glyph ธรรมดาและร่าง emoji สี ⇒ บางเครื่องได้สามเหลี่ยมดำบาง
-            บางเครื่องได้ปุ่มเล่นสีน้ำเงินทึบ ขนาดก็ไม่เท่ากัน
-         ⚠ ใช้ `currentColor` เพื่อให้เปลี่ยนสีตามธีมกลางวัน/กลางคืนได้จาก CSS ที่เดียว */
+      /* ลูกศรท้ายการ์ด — หมุนชี้ลงตอนแถวถูกกาง
+         🎨 **ต้องเป็น SVG ห้ามใช้อักขระ `▶`** — U+25B6 มีทั้งร่าง glyph และร่าง emoji สี
+            แต่ละ OS เลือกคนละแบบ ขนาดก็ไม่เท่ากัน (ผู้ใช้แจ้ง 2026-08-23 · เทส IM7 ล็อกไว้)
+         ⚠ `currentColor` ⇒ เปลี่ยนสีตามธีมจาก CSS ที่เดียว */
       const arrow = document.createElement('span');
       arrow.className = 'cnav';
       arrow.setAttribute('aria-hidden', 'true');
