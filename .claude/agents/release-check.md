@@ -1,6 +1,6 @@
 ---
 name: release-check
-description: ตรวจ checklist ก่อน push/deploy ของ Owlkids แบบอ่านอย่างเดียว (version, changelog, LOG.md, README, visitor badge, syntax, กติกา UI) แล้วรายงานว่าอะไรยังไม่ทำ ใช้ก่อนขอ confirm push ทุกครั้ง
+description: ตรวจ checklist ก่อน push/deploy ของ Owlkids แบบอ่านอย่างเดียว (version, changelog, LOG.md, README, syntax, กติกา UI) แล้วรายงานว่าอะไรยังไม่ทำ ใช้ก่อนขอ confirm push ทุกครั้ง
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -27,13 +27,11 @@ git diff origin/main...HEAD --stat
 
 **5. `README.md`** — สะท้อนฟีเจอร์/หมวดใหม่ล่าสุด
 
-**6. Visitor badge (ต้องเป็นค่า prod ก่อน commit)** — ตรวจทั้ง 2 ไฟล์:
-```bash
-grep -n "hitscounter.dev" index.html teacher/index.html
-```
-- `index.html` ต้องเป็น `url=https%3A%2F%2Fowlkids.net` (ไม่ใช่ `...%2Ftest`)
-- `teacher/index.html` ต้องเป็น `url=https%3A%2F%2Fowlkids.net%2Fteacher` (ไม่ใช่ `...teacher-test`)
-- เตือนในรายงานเสมอว่า **หลัง push สำเร็จต้องแก้กลับเป็นค่า dev ทันทีทั้ง 2 ไฟล์ (ไม่ commit)**
+**6. Visitor badge + เครื่องมือเทส — ไม่ต้องตรวจแล้ว (ตั้งแต่ v3.2.3/v3.2.4)**
+ทั้งคู่เลือกเองจาก `location.hostname` ⇒ ไม่มีอะไรต้องสลับก่อน/หลัง push อีก
+ถ้าจะตรวจให้แน่ใจ ใช้ `npx playwright test tests/house-devgate.spec.js` (DG1-DG5)
+ซึ่งยิงจาก hostname จริงทั้ง `127.0.0.1` และ `owlkids.net`
+- ⚠ ถ้าเจอ `src="https://hitscounter.dev..."` ฝังใน `index.html`/`teacher/index.html` อีก = มีคนย้อนกลับไปแบบเดิม ให้เตือน
 
 **7. JS syntax ครบ 3 ไฟล์ตามลำดับโหลดจริง**
 ```bash
@@ -49,7 +47,7 @@ node -e "const fs=require('fs');const f=['js/data.js','js/owl-messages.js','js/a
 - ถ้าเพิ่ม element/ข้อความที่ไม่ได้อยู่บนการ์ดขาว → มี override สีสำหรับ `body.night-mode` หรือยัง
 - ไม่มีการเผลอย้อนข้อห้ามใน CLAUDE.md (สายรุ้งพื้นหลัง, oscillator เพลง, ระดับเสียงเพลง, mechanic ลากเส้น/นาฬิกา/ar-match, `desktopOnly`)
 
-**9. งานที่ต้องทำ "หลัง" push** (ระบุเป็นรายการเตือน ไม่ต้องทำเอง) — `gh release create <tag>` หลัง push เท่านั้น (สร้างก่อน push จะผูก tag ผิด commit), ติดตาม Pages ด้วย `gh run list` + ยืนยันด้วย `curl -I https://owlkids.net`, แจ้งผล deploy ใน Discord channel `1524252244965589082` ช่องเดียว, แก้ badge กลับเป็น dev
+**9. งานที่ต้องทำ "หลัง" push** (ระบุเป็นรายการเตือน ไม่ต้องทำเอง) — `gh release create <tag>` หลัง push เท่านั้น (สร้างก่อน push จะผูก tag ผิด commit), ติดตาม Pages ด้วย `gh run list` + ยืนยันด้วย `curl -I https://owlkids.net`
 
 ## รายงานกลับ
 
