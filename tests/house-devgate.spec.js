@@ -126,3 +126,43 @@ test('DG4: ป้ายนับผู้เข้าชม — hostname เป�
   expect(await badgeSrc(page, 'https://owlkids.net/teacher/index.html'), 'หน้าครู')
     .toBe('https://owlkids.net/teacher');
 });
+
+/* 🕳 DG5 — **หน้าแรก** ก็ต้องไม่มี API โกงหลุด
+   🐞 บั๊กที่เจอบน production จริง 2026-08-23: `preloadHouseIfOwned()` โหลดชุดบ้าน
+      เบื้องหลังให้เด็กที่มีบ้านอยู่แล้ว ⇒ `HouseShop`/`HouseBook`/`HousePlay` เกิดขึ้นบนหน้าแรก
+      แต่ตัวถอด (`lockDevApi`) ผูกกับ "ตอนเข้าเมือง" จึงยังไม่ทำงาน
+      ⇒ เด็กเรียก `OwlCoins.set()` / `devUnlockAll()` ได้โดยไม่ต้องเข้าเมืองด้วยซ้ำ
+   ⇒ ตอนนี้กันที่ **จุดนิยามของแต่ละโมดูล** แทน ⇒ ไม่มีช่วงเวลาที่หลุดอีก */
+test('DG5: หน้าแรกบน owlkids.net (โหลดชุดบ้านเบื้องหลังแล้ว) ต้องไม่มี API โกงหลุด', async ({ page }) => {
+  await serveAs(page, 'https://owlkids.net');
+  const errs = [];
+  page.on('pageerror', e => errs.push(String(e)));
+  await page.addInitScript(([c, ch]) => {
+    localStorage.setItem('p1quiz_children', JSON.stringify([c]));
+    localStorage.setItem('p1quiz_active_child', c.id);
+    localStorage.setItem('p1quiz_music', 'off');
+    localStorage.setItem('p1quiz_house_' + c.id,
+      JSON.stringify({ v:1, mapV:4, char: ch, tut:{ skip:true } }));   /* มีบ้าน ⇒ preload ทำงาน */
+  }, [CHILD, CHAR]);
+  await page.goto('https://owlkids.net/index.html');
+  await page.locator('#child-select-view .child-card').first().click();
+  /* รอให้ชุดบ้านโหลดเสร็จเบื้องหลัง **โดยยังไม่กดเข้าเมือง** */
+  await page.waitForFunction(() => !!window.HouseShop, null, { timeout: 60000 });
+  await page.waitForTimeout(3000);
+
+  const r = await page.evaluate(() => ({
+    coinSet: typeof (window.OwlCoins || {}).set === 'function',
+    shopDev: typeof (window.HouseShop || {}).devUnlockAll === 'function',
+    bookDev: typeof (window.HouseBook || {}).devMarkAll === 'function',
+    playDev: typeof (window.HousePlay || {}).devGrow === 'function',
+    dbg:     !!window.__houseDbg,
+    coinAdd: typeof (window.OwlCoins || {}).add === 'function',
+  }));
+  expect(r.coinSet, 'OwlCoins.set ห้ามหลุดบนหน้าแรก').toBe(false);
+  expect(r.shopDev, 'HouseShop.devUnlockAll ห้ามหลุดบนหน้าแรก').toBe(false);
+  expect(r.bookDev, 'HouseBook.devMarkAll ห้ามหลุดบนหน้าแรก').toBe(false);
+  expect(r.playDev, 'HousePlay.devGrow ห้ามหลุดบนหน้าแรก').toBe(false);
+  expect(r.dbg,     '__houseDbg ห้ามหลุดบนหน้าแรก').toBe(false);
+  expect(r.coinAdd, 'OwlCoins.add ต้องยังอยู่ (เกมจริงใช้)').toBe(true);
+  expect(errs).toEqual([]);
+});

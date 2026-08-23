@@ -14071,7 +14071,6 @@ function houseLoadFail(msg, err){
   if(typeof showToast==='function') showToast('😢', msg);
 }
 function startHouseGame(){
-  lockDevApi();                                   /* 🔒 ถอด API ของเทสออกถ้า deploy จริง */
   if(typeof playClick==='function') playClick();
   if(!activeChild){ if(typeof showToast==='function') showToast('🙈','เลือกโปรไฟล์ก่อนนะ'); return; }
   if(houseLoading) return;                        /* กดรัวระหว่างโหลดแล้วสร้างฉากซ้อนกันไม่ได้ */
@@ -15226,16 +15225,10 @@ if(!homeView.hidden) houseBuddyRefresh();
 const DEV_API_ENABLED = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
                             || location.protocol === 'file:';
 
-/* ⚠️ ต้องถอดตอน "เข้าบ้าน" ไม่ใช่ตอนไฟล์โหลด — book/play/devtools โหลดหลัง house.js
-   ⚠️ **ห้ามถอด `__housePaint` กับ `OwlCoins.add`** เกมจริงใช้ (ช่างภาพ / จ่ายรางวัลเควสต์) */
-function lockDevApi(){
-  if(DEV_API_ENABLED) return;
-  const strip = (o, keys) => { if(o) keys.forEach(k => { try{ delete o[k]; }catch(err){} }); };
-  strip(window.OwlCoins,  ['set']);                    /* add/spend ยังอยู่ — เกมจริงใช้ */
-  strip(window.HouseShop, ['devUnlockAll', 'devLockAll']);
-  strip(window.HouseBook, ['devMarkAll', 'devUnlockAll', 'devClearAll']);
-  strip(window.HousePlay, ['devGrow', 'devFishToday', 'devRollFish', 'devFishAll', 'devPhotoFill']);
-}
+/* 🔒 เมธอด `dev*` ของโมดูลอื่นกันที่ **จุดนิยามของตัวเอง** (house-shop / house-book / house-play)
+   ไม่ใช่มาลบทีหลังจากที่นี่ — หน้าแรกโหลดชุดบ้านเบื้องหลังให้เด็กที่มีบ้านอยู่แล้ว
+   (`preloadHouseIfOwned`) ตัวลบที่ผูกกับ "ตอนเข้าเมือง" จึงไม่ทัน (เจอบน production 2026-08-23)
+   ⚠️ **ห้ามกัน `__housePaint` กับ `OwlCoins.add`** เกมจริงใช้ (ช่างภาพ / จ่ายรางวัลเควสต์) */
 
 if(DEV_API_ENABLED){
 /* DEBUG-TEMP */ window.__houseDbg = {

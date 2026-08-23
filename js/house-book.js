@@ -63,6 +63,8 @@
 
   let B = null;
 
+  const DEV_ONLY = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+                   || location.protocol === 'file:';
   function blank(){ return {v:BOOK_V, critter:[], crop:[], trick:[], prizes:[]}; }
 
   function sync(){
@@ -336,7 +338,7 @@
   window.HouseBook = {
     open, close, isOpen, render,
     mark, counts, state, sync, checkPrize,
-    devMarkAll, devUnlockAll, devClearAll,
+    ...(DEV_ONLY ? {devMarkAll, devUnlockAll, devClearAll} : {}),   /* เครื่องมือเทสเท่านั้น */
     CRITTERS, PRIZES, TABS,
     tab: () => tab,
     /* ชุดเทส: คลังของแต่ละแท็บและของที่เก็บได้แล้ว */

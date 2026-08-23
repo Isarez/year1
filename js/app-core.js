@@ -634,7 +634,13 @@ function spendCoins(n){
   setCoins(getCoins() - cost);
   return true;
 }
-window.OwlCoins = {get:getCoins, set:setCoins, add:addCoins, spend:spendCoins};
+/* 🔒 `set` = ตั้งเงินเท่าไหร่ก็ได้ ⇒ **เปิดเฉพาะตอนรันในเครื่อง** (กติกาเดียวกับเครื่องมือเทสตัวอื่น)
+   ⚠️ ต้องกันที่ **จุดนิยาม** ไม่ใช่ไปลบทีหลัง — หน้าแรกโหลดชุดบ้านเบื้องหลังให้เด็กที่มีบ้านอยู่แล้ว
+     (`preloadHouseIfOwned`) ตัวลบที่ผูกกับ "ตอนเข้าเมือง" จึงไม่ทันเสมอไป (เจอบน production 2026-08-23) */
+window.OwlCoins = {get:getCoins, add:addCoins, spend:spendCoins};
+if(/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+   || location.protocol === 'file:')
+  window.OwlCoins.set = setCoins;
 
 function catById(id){ return CATS.find(c=>c.id===id); }
 /* นับสติกเกอร์เฉพาะระดับชั้นที่กำลังดูอยู่ (สติกเกอร์แยกตามระดับชั้น) */

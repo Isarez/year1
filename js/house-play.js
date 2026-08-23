@@ -754,6 +754,8 @@
 
   let fishState = null;      /* {phase:'wait'|'bite', t, fish} */
   let fishBob = null;
+  const DEV_ONLY = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+                   || location.protocol === 'file:';
   let fishSpots = [];        /* [{x,z,kind:'pond'|'sea',obj}] — จุดตกปลาถาวร 2 จุด */
 
   /* ---------- จุดตกปลา 2 จุด: บ่อน้ำใหญ่ 1 · ทะเล 1 (ผู้ใช้สั่ง 2026-08-13) ----------
@@ -2104,53 +2106,57 @@
     photoAlbumOpen, photoAlbumClose, photoAlbumIsOpen, playShutter, photoBig, photoBigClose,
     basketOpen, basketClose, basketIsOpen, basketTile,
     fxCount: () => gfx.length,          /* ชุดเทส: อนิเมชันถูกสร้างจริงและไม่ถูกลบทิ้งทันที */
-    /* เครื่องมือเทส: เร่งเวลาผัก (js/house-devtools.js) */
-    devGrow: (n)=>{ if(!P) return 0; let c = 0;
-      (P.garden.plots || []).forEach((pl, i2)=>{ if(!pl) return;
-        const m = growMax(pl.seed);
-        const st = Math.min(m, (pl.stage | 0) + (n || 1));
-        if(st !== pl.stage){ setSlot(i2, {seed:pl.seed, stage:st, wd:''}); c++; } });
-      persist(); gardenBuild(); renderPanel(); return c; },
-    /* 🔓 เครื่องมือเทส — เติม "สมุดปลา" ให้ครบทุกชนิด / ล้างทิ้ง (js/house-devtools.js)
-       ⚠ ปลาเป็นของสะสมที่ **สมุดสะสมอ่านจาก `play.fish.book` ตรงๆ** (ไม่จดซ้ำที่ house-book)
-         ⇒ ปลดล็อกสมุดสะสมต้องมาแก้ที่นี่ ห้ามไปเขียน state ของสมุดแทน */
-    /* 🧪 ชุดเทส: ตั้งจำนวนปลาที่ตกไปแล้ววันนี้ + สุ่มปลาตรงๆ (ใช้วัดว่าโอกาสหรี่ลงจริง) */
-    devFishToday: n => { if(P){ P.fish.today = n | 0; persist(); } },
-    devRollFish: where => rollFish(Math.random, where || 'pond'),
-    devFishAll: (on)=>{
-      if(!P) return 0;
-      P.fish = Object.assign({}, P.fish, {book: on === false ? [] : FISH.map(f => f.id)});
-      persist(); renderPanel();
-      return (P.fish.book || []).length;
-    },
-    /* 🔓 เครื่องมือเทส — ยัดรูปตัวอย่างลงอัลบั้มให้เต็ม (แท็บ 📷 ของสมุดสะสม)
-       รูปวาดเองด้วย canvas เล็กๆ ไม่ได้แคปหน้าจอจริง (เร็วกว่ามากและไม่ต้องรอเฟรม) */
-    devPhotoFill: (on)=>{
-      if(!P) return 0;
-      if(on === false){ P.photo = Object.assign({}, P.photo, {shots: []}); persist(); return 0; }
-      const shots = (P.photo.shots || []).slice();
-      for(let i = shots.length; i < PHOTO_MAX; i++){
-        const cv = document.createElement('canvas');
-        cv.width = 160; cv.height = 120;
-        const g = cv.getContext('2d');
-        const hue = (i * 47) % 360;
-        g.fillStyle = 'hsl(' + hue + ',62%,72%)'; g.fillRect(0, 0, 160, 120);
-        g.fillStyle = 'hsl(' + hue + ',52%,42%)';
-        g.font = 'bold 46px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText(String(i + 1), 80, 62);
-        shots.push({u: cv.toDataURL('image/jpeg', .7), d: dayKey()});
-      }
-      P.photo = Object.assign({}, P.photo, {shots});
-      persist(); renderPanel();
-      return shots.length;
-    },
-    gardenPlant, gardenWater, gardenHarvest,
-    objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
-    /* 🧭 ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" — ลูกศรนำทางของเควสต์เก็บของใช้ (2026-08-16)
-       ⚠ ต้องกรอง `got` ออกเสมอ ไม่งั้นลูกศรชี้ไปที่ของที่เก็บไปแล้ว */
-    colLeft: ()=> (!P || !P.col.items) ? []
-      : P.col.items.map((it, i) => ({x:it.x, z:it.z, i:i}))
-                   .filter(it => (P.col.got || []).indexOf(it.i) < 0),
+    /* เครื่องมือเทสเท่านั้น — เปิดเฉพาะตอนรันในเครื่อง
+       ⚠ กันที่จุดนิยาม ไม่ใช่ลบทีหลัง (หน้าแรกโหลดชุดบ้านเบื้องหลังให้เด็กที่มีบ้านอยู่แล้ว) */
+    ...(DEV_ONLY ? {
+      /* เครื่องมือเทส: เร่งเวลาผัก (js/house-devtools.js) */
+      devGrow: (n)=>{ if(!P) return 0; let c = 0;
+        (P.garden.plots || []).forEach((pl, i2)=>{ if(!pl) return;
+          const m = growMax(pl.seed);
+          const st = Math.min(m, (pl.stage | 0) + (n || 1));
+          if(st !== pl.stage){ setSlot(i2, {seed:pl.seed, stage:st, wd:''}); c++; } });
+        persist(); gardenBuild(); renderPanel(); return c; },
+      /* 🔓 เครื่องมือเทส — เติม "สมุดปลา" ให้ครบทุกชนิด / ล้างทิ้ง (js/house-devtools.js)
+         ⚠ ปลาเป็นของสะสมที่ **สมุดสะสมอ่านจาก `play.fish.book` ตรงๆ** (ไม่จดซ้ำที่ house-book)
+           ⇒ ปลดล็อกสมุดสะสมต้องมาแก้ที่นี่ ห้ามไปเขียน state ของสมุดแทน */
+      /* 🧪 ชุดเทส: ตั้งจำนวนปลาที่ตกไปแล้ววันนี้ + สุ่มปลาตรงๆ (ใช้วัดว่าโอกาสหรี่ลงจริง) */
+      devFishToday: n => { if(P){ P.fish.today = n | 0; persist(); } },
+      devRollFish: where => rollFish(Math.random, where || 'pond'),
+      devFishAll: (on)=>{
+        if(!P) return 0;
+        P.fish = Object.assign({}, P.fish, {book: on === false ? [] : FISH.map(f => f.id)});
+        persist(); renderPanel();
+        return (P.fish.book || []).length;
+      },
+      /* 🔓 เครื่องมือเทส — ยัดรูปตัวอย่างลงอัลบั้มให้เต็ม (แท็บ 📷 ของสมุดสะสม)
+         รูปวาดเองด้วย canvas เล็กๆ ไม่ได้แคปหน้าจอจริง (เร็วกว่ามากและไม่ต้องรอเฟรม) */
+      devPhotoFill: (on)=>{
+        if(!P) return 0;
+        if(on === false){ P.photo = Object.assign({}, P.photo, {shots: []}); persist(); return 0; }
+        const shots = (P.photo.shots || []).slice();
+        for(let i = shots.length; i < PHOTO_MAX; i++){
+          const cv = document.createElement('canvas');
+          cv.width = 160; cv.height = 120;
+          const g = cv.getContext('2d');
+          const hue = (i * 47) % 360;
+          g.fillStyle = 'hsl(' + hue + ',62%,72%)'; g.fillRect(0, 0, 160, 120);
+          g.fillStyle = 'hsl(' + hue + ',52%,42%)';
+          g.font = 'bold 46px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillText(String(i + 1), 80, 62);
+          shots.push({u: cv.toDataURL('image/jpeg', .7), d: dayKey()});
+        }
+        P.photo = Object.assign({}, P.photo, {shots});
+        persist(); renderPanel();
+        return shots.length;
+      },
+      gardenPlant, gardenWater, gardenHarvest,
+      objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
+      /* 🧭 ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" — ลูกศรนำทางของเควสต์เก็บของใช้ (2026-08-16)
+         ⚠ ต้องกรอง `got` ออกเสมอ ไม่งั้นลูกศรชี้ไปที่ของที่เก็บไปแล้ว */
+      colLeft: ()=> (!P || !P.col.items) ? []
+        : P.col.items.map((it, i) => ({x:it.x, z:it.z, i:i}))
+                     .filter(it => (P.col.got || []).indexOf(it.i) < 0)
+    } : {}),
     FISH, SEEDS, COL_PRIZES, COL_N, PLOT_MAX, GROW_MAX, PHOTO_MAX,
     /* ---- 🚪 ประตูเดียวที่ฝั่งเควสต์ใช้เช็คว่า "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" ----
        ⚠ **ต้องเช็คก่อนแจกงานเสมอ** ไม่งั้นเด็กเก็บของครบไปแล้วแล้วเพิ่งได้งานให้เก็บ = ตันทั้งวัน

@@ -26,6 +26,8 @@
   /* ⚠ ระดับ 5-7 เพิ่มในเฟส 9 สำหรับ **เครื่องดนตรี** ซึ่งเป็นของแพงที่สุดในเกมโดยตั้งใจ (ข้อ 31)
      400-1,500 🪙 ⇒ เด็กต้องเก็บเงินหลายวันถึงจะได้ชิ้นแรก เป็น money sink ปลายเกมคู่กับสัตว์เลี้ยง
      **ห้ามลดราคาโดยไม่ถามผู้ใช้** (กติกาเดียวกับราคาสัตว์เลี้ยง) */
+  const DEV_ONLY = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+                   || location.protocol === 'file:';
   const TIER_PRICE = [0, 25, 60, 140, 300, 500, 900, 1500];
   const FURN_TIER = {
     /* ---- ห้องน้ำ ---- */
@@ -1252,7 +1254,8 @@
       ownsCollar, ownsToy, ownedCollars, ownedToys, buyCollar, buyToy,
       starterHome, starterFit, STARTER_FURN,
       grantFree,                       /* เฟส 11: ของรางวัลจากการเก็บของสะสมครบชุด (ไม่ตัดเงิน) */
-      devUnlockAll, devLockAll,        /* เครื่องมือเทสเท่านั้น — ห้ามเรียกจากโค้ดเกมจริง */
+      /* เครื่องมือเทสเท่านั้น — เปิดเฉพาะตอนรันในเครื่อง (ห้ามเรียกจากโค้ดเกมจริง) */
+      ...(DEV_ONLY ? {devUnlockAll, devLockAll} : {}),
       shopForLot, open, close, isOpen, clearSelected,
       refresh: ()=>{ if(isOpen()){ renderItems(); renderBuyBar(); } },
     };
