@@ -2473,7 +2473,7 @@
     box-shadow:var(--shadow-btn); cursor:pointer;
     transition:transform .15s ease, box-shadow .15s ease;
   }
-  /* บรรทัดนี้จริงๆ แล้ว "ไม่จำเป็น" (เคยเข้าใจผิดว่าจำเป็นตอนปิด HOUSE_FEATURE_OFF v2.0.0 แล้วเทสยืนยันแล้วว่าผิด)
+  /* บรรทัดนี้จริงๆ แล้ว "ไม่จำเป็น" (เคยเข้าใจผิดว่าจำเป็นตอนซ่อนปุ่มเข้าเมืองใน v2.0.0 แล้วเทสยืนยันแล้วว่าผิด)
      UA stylesheet ของเบราว์เซอร์คือ [hidden]:not([hidden=until-found i]){display:none !important}
      มี !important จึงชนะ display เดิมของ author เสมอ ไม่ว่า specificity จะเป็นเท่าไหร่
      ⇒ attribute hidden ใช้ซ่อนปุ่มได้เองอยู่แล้ว (เหมือน .icon-btn ที่เป็น display:flex ก็ซ่อนด้วย hidden ได้)
