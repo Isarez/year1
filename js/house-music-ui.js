@@ -17,7 +17,7 @@
 (function(){
   'use strict';
 
-  const MUSIC_PANEL_ENABLED = false;
+  const MUSIC_PANEL_ENABLED = true;
 
   const $ = id => document.getElementById(id);
   let playingIdx = -1;

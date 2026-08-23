@@ -28,7 +28,7 @@
      specificity แบบ `.house-entry-btn[hidden]` ที่เคยเจอมาแล้ว) แล้วเทสชุด
      `tests/house-qbrowse.spec.js` จะข้ามตัวเองอัตโนมัติ เทสยังเขียวครบเหมือนเดิม
      ============================================================ */
-  const QB_ENABLED = false;
+  const QB_ENABLED = true;
 
   const $ = id => document.getElementById(id);
 

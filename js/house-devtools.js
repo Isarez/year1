@@ -25,7 +25,7 @@
      ⚠️ **ก่อน merge เข้า `main` ทุกครั้งต้องตั้งเป็น `false`** เหมือน QB_ENABLED ใน js/house-qbrowse.js
      (กติกาเดียวกันเป๊ะ: เครื่องมือเทส = ปิดตอน deploy เสมอ ไม่ต้องถามผู้ใช้ซ้ำ)
      ============================================================ */
-  const DEV_ENABLED = false;
+  const DEV_ENABLED = true;
 
   const $ = id => document.getElementById(id);
   const click = () => { if(typeof playClick === 'function') playClick(); };
