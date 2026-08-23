@@ -12542,15 +12542,12 @@ function updateQuestArrow(){
 /* ============================================================
    🔒 POS_CHIP_ENABLED — สวิตช์ป้ายพิกัดมุมขวาล่าง **จุดเดียวในทั้งโปรเจค**
 
-   `true`  = เห็นป้าย "x21 z37" ตอนเดินในเมือง (ใช้บน branch ระหว่างพัฒนา/เทสแผนที่)
-   `false` = ไม่โผล่เลย (**ค่าที่ต้องใช้ทุกครั้งที่ merge ขึ้น `main`/deploy จริง**)
-
-   ⚠️ **ก่อน merge เข้า `main` ทุกครั้งต้องตั้งเป็น `false`** (ผู้ใช้สั่ง 2026-08-20)
-      กติกาเดียวกับ QB_ENABLED / DEV_ENABLED / MUSIC_PANEL_ENABLED เป๊ะ:
-      เครื่องมือเทส = ปิดตอน deploy เสมอ ไม่ต้องถามผู้ใช้ซ้ำ
+   ป้ายพิกัด "x21 z37" มุมขวาล่าง — ไว้ดูตำแหน่งตอนทดสอบแผนที่
+   🔒 **ดูจาก hostname เอง** เปิดเฉพาะตอนรันในเครื่อง · production ปิดเสมอโดยไม่ต้องแก้อะไร
    ⚠️ ปิดที่นี่ที่เดียวพอ ไม่ต้องแก้ index.html/CSS
    ============================================================ */
-const POS_CHIP_ENABLED = true;
+const POS_CHIP_ENABLED = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+                             || location.protocol === 'file:';
 /* ป้ายพิกัดมุมขวาล่าง — บอกช่องที่ตัวละครยืนอยู่ (ไว้ดูตำแหน่งตอนทดสอบแผนที่)
    อัปเดตเฉพาะตอนเปลี่ยนช่องจริงๆ ไม่แตะ DOM ทุกเฟรม */
 let posChipKey = '';
@@ -15221,12 +15218,13 @@ $('house-rot-right').addEventListener('click', ()=>{
 /* หน้าหลักเปิดค้างอยู่แล้วตอนไฟล์นี้โหลดเสร็จ (เช่น reload กลางเซสชัน) → โชว์เพื่อนซี้เลย
    กรณีปกติ (เลือกโปรไฟล์เด็กก่อน) renderHome ใน app.js จะเรียกให้เอง */
 if(!homeView.hidden) houseBuddyRefresh();
-/* 🔒 DEV_API_ENABLED — สวิตช์ของ `window.__houseDbg` + เมธอด `dev*` ทุกโมดูล (จุดเดียว)
-   `false` = ถอดออกหมด · **ต้องเป็น false ตอน deploy** (กติกาเดียวกับสวิตช์เครื่องมือเทสตัวอื่น)
-   เดิม production ship ทางโกงมาให้: `OwlCoins.set()` / `HouseShop.devUnlockAll()` (2026-08-23)
+/* 🔒 DEV_API_ENABLED — ประตูของ `window.__houseDbg` + เมธอด `dev*` ทุกโมดูล (จุดเดียว)
+   **ดูจาก hostname เอง** — production ถอดออกหมดโดยอัตโนมัติ ไม่มีสวิตช์ให้คนลืมสลับ
+   เดิม production ship ทางโกงมาให้: `OwlCoins.set()` / `HouseShop.devUnlockAll()` (แก้ 2026-08-23)
    ⚠️ ไม่ใช่ระบบกันโกง — เว็บ static กันไม่ได้ แค่ตัดทางที่ง่ายที่สุดทิ้ง
-   ⚠️ ปิดแล้ว **ชุดเทสจะแดงยกแผง** เพราะเกือบทุกไฟล์พึ่ง `__houseDbg` — รันเทสบน branch ที่เปิดไว้ */
-const DEV_API_ENABLED = true;
+   ⚠️ **ห้ามอ่านจาก `window.*`** ชุดโหมดบ้านโหลด lazy ⇒ เด็กตั้งค่าดักไว้ก่อนกดเข้าเมืองได้ */
+const DEV_API_ENABLED = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+                            || location.protocol === 'file:';
 
 /* ⚠️ ต้องถอดตอน "เข้าบ้าน" ไม่ใช่ตอนไฟล์โหลด — book/play/devtools โหลดหลัง house.js
    ⚠️ **ห้ามถอด `__housePaint` กับ `OwlCoins.add`** เกมจริงใช้ (ช่างภาพ / จ่ายรางวัลเควสต์) */

@@ -17,7 +17,12 @@
 (function(){
   'use strict';
 
-  const MUSIC_PANEL_ENABLED = true;
+  /* 🔒 เครื่องมือเทส — **ดูจาก hostname เอง ไม่มีสวิตช์ให้คนลืมสลับ** (2026-08-23)
+     เปิดเฉพาะตอนรันในเครื่อง (localhost · 127.0.0.1 · file://) ⇒ owlkids.net / isarez.github.io ปิดเสมอ
+     ⚠️ **ห้ามอ่านจาก `window.*`** — ชุดโหมดบ้านโหลดแบบ lazy ตอนกดเข้าเมือง
+        ถ้าอ่านจาก window เด็กตั้งค่าดักไว้ก่อนกดได้ · `location.hostname` เขียนทับไม่ได้ */
+  const MUSIC_PANEL_ENABLED = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+                                            || location.protocol === 'file:';
 
   const $ = id => document.getElementById(id);
   let playingIdx = -1;
