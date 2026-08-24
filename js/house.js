@@ -545,6 +545,9 @@ function closeShopPreview(){
   clearPrevModel();
   const card = $('house-prev-card');
   if(card) card.hidden = true;
+  /* ล้างภาพเฟรมสุดท้ายทิ้ง ไม่งั้นเปิดพรีวิวชิ้นถัดไปจะเห็นของชิ้นเก่าแวบหนึ่งก่อนเฟรมแรกจะวาด */
+  const cv = $('house-prev-canvas');
+  if(cv && cv.width) cv.width = cv.width;
   document.body.classList.remove('house-preview');
 }
 /* เรนเดอร์รอบที่ 2 ลงกรอบของ #house-prev-card — เรียกท้าย frame() หลังวาดฉากเมืองเสร็จ */
@@ -579,6 +582,26 @@ function renderPreviewInset(){
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
   renderer.setClearColor(oldClear, oldAlpha);
+  /* 🖼️ **ย้ายพิกเซลที่เพิ่งวาดมาไว้บนผืนของกรอบเอง** (ผู้ใช้แจ้ง 2026-08-24 จาก iPad)
+     ปัญหา: แถบ HUD (เข็มทิศ · สัตว์เลี้ยง · เควสต์ · ปุ่มกิจกรรม · ลูกศรนำทาง) ทับตัวโมเดล
+       เพราะโมเดลอยู่บน canvas หลักซึ่ง **อยู่หลัง HTML ทุกชิ้นเสมอ** — z-index ช่วยไม่ได้เลย
+     วิธีแก้ที่ผู้ใช้เลือก: **ไม่ซ่อนแถบ ให้แถบไปอยู่หลังกรอบแทน** ⇒ กรอบต้องมีพิกเซลของตัวเอง
+     ⚠ ต้อง `drawImage` **ในจังหวะเดียวกับที่เพิ่งเรนเดอร์เสร็จ** (ยังอยู่ในคอลแบ็ก rAF เดียวกัน)
+       ไม่งั้นบัฟเฟอร์ถูกล้างไปแล้วได้ภาพว่าง — กติกาเดียวกับโหมดถ่ายรูป
+       ⇒ **ห้ามเปิด `preserveDrawingBuffer` เพื่อแก้ปัญหานี้** (กติกาเดิมตั้งแต่เฟส 11) */
+  const cv = $('house-prev-canvas');
+  if(cv){
+    /* ⚠ ก๊อปเฉพาะ "กรอบในขอบ" (padding box) แบบ 1 ต่อ 1 ไม่ใช่ช่วง +1px ที่เพิ่งเรนเดอร์
+       (ช่วงที่เกินมามีไว้กันเส้นบางๆ ที่โลกด้านหลังลอดออกมาตอนปัดเศษเท่านั้น) */
+    const dpr = renderer.getPixelRatio();
+    const cw = Math.max(1, Math.round(card.clientWidth)), chh = Math.max(1, Math.round(card.clientHeight));
+    const dw = Math.round(cw * dpr), dh = Math.round(chh * dpr);
+    if(cv.width !== dw || cv.height !== dh){ cv.width = dw; cv.height = dh; }
+    const c2 = cv.getContext('2d');
+    if(c2) c2.drawImage(renderer.domElement,
+                        Math.round((r.left + bl) * dpr), Math.round((r.top + bt) * dpr), dw, dh,
+                        0, 0, dw, dh);
+  }
 }
 /* ลากบนกรอบพรีวิวเพื่อหมุนดูเอง (ปล่อยแล้วกลับไปหมุนอัตโนมัติ) */
 function bindPrevCardDrag(){

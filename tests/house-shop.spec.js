@@ -266,8 +266,13 @@ test('หน้าร้าน: แตะการ์ด = ดูตัวอย
   expect(st.coins).toBe(400);               // แตะดูเฉยๆ ห้ามตัดเงิน
   expect(st.owns).toBe(false);
 
-  /* กดปุ่มในแถบซื้อถึงจะซื้อจริง */
+  /* กดปุ่มในแถบซื้อ → **ต้องเจอกล่องยืนยันก่อน** แล้วกดยืนยันถึงจะตัดเงินจริง */
   await page.evaluate(() => document.querySelector('#house-shop-buy .hs-buy-btn').click());
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => !!document.getElementById('house-shop-confirm')),
+    'ต้องถามยืนยันก่อนตัดเงินเสมอ').toBe(true);
+  expect(await page.evaluate(() => window.OwlCoins.get()), 'ยังไม่กดยืนยัน = ห้ามตัดเงิน').toBe(400);
+  await page.evaluate(() => document.getElementById('hs-confirm-yes').click());
   await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.OwlCoins.get())).toBe(260);   // 400 - 140
   expect(await page.evaluate(() => window.HouseShop.ownsFurn('armchair'))).toBe(true);
@@ -531,4 +536,145 @@ test('บอกทางซื้อของ: ข้อความในโห
   expect(line, 'ไม่เจอข้อความบอกทางซื้อของในโหมดตกแต่ง').toBeTruthy();
   expect(line.includes('ห้างเฟอร์นิเจอร์'), 'ห้ามฮาร์ดโค้ดชื่อร้านลงในข้อความ').toBe(false);
   expect(src.includes('SHOP.shopForFurn(it.id)'), 'ต้องถามชื่อร้านจาก shopForFurn()').toBe(true);
+});
+
+/* ============================================================
+   🛒 "ซื้อได้เฉพาะของที่เด็กแตะเอง" (ผู้ใช้แจ้ง 2026-08-24: เด็กซื้อกระต่ายแล้วได้หมา)
+
+   ต้นเหตุ: ร้านเลือกของ "ชิ้นแรกของหมวด" ให้อัตโนมัติตอนเข้าร้าน/เปลี่ยนหมวด เพื่อโชว์ตัวอย่าง 3D
+   แล้วปุ่ม "ซื้อเลย" ก็พร้อมซื้อชิ้นนั้นทันที ⇒ เด็กแตะการ์ดที่อยากได้แต่**นิ้วไถนิดเดียว**
+   (เบราว์เซอร์นับเป็นการเลื่อน ไม่ยิง click) ของที่เลือกจึงยังเป็นชิ้นแรก แล้วปุ่มซื้อก็ซื้อผิดตัวเงียบๆ
+   ⇒ ตอนนี้ตัวอย่างยังโชว์เหมือนเดิม แต่ **ปุ่มซื้อโผล่ต่อเมื่อเด็กแตะการ์ดเองเท่านั้น**
+   ============================================================ */
+test('ร้านค้า: ของที่โผล่มาเองยังซื้อไม่ได้ — ต้องแตะการ์ดเองก่อน แล้วแถบซื้อต้องมีรูปของด้วย',
+  async ({ page }) => {
+  const errors = await openHouse(page, { v: 1, mapV: 3, tut: { skip: true },
+    char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await page.evaluate(() => { window.OwlCoins.set(900); window.HouseShop.open('shop-pet'); });
+  await page.waitForTimeout(500);
+
+  const readBar = () => page.evaluate(() => ({
+    barShown: !document.getElementById('house-shop-buy').hidden,
+    text: document.getElementById('house-shop-buy').textContent,
+    btns: document.querySelectorAll('#house-shop-buy .hs-buy-btn').length,
+    pics: document.querySelectorAll('#house-shop-buy .hs-buy-pic').length,
+    sel: Array.from(document.querySelectorAll('#house-shop-items .hs-card.hs-sel')).map(c => c._opts.key),
+    first: ((document.querySelector('#house-shop-items .hs-card') || {})._opts || {}).key || null,
+  }));
+
+  /* เพิ่งเข้าร้าน: ตัวอย่าง 3D ต้องขึ้นแล้ว (ของเดิม) แต่ยัง **ซื้อไม่ได้** */
+  expect(await page.evaluate(() => document.body.classList.contains('house-preview')),
+    'เข้าร้านปุ๊บต้องเห็นตัวอย่างของชิ้นแรกเหมือนเดิม').toBe(true);
+  let b = await readBar();
+  expect(b.barShown, 'แถบล่างยังโชว์อยู่ (มีคำชวนให้แตะ)').toBe(true);
+  expect(b.btns, '❗ ยังไม่ได้แตะเลือกเอง = ห้ามมีปุ่มซื้อ').toBe(0);
+  expect(b.sel, 'ของที่โผล่มาเองยังไม่นับว่า "เลือกอยู่"').toEqual([]);
+  expect(b.first, 'ใบแรกของแท็บนี้คือหมาน้อย (ตัวที่เคยถูกซื้อผิด)').toBe('pet:dog');
+
+  /* ไถนิ้วบนการ์ดกระต่าย = เลื่อนจอ ไม่ใช่การเลือก ⇒ ต้องยังซื้อไม่ได้ */
+  await page.evaluate(() => {
+    const c = Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+      .find(x => x._opts.key === 'pet:rabbit');
+    const r = c.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+    const o = (px, py) => ({ bubbles: true, cancelable: true, clientX: px, clientY: py,
+                             pointerId: 1, pointerType: 'touch', isPrimary: true });
+    c.dispatchEvent(new PointerEvent('pointerdown', o(x, y)));
+    c.dispatchEvent(new PointerEvent('pointermove', o(x, y - 9)));
+    c.dispatchEvent(new PointerEvent('pointerup', o(x, y - 9)));
+  });
+  await page.waitForTimeout(300);
+  expect((await readBar()).btns, 'นิ้วไถแล้วยังไม่มีปุ่มซื้อ = ซื้อผิดตัวไม่ได้').toBe(0);
+
+  /* แตะจริง = ซื้อได้ และแถบต้องบอกด้วย "รูป + ชื่อ" ของชิ้นที่แตะ */
+  await page.evaluate(() => Array.from(document.querySelectorAll('#house-shop-items .hs-card'))
+    .find(x => x._opts.key === 'pet:rabbit').click());
+  await page.waitForTimeout(400);
+  b = await readBar();
+  expect(b.btns, 'แตะเองแล้วปุ่มซื้อต้องขึ้น').toBe(1);
+  expect(b.pics, 'แถบซื้อต้องมีรูปของที่จะซื้อ (เด็ก 5 ขวบอ่านชื่อไม่ทัน)').toBe(1);
+  expect(b.text).toContain('กระต่าย');
+  expect(b.sel).toEqual(['pet:rabbit']);
+
+  /* กดซื้อ → ต้องมีกล่องยืนยันที่บอกว่ากำลังจะซื้ออะไร (รูป + ชื่อ + ราคา) */
+  await page.evaluate(() => document.querySelector('#house-shop-buy .hs-buy-btn').click());
+  await page.waitForTimeout(300);
+  const cf = await page.evaluate(() => {
+    const el = document.getElementById('house-shop-confirm');
+    return el ? { text: el.textContent, pic: !!el.querySelector('.hs-confirm-pic'),
+                  yes: !!document.getElementById('hs-confirm-yes'),
+                  no: !!document.getElementById('hs-confirm-no') } : null;
+  });
+  expect(cf, 'กดซื้อแล้วต้องมีกล่องยืนยัน').toBeTruthy();
+  expect(cf.text, 'ต้องบอกว่ากำลังจะซื้ออะไร').toContain('กระต่าย');
+  expect(cf.text, 'ต้องบอกราคาด้วย').toContain('250');
+  expect(cf.pic, 'ต้องมีรูปของที่จะซื้อ').toBe(true);
+  expect(cf.yes && cf.no, 'ต้องมีทั้งปุ่มยืนยันและปุ่มยกเลิก').toBe(true);
+
+  /* กด "ยังไม่ซื้อ" = ไม่เสียเงิน ไม่ได้ของ */
+  await page.evaluate(() => document.getElementById('hs-confirm-no').click());
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => ({ box: !!document.getElementById('house-shop-confirm'),
+                                      coins: window.OwlCoins.get(),
+                                      own: window.HouseShop.ownsPet('rabbit') })),
+    'ยกเลิกแล้วต้องไม่มีอะไรเปลี่ยน').toEqual({ box: false, coins: 900, own: false });
+
+  /* กดยืนยัน → ต้องได้ **กระต่าย** ไม่ใช่ใบแรกของแท็บ */
+  await page.evaluate(() => document.querySelector('#house-shop-buy .hs-buy-btn').click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('hs-confirm-yes').click());
+  await page.waitForTimeout(400);
+  const own = await page.evaluate(() => ({ rabbit: window.HouseShop.ownsPet('rabbit'),
+                                           dog: window.HouseShop.ownsPet('dog') }));
+  expect(own, 'ซื้อกระต่ายต้องได้กระต่าย').toEqual({ rabbit: true, dog: false });
+
+  /* เปลี่ยนหมวดก็ต้องเริ่มนับใหม่ — ของชิ้นแรกของหมวดใหม่ยังซื้อไม่ได้จนกว่าจะแตะเอง */
+  await page.evaluate(() => Array.from(document.querySelectorAll('#house-shop-tabs .he-tab'))
+    .find(t => /กลาง/.test(t.textContent)).click());
+  await page.waitForTimeout(400);
+  expect((await readBar()).btns, 'เปลี่ยนหมวดแล้วต้องแตะเลือกใหม่ก่อนถึงจะซื้อได้').toBe(0);
+  expect(errors).toEqual([]);
+});
+
+/* 🖼️ กรอบพรีวิวสินค้า 3D ห้ามโดน HUD ทับ (ผู้ใช้แจ้ง 2026-08-24 จาก iPad)
+   🔑 ต้นเหตุไม่ใช่ z-index — โมเดลถูกวาดด้วย WebGL ลงบน canvas ซึ่งอยู่ **หลัง HTML ทุกชิ้น**
+      ตั้ง z-index ให้กรอบสูงแค่ไหนก็ไม่ชนะแถบ HUD
+   ⇒ วิธีที่ผู้ใช้เลือก: **ไม่ซ่อนแถบ ให้แถบไปอยู่หลังกรอบ** ⇒ กรอบมีผืนวาดของตัวเอง
+      (#house-prev-canvas · ก๊อปพิกเซลมาจาก canvas หลักทุกเฟรม) แล้วบังแถบได้ตามปกติ */
+test('ร้านค้า: เปิดพรีวิวแล้วแถบ HUD ต้องยังอยู่ครบ แต่ต้องอยู่ "หลัง" กรอบพรีวิว',
+  async ({ page }) => {
+  const errors = await openHouse(page, { v: 1, mapV: 3, tut: { skip: true },
+    char: { gender: 0, hair: 0, hairC: 0, eyes: 1, eyeC: 0, shirt: 5, bottom: 0, shoes: 0 } });
+  await page.evaluate(() => { window.OwlCoins.set(900); window.HouseShop.open('shop-pet'); });
+  await page.waitForTimeout(900);
+  const r = await page.evaluate(() => {
+    const card = document.getElementById('house-prev-card');
+    const p = card.getBoundingClientRect();
+    const vis = e => !!(e && e.getClientRects().length && getComputedStyle(e).display !== 'none');
+    const ids = ['house-compass', 'house-pet-bar', 'house-quest-bar', 'house-play-btn'];
+    /* จุดที่แถบไปทับกรอบพอดี — ของที่อยู่บนสุดตรงนั้นต้องเป็น "กรอบพรีวิว" ไม่ใช่แถบ */
+    const covered = ids.map(id => {
+      const e = document.getElementById(id);
+      if (!vis(e)) return { id, shown: false };
+      const b = e.getBoundingClientRect();
+      const x = Math.min(b.right, p.right) - 3, y = Math.min(b.bottom, p.bottom) - 3;
+      const overlap = !(b.right <= p.left || b.left >= p.right || b.bottom <= p.top || b.top >= p.bottom);
+      if (!overlap) return { id, shown: true, overlap: false };
+      const top = document.elementFromPoint(x, y);
+      return { id, shown: true, overlap: true, onTop: top ? (top.id || top.tagName) : null };
+    });
+    const cv = document.getElementById('house-prev-canvas');
+    return { covered, cvSize: cv ? [cv.width, cv.height] : null,
+             /* ผืนวาดต้องมีภาพจริง ไม่ใช่ผืนใส */
+             painted: cv ? (() => { const g = cv.getContext('2d');
+               const d = g.getImageData(Math.floor(cv.width / 2), Math.floor(cv.height / 2), 1, 1).data;
+               return d[3] > 200; })() : false };
+  });
+  /* 🔒 แถบทุกอันต้อง **ยังอยู่** (ผู้ใช้สั่ง: ห้ามซ่อน) */
+  r.covered.forEach(c => expect(c.shown, c.id + ' ต้องไม่ถูกซ่อน').toBe(true));
+  /* ...แต่ตรงที่ทับกรอบ ต้องเป็นกรอบพรีวิวที่อยู่บนสุด */
+  r.covered.filter(c => c.overlap).forEach(c =>
+    expect(['house-prev-card', 'house-prev-canvas', 'CANVAS'], c.id + ' ต้องอยู่หลังกรอบพรีวิว')
+      .toContain(c.onTop));
+  expect(r.painted, 'ผืนวาดของกรอบต้องมีภาพโมเดลจริง ไม่ใช่ผืนใส (ไม่งั้นแถบจะโผล่ทะลุมา)').toBe(true);
+  expect(errors).toEqual([]);
 });

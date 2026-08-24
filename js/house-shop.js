@@ -771,8 +771,9 @@
     }
     function close(){
       if(!isOpen()) return;
+      closeBuyConfirm();
       openId = null;
-      sel = null; selKey = null;
+      sel = null; selKey = null; selAuto = false;
       if(kit.closePreview) kit.closePreview();     /* ปิดพรีวิว 3D ด้วย ไม่งั้นค้างอยู่หลังปิดร้าน */
       const el = $('house-shop');
       if(el) el.hidden = true;
@@ -901,12 +902,10 @@
       return it.name + (n > 0 ? ' (มี ' + n + ')' : '');
     }
     const furnFull = it => furnCount(it.id) >= furnMax(it.id);
-    function makeCard(opts){
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'hs-card' + (opts.owned ? ' hs-owned' : (coins() < opts.price ? ' hs-poor' : ''))
-                  + (opts.key === selKey ? ' hs-sel' : '')
-                  + (opts.sub ? ' hs-has-sub' : '');   /* ใบที่มีบรรทัดรองสูงกว่าปกติ — ทั้งแท็บใส่เหมือนกันหมด ขนาดจึงยังเท่ากัน */
+    /* รูปประจำสินค้า 1 ชิ้น — ใช้ทั้งบน **การ์ด** และบน **แถบซื้อ**
+       🎨 มีไอคอน SVG (js/house-icons.js) = ใช้รูปวาด · ไม่มี = emoji เดิม
+          (ผู้ใช้สั่ง 2026-08-18 — emoji แสดงผลไม่เหมือนกันข้าม OS บางตัวไม่มี glyph เลย) */
+    function itemPic(opts, sz){
       const pic = document.createElement('span');
       if(opts.color != null){
         pic.className = 'hs-sw';
@@ -915,13 +914,19 @@
           : hex(opts.color);
       }else{
         pic.className = 'hs-emoji';
-        /* 🎨 มีไอคอน SVG (js/house-icons.js) = ใช้รูปวาด · ไม่มี = emoji เดิม
-           (ผู้ใช้สั่ง 2026-08-18 — emoji แสดงผลไม่เหมือนกันข้าม OS) */
-        const svg = (opts.ico && window.HouseIcons) ? window.HouseIcons.html(opts.ico, 30) : '';
+        const svg = (opts.ico && window.HouseIcons) ? window.HouseIcons.html(opts.ico, sz || 30) : '';
         if(svg) pic.innerHTML = svg;
         else pic.textContent = opts.emoji || '🎁';
       }
-      b.appendChild(pic);
+      return pic;
+    }
+    function makeCard(opts){
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hs-card' + (opts.owned ? ' hs-owned' : (coins() < opts.price ? ' hs-poor' : ''))
+                  + (opts.key === selKey && !selAuto ? ' hs-sel' : '')   /* เลือกเอง = ติดกรอบ · โผล่มาเอง = ยังไม่ใช่ของที่เลือก */
+                  + (opts.sub ? ' hs-has-sub' : '');   /* ใบที่มีบรรทัดรองสูงกว่าปกติ — ทั้งแท็บใส่เหมือนกันหมด ขนาดจึงยังเท่ากัน */
+      b.appendChild(itemPic(opts));
       const nm = document.createElement('span');
       nm.className = 'hs-name';
       nm.textContent = opts.name;
@@ -943,32 +948,95 @@
       return b;
     }
 
-    /* ---------- เลือกสินค้า → พรีวิว 3D ฝั่งซ้าย + แถบซื้อด้านล่าง ---------- */
-    let sel = null, selKey = null;
+    /* ---------- เลือกสินค้า → พรีวิว 3D ฝั่งซ้าย + แถบซื้อด้านล่าง ----------
+       🔒 `selAuto` = "ของชิ้นนี้โผล่มาเอง เด็กยังไม่ได้เลือก" (ตอนเพิ่งเข้าร้าน/เพิ่งเปลี่ยนหมวด)
+          ⇒ **ปุ่มซื้อยังไม่ขึ้น** จนกว่าเด็กจะแตะการ์ดเองสักใบ
+          🐞 ผู้ใช้แจ้ง 2026-08-24: "เด็กซื้อกระต่ายแล้วได้หมา" — ต้นเหตุคือร้านเลือกของชิ้นแรก
+             ให้อัตโนมัติ (หมาน้อยเป็นใบแรกของแท็บ) แล้วปุ่ม "ซื้อเลย" ก็พร้อมซื้อทันที
+             พอเด็กแตะการ์ดกระต่ายแล้ว**นิ้วไถนิดเดียว** เบราว์เซอร์นับเป็นการเลื่อนไม่ใช่การแตะ
+             (ยืนยันด้วยการยิง pointer event จริง: ไถ 9px แล้วของที่เลือกไม่เปลี่ยน)
+             ⇒ ของที่เลือกยังเป็นหมา แล้วปุ่มซื้อก็ซื้อหมาให้เงียบๆ เสียไป 250 🪙 คืนไม่ได้
+          ⇒ ตอนนี้ "แตะเอง" เท่านั้นที่ทำให้ซื้อได้ ⇒ **เป็นไปไม่ได้ที่จะซื้อของที่ไม่ได้แตะ**
+          ⚠ ยังโชว์ตัวอย่าง 3D ของชิ้นแรกเหมือนเดิม (เด็กเห็นทันทีว่าร้านนี้ขายอะไร) */
+    let sel = null, selKey = null, selAuto = false;
     /* ชุดแต่งตัว **พรีวิวได้ทุกแถว** รวมแถวสีด้วย (ปรับ 2026-08-07 ตามคำขอผู้ใช้)
        — พอร้านกลายเป็น "พรีวิวมาก่อน" ทั้งร้านแล้ว การ์ดสีที่กดแล้วไม่มีอะไรขึ้นจะดูเหมือนแอปค้าง
          และเห็นสีจริงบนตัวละครชัดกว่าดูจากสวอตช์สี่เหลี่ยมเล็กๆ อยู่แล้ว */
     function previewableFit(row){ return !!row; }
-    function select(opts){
-      sel = opts; selKey = opts.key;
+    function select(opts, auto){
+      closeBuyConfirm();                 /* เปลี่ยนของที่เลือก = คำถามเดิมใช้ไม่ได้แล้ว */
+      sel = opts; selKey = opts.key; selAuto = !!auto;
       if(kit.preview && opts.preview) kit.preview(opts.preview);
       else if(kit.closePreview) kit.closePreview();
       renderItems();
       renderBuyBar();
     }
-    /* เลือกของชิ้นแรกในหมวดที่เปิดอยู่ (ใช้ตอนเพิ่งเข้าร้าน) — ไม่มีของก็แค่ไม่ทำอะไร */
+    /* โชว์ตัวอย่างของชิ้นแรกในหมวดที่เปิดอยู่ (ตอนเพิ่งเข้าร้าน/เปลี่ยนหมวด) — ไม่มีของก็แค่ไม่ทำอะไร
+       ⚠ `auto = true` ⇒ **ยังซื้อไม่ได้** เด็กต้องแตะการ์ดเองก่อน (ดูคอมเมนต์ selAuto ข้างบน) */
     function selectFirst(){
       const wrap = $('house-shop-items');
       const first = wrap && wrap.querySelector('.hs-card');
-      if(first && first._opts){ select(first._opts); return; }   /* ไม่ยิง click จริง จะได้ไม่มีเสียงกดซ้ำ */
+      if(first && first._opts){ select(first._opts, true); return; }   /* ไม่ยิง click จริง จะได้ไม่มีเสียงกดซ้ำ */
       renderBuyBar();
     }
     function clearSelected(){
       if(!sel && !selKey) return;
-      sel = null; selKey = null;
+      sel = null; selKey = null; selAuto = false;
       if(kit.closePreview) kit.closePreview();
       renderItems();
       renderBuyBar();
+    }
+    /* ---------- ✅ กล่องยืนยันก่อนจ่ายเงิน (ผู้ใช้สั่ง 2026-08-24) ----------
+       เงินในเกมหามาด้วยการทำเควสต์ทั้งวัน ซื้อผิดชิ้นแล้ว **คืนไม่ได้** ⇒ ก่อนตัดเงินทุกครั้ง
+       ต้องบอกให้ชัดว่า "กำลังจะซื้ออะไร" ด้วย **รูปใหญ่ + ชื่อ + ราคา + เงินที่จะเหลือ**
+       🔒 ห้ามข้ามขั้นนี้ไปตัดเงินตรงๆ (ต่อจากกติกา "แตะการ์ดเองก่อนถึงจะมีปุ่มซื้อ")
+       ⚠ เงินไม่พอ **ไม่ต้องเปิดกล่อง** — ปล่อยให้ `onBuy()` เป็นคนบอกเหตุผลเหมือนเดิม
+         (เปิดกล่องแล้วกดยืนยันไม่ได้ = ทางตันเล็กๆ ที่ไม่มีประโยชน์อะไร) */
+    function closeBuyConfirm(){
+      const el = $('house-shop-confirm');
+      if(el && el.parentNode) el.parentNode.removeChild(el);
+    }
+    function askBuyConfirm(opts, run){
+      const host = $('house-shop');
+      if(!host){ run(); return; }             /* ไม่มีที่ให้วางกล่อง = อย่าให้ทางตัน ซื้อไปเลย */
+      closeBuyConfirm();
+      const have = coins(), left = Math.max(0, have - (opts.price | 0));
+      const wrap = document.createElement('div');
+      wrap.className = 'hs-confirm'; wrap.id = 'house-shop-confirm';
+      const card = document.createElement('div');
+      card.className = 'hs-confirm-card';
+      const pic = itemPic(opts, 64);          /* รูปใหญ่ — เด็กดูรูปรู้เรื่องกว่าอ่านชื่อ */
+      pic.classList.add('hs-confirm-pic');
+      card.appendChild(pic);
+      const q = document.createElement('div');
+      q.className = 'hs-confirm-q';
+      q.textContent = 'จะซื้อ ' + opts.name + ' ไหม?';   /* ชื่อมาจากข้อมูลของ ใส่ผ่าน text node เสมอ */
+      card.appendChild(q);
+      const pr = document.createElement('div');
+      pr.className = 'hs-confirm-price';
+      pr.innerHTML = 'ราคา <i class="hs-coin"></i>' + (opts.price | 0);
+      card.appendChild(pr);
+      const lf = document.createElement('div');
+      lf.className = 'hs-confirm-left';
+      lf.innerHTML = 'ตอนนี้มี <i class="hs-coin"></i>' + have
+                   + ' · ซื้อแล้วเหลือ <i class="hs-coin"></i>' + left;
+      card.appendChild(lf);
+      const row = document.createElement('div');
+      row.className = 'hs-confirm-btns';
+      const no = document.createElement('button');
+      no.type = 'button'; no.className = 'hs-confirm-no'; no.id = 'hs-confirm-no';
+      no.textContent = 'ยังไม่ซื้อ';
+      no.onclick = ()=>{ click(); closeBuyConfirm(); };
+      const yes = document.createElement('button');
+      yes.type = 'button'; yes.className = 'hs-confirm-yes'; yes.id = 'hs-confirm-yes';
+      yes.innerHTML = 'ซื้อเลย <i class="hs-coin"></i>' + (opts.price | 0);
+      yes.onclick = ()=>{ click(); closeBuyConfirm(); run(); };
+      row.appendChild(no); row.appendChild(yes);
+      card.appendChild(row);
+      wrap.appendChild(card);
+      /* แตะพื้นที่นอกการ์ด = ปิด (กติกาเดียวกับกล่องอื่นทั้งหมดในโหมดบ้าน) */
+      wrap.onclick = e => { if(e.target === wrap){ click(); closeBuyConfirm(); } };
+      host.appendChild(wrap);
     }
     function renderBuyBar(){
       const bar = $('house-shop-buy');
@@ -982,8 +1050,20 @@
       if(sel.maxedFn && sel.maxedFn()){ sel.owned = true; sel.repeat = false; sel.maxed = true; }
       /* (เคยมีปุ่ม ← กลับไปเลือกของอื่นตรงนี้ — เอาออก 2026-08-08 ตามคำขอผู้ใช้
          ตอนนี้ตารางสินค้าโชว์อยู่ตลอดแล้ว กดการ์ดใบอื่นได้เลย ไม่ต้องมีทางกลับแยก) */
+      /* 🖼️ **รูปของที่กำลังจะซื้อ** — เด็ก 5 ขวบอ่านชื่อบนแถบไม่ทัน บอกด้วยตัวหนังสืออย่างเดียว
+         เท่ากับไม่ได้บอก ⇒ ต้องมีรูปชิ้นเดียวกับบนการ์ดอยู่ข้างปุ่มเสมอ (ผู้ใช้แจ้ง 2026-08-24) */
+      const pic = itemPic(sel);
+      pic.classList.add('hs-buy-pic');
+      bar.appendChild(pic);
       const nm = document.createElement('span');
       nm.className = 'hs-buy-name';
+      /* ยังไม่ได้เลือกเอง = บอกให้แตะก่อน **ห้ามมีปุ่มซื้อ** (ดูคอมเมนต์ selAuto) */
+      if(selAuto){
+        nm.className = 'hs-buy-name hs-buy-hint';
+        nm.textContent = '👆 แตะรูปของที่อยากได้ก่อนนะ';
+        bar.appendChild(nm);
+        return;
+      }
       nm.textContent = sel.name;
       bar.appendChild(nm);
       const btn = document.createElement('button');
@@ -1005,11 +1085,16 @@
         btn.innerHTML = 'ซื้อเลย <i class="hs-coin"></i>' + sel.price;
         btn.onclick = ()=>{
           click();
-          if(!sel.onBuy()) return;
-          if(!sel.repeat) sel.owned = true; /* ซื้อสำเร็จ → แถบเปลี่ยนเป็น "มีแล้ว" ทันที ไม่ต้องปิดพรีวิว */
-          /* ของที่ซื้อซ้ำได้: อัปเดตจำนวนที่มีบนแถบ+การ์ดให้ตรงทันที (ไม่งั้นตัวเลขค้างค่าเก่า) */
-          if(sel.nameFn) sel.name = sel.nameFn();
-          renderItems(); renderBuyBar();
+          const it = sel;                       /* จับไว้ก่อน — กว่าเด็กจะกดยืนยัน `sel` อาจเปลี่ยนแล้ว */
+          const doBuy = ()=>{
+            if(!it.onBuy()) return;
+            if(!it.repeat) it.owned = true;  /* ซื้อสำเร็จ → แถบเปลี่ยนเป็น "มีแล้ว" ทันที ไม่ต้องปิดพรีวิว */
+            /* ของที่ซื้อซ้ำได้: อัปเดตจำนวนที่มีบนแถบ+การ์ดให้ตรงทันที (ไม่งั้นตัวเลขค้างค่าเก่า) */
+            if(it.nameFn) it.name = it.nameFn();
+            renderItems(); renderBuyBar();
+          };
+          if(coins() < it.price){ it.onBuy(); return; }   /* เงินไม่พอ — onBuy บอกเหตุผลเอง */
+          askBuyConfirm(it, doBuy);
         };
       }
       bar.appendChild(btn);
