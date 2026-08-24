@@ -734,5 +734,34 @@ test('11S: เริ่มเกมซ่อนแอบ — แถบบอก�
   await page.evaluate(() => window.HousePlay.seekIntroSkip());
   await expect.poll(() => page.evaluate(() => !document.getElementById('house-seek-hud').hidden),
                     { message: 'นับจบแล้วแถบต้องโผล่' }).toBe(true);
+
+  /* 🙈 แถบต้องโชว์ **หน้าเพื่อนที่ไปแอบ** ด้วย และใช้คลาสชุดเดียวกับในแผงกิจกรรม
+     (ผู้ใช้สั่ง 2026-08-24 — เจอแล้วต้องได้ effect เดียวกันเป๊ะ: จางลง + ติด ✓) */
+  const faces = await page.evaluate(() => {
+    const el = document.getElementById('house-seek-hud');
+    return { n: el.querySelectorAll('.hpl-face').length,
+             spots: window.HousePlay.state().seek.spots.length,
+             found: el.querySelectorAll('.hpl-face.found').length,
+             wrap: !!el.querySelector('.hpl-faces') };
+  });
+  expect(faces.wrap, 'ต้องใช้กล่องหน้าเพื่อนชุดเดียวกับแผงกิจกรรม (.hpl-faces)').toBe(true);
+  expect(faces.n, 'ต้องมีหน้าเพื่อนครบทุกคนที่ไปแอบ').toBe(faces.spots);
+  expect(faces.found, 'ยังไม่เจอใคร ต้องยังไม่มีคนไหนจาง').toBe(0);
+
+  /* เจอ 1 คน ⇒ หน้าคนนั้นต้องจางลงและติด ✓ (เหมือนในแผง) */
+  await page.evaluate(() => { window.HousePlay.state().seek.found = [0]; });
+  await expect.poll(() => page.evaluate(() =>
+    document.querySelectorAll('#house-seek-hud .hpl-face.found').length),
+    { message: 'เจอแล้วหน้าคนนั้นต้องเปลี่ยนสถานะบนแถบด้วย' }).toBe(1);
+  const ok = await page.evaluate(() => ({
+    ok: document.querySelectorAll('#house-seek-hud .hpl-face-ok').length,
+    dim: getComputedStyle(document.querySelector('#house-seek-hud .hpl-face.found')).opacity,
+    dimPanel: (() => { const d = document.createElement('div');
+      d.innerHTML = '<span class="hpl-face found"></span>'; document.body.appendChild(d);
+      const o = getComputedStyle(d.firstChild.firstChild || d.firstChild).opacity;
+      d.remove(); return o; })(),
+  }));
+  expect(ok.ok, 'ต้องติดเครื่องหมาย ✓ เหมือนในแผง').toBe(1);
+  expect(ok.dim, 'ความจางต้องเป็นค่าเดียวกับในแผง (ใช้คลาสร่วมกัน)').toBe(ok.dimPanel);
   expect(errs).toEqual([]);
 });

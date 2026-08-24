@@ -1529,23 +1529,29 @@
   const SEEK_SHIRT = ['#7ec4f5', '#f7a8c8', '#9ee29a', '#ffd166', '#c4a8f5'];
   const SEEK_SKIN  = ['#f7d3ae', '#e8bb90', '#d6a678'];
   const SEEK_HAIR  = ['#4a3327', '#6b4a2f', '#2f2320'];
-  function seekFaces(sample){
-    const wrap = document.createElement('span');
-    wrap.className = 'hpl-faces';
+  /* 🙈 แถวหน้าเพื่อนที่ไปแอบ — **ใช้ทั้งในแผงกิจกรรมและบนแถบบอกระยะห่างในเมือง**
+     (ผู้ใช้สั่ง 2026-08-24: แถบในเมืองต้องโชว์เพื่อนและ effect ตอนเจอแบบเดียวกับในแผงเป๊ะ)
+     🔒 **ต้องเป็นคลาสชุดเดียวกัน (`hpl-faces`/`hpl-face`/`hpl-face-ok`)** ห้ามทำสไตล์แยกให้แถบ
+       ไม่งั้นแก้หน้าตาที่เดียวแล้วอีกที่ไม่ตาม = เด็กเห็นเพื่อนคนละแบบใน 2 ที่ */
+  function seekFacesHtml(sample){
     const n = sample ? 3 : (P.seek.spots || []).length;
+    let out = '';
     for(let i = 0; i < n; i++){
       const found = !sample && P.seek.found.indexOf(i) >= 0;
-      const d = document.createElement('span');
-      d.className = 'hpl-face' + (found ? ' found' : '');
-      d.innerHTML = '<svg viewBox="0 0 36 36" aria-hidden="true">'
+      out += '<span class="hpl-face' + (found ? ' found' : '') + '">'
+        + '<svg viewBox="0 0 36 36" aria-hidden="true">'
         + '<path d="M10 34v-9a8 8 0 0 1 16 0v9z" fill="' + SEEK_SHIRT[i % 5] + '"/>'
         + '<circle cx="18" cy="15" r="8.6" fill="' + SEEK_SKIN[i % 3] + '"/>'
         + '<path d="M9.4 13.5a8.6 8.6 0 0 1 17.2 0z" fill="' + SEEK_HAIR[i % 3] + '"/>'
         + '<circle cx="15" cy="16" r="1.5" fill="#3b2a1d"/><circle cx="21" cy="16" r="1.5" fill="#3b2a1d"/>'
-        + '</svg>' + (found ? '<i class="hpl-face-ok">✓</i>' : '');
-      wrap.appendChild(d);
+        + '</svg>' + (found ? '<i class="hpl-face-ok">✓</i>' : '') + '</span>';
     }
-    return wrap;
+    return '<span class="hpl-faces">' + out + '</span>';
+  }
+  function seekFaces(sample){
+    const box = document.createElement('span');
+    box.innerHTML = seekFacesHtml(sample);
+    return box.firstChild;
   }
   function renderPanel(){
     const list = $('hpl-list');
@@ -1875,6 +1881,9 @@
     el.innerHTML = '<span class="hsk-lab">ระยะห่างจากเพื่อนที่ใกล้ที่สุด</span>'
                  + '<span class="hsk-bar">' + bars + '</span>'
                  + '<span class="hsk-txt">' + h.text + '</span>'
+                 /* 🙈 หน้าเพื่อนที่ไปแอบ — ชุดเดียวกับในแผงกิจกรรม เจอแล้วจางลง + ติด ✓ เหมือนกันเป๊ะ
+                    (ผู้ใช้สั่ง) ⇒ เด็กเห็นได้จากในเมืองเลยว่าเหลือใครบ้าง ไม่ต้องเปิดแผงมาดู */
+                 + seekFacesHtml()
                  + '<span class="hsk-left">เหลืออีก ' + left + ' คน</span>'
                  /* ⏸ ปุ่มพักอยู่ตรงนี้ด้วย (ผู้ใช้สั่ง 2026-08-17) — ของเดิมต้องเปิดแผง 🎈 ก่อน
                     ⚠ ตัวแถบเป็น `pointer-events:none` ปุ่มจึงต้องเปิดกลับเป็น `auto` เอง */
