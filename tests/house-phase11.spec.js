@@ -670,6 +670,12 @@ test('11Q: แผงกิจกรรมมีปุ่มนำทางไป
   expect(ic.emoji, 'ห้ามเหลือ emoji บนปุ่ม').toBe(false);
   await btn.click();
   await expect.poll(() => page.evaluate(() => window.HouseWorld.guidingCollect())).toBe(true);
+  /* 🧭 กดแล้ว **แผงต้องปิดให้เอง** (ผู้ใช้สั่ง 2026-08-24) — ลูกศรอยู่ในโลก 3D
+     แผงเปิดค้างอยู่เด็กก็ไม่เห็นลูกศรที่เพิ่งสั่งให้ขึ้น */
+  await expect(page.locator('#house-playpanel'), 'กด "พาไปเก็บ" แล้วแผงต้องปิดเอง').toBeHidden();
+  /* กด "พอแล้ว" ต้องเปิดแผงกลับมาก่อน (ปุ่มอยู่ในแผง) */
+  await page.locator('#house-play-btn').click();
+  await expect(page.locator('#house-playpanel')).toBeVisible();
   /* ⚠ `guidingCollect()` เป็น state ใน JS ที่พลิกทันทีตอนกดปุ่ม แต่ตัวลูกศร `#house-qarrow`
      **ลูปวาดเป็นคนอัปเดต** ⇒ ต้อง poll ห้ามอ่านครั้งเดียวต่อจากบรรทัดบน
      (เครื่องเทสวาดได้ ~3 fps จริง · กับดักเดิมที่บันทึกไว้ตั้งแต่เฟส 12.1) */
@@ -706,5 +712,27 @@ test('11R: ช่องรายการในร้านสูงเท่า
   expect(r.n, 'ต้องมีแถวขายปลา 2 ชนิด').toBe(2);
   expect(r.max, 'ช่องต้องสูงเท่าเนื้อหาจริง ไม่ยืดเต็มที่ว่าง').toBeLessThan(100);
   expect(r.max - r.min, 'ทุกช่องต้องสูงเท่ากัน').toBe(0);
+  expect(errs).toEqual([]);
+});
+
+
+/* 🙈 แถบบอกระยะห่างตอนซ่อนแอบ ต้องยังไม่โผล่ระหว่างนับถอยหลัง (ผู้ใช้สั่ง 2026-08-24)
+   ตอนนั้นเด็กนั่งปิดตาอยู่ และเพื่อนกำลังวิ่งผ่านไปหาที่แอบ ⇒ แถบจะขยับตามคนที่วิ่งผ่าน = ใบ้ผิด */
+test('11S: เริ่มเกมซ่อนแอบ — แถบบอกระยะห่างต้องซ่อนระหว่างนับถอยหลัง แล้วโผล่ตอนนับจบ',
+  async ({ page }) => {
+  const errs = await house(page);
+  await page.evaluate(() => window.HousePlay.seekStart());
+  await page.waitForTimeout(600);
+  const during = await page.evaluate(() => ({
+    intro: window.HousePlay.seekIntroActive(),
+    bar: !document.getElementById('house-seek-hud').hidden,
+  }));
+  expect(during.intro, 'ต้องอยู่ช่วงนับถอยหลัง').toBe(true);
+  expect(during.bar, 'ระหว่างนับถอยหลังห้ามโชว์แถบบอกระยะห่าง').toBe(false);
+
+  /* นับจบ (ข้ามอินโทร = จังหวะเดียวกับนับถึง 0) ⇒ แถบต้องโผล่เอง */
+  await page.evaluate(() => window.HousePlay.seekIntroSkip());
+  await expect.poll(() => page.evaluate(() => !document.getElementById('house-seek-hud').hidden),
+                    { message: 'นับจบแล้วแถบต้องโผล่' }).toBe(true);
   expect(errs).toEqual([]);
 });

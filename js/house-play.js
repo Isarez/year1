@@ -1587,7 +1587,15 @@
     const guiding = !!(W() && W().guidingCollect && W().guidingCollect());
     const colBtns = colLeftN > 0 ? [{
       label: guiding ? 'พอแล้ว' : 'พาไปเก็บ', ico: 'ui-compass', alt: guiding,
-      fn: ()=>{ if(W() && W().guideCollect){ W().guideCollect(!guiding); renderPanel(); } }
+      /* 🧭 กด "พาไปเก็บ" = **ปิดแผงให้เลย** (ผู้ใช้สั่ง 2026-08-24) — ลูกศรชี้ทางอยู่ในโลก 3D
+         ถ้าแผงยังเปิดค้างอยู่เด็กก็ไม่เห็นลูกศรที่เพิ่งสั่งให้ขึ้น ต้องมากดปิดเองอีกที
+         ⚠ กด "พอแล้ว" (ปิดการนำทาง) **ไม่ต้องปิดแผง** — เด็กแค่ยกเลิก ยังอ่านรายการอื่นต่อได้ */
+      fn: ()=>{
+        if(!W() || !W().guideCollect) return;
+        W().guideCollect(!guiding);
+        if(guiding) renderPanel();      /* เพิ่งปิดการนำทาง — อยู่ในแผงต่อ แค่เปลี่ยนป้ายปุ่ม */
+        else closePanel();              /* เพิ่งเปิดการนำทาง — ออกไปดูลูกศรได้เลย */
+      }
     }] : [];
     list.appendChild(row(ICO('col-' + th.id, th.emoji), 'เก็บ' + th.name + 'ทั่วเมือง',
       'วันนี้เก็บแล้ว ' + P.col.got.length + '/' + (P.col.items.length || COL_N)
@@ -1847,7 +1855,11 @@
     const el = $('house-seek-hud');
     if(!el) return;
     const w = W();
-    const on = !!(P && P.seek.on && w && w.mode() === 'world' && !w.editing() && w.scene() === 'out'
+    /* ⏳ **ระหว่างนับถอยหลังต้องยังไม่โชว์** (ผู้ใช้สั่ง 2026-08-24) — ตอนนั้นเด็กนั่งปิดตาอยู่
+       และเพื่อนกำลังวิ่งผ่านไปหาที่แอบ ⇒ แถบจะเด้งขึ้นๆ ลงๆ ตามคนที่วิ่งผ่าน = บอกใบ้ผิดๆ
+       ⇒ โผล่ตอนนับถึง 0 แล้ว (อินโทรจบ) ซึ่งเป็นจังหวะที่เด็กลืมตาเริ่มออกตามหาพอดี */
+    const on = !!(P && P.seek.on && !seekIntroActive()
+                  && w && w.mode() === 'world' && !w.editing() && w.scene() === 'out'
                   && !document.body.classList.contains('house-photo'));
     if(el.hidden === on) el.hidden = !on;
     if(!on){ hintKey = ''; return; }
