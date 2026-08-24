@@ -65,6 +65,11 @@ async function probe(page, url) {
     /* ของที่เกมจริงใช้ ต้องอยู่ทั้ง 2 ฝั่ง */
     coinAdd: typeof (window.OwlCoins || {}).add === 'function',
     paint:   typeof window.__housePaint === 'function',
+    /* 🧭 `HousePlay.colLeft` = ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" ที่ **ลูกศรนำทางของเกมจริงใช้**
+       🐞 v3.2.4 เผลอย้ายเข้าไปในบล็อก DEV_ONLY ⇒ บน production เป็น undefined
+          ลูกศรจึงไม่ขึ้นเลยทั้งปุ่ม "พาไปเก็บ" และเควสต์เก็บของ — เงียบสนิท ไม่มี error
+          และเทสทุกไฟล์รันบน localhost ซึ่งประตู dev เปิดอยู่เสมอ จึงไม่มีใครจับได้ */
+    colLeft: typeof (window.HousePlay || {}).colLeft === 'function',
   }));
   return { r, errs };
 }
@@ -76,6 +81,7 @@ test('DG1: รันในเครื่อง (127.0.0.1) — เครื่�
   expect(r.coinSet && r.shopDev, 'API ของเทสต้องครบ').toBe(true);
   expect(r.qb && r.dev, 'หน้าคลังโจทย์/ปรับค่าต้องเปิด').toBe(true);
   expect(r.coinAdd && r.paint).toBe(true);
+  expect(r.colLeft, 'ลูกศรนำทางใช้ HousePlay.colLeft').toBe(true);
   expect(errs).toEqual([]);
 });
 
@@ -95,6 +101,7 @@ test('DG2: hostname เป็น owlkids.net — เครื่องมือ�
   /* 🔑 เกมของเด็กต้องไม่พังตามไปด้วย */
   expect(r.coinAdd, 'OwlCoins.add เป็นทางจ่ายรางวัลเควสต์ ห้ามหาย').toBe(true);
   expect(r.paint,   '__housePaint คือโหมดช่างภาพ ห้ามหาย').toBe(true);
+  expect(r.colLeft, 'HousePlay.colLeft คือช่องของลูกศรนำทาง ห้ามหาย').toBe(true);
   expect(errs).toEqual([]);
 });
 
@@ -165,4 +172,63 @@ test('DG5: หน้าแรกบน owlkids.net (โหลดชุดบ้�
   expect(r.dbg,     '__houseDbg ห้ามหลุดบนหน้าแรก').toBe(false);
   expect(r.coinAdd, 'OwlCoins.add ต้องยังอยู่ (เกมจริงใช้)').toBe(true);
   expect(errs).toEqual([]);
+});
+
+/* 🕸 DG6 — **ตะแกรงกันทั้งตระกูล**: ของที่ถูกกันไว้ให้เครื่องมือเทส ต้องไม่มีใครในเกมจริงเรียกใช้
+
+   🐞 บั๊กที่ผู้ใช้เจอ 2026-08-24: `HousePlay.colLeft` (ช่องของลูกศรนำทาง) ถูกย้ายเข้าบล็อก
+      DEV_ONLY ตอนทำประตูเครื่องมือเทส ⇒ บน production เป็น undefined ⇒ **ลูกศรไม่ขึ้นเลย**
+      แบบเงียบสนิท (`(P && P.colLeft) ? … : []` กลืน error ให้เรียบร้อย)
+      ⇒ เทสรายตัวจับไม่ได้ เพราะทุกไฟล์รันบน localhost ที่ประตู dev เปิดอยู่เสมอ
+
+   วิธีคุม: เทียบ "คีย์ที่มีตอนรันในเครื่อง" กับ "คีย์ที่มีบน production" ⇒ ได้รายชื่อของที่ถูกกันไว้
+   แล้วไล่ดูซอร์สว่ามีไฟล์ของ **เกมจริง** เรียก `.<คีย์>` อยู่ไหม (ไฟล์เครื่องมือเทสเรียกได้ตามปกติ)
+   ⚠ ใช้ **หน้าแรก** ทั้ง 2 ฝั่ง ไม่ต้องเข้าเมือง — ชุดบ้านถูกโหลดเบื้องหลังอยู่แล้ว (ดู DG5) */
+test('DG6: ของที่ปิดไว้ให้เครื่องมือเทส ต้องไม่มีโค้ดของเกมจริงเรียกใช้', async ({ page }) => {
+  const MODS = ['HousePlay', 'HouseShop', 'HouseBook'];
+  /* ไฟล์ที่ "เป็นเครื่องมือเทสอยู่แล้ว" — เรียกของ dev ได้ ไม่นับเป็นความผิด */
+  const DEV_FILES = ['house-devtools.js', 'house-qbrowse.js'];
+
+  const keysOn = async (url) => {
+    await page.addInitScript(([c, ch]) => {
+      localStorage.setItem('p1quiz_children', JSON.stringify([c]));
+      localStorage.setItem('p1quiz_active_child', c.id);
+      localStorage.setItem('p1quiz_music', 'off');
+      localStorage.setItem('p1quiz_house_' + c.id,
+        JSON.stringify({ v: 1, mapV: 4, char: ch, tut: { skip: true } }));
+    }, [CHILD, CHAR]);
+    await page.goto(url);
+    await page.locator('#child-select-view .child-card').first().click();
+    await page.waitForFunction(() => !!window.HousePlay && !!window.HouseShop && !!window.HouseBook,
+                               null, { timeout: 60000 });
+    await page.waitForTimeout(2500);
+    return page.evaluate(ms => { const o = {};
+      ms.forEach(m => { o[m] = Object.keys(window[m] || {}); }); return o; },
+      ['HousePlay', 'HouseShop', 'HouseBook']);
+  };
+
+  const local = await keysOn('/');
+  await serveAs(page, 'https://owlkids.net');
+  const prod = await keysOn('https://owlkids.net/index.html');
+
+  const files = fs.readdirSync(path.join(ROOT, 'js')).filter(f => f.endsWith('.js'));
+  const bad = [];
+  MODS.forEach(m => {
+    const gated = local[m].filter(k => prod[m].indexOf(k) < 0);
+    expect(gated.length, m + ' ต้องมีของที่ปิดไว้ให้เครื่องมือเทสอยู่บ้าง (ไม่งั้นเทียบผิดฝั่ง)')
+      .toBeGreaterThan(0);
+    gated.forEach(k => {
+      files.forEach(f => {
+        if (DEV_FILES.indexOf(f) >= 0) return;
+        const src = fs.readFileSync(path.join(ROOT, 'js', f), 'utf8')
+                      .replace(/\/\*[\s\S]*?\*\//g, '');        /* ตัดคอมเมนต์ กันชื่อในคำอธิบาย */
+        /* ตัวไฟล์ที่นิยามเองเรียกภายในได้ (คนละตัวกับ export) — สนใจเฉพาะการเรียกข้ามไฟล์ */
+        const re = new RegExp('(HousePlay|HouseShop|HouseBook|\\bP|\\bPL|\\bS|\\bSHOP|\\bC)\\s*\\.\\s*'
+                              + k + '\\b');
+        if (re.test(src)) bad.push(f + ' เรียก ' + m + '.' + k);
+      });
+    });
+  });
+  expect(bad, '⛔ โค้ดของเกมจริงเรียกของที่ถูกปิดไว้บน production ⇒ ฟีเจอร์นั้นตายเงียบๆ')
+    .toEqual([]);
 });

@@ -2151,12 +2151,16 @@
       },
       gardenPlant, gardenWater, gardenHarvest,
       objs: () => ({seek: seekObjs.length, col: colObjs.length, garden: gardenObjs.length}),
-      /* 🧭 ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" — ลูกศรนำทางของเควสต์เก็บของใช้ (2026-08-16)
-         ⚠ ต้องกรอง `got` ออกเสมอ ไม่งั้นลูกศรชี้ไปที่ของที่เก็บไปแล้ว */
-      colLeft: ()=> (!P || !P.col.items) ? []
-        : P.col.items.map((it, i) => ({x:it.x, z:it.z, i:i}))
-                     .filter(it => (P.col.got || []).indexOf(it.i) < 0)
     } : {}),
+    /* 🧭 ช่องของ "ของประจำวันที่ยังไม่ได้เก็บ" — **ลูกศรนำทางของเกมจริงใช้ตัวนี้**
+         (ปุ่ม "พาไปเก็บ" ในแผงกิจกรรม + ลูกศรของเควสต์ `collectgive` — ดู questArrowTarget ใน js/house.js)
+       🔒 **ห้ามย้ายกลับเข้าบล็อก DEV_ONLY** — เคยหลุดเข้าไปตอนทำประตูเครื่องมือเทส (v3.2.4)
+         ผลคือบน production `colLeft` เป็น undefined ⇒ ลูกศรไม่ขึ้นเลยแบบเงียบๆ ไม่มี error ให้จับ
+         และเทสทุกตัวรันบน localhost ซึ่ง DEV_ONLY เป็นจริงเสมอ จึงไม่มีใครจับได้ (เทส DG6 คุมแล้ว)
+       ⚠ ต้องกรอง `got` ออกเสมอ ไม่งั้นลูกศรชี้ไปที่ของที่เก็บไปแล้ว */
+    colLeft: ()=> (!P || !P.col.items) ? []
+      : P.col.items.map((it, i) => ({x:it.x, z:it.z, i:i}))
+                   .filter(it => (P.col.got || []).indexOf(it.i) < 0),
     FISH, SEEDS, COL_PRIZES, COL_N, PLOT_MAX, GROW_MAX, PHOTO_MAX,
     /* ---- 🚪 ประตูเดียวที่ฝั่งเควสต์ใช้เช็คว่า "วันนี้ยังทำงานแนว Action ได้อีกกี่ครั้ง" ----
        ⚠ **ต้องเช็คก่อนแจกงานเสมอ** ไม่งั้นเด็กเก็บของครบไปแล้วแล้วเพิ่งได้งานให้เก็บ = ตันทั้งวัน

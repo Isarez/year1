@@ -175,6 +175,9 @@ test('ซื้อสัตว์: ตัดเงินผ่าน OwlCoins ·
   });
   await page.waitForTimeout(300);
   await page.locator('#house-shop-buy .hs-buy-btn').click();
+  /* ✅ ต้องยืนยันก่อนตัดเงินเสมอ (ผู้ใช้สั่ง 2026-08-24) */
+  await page.waitForTimeout(300);
+  await page.locator('#hs-confirm-yes').click();
   await page.waitForTimeout(2200);
   expect(await coinsOf(page)).toBe(50);
   expect(await page.evaluate(() => window.HouseShop.ownsPet('dog'))).toBe(true);

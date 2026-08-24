@@ -3127,6 +3127,17 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   body.house-preview .house-pet-name,
   body.house-preview .house-pet-bubble,
   body.house-preview .house-npc-bubble{display:none !important;}
+  /* 🖼️ **ผืนวาดของกรอบพรีวิว** — ตัวโมเดลถูก "ก๊อปปี้" จาก canvas หลักมาลงที่นี่ทุกเฟรม
+     (renderPreviewInset ใน js/house.js · drawImage ในจังหวะเดียวกับที่เพิ่งเรนเดอร์เสร็จ
+      เทคนิคเดียวกับโหมดถ่ายรูปที่ไม่ต้องเปิด preserveDrawingBuffer)
+     🔑 **เหตุผลที่ต้องมีผืนนี้**: ผู้ใช้แจ้ง 2026-08-24 จาก iPad ว่าแถบ HUD (เข็มทิศ/สัตว์เลี้ยง/
+       เควสต์/ปุ่มกิจกรรม/ลูกศรนำทาง) ขึ้นมาทับตัวโมเดลในกรอบพรีวิว — เพราะโมเดลถูกวาดลง
+       **canvas ซึ่งอยู่หลัง HTML ทุกชิ้นเสมอ** ตั้ง z-index ให้กรอบสูงแค่ไหนก็ไม่ชนะ
+     ⇒ พอย้ายพิกเซลมาอยู่บน element ของกรอบเอง กรอบก็บังแถบพวกนั้นได้ตามปกติ
+       **แถบทุกอันยังอยู่ครบเหมือนเดิม แค่ไปอยู่หลังกรอบ** (ผู้ใช้สั่ง — ห้ามซ่อนแถบทิ้ง) */
+  .house-prev-card > canvas{
+    position:absolute; inset:0; width:100%; height:100%; display:block; border-radius:14px;
+  }
   .hpv-hint{
     position:absolute; left:50%; bottom:-4px; transform:translateX(-50%);
     background:rgba(255,255,255,.86); border-radius:999px; padding:3px 10px;
@@ -3250,6 +3261,12 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
     flex:1 1 auto; min-width:0; font-size:15px; font-weight:700; color:var(--ink);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
+  /* รูปของที่กำลังจะซื้อ (ชิ้นเดียวกับบนการ์ด) — เด็กอ่านชื่อไม่ทัน ต้องเห็นเป็นรูป */
+  .hs-buy-pic{flex:0 0 auto;}
+  .hs-buy-pic.hs-emoji{font-size:26px;}
+  .hs-buy-pic.hs-sw{width:28px; height:28px; border-radius:9px;}
+  /* ยังไม่ได้แตะเลือกเอง = บรรทัดชวนให้แตะ (ไม่มีปุ่มซื้อในแถบตอนนี้) */
+  .hs-buy-hint{color:var(--ink-soft); font-size:14px;}
   .hs-buy-btn{
     flex:0 0 auto; border:none; border-radius:999px; padding:10px 18px;
     background:linear-gradient(135deg,#66BB6A,#43A047); color:#fff; font-family:inherit;
@@ -3260,6 +3277,44 @@ body.night-mode .hpm-close{background:#5d6ba6; color:#fff;}
   .hs-buy-btn .hs-coin{width:14px; height:14px;}
   .hs-buy-btn.hs-buy-poor{background:linear-gradient(135deg,#CBBFA9,#AFA28A);}
   .hs-buy-btn.hs-buy-have{background:linear-gradient(135deg,#A5D6A7,#7CBF80); color:#2F5C33;}
+
+  /* ---------- ✅ กล่องยืนยันก่อนจ่ายเงิน (ผู้ใช้สั่ง 2026-08-24) ----------
+     คลุมเฉพาะ "กล่องร้าน" ไม่ใช่ทั้งจอ ⇒ **ยังเห็นตัวอย่าง 3D ของชิ้นที่จะซื้ออยู่ข้างๆ**
+     ระหว่างตัดสินใจ (กรอบพรีวิวลอยอยู่นอกกล่องร้าน) */
+  .hs-confirm{
+    position:absolute; inset:0; z-index:20; border-radius:inherit;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+    background:rgba(60,40,10,.34); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  }
+  .hs-confirm-card{
+    width:min(340px,100%); background:var(--white); border-radius:24px; padding:18px 18px 16px;
+    box-shadow:0 10px 30px rgba(70,40,10,.3); text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .hs-confirm-pic{font-size:58px; line-height:1;}
+  .hs-confirm-pic svg{display:block;}
+  .hs-confirm-pic.hs-sw{width:58px; height:58px; border-radius:18px;}
+  .hs-confirm-q{font-size:18px; font-weight:800; color:var(--ink); line-height:1.5;}
+  .hs-confirm-price{font-size:16px; font-weight:800; color:var(--ink);}
+  .hs-confirm-left{font-size:13.5px; font-weight:700; color:var(--ink-soft); line-height:1.6;}
+  .hs-confirm-price .hs-coin, .hs-confirm-left .hs-coin{width:15px; height:15px;}
+  .hs-confirm-btns{display:flex; gap:10px; margin-top:6px; width:100%; justify-content:center;}
+  .hs-confirm-no, .hs-confirm-yes{
+    flex:1 1 0; border:none; border-radius:999px; padding:12px 10px; font-family:inherit;
+    font-size:15.5px; font-weight:800; cursor:pointer; box-shadow:var(--shadow-btn);
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    transition:transform .12s ease;
+  }
+  .hs-confirm-no:active, .hs-confirm-yes:active{transform:scale(.95);}
+  .hs-confirm-no{background:#EFE6D6; color:var(--ink-soft);}
+  .hs-confirm-yes{background:linear-gradient(135deg,#66BB6A,#43A047); color:#fff;}
+  .hs-confirm-yes .hs-coin{width:15px; height:15px;}
+  @media (max-width:480px){
+    .hs-confirm-card{padding:15px 14px 13px; gap:6px;}
+    .hs-confirm-pic{font-size:48px;}
+    .hs-confirm-q{font-size:16.5px;}
+    .hs-confirm-no, .hs-confirm-yes{font-size:14.5px; padding:11px 8px;}
+  }
 
   /* แถบเครื่องมือชิ้นที่เลือก (ลอยเหนือกล่อง panel) */
   .house-edit-toolbar{
